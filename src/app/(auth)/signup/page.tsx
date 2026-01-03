@@ -62,11 +62,51 @@ export default function SignupPage() {
       });
 
       if (error) {
-        toast({
-          title: "Error",
-          description: error.message,
-          variant: "destructive",
-        });
+        // If user already exists, check if they have a profile
+        if (error.message.includes("already registered") || error.message.includes("already been registered")) {
+          // Try to sign them in instead
+          const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+            email,
+            password,
+          });
+
+          if (signInError) {
+            toast({
+              title: "Error",
+              description: "This email is already registered. Please use the login page instead.",
+              variant: "destructive",
+            });
+            setTimeout(() => {
+              router.push("/login");
+            }, 2000);
+          } else if (signInData.user) {
+            // Check if user has a profile
+            const { data: profile } = await supabase
+              .from("profiles")
+              .select("id")
+              .eq("id", signInData.user.id)
+              .single();
+
+            if (!profile) {
+              // User exists but no profile - redirect to setup
+              toast({
+                title: "Complete Setup",
+                description: "Please complete your profile setup.",
+              });
+              router.push("/setup");
+            } else {
+              // User has profile - redirect to dashboard
+              router.push("/dashboard");
+            }
+            router.refresh();
+          }
+        } else {
+          toast({
+            title: "Error",
+            description: error.message,
+            variant: "destructive",
+          });
+        }
       } else if (data.user) {
         toast({
           title: "Success",

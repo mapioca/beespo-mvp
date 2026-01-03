@@ -30,7 +30,7 @@ export default function LoginPage() {
 
     try {
       const supabase = createClient();
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
@@ -41,12 +41,27 @@ export default function LoginPage() {
           description: error.message,
           variant: "destructive",
         });
-      } else {
-        toast({
-          title: "Success",
-          description: "You&apos;ve been logged in successfully.",
-        });
-        router.push("/dashboard");
+      } else if (data.user) {
+        // Check if user has completed profile setup
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("id")
+          .eq("id", data.user.id)
+          .single();
+
+        if (!profile) {
+          toast({
+            title: "Complete Setup",
+            description: "Please complete your profile setup.",
+          });
+          router.push("/setup");
+        } else {
+          toast({
+            title: "Success",
+            description: "You&apos;ve been logged in successfully.",
+          });
+          router.push("/dashboard");
+        }
         router.refresh();
       }
     } catch {

@@ -39,64 +39,72 @@ export default function SetupPage() {
     e.preventDefault();
     setIsLoading(true);
 
-    try {
-      const supabase = createClient();
+    const supabase = createClient();
 
-      // Get current user
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
+    // Get current user
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
 
-      if (userError || !user) {
-        throw new Error("Not authenticated");
-      }
-
-      // Create organization
-      const { data: org, error: orgError } = await (supabase
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .from("organizations") as any)
-        .insert({
-          name: organizationName,
-          type: organizationType,
-        })
-        .select()
-        .single();
-
-      if (orgError) {
-        throw orgError;
-      }
-
-      // Create profile for user as leader
-      const { error: profileError } = await (supabase
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .from("profiles") as any)
-        .insert({
-          id: user.id,
-          email: user.email!,
-          full_name: user.user_metadata.full_name || "",
-          organization_id: org?.id,
-          role: "leader",
-        });
-
-      if (profileError) {
-        throw profileError;
-      }
-
-      toast({
-        title: "Success",
-        description: `${organizationName} has been created successfully!`,
-      });
-
-      router.push("/dashboard");
-      router.refresh();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (error: any) {
+    if (userError || !user) {
       toast({
         title: "Error",
-        description: error.message || "Failed to create organization.",
+        description: "Not authenticated. Please log in again.",
         variant: "destructive",
       });
-    } finally {
       setIsLoading(false);
+      return;
     }
+
+    // Create organization
+    const { data: org, error: orgError } = await (supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from("organizations") as any)
+      .insert({
+        name: organizationName,
+        type: organizationType,
+      })
+      .select()
+      .single();
+
+    if (orgError) {
+      toast({
+        title: "Error",
+        description: orgError.message || "Failed to create organization.",
+        variant: "destructive",
+      });
+      setIsLoading(false);
+      return;
+    }
+
+    // Create profile for user as leader
+    const { error: profileError } = await (supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from("profiles") as any)
+      .insert({
+        id: user.id,
+        email: user.email!,
+        full_name: user.user_metadata.full_name || "",
+        organization_id: org?.id,
+        role: "leader",
+      });
+
+    if (profileError) {
+      toast({
+        title: "Error",
+        description: profileError.message || "Failed to create profile.",
+        variant: "destructive",
+      });
+      setIsLoading(false);
+      return;
+    }
+
+    toast({
+      title: "Success",
+      description: `${organizationName} has been created successfully!`,
+    });
+
+    setIsLoading(false);
+    router.push("/dashboard");
+    router.refresh();
   };
 
   return (

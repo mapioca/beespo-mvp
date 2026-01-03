@@ -34,13 +34,29 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
+  // Check if user has completed setup (has a profile)
+  let hasProfile = false;
+  if (user) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("id", user.id)
+      .single();
+    hasProfile = !!profile;
+  }
+
   // Protected routes - redirect to login if not authenticated
-  if (!user && request.nextUrl.pathname.startsWith("/dashboard")) {
+  if (!user && (request.nextUrl.pathname.startsWith("/dashboard") || request.nextUrl.pathname === "/setup")) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  // Redirect authenticated users away from auth pages
-  if (user && (request.nextUrl.pathname === "/login" || request.nextUrl.pathname === "/signup")) {
+  // Redirect to setup if authenticated but no profile
+  if (user && !hasProfile && request.nextUrl.pathname !== "/setup") {
+    return NextResponse.redirect(new URL("/setup", request.url));
+  }
+
+  // Redirect authenticated users with complete profiles away from auth pages
+  if (user && hasProfile && (request.nextUrl.pathname === "/login" || request.nextUrl.pathname === "/signup" || request.nextUrl.pathname === "/setup")) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
