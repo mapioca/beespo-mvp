@@ -1,5 +1,6 @@
-// Database types - will be regenerated from Supabase schema in Week 2
-// Run: npx supabase gen types typescript --project-id <project-id> > src/types/database.ts
+// Database types - Complete schema for Beespo MVP
+// This will be regenerated from Supabase after deployment:
+// Run: npx supabase gen types typescript --project-id tuekpooasofqfawmpdxj > src/types/database.ts
 
 export type Database = {
   public: {
@@ -91,9 +92,164 @@ export type Database = {
           updated_at?: string;
         };
       };
+      template_items: {
+        Row: {
+          id: string;
+          template_id: string;
+          title: string;
+          description: string | null;
+          order_index: number;
+          duration_minutes: number | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          template_id: string;
+          title: string;
+          description?: string | null;
+          order_index: number;
+          duration_minutes?: number | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          template_id?: string;
+          title?: string;
+          description?: string | null;
+          order_index?: number;
+          duration_minutes?: number | null;
+          created_at?: string;
+        };
+      };
+      meetings: {
+        Row: {
+          id: string;
+          organization_id: string;
+          template_id: string | null;
+          title: string;
+          scheduled_date: string;
+          status: "scheduled" | "in_progress" | "completed" | "cancelled";
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          organization_id: string;
+          template_id?: string | null;
+          title: string;
+          scheduled_date: string;
+          status?: "scheduled" | "in_progress" | "completed" | "cancelled";
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          organization_id?: string;
+          template_id?: string | null;
+          title?: string;
+          scheduled_date?: string;
+          status?: "scheduled" | "in_progress" | "completed" | "cancelled";
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      agenda_items: {
+        Row: {
+          id: string;
+          meeting_id: string;
+          title: string;
+          description: string | null;
+          order_index: number;
+          duration_minutes: number | null;
+          notes: string | null;
+          is_completed: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          meeting_id: string;
+          title: string;
+          description?: string | null;
+          order_index: number;
+          duration_minutes?: number | null;
+          notes?: string | null;
+          is_completed?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          meeting_id?: string;
+          title?: string;
+          description?: string | null;
+          order_index?: number;
+          duration_minutes?: number | null;
+          notes?: string | null;
+          is_completed?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      tasks: {
+        Row: {
+          id: string;
+          organization_id: string;
+          meeting_id: string | null;
+          agenda_item_id: string | null;
+          title: string;
+          description: string | null;
+          assigned_to: string | null;
+          due_date: string | null;
+          status: "pending" | "in_progress" | "completed" | "cancelled";
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          organization_id: string;
+          meeting_id?: string | null;
+          agenda_item_id?: string | null;
+          title: string;
+          description?: string | null;
+          assigned_to?: string | null;
+          due_date?: string | null;
+          status?: "pending" | "in_progress" | "completed" | "cancelled";
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          organization_id?: string;
+          meeting_id?: string | null;
+          agenda_item_id?: string | null;
+          title?: string;
+          description?: string | null;
+          assigned_to?: string | null;
+          due_date?: string | null;
+          status?: "pending" | "in_progress" | "completed" | "cancelled";
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
     };
     Views: Record<string, never>;
-    Functions: Record<string, never>;
+    Functions: {
+      create_meeting_from_template: {
+        Args: {
+          p_template_id: string;
+          p_title: string;
+          p_scheduled_date: string;
+        };
+        Returns: string;
+      };
+    };
     Enums: Record<string, never>;
   };
 };
