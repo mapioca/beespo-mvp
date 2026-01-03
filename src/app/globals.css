@@ -1,0 +1,66 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Black & White Elegance Theme */
+    --background: 0 0% 100%; /* Pure white */
+    --foreground: 0 0% 0%; /* Pure black */
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 0%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 0%;
+    --primary: 0 0% 0%; /* Black */
+    --primary-foreground: 0 0% 100%; /* White */
+    --secondary: 0 0% 96%; /* Near white gray */
+    --secondary-foreground: 0 0% 0%;
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 40%;
+    --accent: 0 0% 96%;
+    --accent-foreground: 0 0% 0%;
+    --destructive: 0 84% 60%; /* Error red - minimal color */
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 90%; /* Light gray for borders */
+    --input: 0 0% 90%;
+    --ring: 0 0% 0%;
+    --radius: 0.5rem;
+    --chart-1: 0 0% 60%;
+    --chart-2: 0 0% 40%;
+    --chart-3: 0 0% 20%;
+    --chart-4: 0 0% 80%;
+    --chart-5: 0 0% 50%;
+  }
+
+  .dark {
+    --background: 0 0% 0%;
+    --foreground: 0 0% 100%;
+    --card: 0 0% 5%;
+    --card-foreground: 0 0% 100%;
+    --popover: 0 0% 5%;
+    --popover-foreground: 0 0% 100%;
+    --primary: 0 0% 100%;
+    --primary-foreground: 0 0% 0%;
+    --secondary: 0 0% 10%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 0 0% 10%;
+    --muted-foreground: 0 0% 60%;
+    --accent: 0 0% 10%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 0%;
+    --border: 0 0% 15%;
+    --input: 0 0% 15%;
+    --ring: 0 0% 100%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
