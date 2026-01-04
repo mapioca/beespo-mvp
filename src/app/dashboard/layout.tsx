@@ -19,8 +19,9 @@ export default async function DashboardLayout({
     redirect("/login");
   }
 
-  const { data: profile } = await supabase
-    .from("profiles")
+  const { data: profile } = await (supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .from("profiles") as any)
     .select("full_name, organization_id")
     .eq("id", user.id)
     .single();

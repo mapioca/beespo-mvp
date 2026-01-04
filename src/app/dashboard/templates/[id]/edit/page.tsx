@@ -58,8 +58,9 @@ export default function EditTemplatePage() {
     const templateId = params.id as string;
 
     // Get template
-    const { data: template, error: templateError } = await supabase
-      .from("templates")
+    const { data: template, error: templateError } = await (supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from("templates") as any)
       .select("*")
       .eq("id", templateId)
       .single();
@@ -76,8 +77,9 @@ export default function EditTemplatePage() {
 
     // Check if user can edit
     const { data: { user } } = await supabase.auth.getUser();
-    const { data: profile } = await supabase
-      .from("profiles")
+    const { data: profile } = await (supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from("profiles") as any)
       .select("role")
       .eq("id", user?.id)
       .single();
@@ -97,15 +99,17 @@ export default function EditTemplatePage() {
     setCallingType(template.calling_type || "");
 
     // Get template items
-    const { data: templateItems } = await supabase
-      .from("template_items")
+    const { data: templateItems } = await (supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from("template_items") as any)
       .select("*")
       .eq("template_id", templateId)
       .order("order_index");
 
     if (templateItems) {
       setItems(
-        templateItems.map((item) => ({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        templateItems.map((item: any) => ({
           id: item.id,
           title: item.title,
           description: item.description || "",
@@ -154,8 +158,9 @@ export default function EditTemplatePage() {
     const templateId = params.id as string;
 
     // Update template
-    const { error: templateError } = await supabase
-      .from("templates")
+    const { error: templateError } = await (supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from("templates") as any)
       .update({
         name,
         description,
@@ -174,7 +179,8 @@ export default function EditTemplatePage() {
     }
 
     // Delete all existing items
-    await supabase.from("template_items").delete().eq("template_id", templateId);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase.from("template_items") as any).delete().eq("template_id", templateId);
 
     // Insert all items (both existing and new)
     const templateItems = items
@@ -188,8 +194,9 @@ export default function EditTemplatePage() {
       }));
 
     if (templateItems.length > 0) {
-      const { error: itemsError } = await supabase
-        .from("template_items")
+      const { error: itemsError } = await (supabase
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .from("template_items") as any)
         .insert(templateItems);
 
       if (itemsError) {

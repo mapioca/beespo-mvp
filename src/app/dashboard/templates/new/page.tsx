@@ -88,8 +88,9 @@ export default function NewTemplatePage() {
     }
 
     // Get user profile
-    const { data: profile } = await supabase
-      .from("profiles")
+    const { data: profile } = await (supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from("profiles") as any)
       .select("organization_id, role")
       .eq("id", user.id)
       .single();
@@ -105,8 +106,9 @@ export default function NewTemplatePage() {
     }
 
     // Create template
-    const { data: template, error: templateError } = await supabase
-      .from("templates")
+    const { data: template, error: templateError } = await (supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from("templates") as any)
       .insert({
         name,
         description,
@@ -140,8 +142,9 @@ export default function NewTemplatePage() {
       }));
 
     if (templateItems.length > 0) {
-      const { error: itemsError } = await supabase
-        .from("template_items")
+      const { error: itemsError } = await (supabase
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .from("template_items") as any)
         .insert(templateItems);
 
       if (itemsError) {
