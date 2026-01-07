@@ -71,7 +71,7 @@ export default function EditTemplatePage() {
         description: "Failed to load template.",
         variant: "destructive",
       });
-      router.push("/dashboard/templates");
+      router.push("/templates");
       return;
     }
 
@@ -90,7 +90,7 @@ export default function EditTemplatePage() {
         description: "You don't have permission to edit this template.",
         variant: "destructive",
       });
-      router.push("/dashboard/templates");
+      router.push("/templates");
       return;
     }
 
@@ -214,7 +214,7 @@ export default function EditTemplatePage() {
     });
 
     setIsLoading(false);
-    router.push(`/dashboard/templates/${templateId}`);
+    router.push(`/templates/${templateId}`);
     router.refresh();
   };
 
@@ -230,7 +230,7 @@ export default function EditTemplatePage() {
     <div className="container mx-auto p-6 max-w-4xl">
       <div className="mb-6">
         <Button variant="ghost" asChild>
-          <Link href={`/dashboard/templates/${params.id}`}>
+          <Link href={`/templates/${params.id}`}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Template
           </Link>
@@ -412,7 +412,7 @@ export default function EditTemplatePage() {
           <Button
             type="button"
             variant="outline"
-            onClick={() => router.push(`/dashboard/templates/${params.id}`)}
+            onClick={() => router.push(`/templates/${params.id}`)}
             disabled={isLoading}
           >
             Cancel

@@ -162,7 +162,7 @@ export default function NewTemplatePage() {
     });
 
     setIsLoading(false);
-    router.push("/dashboard/templates");
+    router.push("/templates");
     router.refresh();
   };
 
@@ -170,7 +170,7 @@ export default function NewTemplatePage() {
     <div className="container mx-auto p-6 max-w-4xl">
       <div className="mb-6">
         <Button variant="ghost" asChild>
-          <Link href="/dashboard/templates">
+          <Link href="/templates">
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Templates
           </Link>
@@ -330,7 +330,7 @@ export default function NewTemplatePage() {
           <Button
             type="button"
             variant="outline"
-            onClick={() => router.push("/dashboard/templates")}
+            onClick={() => router.push("/templates")}
             disabled={isLoading}
           >
             Cancel

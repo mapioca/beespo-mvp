@@ -160,6 +160,7 @@ export type Database = {
         Row: {
           id: string;
           meeting_id: string;
+          discussion_id: string | null;
           title: string;
           description: string | null;
           order_index: number;
@@ -172,6 +173,7 @@ export type Database = {
         Insert: {
           id?: string;
           meeting_id: string;
+          discussion_id?: string | null;
           title: string;
           description?: string | null;
           order_index: number;
@@ -184,6 +186,7 @@ export type Database = {
         Update: {
           id?: string;
           meeting_id?: string;
+          discussion_id?: string | null;
           title?: string;
           description?: string | null;
           order_index?: number;
@@ -200,6 +203,7 @@ export type Database = {
           organization_id: string;
           meeting_id: string | null;
           agenda_item_id: string | null;
+          discussion_id: string | null;
           title: string;
           description: string | null;
           assigned_to: string | null;
@@ -214,6 +218,7 @@ export type Database = {
           organization_id: string;
           meeting_id?: string | null;
           agenda_item_id?: string | null;
+          discussion_id?: string | null;
           title: string;
           description?: string | null;
           assigned_to?: string | null;
@@ -228,12 +233,134 @@ export type Database = {
           organization_id?: string;
           meeting_id?: string | null;
           agenda_item_id?: string | null;
+          discussion_id?: string | null;
           title?: string;
           description?: string | null;
           assigned_to?: string | null;
           due_date?: string | null;
           status?: "pending" | "in_progress" | "completed" | "cancelled";
           created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      discussions: {
+        Row: {
+          id: string;
+          organization_id: string;
+          title: string;
+          description: string | null;
+          category:
+            | "member_concerns"
+            | "activities"
+            | "service_opportunities"
+            | "callings"
+            | "temple_work"
+            | "budget"
+            | "facilities"
+            | "youth"
+            | "mission_work"
+            | "other";
+          status:
+            | "new"
+            | "active"
+            | "decision_required"
+            | "monitoring"
+            | "resolved"
+            | "deferred";
+          priority: "low" | "medium" | "high";
+          due_date: string | null;
+          deferred_reason: string | null;
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          organization_id: string;
+          title: string;
+          description?: string | null;
+          category:
+            | "member_concerns"
+            | "activities"
+            | "service_opportunities"
+            | "callings"
+            | "temple_work"
+            | "budget"
+            | "facilities"
+            | "youth"
+            | "mission_work"
+            | "other";
+          status?:
+            | "new"
+            | "active"
+            | "decision_required"
+            | "monitoring"
+            | "resolved"
+            | "deferred";
+          priority?: "low" | "medium" | "high";
+          due_date?: string | null;
+          deferred_reason?: string | null;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          organization_id?: string;
+          title?: string;
+          description?: string | null;
+          category?:
+            | "member_concerns"
+            | "activities"
+            | "service_opportunities"
+            | "callings"
+            | "temple_work"
+            | "budget"
+            | "facilities"
+            | "youth"
+            | "mission_work"
+            | "other";
+          status?:
+            | "new"
+            | "active"
+            | "decision_required"
+            | "monitoring"
+            | "resolved"
+            | "deferred";
+          priority?: "low" | "medium" | "high";
+          due_date?: string | null;
+          deferred_reason?: string | null;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      discussion_notes: {
+        Row: {
+          id: string;
+          discussion_id: string;
+          meeting_id: string | null;
+          content: string;
+          created_by: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          discussion_id: string;
+          meeting_id?: string | null;
+          content: string;
+          created_by: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          discussion_id?: string;
+          meeting_id?: string | null;
+          content?: string;
+          created_by?: string;
           created_at?: string;
           updated_at?: string;
         };

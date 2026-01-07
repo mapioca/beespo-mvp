@@ -59,7 +59,7 @@ export default async function TemplatesPage() {
         </div>
         {profile.role === "leader" && (
           <Button asChild>
-            <Link href="/dashboard/templates/new">
+            <Link href="/templates/new">
               <Plus className="mr-2 h-4 w-4" />
               New Template
             </Link>
@@ -98,7 +98,7 @@ export default async function TemplatesPage() {
                   </CardDescription>
                   <div className="mt-4 flex gap-2">
                     <Button variant="outline" size="sm" asChild className="w-full">
-                      <Link href={`/dashboard/templates/${template.id}`}>
+                      <Link href={`/templates/${template.id}`}>
                         View Details
                       </Link>
                     </Button>
@@ -141,13 +141,13 @@ export default async function TemplatesPage() {
                   </CardDescription>
                   <div className="mt-4 flex gap-2">
                     <Button variant="outline" size="sm" asChild className="flex-1">
-                      <Link href={`/dashboard/templates/${template.id}`}>
+                      <Link href={`/templates/${template.id}`}>
                         View
                       </Link>
                     </Button>
                     {profile.role === "leader" && (
                       <Button variant="outline" size="sm" asChild className="flex-1">
-                        <Link href={`/dashboard/templates/${template.id}/edit`}>
+                        <Link href={`/templates/${template.id}/edit`}>
                           Edit
                         </Link>
                       </Button>
@@ -167,7 +167,7 @@ export default async function TemplatesPage() {
               </p>
               {profile.role === "leader" && (
                 <Button asChild>
-                  <Link href="/dashboard/templates/new">
+                  <Link href="/templates/new">
                     <Plus className="mr-2 h-4 w-4" />
                     Create Template
                   </Link>

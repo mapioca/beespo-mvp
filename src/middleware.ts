@@ -46,7 +46,10 @@ export async function middleware(request: NextRequest) {
   }
 
   // Protected routes - redirect to login if not authenticated
-  if (!user && (request.nextUrl.pathname.startsWith("/dashboard") || request.nextUrl.pathname === "/setup")) {
+  const protectedRoutes = ["/dashboard", "/templates", "/discussions", "/meetings", "/tasks", "/members", "/setup"];
+  const isProtectedRoute = protectedRoutes.some(route => request.nextUrl.pathname.startsWith(route));
+
+  if (!user && isProtectedRoute) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
@@ -58,6 +61,15 @@ export async function middleware(request: NextRequest) {
   // Redirect authenticated users with complete profiles away from auth pages
   if (user && hasProfile && (request.nextUrl.pathname === "/login" || request.nextUrl.pathname === "/signup" || request.nextUrl.pathname === "/setup")) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
+  }
+
+  // Redirect root path to dashboard if authenticated, login if not
+  if (request.nextUrl.pathname === "/") {
+    if (user && hasProfile) {
+      return NextResponse.redirect(new URL("/dashboard", request.url));
+    } else {
+      return NextResponse.redirect(new URL("/login", request.url));
+    }
   }
 
   return supabaseResponse;
