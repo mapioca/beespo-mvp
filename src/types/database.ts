@@ -161,6 +161,7 @@ export type Database = {
           id: string;
           meeting_id: string;
           discussion_id: string | null;
+          business_item_id: string | null;
           title: string;
           description: string | null;
           order_index: number;
@@ -174,6 +175,7 @@ export type Database = {
           id?: string;
           meeting_id: string;
           discussion_id?: string | null;
+          business_item_id?: string | null;
           title: string;
           description?: string | null;
           order_index: number;
@@ -187,6 +189,7 @@ export type Database = {
           id?: string;
           meeting_id?: string;
           discussion_id?: string | null;
+          business_item_id?: string | null;
           title?: string;
           description?: string | null;
           order_index?: number;
@@ -361,6 +364,65 @@ export type Database = {
           meeting_id?: string | null;
           content?: string;
           created_by?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      business_items: {
+        Row: {
+          id: string;
+          organization_id: string;
+          person_name: string;
+          position_calling: string | null;
+          category:
+            | "sustaining"
+            | "release"
+            | "confirmation"
+            | "ordination"
+            | "setting_apart"
+            | "other";
+          status: "pending" | "completed";
+          action_date: string | null;
+          notes: string | null;
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          organization_id: string;
+          person_name: string;
+          position_calling?: string | null;
+          category:
+            | "sustaining"
+            | "release"
+            | "confirmation"
+            | "ordination"
+            | "setting_apart"
+            | "other";
+          status?: "pending" | "completed";
+          action_date?: string | null;
+          notes?: string | null;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          organization_id?: string;
+          person_name?: string;
+          position_calling?: string | null;
+          category?:
+            | "sustaining"
+            | "release"
+            | "confirmation"
+            | "ordination"
+            | "setting_apart"
+            | "other";
+          status?: "pending" | "completed";
+          action_date?: string | null;
+          notes?: string | null;
+          created_by?: string | null;
           created_at?: string;
           updated_at?: string;
         };

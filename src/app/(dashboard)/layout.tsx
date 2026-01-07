@@ -2,7 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Home, FileText, Calendar, CheckSquare, Users, LogOut, MessageSquare } from "lucide-react";
+import { Home, FileText, Calendar, CheckSquare, Users, LogOut, MessageSquare, Briefcase } from "lucide-react";
 
 export default async function DashboardLayout({
   children,
@@ -42,6 +42,7 @@ export default async function DashboardLayout({
     { href: "/templates", icon: FileText, label: "Templates" },
     { href: "/meetings", icon: Calendar, label: "Meetings" },
     { href: "/discussions", icon: MessageSquare, label: "Discussions" },
+    { href: "/business", icon: Briefcase, label: "Business" },
     { href: "/tasks", icon: CheckSquare, label: "Tasks" },
     { href: "/members", icon: Users, label: "Members" },
   ];
