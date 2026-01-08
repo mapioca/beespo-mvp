@@ -3,7 +3,7 @@
 // Run: npx supabase gen types typescript --project-id tuekpooasofqfawmpdxj > src/types/database.ts
 
 // Agenda item types
-export type AgendaItemType = 'procedural' | 'discussion' | 'business' | 'announcement';
+export type AgendaItemType = 'procedural' | 'discussion' | 'business' | 'announcement' | 'speaker';
 
 export type Database = {
   public: {
@@ -169,6 +169,7 @@ export type Database = {
           discussion_id: string | null;
           business_item_id: string | null;
           announcement_id: string | null;
+          speaker_id: string | null;
           title: string;
           description: string | null;
           order_index: number;
@@ -185,6 +186,7 @@ export type Database = {
           discussion_id?: string | null;
           business_item_id?: string | null;
           announcement_id?: string | null;
+          speaker_id?: string | null;
           title: string;
           description?: string | null;
           order_index: number;
@@ -201,6 +203,7 @@ export type Database = {
           discussion_id?: string | null;
           business_item_id?: string | null;
           announcement_id?: string | null;
+          speaker_id?: string | null;
           title?: string;
           description?: string | null;
           order_index?: number;
@@ -472,6 +475,38 @@ export type Database = {
           priority?: "low" | "medium" | "high";
           status?: "draft" | "active" | "stopped";
           deadline?: string | null;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      speakers: {
+        Row: {
+          id: string;
+          organization_id: string;
+          name: string;
+          topic: string;
+          is_confirmed: boolean;
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          organization_id: string;
+          name: string;
+          topic: string;
+          is_confirmed?: boolean;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          organization_id?: string;
+          name?: string;
+          topic?: string;
+          is_confirmed?: boolean;
           created_by?: string | null;
           created_at?: string;
           updated_at?: string;

@@ -36,18 +36,20 @@ export function getItemTypeLabel(type: string): string {
     discussion: 'Discussion',
     business: 'Business Item',
     announcement: 'Announcement',
+    speaker: 'Speaker',
   };
   return labels[type] || type;
 }
 
 export function getItemTypeBadgeVariant(
   type: string
-): 'default' | 'secondary' | 'outline' {
-  const variants: Record<string, 'default' | 'secondary' | 'outline'> = {
+): 'default' | 'secondary' | 'outline' | 'destructive' {
+  const variants: Record<string, 'default' | 'secondary' | 'outline' | 'destructive'> = {
     procedural: 'outline',
     discussion: 'default',
     business: 'secondary',
     announcement: 'default',
+    speaker: 'destructive',
   };
   return variants[type] || 'outline';
 }

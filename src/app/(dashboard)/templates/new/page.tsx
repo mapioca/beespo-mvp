@@ -30,7 +30,7 @@ interface TemplateItem {
   title: string;
   description: string;
   duration_minutes: number;
-  item_type: 'procedural' | 'discussion' | 'business' | 'announcement';
+  item_type: 'procedural' | 'discussion' | 'business' | 'announcement' | 'speaker';
 }
 
 export default function NewTemplatePage() {
@@ -293,6 +293,7 @@ export default function NewTemplatePage() {
                           <SelectItem value="discussion">Discussion</SelectItem>
                           <SelectItem value="business">Business</SelectItem>
                           <SelectItem value="announcement">Announcement</SelectItem>
+                          <SelectItem value="speaker">Speaker</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
