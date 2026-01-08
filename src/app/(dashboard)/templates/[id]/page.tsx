@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Edit, Clock } from "lucide-react";
+import { getItemTypeLabel, getItemTypeBadgeVariant } from "@/types/agenda";
 
 export default async function TemplateDetailPage({
   params,
@@ -142,7 +143,12 @@ export default async function TemplateDetailPage({
                     </div>
                     <div className="flex-1 space-y-1">
                       <div className="flex items-center justify-between">
-                        <h4 className="font-medium">{item.title}</h4>
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-medium">{item.title}</h4>
+                          <Badge variant={getItemTypeBadgeVariant(item.item_type)} className="text-xs">
+                            {getItemTypeLabel(item.item_type)}
+                          </Badge>
+                        </div>
                         {item.duration_minutes && (
                           <Badge variant="outline" className="text-xs">
                             <Clock className="mr-1 h-3 w-3" />

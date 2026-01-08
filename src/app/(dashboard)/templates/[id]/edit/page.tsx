@@ -30,6 +30,7 @@ interface TemplateItem {
   title: string;
   description: string;
   duration_minutes: number;
+  item_type: 'procedural' | 'discussion' | 'business' | 'announcement';
   isNew?: boolean;
 }
 
@@ -114,6 +115,7 @@ export default function EditTemplatePage() {
           title: item.title,
           description: item.description || "",
           duration_minutes: item.duration_minutes || 5,
+          item_type: item.item_type || 'procedural',
         }))
       );
     }
@@ -129,6 +131,7 @@ export default function EditTemplatePage() {
         title: "",
         description: "",
         duration_minutes: 5,
+        item_type: 'procedural',
         isNew: true,
       },
     ]);
@@ -190,6 +193,7 @@ export default function EditTemplatePage() {
         title: item.title,
         description: item.description,
         duration_minutes: item.duration_minutes,
+        item_type: item.item_type,
         order_index: index,
       }));
 
@@ -349,6 +353,26 @@ export default function EditTemplatePage() {
                         placeholder="Agenda item title"
                         disabled={isLoading}
                       />
+                    </div>
+                    <div className="w-40">
+                      <Label htmlFor={`item-type-${item.id}`} className="text-xs">
+                        Type
+                      </Label>
+                      <Select
+                        value={item.item_type}
+                        onValueChange={(value) => updateItem(item.id, "item_type", value)}
+                        disabled={isLoading}
+                      >
+                        <SelectTrigger id={`item-type-${item.id}`}>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="procedural">Procedural</SelectItem>
+                          <SelectItem value="discussion">Discussion</SelectItem>
+                          <SelectItem value="business">Business</SelectItem>
+                          <SelectItem value="announcement">Announcement</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div className="w-32">
                       <Label

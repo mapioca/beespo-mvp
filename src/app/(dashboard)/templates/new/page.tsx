@@ -30,6 +30,7 @@ interface TemplateItem {
   title: string;
   description: string;
   duration_minutes: number;
+  item_type: 'procedural' | 'discussion' | 'business' | 'announcement';
 }
 
 export default function NewTemplatePage() {
@@ -44,13 +45,13 @@ export default function NewTemplatePage() {
 
   // Template items
   const [items, setItems] = useState<TemplateItem[]>([
-    { id: crypto.randomUUID(), title: "", description: "", duration_minutes: 5 },
+    { id: crypto.randomUUID(), title: "", description: "", duration_minutes: 5, item_type: 'procedural' },
   ]);
 
   const addItem = () => {
     setItems([
       ...items,
-      { id: crypto.randomUUID(), title: "", description: "", duration_minutes: 5 },
+      { id: crypto.randomUUID(), title: "", description: "", duration_minutes: 5, item_type: 'procedural' },
     ]);
   };
 
@@ -138,6 +139,7 @@ export default function NewTemplatePage() {
         title: item.title,
         description: item.description,
         duration_minutes: item.duration_minutes,
+        item_type: item.item_type,
         order_index: index,
       }));
 
@@ -273,6 +275,26 @@ export default function NewTemplatePage() {
                         placeholder="Agenda item title"
                         disabled={isLoading}
                       />
+                    </div>
+                    <div className="w-40">
+                      <Label htmlFor={`item-type-${item.id}`} className="text-xs">
+                        Type
+                      </Label>
+                      <Select
+                        value={item.item_type}
+                        onValueChange={(value) => updateItem(item.id, "item_type", value)}
+                        disabled={isLoading}
+                      >
+                        <SelectTrigger id={`item-type-${item.id}`}>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="procedural">Procedural</SelectItem>
+                          <SelectItem value="discussion">Discussion</SelectItem>
+                          <SelectItem value="business">Business</SelectItem>
+                          <SelectItem value="announcement">Announcement</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div className="w-32">
                       <Label htmlFor={`item-duration-${item.id}`} className="text-xs">

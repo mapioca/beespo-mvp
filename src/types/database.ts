@@ -2,6 +2,9 @@
 // This will be regenerated from Supabase after deployment:
 // Run: npx supabase gen types typescript --project-id tuekpooasofqfawmpdxj > src/types/database.ts
 
+// Agenda item types
+export type AgendaItemType = 'procedural' | 'discussion' | 'business' | 'announcement';
+
 export type Database = {
   public: {
     Tables: {
@@ -100,6 +103,7 @@ export type Database = {
           description: string | null;
           order_index: number;
           duration_minutes: number | null;
+          item_type: AgendaItemType;
           created_at: string;
         };
         Insert: {
@@ -109,6 +113,7 @@ export type Database = {
           description?: string | null;
           order_index: number;
           duration_minutes?: number | null;
+          item_type?: AgendaItemType;
           created_at?: string;
         };
         Update: {
@@ -118,6 +123,7 @@ export type Database = {
           description?: string | null;
           order_index?: number;
           duration_minutes?: number | null;
+          item_type?: AgendaItemType;
           created_at?: string;
         };
       };
@@ -169,6 +175,7 @@ export type Database = {
           duration_minutes: number | null;
           notes: string | null;
           is_completed: boolean;
+          item_type: AgendaItemType;
           created_at: string;
           updated_at: string;
         };
@@ -184,6 +191,7 @@ export type Database = {
           duration_minutes?: number | null;
           notes?: string | null;
           is_completed?: boolean;
+          item_type?: AgendaItemType;
           created_at?: string;
           updated_at?: string;
         };
@@ -199,6 +207,7 @@ export type Database = {
           duration_minutes?: number | null;
           notes?: string | null;
           is_completed?: boolean;
+          item_type?: AgendaItemType;
           created_at?: string;
           updated_at?: string;
         };
