@@ -73,9 +73,15 @@ export default async function AnnouncementDetailPage({
     .eq("announcement_id", id)
     .order("created_at", { ascending: false });
 
-  const relatedMeetings =
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    agendaItems?.map((item: any) => item.meeting).filter(Boolean) || [];
+  const relatedMeetingsMap = new Map();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  agendaItems?.forEach((item: any) => {
+    if (item.meeting && !relatedMeetingsMap.has(item.meeting.id)) {
+      relatedMeetingsMap.set(item.meeting.id, item.meeting);
+    }
+  });
+
+  const relatedMeetings = Array.from(relatedMeetingsMap.values());
 
   // Calculate days until deadline
   const daysUntilDeadline = getDaysUntilDeadline(announcement.deadline);
