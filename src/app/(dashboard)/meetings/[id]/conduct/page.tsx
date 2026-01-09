@@ -10,6 +10,7 @@ import { ArrowLeft, Check, ChevronRight, ChevronLeft, StopCircle, Clock } from "
 import { MeetingTypeBadge } from "@/components/meetings/meeting-type-badge";
 import { cn } from "@/lib/utils";
 import { debounce } from "lodash";
+import { CreateTaskDialog } from "@/components/tasks/create-task-dialog";
 
 type AgendaItem = Database['public']['Tables']['agenda_items']['Row'];
 type Meeting = Database['public']['Tables']['meetings']['Row'];
@@ -198,10 +199,10 @@ export default function ConductMeetingPage({ params }: ConductMeetingProps) {
                             />
                         </div>
 
-                        <div className="pt-4 border-t">
+                        <div className="pt-4 border-t flex gap-2">
                             <Button
                                 size="lg"
-                                className={cn("w-full transition-all", currentItem.is_completed ? "bg-green-600 hover:bg-green-700" : "")}
+                                className={cn("flex-1 transition-all", currentItem.is_completed ? "bg-green-600 hover:bg-green-700" : "")}
                                 onClick={handleToggleComplete}
                             >
                                 {currentItem.is_completed ? (
@@ -211,6 +212,20 @@ export default function ConductMeetingPage({ params }: ConductMeetingProps) {
                                     </>
                                 ) : "Mark as Complete"}
                             </Button>
+
+                            <CreateTaskDialog
+                                context={{
+                                    meeting_id: meeting.id,
+                                    agenda_item_id: currentItem.id,
+                                    // Map other IDs if they exist on the current item
+                                    discussion_id: currentItem.discussion_id || undefined,
+                                    business_item_id: currentItem.business_item_id || undefined
+                                }}
+                            >
+                                <Button size="lg" variant="outline">
+                                    <span className="mr-2">+</span> Assign Task
+                                </Button>
+                            </CreateTaskDialog>
                         </div>
                     </div>
                 </div>

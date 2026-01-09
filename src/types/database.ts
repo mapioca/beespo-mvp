@@ -222,11 +222,14 @@ export type Database = {
           meeting_id: string | null;
           agenda_item_id: string | null;
           discussion_id: string | null;
+          business_item_id: string | null;
           title: string;
           description: string | null;
           assigned_to: string | null;
           due_date: string | null;
           status: "pending" | "in_progress" | "completed" | "cancelled";
+          completed_at: string | null;
+          access_token: string;
           created_by: string | null;
           created_at: string;
           updated_at: string;
@@ -237,11 +240,14 @@ export type Database = {
           meeting_id?: string | null;
           agenda_item_id?: string | null;
           discussion_id?: string | null;
+          business_item_id?: string | null;
           title: string;
           description?: string | null;
           assigned_to?: string | null;
           due_date?: string | null;
           status?: "pending" | "in_progress" | "completed" | "cancelled";
+          completed_at?: string | null;
+          access_token?: string;
           created_by?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -252,14 +258,69 @@ export type Database = {
           meeting_id?: string | null;
           agenda_item_id?: string | null;
           discussion_id?: string | null;
+          business_item_id?: string | null;
           title?: string;
           description?: string | null;
           assigned_to?: string | null;
           due_date?: string | null;
           status?: "pending" | "in_progress" | "completed" | "cancelled";
+          completed_at?: string | null;
+          access_token?: string;
           created_by?: string | null;
           created_at?: string;
           updated_at?: string;
+        };
+      };
+      task_comments: {
+        Row: {
+          id: string;
+          task_id: string;
+          user_id: string;
+          content: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          task_id: string;
+          user_id: string;
+          content: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          task_id?: string;
+          user_id?: string;
+          content?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      task_activities: {
+        Row: {
+          id: string;
+          task_id: string;
+          user_id: string | null;
+          activity_type: string;
+          details: any | null; // Using any for JSONB flexibility
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          task_id: string;
+          user_id?: string | null;
+          activity_type: string;
+          details?: any | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          task_id?: string;
+          user_id?: string | null;
+          activity_type?: string;
+          details?: any | null;
+          created_at?: string;
         };
       };
       discussions: {
@@ -269,23 +330,23 @@ export type Database = {
           title: string;
           description: string | null;
           category:
-            | "member_concerns"
-            | "activities"
-            | "service_opportunities"
-            | "callings"
-            | "temple_work"
-            | "budget"
-            | "facilities"
-            | "youth"
-            | "mission_work"
-            | "other";
+          | "member_concerns"
+          | "activities"
+          | "service_opportunities"
+          | "callings"
+          | "temple_work"
+          | "budget"
+          | "facilities"
+          | "youth"
+          | "mission_work"
+          | "other";
           status:
-            | "new"
-            | "active"
-            | "decision_required"
-            | "monitoring"
-            | "resolved"
-            | "deferred";
+          | "new"
+          | "active"
+          | "decision_required"
+          | "monitoring"
+          | "resolved"
+          | "deferred";
           priority: "low" | "medium" | "high";
           due_date: string | null;
           deferred_reason: string | null;
@@ -299,23 +360,23 @@ export type Database = {
           title: string;
           description?: string | null;
           category:
-            | "member_concerns"
-            | "activities"
-            | "service_opportunities"
-            | "callings"
-            | "temple_work"
-            | "budget"
-            | "facilities"
-            | "youth"
-            | "mission_work"
-            | "other";
+          | "member_concerns"
+          | "activities"
+          | "service_opportunities"
+          | "callings"
+          | "temple_work"
+          | "budget"
+          | "facilities"
+          | "youth"
+          | "mission_work"
+          | "other";
           status?:
-            | "new"
-            | "active"
-            | "decision_required"
-            | "monitoring"
-            | "resolved"
-            | "deferred";
+          | "new"
+          | "active"
+          | "decision_required"
+          | "monitoring"
+          | "resolved"
+          | "deferred";
           priority?: "low" | "medium" | "high";
           due_date?: string | null;
           deferred_reason?: string | null;
@@ -329,23 +390,23 @@ export type Database = {
           title?: string;
           description?: string | null;
           category?:
-            | "member_concerns"
-            | "activities"
-            | "service_opportunities"
-            | "callings"
-            | "temple_work"
-            | "budget"
-            | "facilities"
-            | "youth"
-            | "mission_work"
-            | "other";
+          | "member_concerns"
+          | "activities"
+          | "service_opportunities"
+          | "callings"
+          | "temple_work"
+          | "budget"
+          | "facilities"
+          | "youth"
+          | "mission_work"
+          | "other";
           status?:
-            | "new"
-            | "active"
-            | "decision_required"
-            | "monitoring"
-            | "resolved"
-            | "deferred";
+          | "new"
+          | "active"
+          | "decision_required"
+          | "monitoring"
+          | "resolved"
+          | "deferred";
           priority?: "low" | "medium" | "high";
           due_date?: string | null;
           deferred_reason?: string | null;
@@ -390,12 +451,12 @@ export type Database = {
           person_name: string;
           position_calling: string | null;
           category:
-            | "sustaining"
-            | "release"
-            | "confirmation"
-            | "ordination"
-            | "setting_apart"
-            | "other";
+          | "sustaining"
+          | "release"
+          | "confirmation"
+          | "ordination"
+          | "setting_apart"
+          | "other";
           status: "pending" | "completed";
           action_date: string | null;
           notes: string | null;
@@ -409,12 +470,12 @@ export type Database = {
           person_name: string;
           position_calling?: string | null;
           category:
-            | "sustaining"
-            | "release"
-            | "confirmation"
-            | "ordination"
-            | "setting_apart"
-            | "other";
+          | "sustaining"
+          | "release"
+          | "confirmation"
+          | "ordination"
+          | "setting_apart"
+          | "other";
           status?: "pending" | "completed";
           action_date?: string | null;
           notes?: string | null;
@@ -428,12 +489,12 @@ export type Database = {
           person_name?: string;
           position_calling?: string | null;
           category?:
-            | "sustaining"
-            | "release"
-            | "confirmation"
-            | "ordination"
-            | "setting_apart"
-            | "other";
+          | "sustaining"
+          | "release"
+          | "confirmation"
+          | "ordination"
+          | "setting_apart"
+          | "other";
           status?: "pending" | "completed";
           action_date?: string | null;
           notes?: string | null;
