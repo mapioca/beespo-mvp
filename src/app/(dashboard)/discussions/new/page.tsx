@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,8 +27,13 @@ import Link from "next/link";
 
 export default function NewDiscussionPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+
+  // Parent discussion info (if this is a follow-up)
+  const [parentDiscussionId, setParentDiscussionId] = useState<string | null>(null);
+  const [parentDiscussionTitle, setParentDiscussionTitle] = useState<string | null>(null);
 
   // Form fields
   const [title, setTitle] = useState("");
@@ -38,6 +43,31 @@ export default function NewDiscussionPage() {
   const [status, setStatus] = useState("new");
   const [dueDate, setDueDate] = useState("");
   const [deferredReason, setDeferredReason] = useState("");
+
+  // Fetch parent discussion info if follow_up parameter exists
+  useEffect(() => {
+    const followUpId = searchParams.get("follow_up");
+    if (followUpId) {
+      setParentDiscussionId(followUpId);
+
+      // Fetch parent discussion title
+      const fetchParentDiscussion = async () => {
+        const supabase = createClient();
+        const { data } = await (supabase
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          .from("discussions") as any)
+          .select("title")
+          .eq("id", followUpId)
+          .single();
+
+        if (data) {
+          setParentDiscussionTitle(data.title);
+        }
+      };
+
+      fetchParentDiscussion();
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -91,6 +121,7 @@ export default function NewDiscussionPage() {
         due_date: dueDate || null,
         deferred_reason:
           status === "deferred" && deferredReason ? deferredReason : null,
+        parent_discussion_id: parentDiscussionId || null,
         organization_id: profile.organization_id,
         created_by: user.id,
       })
@@ -135,6 +166,12 @@ export default function NewDiscussionPage() {
             <CardDescription>
               Add a new topic for leadership discussion and tracking
             </CardDescription>
+            {parentDiscussionTitle && (
+              <div className="mt-2 p-2 bg-muted rounded-md text-sm">
+                <span className="text-muted-foreground">Follow-up to: </span>
+                <span className="font-medium">{parentDiscussionTitle}</span>
+              </div>
+            )}
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">

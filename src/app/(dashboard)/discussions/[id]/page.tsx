@@ -97,6 +97,26 @@ export default async function DiscussionDetailPage({
     notFound();
   }
 
+  // Get parent discussion if this is a follow-up
+  let parentDiscussion = null;
+  if (discussion.parent_discussion_id) {
+    const { data } = await (supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from("discussions") as any)
+      .select("id, title")
+      .eq("id", discussion.parent_discussion_id)
+      .single();
+    parentDiscussion = data;
+  }
+
+  // Get child discussions (follow-ups)
+  const { data: childDiscussions } = await (supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .from("discussions") as any)
+    .select("id, title, status, priority, created_at")
+    .eq("parent_discussion_id", id)
+    .order("created_at", { ascending: false });
+
   // Get discussion notes with creator info
   const { data: notes } = await (supabase
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -160,6 +180,17 @@ export default async function DiscussionDetailPage({
                       {discussion.title}
                     </CardTitle>
                   </div>
+                  {parentDiscussion && (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <span>Follow-up to:</span>
+                      <Link
+                        href={`/discussions/${parentDiscussion.id}`}
+                        className="text-primary hover:underline"
+                      >
+                        {parentDiscussion.title}
+                      </Link>
+                    </div>
+                  )}
                   <div className="flex gap-2 flex-wrap">
                     <Badge variant="outline">
                       {formatCategory(discussion.category)}
@@ -281,6 +312,52 @@ export default async function DiscussionDetailPage({
               )}
             </CardContent>
           </Card>
+
+          {/* Follow-up Discussions */}
+          {childDiscussions && childDiscussions.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Follow-up Discussions</CardTitle>
+                <CardDescription>
+                  {childDiscussions.length} follow-up
+                  {childDiscussions.length !== 1 ? "s" : ""}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                  {childDiscussions.map((child: any) => (
+                    <Link
+                      key={child.id}
+                      href={`/discussions/${child.id}`}
+                      className="block p-2 hover:bg-muted rounded-md transition-colors"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="text-sm font-medium flex-1">{child.title}</p>
+                        <div className="flex gap-1">
+                          <Badge
+                            variant={getStatusVariant(child.status)}
+                            className="text-xs"
+                          >
+                            {formatCategory(child.status)}
+                          </Badge>
+                          <Badge
+                            variant={getPriorityVariant(child.priority)}
+                            className="text-xs"
+                          >
+                            {child.priority}
+                          </Badge>
+                        </div>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {format(new Date(child.created_at), "MMM d, yyyy")}
+                      </p>
+                    </Link>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
     </div>
