@@ -82,7 +82,7 @@ export default function EditAnnouncementPage() {
       .eq("id", user?.id)
       .single();
 
-    if (profile?.role !== "leader") {
+    if (!["leader", "admin"].includes(profile?.role || "")) {
       toast({
         title: "Error",
         description: "You don't have permission to edit this announcement.",

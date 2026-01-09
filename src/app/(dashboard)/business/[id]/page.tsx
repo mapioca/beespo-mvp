@@ -42,7 +42,7 @@ export default async function BusinessDetailPage({
     .eq("id", user.id)
     .single();
 
-  if (!profile || profile.role !== "leader") {
+  if (!profile || !["leader", "admin"].includes(profile.role)) {
     redirect("/");
   }
 

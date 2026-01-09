@@ -98,10 +98,10 @@ export default function NewDiscussionPage() {
       .eq("id", user.id)
       .single();
 
-    if (!profile || profile.role !== "leader") {
+    if (!profile || !["leader", "admin"].includes(profile.role)) {
       toast({
         title: "Error",
-        description: "Only leaders can create discussions.",
+        description: "Only leaders and admins can create discussions.",
         variant: "destructive",
       });
       setIsLoading(false);

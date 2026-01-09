@@ -58,10 +58,10 @@ export default function NewSpeakerPage() {
       .eq("id", user.id)
       .single();
 
-    if (!profile || profile.role !== "leader") {
+    if (!profile || !["leader", "admin"].includes(profile.role)) {
       toast({
         title: "Error",
-        description: "Only leaders can create speakers.",
+        description: "Only leaders and admins can create speakers.",
         variant: "destructive",
       });
       setIsLoading(false);

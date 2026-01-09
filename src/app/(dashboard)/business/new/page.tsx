@@ -67,10 +67,10 @@ export default function NewBusinessPage() {
       .eq("id", user.id)
       .single();
 
-    if (!profile || profile.role !== "leader") {
+    if (!profile || !["leader", "admin"].includes(profile.role)) {
       toast({
         title: "Error",
-        description: "Only leaders can create business items.",
+        description: "Only leaders and admins can create business items.",
         variant: "destructive",
       });
       setIsLoading(false);

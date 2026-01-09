@@ -82,10 +82,10 @@ export default function NewAnnouncementPage() {
       .eq("id", user.id)
       .single();
 
-    if (!profile || profile.role !== "leader") {
+    if (!profile || !["leader", "admin"].includes(profile.role)) {
       toast({
         title: "Error",
-        description: "Only leaders can create announcements.",
+        description: "Only leaders and admins can create announcements.",
         variant: "destructive",
       });
       setIsLoading(false);
