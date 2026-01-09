@@ -80,11 +80,6 @@ export default async function DiscussionsPage() {
     redirect("/setup");
   }
 
-  // Only leaders can see discussions (MVP restriction)
-  if (profile.role !== "leader") {
-    redirect("/");
-  }
-
   // Get all discussions for the organization
   const { data: discussions } = await (supabase
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

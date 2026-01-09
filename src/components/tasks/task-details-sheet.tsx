@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from "@/components/ui/sheet";
-import { Badge } from "@/components/ui/badge";
+import { useState, useEffect, useCallback } from "react";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -10,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
-import { Loader2, Send, MessageSquare, Activity as ActivityIcon, Check, Save, X, Calendar as CalendarIcon } from "lucide-react";
+import { Loader2, Send, MessageSquare, Activity as ActivityIcon, Check, X, Calendar as CalendarIcon } from "lucide-react";
 import { addTaskComment, getTaskActivity, updateTask } from "@/lib/actions/task-actions";
 import { useToast } from "@/lib/hooks/use-toast";
 import { Database } from "@/types/database";
@@ -28,11 +27,20 @@ interface TaskDetailsSheetProps {
     task: TaskWithDetails | null;
 }
 
+interface TimelineItem {
+    id: string;
+    created_at: string;
+    type: 'comment' | 'activity';
+    content?: string;
+    user?: { full_name: string } | null;
+    details?: { from?: string; to?: string; snippet?: string };
+}
+
 export function TaskDetailsSheet({ open, onOpenChange, task }: TaskDetailsSheetProps) {
     const [newComment, setNewComment] = useState("");
     const [sending, setSending] = useState(false);
     const [activityLoading, setActivityLoading] = useState(false);
-    const [timeline, setTimeline] = useState<any[]>([]);
+    const [timeline, setTimeline] = useState<TimelineItem[]>([]);
     const [profiles, setProfiles] = useState<{ id: string; full_name: string }[]>([]);
 
     // Editing state
@@ -40,6 +48,7 @@ export function TaskDetailsSheet({ open, onOpenChange, task }: TaskDetailsSheetP
     const [editDescription, setEditDescription] = useState("");
     const [editAssignee, setEditAssignee] = useState<string | null>(null);
     const [editDueDate, setEditDueDate] = useState<Date | undefined>(undefined);
+    const [editStatus, setEditStatus] = useState<string>("");
 
     const [isSaving, setIsSaving] = useState(false);
     const [isDirty, setIsDirty] = useState(false);
@@ -61,38 +70,40 @@ export function TaskDetailsSheet({ open, onOpenChange, task }: TaskDetailsSheetP
         }
     }, [open]);
 
+    const fetchActivity = useCallback(async () => {
+        if (!task) return;
+        setActivityLoading(true);
+        const { comments, activities } = await getTaskActivity(task.id);
+
+        const combined: TimelineItem[] = [
+            ...(comments || []).map(c => ({ ...(c as Record<string, unknown>), type: 'comment' as const } as unknown as TimelineItem)),
+            ...(activities || []).map(a => ({ ...(a as Record<string, unknown>), type: 'activity' as const } as unknown as TimelineItem))
+        ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+        setTimeline(combined);
+        setActivityLoading(false);
+    }, [task]);
+
+    const handleChange = (field: 'title' | 'description' | 'assignee' | 'date' | 'status', value: string | Date | null | undefined) => {
+        if (field === 'title') setEditTitle(value as string);
+        if (field === 'description') setEditDescription(value as string);
+        if (field === 'assignee') setEditAssignee(value === "unassigned" ? null : value as string);
+        if (field === 'date') setEditDueDate(value as Date);
+        if (field === 'status') setEditStatus(value as string);
+        setIsDirty(true);
+    };
+
     useEffect(() => {
         if (open && task) {
             setEditTitle(task.title);
             setEditDescription(task.description || "");
             setEditAssignee(task.assigned_to || "unassigned");
             setEditDueDate(task.due_date ? new Date(task.due_date) : undefined);
+            setEditStatus(task.status === 'in_progress' ? 'pending' : task.status);
             setIsDirty(false);
             fetchActivity();
         }
-    }, [open, task]);
-
-    const handleChange = (field: 'title' | 'description' | 'assignee' | 'date', value: any) => {
-        if (field === 'title') setEditTitle(value);
-        if (field === 'description') setEditDescription(value);
-        if (field === 'assignee') setEditAssignee(value === "unassigned" ? null : value);
-        if (field === 'date') setEditDueDate(value);
-        setIsDirty(true);
-    };
-
-    const fetchActivity = async () => {
-        if (!task) return;
-        setActivityLoading(true);
-        const { comments, activities } = await getTaskActivity(task.id);
-
-        const combined = [
-            ...(comments || []).map(c => ({ ...c, type: 'comment' })),
-            ...(activities || []).map(a => ({ ...a, type: 'activity' }))
-        ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-
-        setTimeline(combined);
-        setActivityLoading(false);
-    };
+    }, [open, task, fetchActivity]);
 
     const handleDiscard = () => {
         if (!task) return;
@@ -100,6 +111,7 @@ export function TaskDetailsSheet({ open, onOpenChange, task }: TaskDetailsSheetP
         setEditDescription(task.description || "");
         setEditAssignee(task.assigned_to || "unassigned");
         setEditDueDate(task.due_date ? new Date(task.due_date) : undefined);
+        setEditStatus(task.status);
         setIsDirty(false);
     };
 
@@ -110,7 +122,8 @@ export function TaskDetailsSheet({ open, onOpenChange, task }: TaskDetailsSheetP
             title: editTitle,
             description: editDescription,
             assigned_to: editAssignee === "unassigned" ? null : editAssignee,
-            due_date: editDueDate ? format(editDueDate, 'yyyy-MM-dd') : null
+            due_date: editDueDate ? format(editDueDate, 'yyyy-MM-dd') : null,
+            status: editStatus
         });
         setIsSaving(false);
 
@@ -152,9 +165,19 @@ export function TaskDetailsSheet({ open, onOpenChange, task }: TaskDetailsSheetP
                                 className="font-semibold text-lg border-transparent hover:border-input focus:border-input px-2 -ml-2 h-auto py-1"
                             />
                         </div>
-                        <Badge variant={task.status === 'completed' ? 'secondary' : 'outline'} className="shrink-0 mt-1">
-                            {task.status}
-                        </Badge>
+                        <Select
+                            value={editStatus}
+                            onValueChange={(val) => handleChange('status', val)}
+                        >
+                            <SelectTrigger className="h-7 w-auto border-transparent bg-transparent hover:bg-background hover:border-input focus:bg-background focus:ring-0 px-2">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="pending">Todo</SelectItem>
+                                <SelectItem value="completed">Done</SelectItem>
+                                <SelectItem value="cancelled">Canceled</SelectItem>
+                            </SelectContent>
+                        </Select>
                     </div>
 
                     <div className="relative">
@@ -228,7 +251,6 @@ export function TaskDetailsSheet({ open, onOpenChange, task }: TaskDetailsSheetP
                                         mode="single"
                                         selected={editDueDate}
                                         onSelect={(date) => handleChange('date', date)}
-                                        initialFocus
                                     />
                                 </PopoverContent>
                             </Popover>

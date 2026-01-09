@@ -41,11 +41,6 @@ export default async function SpeakersPage() {
     redirect("/setup");
   }
 
-  // Only leaders can see speakers (MVP restriction)
-  if (profile.role !== "leader") {
-    redirect("/");
-  }
-
   // Get all speakers for the organization with meeting info
   const { data: speakers } = await (supabase
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

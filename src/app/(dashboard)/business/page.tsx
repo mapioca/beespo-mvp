@@ -41,11 +41,6 @@ export default async function BusinessPage() {
     redirect("/setup");
   }
 
-  // Only leaders can see business items (MVP restriction)
-  if (profile.role !== "leader") {
-    redirect("/");
-  }
-
   // Get all business items for the organization
   const { data: businessItems } = await (supabase
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

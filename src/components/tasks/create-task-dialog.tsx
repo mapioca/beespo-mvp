@@ -45,6 +45,7 @@ export function CreateTaskDialog({ children, context, onTaskCreated }: CreateTas
     const [description, setDescription] = useState("");
     const [assignee, setAssignee] = useState<string>("");
     const [dueDate, setDueDate] = useState<Date | undefined>(undefined);
+    const [priority, setPriority] = useState<'low' | 'medium' | 'high'>('medium');
 
     // Load available profiles (members) for assignment
     useEffect(() => {
@@ -70,6 +71,7 @@ export function CreateTaskDialog({ children, context, onTaskCreated }: CreateTas
             description,
             assigned_to: assignee || undefined,
             due_date: dueDate ? format(dueDate, 'yyyy-MM-dd') : undefined,
+            priority,
             ...context
         });
 
@@ -92,6 +94,7 @@ export function CreateTaskDialog({ children, context, onTaskCreated }: CreateTas
             setDescription("");
             setAssignee("");
             setDueDate(undefined);
+            setPriority('medium');
             if (onTaskCreated) onTaskCreated();
         }
     };
@@ -144,30 +147,43 @@ export function CreateTaskDialog({ children, context, onTaskCreated }: CreateTas
                             </Select>
                         </div>
                         <div className="space-y-2">
-                            <Label>Due Date</Label>
-                            <Popover>
-                                <PopoverTrigger asChild>
-                                    <Button
-                                        variant={"outline"}
-                                        className={cn(
-                                            "w-full justify-start text-left font-normal",
-                                            !dueDate && "text-muted-foreground"
-                                        )}
-                                    >
-                                        <CalendarIcon className="mr-2 h-4 w-4" />
-                                        {dueDate ? format(dueDate, "PPP") : <span>Pick a date</span>}
-                                    </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0">
-                                    <Calendar
-                                        mode="single"
-                                        selected={dueDate}
-                                        onSelect={setDueDate}
-                                        initialFocus
-                                    />
-                                </PopoverContent>
-                            </Popover>
+                            <Label>Priority</Label>
+                            <Select value={priority} onValueChange={(v) => setPriority(v as 'low' | 'medium' | 'high')}>
+                                <SelectTrigger>
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="low">Low</SelectItem>
+                                    <SelectItem value="medium">Medium</SelectItem>
+                                    <SelectItem value="high">High</SelectItem>
+                                </SelectContent>
+                            </Select>
                         </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label>Due Date</Label>
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button
+                                    variant={"outline"}
+                                    className={cn(
+                                        "w-full justify-start text-left font-normal",
+                                        !dueDate && "text-muted-foreground"
+                                    )}
+                                >
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {dueDate ? format(dueDate, "PPP") : <span>Pick a date</span>}
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0">
+                                <Calendar
+                                    mode="single"
+                                    selected={dueDate}
+                                    onSelect={setDueDate}
+                                />
+                            </PopoverContent>
+                        </Popover>
                     </div>
                 </div>
                 <DialogFooter>

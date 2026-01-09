@@ -42,11 +42,6 @@ export default async function AnnouncementsPage() {
     redirect("/setup");
   }
 
-  // Only leaders can see announcements (MVP restriction)
-  if (profile.role !== "leader") {
-    redirect("/");
-  }
-
   // Get all announcements for the organization
   const { data: announcements } = await (supabase
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
