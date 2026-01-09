@@ -10,7 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Edit, Clock } from "lucide-react";
+import { ArrowLeft, Edit, Clock, Calendar } from "lucide-react";
 import { getItemTypeLabel, getItemTypeBadgeVariant } from "@/types/agenda";
 
 export default async function TemplateDetailPage({
@@ -95,14 +95,22 @@ export default async function TemplateDetailPage({
                   </Badge>
                 )}
               </div>
-              {canEdit && (
-                <Button asChild>
-                  <Link href={`/templates/${template.id}/edit`}>
-                    <Edit className="mr-2 h-4 w-4" />
-                    Edit Template
+              <div className="flex gap-2">
+                <Button variant="outline" asChild>
+                  <Link href={`/meetings/new?template=${template.id}`}>
+                    <Calendar className="mr-2 h-4 w-4" />
+                    Use Template
                   </Link>
                 </Button>
-              )}
+                {canEdit && (
+                  <Button asChild>
+                    <Link href={`/templates/${template.id}/edit`}>
+                      <Edit className="mr-2 h-4 w-4" />
+                      Edit Template
+                    </Link>
+                  </Button>
+                )}
+              </div>
             </div>
             {template.description && (
               <CardDescription className="text-base mt-4">
