@@ -1,5 +1,11 @@
 import { createClient } from "@/lib/supabase/server";
 import { TasksClient } from "./tasks-client";
+import { Database } from "@/types/database";
+
+type TaskWithRelations = Database['public']['Tables']['tasks']['Row'] & {
+    assignee: { full_name: string; email: string } | null;
+    labels: { label: { id: string; name: string; color: string } }[];
+};
 
 export default async function TasksPage() {
     const supabase = await createClient();
@@ -22,11 +28,10 @@ export default async function TasksPage() {
     }
 
     // Transform to match Table props
-    const tasks = (rawTasks || []).map((t) => {
+    const typedTasks = rawTasks as unknown as TaskWithRelations[] | null;
+    const tasks = (typedTasks || []).map((t) => {
         const labels = Array.isArray(t.labels)
-            ? (t.labels as unknown as { label: { id: string; name: string; color: string } }[])
-                .map((la) => la.label)
-                .filter(Boolean)
+            ? t.labels.map((la) => la.label).filter(Boolean)
             : [];
 
         return {
@@ -36,21 +41,30 @@ export default async function TasksPage() {
         };
     });
 
+    if (!user) {
+        return null; // Or redirect, assuming middleware handles protection
+    }
+
     // Fetch workspace profiles
-    const { data: currentUserProfile } = await supabase
+    const { data: rawProfile } = await supabase
         .from('profiles')
         .select('workspace_id')
         .eq('id', user.id)
         .single();
 
-    let profiles: any[] = [];
+    const currentUserProfile = rawProfile as { workspace_id: string | null } | null;
+
+    let profiles: { id: string; full_name: string; email: string }[] = [];
     if (currentUserProfile?.workspace_id) {
         const { data } = await supabase
             .from('profiles')
             .select('id, full_name, email')
             .eq('workspace_id', currentUserProfile.workspace_id)
             .order('full_name');
-        profiles = data || [];
+
+        if (data) {
+            profiles = data as { id: string; full_name: string; email: string }[];
+        }
     }
 
     return <TasksClient tasks={tasks} userId={user?.id || ""} profiles={profiles} />;

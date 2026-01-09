@@ -296,6 +296,8 @@ export type Database = {
           created_by: string | null;
           created_at: string;
           updated_at: string;
+          workspace_task_id: string | null;
+          priority: "low" | "medium" | "high";
         };
         Insert: {
           id?: string;
@@ -314,6 +316,8 @@ export type Database = {
           created_by?: string | null;
           created_at?: string;
           updated_at?: string;
+          workspace_task_id?: string | null;
+          priority?: "low" | "medium" | "high";
         };
         Update: {
           id?: string;
@@ -332,6 +336,8 @@ export type Database = {
           created_by?: string | null;
           created_at?: string;
           updated_at?: string;
+          workspace_task_id?: string | null;
+          priority?: "low" | "medium" | "high";
         };
       };
       task_comments: {
@@ -366,7 +372,7 @@ export type Database = {
           task_id: string;
           user_id: string | null;
           activity_type: string;
-          details: any | null; // Using any for JSONB flexibility
+          details: Record<string, unknown> | null;
           created_at: string;
         };
         Insert: {
@@ -374,7 +380,7 @@ export type Database = {
           task_id: string;
           user_id?: string | null;
           activity_type: string;
-          details?: any | null;
+          details?: Record<string, unknown> | null;
           created_at?: string;
         };
         Update: {
@@ -382,7 +388,7 @@ export type Database = {
           task_id?: string;
           user_id?: string | null;
           activity_type?: string;
-          details?: any | null;
+          details?: Record<string, unknown> | null;
           created_at?: string;
         };
       };

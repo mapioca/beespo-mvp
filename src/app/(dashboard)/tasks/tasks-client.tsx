@@ -65,20 +65,20 @@ export function TasksClient({ tasks, profiles }: TasksClientProps) {
         if (sortConfig) {
             result.sort((a, b) => {
                 const { key, direction } = sortConfig;
-                let aValue: any = (a as any)[key];
-                let bValue: any = (b as any)[key];
+                let aValue: string | number | null | undefined;
+                let bValue: string | number | null | undefined;
 
                 // Handle nested assignee
                 if (key === 'assignee') {
                     aValue = a.assignee?.full_name || '';
                     bValue = b.assignee?.full_name || '';
-                }
-
-                // Handle Priority order
-                if (key === 'priority') {
+                } else if (key === 'priority') {
                     const priorityOrder = { high: 1, medium: 2, low: 3 };
                     aValue = priorityOrder[a.priority as keyof typeof priorityOrder] || 99;
                     bValue = priorityOrder[b.priority as keyof typeof priorityOrder] || 99;
+                } else {
+                    aValue = a[key as keyof Task] as string | number | null | undefined;
+                    bValue = b[key as keyof Task] as string | number | null | undefined;
                 }
 
                 // Handle nulls
