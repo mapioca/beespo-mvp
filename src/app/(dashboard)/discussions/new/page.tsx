@@ -94,7 +94,7 @@ export default function NewDiscussionPage() {
     const { data: profile } = await (supabase
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .from("profiles") as any)
-      .select("organization_id, role")
+      .select("workspace_id, role")
       .eq("id", user.id)
       .single();
 
@@ -122,7 +122,7 @@ export default function NewDiscussionPage() {
         deferred_reason:
           status === "deferred" && deferredReason ? deferredReason : null,
         parent_discussion_id: parentDiscussionId || null,
-        organization_id: profile.organization_id,
+        workspace_id: profile.workspace_id,
         created_by: user.id,
       })
       .select()

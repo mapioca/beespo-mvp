@@ -92,14 +92,14 @@ export default function NewTemplatePage() {
     const { data: profile } = await (supabase
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .from("profiles") as any)
-      .select("organization_id, role")
+      .select("workspace_id, role")
       .eq("id", user.id)
       .single();
 
-    if (!profile || profile.role !== "leader") {
+    if (!profile || !['admin', 'leader'].includes(profile.role)) {
       toast({
         title: "Error",
-        description: "Only leaders can create templates.",
+        description: "Only admins and leaders can create templates.",
         variant: "destructive",
       });
       setIsLoading(false);
@@ -114,7 +114,7 @@ export default function NewTemplatePage() {
         name,
         description,
         calling_type: callingType || null,
-        organization_id: profile.organization_id,
+        workspace_id: profile.workspace_id,
         created_by: user.id,
         is_shared: false,
       })

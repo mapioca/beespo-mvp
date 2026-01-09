@@ -40,7 +40,7 @@ export default async function AnnouncementDetailPage({
   const { data: profile } = await (supabase
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     .from("profiles") as any)
-    .select("organization_id, role, full_name")
+    .select("workspace_id, role, full_name")
     .eq("id", user.id)
     .single();
 

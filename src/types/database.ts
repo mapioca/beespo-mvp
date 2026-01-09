@@ -5,28 +5,50 @@
 // Agenda item types
 export type AgendaItemType = 'procedural' | 'discussion' | 'business' | 'announcement' | 'speaker';
 
+// Workspace types
+export type WorkspaceType = 'ward' | 'branch' | 'stake' | 'district';
+export type OrganizationType =
+  | 'bishopric'
+  | 'elders_quorum'
+  | 'relief_society'
+  | 'young_men'
+  | 'young_women'
+  | 'primary'
+  | 'missionary_work'
+  | 'temple_family_history'
+  | 'sunday_school';
+
+// User roles
+export type UserRole = 'admin' | 'leader' | 'guest';
+
+// Invitation status
+export type InvitationStatus = 'pending' | 'accepted' | 'revoked' | 'expired';
+
 export type Database = {
   public: {
     Tables: {
-      organizations: {
+      workspaces: {
         Row: {
           id: string;
           name: string;
-          type: "ward" | "stake";
+          type: WorkspaceType;
+          organization_type: OrganizationType;
           created_at: string;
           updated_at: string;
         };
         Insert: {
           id?: string;
           name: string;
-          type: "ward" | "stake";
+          type: WorkspaceType;
+          organization_type: OrganizationType;
           created_at?: string;
           updated_at?: string;
         };
         Update: {
           id?: string;
           name?: string;
-          type?: "ward" | "stake";
+          type?: WorkspaceType;
+          organization_type?: OrganizationType;
           created_at?: string;
           updated_at?: string;
         };
@@ -36,8 +58,9 @@ export type Database = {
           id: string;
           email: string;
           full_name: string;
-          organization_id: string;
-          role: "leader" | "member";
+          workspace_id: string | null;
+          role: UserRole;
+          is_sys_admin: boolean;
           created_at: string;
           updated_at: string;
         };
@@ -45,8 +68,9 @@ export type Database = {
           id: string;
           email: string;
           full_name: string;
-          organization_id: string;
-          role: "leader" | "member";
+          workspace_id?: string | null;
+          role: UserRole;
+          is_sys_admin?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -54,8 +78,47 @@ export type Database = {
           id?: string;
           email?: string;
           full_name?: string;
-          organization_id?: string;
-          role?: "leader" | "member";
+          workspace_id?: string | null;
+          role?: UserRole;
+          is_sys_admin?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      workspace_invitations: {
+        Row: {
+          id: string;
+          workspace_id: string;
+          email: string;
+          role: UserRole;
+          token: string;
+          invited_by: string | null;
+          status: InvitationStatus;
+          expires_at: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          workspace_id: string;
+          email: string;
+          role: UserRole;
+          token?: string;
+          invited_by?: string | null;
+          status?: InvitationStatus;
+          expires_at?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          workspace_id?: string;
+          email?: string;
+          role?: UserRole;
+          token?: string;
+          invited_by?: string | null;
+          status?: InvitationStatus;
+          expires_at?: string;
           created_at?: string;
           updated_at?: string;
         };
@@ -63,7 +126,7 @@ export type Database = {
       templates: {
         Row: {
           id: string;
-          organization_id: string;
+          workspace_id: string;
           name: string;
           description: string | null;
           calling_type: string | null;
@@ -74,7 +137,7 @@ export type Database = {
         };
         Insert: {
           id?: string;
-          organization_id: string;
+          workspace_id: string;
           name: string;
           description?: string | null;
           calling_type?: string | null;
@@ -85,7 +148,7 @@ export type Database = {
         };
         Update: {
           id?: string;
-          organization_id?: string;
+          workspace_id?: string;
           name?: string;
           description?: string | null;
           calling_type?: string | null;
@@ -130,7 +193,7 @@ export type Database = {
       meetings: {
         Row: {
           id: string;
-          organization_id: string;
+          workspace_id: string;
           template_id: string | null;
           title: string;
           scheduled_date: string;
@@ -141,7 +204,7 @@ export type Database = {
         };
         Insert: {
           id?: string;
-          organization_id: string;
+          workspace_id: string;
           template_id?: string | null;
           title: string;
           scheduled_date: string;
@@ -152,7 +215,7 @@ export type Database = {
         };
         Update: {
           id?: string;
-          organization_id?: string;
+          workspace_id?: string;
           template_id?: string | null;
           title?: string;
           scheduled_date?: string;
@@ -218,7 +281,7 @@ export type Database = {
       tasks: {
         Row: {
           id: string;
-          organization_id: string;
+          workspace_id: string;
           meeting_id: string | null;
           agenda_item_id: string | null;
           discussion_id: string | null;
@@ -236,7 +299,7 @@ export type Database = {
         };
         Insert: {
           id?: string;
-          organization_id: string;
+          workspace_id: string;
           meeting_id?: string | null;
           agenda_item_id?: string | null;
           discussion_id?: string | null;
@@ -254,7 +317,7 @@ export type Database = {
         };
         Update: {
           id?: string;
-          organization_id?: string;
+          workspace_id?: string;
           meeting_id?: string | null;
           agenda_item_id?: string | null;
           discussion_id?: string | null;
@@ -326,7 +389,7 @@ export type Database = {
       discussions: {
         Row: {
           id: string;
-          organization_id: string;
+          workspace_id: string;
           title: string;
           description: string | null;
           category:
@@ -356,7 +419,7 @@ export type Database = {
         };
         Insert: {
           id?: string;
-          organization_id: string;
+          workspace_id: string;
           title: string;
           description?: string | null;
           category:
@@ -386,7 +449,7 @@ export type Database = {
         };
         Update: {
           id?: string;
-          organization_id?: string;
+          workspace_id?: string;
           title?: string;
           description?: string | null;
           category?:
@@ -447,7 +510,7 @@ export type Database = {
       business_items: {
         Row: {
           id: string;
-          organization_id: string;
+          workspace_id: string;
           person_name: string;
           position_calling: string | null;
           category:
@@ -466,7 +529,7 @@ export type Database = {
         };
         Insert: {
           id?: string;
-          organization_id: string;
+          workspace_id: string;
           person_name: string;
           position_calling?: string | null;
           category:
@@ -485,7 +548,7 @@ export type Database = {
         };
         Update: {
           id?: string;
-          organization_id?: string;
+          workspace_id?: string;
           person_name?: string;
           position_calling?: string | null;
           category?:
@@ -506,7 +569,7 @@ export type Database = {
       announcements: {
         Row: {
           id: string;
-          organization_id: string;
+          workspace_id: string;
           title: string;
           content: string | null;
           priority: "low" | "medium" | "high";
@@ -518,7 +581,7 @@ export type Database = {
         };
         Insert: {
           id?: string;
-          organization_id: string;
+          workspace_id: string;
           title: string;
           content?: string | null;
           priority?: "low" | "medium" | "high";
@@ -530,7 +593,7 @@ export type Database = {
         };
         Update: {
           id?: string;
-          organization_id?: string;
+          workspace_id?: string;
           title?: string;
           content?: string | null;
           priority?: "low" | "medium" | "high";
@@ -544,7 +607,7 @@ export type Database = {
       speakers: {
         Row: {
           id: string;
-          organization_id: string;
+          workspace_id: string;
           name: string;
           topic: string;
           is_confirmed: boolean;
@@ -554,7 +617,7 @@ export type Database = {
         };
         Insert: {
           id?: string;
-          organization_id: string;
+          workspace_id: string;
           name: string;
           topic: string;
           is_confirmed?: boolean;
@@ -564,7 +627,7 @@ export type Database = {
         };
         Update: {
           id?: string;
-          organization_id?: string;
+          workspace_id?: string;
           name?: string;
           topic?: string;
           is_confirmed?: boolean;

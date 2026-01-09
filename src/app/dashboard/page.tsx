@@ -16,7 +16,7 @@ export default async function DashboardPage() {
   const { data: profile } = await (supabase
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     .from("profiles") as any)
-    .select("full_name, role, organization_id")
+    .select("full_name, role, workspace_id")
     .eq("id", user.id)
     .single();
 

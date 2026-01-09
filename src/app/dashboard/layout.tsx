@@ -2,7 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Home, FileText, Calendar, CheckSquare, Users, LogOut, MessageSquare, Briefcase, Megaphone, Mic } from "lucide-react";
+import { Home, FileText, Calendar, CheckSquare, LogOut, MessageSquare, Briefcase, Megaphone, Mic, Settings } from "lucide-react";
 
 export default async function DashboardLayout({
   children,
@@ -22,11 +22,11 @@ export default async function DashboardLayout({
   const { data: profile } = await (supabase
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     .from("profiles") as any)
-    .select("full_name, organization_id")
+    .select("full_name, workspace_id")
     .eq("id", user.id)
     .single();
 
-  if (!profile?.organization_id) {
+  if (!profile?.workspace_id) {
     redirect("/setup");
   }
 
@@ -46,7 +46,7 @@ export default async function DashboardLayout({
     { href: "/announcements", icon: Megaphone, label: "Announcements" },
     { href: "/speakers", icon: Mic, label: "Speakers" },
     { href: "/tasks", icon: CheckSquare, label: "Tasks" },
-    { href: "/members", icon: Users, label: "Members" },
+    { href: "/settings", icon: Settings, label: "Settings" },
   ];
 
   return (

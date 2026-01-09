@@ -227,16 +227,18 @@ export async function createTask(data: {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { error: "Unauthorized" };
 
-    const { data: profile } = await supabase
-        .from("profiles")
-        .select("organization_id, role")
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: profile } = await (supabase
+        .from("profiles") as any)
+        .select("workspace_id, role")
         .eq("id", user.id)
         .single();
 
-    if (!profile?.organization_id) return { error: "Profile not found" };
+    if (!profile?.workspace_id) return { error: "Profile not found" };
 
-    const { data: task, error } = await supabase
-        .from("tasks")
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: task, error } = await (supabase
+        .from("tasks") as any)
         .insert({
             title: data.title,
             description: data.description,
@@ -246,7 +248,7 @@ export async function createTask(data: {
             agenda_item_id: data.agenda_item_id,
             discussion_id: data.discussion_id,
             business_item_id: data.business_item_id,
-            organization_id: profile.organization_id,
+            workspace_id: profile.workspace_id,
             created_by: user.id,
             status: 'pending'
         })

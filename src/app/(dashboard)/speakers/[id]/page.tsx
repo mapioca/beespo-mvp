@@ -38,7 +38,7 @@ export default async function SpeakerDetailPage({
   const { data: profile } = await (supabase
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     .from("profiles") as any)
-    .select("organization_id, role")
+    .select("workspace_id, role")
     .eq("id", user.id)
     .single();
 

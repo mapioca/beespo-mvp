@@ -33,7 +33,7 @@ export default async function SpeakersPage() {
   const { data: profile } = await (supabase
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     .from("profiles") as any)
-    .select("organization_id, role")
+    .select("workspace_id, role")
     .eq("id", user.id)
     .single();
 
@@ -60,7 +60,7 @@ export default async function SpeakersPage() {
         )
       )
     `)
-    .eq("organization_id", profile.organization_id)
+    .eq("workspace_id", profile.workspace_id)
     .order("created_at", { ascending: false });
 
   return (
@@ -127,9 +127,9 @@ export default async function SpeakersPage() {
                     <TableCell>
                       {meeting?.scheduled_date
                         ? format(
-                            new Date(meeting.scheduled_date),
-                            "MMM d, yyyy"
-                          )
+                          new Date(meeting.scheduled_date),
+                          "MMM d, yyyy"
+                        )
                         : "-"}
                     </TableCell>
                     <TableCell>

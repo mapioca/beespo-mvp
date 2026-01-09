@@ -54,7 +54,7 @@ export default function NewSpeakerPage() {
     const { data: profile } = await (supabase
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .from("profiles") as any)
-      .select("organization_id, role")
+      .select("workspace_id, role")
       .eq("id", user.id)
       .single();
 
@@ -76,7 +76,7 @@ export default function NewSpeakerPage() {
         name,
         topic,
         is_confirmed: isConfirmed,
-        organization_id: profile.organization_id,
+        workspace_id: profile.workspace_id,
         created_by: user.id,
       })
       .select()
