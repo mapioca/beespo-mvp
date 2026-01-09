@@ -13,6 +13,8 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Edit, Plus, CheckSquare, Calendar } from "lucide-react";
 import { format } from "date-fns";
 import { DiscussionNotesSection } from "@/components/discussions/discussion-notes-section";
+import { DiscussionTasksSection } from "@/components/discussions/discussion-tasks-section";
+import { CreateTaskDialog } from "@/components/tasks/create-task-dialog";
 
 // Helper functions (same as list page)
 function formatCategory(category: string): string {
@@ -208,6 +210,12 @@ export default async function DiscussionDetailPage({
             initialNotes={notes || []}
             currentUserId={user.id}
           />
+
+          {/* Tasks Section - Client Component */}
+          <DiscussionTasksSection
+            discussionId={id}
+            initialTasks={tasks || []}
+          />
         </div>
 
         {/* Sidebar */}
@@ -218,16 +226,15 @@ export default async function DiscussionDetailPage({
               <CardTitle className="text-lg">Quick Actions</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
-              <Button
-                asChild
-                className="w-full justify-start"
-                variant="outline"
-              >
-                <Link href={`/tasks/new?discussion_id=${id}`}>
+              <CreateTaskDialog context={{ discussion_id: id }}>
+                <Button
+                  className="w-full justify-start"
+                  variant="outline"
+                >
                   <CheckSquare className="mr-2 h-4 w-4" />
                   Create Task
-                </Link>
-              </Button>
+                </Button>
+              </CreateTaskDialog>
               <Button
                 asChild
                 className="w-full justify-start"
@@ -238,44 +245,6 @@ export default async function DiscussionDetailPage({
                   Create Follow-up
                 </Link>
               </Button>
-            </CardContent>
-          </Card>
-
-          {/* Related Tasks */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Related Tasks</CardTitle>
-              <CardDescription>
-                {tasks?.length || 0} task{tasks?.length !== 1 ? "s" : ""}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {tasks && tasks.length > 0 ? (
-                <div className="space-y-2">
-                  {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                  {tasks.map((task: any) => (
-                    <Link
-                      key={task.id}
-                      href={`/tasks/${task.id}`}
-                      className="block p-2 hover:bg-muted rounded-md transition-colors"
-                    >
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm font-medium">{task.title}</p>
-                        <Badge variant="outline" className="text-xs">
-                          {task.status}
-                        </Badge>
-                      </div>
-                      {task.due_date && (
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Due: {format(new Date(task.due_date), "MMM d")}
-                        </p>
-                      )}
-                    </Link>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">No tasks yet</p>
-              )}
             </CardContent>
           </Card>
 
