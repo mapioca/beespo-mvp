@@ -11,9 +11,8 @@ type Profile = {
 export type Workspace = {
     id: string;
     name: string;
-    type: string; // Added missing property
-    organization_type: string; // Added missing property
-    // Add other workspace fields here
+    type: string;
+    organization_type: string;
 };
 
 export default async function SettingsPage() {
