@@ -2,6 +2,20 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { SettingsClient } from "./settings-client";
 
+type Profile = {
+    workspace_id: string;
+    role: string;
+    full_name: string;
+};
+
+export type Workspace = {
+    id: string;
+    name: string;
+    type: string; // Added missing property
+    organization_type: string; // Added missing property
+    // Add other workspace fields here
+};
+
 export default async function SettingsPage() {
     const supabase = await createClient();
 
@@ -14,33 +28,38 @@ export default async function SettingsPage() {
     }
 
     // Get current user's profile
-    const { data: profile } = await (supabase
-        .from("profiles") as any)
+    const { data: profile } = await supabase
+        .from("profiles")
         .select("workspace_id, role, full_name")
         .eq("id", user.id)
-        .single();
+        .single() as { data: Profile | null };
 
-    if (!profile?.workspace_id) {
+    if (!profile || !profile.workspace_id) {
         redirect("/setup");
     }
 
     // Get workspace details
-    const { data: workspace } = await (supabase
-        .from("workspaces") as any)
+    const { data: workspace } = await supabase
+        .from("workspaces")
         .select("*")
         .eq("id", profile.workspace_id)
-        .single();
+        .single() as { data: Workspace | null };
+
+    // Ensure workspace is not null before passing it to SettingsClient
+    if (!workspace) {
+        throw new Error("Workspace not found");
+    }
 
     // Get team members
-    const { data: members } = await (supabase
-        .from("profiles") as any)
+    const { data: members } = await supabase
+        .from("profiles")
         .select("id, email, full_name, role, created_at")
         .eq("workspace_id", profile.workspace_id)
         .order("created_at", { ascending: true });
 
     // Get pending invitations
-    const { data: invitations } = await (supabase
-        .from("workspace_invitations") as any)
+    const { data: invitations } = await supabase
+        .from("workspace_invitations")
         .select(`
       id,
       email,

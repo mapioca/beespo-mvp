@@ -15,8 +15,9 @@ export async function DELETE(request: NextRequest, { params }: Params) {
     }
 
     // Check if user is admin
-    const { data: profile } = await (supabase
-        .from('profiles') as any)
+    // @ts-expect-error - Supabase type inference issue
+    const { data: profile } = await supabase
+        .from('profiles')
         .select('workspace_id, role')
         .eq('id', user.id)
         .single();
@@ -26,8 +27,9 @@ export async function DELETE(request: NextRequest, { params }: Params) {
     }
 
     // Revoke the invitation
-    const { error } = await (supabase
-        .from('workspace_invitations') as any)
+    // @ts-expect-error - Supabase type inference issue
+    const { error } = await supabase
+        .from('workspace_invitations')
         .update({ status: 'revoked' })
         .eq('id', id)
         .eq('workspace_id', profile.workspace_id);
@@ -50,8 +52,9 @@ export async function POST(request: NextRequest, { params }: Params) {
     }
 
     // Get user's profile
-    const { data: profile } = await (supabase
-        .from('profiles') as any)
+    // @ts-expect-error - Supabase type inference issue
+    const { data: profile } = await supabase
+        .from('profiles')
         .select('workspace_id, role, full_name')
         .eq('id', user.id)
         .single();
@@ -61,8 +64,9 @@ export async function POST(request: NextRequest, { params }: Params) {
     }
 
     // Get the invitation
-    const { data: invitation, error: fetchError } = await (supabase
-        .from('workspace_invitations') as any)
+    // @ts-expect-error - Supabase type inference issue
+    const { data: invitation, error: fetchError } = await supabase
+        .from('workspace_invitations')
         .select('*')
         .eq('id', id)
         .eq('workspace_id', profile.workspace_id)
@@ -74,8 +78,9 @@ export async function POST(request: NextRequest, { params }: Params) {
     }
 
     // Get workspace details
-    const { data: workspace } = await (supabase
-        .from('workspaces') as any)
+    // @ts-expect-error - Supabase type inference issue
+    const { data: workspace } = await supabase
+        .from('workspaces')
         .select('name')
         .eq('id', profile.workspace_id)
         .single();
@@ -93,8 +98,9 @@ export async function POST(request: NextRequest, { params }: Params) {
     });
 
     // Update expires_at to extend invitation
-    await (supabase
-        .from('workspace_invitations') as any)
+    // @ts-expect-error - Supabase type inference issue
+    await supabase
+        .from('workspace_invitations')
         .update({
             expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
             updated_at: new Date().toISOString(),

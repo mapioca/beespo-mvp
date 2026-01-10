@@ -13,7 +13,7 @@ export async function GET() {
 
     // Get user's workspace
     const { data: profile } = await (supabase
-        .from('profiles') as any)
+        .from('profiles'))
         .select('workspace_id, role')
         .eq('id', user.id)
         .single();
@@ -24,7 +24,7 @@ export async function GET() {
 
     // Fetch invitations
     const { data: invitations, error } = await (supabase
-        .from('workspace_invitations') as any)
+        .from('workspace_invitations'))
         .select(`
       id,
       email,
@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
 
     // Get user's profile and check if admin
     const { data: profile } = await (supabase
-        .from('profiles') as any)
+        .from('profiles'))
         .select('workspace_id, role, full_name')
         .eq('id', user.id)
         .single();
@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
 
     // Get workspace details
     const { data: workspace } = await (supabase
-        .from('workspaces') as any)
+        .from('workspaces'))
         .select('name')
         .eq('id', profile.workspace_id)
         .single();
@@ -92,7 +92,7 @@ export async function POST(request: NextRequest) {
 
     // Check if user already exists in workspace
     const { data: existingUser } = await (supabase
-        .from('profiles') as any)
+        .from('profiles'))
         .select('id')
         .eq('email', email)
         .eq('workspace_id', profile.workspace_id)
@@ -104,7 +104,7 @@ export async function POST(request: NextRequest) {
 
     // Check for pending invitation
     const { data: existingInvite } = await (supabase
-        .from('workspace_invitations') as any)
+        .from('workspace_invitations'))
         .select('id')
         .eq('email', email)
         .eq('workspace_id', profile.workspace_id)
@@ -117,7 +117,7 @@ export async function POST(request: NextRequest) {
 
     // Create invitation
     const { data: invitation, error: insertError } = await (supabase
-        .from('workspace_invitations') as any)
+        .from('workspace_invitations'))
         .insert({
             workspace_id: profile.workspace_id,
             email,

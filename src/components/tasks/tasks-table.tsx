@@ -67,7 +67,7 @@ export function TasksTable({ tasks, profiles = [], sortConfig, onSort }: TasksTa
     const [selectedTask, setSelectedTask] = useState<Task | null>(null);
     const { toast } = useToast();
 
-    const handleUpdate = async (taskId: string, data: any) => {
+    const handleUpdate = async (taskId: string, data: Record<string, unknown>) => {
         const result = await updateTask(taskId, data);
         if (result.error) {
             toast({ title: "Failed to update", description: result.error, variant: "destructive" });

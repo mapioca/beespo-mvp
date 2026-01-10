@@ -244,7 +244,6 @@ export default async function DiscussionDetailPage({
 
           {/* Tasks Section - Client Component */}
           <DiscussionTasksSection
-            discussionId={id}
             initialTasks={tasks || []}
           />
         </div>

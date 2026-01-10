@@ -14,7 +14,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/lib/hooks/use-toast";
 import { createClient } from "@/lib/supabase/client";
 import { InviteMemberDialog } from "@/components/team/invite-member-dialog";
@@ -94,8 +93,9 @@ export function SettingsClient({
         setIsSaving(true);
         const supabase = createClient();
 
-        const { error } = await (supabase
-            .from("workspaces") as any)
+        // @ts-expect-error - Supabase type inference issue
+        const { error } = await supabase
+            .from("workspaces")
             .update({ name: workspaceName })
             .eq("id", workspace.id);
 

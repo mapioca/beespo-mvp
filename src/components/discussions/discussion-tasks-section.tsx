@@ -14,11 +14,10 @@ type Task = Database['public']['Tables']['tasks']['Row'] & {
 };
 
 interface DiscussionTasksSectionProps {
-    discussionId: string;
     initialTasks: Task[];
 }
 
-export function DiscussionTasksSection({ discussionId, initialTasks }: DiscussionTasksSectionProps) {
+export function DiscussionTasksSection({ initialTasks }: DiscussionTasksSectionProps) {
     const [selectedTask, setSelectedTask] = useState<Task | null>(null);
     const router = useRouter();
 
