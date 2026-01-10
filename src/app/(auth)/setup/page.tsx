@@ -76,8 +76,9 @@ export default function SetupPage() {
     }
 
     // Create workspace
-    const { data: workspace, error: workspaceError } = await (supabase
-      .from("workspaces") as any)
+    const { data: workspace, error: workspaceError } = await supabase
+      .from("workspaces")
+      // @ts-expect-error - Supabase type inference issue
       .insert({
         name: workspaceName,
         type: workspaceType,
@@ -86,10 +87,10 @@ export default function SetupPage() {
       .select()
       .single();
 
-    if (workspaceError) {
+    if (workspaceError || !workspace) {
       toast({
         title: "Error",
-        description: workspaceError.message || "Failed to create workspace.",
+        description: workspaceError?.message || "Failed to create workspace.",
         variant: "destructive",
       });
       setIsLoading(false);
@@ -97,13 +98,15 @@ export default function SetupPage() {
     }
 
     // Create profile for user as admin (owner)
-    const { error: profileError } = await (supabase
-      .from("profiles") as any)
+    const { error: profileError } = await supabase
+      .from("profiles")
+      // @ts-expect-error - Supabase type inference issue
       .insert({
         id: user.id,
         email: user.email!,
         full_name: user.user_metadata.full_name || user.email?.split("@")[0] || "User",
-        workspace_id: workspace?.id,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        workspace_id: (workspace as any).id,
         role: "admin",
       });
 
@@ -141,7 +144,13 @@ export default function SetupPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Failed to accept invitation");
+        const errorMessage = typeof data.error === "string" ? data.error : "Failed to accept invitation";
+        toast({
+          title: "Error",
+          description: errorMessage,
+          variant: "destructive",
+        });
+        return;
       }
 
       if (data.needsAuth) {

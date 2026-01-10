@@ -14,8 +14,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/lib/hooks/use-toast";
 import { createClient } from "@/lib/supabase/client";
+import { GoogleOAuthButton } from "@/components/auth/google-oauth-button";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -83,6 +85,19 @@ export default function LoginPage() {
           Enter your email and password to access your account
         </CardDescription>
       </CardHeader>
+      <CardContent className="space-y-4">
+        <GoogleOAuthButton />
+        <div className="relative">
+          <div className="absolute inset-0 flex items-center">
+            <Separator />
+          </div>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-background px-2 text-muted-foreground">
+              Or continue with email
+            </span>
+          </div>
+        </div>
+      </CardContent>
       <form onSubmit={handleLogin}>
         <CardContent className="space-y-4">
           <div className="space-y-2">
