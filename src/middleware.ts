@@ -29,43 +29,27 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  // Refresh session if expired
+  // Only check auth status for routing - layout will handle profile checks
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Check if user has completed setup (has a profile)
-  let hasProfile = false;
-  if (user) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("id")
-      .eq("id", user.id)
-      .single();
-    hasProfile = !!profile;
-  }
-
   // Protected routes - redirect to login if not authenticated
-  const protectedRoutes = ["/dashboard", "/templates", "/discussions", "/meetings", "/tasks", "/members", "/business", "/setup"];
+  const protectedRoutes = ["/dashboard", "/templates", "/discussions", "/meetings", "/tasks", "/members", "/business", "/announcements", "/speakers", "/settings"];
   const isProtectedRoute = protectedRoutes.some(route => request.nextUrl.pathname.startsWith(route));
 
   if (!user && isProtectedRoute) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  // Redirect to setup if authenticated but no profile
-  if (user && !hasProfile && request.nextUrl.pathname !== "/setup") {
-    return NextResponse.redirect(new URL("/setup", request.url));
-  }
-
-  // Redirect authenticated users with complete profiles away from auth pages
-  if (user && hasProfile && (request.nextUrl.pathname === "/login" || request.nextUrl.pathname === "/signup" || request.nextUrl.pathname === "/setup")) {
+  // Redirect authenticated users away from auth pages (layout will handle setup redirect)
+  if (user && (request.nextUrl.pathname === "/login" || request.nextUrl.pathname === "/signup")) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
   // Redirect root path to dashboard if authenticated, login if not
   if (request.nextUrl.pathname === "/") {
-    if (user && hasProfile) {
+    if (user) {
       return NextResponse.redirect(new URL("/dashboard", request.url));
     } else {
       return NextResponse.redirect(new URL("/login", request.url));
