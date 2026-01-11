@@ -36,42 +36,45 @@ export default async function AnnouncementDetailPage({
     redirect("/login");
   }
 
-  // Get user profile
-  const { data: profile } = await (supabase
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    .from("profiles") as any)
-    .select("workspace_id, role, full_name")
-    .eq("id", user.id)
-    .single();
+  // Parallelize all queries
+  const [
+    { data: profile },
+    { data: announcement },
+    { data: agendaItems }
+  ] = await Promise.all([
+    // Get user profile
+    (supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from("profiles") as any)
+      .select("workspace_id, role, full_name")
+      .eq("id", user.id)
+      .single(),
+    // Get announcement with specific columns only
+    (supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from("announcements") as any)
+      .select("id, title, content, status, priority, deadline, created_at, updated_at, workspace_id")
+      .eq("id", id)
+      .single(),
+    // Get related meetings (via agenda_items)
+    (supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from("agenda_items") as any)
+      .select(`
+        id,
+        meeting:meetings(id, title, scheduled_date)
+      `)
+      .eq("announcement_id", id)
+      .order("created_at", { ascending: false })
+  ]);
 
   if (!profile || !["leader", "admin"].includes(profile.role)) {
     redirect("/");
   }
 
-  // Get announcement details
-  const { data: announcement } = await (supabase
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    .from("announcements") as any)
-    .select("*")
-    .eq("id", id)
-    .single();
-
   if (!announcement) {
     notFound();
   }
-
-  // Get related meetings (via agenda_items)
-  const { data: agendaItems } = await (supabase
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    .from("agenda_items") as any)
-    .select(
-      `
-      id,
-      meeting:meetings(id, title, scheduled_date)
-    `
-    )
-    .eq("announcement_id", id)
-    .order("created_at", { ascending: false });
 
   const relatedMeetingsMap = new Map();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

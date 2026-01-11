@@ -1,3 +1,20 @@
 # Ignore .env.example file
 .env.example
 
+# Ignore local environment files
+.env.local
+
+# Ignore IDE settings
+.idea/
+
+# Ignore Next.js build output
+.next/
+
+# Ignore TypeScript build info
+*.tsbuildinfo
+
+# Ignore Claude-related files
+.claude/
+
+# Ignore node_modules
+node_modules/
