@@ -15,15 +15,13 @@ import {
     FileEdit,
     CheckCircle,
     Clock,
-    Archive,
     ArrowUp,
     ArrowDown,
-    Minus,
-    AlertCircle
+    Minus
 } from "lucide-react";
 
-export type AnnouncementStatus = "draft" | "active" | "expired" | "archived";
-export type AnnouncementPriority = "low" | "normal" | "high" | "urgent";
+export type AnnouncementStatus = "draft" | "active" | "stopped";
+export type AnnouncementPriority = "low" | "medium" | "high";
 
 interface AnnouncementFiltersProps {
     onFilterChange: (filters: {
@@ -38,15 +36,13 @@ interface AnnouncementFiltersProps {
 const STATUS_OPTIONS: { value: AnnouncementStatus; label: string; icon: React.ReactNode }[] = [
     { value: "draft", label: "Draft", icon: <FileEdit className="h-4 w-4" /> },
     { value: "active", label: "Active", icon: <CheckCircle className="h-4 w-4 text-green-500" /> },
-    { value: "expired", label: "Expired", icon: <Clock className="h-4 w-4 text-muted-foreground" /> },
-    { value: "archived", label: "Archived", icon: <Archive className="h-4 w-4" /> },
+    { value: "stopped", label: "Stopped", icon: <Clock className="h-4 w-4 text-muted-foreground" /> },
 ];
 
 const PRIORITY_OPTIONS: { value: AnnouncementPriority; label: string; icon: React.ReactNode }[] = [
     { value: "low", label: "Low", icon: <ArrowDown className="h-4 w-4" /> },
-    { value: "normal", label: "Normal", icon: <Minus className="h-4 w-4" /> },
+    { value: "medium", label: "Medium", icon: <Minus className="h-4 w-4" /> },
     { value: "high", label: "High", icon: <ArrowUp className="h-4 w-4" /> },
-    { value: "urgent", label: "Urgent", icon: <AlertCircle className="h-4 w-4 text-destructive" /> },
 ];
 
 export function AnnouncementsFilters({ onFilterChange, statusCounts, priorityCounts }: AnnouncementFiltersProps) {

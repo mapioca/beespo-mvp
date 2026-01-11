@@ -17,11 +17,9 @@ import {
     ArrowUpDown,
     FileEdit,
     CheckCircle,
-    Clock,
-    Archive,
     Minus,
-    AlertCircle,
-    Megaphone
+    Megaphone,
+    StopCircle
 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -47,16 +45,15 @@ function getStatusIcon(status: string) {
     switch (status) {
         case "draft": return <FileEdit className="h-4 w-4 text-muted-foreground" />;
         case "active": return <CheckCircle className="h-4 w-4 text-green-500" />;
-        case "expired": return <Clock className="h-4 w-4 text-muted-foreground" />;
-        case "archived": return <Archive className="h-4 w-4 text-muted-foreground" />;
+        case "stopped": return <StopCircle className="h-4 w-4 text-muted-foreground" />;
         default: return <FileEdit className="h-4 w-4" />;
     }
 }
 
 function getPriorityIcon(priority: string) {
     switch (priority) {
-        case "urgent": return <AlertCircle className="h-4 w-4 text-destructive" />;
         case "high": return <ArrowUp className="h-4 w-4 text-destructive" />;
+        case "medium": return <Minus className="h-4 w-4 text-yellow-500" />;
         case "low": return <ArrowDown className="h-4 w-4 text-muted-foreground" />;
         default: return <Minus className="h-4 w-4 text-muted-foreground" />;
     }
@@ -70,16 +67,15 @@ function getStatusVariant(status: string): "default" | "secondary" | "destructiv
     switch (status) {
         case "draft": return "secondary";
         case "active": return "default";
-        case "expired": return "outline";
-        case "archived": return "outline";
+        case "stopped": return "outline";
         default: return "default";
     }
 }
 
-function getPriorityVariant(priority: string): "default" | "secondary" | "destructive" {
+function getPriorityVariant(priority: string): "default" | "secondary" | "destructive" | "outline" {
     switch (priority) {
-        case "urgent": return "destructive";
         case "high": return "destructive";
+        case "medium": return "outline"; // Using outline for medium/yellow
         case "low": return "secondary";
         default: return "default";
     }

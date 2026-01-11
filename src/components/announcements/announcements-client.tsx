@@ -56,7 +56,7 @@ export function AnnouncementsClient({ announcements }: AnnouncementsClientProps)
 
                 // Priority ordering
                 if (key === 'priority') {
-                    const priorityOrder = { urgent: 1, high: 2, normal: 3, low: 4 };
+                    const priorityOrder = { high: 1, medium: 2, low: 3 };
                     aValue = priorityOrder[aValue as keyof typeof priorityOrder] || 99;
                     bValue = priorityOrder[bValue as keyof typeof priorityOrder] || 99;
                 }
@@ -71,7 +71,7 @@ export function AnnouncementsClient({ announcements }: AnnouncementsClientProps)
     }, [announcements, filters, sortConfig]);
 
     const statusCounts = useMemo(() => {
-        const counts: Record<AnnouncementStatus, number> = { draft: 0, active: 0, expired: 0, archived: 0 };
+        const counts: Record<AnnouncementStatus, number> = { draft: 0, active: 0, stopped: 0 };
         announcements.forEach((a) => {
             if (a.status in counts) counts[a.status as AnnouncementStatus]++;
         });
@@ -79,7 +79,7 @@ export function AnnouncementsClient({ announcements }: AnnouncementsClientProps)
     }, [announcements]);
 
     const priorityCounts = useMemo(() => {
-        const counts: Record<AnnouncementPriority, number> = { low: 0, normal: 0, high: 0, urgent: 0 };
+        const counts: Record<AnnouncementPriority, number> = { low: 0, medium: 0, high: 0 };
         announcements.forEach((a) => {
             if (a.priority in counts) counts[a.priority as AnnouncementPriority]++;
         });

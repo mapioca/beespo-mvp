@@ -124,8 +124,11 @@ export default function NewAnnouncementPage() {
     });
 
     setIsLoading(false);
-    router.push(`/announcements/${announcement.id}`);
-    router.refresh();
+
+    // Navigate after a brief delay to ensure toast is visible
+    setTimeout(() => {
+      router.push(`/announcements/${announcement.id}`);
+    }, 500);
   };
 
   return (
