@@ -1,11 +1,13 @@
 import { createClient } from "@/lib/supabase/server";
-import { MeetingList } from "@/components/meetings/meeting-list";
+import { MeetingsClient } from "@/components/meetings/meetings-client";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
     title: "Meetings | Beespo",
     description: "Manage your meetings and agendas",
 };
+
+export const revalidate = 0;
 
 export default async function MeetingsPage() {
     const supabase = await createClient();
@@ -18,7 +20,7 @@ export default async function MeetingsPage() {
         .eq("id", user?.id || "")
         .single();
 
-    const isLeader = profile?.role === "leader";
+    const isLeader = profile?.role === "leader" || profile?.role === "admin";
 
     // Fetch meetings with template info
     const { data: meetings, error } = await supabase
@@ -36,16 +38,5 @@ export default async function MeetingsPage() {
         return <div>Error loading meetings. Please try again.</div>;
     }
 
-    return (
-        <div className="flex flex-col gap-8 p-8">
-            <div>
-                <h1 className="text-3xl font-bold tracking-tight">Meetings</h1>
-                <p className="text-muted-foreground mt-2">
-                    Manage your meeting schedules, agendas, and history.
-                </p>
-            </div>
-
-            <MeetingList meetings={meetings} isLeader={isLeader} />
-        </div>
-    );
+    return <MeetingsClient meetings={meetings || []} isLeader={isLeader} />;
 }
