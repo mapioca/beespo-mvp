@@ -55,8 +55,8 @@ export function DiscussionsClient({ discussions }: DiscussionsClientProps) {
         if (sortConfig) {
             result.sort((a, b) => {
                 const { key, direction } = sortConfig;
-                let aValue = a[key as keyof Discussion];
-                let bValue = b[key as keyof Discussion];
+                const aValue = a[key as keyof Discussion];
+                const bValue = b[key as keyof Discussion];
 
                 // Handle nulls
                 if (aValue === null || aValue === undefined) return 1;
@@ -65,8 +65,11 @@ export function DiscussionsClient({ discussions }: DiscussionsClientProps) {
                 // Handle priority ordering
                 if (key === 'priority') {
                     const priorityOrder = { high: 1, medium: 2, low: 3 };
-                    aValue = priorityOrder[aValue as keyof typeof priorityOrder] || 99;
-                    bValue = priorityOrder[bValue as keyof typeof priorityOrder] || 99;
+                    const aPriority = priorityOrder[aValue as keyof typeof priorityOrder] || 99;
+                    const bPriority = priorityOrder[bValue as keyof typeof priorityOrder] || 99;
+                    if (aPriority < bPriority) return direction === 'asc' ? -1 : 1;
+                    if (aPriority > bPriority) return direction === 'asc' ? 1 : -1;
+                    return 0;
                 }
 
                 if (aValue < bValue) return direction === 'asc' ? -1 : 1;

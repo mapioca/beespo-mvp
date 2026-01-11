@@ -15,8 +15,8 @@ export async function DELETE(request: NextRequest, { params }: Params) {
     }
 
     // Check if user is admin
-    // @ts-expect-error - Supabase type inference issue
-    const { data: profile } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: profile } = await (supabase as any)
         .from('profiles')
         .select('workspace_id, role')
         .eq('id', user.id)
@@ -27,8 +27,8 @@ export async function DELETE(request: NextRequest, { params }: Params) {
     }
 
     // Revoke the invitation
-    // @ts-expect-error - Supabase type inference issue
-    const { error } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any)
         .from('workspace_invitations')
         .update({ status: 'revoked' })
         .eq('id', id)
@@ -52,8 +52,8 @@ export async function POST(request: NextRequest, { params }: Params) {
     }
 
     // Get user's profile
-    // @ts-expect-error - Supabase type inference issue
-    const { data: profile } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: profile } = await (supabase as any)
         .from('profiles')
         .select('workspace_id, role, full_name')
         .eq('id', user.id)
@@ -64,8 +64,8 @@ export async function POST(request: NextRequest, { params }: Params) {
     }
 
     // Get the invitation
-    // @ts-expect-error - Supabase type inference issue
-    const { data: invitation, error: fetchError } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: invitation, error: fetchError } = await (supabase as any)
         .from('workspace_invitations')
         .select('*')
         .eq('id', id)
@@ -78,8 +78,8 @@ export async function POST(request: NextRequest, { params }: Params) {
     }
 
     // Get workspace details
-    // @ts-expect-error - Supabase type inference issue
-    const { data: workspace } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: workspace } = await (supabase as any)
         .from('workspaces')
         .select('name')
         .eq('id', profile.workspace_id)
@@ -98,8 +98,8 @@ export async function POST(request: NextRequest, { params }: Params) {
     });
 
     // Update expires_at to extend invitation
-    // @ts-expect-error - Supabase type inference issue
-    await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase as any)
         .from('workspace_invitations')
         .update({
             expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),

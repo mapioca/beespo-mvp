@@ -26,12 +26,10 @@ export function AgendaEditor({ items, setItems, onDeleteItem }: AgendaEditorProp
 
     const handleAddItem = (newItem: NewAgendaItem) => {
         const tempId = `temp-${Date.now()}`;
-        // @ts-expect-error - Creating a partial object compatible with AgendaItem for UI purposes
         const item: AgendaItem = {
             ...newItem,
             id: tempId,
             meeting_id: items[0]?.meeting_id || "",
-            details: null,
             notes: null,
             is_completed: false,
             created_at: new Date().toISOString(),

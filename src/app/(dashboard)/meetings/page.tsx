@@ -12,13 +12,14 @@ export default async function MeetingsPage() {
 
     // Get current user profile to check role
     const { data: { user } } = await supabase.auth.getUser();
-    const { data: profile } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: profile } = await (supabase as any)
         .from("profiles")
         .select("role")
         .eq("id", user?.id || "")
         .single();
 
-    const isLeader = profile?.role === "leader";
+    const isLeader = profile?.role === "leader" || profile?.role === "admin";
 
     // Fetch meetings with template info
     const { data: meetings, error } = await supabase

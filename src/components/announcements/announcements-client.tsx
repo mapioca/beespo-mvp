@@ -48,8 +48,8 @@ export function AnnouncementsClient({ announcements }: AnnouncementsClientProps)
         if (sortConfig) {
             result.sort((a, b) => {
                 const { key, direction } = sortConfig;
-                let aValue = a[key as keyof Announcement];
-                let bValue = b[key as keyof Announcement];
+                const aValue = a[key as keyof Announcement];
+                const bValue = b[key as keyof Announcement];
 
                 if (aValue === null || aValue === undefined) return 1;
                 if (bValue === null || bValue === undefined) return -1;
@@ -57,8 +57,11 @@ export function AnnouncementsClient({ announcements }: AnnouncementsClientProps)
                 // Priority ordering
                 if (key === 'priority') {
                     const priorityOrder = { urgent: 1, high: 2, normal: 3, low: 4 };
-                    aValue = priorityOrder[aValue as keyof typeof priorityOrder] || 99;
-                    bValue = priorityOrder[bValue as keyof typeof priorityOrder] || 99;
+                    const aPriority = priorityOrder[aValue as keyof typeof priorityOrder] || 99;
+                    const bPriority = priorityOrder[bValue as keyof typeof priorityOrder] || 99;
+                    if (aPriority < bPriority) return direction === 'asc' ? -1 : 1;
+                    if (aPriority > bPriority) return direction === 'asc' ? 1 : -1;
+                    return 0;
                 }
 
                 if (aValue < bValue) return direction === 'asc' ? -1 : 1;

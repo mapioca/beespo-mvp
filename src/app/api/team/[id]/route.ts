@@ -14,8 +14,9 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     }
 
     // Get current user's profile
-    const { data: currentProfile } = await (supabase
-        .from('profiles'))
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: currentProfile } = await (supabase as any)
+        .from('profiles')
         .select('workspace_id, role')
         .eq('id', user.id)
         .single();
@@ -25,8 +26,9 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     }
 
     // Get target member's profile
-    const { data: targetProfile } = await (supabase
-        .from('profiles'))
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: targetProfile } = await (supabase as any)
+        .from('profiles')
         .select('workspace_id, role')
         .eq('id', memberId)
         .single();
@@ -44,8 +46,9 @@ export async function PATCH(request: NextRequest, { params }: Params) {
 
     // Prevent demoting the last admin
     if (targetProfile.role === 'admin' && role !== 'admin') {
-        const { count } = await (supabase
-            .from('profiles'))
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { count } = await (supabase as any)
+            .from('profiles')
             .select('*', { count: 'exact', head: true })
             .eq('workspace_id', currentProfile.workspace_id)
             .eq('role', 'admin');
@@ -58,8 +61,9 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     }
 
     // Update role
-    const { error: updateError } = await (supabase
-        .from('profiles'))
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error: updateError } = await (supabase as any)
+        .from('profiles')
         .update({ role })
         .eq('id', memberId);
 
@@ -81,8 +85,9 @@ export async function DELETE(request: NextRequest, { params }: Params) {
     }
 
     // Get current user's profile
-    const { data: currentProfile } = await (supabase
-        .from('profiles'))
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: currentProfile } = await (supabase as any)
+        .from('profiles')
         .select('workspace_id, role')
         .eq('id', user.id)
         .single();
@@ -97,8 +102,9 @@ export async function DELETE(request: NextRequest, { params }: Params) {
     }
 
     // Get target member's profile
-    const { data: targetProfile } = await (supabase
-        .from('profiles'))
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: targetProfile } = await (supabase as any)
+        .from('profiles')
         .select('workspace_id, role')
         .eq('id', memberId)
         .single();
@@ -109,8 +115,9 @@ export async function DELETE(request: NextRequest, { params }: Params) {
 
     // Prevent removing the last admin
     if (targetProfile.role === 'admin') {
-        const { count } = await (supabase
-            .from('profiles'))
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { count } = await (supabase as any)
+            .from('profiles')
             .select('*', { count: 'exact', head: true })
             .eq('workspace_id', currentProfile.workspace_id)
             .eq('role', 'admin');
@@ -123,8 +130,9 @@ export async function DELETE(request: NextRequest, { params }: Params) {
     }
 
     // Remove from workspace (set workspace_id to null, preserving data)
-    const { error: updateError } = await (supabase
-        .from('profiles'))
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error: updateError } = await (supabase as any)
+        .from('profiles')
         .update({ workspace_id: null })
         .eq('id', memberId);
 

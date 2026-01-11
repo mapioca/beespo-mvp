@@ -39,9 +39,9 @@ export default function ConductMeetingPage({ params }: ConductMeetingProps) {
 
             if (m && i) {
                 setMeeting(m);
-                setItems(i);
+                setItems(i as AgendaItem[]);
                 // Find first incomplete item
-                const firstIncomplete = i.findIndex(item => !item.is_completed);
+                const firstIncomplete = (i as AgendaItem[]).findIndex(item => !item.is_completed);
                 if (firstIncomplete !== -1) setCurrentItemIndex(firstIncomplete);
             }
         };
@@ -78,7 +78,8 @@ export default function ConductMeetingPage({ params }: ConductMeetingProps) {
         debounce(async (itemId: string, content: string) => {
             const supabase = createClient();
             console.log('Saving notes...', itemId);
-            await supabase
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            await (supabase as any)
                 .from('agenda_items')
                 .update({ notes: content })
                 .eq('id', itemId);
@@ -103,7 +104,8 @@ export default function ConductMeetingPage({ params }: ConductMeetingProps) {
         setItems(newItems);
 
         const supabase = createClient();
-        await supabase.from('agenda_items').update({ is_completed: newStatus }).eq('id', item.id);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (supabase as any).from('agenda_items').update({ is_completed: newStatus }).eq('id', item.id);
 
         if (newStatus && currentItemIndex < items.length - 1) {
             // Auto-advance if marking complete

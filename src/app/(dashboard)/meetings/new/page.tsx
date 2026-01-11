@@ -68,7 +68,8 @@ export default function CreateMeetingWizard() {
         const scheduledDate = new Date(date);
         scheduledDate.setHours(hours, minutes);
 
-        const { data, error } = await supabase
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data, error } = await (supabase as any)
             .rpc('create_meeting_from_template', {
                 p_template_id: selectedTemplate,
                 p_title: title,

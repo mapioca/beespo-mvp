@@ -131,6 +131,7 @@ export type Database = {
           description: string | null;
           calling_type: string | null;
           is_shared: boolean;
+          folder_id: string | null;
           created_by: string | null;
           created_at: string;
           updated_at: string;
@@ -142,6 +143,7 @@ export type Database = {
           description?: string | null;
           calling_type?: string | null;
           is_shared?: boolean;
+          folder_id?: string | null;
           created_by?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -153,6 +155,7 @@ export type Database = {
           description?: string | null;
           calling_type?: string | null;
           is_shared?: boolean;
+          folder_id?: string | null;
           created_by?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -640,6 +643,52 @@ export type Database = {
           created_by?: string | null;
           created_at?: string;
           updated_at?: string;
+        };
+      };
+      template_folders: {
+        Row: {
+          id: string;
+          workspace_id: string;
+          name: string;
+          order_index: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          workspace_id: string;
+          name: string;
+          order_index?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          workspace_id?: string;
+          name?: string;
+          order_index?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      hidden_template_categories: {
+        Row: {
+          id: string;
+          workspace_id: string;
+          category_name: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          workspace_id: string;
+          category_name: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          workspace_id?: string;
+          category_name?: string;
+          created_at?: string;
         };
       };
     };

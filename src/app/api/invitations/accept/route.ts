@@ -12,8 +12,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Get the invitation by token (RLS allows anyone to view by token)
-    const { data: invitation, error: fetchError } = await (supabase
-        .from('workspace_invitations'))
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: invitation, error: fetchError } = await (supabase as any)
+        .from('workspace_invitations')
         .select('*, workspaces(name)')
         .eq('token', token)
         .single();
@@ -28,8 +29,9 @@ export async function POST(request: NextRequest) {
 
     if (new Date(invitation.expires_at) < new Date()) {
         // Mark as expired
-        await (supabase
-            .from('workspace_invitations'))
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (supabase as any)
+            .from('workspace_invitations')
             .update({ status: 'expired' })
             .eq('id', invitation.id);
         return NextResponse.json({ error: 'Invitation has expired' }, { status: 400 });
@@ -50,8 +52,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user already has a profile
-    const { data: existingProfile } = await (supabase
-        .from('profiles'))
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: existingProfile } = await (supabase as any)
+        .from('profiles')
         .select('id, workspace_id')
         .eq('id', user.id)
         .single();
@@ -65,8 +68,9 @@ export async function POST(request: NextRequest) {
     // Create or update profile
     if (existingProfile) {
         // Update existing profile
-        const { error: updateError } = await (supabase
-            .from('profiles'))
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { error: updateError } = await (supabase as any)
+            .from('profiles')
             .update({
                 workspace_id: invitation.workspace_id,
                 role: invitation.role,
@@ -78,8 +82,9 @@ export async function POST(request: NextRequest) {
         }
     } else {
         // Create new profile
-        const { error: insertError } = await (supabase
-            .from('profiles'))
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { error: insertError } = await (supabase as any)
+            .from('profiles')
             .insert({
                 id: user.id,
                 email: user.email!,
@@ -94,8 +99,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Mark invitation as accepted
-    await (supabase
-        .from('workspace_invitations'))
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase as any)
+        .from('workspace_invitations')
         .update({ status: 'accepted' })
         .eq('id', invitation.id);
 

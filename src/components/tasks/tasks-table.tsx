@@ -28,7 +28,7 @@ import { cn } from "@/lib/utils";
 type Task = Database['public']['Tables']['tasks']['Row'] & {
     assignee?: { full_name: string; email?: string } | null;
     comment_count?: number;
-    workspace_task_id?: string;
+    workspace_task_id?: string | null;
     priority?: 'low' | 'medium' | 'high';
     labels?: Array<{ id: string; name: string; color: string }>;
 };

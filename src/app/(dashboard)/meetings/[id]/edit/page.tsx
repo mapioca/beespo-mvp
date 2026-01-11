@@ -57,11 +57,11 @@ export default function EditMeetingPage({ params }: EditMeetingProps) {
                 return;
             }
 
-            setMeeting(meetingData);
-            setTitle(meetingData.title);
+            setMeeting(meetingData as Meeting);
+            setTitle((meetingData as Meeting).title);
             // Format for datetime-local input: YYYY-MM-DDThh:mm
-            setScheduledDate(new Date(meetingData.scheduled_date).toISOString().slice(0, 16));
-            setItems(itemsData || []);
+            setScheduledDate(new Date((meetingData as Meeting).scheduled_date).toISOString().slice(0, 16));
+            setItems((itemsData as AgendaItem[]) || []);
             setLoading(false);
         };
 
@@ -74,7 +74,8 @@ export default function EditMeetingPage({ params }: EditMeetingProps) {
         const supabase = createClient();
 
         // 1. Update Meeting Metadata
-        const { error: mError } = await supabase
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { error: mError } = await (supabase as any)
             .from('meetings')
             .update({
                 title,
@@ -137,7 +138,8 @@ export default function EditMeetingPage({ params }: EditMeetingProps) {
             }
         });
 
-        const { error: uError } = await supabase
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { error: uError } = await (supabase as any)
             .from('agenda_items')
             .upsert(upsertData);
 

@@ -93,8 +93,8 @@ export function SettingsClient({
         setIsSaving(true);
         const supabase = createClient();
 
-        // @ts-expect-error - Supabase type inference issue
-        const { error } = await supabase
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { error } = await (supabase as any)
             .from("workspaces")
             .update({ name: workspaceName })
             .eq("id", workspace.id);

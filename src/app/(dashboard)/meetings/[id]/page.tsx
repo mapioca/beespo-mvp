@@ -22,16 +22,18 @@ export default async function MeetingDetailPage({ params }: MeetingDetailPagePro
 
     // Get current user profile
     const { data: { user } } = await supabase.auth.getUser();
-    const { data: profile } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: profile } = await (supabase as any)
         .from("profiles")
         .select("role, full_name")
         .eq("id", user?.id || "")
         .single();
 
-    const isLeader = profile?.role === "leader";
+    const isLeader = profile?.role === "leader" || profile?.role === "admin";
 
     // Fetch meeting details
-    const { data: meeting, error } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: meeting, error } = await (supabase as any)
         .from("meetings")
         .select(`
       *,
@@ -46,13 +48,15 @@ export default async function MeetingDetailPage({ params }: MeetingDetailPagePro
     }
 
     // Fetch agenda items
-    const { data: agendaItems } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: agendaItems } = await (supabase as any)
         .from("agenda_items")
         .select("*")
         .eq("meeting_id", id)
         .order("order_index", { ascending: true });
 
-    const totalDuration = agendaItems?.reduce((acc, item) => acc + (item.duration_minutes || 0), 0) || 0;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const totalDuration = (agendaItems as any)?.reduce((acc: number, item: any) => acc + (item.duration_minutes || 0), 0) || 0;
 
     return (
         <div className="flex flex-col gap-8 p-8 max-w-5xl mx-auto">

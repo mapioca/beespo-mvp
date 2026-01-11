@@ -76,9 +76,9 @@ export default function SetupPage() {
     }
 
     // Create workspace
-    const { data: workspace, error: workspaceError } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: workspace, error: workspaceError } = await (supabase as any)
       .from("workspaces")
-      // @ts-expect-error - Supabase type inference issue
       .insert({
         name: workspaceName,
         type: workspaceType,
@@ -98,9 +98,9 @@ export default function SetupPage() {
     }
 
     // Create profile for user as admin (owner)
-    const { error: profileError } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error: profileError } = await (supabase as any)
       .from("profiles")
-      // @ts-expect-error - Supabase type inference issue
       .insert({
         id: user.id,
         email: user.email!,
