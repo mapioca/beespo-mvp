@@ -144,8 +144,11 @@ export default function NewDiscussionPage() {
     });
 
     setIsLoading(false);
-    router.push(`/discussions/${discussion.id}`);
-    router.refresh();
+
+    // Navigate after a brief delay to ensure toast is visible
+    setTimeout(() => {
+      router.push(`/discussions/${discussion.id}`);
+    }, 500);
   };
 
   return (
