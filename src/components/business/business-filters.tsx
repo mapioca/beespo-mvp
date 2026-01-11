@@ -14,10 +14,9 @@ export type BusinessStatus = "pending" | "completed";
 export type BusinessCategory =
     | "sustaining"
     | "release"
-    | "set_apart"
+    | "confirmation"
     | "ordination"
-    | "blessing"
-    | "membership_action"
+    | "setting_apart"
     | "other";
 
 interface BusinessFiltersProps {
@@ -38,10 +37,9 @@ const STATUS_OPTIONS: { value: BusinessStatus; label: string; icon: React.ReactN
 const CATEGORY_OPTIONS: { value: BusinessCategory; label: string }[] = [
     { value: "sustaining", label: "Sustaining" },
     { value: "release", label: "Release" },
-    { value: "set_apart", label: "Set Apart" },
+    { value: "confirmation", label: "Confirmation" },
     { value: "ordination", label: "Ordination" },
-    { value: "blessing", label: "Blessing" },
-    { value: "membership_action", label: "Membership Action" },
+    { value: "setting_apart", label: "Setting Apart" },
     { value: "other", label: "Other" },
 ];
 

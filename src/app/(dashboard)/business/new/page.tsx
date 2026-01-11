@@ -110,8 +110,11 @@ export default function NewBusinessPage() {
     });
 
     setIsLoading(false);
-    router.push(`/business/${businessItem.id}`);
-    router.refresh();
+
+    // Navigate after a brief delay to ensure toast is visible
+    setTimeout(() => {
+      router.push(`/business/${businessItem.id}`);
+    }, 500);
   };
 
   return (

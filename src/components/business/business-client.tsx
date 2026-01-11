@@ -73,7 +73,7 @@ export function BusinessClient({ items }: BusinessClientProps) {
 
     const categoryCounts = useMemo(() => {
         const counts: Record<BusinessCategory, number> = {
-            sustaining: 0, release: 0, set_apart: 0, ordination: 0, blessing: 0, membership_action: 0, other: 0,
+            sustaining: 0, release: 0, confirmation: 0, ordination: 0, setting_apart: 0, other: 0,
         };
         items.forEach((item) => {
             if (item.category in counts) counts[item.category as BusinessCategory]++;

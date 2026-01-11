@@ -2,8 +2,8 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { BusinessClient } from "@/components/business/business-client";
 
-// Enable caching with revalidation every 60 seconds
-export const revalidate = 60;
+// Disable caching to ensure new business items appear immediately
+export const revalidate = 0;
 
 export default async function BusinessPage() {
   const supabase = await createClient();
@@ -16,33 +16,34 @@ export default async function BusinessPage() {
     redirect("/login");
   }
 
+  // Get user profile to check role
+  const { data: profile } = await (supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .from("profiles") as any)
+    .select("workspace_id, role")
+    .eq("id", user.id)
+    .single();
+
+  if (!profile || !profile.workspace_id) {
+    redirect("/setup");
+  }
+
   // Pagination settings
   const ITEMS_PER_PAGE = 50;
 
-  // Parallelize profile and business items queries
-  const [
-    { data: profile },
-    { data: businessItems }
-  ] = await Promise.all([
-    // Get user profile to check role
-    (supabase
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .from("profiles") as any)
-      .select("workspace_id, role")
-      .eq("id", user.id)
-      .single(),
-    // Get business items with specific columns only
-    (supabase
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .from("business_items") as any)
-      .select("id, title, description, status, created_at, updated_at, workspace_id, workspace_entity_id, created_by")
-      .order("created_at", { ascending: false })
-      .limit(ITEMS_PER_PAGE)
-  ]);
+  // Get business items with specific columns only
+  const { data: businessItems, error } = await (supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .from("business_items") as any)
+    .select("id, person_name, position_calling, category, status, action_date, notes, created_at, updated_at, workspace_id, workspace_business_id, created_by")
+    .eq("workspace_id", profile.workspace_id)
+    .order("created_at", { ascending: false })
+    .limit(ITEMS_PER_PAGE);
 
-  if (!profile) {
-    redirect("/setup");
-  }
+  // Log for debugging
+  console.log("Business items query error:", error);
+  console.log("Business items count:", businessItems?.length || 0);
+  console.log("Workspace ID:", profile.workspace_id);
 
   return <BusinessClient items={businessItems || []} />;
 }
