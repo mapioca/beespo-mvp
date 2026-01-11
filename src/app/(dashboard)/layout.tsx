@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Home, FileText, Calendar, CheckSquare, LogOut, MessageSquare, Briefcase, Megaphone, Mic, Settings } from "lucide-react";
+import { Home, FileText, Calendar, CheckSquare, MessageSquare, Briefcase, Megaphone, Mic } from "lucide-react";
+import { SidebarUserProfile } from "@/components/dashboard/sidebar-user-profile";
 
 export default async function DashboardLayout({
   children,
@@ -30,12 +30,7 @@ export default async function DashboardLayout({
     redirect("/setup");
   }
 
-  const handleSignOut = async () => {
-    "use server";
-    const supabase = await createClient();
-    await supabase.auth.signOut();
-    redirect("/login");
-  };
+
 
   const navItems = [
     { href: "/dashboard", icon: Home, label: "Dashboard" },
@@ -46,7 +41,6 @@ export default async function DashboardLayout({
     { href: "/announcements", icon: Megaphone, label: "Announcements" },
     { href: "/speakers", icon: Mic, label: "Speakers" },
     { href: "/tasks", icon: CheckSquare, label: "Tasks" },
-    { href: "/settings", icon: Settings, label: "Settings" },
   ];
 
   return (
@@ -74,19 +68,11 @@ export default async function DashboardLayout({
             ))}
           </nav>
 
-          {/* Sign Out */}
-          <div className="border-t p-4">
-            <form action={handleSignOut}>
-              <Button
-                type="submit"
-                variant="ghost"
-                className="w-full justify-start"
-              >
-                <LogOut className="mr-3 h-4 w-4" />
-                Sign Out
-              </Button>
-            </form>
-          </div>
+          {/* User Profile / Sign Out */}
+          <SidebarUserProfile
+            name={profile?.full_name || ""}
+            email={user?.email || ""}
+          />
         </div>
       </aside>
 

@@ -19,7 +19,7 @@ import { createClient } from "@/lib/supabase/client";
 import { InviteMemberDialog } from "@/components/team/invite-member-dialog";
 import { TeamMembersList } from "@/components/team/team-members-list";
 import { PendingInvitations } from "@/components/team/pending-invitations";
-import { Building2, Users, Save, Loader2 } from "lucide-react";
+import { Building2, Users, Save, Loader2, User } from "lucide-react";
 
 interface Workspace {
     id: string;
@@ -53,6 +53,10 @@ interface SettingsClientProps {
     invitations: Invitation[];
     currentUserId: string;
     currentUserRole: string;
+    currentUserDetails: {
+        fullName: string;
+        email: string;
+    };
 }
 
 const workspaceTypeLabels: Record<string, string> = {
@@ -80,11 +84,14 @@ export function SettingsClient({
     invitations,
     currentUserId,
     currentUserRole,
+    currentUserDetails,
 }: SettingsClientProps) {
     const router = useRouter();
     const { toast } = useToast();
     const [workspaceName, setWorkspaceName] = useState(workspace.name);
+    const [userFullName, setUserFullName] = useState(currentUserDetails.fullName);
     const [isSaving, setIsSaving] = useState(false);
+    const [isSavingProfile, setIsSavingProfile] = useState(false);
     const isAdmin = currentUserRole === "admin";
 
     const handleSaveWorkspace = async () => {
@@ -116,6 +123,34 @@ export function SettingsClient({
         setIsSaving(false);
     };
 
+    const handleSaveProfile = async () => {
+        if (userFullName === currentUserDetails.fullName) return;
+
+        setIsSavingProfile(true);
+        const supabase = createClient();
+
+        const { error } = await supabase
+            .from("profiles")
+            .update({ full_name: userFullName })
+            .eq("id", currentUserId);
+
+        if (error) {
+            toast({
+                title: "Error",
+                description: error.message || "Failed to update profile",
+                variant: "destructive",
+            });
+        } else {
+            toast({
+                title: "Saved",
+                description: "Your profile has been updated.",
+            });
+            router.refresh();
+        }
+
+        setIsSavingProfile(false);
+    };
+
     const handleRefresh = () => {
         router.refresh();
     };
@@ -129,17 +164,66 @@ export function SettingsClient({
                 </p>
             </div>
 
-            <Tabs defaultValue="general" className="space-y-6">
+            <Tabs defaultValue="account" className="space-y-6">
                 <TabsList>
+                    <TabsTrigger value="account" className="gap-2">
+                        <User className="h-4 w-4" />
+                        Account
+                    </TabsTrigger>
                     <TabsTrigger value="general" className="gap-2">
                         <Building2 className="h-4 w-4" />
-                        General
+                        Workspace
                     </TabsTrigger>
                     <TabsTrigger value="team" className="gap-2">
                         <Users className="h-4 w-4" />
                         Team
                     </TabsTrigger>
                 </TabsList>
+
+                <TabsContent value="account" className="space-y-6">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Profile Settings</CardTitle>
+                            <CardDescription>
+                                Manage your personal account information
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="fullName">Full Name</Label>
+                                <div className="flex gap-2">
+                                    <Input
+                                        id="fullName"
+                                        value={userFullName}
+                                        onChange={(e) => setUserFullName(e.target.value)}
+                                        disabled={isSavingProfile}
+                                        className="max-w-md"
+                                    />
+                                    {userFullName !== currentUserDetails.fullName && (
+                                        <Button onClick={handleSaveProfile} disabled={isSavingProfile}>
+                                            {isSavingProfile ? (
+                                                <Loader2 className="h-4 w-4 animate-spin" />
+                                            ) : (
+                                                <Save className="h-4 w-4" />
+                                            )}
+                                            <span className="ml-2">Save</span>
+                                        </Button>
+                                    )}
+                                </div>
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="email">Email Address</Label>
+                                <Input
+                                    id="email"
+                                    value={currentUserDetails.email}
+                                    disabled
+                                    className="max-w-md bg-muted"
+                                />
+                                <p className="text-xs text-muted-foreground">Email address cannot be changed currently.</p>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
 
                 <TabsContent value="general" className="space-y-6">
                     <Card>

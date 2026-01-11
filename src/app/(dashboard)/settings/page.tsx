@@ -79,6 +79,10 @@ export default async function SettingsPage() {
             invitations={invitations || []}
             currentUserId={user.id}
             currentUserRole={profile.role}
+            currentUserDetails={{
+                fullName: profile.full_name,
+                email: user.email || "",
+            }}
         />
     );
 }
