@@ -13,6 +13,9 @@ export const metadata: Metadata = {
   title: "Beespo - Leadership Management for Church Leaders",
   description:
     "A comprehensive agenda and leadership management platform designed for leaders in The Church of Jesus Christ of Latter-day Saints.",
+  icons: {
+    icon: "/beespo-favicon.png",
+  },
 };
 
 export default function RootLayout({

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { Home, FileText, Calendar, CheckSquare, MessageSquare, Briefcase, Megaphone, Mic } from "lucide-react";
@@ -22,7 +23,7 @@ export default async function DashboardLayout({
   const { data: profile } = await (supabase
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     .from("profiles") as any)
-    .select("full_name, workspace_id, role")
+    .select("full_name, workspace_id, role, workspaces(name)")
     .eq("id", user.id)
     .single();
 
@@ -49,9 +50,18 @@ export default async function DashboardLayout({
       <aside className="w-64 border-r bg-card">
         <div className="flex h-full flex-col">
           {/* Logo/Header */}
-          <div className="border-b p-6">
-            <h1 className="text-2xl font-bold">Beespo</h1>
-            <p className="text-sm text-muted-foreground">{profile?.full_name}</p>
+          <div className="border-b p-4">
+            <Link href="/dashboard" className="block mb-2">
+              <div className="relative h-12 w-48">
+                <Image
+                  src="/images/beespo-logo-full.svg"
+                  alt="Beespo"
+                  fill
+                  className="object-contain object-left"
+                />
+              </div>
+            </Link>
+            <p className="text-sm text-muted-foreground pl-1">{profile?.workspaces?.name || "Workspace"}</p>
           </div>
 
           {/* Navigation */}
