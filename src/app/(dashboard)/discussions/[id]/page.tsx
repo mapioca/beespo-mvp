@@ -15,6 +15,7 @@ import { format } from "date-fns";
 import { DiscussionNotesSection } from "@/components/discussions/discussion-notes-section";
 import { DiscussionTasksSection } from "@/components/discussions/discussion-tasks-section";
 import { CreateTaskDialog } from "@/components/tasks/create-task-dialog";
+import { LinkedNotesList } from "@/components/notes/linked-notes-list";
 
 // Helper functions (same as list page)
 function formatCategory(category: string): string {
@@ -241,6 +242,9 @@ export default async function DiscussionDetailPage({
             initialNotes={notes || []}
             currentUserId={user.id}
           />
+
+          {/* Linked Notes (Rich Text) */}
+          <LinkedNotesList entityId={id} entityType="discussion" />
 
           {/* Tasks Section - Client Component */}
           <DiscussionTasksSection

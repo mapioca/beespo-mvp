@@ -641,19 +641,77 @@ export type Database = {
           created_at?: string;
           updated_at?: string;
         };
-      };
-    };
-    Views: Record<string, never>;
-    Functions: {
-      create_meeting_from_template: {
-        Args: {
-          p_template_id: string;
-          p_title: string;
-          p_scheduled_date: string;
+      },
+      notes: {
+        Row: {
+          id: string;
+          workspace_id: string;
+          title: string;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          content: any; // Editor.js JSON
+          is_personal: boolean;
+          created_by: string;
+          created_at: string;
+          updated_at: string;
         };
-        Returns: string;
+        Insert: {
+          id?: string;
+          workspace_id: string;
+          title: string;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          content?: any;
+          is_personal?: boolean;
+          created_by: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          workspace_id?: string;
+          title?: string;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          content?: any;
+          is_personal?: boolean;
+          created_by?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      note_associations: {
+        Row: {
+          id: string;
+          note_id: string;
+          entity_type: "discussion" | "meeting" | "task";
+          entity_id: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          note_id: string;
+          entity_type: "discussion" | "meeting" | "task";
+          entity_id: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          note_id?: string;
+          entity_type?: "discussion" | "meeting" | "task";
+          entity_id?: string;
+          created_at?: string;
+        };
       };
     };
-    Enums: Record<string, never>;
   };
+  Views: Record<string, never>;
+  Functions: {
+    create_meeting_from_template: {
+      Args: {
+        p_template_id: string;
+        p_title: string;
+        p_scheduled_date: string;
+      };
+      Returns: string;
+    };
+  };
+  Enums: Record<string, never>;
 };

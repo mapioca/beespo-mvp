@@ -2,7 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { Home, FileText, Calendar, CheckSquare, MessageSquare, Briefcase, Megaphone, Mic } from "lucide-react";
+import { Home, FileText, Calendar, CheckSquare, MessageSquare, Briefcase, Megaphone, Mic, StickyNote } from "lucide-react";
 import { SidebarUserProfile } from "@/components/dashboard/sidebar-user-profile";
 
 export default async function DashboardLayout({
@@ -31,13 +31,12 @@ export default async function DashboardLayout({
     redirect("/setup");
   }
 
-
-
   const navItems = [
     { href: "/dashboard", icon: Home, label: "Dashboard" },
     { href: "/templates", icon: FileText, label: "Templates" },
     { href: "/meetings", icon: Calendar, label: "Meetings" },
     { href: "/discussions", icon: MessageSquare, label: "Discussions" },
+    { href: "/notes", icon: StickyNote, label: "Notes" },
     { href: "/business", icon: Briefcase, label: "Business" },
     { href: "/announcements", icon: Megaphone, label: "Announcements" },
     { href: "/speakers", icon: Mic, label: "Speakers" },

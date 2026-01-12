@@ -53,7 +53,7 @@ export function TemplatesList({ templates, selectedId, onSelect }: TemplatesList
                             className="pl-8 bg-white"
                         />
                     </div>
-                    <Select value={typeFilter} onValueChange={(v: any) => setTypeFilter(v)}>
+                    <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v as "all" | "beespo" | "custom")}>
                         <SelectTrigger className="w-full bg-white">
                             <SelectValue placeholder="Filter by type" />
                         </SelectTrigger>

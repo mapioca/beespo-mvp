@@ -15,6 +15,7 @@ import { useToast } from "@/lib/hooks/use-toast";
 import { Database } from "@/types/database";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
+import { LinkedNotesList } from "@/components/notes/linked-notes-list";
 
 type TaskWithDetails = Database['public']['Tables']['tasks']['Row'] & {
     assignee?: { full_name: string } | null;
@@ -256,6 +257,9 @@ export function TaskDetailsSheet({ open, onOpenChange, task }: TaskDetailsSheetP
                             </Popover>
                         </div>
                     </div>
+
+                    {/* Linked Notes */}
+                    <LinkedNotesList entityId={task.id} entityType="task" className="mb-6 border-none shadow-none p-0" />
 
                     {/* Timeline */}
                     <div>

@@ -4,6 +4,7 @@ import { formatMeetingDateTime } from "@/lib/meeting-helpers";
 import { MeetingStatusBadge } from "@/components/meetings/meeting-status-badge";
 import { AgendaItemList } from "@/components/meetings/agenda-item-list";
 import { MeetingDashboardActions } from "@/components/meetings/meeting-dashboard-actions";
+import { LinkedNotesList } from "@/components/notes/linked-notes-list";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { ArrowLeft, Clock, CalendarDays, User } from "lucide-react";
@@ -106,6 +107,8 @@ export default async function MeetingDetailPage({ params }: MeetingDetailPagePro
                             <MeetingDashboardActions meeting={meeting} isLeader={isLeader} />
                         </CardContent>
                     </Card>
+
+                    <LinkedNotesList entityId={id} entityType="meeting" />
 
                     <Card>
                         <CardHeader>
