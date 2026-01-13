@@ -85,7 +85,7 @@ export default function EditTemplatePage() {
       .eq("id", user?.id)
       .single();
 
-    if (template.is_shared || profile?.role !== "leader") {
+    if (template.is_shared || !['admin', 'leader'].includes(profile?.role)) {
       toast({
         title: "Error",
         description: "You don't have permission to edit this template.",

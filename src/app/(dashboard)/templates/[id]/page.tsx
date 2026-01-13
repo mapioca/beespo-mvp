@@ -61,7 +61,7 @@ export default async function TemplateDetailPage({
     .eq("template_id", id)
     .order("order_index");
 
-  const canEdit = profile.role === "leader" && !template.is_shared;
+  const canEdit = ['admin', 'leader'].includes(profile.role) && !template.is_shared;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const totalDuration = items?.reduce((sum: number, item: any) => sum + (item.duration_minutes || 0), 0) || 0;
 
