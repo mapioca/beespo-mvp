@@ -19,6 +19,7 @@ import { createClient } from "@/lib/supabase/client";
 import { InviteMemberDialog } from "@/components/team/invite-member-dialog";
 import { TeamMembersList } from "@/components/team/team-members-list";
 import { PendingInvitations } from "@/components/team/pending-invitations";
+import { ChangePasswordForm } from "@/components/auth/change-password-form";
 import { Building2, Users, Save, Loader2, User } from "lucide-react";
 
 interface Workspace {
@@ -223,6 +224,7 @@ export function SettingsClient({
                             </div>
                         </CardContent>
                     </Card>
+                    <ChangePasswordForm email={currentUserDetails.email} />
                 </TabsContent>
 
                 <TabsContent value="general" className="space-y-6">
