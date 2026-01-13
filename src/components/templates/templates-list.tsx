@@ -1,13 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { Search, FileText } from "lucide-react";
+import { Search, FileText, Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Template } from "./templates-layout";
+import Link from "next/link";
 
 interface TemplatesListProps {
     templates: Template[];
@@ -36,11 +38,19 @@ export function TemplatesList({ templates, selectedId, onSelect }: TemplatesList
     return (
         <div className="flex flex-col h-full">
             <div className="p-4 border-b space-y-4 bg-white/50 backdrop-blur-sm sticky top-0 z-10">
-                <div>
-                    <h2 className="text-xl font-bold tracking-tight">Templates</h2>
-                    <p className="text-xs text-muted-foreground mt-1">
-                        {templates.length} templates available
-                    </p>
+                <div className="flex items-start justify-between gap-3">
+                    <div>
+                        <h2 className="text-xl font-bold tracking-tight">Templates</h2>
+                        <p className="text-xs text-muted-foreground mt-1">
+                            {templates.length} templates available
+                        </p>
+                    </div>
+                    <Button asChild size="sm" className="shrink-0">
+                        <Link href="/templates/new">
+                            <Plus className="h-4 w-4 mr-1" />
+                            Create
+                        </Link>
+                    </Button>
                 </div>
 
                 <div className="space-y-2">

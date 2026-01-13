@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,51 +22,109 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/lib/hooks/use-toast";
 import { createClient } from "@/lib/supabase/client";
-import { ArrowLeft, Plus, Trash2, GripVertical } from "lucide-react";
+import { ArrowLeft, Plus } from "lucide-react";
 import Link from "next/link";
+import { AddItemModal } from "@/components/templates/add-item-modal";
+import { SortableTemplateItems } from "@/components/templates/sortable-template-items";
+import { getAddedSpecializedTypes, type SpecializedItemType } from "@/types/agenda";
 
 interface TemplateItem {
-  id: string;
+  id?: string;
+  tempId?: string;
   title: string;
   description: string;
   duration_minutes: number;
   item_type: 'procedural' | 'discussion' | 'business' | 'announcement' | 'speaker';
+  procedural_item_type_id?: string | null;
+  hymn_number?: number | null;
+  hymn_title?: string | null;
+  order_index?: number;
 }
 
 export default function NewTemplatePage() {
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
 
   // Template fields
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [callingType, setCallingType] = useState("");
+  const [workspaceId, setWorkspaceId] = useState<string>("");
 
   // Template items
-  const [items, setItems] = useState<TemplateItem[]>([
-    { id: crypto.randomUUID(), title: "", description: "", duration_minutes: 5, item_type: 'procedural' },
-  ]);
+  const [items, setItems] = useState<TemplateItem[]>([]);
 
-  const addItem = () => {
-    setItems([
-      ...items,
-      { id: crypto.randomUUID(), title: "", description: "", duration_minutes: 5, item_type: 'procedural' },
-    ]);
-  };
+  // Procedural items catalog and hymns
+  const [proceduralItems, setProceduralItems] = useState<any[]>([]);
+  const [hymns, setHymns] = useState<any[]>([]);
 
-  const removeItem = (id: string) => {
-    if (items.length > 1) {
-      setItems(items.filter((item) => item.id !== id));
+  useEffect(() => {
+    loadUserData();
+    loadCatalogData();
+  }, []);
+
+  const loadUserData = async () => {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('workspace_id')
+        .eq('id', user.id)
+        .single();
+
+      if (profile) {
+        setWorkspaceId(profile.workspace_id);
+      }
     }
   };
 
-  const updateItem = (id: string, field: keyof TemplateItem, value: string | number) => {
-    setItems(
-      items.map((item) =>
-        item.id === id ? { ...item, [field]: value } : item
-      )
-    );
+  const loadCatalogData = async () => {
+    const supabase = createClient();
+
+    // Load procedural items (non-hymns, global + workspace custom)
+    const { data: proceduralData } = await supabase
+      .from('procedural_item_types')
+      .select('*')
+      .eq('is_hymn', false)
+      .order('order_hint');
+
+    if (proceduralData) {
+      setProceduralItems(proceduralData);
+    }
+
+    // Load hymns
+    const { data: hymnsData } = await supabase
+      .from('procedural_item_types')
+      .select('*')
+      .eq('is_hymn', true)
+      .order('hymn_number');
+
+    if (hymnsData) {
+      setHymns(hymnsData);
+    }
+  };
+
+  const handleAddItem = (newItem: any) => {
+    const tempId = `temp-${Date.now()}-${Math.random()}`;
+    setItems([...items, { ...newItem, tempId, order_index: items.length }]);
+  };
+
+  const handleReorder = (reorderedItems: TemplateItem[]) => {
+    setItems(reorderedItems);
+  };
+
+  const handleUpdateItem = (id: string, updates: Partial<TemplateItem>) => {
+    setItems(items.map(item =>
+      (item.id === id || item.tempId === id) ? { ...item, ...updates } : item
+    ));
+  };
+
+  const handleDeleteItem = (id: string) => {
+    setItems(items.filter(item => item.id !== id && item.tempId !== id));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -89,9 +147,8 @@ export default function NewTemplatePage() {
     }
 
     // Get user profile
-    const { data: profile } = await (supabase
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .from("profiles") as any)
+    const { data: profile } = await supabase
+      .from("profiles")
       .select("workspace_id, role")
       .eq("id", user.id)
       .single();
@@ -107,9 +164,8 @@ export default function NewTemplatePage() {
     }
 
     // Create template
-    const { data: template, error: templateError } = await (supabase
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .from("templates") as any)
+    const { data: template, error: templateError } = await supabase
+      .from("templates")
       .insert({
         name,
         description,
@@ -132,30 +188,50 @@ export default function NewTemplatePage() {
     }
 
     // Create template items
+    console.log('Items state before filtering:', items);
+
     const templateItems = items
       .filter((item) => item.title.trim())
       .map((item, index) => ({
         template_id: template.id,
         title: item.title,
-        description: item.description,
+        description: item.description || null,
         duration_minutes: item.duration_minutes,
         item_type: item.item_type,
+        procedural_item_type_id: item.procedural_item_type_id || null,
+        hymn_number: item.hymn_number || null,
+        hymn_title: item.hymn_title || null,
         order_index: index,
       }));
 
+    console.log('Template items to insert:', templateItems);
+    console.log('Template items count:', templateItems.length);
+
     if (templateItems.length > 0) {
-      const { error: itemsError } = await (supabase
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .from("template_items") as any)
-        .insert(templateItems);
+      const { data: insertedItems, error: itemsError } = await supabase
+        .from("template_items")
+        .insert(templateItems)
+        .select();
+
+      console.log('Insert result:', { insertedItems, itemsError });
 
       if (itemsError) {
+        console.error('Error inserting template items:', itemsError);
         toast({
           title: "Warning",
-          description: "Template created but some items failed to save.",
+          description: `Template created but items failed to save: ${itemsError.message}`,
           variant: "destructive",
         });
+      } else {
+        console.log('Successfully inserted items:', insertedItems);
       }
+    } else {
+      console.warn('No template items to insert!');
+      toast({
+        title: "Warning",
+        description: "Template created but no items were added.",
+        variant: "destructive",
+      });
     }
 
     toast({
@@ -167,6 +243,8 @@ export default function NewTemplatePage() {
     router.push("/templates");
     router.refresh();
   };
+
+  const addedSpecializedTypes = getAddedSpecializedTypes(items as any);
 
   return (
     <div className="container mx-auto p-6 max-w-4xl">
@@ -242,110 +320,34 @@ export default function NewTemplatePage() {
               <div>
                 <CardTitle>Agenda Items</CardTitle>
                 <CardDescription>
-                  Define the default agenda items for this template
+                  Build your template agenda using procedural items and specialized components
                 </CardDescription>
               </div>
-              <Button type="button" onClick={addItem} variant="outline" size="sm">
+              <Button
+                type="button"
+                onClick={() => setShowAddModal(true)}
+                variant="outline"
+                size="sm"
+              >
                 <Plus className="mr-2 h-4 w-4" />
                 Add Item
               </Button>
             </div>
           </CardHeader>
-          <CardContent className="space-y-4">
-            {items.map((item) => (
-              <div
-                key={item.id}
-                className="flex gap-4 p-4 border rounded-lg bg-card"
-              >
-                <div className="flex items-center">
-                  <GripVertical className="h-5 w-5 text-muted-foreground" />
-                </div>
-                <div className="flex-1 space-y-3">
-                  <div className="flex gap-3">
-                    <div className="flex-1">
-                      <Label htmlFor={`item-title-${item.id}`} className="text-xs">
-                        Title *
-                      </Label>
-                      <Input
-                        id={`item-title-${item.id}`}
-                        value={item.title}
-                        onChange={(e) =>
-                          updateItem(item.id, "title", e.target.value)
-                        }
-                        placeholder="Agenda item title"
-                        disabled={isLoading}
-                      />
-                    </div>
-                    <div className="w-40">
-                      <Label htmlFor={`item-type-${item.id}`} className="text-xs">
-                        Type
-                      </Label>
-                      <Select
-                        value={item.item_type}
-                        onValueChange={(value) => updateItem(item.id, "item_type", value)}
-                        disabled={isLoading}
-                      >
-                        <SelectTrigger id={`item-type-${item.id}`}>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="procedural">Procedural</SelectItem>
-                          <SelectItem value="discussion">Discussion</SelectItem>
-                          <SelectItem value="business">Business</SelectItem>
-                          <SelectItem value="announcement">Announcement</SelectItem>
-                          <SelectItem value="speaker">Speaker</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="w-32">
-                      <Label htmlFor={`item-duration-${item.id}`} className="text-xs">
-                        Duration (min)
-                      </Label>
-                      <Input
-                        id={`item-duration-${item.id}`}
-                        type="number"
-                        min="1"
-                        value={item.duration_minutes}
-                        onChange={(e) =>
-                          updateItem(
-                            item.id,
-                            "duration_minutes",
-                            parseInt(e.target.value) || 5
-                          )
-                        }
-                        disabled={isLoading}
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <Label htmlFor={`item-desc-${item.id}`} className="text-xs">
-                      Description
-                    </Label>
-                    <Textarea
-                      id={`item-desc-${item.id}`}
-                      value={item.description}
-                      onChange={(e) =>
-                        updateItem(item.id, "description", e.target.value)
-                      }
-                      placeholder="Optional description"
-                      rows={2}
-                      disabled={isLoading}
-                    />
-                  </div>
-                </div>
-                <div className="flex items-start">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => removeItem(item.id)}
-                    disabled={items.length === 1 || isLoading}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
+          <CardContent>
+            {items.length > 0 ? (
+              <SortableTemplateItems
+                items={items}
+                onReorder={handleReorder}
+                onUpdateItem={handleUpdateItem}
+                onDeleteItem={handleDeleteItem}
+              />
+            ) : (
+              <div className="text-center py-12 text-muted-foreground">
+                <p>No items added yet.</p>
+                <p className="text-sm mt-1">Click "Add Item" to start building your template.</p>
               </div>
-            ))}
+            )}
           </CardContent>
         </Card>
 
@@ -358,11 +360,22 @@ export default function NewTemplatePage() {
           >
             Cancel
           </Button>
-          <Button type="submit" disabled={isLoading}>
+          <Button type="submit" disabled={isLoading || items.length === 0}>
             {isLoading ? "Creating..." : "Create Template"}
           </Button>
         </div>
       </form>
+
+      <AddItemModal
+        open={showAddModal}
+        onOpenChange={setShowAddModal}
+        onAddItem={handleAddItem}
+        addedSpecializedTypes={addedSpecializedTypes}
+        proceduralItems={proceduralItems}
+        hymns={hymns}
+        workspaceId={workspaceId}
+        onCatalogUpdate={loadCatalogData}
+      />
     </div>
   );
 }
