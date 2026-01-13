@@ -6,6 +6,8 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { TermsOfServiceDialog } from "@/components/auth/terms-of-service-dialog";
 import {
   Card,
   CardContent,
@@ -26,6 +28,7 @@ export default function SignupPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSignup = async (e: React.FormEvent) => {
@@ -44,6 +47,15 @@ export default function SignupPage() {
       toast({
         title: "Error",
         description: "Password must be at least 6 characters long.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!agreedToTerms) {
+      toast({
+        title: "Error",
+        description: "You must agree to the Terms and Conditions to create an account.",
         variant: "destructive",
       });
       return;
@@ -196,6 +208,20 @@ export default function SignupPage() {
               required
               disabled={isLoading}
             />
+          </div>
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="terms"
+              checked={agreedToTerms}
+              onCheckedChange={(checked) => setAgreedToTerms(checked as boolean)}
+              disabled={isLoading}
+            />
+            <label
+              htmlFor="terms"
+              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+            >
+              I agree to the <TermsOfServiceDialog />
+            </label>
           </div>
         </CardContent>
         <CardFooter className="flex flex-col space-y-4">
