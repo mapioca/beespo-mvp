@@ -117,7 +117,7 @@ export function NoteEditor({ noteId, onNoteUpdated, onNoteDeleted }: NoteEditorP
         try {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const { error } = await (supabase
-                .from("notes") as any)
+                .from("notes") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
                 .update({
                     title,
                     content,

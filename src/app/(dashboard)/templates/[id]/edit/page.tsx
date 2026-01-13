@@ -22,17 +22,11 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/lib/hooks/use-toast";
 import { createClient } from "@/lib/supabase/client";
-import { ArrowLeft, Plus, Trash2, GripVertical } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { TemplateBuilder } from "@/components/templates/template-builder";
+import { TemplateItem } from "@/components/templates/types";
 
-interface TemplateItem {
-  id: string;
-  title: string;
-  description: string;
-  duration_minutes: number;
-  item_type: 'procedural' | 'discussion' | 'business' | 'announcement' | 'speaker';
-  isNew?: boolean;
-}
 
 export default function EditTemplatePage() {
   const router = useRouter();
@@ -60,8 +54,7 @@ export default function EditTemplatePage() {
 
     // Get template
     const { data: template, error: templateError } = await (supabase
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .from("templates") as any)
+      .from("templates") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
       .select("*")
       .eq("id", templateId)
       .single();
@@ -78,14 +71,15 @@ export default function EditTemplatePage() {
 
     // Check if user can edit
     const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return; // Should handle auth redirect ideally via middleware
+
     const { data: profile } = await (supabase
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .from("profiles") as any)
+      .from("profiles") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
       .select("role")
-      .eq("id", user?.id)
+      .eq("id", user.id)
       .single();
 
-    if (template.is_shared || !['admin', 'leader'].includes(profile?.role)) {
+    if (template.is_shared || !['admin', 'leader'].includes(profile?.role || '')) {
       toast({
         title: "Error",
         description: "You don't have permission to edit this template.",
@@ -99,11 +93,10 @@ export default function EditTemplatePage() {
     setDescription(template.description || "");
     setCallingType(template.calling_type || "");
 
-    // Get template items
-    const { data: templateItems } = await (supabase
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .from("template_items") as any)
-      .select("*")
+    // Get template items with join to identify hymns
+    const { data: templateItems } = await supabase
+      .from("template_items")
+      .select("*, procedural_item_types(is_hymn)")
       .eq("template_id", templateId)
       .order("order_index");
 
@@ -116,41 +109,14 @@ export default function EditTemplatePage() {
           description: item.description || "",
           duration_minutes: item.duration_minutes || 5,
           item_type: item.item_type || 'procedural',
+          procedural_item_type_id: item.procedural_item_type_id,
+          hymn_id: item.hymn_id,
+          is_hymn_type: item.procedural_item_types?.is_hymn || false,
         }))
       );
     }
 
     setIsLoadingData(false);
-  };
-
-  const addItem = () => {
-    setItems([
-      ...items,
-      {
-        id: crypto.randomUUID(),
-        title: "",
-        description: "",
-        duration_minutes: 5,
-        item_type: 'procedural',
-        isNew: true,
-      },
-    ]);
-  };
-
-  const removeItem = (id: string) => {
-    if (items.length > 1) {
-      setItems(items.filter((item) => item.id !== id));
-    }
-  };
-
-  const updateItem = (
-    id: string,
-    field: keyof TemplateItem,
-    value: string | number
-  ) => {
-    setItems(
-      items.map((item) => (item.id === id ? { ...item, [field]: value } : item))
-    );
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -162,8 +128,7 @@ export default function EditTemplatePage() {
 
     // Update template
     const { error: templateError } = await (supabase
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .from("templates") as any)
+      .from("templates") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
       .update({
         name,
         description,
@@ -181,12 +146,11 @@ export default function EditTemplatePage() {
       return;
     }
 
-    // Delete all existing items
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (supabase.from("template_items") as any).delete().eq("template_id", templateId);
+    // Delete all existing items (simplest strategy for reordering/updates)
+    await (supabase.from("template_items") as any).delete().eq("template_id", templateId); // eslint-disable-line @typescript-eslint/no-explicit-any
 
-    // Insert all items (both existing and new)
-    const templateItems = items
+    // Insert all items
+    const templateItemsToInsert = items
       .filter((item) => item.title.trim())
       .map((item, index) => ({
         template_id: templateId,
@@ -194,19 +158,23 @@ export default function EditTemplatePage() {
         description: item.description,
         duration_minutes: item.duration_minutes,
         item_type: item.item_type,
+        procedural_item_type_id: item.procedural_item_type_id || null,
+        hymn_id: item.hymn_id || null,
         order_index: index,
       }));
 
-    if (templateItems.length > 0) {
+    if (templateItemsToInsert.length > 0) {
+      console.log("Inserting items:", JSON.stringify(templateItemsToInsert, null, 2));
       const { error: itemsError } = await (supabase
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .from("template_items") as any)
-        .insert(templateItems);
+        .from("template_items") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+        .insert(templateItemsToInsert);
 
       if (itemsError) {
+        console.error("Error inserting items:", JSON.stringify(itemsError));
+        console.error("Error details:", itemsError.message, itemsError.details, itemsError.hint, itemsError.code);
         toast({
           title: "Warning",
-          description: "Template updated but some items failed to save.",
+          description: "Template updated but some items failed to save: " + (itemsError.message || itemsError.code || "Unknown error"),
           variant: "destructive",
         });
       }
@@ -218,6 +186,7 @@ export default function EditTemplatePage() {
     });
 
     setIsLoading(false);
+    // Use push then refresh to ensure data is fresh
     router.push(`/templates/${templateId}`);
     router.refresh();
   };
@@ -306,132 +275,12 @@ export default function EditTemplatePage() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>Agenda Items</CardTitle>
-                <CardDescription>
-                  Update the default agenda items for this template
-                </CardDescription>
-              </div>
-              <Button
-                type="button"
-                onClick={addItem}
-                variant="outline"
-                size="sm"
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                Add Item
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {items.map((item) => (
-              <div
-                key={item.id}
-                className="flex gap-4 p-4 border rounded-lg bg-card"
-              >
-                <div className="flex items-center">
-                  <GripVertical className="h-5 w-5 text-muted-foreground" />
-                </div>
-                <div className="flex-1 space-y-3">
-                  <div className="flex gap-3">
-                    <div className="flex-1">
-                      <Label
-                        htmlFor={`item-title-${item.id}`}
-                        className="text-xs"
-                      >
-                        Title *
-                      </Label>
-                      <Input
-                        id={`item-title-${item.id}`}
-                        value={item.title}
-                        onChange={(e) =>
-                          updateItem(item.id, "title", e.target.value)
-                        }
-                        placeholder="Agenda item title"
-                        disabled={isLoading}
-                      />
-                    </div>
-                    <div className="w-40">
-                      <Label htmlFor={`item-type-${item.id}`} className="text-xs">
-                        Type
-                      </Label>
-                      <Select
-                        value={item.item_type}
-                        onValueChange={(value) => updateItem(item.id, "item_type", value)}
-                        disabled={isLoading}
-                      >
-                        <SelectTrigger id={`item-type-${item.id}`}>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="procedural">Procedural</SelectItem>
-                          <SelectItem value="discussion">Discussion</SelectItem>
-                          <SelectItem value="business">Business</SelectItem>
-                          <SelectItem value="announcement">Announcement</SelectItem>
-                          <SelectItem value="speaker">Speaker</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="w-32">
-                      <Label
-                        htmlFor={`item-duration-${item.id}`}
-                        className="text-xs"
-                      >
-                        Duration (min)
-                      </Label>
-                      <Input
-                        id={`item-duration-${item.id}`}
-                        type="number"
-                        min="1"
-                        value={item.duration_minutes}
-                        onChange={(e) =>
-                          updateItem(
-                            item.id,
-                            "duration_minutes",
-                            parseInt(e.target.value) || 5
-                          )
-                        }
-                        disabled={isLoading}
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <Label
-                      htmlFor={`item-desc-${item.id}`}
-                      className="text-xs"
-                    >
-                      Description
-                    </Label>
-                    <Textarea
-                      id={`item-desc-${item.id}`}
-                      value={item.description}
-                      onChange={(e) =>
-                        updateItem(item.id, "description", e.target.value)
-                      }
-                      placeholder="Optional description"
-                      rows={2}
-                      disabled={isLoading}
-                    />
-                  </div>
-                </div>
-                <div className="flex items-start">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => removeItem(item.id)}
-                    disabled={items.length === 1 || isLoading}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
+        {/* New Modular Template Builder */}
+        <TemplateBuilder
+          items={items}
+          onChange={setItems}
+          isLoading={isLoading}
+        />
 
         <div className="flex justify-end gap-3">
           <Button

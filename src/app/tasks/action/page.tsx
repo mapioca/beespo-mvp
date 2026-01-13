@@ -35,7 +35,8 @@ export default async function TaskActionPage({ searchParams }: ActionPageProps) 
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <p className="text-muted-foreground">
-                        You have successfully marked the task <strong>&quot;{result.task?.title}&quot;</strong> as complete.
+                        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                        You have successfully marked the task <strong>&quot;{(result as any).task?.title}&quot;</strong> as complete.
                     </p>
                     <p className="text-sm text-muted-foreground bg-muted p-3 rounded">
                         Thank you for your update. The leadership team has been notified.

@@ -101,9 +101,9 @@ export function SettingsClient({
         setIsSaving(true);
         const supabase = createClient();
 
-        // @ts-expect-error - Supabase type inference issue
-        const { error } = await supabase
-            .from("workspaces")
+
+        const { error } = await (supabase
+            .from("workspaces") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
             .update({ name: workspaceName })
             .eq("id", workspace.id);
 
@@ -130,8 +130,8 @@ export function SettingsClient({
         setIsSavingProfile(true);
         const supabase = createClient();
 
-        const { error } = await supabase
-            .from("profiles")
+        const { error } = await (supabase
+            .from("profiles") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
             .update({ full_name: userFullName })
             .eq("id", currentUserId);
 

@@ -52,7 +52,7 @@ function NotesPageContent() {
                     noteId={selectedNoteId}
                     onNoteUpdated={handleNoteUpdated}
                     onNoteDeleted={handleNoteDeleted}
-                    currentUserId={userId}
+
                 />
             </div>
         </div>

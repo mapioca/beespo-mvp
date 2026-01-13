@@ -55,8 +55,10 @@ export function DiscussionsClient({ discussions }: DiscussionsClientProps) {
         if (sortConfig) {
             result.sort((a, b) => {
                 const { key, direction } = sortConfig;
-                let aValue = a[key as keyof Discussion];
-                let bValue = b[key as keyof Discussion];
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                let aValue: any = a[key as keyof Discussion];
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                let bValue: any = b[key as keyof Discussion];
 
                 // Handle nulls
                 if (aValue === null || aValue === undefined) return 1;

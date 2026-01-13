@@ -57,11 +57,12 @@ export default function EditMeetingPage({ params }: EditMeetingProps) {
                 return;
             }
 
-            setMeeting(meetingData);
-            setTitle(meetingData.title);
+            const mData = meetingData as Meeting;
+            setMeeting(mData);
+            setTitle(mData.title);
             // Format for datetime-local input: YYYY-MM-DDThh:mm
-            setScheduledDate(new Date(meetingData.scheduled_date).toISOString().slice(0, 16));
-            setItems(itemsData || []);
+            setScheduledDate(new Date(mData.scheduled_date).toISOString().slice(0, 16));
+            setItems((itemsData as AgendaItem[]) || []);
             setLoading(false);
         };
 
@@ -74,8 +75,8 @@ export default function EditMeetingPage({ params }: EditMeetingProps) {
         const supabase = createClient();
 
         // 1. Update Meeting Metadata
-        const { error: mError } = await supabase
-            .from('meetings')
+        const { error: mError } = await (supabase
+            .from('meetings') as any) // eslint-disable-line @typescript-eslint/no-explicit-any
             .update({
                 title,
                 scheduled_date: new Date(scheduledDate).toISOString()
@@ -95,8 +96,8 @@ export default function EditMeetingPage({ params }: EditMeetingProps) {
         // 2. Process Agenda Items
         // A. Delete removed items
         if (deletedItemIds.length > 0) {
-            const { error: dError } = await supabase
-                .from('agenda_items')
+            const { error: dError } = await (supabase
+                .from('agenda_items') as any) // eslint-disable-line @typescript-eslint/no-explicit-any
                 .delete()
                 .in('id', deletedItemIds);
 
@@ -137,8 +138,8 @@ export default function EditMeetingPage({ params }: EditMeetingProps) {
             }
         });
 
-        const { error: uError } = await supabase
-            .from('agenda_items')
+        const { error: uError } = await (supabase
+            .from('agenda_items') as any) // eslint-disable-line @typescript-eslint/no-explicit-any
             .upsert(upsertData);
 
         if (uError) {

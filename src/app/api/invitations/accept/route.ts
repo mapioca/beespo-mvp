@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
 
     // Get the invitation by token (RLS allows anyone to view by token)
     const { data: invitation, error: fetchError } = await (supabase
-        .from('workspace_invitations'))
+        .from('workspace_invitations') as any) // eslint-disable-line @typescript-eslint/no-explicit-any
         .select('*, workspaces(name)')
         .eq('token', token)
         .single();
@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
     if (new Date(invitation.expires_at) < new Date()) {
         // Mark as expired
         await (supabase
-            .from('workspace_invitations'))
+            .from('workspace_invitations') as any) // eslint-disable-line @typescript-eslint/no-explicit-any
             .update({ status: 'expired' })
             .eq('id', invitation.id);
         return NextResponse.json({ error: 'Invitation has expired' }, { status: 400 });
@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
 
     // Check if user already has a profile
     const { data: existingProfile } = await (supabase
-        .from('profiles'))
+        .from('profiles') as any) // eslint-disable-line @typescript-eslint/no-explicit-any
         .select('id, workspace_id')
         .eq('id', user.id)
         .single();
@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
     if (existingProfile) {
         // Update existing profile
         const { error: updateError } = await (supabase
-            .from('profiles'))
+            .from('profiles') as any) // eslint-disable-line @typescript-eslint/no-explicit-any
             .update({
                 workspace_id: invitation.workspace_id,
                 role: invitation.role,
@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
     } else {
         // Create new profile
         const { error: insertError } = await (supabase
-            .from('profiles'))
+            .from('profiles') as any) // eslint-disable-line @typescript-eslint/no-explicit-any
             .insert({
                 id: user.id,
                 email: user.email!,
@@ -95,7 +95,7 @@ export async function POST(request: NextRequest) {
 
     // Mark invitation as accepted
     await (supabase
-        .from('workspace_invitations'))
+        .from('workspace_invitations') as any) // eslint-disable-line @typescript-eslint/no-explicit-any
         .update({ status: 'accepted' })
         .eq('id', invitation.id);
 

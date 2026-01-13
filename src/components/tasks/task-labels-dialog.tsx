@@ -123,8 +123,8 @@ export function TaskLabelsDialog({
         }
 
         const result = await createLabel(newLabelName.trim(), selectedColor);
-        if (result.success && result.label) {
-            setWorkspaceLabels([...workspaceLabels, result.label]);
+        if (result.success && (result as any).label) { // eslint-disable-line @typescript-eslint/no-explicit-any
+            setWorkspaceLabels([...workspaceLabels, (result as any).label]); // eslint-disable-line @typescript-eslint/no-explicit-any
             setNewLabelName("");
             setSelectedColor(PRESET_COLORS[0]);
             setIsCreating(false);

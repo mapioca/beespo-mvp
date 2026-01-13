@@ -24,6 +24,7 @@ import { useToast } from "@/lib/hooks/use-toast";
 import { createClient } from "@/lib/supabase/client";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { TemplateSelector } from "@/components/templates/template-selector";
 
 export default function NewDiscussionPage() {
   const router = useRouter();
@@ -42,7 +43,9 @@ export default function NewDiscussionPage() {
   const [priority, setPriority] = useState("medium");
   const [status, setStatus] = useState("new");
   const [dueDate, setDueDate] = useState("");
+
   const [deferredReason, setDeferredReason] = useState("");
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
 
   // Fetch parent discussion info if follow_up parameter exists
   useEffect(() => {
@@ -138,10 +141,28 @@ export default function NewDiscussionPage() {
       return;
     }
 
-    toast({
-      title: "Success",
-      description: "Discussion created successfully!",
-    });
+
+
+    // Link template if selected
+    if (selectedTemplateId) {
+      const { error: templateError } = await (supabase
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .from("discussion_templates") as any)
+        .insert({
+          discussion_id: discussion.id,
+          template_id: selectedTemplateId,
+        });
+
+      if (templateError) {
+        console.error("Error linking template:", templateError);
+        // Don't block success, just log/notify
+        toast({
+          title: "Warning",
+          description: "Discussion created but failed to link to template.",
+          variant: "destructive",
+        });
+      }
+    }
 
     setIsLoading(false);
 
@@ -304,6 +325,14 @@ export default function NewDiscussionPage() {
                 />
               </div>
             )}
+
+            <div className="pt-4 border-t">
+              <TemplateSelector
+                value={selectedTemplateId}
+                onChange={setSelectedTemplateId}
+                disabled={isLoading}
+              />
+            </div>
           </CardContent>
         </Card>
 

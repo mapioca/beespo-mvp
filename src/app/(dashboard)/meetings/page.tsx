@@ -14,8 +14,8 @@ export default async function MeetingsPage() {
 
     // Get current user profile to check role
     const { data: { user } } = await supabase.auth.getUser();
-    const { data: profile } = await supabase
-        .from("profiles")
+    const { data: profile } = await (supabase
+        .from("profiles") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
         .select("role")
         .eq("id", user?.id || "")
         .single();

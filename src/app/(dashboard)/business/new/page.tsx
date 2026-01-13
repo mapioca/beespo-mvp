@@ -24,6 +24,7 @@ import { useToast } from "@/lib/hooks/use-toast";
 import { createClient } from "@/lib/supabase/client";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { TemplateSelector } from "@/components/templates/template-selector";
 
 export default function NewBusinessPage() {
   const router = useRouter();
@@ -37,6 +38,7 @@ export default function NewBusinessPage() {
   const [status, setStatus] = useState("pending");
   const [actionDate, setActionDate] = useState("");
   const [notes, setNotes] = useState("");
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -108,6 +110,26 @@ export default function NewBusinessPage() {
       title: "Success",
       description: "Business item created successfully!",
     });
+
+    // Link template if selected
+    if (selectedTemplateId) {
+      const { error: templateError } = await (supabase
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .from("business_templates") as any)
+        .insert({
+          business_item_id: businessItem.id,
+          template_id: selectedTemplateId,
+        });
+
+      if (templateError) {
+        console.error("Error linking template:", templateError);
+        toast({
+          title: "Warning",
+          description: "Business item created but failed to link to template.",
+          variant: "destructive",
+        });
+      }
+    }
 
     setIsLoading(false);
 
@@ -228,6 +250,14 @@ export default function NewBusinessPage() {
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Additional context or details"
                 rows={3}
+                disabled={isLoading}
+              />
+            </div>
+
+            <div className="pt-4 border-t">
+              <TemplateSelector
+                value={selectedTemplateId}
+                onChange={setSelectedTemplateId}
                 disabled={isLoading}
               />
             </div>

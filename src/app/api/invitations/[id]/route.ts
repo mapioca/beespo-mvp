@@ -15,9 +15,8 @@ export async function DELETE(request: NextRequest, { params }: Params) {
     }
 
     // Check if user is admin
-    // @ts-expect-error - Supabase type inference issue
-    const { data: profile } = await supabase
-        .from('profiles')
+    const { data: profile } = await (supabase
+        .from('profiles') as any) // eslint-disable-line @typescript-eslint/no-explicit-any
         .select('workspace_id, role')
         .eq('id', user.id)
         .single();
@@ -27,9 +26,8 @@ export async function DELETE(request: NextRequest, { params }: Params) {
     }
 
     // Revoke the invitation
-    // @ts-expect-error - Supabase type inference issue
-    const { error } = await supabase
-        .from('workspace_invitations')
+    const { error } = await (supabase
+        .from('workspace_invitations') as any) // eslint-disable-line @typescript-eslint/no-explicit-any
         .update({ status: 'revoked' })
         .eq('id', id)
         .eq('workspace_id', profile.workspace_id);
@@ -52,9 +50,8 @@ export async function POST(request: NextRequest, { params }: Params) {
     }
 
     // Get user's profile
-    // @ts-expect-error - Supabase type inference issue
-    const { data: profile } = await supabase
-        .from('profiles')
+    const { data: profile } = await (supabase
+        .from('profiles') as any) // eslint-disable-line @typescript-eslint/no-explicit-any
         .select('workspace_id, role, full_name')
         .eq('id', user.id)
         .single();
@@ -64,9 +61,8 @@ export async function POST(request: NextRequest, { params }: Params) {
     }
 
     // Get the invitation
-    // @ts-expect-error - Supabase type inference issue
-    const { data: invitation, error: fetchError } = await supabase
-        .from('workspace_invitations')
+    const { data: invitation, error: fetchError } = await (supabase
+        .from('workspace_invitations') as any) // eslint-disable-line @typescript-eslint/no-explicit-any
         .select('*')
         .eq('id', id)
         .eq('workspace_id', profile.workspace_id)
@@ -78,9 +74,8 @@ export async function POST(request: NextRequest, { params }: Params) {
     }
 
     // Get workspace details
-    // @ts-expect-error - Supabase type inference issue
-    const { data: workspace } = await supabase
-        .from('workspaces')
+    const { data: workspace } = await (supabase
+        .from('workspaces') as any) // eslint-disable-line @typescript-eslint/no-explicit-any
         .select('name')
         .eq('id', profile.workspace_id)
         .single();
@@ -98,9 +93,8 @@ export async function POST(request: NextRequest, { params }: Params) {
     });
 
     // Update expires_at to extend invitation
-    // @ts-expect-error - Supabase type inference issue
-    await supabase
-        .from('workspace_invitations')
+    await (supabase
+        .from('workspace_invitations') as any) // eslint-disable-line @typescript-eslint/no-explicit-any
         .update({
             expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
             updated_at: new Date().toISOString(),

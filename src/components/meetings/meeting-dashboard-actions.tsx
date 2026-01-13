@@ -26,8 +26,8 @@ export function MeetingDashboardActions({ meeting, isLeader }: MeetingDashboardA
     const handleStatusChange = async (newStatus: Meeting['status']) => {
         setIsLoading(true);
         const supabase = createClient();
-        const { error } = await supabase
-            .from('meetings')
+        const { error } = await (supabase
+            .from('meetings') as any) // eslint-disable-line @typescript-eslint/no-explicit-any
             .update({ status: newStatus })
             .eq('id', meeting.id);
 

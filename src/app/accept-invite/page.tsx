@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,7 +13,7 @@ import {
 import { Loader2, CheckCircle, XCircle } from "lucide-react";
 import Link from "next/link";
 
-export default function AcceptInvitePage() {
+function AcceptInviteContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const token = searchParams.get("token");
@@ -134,3 +134,24 @@ export default function AcceptInvitePage() {
         </div>
     );
 }
+
+export default function AcceptInvitePage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-background to-muted">
+                <Card className="max-w-md w-full">
+                    <CardHeader className="text-center">
+                        <CardTitle className="text-2xl">Processing Invitation...</CardTitle>
+                        <CardDescription>Please wait while we process your invitation.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex flex-col items-center space-y-4">
+                        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                    </CardContent>
+                </Card>
+            </div>
+        }>
+            <AcceptInviteContent />
+        </Suspense>
+    );
+}
+

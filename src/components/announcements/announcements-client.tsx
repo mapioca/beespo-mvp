@@ -48,8 +48,10 @@ export function AnnouncementsClient({ announcements }: AnnouncementsClientProps)
         if (sortConfig) {
             result.sort((a, b) => {
                 const { key, direction } = sortConfig;
-                let aValue = a[key as keyof Announcement];
-                let bValue = b[key as keyof Announcement];
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                let aValue: any = a[key as keyof Announcement];
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                let bValue: any = b[key as keyof Announcement];
 
                 if (aValue === null || aValue === undefined) return 1;
                 if (bValue === null || bValue === undefined) return -1;

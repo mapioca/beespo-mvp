@@ -5,17 +5,15 @@ import { CreateTaskDialog } from "@/components/tasks/create-task-dialog";
 import { TasksTable } from "@/components/tasks/tasks-table";
 import { TaskFilters, TaskStatus, TaskPriority } from "@/components/tasks/task-filters";
 import { Separator } from "@/components/ui/separator";
+import { Database } from "@/types/database";
 
-interface Task {
-    id: string;
-    title: string;
-    description: string | null;
-    status: string;
-    priority: string;
-    assigned_to: string | null;
-    workspace_task_id: string | null;
-    assignee?: { full_name: string } | null;
-}
+type Task = Database['public']['Tables']['tasks']['Row'] & {
+    assignee?: { full_name: string; email?: string } | null;
+    comment_count?: number;
+    workspace_task_id?: string | null;
+    priority?: 'low' | 'medium' | 'high';
+    labels?: Array<{ id: string; name: string; color: string }>;
+};
 
 interface TasksClientProps {
     tasks: Task[];

@@ -27,6 +27,123 @@ export type InvitationStatus = 'pending' | 'accepted' | 'revoked' | 'expired';
 export type Database = {
   public: {
     Tables: {
+      hymns: {
+        Row: {
+          id: string;
+          book_id: string;
+          hymn_number: number;
+          title: string;
+          lyrics: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          book_id: string;
+          hymn_number: number;
+          title: string;
+          lyrics?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          book_id?: string;
+          hymn_number?: number;
+          title?: string;
+          lyrics?: string | null;
+          created_at?: string;
+        };
+      };
+      procedural_item_types: {
+        Row: {
+          id: string;
+          name: string;
+          description: string | null;
+          default_duration_minutes: number | null;
+          order_hint: number | null;
+          is_custom: boolean | null;
+          is_hymn: boolean | null;
+          created_at: string;
+          workspace_id: string | null;
+        };
+        Insert: {
+          id: string;
+          name: string;
+          description?: string | null;
+          default_duration_minutes?: number | null;
+          order_hint?: number | null;
+          is_custom?: boolean | null;
+          is_hymn?: boolean | null;
+          created_at?: string;
+          workspace_id?: string | null;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          description?: string | null;
+          default_duration_minutes?: number | null;
+          order_hint?: number | null;
+          is_custom?: boolean | null;
+          is_hymn?: boolean | null;
+          created_at?: string;
+          workspace_id?: string | null;
+        };
+      };
+      discussion_templates: {
+        Row: {
+          discussion_id: string;
+          template_id: string;
+        };
+        Insert: {
+          discussion_id: string;
+          template_id: string;
+        };
+        Update: {
+          discussion_id?: string;
+          template_id?: string;
+        };
+      };
+      business_templates: {
+        Row: {
+          business_item_id: string;
+          template_id: string;
+        };
+        Insert: {
+          business_item_id: string;
+          template_id: string;
+        };
+        Update: {
+          business_item_id?: string;
+          template_id?: string;
+        };
+      };
+      announcement_templates: {
+        Row: {
+          announcement_id: string;
+          template_id: string;
+        };
+        Insert: {
+          announcement_id: string;
+          template_id: string;
+        };
+        Update: {
+          announcement_id?: string;
+          template_id?: string;
+        };
+      };
+      speaker_templates: {
+        Row: {
+          speaker_id: string;
+          template_id: string;
+        };
+        Insert: {
+          speaker_id: string;
+          template_id: string;
+        };
+        Update: {
+          speaker_id?: string;
+          template_id?: string;
+        };
+      };
       workspaces: {
         Row: {
           id: string;
@@ -168,6 +285,8 @@ export type Database = {
           duration_minutes: number | null;
           item_type: AgendaItemType;
           created_at: string;
+          procedural_item_type_id: string | null;
+          hymn_id: string | null;
         };
         Insert: {
           id?: string;
@@ -178,6 +297,8 @@ export type Database = {
           duration_minutes?: number | null;
           item_type?: AgendaItemType;
           created_at?: string;
+          procedural_item_type_id?: string | null;
+          hymn_id?: string | null;
         };
         Update: {
           id?: string;
@@ -188,6 +309,8 @@ export type Database = {
           duration_minutes?: number | null;
           item_type?: AgendaItemType;
           created_at?: string;
+          procedural_item_type_id?: string | null;
+          hymn_id?: string | null;
         };
       };
       meetings: {

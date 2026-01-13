@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
 
     // Get current user's profile
     const { data: currentProfile } = await (supabase
-        .from('profiles'))
+        .from('profiles') as any) // eslint-disable-line @typescript-eslint/no-explicit-any
         .select('workspace_id, role')
         .eq('id', user.id)
         .single();
@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
 
     // Check that new owner is in the same workspace
     const { data: newOwnerProfile } = await (supabase
-        .from('profiles'))
+        .from('profiles') as any) // eslint-disable-line @typescript-eslint/no-explicit-any
         .select('workspace_id, role')
         .eq('id', newOwnerId)
         .single();
@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
 
     // Transfer ownership: make new owner admin, keep current user as leader
     const { error: updateNewOwner } = await (supabase
-        .from('profiles'))
+        .from('profiles') as any) // eslint-disable-line @typescript-eslint/no-explicit-any
         .update({ role: 'admin' })
         .eq('id', newOwnerId);
 

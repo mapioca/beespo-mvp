@@ -24,6 +24,7 @@ import { useToast } from "@/lib/hooks/use-toast";
 import { createClient } from "@/lib/supabase/client";
 import { ArrowLeft, AlertCircle } from "lucide-react";
 import Link from "next/link";
+import { TemplateSelector } from "@/components/templates/template-selector";
 
 export default function NewAnnouncementPage() {
   const router = useRouter();
@@ -36,6 +37,7 @@ export default function NewAnnouncementPage() {
   const [priority, setPriority] = useState("medium");
   const [status, setStatus] = useState("draft");
   const [deadline, setDeadline] = useState("");
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
 
   // Validation state
   const [showDeadlineWarning, setShowDeadlineWarning] = useState(false);
@@ -122,6 +124,26 @@ export default function NewAnnouncementPage() {
       title: "Success",
       description: "Announcement created successfully!",
     });
+
+    // Link template if selected
+    if (selectedTemplateId) {
+      const { error: templateError } = await (supabase
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .from("announcement_templates") as any)
+        .insert({
+          announcement_id: announcement.id,
+          template_id: selectedTemplateId,
+        });
+
+      if (templateError) {
+        console.error("Error linking template:", templateError);
+        toast({
+          title: "Warning",
+          description: "Announcement created but failed to link to template.",
+          variant: "destructive",
+        });
+      }
+    }
 
     setIsLoading(false);
 
@@ -250,6 +272,14 @@ export default function NewAnnouncementPage() {
                 </div>
               )}
             </div>
+
+            <div className="pt-4 border-t">
+              <TemplateSelector
+                value={selectedTemplateId}
+                onChange={setSelectedTemplateId}
+                disabled={isLoading}
+              />
+            </div>
           </CardContent>
         </Card>
 
@@ -267,6 +297,6 @@ export default function NewAnnouncementPage() {
           </Button>
         </div>
       </form>
-    </div>
+    </div >
   );
 }

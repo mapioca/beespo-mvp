@@ -28,7 +28,7 @@ interface NotesListProps {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-export function NotesList({ selectedId, onSelect, refreshKey}: NotesListProps) {
+export function NotesList({ selectedId, onSelect, refreshKey }: NotesListProps) {
     const [notes, setNotes] = useState<NoteSummary[]>([]);
     const [filter, setFilter] = useState("all");
     const [search, setSearch] = useState("");
@@ -67,21 +67,22 @@ export function NotesList({ selectedId, onSelect, refreshKey}: NotesListProps) {
     });
 
     const createNote = async (isPersonal: boolean) => {
-        const { data, error } = await supabase.from("notes").insert({
-            title: "Untitled Note",
-            is_personal: isPersonal,
-            content: { time: Date.now(), blocks: [], version: "2.29.0" },
-            workspace_id: (await supabase.auth.getUser()).data.user?.user_metadata?.workspace_id
-        }).select().single();
+        const { data, error } = await (supabase.from("notes") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+            .insert({
+                title: "Untitled Note",
+                is_personal: isPersonal,
+                content: { time: Date.now(), blocks: [], version: "2.29.0" },
+                workspace_id: (await supabase.auth.getUser()).data.user?.user_metadata?.workspace_id
+            }).select().single();
 
         if (!data && error) {
             // If insert failed due to missing workspace_id, we need to fetch it.
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) return;
-            const { data: profile } = await supabase.from('profiles').select('workspace_id').eq('id', user.id).single();
+            const { data: profile } = await (supabase.from('profiles') as any).select('workspace_id').eq('id', user.id).single(); // eslint-disable-line @typescript-eslint/no-explicit-any
             if (!profile) return;
 
-            const { data: newNote, error: createError } = await supabase.from("notes").insert({
+            const { data: newNote, error: createError } = await (supabase.from("notes") as any).insert({ // eslint-disable-line @typescript-eslint/no-explicit-any
                 title: "Untitled Note",
                 is_personal: isPersonal,
                 content: { time: Date.now(), blocks: [], version: "2.29.0" },
