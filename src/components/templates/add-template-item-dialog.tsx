@@ -1,3 +1,6 @@
+"use client";
+
+import { useState, useEffect } from "react";
 import {
     Dialog,
     DialogContent,
@@ -7,10 +10,24 @@ import {
     DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Plus, Music, MessageSquare, Briefcase, Megaphone, User, BookOpen } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import { useState, useEffect } from "react";
+import {
+    Plus,
+    Search,
+    Music,
+    MessageSquare,
+    Briefcase,
+    Megaphone,
+    User,
+    BookOpen,
+    Users,
+    GraduationCap,
+    ChevronRight,
+    ClipboardList,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 
 interface ProceduralItemType {
@@ -20,6 +37,7 @@ interface ProceduralItemType {
     default_duration_minutes: number | null;
     is_custom: boolean | null;
     is_hymn: boolean | null;
+    category: string | null;
 }
 
 export type NewItemData = {
@@ -36,12 +54,25 @@ interface AddTemplateItemDialogProps {
     trigger?: React.ReactNode;
 }
 
+type CategoryType = 'administrative' | 'worship' | 'specialized' | 'music' | 'council' | 'teaching';
+
+const categories = [
+    { id: 'administrative' as const, label: 'Administrative', icon: ClipboardList, color: 'text-slate-600' },
+    { id: 'worship' as const, label: 'Worship', icon: BookOpen, color: 'text-purple-600' },
+    { id: 'specialized' as const, label: 'Specialized', icon: Briefcase, color: 'text-amber-600' },
+    { id: 'music' as const, label: 'Music', icon: Music, color: 'text-blue-600' },
+    { id: 'council' as const, label: 'Council', icon: Users, color: 'text-green-600' },
+    { id: 'teaching' as const, label: 'Teaching', icon: GraduationCap, color: 'text-pink-600' },
+];
+
 export function AddTemplateItemDialog({
     onAddItem,
     existingItemTypes,
     trigger,
 }: AddTemplateItemDialogProps) {
     const [open, setOpen] = useState(false);
+    const [selectedCategory, setSelectedCategory] = useState<CategoryType>('worship');
+    const [search, setSearch] = useState("");
     const [proceduralTypes, setProceduralTypes] = useState<ProceduralItemType[]>([]);
     const [isLoadingProcedural, setIsLoadingProcedural] = useState(false);
 
@@ -91,6 +122,89 @@ export function AddTemplateItemDialog({
         setOpen(false);
     };
 
+    const renderCategoryItems = () => {
+        const searchLower = search.toLowerCase();
+
+        if (selectedCategory === 'specialized') {
+            // Show specialized items
+            const specializedItems = [
+                {
+                    id: 'discussion',
+                    icon: <MessageSquare className="h-4 w-4 text-green-500" />,
+                    title: 'Discussion',
+                    subtitle: 'Link to Discussion topics',
+                    disabled: hasSingleton('discussion'),
+                    onClick: () => handleSelectSpecialized('discussion', 'Discussion & Counsel'),
+                },
+                {
+                    id: 'announcement',
+                    icon: <Megaphone className="h-4 w-4 text-orange-500" />,
+                    title: 'Announcements',
+                    subtitle: 'Link to active Announcements',
+                    disabled: hasSingleton('announcement'),
+                    onClick: () => handleSelectSpecialized('announcement', 'Announcements'),
+                },
+                {
+                    id: 'business',
+                    icon: <Briefcase className="h-4 w-4 text-purple-500" />,
+                    title: 'Business',
+                    subtitle: 'Callings, Releases, Ordinations',
+                    disabled: hasSingleton('business'),
+                    onClick: () => handleSelectSpecialized('business', 'Ward Business'),
+                },
+                {
+                    id: 'speaker',
+                    icon: <User className="h-4 w-4 text-pink-500" />,
+                    title: 'Speaker',
+                    subtitle: 'Assign speakers and topics',
+                    disabled: false,
+                    onClick: () => handleSelectSpecialized('speaker', 'Speaker'),
+                },
+            ];
+
+            const filteredItems = specializedItems.filter(
+                (item) => item.title.toLowerCase().includes(searchLower)
+            );
+
+            return filteredItems.length > 0 ? (
+                filteredItems.map((item) => (
+                    <ItemRow
+                        key={item.id}
+                        icon={item.icon}
+                        title={item.title}
+                        subtitle={item.subtitle}
+                        badge={item.disabled ? <Badge variant="secondary" className="text-[10px] px-1 h-5">Added</Badge> : null}
+                        onClick={item.onClick}
+                        disabled={item.disabled}
+                    />
+                ))
+            ) : (
+                <EmptyState message="No items found" />
+            );
+        } else {
+            // Show procedural items for the selected category
+            const filteredProcedural = proceduralTypes.filter(
+                (type) =>
+                    (type.category === selectedCategory || (!type.category && selectedCategory === 'worship')) &&
+                    type.name.toLowerCase().includes(searchLower)
+            );
+
+            return filteredProcedural.length > 0 ? (
+                filteredProcedural.map((type) => (
+                    <ItemRow
+                        key={type.id}
+                        icon={type.is_hymn ? <Music className="h-4 w-4 text-blue-500" /> : <BookOpen className="h-4 w-4 text-slate-500" />}
+                        title={type.name}
+                        subtitle={type.description}
+                        onClick={() => handleSelectProcedural(type)}
+                    />
+                ))
+            ) : (
+                <EmptyState message="No items in this category" />
+            );
+        }
+    };
+
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
@@ -101,85 +215,75 @@ export function AddTemplateItemDialog({
                     </Button>
                 )}
             </DialogTrigger>
-            <DialogContent className="sm:max-w-2xl">
-                <DialogHeader>
+            <DialogContent className="sm:max-w-3xl p-0 gap-0">
+                <DialogHeader className="p-4 pb-0">
                     <DialogTitle>Add Agenda Item</DialogTitle>
                     <DialogDescription>
-                        Choose a type of item to add to your template.
+                        Select a category and choose an item to add to your template
                     </DialogDescription>
                 </DialogHeader>
 
-                <div className="grid gap-6 py-4">
+                {/* Search bar */}
+                <div className="p-4 border-b">
+                    <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                            placeholder="Search items..."
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            className="pl-9"
+                        />
+                    </div>
+                </div>
 
-                    {/* Procedural Section */}
-                    <div className="space-y-3">
-                        <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
-                            Procedural & Standard Items
-                        </h3>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                            {isLoadingProcedural ? (
-                                <div className="col-span-3 text-center py-4 text-sm text-muted-foreground">Loading...</div>
-                            ) : (
-                                proceduralTypes.map((type) => (
+                {/* Split pane layout */}
+                <div className="flex h-[500px]">
+                    {/* Left pane - Categories */}
+                    <div className="w-48 border-r bg-muted/30">
+                        <nav className="py-2">
+                            {categories.map((cat) => {
+                                const Icon = cat.icon;
+                                return (
                                     <button
-                                        key={type.id}
-                                        onClick={() => handleSelectProcedural(type)}
-                                        className="flex flex-col items-start gap-2 p-3 text-left border rounded-lg hover:bg-accent transition-colors"
+                                        key={cat.id}
+                                        onClick={() => {
+                                            setSelectedCategory(cat.id);
+                                            setSearch("");
+                                        }}
+                                        className={cn(
+                                            "w-full flex items-center gap-2 px-4 py-2.5 text-sm text-left transition-colors",
+                                            selectedCategory === cat.id
+                                                ? "bg-accent font-medium"
+                                                : "hover:bg-accent/50"
+                                        )}
                                     >
-                                        <div className="flex items-center gap-2 w-full">
-                                            {type.is_hymn ? (
-                                                <Music className="h-4 w-4 text-blue-500" />
-                                            ) : (
-                                                <BookOpen className="h-4 w-4 text-slate-500" />
-                                            )}
-                                            <span className="font-medium text-sm">{type.name}</span>
-                                        </div>
-                                        {type.description && (
-                                            <span className="text-xs text-muted-foreground line-clamp-2">
-                                                {type.description}
-                                            </span>
+                                        <Icon className={cn("h-4 w-4", cat.color)} />
+                                        <span className="flex-1">{cat.label}</span>
+                                        {selectedCategory === cat.id && (
+                                            <ChevronRight className="h-4 w-4 text-muted-foreground" />
                                         )}
                                     </button>
-                                ))
-                            )}
-                        </div>
+                                );
+                            })}
+                        </nav>
                     </div>
 
-                    {/* Specialized Section */}
-                    <div className="space-y-3">
-                        <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
-                            Specialized Items
-                        </h3>
-                        <div className="grid grid-cols-2 gap-3">
-                            <SpecializedButton
-                                icon={<MessageSquare className="h-4 w-4 text-green-500" />}
-                                title="Discussion"
-                                description="Link to Discussion topics"
-                                disabled={hasSingleton('discussion')}
-                                onClick={() => handleSelectSpecialized('discussion', 'Discussion & Counsel')}
-                            />
-                            <SpecializedButton
-                                icon={<Megaphone className="h-4 w-4 text-orange-500" />}
-                                title="Announcements"
-                                description="Link to active Announcements"
-                                disabled={hasSingleton('announcement')}
-                                onClick={() => handleSelectSpecialized('announcement', 'Announcements')}
-                            />
-                            <SpecializedButton
-                                icon={<Briefcase className="h-4 w-4 text-purple-500" />}
-                                title="Business"
-                                description="Callings, Releases, Ordinations"
-                                disabled={hasSingleton('business')}
-                                onClick={() => handleSelectSpecialized('business', 'Ward Business')}
-                            />
-                            <SpecializedButton
-                                icon={<User className="h-4 w-4 text-pink-500" />}
-                                title="Speaker"
-                                description="Assign speakers and topics"
-                                disabled={false} // Speakers are NOT singletons
-                                onClick={() => handleSelectSpecialized('speaker', 'Speaker')}
-                            />
+                    {/* Right pane - Items */}
+                    <div className="flex-1 flex flex-col">
+                        <div className="px-4 py-2 border-b bg-muted/20">
+                            <h3 className="font-medium text-sm">
+                                {categories.find((c) => c.id === selectedCategory)?.label}
+                            </h3>
                         </div>
+                        <ScrollArea className="flex-1">
+                            {isLoadingProcedural ? (
+                                <div className="p-4 text-center text-sm text-muted-foreground">
+                                    Loading...
+                                </div>
+                            ) : (
+                                <div className="divide-y">{renderCategoryItems()}</div>
+                            )}
+                        </ScrollArea>
                     </div>
                 </div>
             </DialogContent>
@@ -187,36 +291,52 @@ export function AddTemplateItemDialog({
     );
 }
 
-function SpecializedButton({
+// Helper components
+function ItemRow({
     icon,
     title,
-    description,
+    subtitle,
+    badge,
+    onClick,
     disabled,
-    onClick
 }: {
     icon: React.ReactNode;
     title: string;
-    description: string;
-    disabled: boolean;
+    subtitle?: string | null;
+    badge?: React.ReactNode;
     onClick: () => void;
+    disabled?: boolean;
 }) {
     return (
         <button
             onClick={onClick}
             disabled={disabled}
             className={cn(
-                "flex flex-col items-start gap-2 p-3 text-left border rounded-lg transition-colors bg-white",
-                disabled ? "opacity-50 cursor-not-allowed bg-slate-50" : "hover:bg-accent"
+                "w-full text-left p-3 hover:bg-accent transition-colors flex items-start gap-3",
+                disabled && "opacity-50 cursor-not-allowed bg-slate-50"
             )}
         >
-            <div className="flex items-center justify-between w-full">
+            <div className="mt-0.5">{icon}</div>
+            <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                    {icon}
-                    <span className="font-medium text-sm">{title}</span>
+                    <span className="font-medium text-sm truncate">{title}</span>
+                    {badge}
                 </div>
-                {disabled && <Badge variant="secondary" className="text-[10px] px-1 h-5">Added</Badge>}
+                {subtitle && (
+                    <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">
+                        {subtitle}
+                    </p>
+                )}
             </div>
-            <span className="text-xs text-muted-foreground">{description}</span>
+            <ChevronRight className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
         </button>
+    );
+}
+
+function EmptyState({ message }: { message: string }) {
+    return (
+        <div className="p-8 text-center text-sm text-muted-foreground">
+            {message}
+        </div>
     );
 }

@@ -95,18 +95,6 @@ export function TemplateDetailView({ template, onClose, userRole }: TemplateDeta
 
                     <Separator />
 
-                    {/* Pending Items Note */}
-                    <div className="rounded-lg bg-blue-50/50 border border-blue-100 p-4 text-sm text-blue-800">
-                        <p className="font-medium mb-1">Automated Agenda Items</p>
-                        <p className="text-blue-600/90">
-                            When created, this meeting will automatically include any
-                            <span className="font-semibold"> pending business items</span> and
-                            <span className="font-semibold"> active announcements</span> appropriate for your workspace.
-                        </p>
-                    </div>
-
-                    <Separator />
-
                     {/* Visual Agenda Section */}
                     <div className="space-y-4">
                         <h3 className="text-sm font-medium text-gray-900 uppercase tracking-wider">Agenda Structure</h3>

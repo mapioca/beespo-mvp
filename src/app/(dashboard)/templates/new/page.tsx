@@ -22,16 +22,10 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/lib/hooks/use-toast";
 import { createClient } from "@/lib/supabase/client";
-import { ArrowLeft, Plus, Trash2, GripVertical } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
-
-interface TemplateItem {
-  id: string;
-  title: string;
-  description: string;
-  duration_minutes: number;
-  item_type: 'procedural' | 'discussion' | 'business' | 'announcement' | 'speaker';
-}
+import { TemplateBuilder } from "@/components/templates/template-builder";
+import { TemplateItem } from "@/components/templates/types";
 
 export default function NewTemplatePage() {
   const router = useRouter();
@@ -44,30 +38,7 @@ export default function NewTemplatePage() {
   const [callingType, setCallingType] = useState("");
 
   // Template items
-  const [items, setItems] = useState<TemplateItem[]>([
-    { id: crypto.randomUUID(), title: "", description: "", duration_minutes: 5, item_type: 'procedural' },
-  ]);
-
-  const addItem = () => {
-    setItems([
-      ...items,
-      { id: crypto.randomUUID(), title: "", description: "", duration_minutes: 5, item_type: 'procedural' },
-    ]);
-  };
-
-  const removeItem = (id: string) => {
-    if (items.length > 1) {
-      setItems(items.filter((item) => item.id !== id));
-    }
-  };
-
-  const updateItem = (id: string, field: keyof TemplateItem, value: string | number) => {
-    setItems(
-      items.map((item) =>
-        item.id === id ? { ...item, [field]: value } : item
-      )
-    );
-  };
+  const [items, setItems] = useState<TemplateItem[]>([]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -140,6 +111,8 @@ export default function NewTemplatePage() {
         description: item.description,
         duration_minutes: item.duration_minutes,
         item_type: item.item_type,
+        procedural_item_type_id: item.procedural_item_type_id || null,
+        hymn_id: item.hymn_id || null,
         order_index: index,
       }));
 
@@ -236,118 +209,12 @@ export default function NewTemplatePage() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>Agenda Items</CardTitle>
-                <CardDescription>
-                  Define the default agenda items for this template
-                </CardDescription>
-              </div>
-              <Button type="button" onClick={addItem} variant="outline" size="sm">
-                <Plus className="mr-2 h-4 w-4" />
-                Add Item
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {items.map((item) => (
-              <div
-                key={item.id}
-                className="flex gap-4 p-4 border rounded-lg bg-card"
-              >
-                <div className="flex items-center">
-                  <GripVertical className="h-5 w-5 text-muted-foreground" />
-                </div>
-                <div className="flex-1 space-y-3">
-                  <div className="flex gap-3">
-                    <div className="flex-1">
-                      <Label htmlFor={`item-title-${item.id}`} className="text-xs">
-                        Title *
-                      </Label>
-                      <Input
-                        id={`item-title-${item.id}`}
-                        value={item.title}
-                        onChange={(e) =>
-                          updateItem(item.id, "title", e.target.value)
-                        }
-                        placeholder="Agenda item title"
-                        disabled={isLoading}
-                      />
-                    </div>
-                    <div className="w-40">
-                      <Label htmlFor={`item-type-${item.id}`} className="text-xs">
-                        Type
-                      </Label>
-                      <Select
-                        value={item.item_type}
-                        onValueChange={(value) => updateItem(item.id, "item_type", value)}
-                        disabled={isLoading}
-                      >
-                        <SelectTrigger id={`item-type-${item.id}`}>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="procedural">Procedural</SelectItem>
-                          <SelectItem value="discussion">Discussion</SelectItem>
-                          <SelectItem value="business">Business</SelectItem>
-                          <SelectItem value="announcement">Announcement</SelectItem>
-                          <SelectItem value="speaker">Speaker</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="w-32">
-                      <Label htmlFor={`item-duration-${item.id}`} className="text-xs">
-                        Duration (min)
-                      </Label>
-                      <Input
-                        id={`item-duration-${item.id}`}
-                        type="number"
-                        min="1"
-                        value={item.duration_minutes}
-                        onChange={(e) =>
-                          updateItem(
-                            item.id,
-                            "duration_minutes",
-                            parseInt(e.target.value) || 5
-                          )
-                        }
-                        disabled={isLoading}
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <Label htmlFor={`item-desc-${item.id}`} className="text-xs">
-                      Description
-                    </Label>
-                    <Textarea
-                      id={`item-desc-${item.id}`}
-                      value={item.description}
-                      onChange={(e) =>
-                        updateItem(item.id, "description", e.target.value)
-                      }
-                      placeholder="Optional description"
-                      rows={2}
-                      disabled={isLoading}
-                    />
-                  </div>
-                </div>
-                <div className="flex items-start">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => removeItem(item.id)}
-                    disabled={items.length === 1 || isLoading}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
+        {/* New Modular Template Builder */}
+        <TemplateBuilder
+          items={items}
+          onChange={setItems}
+          isLoading={isLoading}
+        />
 
         <div className="flex justify-end gap-3">
           <Button
