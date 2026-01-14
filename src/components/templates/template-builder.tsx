@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -8,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { TemplateItem } from "./types";
 import { AddTemplateItemDialog, NewItemData } from "./add-template-item-dialog";
 import { getItemTypeBadgeVariant, getItemTypeLabel } from "@/types/agenda";
+import { cn } from "@/lib/utils";
 
 interface TemplateBuilderProps {
     items: TemplateItem[];
@@ -16,6 +18,8 @@ interface TemplateBuilderProps {
 }
 
 export function TemplateBuilder({ items, onChange, isLoading }: TemplateBuilderProps) {
+    const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+    const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
     const handleAddItem = (newItem: NewItemData) => {
         const item: TemplateItem = {
@@ -41,6 +45,42 @@ export function TemplateBuilder({ items, onChange, isLoading }: TemplateBuilderP
         onChange(
             items.map((item) => (item.id === id ? { ...item, [field]: value } : item))
         );
+    };
+
+    const handleDragStart = (index: number) => {
+        setDraggedIndex(index);
+    };
+
+    const handleDragOver = (e: React.DragEvent, index: number) => {
+        e.preventDefault();
+        setDragOverIndex(index);
+    };
+
+    const handleDrop = (e: React.DragEvent, dropIndex: number) => {
+        e.preventDefault();
+
+        if (draggedIndex === null || draggedIndex === dropIndex) {
+            setDraggedIndex(null);
+            setDragOverIndex(null);
+            return;
+        }
+
+        const newItems = [...items];
+        const draggedItem = newItems[draggedIndex];
+
+        // Remove from old position
+        newItems.splice(draggedIndex, 1);
+        // Insert at new position
+        newItems.splice(dropIndex, 0, draggedItem);
+
+        onChange(newItems);
+        setDraggedIndex(null);
+        setDragOverIndex(null);
+    };
+
+    const handleDragEnd = () => {
+        setDraggedIndex(null);
+        setDragOverIndex(null);
     };
 
     const getIcon = (item: TemplateItem) => {
@@ -81,13 +121,22 @@ export function TemplateBuilder({ items, onChange, isLoading }: TemplateBuilderP
                         No items added yet. Click &quot;Add Item&quot; to start building your template.
                     </div>
                 )}
-                {items.map((item) => (
+                {items.map((item, index) => (
                     <div
                         key={item.id}
-                        className="flex gap-4 p-4 border rounded-lg bg-card group hover:border-sidebar-accent transition-colors relative"
+                        draggable={!isLoading}
+                        onDragStart={() => handleDragStart(index)}
+                        onDragOver={(e) => handleDragOver(e, index)}
+                        onDrop={(e) => handleDrop(e, index)}
+                        onDragEnd={handleDragEnd}
+                        className={cn(
+                            "flex gap-4 p-4 border rounded-lg bg-card group hover:border-sidebar-accent transition-all relative",
+                            draggedIndex === index && "opacity-50 scale-95",
+                            dragOverIndex === index && draggedIndex !== null && draggedIndex !== index && "border-primary border-2"
+                        )}
                     >
-                        <div className="flex items-center pt-2">
-                            <GripVertical className="h-5 w-5 text-muted-foreground cursor-move" />
+                        <div className="flex items-center pt-2 cursor-move">
+                            <GripVertical className="h-5 w-5 text-muted-foreground" />
                         </div>
                         <div className="flex-1 space-y-3">
                             <div className="flex gap-3 items-start">
