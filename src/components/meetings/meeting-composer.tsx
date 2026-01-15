@@ -267,6 +267,11 @@ export function MeetingComposer({
 
     const totalDuration = agendaItems.reduce((sum, item) => sum + item.duration_minutes, 0);
 
+    // Collect all selected speaker IDs for display in dropdowns
+    const selectedSpeakerIdsInMeeting = agendaItems
+        .filter((item) => item.speaker_id)
+        .map((item) => item.speaker_id as string);
+
     return (
         <>
             <Card>
@@ -353,10 +358,7 @@ export function MeetingComposer({
                                                     <SpeakerSelector
                                                         selectedSpeakerId={item.speaker_id}
                                                         onSelect={(s) => handleSelectSpeaker(item.id, s)}
-                                                        onCreateNew={() => {
-                                                            // TODO: Open create speaker dialog
-                                                            console.log("Create new speaker");
-                                                        }}
+                                                        selectedSpeakerIdsInMeeting={selectedSpeakerIdsInMeeting}
                                                     />
                                                 </div>
                                             )}

@@ -19,18 +19,29 @@ interface TemplatesListProps {
 
 export function TemplatesList({ templates, selectedId, onSelect }: TemplatesListProps) {
     const [search, setSearch] = useState("");
-    const [typeFilter, setTypeFilter] = useState<"all" | "beespo" | "custom">("all");
+    const [typeFilter, setTypeFilter] = useState<string>("all");
+
+    // Extract unique tags from all templates
+    const allTags = Array.from(
+        new Set(
+            templates.flatMap(t => (t.tags as string[] | null) || [])
+        )
+    ).sort();
 
     const filteredTemplates = templates.filter(template => {
         const matchesSearch = template.name.toLowerCase().includes(search.toLowerCase()) ||
             (template.description?.toLowerCase() || "").includes(search.toLowerCase());
 
         const isBeespo = template.is_shared;
+        const templateTags = (template.tags as string[] | null) || [];
+
         const matchesType = typeFilter === "all"
             ? true
             : typeFilter === "beespo"
                 ? isBeespo
-                : !isBeespo;
+                : typeFilter === "custom"
+                    ? !isBeespo
+                    : templateTags.includes(typeFilter); // Filter by tag
 
         return matchesSearch && matchesType;
     });
@@ -63,7 +74,7 @@ export function TemplatesList({ templates, selectedId, onSelect }: TemplatesList
                             className="pl-8 bg-white"
                         />
                     </div>
-                    <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v as "all" | "beespo" | "custom")}>
+                    <Select value={typeFilter} onValueChange={setTypeFilter}>
                         <SelectTrigger className="w-full bg-white">
                             <SelectValue placeholder="Filter by type" />
                         </SelectTrigger>
@@ -71,6 +82,16 @@ export function TemplatesList({ templates, selectedId, onSelect }: TemplatesList
                             <SelectItem value="all">All Templates</SelectItem>
                             <SelectItem value="beespo">Beespo Templates</SelectItem>
                             <SelectItem value="custom">Custom Templates</SelectItem>
+                            {allTags.length > 0 && (
+                                <>
+                                    <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">Tags</div>
+                                    {allTags.map(tag => (
+                                        <SelectItem key={tag} value={tag}>
+                                            {tag}
+                                        </SelectItem>
+                                    ))}
+                                </>
+                            )}
                         </SelectContent>
                     </Select>
                 </div>
@@ -108,8 +129,20 @@ export function TemplatesList({ templates, selectedId, onSelect }: TemplatesList
                                     <p className="text-xs text-muted-foreground line-clamp-2">
                                         {template.description || "No description provided."}
                                     </p>
-                                    <div className="flex items-center gap-2 mt-2 text-[10px] text-muted-foreground">
-                                        <span>{template.items?.length || 0} agenda items</span>
+                                    <div className="flex items-center gap-2 mt-2 flex-wrap">
+                                        <span className="text-[10px] text-muted-foreground">{template.items?.length || 0} agenda items</span>
+                                        {((template.tags as string[] | null) || []).length > 0 && (
+                                            <>
+                                                <span className="text-[10px] text-muted-foreground">•</span>
+                                                <div className="flex gap-1 flex-wrap">
+                                                    {((template.tags as string[] | null) || []).slice(0, 3).map((tag) => (
+                                                        <Badge key={tag} variant="outline" className="text-[9px] px-1 py-0 h-4">
+                                                            {tag}
+                                                        </Badge>
+                                                    ))}
+                                                </div>
+                                            </>
+                                        )}
                                     </div>
                                 </div>
                             </div>

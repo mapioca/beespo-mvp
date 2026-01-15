@@ -22,8 +22,9 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/lib/hooks/use-toast";
 import { createClient } from "@/lib/supabase/client";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, X } from "lucide-react";
 import Link from "next/link";
+import { Badge } from "@/components/ui/badge";
 import { TemplateBuilder } from "@/components/templates/template-builder";
 import { TemplateItem } from "@/components/templates/types";
 
@@ -36,9 +37,30 @@ export default function NewTemplatePage() {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [callingType, setCallingType] = useState("");
+  const [tags, setTags] = useState<string[]>([]);
+  const [tagInput, setTagInput] = useState("");
 
   // Template items
   const [items, setItems] = useState<TemplateItem[]>([]);
+
+  const handleAddTag = () => {
+    const trimmedTag = tagInput.trim();
+    if (trimmedTag && !tags.includes(trimmedTag)) {
+      setTags([...tags, trimmedTag]);
+      setTagInput("");
+    }
+  };
+
+  const handleRemoveTag = (tagToRemove: string) => {
+    setTags(tags.filter(tag => tag !== tagToRemove));
+  };
+
+  const handleTagKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleAddTag();
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -85,6 +107,7 @@ export default function NewTemplatePage() {
         name,
         description,
         calling_type: callingType || null,
+        tags: tags.length > 0 ? tags : null,
         workspace_id: profile.workspace_id,
         created_by: user.id,
         is_shared: false,
@@ -186,14 +209,14 @@ export default function NewTemplatePage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="callingType">Calling Type</Label>
+              <Label htmlFor="callingType">Organization</Label>
               <Select
                 value={callingType}
                 onValueChange={setCallingType}
                 disabled={isLoading}
               >
                 <SelectTrigger id="callingType">
-                  <SelectValue placeholder="Select calling type (optional)" />
+                  <SelectValue placeholder="Select organization (optional)" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="bishopric">Bishopric</SelectItem>
@@ -205,6 +228,50 @@ export default function NewTemplatePage() {
                   <SelectItem value="other">Other</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="tags">Tags</Label>
+              <div className="space-y-2">
+                <div className="flex gap-2">
+                  <Input
+                    id="tags"
+                    value={tagInput}
+                    onChange={(e) => setTagInput(e.target.value)}
+                    onKeyDown={handleTagKeyDown}
+                    placeholder="Add a tag (press Enter)"
+                    disabled={isLoading}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleAddTag}
+                    disabled={!tagInput.trim() || isLoading}
+                  >
+                    Add
+                  </Button>
+                </div>
+                {tags.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {tags.map((tag) => (
+                      <Badge key={tag} variant="secondary" className="flex items-center gap-1">
+                        {tag}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveTag(tag)}
+                          className="ml-1 hover:bg-secondary-foreground/20 rounded-full p-0.5"
+                          disabled={isLoading}
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  Add tags to help organize and filter templates (e.g., Leadership, Sacrament, Sunday School)
+                </p>
+              </div>
             </div>
           </CardContent>
         </Card>

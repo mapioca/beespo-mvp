@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import Image from "next/image";
 import {
     Dialog,
     DialogContent,
@@ -81,6 +82,20 @@ export function HymnSelectorModal({
         onClose();
     };
 
+    const getHymnBookLogo = (bookId: string) => {
+        const logos: Record<string, { src: string; alt: string }> = {
+            'hymns_church': {
+                src: '/images/lds-hymns.svg',
+                alt: 'LDS Hymns'
+            },
+            'hymns_home_church': {
+                src: '/images/home-church.svg',
+                alt: 'Home Church Collection'
+            }
+        };
+        return logos[bookId] || { src: '/images/lds-hymns.svg', alt: 'Hymnal' };
+    };
+
     return (
         <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
             <DialogContent className="sm:max-w-lg">
@@ -116,23 +131,35 @@ export function HymnSelectorModal({
                         </div>
                     ) : (
                         <div className="divide-y">
-                            {filteredHymns.map((hymn) => (
-                                <button
-                                    key={hymn.id}
-                                    onClick={() => handleSelect(hymn)}
-                                    className={cn(
-                                        "w-full text-left p-3 hover:bg-accent transition-colors flex items-center gap-3",
-                                        currentHymnId === hymn.id && "bg-accent"
-                                    )}
-                                >
-                                    <span className="font-mono text-sm text-muted-foreground w-8">
-                                        #{hymn.hymn_number}
-                                    </span>
-                                    <span className="font-medium truncate">
-                                        {hymn.title}
-                                    </span>
-                                </button>
-                            ))}
+                            {filteredHymns.map((hymn) => {
+                                const logo = getHymnBookLogo(hymn.book_id);
+                                return (
+                                    <button
+                                        key={hymn.id}
+                                        onClick={() => handleSelect(hymn)}
+                                        className={cn(
+                                            "w-full text-left p-3 hover:bg-accent transition-colors flex items-center gap-3",
+                                            currentHymnId === hymn.id && "bg-accent"
+                                        )}
+                                    >
+                                        <div className="relative w-6 h-6 flex-shrink-0">
+                                            <Image
+                                                src={logo.src}
+                                                alt={logo.alt}
+                                                width={24}
+                                                height={24}
+                                                className="object-contain"
+                                            />
+                                        </div>
+                                        <span className="font-mono text-sm text-muted-foreground w-8">
+                                            #{hymn.hymn_number}
+                                        </span>
+                                        <span className="font-medium truncate">
+                                            {hymn.title}
+                                        </span>
+                                    </button>
+                                );
+                            })}
                         </div>
                     )}
                 </ScrollArea>
