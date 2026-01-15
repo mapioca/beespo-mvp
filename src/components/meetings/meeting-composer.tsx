@@ -121,7 +121,7 @@ export function MeetingComposer({
                 return;
             }
 
-            // 2. Load linked discussions (try with auto_populate, fallback without)
+            // 2. Load linked discussions from junction table
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             let linkedDiscussions: any[] | null = null;
             const { data: discData, error: discError } = await (supabase
@@ -130,7 +130,7 @@ export function MeetingComposer({
                 .eq("template_id", templateId);
             if (!discError) linkedDiscussions = discData;
 
-            // 3. Load linked business items
+            // 3. Load linked business items from junction table
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             let linkedBusiness: any[] | null = null;
             const { data: bizData, error: bizError } = await (supabase
@@ -138,15 +138,18 @@ export function MeetingComposer({
                 .select("business_item_id, business_items(id, person_name, position_calling, category, notes, status)")
                 .eq("template_id", templateId);
             if (!bizError) linkedBusiness = bizData;
+            console.log("Linked business items:", linkedBusiness?.length || 0);
 
-            // 4. Load linked announcements
+            // 4. Load linked announcements from junction table
+            // Note: announcements table uses 'content' not 'description'
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             let linkedAnnouncements: any[] | null = null;
             const { data: annData, error: annError } = await (supabase
                 .from("announcement_templates") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
-                .select("announcement_id, announcements(id, title, description, status, priority)")
+                .select("announcement_id, announcements(id, title, content, status, priority)")
                 .eq("template_id", templateId);
             if (!annError) linkedAnnouncements = annData;
+            console.log("Linked announcements:", linkedAnnouncements?.length || 0);
 
             // Build composed agenda
             const composed: ComposedAgendaItem[] = [];
@@ -202,7 +205,7 @@ export function MeetingComposer({
                         childItems,
                     });
                 } else if (item.item_type === "business") {
-                    // Create container for business items
+                    // Create container for business items - populate from linked items in junction table
                     const childItems: ContainerChildItem[] = [];
                     if (linkedBusiness?.length) {
                         for (const link of linkedBusiness) {
@@ -225,7 +228,7 @@ export function MeetingComposer({
                         childItems,
                     });
                 } else if (item.item_type === "announcement") {
-                    // Create container for announcements
+                    // Create container for announcements - populate from linked items in junction table
                     const childItems: ContainerChildItem[] = [];
                     if (linkedAnnouncements?.length) {
                         for (const link of linkedAnnouncements) {
@@ -234,7 +237,7 @@ export function MeetingComposer({
                                 childItems.push({
                                     id: `child-ann-${ann.id}`,
                                     title: ann.title,
-                                    description: ann.description,
+                                    description: ann.content, // Note: announcements table uses 'content' not 'description'
                                     announcement_id: ann.id,
                                     priority: ann.priority,
                                 });
