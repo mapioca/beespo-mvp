@@ -64,16 +64,17 @@ interface Discussion {
 
 interface BusinessItem {
     id: string;
-    title: string;
-    description: string | null;
-    business_type: string;
+    person_name: string;
+    position_calling: string | null;
+    category: string;
+    notes: string | null;
     status: string;
 }
 
 interface Announcement {
     id: string;
     title: string;
-    description: string | null;
+    content: string | null;
     status: string;
     priority: string;
 }
@@ -115,9 +116,10 @@ export interface DiscussionSelection {
 
 export interface BusinessSelection {
     id: string;
-    title: string;
-    description: string | null;
-    business_type: string;
+    person_name: string;
+    position_calling: string | null;
+    category: string;
+    notes: string | null;
 }
 
 export interface AnnouncementSelection {
@@ -202,58 +204,103 @@ export function UnifiedSelectorModal({
         const supabase = createClient();
 
         try {
+            // Get current user's workspace_id for explicit filtering
+            const { data: { user } } = await supabase.auth.getUser();
+            let workspaceId: string | null = null;
+
+            if (user) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const { data: profile } = await (supabase.from("profiles") as any)
+                    .select("workspace_id")
+                    .eq("id", user.id)
+                    .single();
+                workspaceId = profile?.workspace_id;
+            }
+
             switch (mode) {
                 case "hymn": {
                     if (hymns.length === 0) {
                         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        const { data } = await (supabase.from("hymns") as any)
+                        const { data, error } = await (supabase.from("hymns") as any)
                             .select("id, hymn_number, title, book_id")
                             .order("hymn_number");
+                        if (error) console.error("Error loading hymns:", error);
                         if (data) setHymns(data);
                     }
                     break;
                 }
                 case "discussion": {
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    const { data } = await (supabase.from("discussions") as any)
+                    let query = (supabase.from("discussions") as any)
                         .select("id, title, description, status, priority")
-                        .in("status", ["new", "active", "decision_required"])
-                        .order("created_at", { ascending: false });
+                        .in("status", ["new", "active", "decision_required"]);
+
+                    if (workspaceId) {
+                        query = query.eq("workspace_id", workspaceId);
+                    }
+
+                    const { data, error } = await query.order("created_at", { ascending: false });
+                    if (error) console.error("Error loading discussions:", error);
                     if (data) setDiscussions(data);
                     break;
                 }
                 case "business": {
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    const { data } = await (supabase.from("business_items") as any)
-                        .select("id, title, description, business_type, status")
-                        .eq("status", "pending")
-                        .order("created_at", { ascending: false });
+                    let query = (supabase.from("business_items") as any)
+                        .select("id, person_name, position_calling, category, notes, status")
+                        .eq("status", "pending");
+
+                    if (workspaceId) {
+                        query = query.eq("workspace_id", workspaceId);
+                    }
+
+                    const { data, error } = await query.order("created_at", { ascending: false });
+                    if (error) console.error("Error loading business items:", error);
                     if (data) setBusinessItems(data);
                     break;
                 }
                 case "announcement": {
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    const { data } = await (supabase.from("announcements") as any)
-                        .select("id, title, description, status, priority")
-                        .eq("status", "active")
-                        .order("created_at", { ascending: false });
+                    let query = (supabase.from("announcements") as any)
+                        .select("id, title, content, status, priority")
+                        .eq("status", "active");
+
+                    if (workspaceId) {
+                        query = query.eq("workspace_id", workspaceId);
+                    }
+
+                    const { data, error } = await query.order("created_at", { ascending: false });
+                    if (error) console.error("Error loading announcements:", error);
+                    console.log("Announcements loaded:", data?.length || 0, "items");
                     if (data) setAnnouncements(data);
                     break;
                 }
                 case "participant": {
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    const { data } = await (supabase.from("participants") as any)
-                        .select("id, name, created_at")
-                        .order("name");
+                    let query = (supabase.from("participants") as any)
+                        .select("id, name, created_at");
+
+                    if (workspaceId) {
+                        query = query.eq("workspace_id", workspaceId);
+                    }
+
+                    const { data, error } = await query.order("name");
+                    if (error) console.error("Error loading participants:", error);
                     if (data) setParticipants(data);
                     break;
                 }
                 case "speaker": {
                     // Get all speakers in the workspace
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    const { data: allSpeakers } = await (supabase.from("speakers") as any)
-                        .select("id, name, topic, is_confirmed")
-                        .order("name");
+                    let query = (supabase.from("speakers") as any)
+                        .select("id, name, topic, is_confirmed");
+
+                    if (workspaceId) {
+                        query = query.eq("workspace_id", workspaceId);
+                    }
+
+                    const { data: allSpeakers, error } = await query.order("name");
+                    if (error) console.error("Error loading speakers:", error);
 
                     if (!allSpeakers) {
                         setSpeakers([]);
@@ -332,7 +379,8 @@ export function UnifiedSelectorModal({
         return businessItems.filter((b) => {
             if (excludeIds.includes(b.id)) return false;
             if (!searchLower) return true;
-            return b.title.toLowerCase().includes(searchLower);
+            return b.person_name.toLowerCase().includes(searchLower) ||
+                (b.position_calling?.toLowerCase().includes(searchLower));
         });
     }, [businessItems, search, excludeIds]);
 
@@ -603,9 +651,10 @@ export function UnifiedSelectorModal({
                                                             onSelect={() => {
                                                                 onSelectBusiness?.({
                                                                     id: item.id,
-                                                                    title: item.title,
-                                                                    description: item.description,
-                                                                    business_type: item.business_type,
+                                                                    person_name: item.person_name,
+                                                                    position_calling: item.position_calling,
+                                                                    category: item.category,
+                                                                    notes: item.notes,
                                                                 });
                                                                 onClose();
                                                             }}
@@ -618,15 +667,15 @@ export function UnifiedSelectorModal({
                                                             <div className="flex-1 min-w-0">
                                                                 <div className="flex items-center gap-2">
                                                                     <span className="font-medium truncate">
-                                                                        {item.title}
+                                                                        {item.person_name}{item.position_calling ? ` - ${item.position_calling}` : ""}
                                                                     </span>
-                                                                    <Badge variant="secondary" className="text-xs">
-                                                                        {item.business_type}
+                                                                    <Badge variant="secondary" className="text-xs capitalize">
+                                                                        {item.category.replace("_", " ")}
                                                                     </Badge>
                                                                 </div>
-                                                                {item.description && (
+                                                                {item.notes && (
                                                                     <p className="text-xs text-muted-foreground truncate">
-                                                                        {item.description}
+                                                                        {item.notes}
                                                                     </p>
                                                                 )}
                                                             </div>
@@ -652,7 +701,7 @@ export function UnifiedSelectorModal({
                                                                 onSelectAnnouncement?.({
                                                                     id: ann.id,
                                                                     title: ann.title,
-                                                                    description: ann.description,
+                                                                    description: ann.content,
                                                                     priority: ann.priority,
                                                                 });
                                                                 onClose();
@@ -670,9 +719,9 @@ export function UnifiedSelectorModal({
                                                                     </span>
                                                                     <PriorityBadge priority={ann.priority} />
                                                                 </div>
-                                                                {ann.description && (
+                                                                {ann.content && (
                                                                     <p className="text-xs text-muted-foreground truncate">
-                                                                        {ann.description}
+                                                                        {ann.content}
                                                                     </p>
                                                                 )}
                                                             </div>

@@ -24,6 +24,7 @@ import { useToast } from "@/lib/hooks/use-toast";
 import { createClient } from "@/lib/supabase/client";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { TemplateSelector } from "@/components/templates/template-selector";
 
 export default function EditDiscussionPage() {
   const router = useRouter();
@@ -40,6 +41,7 @@ export default function EditDiscussionPage() {
   const [status, setStatus] = useState("new");
   const [dueDate, setDueDate] = useState("");
   const [deferredReason, setDeferredReason] = useState("");
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
 
   useEffect(() => {
     loadDiscussionData();
@@ -98,6 +100,18 @@ export default function EditDiscussionPage() {
     setDueDate(discussion.due_date || "");
     setDeferredReason(discussion.deferred_reason || "");
 
+    // Fetch existing template link
+    const { data: templateLink } = await (supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from("discussion_templates") as any)
+      .select("template_id")
+      .eq("discussion_id", discussionId)
+      .maybeSingle();
+
+    if (templateLink) {
+      setSelectedTemplateId(templateLink.template_id);
+    }
+
     setIsLoadingData(false);
   };
 
@@ -132,6 +146,29 @@ export default function EditDiscussionPage() {
       });
       setIsLoading(false);
       return;
+    }
+
+    // Update template link
+    // First, delete any existing link
+    await (supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from("discussion_templates") as any)
+      .delete()
+      .eq("discussion_id", discussionId);
+
+    // Then insert new link if a template is selected
+    if (selectedTemplateId) {
+      const { error: templateError } = await (supabase
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .from("discussion_templates") as any)
+        .insert({
+          discussion_id: discussionId,
+          template_id: selectedTemplateId,
+        });
+
+      if (templateError) {
+        console.error("Error updating template link:", templateError);
+      }
     }
 
     toast({
@@ -299,6 +336,14 @@ export default function EditDiscussionPage() {
                 />
               </div>
             )}
+
+            <div className="pt-4 border-t">
+              <TemplateSelector
+                value={selectedTemplateId}
+                onChange={setSelectedTemplateId}
+                disabled={isLoading}
+              />
+            </div>
           </CardContent>
         </Card>
 

@@ -74,12 +74,41 @@ function CreateMeetingContent() {
         const scheduledDate = new Date(date);
         scheduledDate.setHours(hours, minutes);
 
-        // Convert composed agenda to JSON for the RPC
-        const agendaJson = composedAgenda.map((item, index) => ({
+        // Flatten containers: inject child items as separate agenda entries
+        const flattenedAgenda: ComposedAgendaItem[] = [];
+        let orderIndex = 0;
+
+        for (const item of composedAgenda) {
+            if (item.isContainer && item.childItems && item.childItems.length > 0) {
+                // Add container placeholder to preserve agenda structure
+                flattenedAgenda.push({ ...item, order_index: orderIndex++ });
+
+                // Add each child as a separate agenda item
+                for (const child of item.childItems) {
+                    flattenedAgenda.push({
+                        id: child.id,
+                        category: item.containerType!, // 'discussion', 'business', or 'announcement'
+                        title: child.title,
+                        description: child.description,
+                        duration_minutes: 5, // Default duration for child items
+                        order_index: orderIndex++,
+                        discussion_id: child.discussion_id,
+                        business_item_id: child.business_item_id,
+                        announcement_id: child.announcement_id,
+                    });
+                }
+            } else {
+                // Regular item, add as-is
+                flattenedAgenda.push({ ...item, order_index: orderIndex++ });
+            }
+        }
+
+        // Convert flattened agenda to JSON for the RPC
+        const agendaJson = flattenedAgenda.map((item) => ({
             title: item.title,
             description: item.description,
             duration_minutes: item.duration_minutes,
-            order_index: index,
+            order_index: item.order_index,
             item_type: item.category,
             hymn_id: item.hymn_id || null,
             speaker_id: item.speaker_id || null,

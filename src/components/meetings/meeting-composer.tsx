@@ -94,52 +94,77 @@ export function MeetingComposer({
     }, [templateId]);
 
     const loadTemplateAndInjectItems = async () => {
+        console.log("Loading template items for templateId:", templateId);
         setIsLoading(true);
         const supabase = createClient();
 
         try {
             // 1. Load template items
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const { data: templateItems } = await (supabase
+            const { data: templateItems, error: templateError } = await (supabase
                 .from("template_items") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
-                .select("*, procedural_item_types(is_hymn, requires_participant)")
+                .select("*, procedural_item_types(id, name, is_hymn)")
                 .eq("template_id", templateId)
                 .order("order_index");
 
-            if (!templateItems) {
+            console.log("Template items query result:", { templateItems, templateError });
+
+            if (templateError) {
+                console.error("Error loading template items:", templateError);
                 setIsLoading(false);
                 return;
             }
 
-            // 2. Load linked discussions (only auto_populate = true)
+            if (!templateItems || templateItems.length === 0) {
+                console.log("No template items found for templateId:", templateId);
+                setIsLoading(false);
+                return;
+            }
+
+            // 2. Load linked discussions (try with auto_populate, fallback without)
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const { data: linkedDiscussions } = await (supabase
+            let linkedDiscussions: any[] | null = null;
+            const { data: discData, error: discError } = await (supabase
                 .from("discussion_templates") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
-                .select("discussion_id, auto_populate, discussions(id, title, description, status)")
-                .eq("template_id", templateId)
-                .neq("auto_populate", false);
+                .select("discussion_id, discussions(id, title, description, status)")
+                .eq("template_id", templateId);
+            if (!discError) linkedDiscussions = discData;
 
-            // 3. Load linked business items (only auto_populate = true)
+            // 3. Load linked business items
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const { data: linkedBusiness } = await (supabase
+            let linkedBusiness: any[] | null = null;
+            const { data: bizData, error: bizError } = await (supabase
                 .from("business_templates") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
-                .select("business_item_id, auto_populate, business_items(id, title, description, status, business_type)")
-                .eq("template_id", templateId)
-                .neq("auto_populate", false);
+                .select("business_item_id, business_items(id, person_name, position_calling, category, notes, status)")
+                .eq("template_id", templateId);
+            if (!bizError) linkedBusiness = bizData;
 
-            // 4. Load linked announcements (only auto_populate = true)
+            // 4. Load linked announcements
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const { data: linkedAnnouncements } = await (supabase
+            let linkedAnnouncements: any[] | null = null;
+            const { data: annData, error: annError } = await (supabase
                 .from("announcement_templates") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
-                .select("announcement_id, auto_populate, announcements(id, title, description, status, priority)")
-                .eq("template_id", templateId)
-                .neq("auto_populate", false);
+                .select("announcement_id, announcements(id, title, description, status, priority)")
+                .eq("template_id", templateId);
+            if (!annError) linkedAnnouncements = annData;
 
             // Build composed agenda
             const composed: ComposedAgendaItem[] = [];
             let orderIndex = 0;
 
             for (const item of templateItems) {
+                // Infer requires_participant from item name if column doesn't exist
+                const itemName = (item.procedural_item_types?.name || item.title || "").toLowerCase();
+                const inferredRequiresParticipant =
+                    item.procedural_item_types?.requires_participant ??
+                    (itemName.includes("prayer") ||
+                        itemName.includes("preside") ||
+                        itemName.includes("conduct") ||
+                        itemName.includes("invocation") ||
+                        itemName.includes("benediction") ||
+                        itemName.includes("spiritual thought") ||
+                        itemName.includes("testimony"));
+
                 const baseItem: ComposedAgendaItem = {
                     id: `temp-${Date.now()}-${orderIndex}`,
                     category: item.item_type as CategoryType,
@@ -148,8 +173,8 @@ export function MeetingComposer({
                     duration_minutes: item.duration_minutes || 5,
                     order_index: orderIndex++,
                     procedural_item_type_id: item.procedural_item_type_id,
-                    is_hymn: item.procedural_item_types?.is_hymn || false,
-                    requires_participant: item.procedural_item_types?.requires_participant || false,
+                    is_hymn: item.procedural_item_types?.is_hymn || itemName.includes("hymn"),
+                    requires_participant: inferredRequiresParticipant,
                 };
 
                 // For specialized types, create containers with child items
@@ -185,10 +210,10 @@ export function MeetingComposer({
                             if (biz && biz.status === "pending") {
                                 childItems.push({
                                     id: `child-biz-${biz.id}`,
-                                    title: biz.title,
-                                    description: biz.description,
+                                    title: `${biz.person_name}${biz.position_calling ? ` - ${biz.position_calling}` : ""}`,
+                                    description: biz.notes,
                                     business_item_id: biz.id,
-                                    business_type: biz.business_type,
+                                    business_type: biz.category,
                                 });
                             }
                         }
@@ -237,6 +262,7 @@ export function MeetingComposer({
                 .map((item) => item.id);
             setExpandedContainers(new Set(containerIds));
 
+            console.log("Setting agenda items:", composed.length, "items", composed);
             setAgendaItems(composed);
         } catch (error) {
             console.error("Error loading template:", error);
@@ -303,16 +329,32 @@ export function MeetingComposer({
     };
 
     // Handle adding item to container from unified modal
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const handleAddToContainer = (
-        selectedItem: { id: string; title: string; description?: string | null; status?: string; business_type?: string; priority?: string },
+        selectedItem: any,
         type: ContainerType
     ) => {
         if (!targetContainerId) return;
 
+        let itemTitle: string;
+        let itemDescription: string | null;
+        let businessType: string | undefined;
+
+        if (type === "business") {
+            // BusinessSelection uses person_name, position_calling, category, notes
+            itemTitle = `${selectedItem.person_name}${selectedItem.position_calling ? ` - ${selectedItem.position_calling}` : ""}`;
+            itemDescription = selectedItem.notes;
+            businessType = selectedItem.category;
+        } else {
+            // Discussion and Announcement selections use title and description
+            itemTitle = selectedItem.title;
+            itemDescription = selectedItem.description;
+        }
+
         const newChild: ContainerChildItem = {
             id: `child-${type}-${selectedItem.id}-${Date.now()}`,
-            title: selectedItem.title,
-            description: selectedItem.description,
+            title: itemTitle,
+            description: itemDescription,
         };
 
         if (type === "discussion") {
@@ -320,7 +362,7 @@ export function MeetingComposer({
             newChild.status = selectedItem.status;
         } else if (type === "business") {
             newChild.business_item_id = selectedItem.id;
-            newChild.business_type = selectedItem.business_type;
+            newChild.business_type = businessType;
         } else if (type === "announcement") {
             newChild.announcement_id = selectedItem.id;
             newChild.priority = selectedItem.priority;
@@ -611,8 +653,8 @@ export function MeetingComposer({
                 currentSelectionId={
                     selectedItemId
                         ? agendaItems.find((i) => i.id === selectedItemId)?.hymn_id ||
-                          agendaItems.find((i) => i.id === selectedItemId)?.participant_id ||
-                          agendaItems.find((i) => i.id === selectedItemId)?.speaker_id
+                        agendaItems.find((i) => i.id === selectedItemId)?.participant_id ||
+                        agendaItems.find((i) => i.id === selectedItemId)?.speaker_id
                         : undefined
                 }
                 onSelectHymn={handleSelectHymn}

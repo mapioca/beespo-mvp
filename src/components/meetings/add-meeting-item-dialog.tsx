@@ -43,16 +43,17 @@ interface Discussion {
 
 interface BusinessItem {
     id: string;
-    title: string;
-    description: string | null;
-    business_type: string;
+    person_name: string;
+    position_calling: string | null;
+    category: string;
+    notes: string | null;
     status: string;
 }
 
 interface Announcement {
     id: string;
     title: string;
-    description: string | null;
+    content: string | null;
     status: string;
     priority: string;
 }
@@ -130,50 +131,91 @@ export function AddMeetingItemDialog({
         const supabase = createClient();
 
         try {
+            // Get current user's workspace_id for explicit filtering
+            const { data: { user } } = await supabase.auth.getUser();
+            let workspaceId: string | null = null;
+
+            if (user) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const { data: profile } = await (supabase.from("profiles") as any)
+                    .select("workspace_id")
+                    .eq("id", user.id)
+                    .single();
+                workspaceId = profile?.workspace_id;
+            }
+
             switch (category) {
                 case "procedural": {
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    const { data } = await (supabase.from("procedural_item_types") as any)
+                    const { data, error } = await (supabase.from("procedural_item_types") as any)
                         .select("*")
                         .order("order_hint");
+                    if (error) console.error("Error loading procedural items:", error);
                     if (data) setProceduralTypes(data);
                     break;
                 }
                 case "discussion": {
-                    // Get discussions linked to template or unlinked active ones
+                    // Get discussions - explicitly filter by workspace_id
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    const { data } = await (supabase.from("discussions") as any)
+                    let query = (supabase.from("discussions") as any)
                         .select("id, title, description, status, priority")
-                        .in("status", ["new", "active", "decision_required"])
-                        .order("created_at", { ascending: false });
+                        .in("status", ["new", "active", "decision_required"]);
+
+                    if (workspaceId) {
+                        query = query.eq("workspace_id", workspaceId);
+                    }
+
+                    const { data, error } = await query.order("created_at", { ascending: false });
+                    if (error) console.error("Error loading discussions:", error);
                     if (data) setDiscussions(data);
                     break;
                 }
                 case "business": {
+                    // Get business items - explicitly filter by workspace_id
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    const { data } = await (supabase.from("business_items") as any)
-                        .select("id, title, description, business_type, status")
-                        .eq("status", "pending")
-                        .order("created_at", { ascending: false });
+                    let query = (supabase.from("business_items") as any)
+                        .select("id, person_name, position_calling, category, notes, status")
+                        .eq("status", "pending");
+
+                    if (workspaceId) {
+                        query = query.eq("workspace_id", workspaceId);
+                    }
+
+                    const { data, error } = await query.order("created_at", { ascending: false });
+                    if (error) console.error("Error loading business items:", error);
                     if (data) setBusinessItems(data);
                     break;
                 }
                 case "announcement": {
+                    // Get announcements - explicitly filter by workspace_id
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    const { data } = await (supabase.from("announcements") as any)
-                        .select("id, title, description, status, priority")
-                        .eq("status", "active")
-                        .order("created_at", { ascending: false });
+                    let query = (supabase.from("announcements") as any)
+                        .select("id, title, content, status, priority")
+                        .eq("status", "active");
+
+                    if (workspaceId) {
+                        query = query.eq("workspace_id", workspaceId);
+                    }
+
+                    const { data, error } = await query.order("created_at", { ascending: false });
+                    if (error) console.error("Error loading announcements:", error);
+                    console.log("Announcements loaded:", data?.length || 0, "items");
                     if (data) setAnnouncements(data);
                     break;
                 }
                 case "speaker": {
-                    // Get unassigned speakers
+                    // Get unassigned speakers - explicitly filter by workspace_id
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    const { data } = await (supabase.from("speakers") as any)
+                    let query = (supabase.from("speakers") as any)
                         .select("id, name, topic, is_confirmed")
-                        .is("meeting_id", null)
-                        .order("name");
+                        .is("meeting_id", null);
+
+                    if (workspaceId) {
+                        query = query.eq("workspace_id", workspaceId);
+                    }
+
+                    const { data, error } = await query.order("name");
+                    if (error) console.error("Error loading speakers:", error);
                     if (data) setSpeakers(data);
                     break;
                 }
@@ -246,21 +288,22 @@ export function AddMeetingItemDialog({
 
             case "business":
                 const filteredBusiness = businessItems.filter(
-                    (b) => b.title.toLowerCase().includes(searchLower)
+                    (b) => b.person_name.toLowerCase().includes(searchLower) ||
+                        (b.position_calling?.toLowerCase().includes(searchLower))
                 );
                 return filteredBusiness.length > 0 ? (
                     filteredBusiness.map((item) => (
                         <ItemRow
                             key={item.id}
                             icon={<Briefcase className="h-4 w-4 text-purple-500" />}
-                            title={item.title}
-                            subtitle={item.description}
-                            badge={<Badge variant="secondary" className="text-xs">{item.business_type}</Badge>}
+                            title={`${item.person_name}${item.position_calling ? ` - ${item.position_calling}` : ""}`}
+                            subtitle={item.notes}
+                            badge={<Badge variant="secondary" className="text-xs capitalize">{item.category.replace("_", " ")}</Badge>}
                             onClick={() =>
                                 handleSelectItem({
                                     category: "business",
-                                    title: item.title,
-                                    description: item.description,
+                                    title: `${item.category.replace("_", " ").replace(/\b\w/g, (l) => l.toUpperCase())}: ${item.person_name}`,
+                                    description: item.position_calling ? `Position: ${item.position_calling}${item.notes ? `\nNotes: ${item.notes}` : ""}` : item.notes,
                                     duration_minutes: 3,
                                     business_item_id: item.id,
                                 })
@@ -281,13 +324,13 @@ export function AddMeetingItemDialog({
                             key={ann.id}
                             icon={<Megaphone className="h-4 w-4 text-orange-500" />}
                             title={ann.title}
-                            subtitle={ann.description}
+                            subtitle={ann.content}
                             badge={<PriorityBadge priority={ann.priority} />}
                             onClick={() =>
                                 handleSelectItem({
                                     category: "announcement",
                                     title: ann.title,
-                                    description: ann.description,
+                                    description: ann.content,
                                     duration_minutes: 2,
                                     announcement_id: ann.id,
                                 })

@@ -24,6 +24,7 @@ import { useToast } from "@/lib/hooks/use-toast";
 import { createClient } from "@/lib/supabase/client";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { TemplateSelector } from "@/components/templates/template-selector";
 
 export default function EditBusinessPage() {
   const router = useRouter();
@@ -39,6 +40,7 @@ export default function EditBusinessPage() {
   const [status, setStatus] = useState("pending");
   const [actionDate, setActionDate] = useState("");
   const [notes, setNotes] = useState("");
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
 
   useEffect(() => {
     loadBusinessData();
@@ -96,6 +98,18 @@ export default function EditBusinessPage() {
     setActionDate(businessItem.action_date || "");
     setNotes(businessItem.notes || "");
 
+    // Fetch existing template link
+    const { data: templateLink } = await (supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from("business_templates") as any)
+      .select("template_id")
+      .eq("business_item_id", businessItemId)
+      .maybeSingle();
+
+    if (templateLink) {
+      setSelectedTemplateId(templateLink.template_id);
+    }
+
     setIsLoadingData(false);
   };
 
@@ -128,6 +142,29 @@ export default function EditBusinessPage() {
       });
       setIsLoading(false);
       return;
+    }
+
+    // Update template link
+    // First, delete any existing link
+    await (supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from("business_templates") as any)
+      .delete()
+      .eq("business_item_id", businessItemId);
+
+    // Then insert new link if a template is selected
+    if (selectedTemplateId) {
+      const { error: templateError } = await (supabase
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .from("business_templates") as any)
+        .insert({
+          business_item_id: businessItemId,
+          template_id: selectedTemplateId,
+        });
+
+      if (templateError) {
+        console.error("Error updating template link:", templateError);
+      }
     }
 
     toast({
@@ -256,6 +293,14 @@ export default function EditBusinessPage() {
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Additional context or details"
                 rows={3}
+                disabled={isLoading}
+              />
+            </div>
+
+            <div className="pt-4 border-t">
+              <TemplateSelector
+                value={selectedTemplateId}
+                onChange={setSelectedTemplateId}
                 disabled={isLoading}
               />
             </div>

@@ -24,6 +24,7 @@ import { useToast } from "@/lib/hooks/use-toast";
 import { createClient } from "@/lib/supabase/client";
 import { ArrowLeft, AlertCircle } from "lucide-react";
 import Link from "next/link";
+import { TemplateSelector } from "@/components/templates/template-selector";
 
 export default function EditAnnouncementPage() {
   const router = useRouter();
@@ -39,6 +40,7 @@ export default function EditAnnouncementPage() {
   const [status, setStatus] = useState("draft");
   const [deadline, setDeadline] = useState("");
   const [originalStatus, setOriginalStatus] = useState("");
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
 
   // Validation state
   const [showDeadlineWarning, setShowDeadlineWarning] = useState(false);
@@ -100,6 +102,18 @@ export default function EditAnnouncementPage() {
     setOriginalStatus(announcement.status);
     setDeadline(announcement.deadline || "");
 
+    // Fetch existing template link
+    const { data: templateLink } = await (supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from("announcement_templates") as any)
+      .select("template_id")
+      .eq("announcement_id", announcementId)
+      .maybeSingle();
+
+    if (templateLink) {
+      setSelectedTemplateId(templateLink.template_id);
+    }
+
     setIsLoadingData(false);
   };
 
@@ -152,6 +166,29 @@ export default function EditAnnouncementPage() {
       });
       setIsLoading(false);
       return;
+    }
+
+    // Update template link
+    // First, delete any existing link
+    await (supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from("announcement_templates") as any)
+      .delete()
+      .eq("announcement_id", announcementId);
+
+    // Then insert new link if a template is selected
+    if (selectedTemplateId) {
+      const { error: templateError } = await (supabase
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .from("announcement_templates") as any)
+        .insert({
+          announcement_id: announcementId,
+          template_id: selectedTemplateId,
+        });
+
+      if (templateError) {
+        console.error("Error updating template link:", templateError);
+      }
     }
 
     toast({
@@ -301,6 +338,14 @@ export default function EditAnnouncementPage() {
                   </span>
                 </div>
               )}
+            </div>
+
+            <div className="pt-4 border-t">
+              <TemplateSelector
+                value={selectedTemplateId}
+                onChange={setSelectedTemplateId}
+                disabled={isLoading}
+              />
             </div>
           </CardContent>
         </Card>
