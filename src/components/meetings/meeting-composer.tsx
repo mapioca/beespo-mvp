@@ -17,11 +17,13 @@ import {
     User,
     ChevronRight,
     Pencil,
+    UserPlus,
+    Mic,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { AddMeetingItemDialog, SelectedItem, CategoryType } from "./add-meeting-item-dialog";
-import { HymnSelectorModal } from "./hymn-selector-modal";
-import { SpeakerSelector } from "./speaker-selector";
+import { UnifiedSelectorModal, UnifiedSelectorMode, SpeakerSelection } from "./unified-selector-modal";
+import { ContainerAgendaItem, ContainerChildItem, ContainerType } from "./container-agenda-item";
 
 // Composed agenda item type
 export interface ComposedAgendaItem {
@@ -44,6 +46,18 @@ export interface ComposedAgendaItem {
     hymn_title?: string;
     // Speaker details
     speaker_name?: string;
+    // Container support
+    isContainer?: boolean;
+    containerType?: ContainerType;
+    childItems?: ContainerChildItem[];
+    // Participant assignment (for procedural items)
+    participant_id?: string;
+    participant_name?: string;
+    requires_participant?: boolean;
+    // Status/type for child items
+    status?: string;
+    business_type?: string;
+    priority?: string;
 }
 
 interface MeetingComposerProps {
@@ -64,9 +78,15 @@ export function MeetingComposer({
     const [agendaItems, setAgendaItems] = useState<ComposedAgendaItem[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [addDialogOpen, setAddDialogOpen] = useState(false);
-    const [hymnModalOpen, setHymnModalOpen] = useState(false);
-    const [selectedHymnItemId, setSelectedHymnItemId] = useState<string | null>(null);
     const [editingItemId, setEditingItemId] = useState<string | null>(null);
+
+    // Container state
+    const [expandedContainers, setExpandedContainers] = useState<Set<string>>(new Set());
+    // Unified selector modal state
+    const [unifiedModalOpen, setUnifiedModalOpen] = useState(false);
+    const [unifiedModalMode, setUnifiedModalMode] = useState<UnifiedSelectorMode>("hymn");
+    const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+    const [targetContainerId, setTargetContainerId] = useState<string | null>(null);
 
     useEffect(() => {
         loadTemplateAndInjectItems();
@@ -82,7 +102,7 @@ export function MeetingComposer({
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const { data: templateItems } = await (supabase
                 .from("template_items") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
-                .select("*, procedural_item_types(is_hymn)")
+                .select("*, procedural_item_types(is_hymn, requires_participant)")
                 .eq("template_id", templateId)
                 .order("order_index");
 
@@ -91,26 +111,29 @@ export function MeetingComposer({
                 return;
             }
 
-            // 2. Load linked discussions
+            // 2. Load linked discussions (only auto_populate = true)
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const { data: linkedDiscussions } = await (supabase
                 .from("discussion_templates") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
-                .select("discussion_id, discussions(id, title, description, status)")
-                .eq("template_id", templateId);
+                .select("discussion_id, auto_populate, discussions(id, title, description, status)")
+                .eq("template_id", templateId)
+                .neq("auto_populate", false);
 
-            // 3. Load linked business items
+            // 3. Load linked business items (only auto_populate = true)
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const { data: linkedBusiness } = await (supabase
                 .from("business_templates") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
-                .select("business_item_id, business_items(id, title, description, status)")
-                .eq("template_id", templateId);
+                .select("business_item_id, auto_populate, business_items(id, title, description, status, business_type)")
+                .eq("template_id", templateId)
+                .neq("auto_populate", false);
 
-            // 4. Load linked announcements
+            // 4. Load linked announcements (only auto_populate = true)
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const { data: linkedAnnouncements } = await (supabase
                 .from("announcement_templates") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
-                .select("announcement_id, announcements(id, title, description, status)")
-                .eq("template_id", templateId);
+                .select("announcement_id, auto_populate, announcements(id, title, description, status, priority)")
+                .eq("template_id", templateId)
+                .neq("auto_populate", false);
 
             // Build composed agenda
             const composed: ComposedAgendaItem[] = [];
@@ -126,57 +149,79 @@ export function MeetingComposer({
                     order_index: orderIndex++,
                     procedural_item_type_id: item.procedural_item_type_id,
                     is_hymn: item.procedural_item_types?.is_hymn || false,
+                    requires_participant: item.procedural_item_types?.requires_participant || false,
                 };
 
-                // For specialized types, inject linked items instead of placeholder
-                if (item.item_type === "discussion" && linkedDiscussions?.length) {
-                    // Inject each linked discussion
-                    for (const link of linkedDiscussions) {
-                        const disc = link.discussions;
-                        if (disc && ["new", "active", "decision_required"].includes(disc.status)) {
-                            composed.push({
-                                id: `temp-${Date.now()}-${orderIndex}`,
-                                category: "discussion",
-                                title: disc.title,
-                                description: disc.description,
-                                duration_minutes: 15,
-                                order_index: orderIndex++,
-                                discussion_id: disc.id,
-                            });
+                // For specialized types, create containers with child items
+                if (item.item_type === "discussion") {
+                    // Create container for discussions
+                    const childItems: ContainerChildItem[] = [];
+                    if (linkedDiscussions?.length) {
+                        for (const link of linkedDiscussions) {
+                            const disc = link.discussions;
+                            if (disc && ["new", "active", "decision_required"].includes(disc.status)) {
+                                childItems.push({
+                                    id: `child-disc-${disc.id}`,
+                                    title: disc.title,
+                                    description: disc.description,
+                                    discussion_id: disc.id,
+                                    status: disc.status,
+                                });
+                            }
                         }
                     }
-                } else if (item.item_type === "business" && linkedBusiness?.length) {
-                    // Inject each linked business item
-                    for (const link of linkedBusiness) {
-                        const biz = link.business_items;
-                        if (biz && biz.status === "pending") {
-                            composed.push({
-                                id: `temp-${Date.now()}-${orderIndex}`,
-                                category: "business",
-                                title: biz.title,
-                                description: biz.description,
-                                duration_minutes: 3,
-                                order_index: orderIndex++,
-                                business_item_id: biz.id,
-                            });
+                    composed.push({
+                        ...baseItem,
+                        isContainer: true,
+                        containerType: "discussion",
+                        childItems,
+                    });
+                } else if (item.item_type === "business") {
+                    // Create container for business items
+                    const childItems: ContainerChildItem[] = [];
+                    if (linkedBusiness?.length) {
+                        for (const link of linkedBusiness) {
+                            const biz = link.business_items;
+                            if (biz && biz.status === "pending") {
+                                childItems.push({
+                                    id: `child-biz-${biz.id}`,
+                                    title: biz.title,
+                                    description: biz.description,
+                                    business_item_id: biz.id,
+                                    business_type: biz.business_type,
+                                });
+                            }
                         }
                     }
-                } else if (item.item_type === "announcement" && linkedAnnouncements?.length) {
-                    // Inject each linked announcement
-                    for (const link of linkedAnnouncements) {
-                        const ann = link.announcements;
-                        if (ann && ann.status === "active") {
-                            composed.push({
-                                id: `temp-${Date.now()}-${orderIndex}`,
-                                category: "announcement",
-                                title: ann.title,
-                                description: ann.description,
-                                duration_minutes: 2,
-                                order_index: orderIndex++,
-                                announcement_id: ann.id,
-                            });
+                    composed.push({
+                        ...baseItem,
+                        isContainer: true,
+                        containerType: "business",
+                        childItems,
+                    });
+                } else if (item.item_type === "announcement") {
+                    // Create container for announcements
+                    const childItems: ContainerChildItem[] = [];
+                    if (linkedAnnouncements?.length) {
+                        for (const link of linkedAnnouncements) {
+                            const ann = link.announcements;
+                            if (ann && ann.status === "active") {
+                                childItems.push({
+                                    id: `child-ann-${ann.id}`,
+                                    title: ann.title,
+                                    description: ann.description,
+                                    announcement_id: ann.id,
+                                    priority: ann.priority,
+                                });
+                            }
                         }
                     }
+                    composed.push({
+                        ...baseItem,
+                        isContainer: true,
+                        containerType: "announcement",
+                        childItems,
+                    });
                 } else if (item.item_type === "speaker") {
                     // Speaker items are placeholders - user assigns during compose
                     composed.push(baseItem);
@@ -185,6 +230,12 @@ export function MeetingComposer({
                     composed.push(baseItem);
                 }
             }
+
+            // Expand all containers by default
+            const containerIds = composed
+                .filter((item) => item.isContainer)
+                .map((item) => item.id);
+            setExpandedContainers(new Set(containerIds));
 
             setAgendaItems(composed);
         } catch (error) {
@@ -216,10 +267,11 @@ export function MeetingComposer({
         setAgendaItems(agendaItems.filter((item) => item.id !== id));
     };
 
+    // Handle hymn selection from unified modal
     const handleSelectHymn = (hymn: { id: string; number: number; title: string }) => {
-        if (selectedHymnItemId) {
+        if (selectedItemId) {
             setAgendaItems(agendaItems.map((item) =>
-                item.id === selectedHymnItemId
+                item.id === selectedItemId
                     ? {
                         ...item,
                         hymn_id: hymn.id,
@@ -229,20 +281,132 @@ export function MeetingComposer({
                     : item
             ));
         }
-        setHymnModalOpen(false);
-        setSelectedHymnItemId(null);
+        setUnifiedModalOpen(false);
+        setSelectedItemId(null);
     };
 
-    const handleSelectSpeaker = (itemId: string, speaker: { id: string; name: string } | null) => {
+    // Handle participant selection from unified modal
+    const handleSelectParticipant = (participant: { id: string; name: string }) => {
+        if (selectedItemId) {
+            setAgendaItems(agendaItems.map((item) =>
+                item.id === selectedItemId
+                    ? {
+                        ...item,
+                        participant_id: participant.id,
+                        participant_name: participant.name,
+                    }
+                    : item
+            ));
+        }
+        setUnifiedModalOpen(false);
+        setSelectedItemId(null);
+    };
+
+    // Handle adding item to container from unified modal
+    const handleAddToContainer = (
+        selectedItem: { id: string; title: string; description?: string | null; status?: string; business_type?: string; priority?: string },
+        type: ContainerType
+    ) => {
+        if (!targetContainerId) return;
+
+        const newChild: ContainerChildItem = {
+            id: `child-${type}-${selectedItem.id}-${Date.now()}`,
+            title: selectedItem.title,
+            description: selectedItem.description,
+        };
+
+        if (type === "discussion") {
+            newChild.discussion_id = selectedItem.id;
+            newChild.status = selectedItem.status;
+        } else if (type === "business") {
+            newChild.business_item_id = selectedItem.id;
+            newChild.business_type = selectedItem.business_type;
+        } else if (type === "announcement") {
+            newChild.announcement_id = selectedItem.id;
+            newChild.priority = selectedItem.priority;
+        }
+
         setAgendaItems(agendaItems.map((item) =>
-            item.id === itemId
+            item.id === targetContainerId
                 ? {
                     ...item,
-                    speaker_id: speaker?.id,
-                    speaker_name: speaker?.name,
+                    childItems: [...(item.childItems || []), newChild],
                 }
                 : item
         ));
+
+        setUnifiedModalOpen(false);
+        setTargetContainerId(null);
+    };
+
+    // Container toggle expand/collapse
+    const toggleContainer = (containerId: string) => {
+        setExpandedContainers((prev) => {
+            const next = new Set(prev);
+            if (next.has(containerId)) {
+                next.delete(containerId);
+            } else {
+                next.add(containerId);
+            }
+            return next;
+        });
+    };
+
+    // Hide child item (client-side only)
+    const hideChildItem = (containerId: string, childId: string) => {
+        setAgendaItems(agendaItems.map((item) =>
+            item.id === containerId
+                ? {
+                    ...item,
+                    childItems: (item.childItems || []).filter((c) => c.id !== childId),
+                }
+                : item
+        ));
+    };
+
+    // Open unified modal for hymn selection
+    const openHymnSelector = (itemId: string) => {
+        setSelectedItemId(itemId);
+        setUnifiedModalMode("hymn");
+        setUnifiedModalOpen(true);
+    };
+
+    // Open unified modal for participant selection
+    const openParticipantSelector = (itemId: string) => {
+        setSelectedItemId(itemId);
+        setUnifiedModalMode("participant");
+        setUnifiedModalOpen(true);
+    };
+
+    // Open unified modal for adding to container
+    const openContainerAddModal = (containerId: string, containerType: ContainerType) => {
+        setTargetContainerId(containerId);
+        setUnifiedModalMode(containerType as UnifiedSelectorMode);
+        setUnifiedModalOpen(true);
+    };
+
+    // Open unified modal for speaker selection
+    const openSpeakerSelector = (itemId: string) => {
+        setSelectedItemId(itemId);
+        setUnifiedModalMode("speaker");
+        setUnifiedModalOpen(true);
+    };
+
+    // Handle speaker selection from unified modal
+    const handleSelectSpeaker = (speaker: SpeakerSelection) => {
+        if (selectedItemId) {
+            setAgendaItems(agendaItems.map((item) =>
+                item.id === selectedItemId
+                    ? {
+                        ...item,
+                        speaker_id: speaker.id,
+                        speaker_name: speaker.name,
+                    }
+                    : item
+            ));
+        }
+        setUnifiedModalOpen(false);
+        setSelectedItemId(null);
     };
 
     const handleUpdateTitle = (id: string, title: string) => {
@@ -300,83 +464,118 @@ export function MeetingComposer({
                         <ScrollArea className="h-[400px] pr-4">
                             <div className="space-y-2">
                                 {agendaItems.map((item) => (
-                                    <div
-                                        key={item.id}
-                                        className="flex items-center gap-2 p-3 border rounded-lg bg-card hover:bg-accent/30 transition-colors group"
-                                    >
-                                        <GripVertical className="h-4 w-4 text-muted-foreground cursor-grab" />
-
-                                        <div className="shrink-0">
-                                            {getCategoryIcon(item.category, item.is_hymn)}
-                                        </div>
-
-                                        <div className="flex-1 min-w-0">
-                                            {editingItemId === item.id ? (
-                                                <Input
-                                                    value={item.title}
-                                                    onChange={(e) => handleUpdateTitle(item.id, e.target.value)}
-                                                    onBlur={() => setEditingItemId(null)}
-                                                    onKeyDown={(e) => e.key === "Enter" && setEditingItemId(null)}
-                                                    autoFocus
-                                                    className="h-7 text-sm"
-                                                />
-                                            ) : (
-                                                <div className="flex items-center gap-2">
-                                                    <span className="font-medium text-sm truncate">
-                                                        {item.title}
-                                                    </span>
-                                                    <button
-                                                        onClick={() => setEditingItemId(item.id)}
-                                                        className="opacity-0 group-hover:opacity-100 transition-opacity"
-                                                    >
-                                                        <Pencil className="h-3 w-3 text-muted-foreground" />
-                                                    </button>
-                                                </div>
-                                            )}
-
-                                            {/* Hymn selector for hymn items */}
-                                            {item.is_hymn && (
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    className="h-6 text-xs mt-1 text-blue-600"
-                                                    onClick={() => {
-                                                        setSelectedHymnItemId(item.id);
-                                                        setHymnModalOpen(true);
-                                                    }}
-                                                >
-                                                    {item.hymn_title
-                                                        ? `#${item.hymn_number} ${item.hymn_title}`
-                                                        : "Select Hymn →"
-                                                    }
-                                                </Button>
-                                            )}
-
-                                            {/* Speaker selector for speaker items */}
-                                            {item.category === "speaker" && (
-                                                <div className="mt-1 max-w-[200px]">
-                                                    <SpeakerSelector
-                                                        selectedSpeakerId={item.speaker_id}
-                                                        onSelect={(s) => handleSelectSpeaker(item.id, s)}
-                                                        selectedSpeakerIdsInMeeting={selectedSpeakerIdsInMeeting}
-                                                    />
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        <span className="text-xs text-muted-foreground shrink-0">
-                                            {item.duration_minutes}m
-                                        </span>
-
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
-                                            onClick={() => handleRemoveItem(item.id)}
+                                    item.isContainer ? (
+                                        // Container item (Discussion, Business, Announcement)
+                                        <ContainerAgendaItem
+                                            key={item.id}
+                                            id={item.id}
+                                            title={item.title}
+                                            containerType={item.containerType!}
+                                            duration_minutes={item.duration_minutes}
+                                            isExpanded={expandedContainers.has(item.id)}
+                                            onToggleExpand={() => toggleContainer(item.id)}
+                                            childItems={item.childItems || []}
+                                            onAddChild={() => openContainerAddModal(item.id, item.containerType!)}
+                                            onRemoveChild={(childId) => hideChildItem(item.id, childId)}
+                                        />
+                                    ) : (
+                                        // Regular item (Procedural, Speaker)
+                                        <div
+                                            key={item.id}
+                                            className="flex items-center gap-2 p-3 border rounded-lg bg-card hover:bg-accent/30 transition-colors group"
                                         >
-                                            <Trash2 className="h-4 w-4 text-destructive" />
-                                        </Button>
-                                    </div>
+                                            <GripVertical className="h-4 w-4 text-muted-foreground cursor-grab" />
+
+                                            <div className="shrink-0">
+                                                {getCategoryIcon(item.category, item.is_hymn)}
+                                            </div>
+
+                                            <div className="flex-1 min-w-0">
+                                                {editingItemId === item.id ? (
+                                                    <Input
+                                                        value={item.title}
+                                                        onChange={(e) => handleUpdateTitle(item.id, e.target.value)}
+                                                        onBlur={() => setEditingItemId(null)}
+                                                        onKeyDown={(e) => e.key === "Enter" && setEditingItemId(null)}
+                                                        autoFocus
+                                                        className="h-7 text-sm"
+                                                    />
+                                                ) : (
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="font-medium text-sm truncate">
+                                                            {item.title}
+                                                        </span>
+                                                        <button
+                                                            onClick={() => setEditingItemId(item.id)}
+                                                            className="opacity-0 group-hover:opacity-100 transition-opacity"
+                                                        >
+                                                            <Pencil className="h-3 w-3 text-muted-foreground" />
+                                                        </button>
+                                                    </div>
+                                                )}
+
+                                                {/* Hymn selector for hymn items */}
+                                                {item.is_hymn && (
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="h-6 text-xs mt-1 text-blue-600"
+                                                        onClick={() => openHymnSelector(item.id)}
+                                                    >
+                                                        {item.hymn_title
+                                                            ? `#${item.hymn_number} ${item.hymn_title}`
+                                                            : "Select Hymn →"
+                                                        }
+                                                    </Button>
+                                                )}
+
+                                                {/* Participant selector for procedural items that require a person */}
+                                                {item.category === "procedural" && item.requires_participant && (
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="h-6 text-xs mt-1 text-slate-600"
+                                                        onClick={() => openParticipantSelector(item.id)}
+                                                    >
+                                                        <UserPlus className="h-3 w-3 mr-1" />
+                                                        {item.participant_name
+                                                            ? item.participant_name
+                                                            : "Select participant →"
+                                                        }
+                                                    </Button>
+                                                )}
+
+                                                {/* Speaker selector for speaker items */}
+                                                {item.category === "speaker" && (
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="h-6 text-xs mt-1 text-indigo-600"
+                                                        onClick={() => openSpeakerSelector(item.id)}
+                                                    >
+                                                        <Mic className="h-3 w-3 mr-1" />
+                                                        {item.speaker_name
+                                                            ? item.speaker_name
+                                                            : "Select speaker →"
+                                                        }
+                                                    </Button>
+                                                )}
+                                            </div>
+
+                                            <span className="text-xs text-muted-foreground shrink-0">
+                                                {item.duration_minutes}m
+                                            </span>
+
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                onClick={() => handleRemoveItem(item.id)}
+                                            >
+                                                <Trash2 className="h-4 w-4 text-destructive" />
+                                            </Button>
+                                        </div>
+                                    )
                                 ))}
                             </div>
                         </ScrollArea>
@@ -401,18 +600,28 @@ export function MeetingComposer({
                 meetingDate={meetingDate}
             />
 
-            <HymnSelectorModal
-                open={hymnModalOpen}
+            <UnifiedSelectorModal
+                open={unifiedModalOpen}
                 onClose={() => {
-                    setHymnModalOpen(false);
-                    setSelectedHymnItemId(null);
+                    setUnifiedModalOpen(false);
+                    setSelectedItemId(null);
+                    setTargetContainerId(null);
                 }}
-                onSelect={handleSelectHymn}
-                currentHymnId={
-                    selectedHymnItemId
-                        ? agendaItems.find((i) => i.id === selectedHymnItemId)?.hymn_id
+                mode={unifiedModalMode}
+                currentSelectionId={
+                    selectedItemId
+                        ? agendaItems.find((i) => i.id === selectedItemId)?.hymn_id ||
+                          agendaItems.find((i) => i.id === selectedItemId)?.participant_id ||
+                          agendaItems.find((i) => i.id === selectedItemId)?.speaker_id
                         : undefined
                 }
+                onSelectHymn={handleSelectHymn}
+                onSelectParticipant={handleSelectParticipant}
+                onSelectSpeaker={handleSelectSpeaker}
+                onSelectDiscussion={(disc) => handleAddToContainer(disc, "discussion")}
+                onSelectBusiness={(biz) => handleAddToContainer(biz, "business")}
+                onSelectAnnouncement={(ann) => handleAddToContainer(ann, "announcement")}
+                selectedSpeakerIdsInMeeting={selectedSpeakerIdsInMeeting}
             />
         </>
     );

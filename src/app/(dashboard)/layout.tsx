@@ -2,7 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { Home, FileText, Calendar, CheckSquare, MessageSquare, Briefcase, Megaphone, Mic, StickyNote } from "lucide-react";
+import { Home, FileText, Calendar, CheckSquare, MessageSquare, Briefcase, Megaphone, Mic, StickyNote, Users } from "lucide-react";
 import { SidebarUserProfile } from "@/components/dashboard/sidebar-user-profile";
 
 export default async function DashboardLayout({
@@ -40,6 +40,7 @@ export default async function DashboardLayout({
     { href: "/business", icon: Briefcase, label: "Business" },
     { href: "/announcements", icon: Megaphone, label: "Announcements" },
     { href: "/speakers", icon: Mic, label: "Speakers" },
+    { href: "/participants", icon: Users, label: "Participants" },
     { href: "/tasks", icon: CheckSquare, label: "Tasks" },
   ];
 
