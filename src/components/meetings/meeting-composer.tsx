@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -15,15 +16,18 @@ import {
     Briefcase,
     Megaphone,
     User,
-    ChevronRight,
     Pencil,
     UserPlus,
     Mic,
+    CheckCircle,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { useToast } from "@/lib/hooks/use-toast";
 import { AddMeetingItemDialog, SelectedItem, CategoryType } from "./add-meeting-item-dialog";
 import { UnifiedSelectorModal, UnifiedSelectorMode, SpeakerSelection } from "./unified-selector-modal";
 import { ContainerAgendaItem, ContainerChildItem, ContainerType } from "./container-agenda-item";
+import { ValidationModal, ValidationItem, ValidationState } from "./validation-modal";
+
 
 // Composed agenda item type
 export interface ComposedAgendaItem {
@@ -64,17 +68,19 @@ interface MeetingComposerProps {
     templateId: string;
     meetingTitle: string;
     meetingDate: Date;
+    meetingTime: string;
     onBack: () => void;
-    onNext: (composedAgenda: ComposedAgendaItem[]) => void;
 }
 
 export function MeetingComposer({
     templateId,
     meetingTitle,
     meetingDate,
+    meetingTime,
     onBack,
-    onNext,
 }: MeetingComposerProps) {
+    const router = useRouter();
+    const { toast } = useToast();
     const [agendaItems, setAgendaItems] = useState<ComposedAgendaItem[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [addDialogOpen, setAddDialogOpen] = useState(false);
@@ -87,6 +93,12 @@ export function MeetingComposer({
     const [unifiedModalMode, setUnifiedModalMode] = useState<UnifiedSelectorMode>("hymn");
     const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
     const [targetContainerId, setTargetContainerId] = useState<string | null>(null);
+
+    // Validation modal state
+    const [validationModalOpen, setValidationModalOpen] = useState(false);
+    const [validationState, setValidationState] = useState<ValidationState>("validating");
+    const [validationItems, setValidationItems] = useState<ValidationItem[]>([]);
+    const [isCreating, setIsCreating] = useState(false);
 
     useEffect(() => {
         loadTemplateAndInjectItems();
@@ -337,8 +349,8 @@ export function MeetingComposer({
     };
 
     // Handle adding item to container from unified modal
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const handleAddToContainer = (
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         selectedItem: any,
         type: ContainerType
     ) => {
@@ -485,6 +497,263 @@ export function MeetingComposer({
     const selectedSpeakerIdsInMeeting = agendaItems
         .filter((item) => item.speaker_id)
         .map((item) => item.speaker_id as string);
+
+    // Validation logic
+    const validateAgenda = (): ValidationItem[] => {
+        const items: ValidationItem[] = [];
+
+        agendaItems.forEach((item) => {
+            // Check hymn items
+            if (item.is_hymn && !item.hymn_id) {
+                items.push({
+                    id: item.id,
+                    title: item.title,
+                    status: "warning",
+                    message: "Hymn not specified",
+                });
+            } else if (item.is_hymn && item.hymn_id) {
+                items.push({
+                    id: item.id,
+                    title: item.hymn_title || item.title,
+                    status: "success",
+                });
+            }
+
+            // Check procedural items requiring participant
+            if (item.requires_participant && !item.participant_id) {
+                items.push({
+                    id: item.id,
+                    title: item.title,
+                    status: "warning",
+                    message: "Participant not assigned",
+                });
+            } else if (item.requires_participant && item.participant_id) {
+                items.push({
+                    id: item.id,
+                    title: `${item.title} - ${item.participant_name}`,
+                    status: "success",
+                });
+            }
+
+            // Check speaker items
+            if (item.category === "speaker" && !item.speaker_id) {
+                items.push({
+                    id: item.id,
+                    title: item.title,
+                    status: "warning",
+                    message: "Speaker not assigned",
+                });
+            } else if (item.category === "speaker" && item.speaker_id) {
+                items.push({
+                    id: item.id,
+                    title: `${item.title} - ${item.speaker_name}`,
+                    status: "success",
+                });
+            }
+
+            // Check containers
+            if (item.isContainer) {
+                const childCount = item.childItems?.length || 0;
+                if (childCount === 0) {
+                    items.push({
+                        id: item.id,
+                        title: item.title,
+                        status: "warning",
+                        message: "No items selected (will be omitted)",
+                    });
+                } else {
+                    items.push({
+                        id: item.id,
+                        title: `${item.title} (${childCount} item${childCount !== 1 ? "s" : ""})`,
+                        status: "success",
+                    });
+                }
+            }
+
+            // Regular procedural items without special requirements
+            if (
+                item.category === "procedural" &&
+                !item.is_hymn &&
+                !item.requires_participant
+            ) {
+                items.push({
+                    id: item.id,
+                    title: item.title,
+                    status: "success",
+                });
+            }
+        });
+
+        return items;
+    };
+
+    // Handle validate button click
+    const handleValidate = () => {
+        setValidationModalOpen(true);
+        setValidationState("validating");
+        setValidationItems([]);
+
+        // Simulate validation delay for UX
+        setTimeout(() => {
+            const items = validateAgenda();
+            setValidationItems(items);
+
+            const hasWarnings = items.some((i) => i.status === "warning");
+            const hasErrors = items.some((i) => i.status === "error");
+
+            if (hasErrors) {
+                setValidationState("error");
+            } else if (hasWarnings) {
+                setValidationState("warnings");
+            } else {
+                setValidationState("success");
+            }
+        }, 800);
+    };
+
+    // Create the meeting
+    const handleCreateMeeting = async () => {
+        setIsCreating(true);
+
+        try {
+            const supabase = createClient();
+
+            // Combine date and time
+            const [hours, minutes] = meetingTime.split(":").map(Number);
+            const scheduledDate = new Date(meetingDate);
+            scheduledDate.setHours(hours, minutes);
+
+            // Flatten containers: only add child items
+            const flattenedAgenda: ComposedAgendaItem[] = [];
+            let orderIndex = 0;
+
+            for (const item of agendaItems) {
+                if (item.isContainer) {
+                    // Only add child items which have proper FKs
+                    if (item.childItems && item.childItems.length > 0) {
+                        for (const child of item.childItems) {
+                            flattenedAgenda.push({
+                                id: child.id,
+                                category: item.containerType!,
+                                title: child.title,
+                                description: child.description,
+                                duration_minutes: 5,
+                                order_index: orderIndex++,
+                                discussion_id: child.discussion_id,
+                                business_item_id: child.business_item_id,
+                                announcement_id: child.announcement_id,
+                            });
+                        }
+                    }
+                } else {
+                    flattenedAgenda.push({ ...item, order_index: orderIndex++ });
+                }
+            }
+
+            // Convert to JSON for RPC
+            const agendaJson = flattenedAgenda.map((item) => ({
+                title: item.title,
+                description: item.description,
+                duration_minutes: item.duration_minutes,
+                order_index: item.order_index,
+                item_type: item.category,
+                hymn_id: item.hymn_id || null,
+                speaker_id: item.speaker_id || null,
+                discussion_id: item.discussion_id || null,
+                business_item_id: item.business_item_id || null,
+                announcement_id: item.announcement_id || null,
+            }));
+
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const { data, error } = await (supabase as any).rpc(
+                "create_meeting_with_agenda",
+                {
+                    p_template_id: templateId,
+                    p_title: meetingTitle,
+                    p_scheduled_date: scheduledDate.toISOString(),
+                    p_agenda_items: agendaJson,
+                }
+            );
+
+            // Fallback to simple creation if new RPC doesn't exist
+            if (error && error.code === "PGRST202") {
+                const { data: fallbackData, error: fallbackError } = await (
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    supabase as any
+                ).rpc("create_meeting_from_template", {
+                    p_template_id: templateId,
+                    p_title: meetingTitle,
+                    p_scheduled_date: scheduledDate.toISOString(),
+                });
+
+                if (fallbackError) {
+                    console.error("Fallback RPC error:", fallbackError);
+                    toast({
+                        title: "Failed to create meeting",
+                        description: fallbackError.message || "An error occurred while creating the meeting (fallback).",
+                    });
+                    setValidationItems([
+                        {
+                            id: "error-create",
+                            title: "Failed to create meeting",
+                            status: "error",
+                            message: fallbackError.message || "Fallback RPC failed",
+                        },
+                    ]);
+                    setValidationState("error");
+                    return;
+                }
+
+                toast({
+                    title: "Meeting created",
+                    description: "Redirecting to meeting details...",
+                });
+
+                router.push(`/meetings/${fallbackData}`);
+                router.refresh();
+                return;
+            }
+
+            if (error) {
+                console.error("RPC error:", error);
+                toast({
+                    title: "Failed to create meeting",
+                    description: (error as Error)?.message || "An error occurred while creating the meeting.",
+                });
+                setValidationItems([
+                    {
+                        id: "error-create",
+                        title: "Failed to create meeting",
+                        status: "error",
+                        message: (error as Error)?.message || "RPC failed",
+                    },
+                ]);
+                setValidationState("error");
+                return;
+            }
+
+            toast({
+                title: "Meeting created",
+                description: "Redirecting to meeting details...",
+            });
+
+            router.push(`/meetings/${data}`);
+            router.refresh();
+        } catch (err: unknown) {
+            const errorMessage = err instanceof Error ? err.message : "Unable to create meeting";
+            setValidationItems([
+                {
+                    id: "error-create",
+                    title: "Failed to create meeting",
+                    status: "error",
+                    message: errorMessage,
+                },
+            ]);
+            setValidationState("error");
+        } finally {
+            setIsCreating(false);
+        }
+    };
 
     return (
         <>
@@ -635,9 +904,9 @@ export function MeetingComposer({
                     <Button variant="ghost" onClick={onBack}>
                         Back
                     </Button>
-                    <Button onClick={() => onNext(agendaItems)} disabled={agendaItems.length === 0}>
-                        Next: Review
-                        <ChevronRight className="ml-2 h-4 w-4" />
+                    <Button onClick={handleValidate} disabled={agendaItems.length === 0}>
+                        <CheckCircle className="mr-2 h-4 w-4" />
+                        Validate & Create
                     </Button>
                 </CardFooter>
             </Card>
@@ -672,6 +941,17 @@ export function MeetingComposer({
                 onSelectBusiness={(biz) => handleAddToContainer(biz, "business")}
                 onSelectAnnouncement={(ann) => handleAddToContainer(ann, "announcement")}
                 selectedSpeakerIdsInMeeting={selectedSpeakerIdsInMeeting}
+            />
+
+            <ValidationModal
+                open={validationModalOpen}
+                onClose={() => setValidationModalOpen(false)}
+                state={validationState}
+                items={validationItems}
+                onReviewAgenda={() => setValidationModalOpen(false)}
+                onProceed={handleCreateMeeting}
+                onRetry={handleValidate}
+                isCreating={isCreating}
             />
         </>
     );
