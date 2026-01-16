@@ -128,7 +128,12 @@ export function MeetingComposer({
                 .from("discussion_templates") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
                 .select("discussion_id, discussions(id, title, description, status)")
                 .eq("template_id", templateId);
-            if (!discError) linkedDiscussions = discData;
+            if (discError) {
+                console.error("Error loading discussion_templates:", discError);
+            } else {
+                linkedDiscussions = discData;
+                console.log("Linked discussions:", linkedDiscussions?.length || 0, linkedDiscussions);
+            }
 
             // 3. Load linked business items from junction table
             // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -79,24 +79,26 @@ function CreateMeetingContent() {
         let orderIndex = 0;
 
         for (const item of composedAgenda) {
-            if (item.isContainer && item.childItems && item.childItems.length > 0) {
-                // Add container placeholder to preserve agenda structure
-                flattenedAgenda.push({ ...item, order_index: orderIndex++ });
-
-                // Add each child as a separate agenda item
-                for (const child of item.childItems) {
-                    flattenedAgenda.push({
-                        id: child.id,
-                        category: item.containerType!, // 'discussion', 'business', or 'announcement'
-                        title: child.title,
-                        description: child.description,
-                        duration_minutes: 5, // Default duration for child items
-                        order_index: orderIndex++,
-                        discussion_id: child.discussion_id,
-                        business_item_id: child.business_item_id,
-                        announcement_id: child.announcement_id,
-                    });
+            if (item.isContainer) {
+                // Skip container placeholders entirely - they have item_type but no FKs
+                // which violates database constraints (e.g., check_discussion_has_fk)
+                // Only add the child items which have the proper FKs
+                if (item.childItems && item.childItems.length > 0) {
+                    for (const child of item.childItems) {
+                        flattenedAgenda.push({
+                            id: child.id,
+                            category: item.containerType!, // 'discussion', 'business', 'announcement', or 'speaker'
+                            title: child.title,
+                            description: child.description,
+                            duration_minutes: 5, // Default duration for child items
+                            order_index: orderIndex++,
+                            discussion_id: child.discussion_id,
+                            business_item_id: child.business_item_id,
+                            announcement_id: child.announcement_id,
+                        });
+                    }
                 }
+                // Empty containers are skipped entirely
             } else {
                 // Regular item, add as-is
                 flattenedAgenda.push({ ...item, order_index: orderIndex++ });
@@ -192,7 +194,7 @@ function CreateMeetingContent() {
     };
 
     return (
-        <div className="max-w-3xl mx-auto p-8">
+        <div className="max-w-5xl mx-auto p-8">
             <div className="mb-8">
                 <h1 className="text-3xl font-bold tracking-tight">New Meeting</h1>
                 <div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
@@ -376,7 +378,7 @@ function CreateMeetingContent() {
 export default function CreateMeetingWizard() {
     return (
         <Suspense fallback={
-            <div className="max-w-3xl mx-auto p-8">
+            <div className="max-w-5xl mx-auto p-8">
                 <div className="flex items-center justify-center py-12">
                     <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                 </div>
