@@ -21,6 +21,55 @@ export type OrganizationType =
 // User roles
 export type UserRole = 'admin' | 'leader' | 'guest';
 
+// Recurrence types for calendar events
+export type RecurrenceType = 'none' | 'daily' | 'weekly' | 'biweekly' | 'monthly' | 'yearly' | 'custom';
+
+// Recurrence configuration for custom patterns
+export interface RecurrenceConfig {
+  daysOfWeek?: number[]; // 0-6, Sunday = 0
+  dayOfMonth?: number;   // 1-31
+  interval?: number;     // Every N days/weeks/months
+}
+
+// External calendar subscription
+export interface CalendarSubscription {
+  id: string;
+  workspace_id: string;
+  name: string;
+  url: string;
+  color: string;
+  is_enabled: boolean;
+  last_synced_at: string | null;
+  sync_error: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// External calendar event
+export interface ExternalCalendarEvent {
+  id: string;
+  subscription_id: string;
+  external_uid: string;
+  title: string;
+  description: string | null;
+  start_date: string;
+  end_date: string | null;
+  location: string | null;
+  is_all_day: boolean;
+  raw_ical: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// External event link
+export interface ExternalEventLink {
+  id: string;
+  external_event_id: string;
+  announcement_id: string;
+  created_at: string;
+}
+
 // Invitation status
 export type InvitationStatus = 'pending' | 'accepted' | 'revoked' | 'expired';
 
@@ -704,6 +753,10 @@ export type Database = {
           priority: "low" | "medium" | "high";
           status: "draft" | "active" | "stopped";
           deadline: string | null;
+          schedule_date: string | null;
+          recurrence_type: RecurrenceType | null;
+          recurrence_end_date: string | null;
+          recurrence_config: RecurrenceConfig;
           created_by: string | null;
           created_at: string;
           updated_at: string;
@@ -716,6 +769,10 @@ export type Database = {
           priority?: "low" | "medium" | "high";
           status?: "draft" | "active" | "stopped";
           deadline?: string | null;
+          schedule_date?: string | null;
+          recurrence_type?: RecurrenceType | null;
+          recurrence_end_date?: string | null;
+          recurrence_config?: RecurrenceConfig;
           created_by?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -728,6 +785,10 @@ export type Database = {
           priority?: "low" | "medium" | "high";
           status?: "draft" | "active" | "stopped";
           deadline?: string | null;
+          schedule_date?: string | null;
+          recurrence_type?: RecurrenceType | null;
+          recurrence_end_date?: string | null;
+          recurrence_config?: RecurrenceConfig;
           created_by?: string | null;
           created_at?: string;
           updated_at?: string;
