@@ -19,11 +19,14 @@ type Template = Database['public']['Tables']['templates']['Row'];
 
 function CreateMeetingContent() {
     const searchParams = useSearchParams();
-    const [step, setStep] = useState(1);
+    const templateIdFromUrl = searchParams.get('templateId');
+
+    // Skip step 1 if template is pre-selected from URL
+    const [step, setStep] = useState(templateIdFromUrl ? 2 : 1);
     const [templates, setTemplates] = useState<Template[]>([]);
 
     // Form State
-    const [selectedTemplate, setSelectedTemplate] = useState<string | null>(searchParams.get('templateId'));
+    const [selectedTemplate, setSelectedTemplate] = useState<string | null>(templateIdFromUrl);
     const [title, setTitle] = useState("");
     const [date, setDate] = useState<Date | undefined>(new Date());
     const [time, setTime] = useState("07:00");
