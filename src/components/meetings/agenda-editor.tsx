@@ -41,6 +41,7 @@ export function AgendaEditor({ items, setItems, onDeleteItem }: AgendaEditorProp
             business_item_id: null,
             announcement_id: null,
             speaker_id: null,
+            hymn_id: null,
             participant_id: null,
             participant_name: null,
         };

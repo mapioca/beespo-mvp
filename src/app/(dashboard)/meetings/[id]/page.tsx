@@ -1,11 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
-import { formatMeetingDateTime } from "@/lib/meeting-helpers";
-import { MeetingStatusBadge } from "@/components/meetings/meeting-status-badge";
-import { AgendaItemList } from "@/components/meetings/agenda-item-list";
-import { MeetingSidebar } from "@/components/meetings/sidebar";
-import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Clock, CalendarDays } from "lucide-react";
+import { MeetingDetailContent } from "@/components/meetings/meeting-detail-content";
+import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
@@ -48,7 +44,7 @@ export default async function MeetingDetailPage({ params }: MeetingDetailPagePro
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const workspaceSlug = (meeting.workspaces as any)?.slug || null;
 
-    // Fetch agenda items with hymn data for PDF generation
+    // Fetch agenda items with hymn data for PDF generation and editing
     const { data: agendaItems } = await (supabase
         .from("agenda_items") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
         .select(`
@@ -73,49 +69,14 @@ export default async function MeetingDetailPage({ params }: MeetingDetailPagePro
                 </Button>
             </div>
 
-            {/* Main Layout - Sidebar on right */}
-            <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
-                {/* Main Content Area */}
-                <div className="space-y-6 min-w-0">
-                    {/* Title Section */}
-                    <div>
-                        <div className="flex items-center gap-3 mb-2 flex-wrap">
-                            <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">{meeting.title}</h1>
-                            <MeetingStatusBadge status={meeting.status} />
-                        </div>
-                        <p className="text-muted-foreground flex items-center gap-2">
-                            <CalendarDays className="w-4 h-4" />
-                            {formatMeetingDateTime(meeting.scheduled_date)}
-                        </p>
-                    </div>
-
-                    <Separator />
-
-                    {/* Agenda Section */}
-                    <div className="space-y-4">
-                        <div className="flex items-center justify-between">
-                            <h2 className="text-xl font-semibold">Agenda</h2>
-                            <div className="text-sm text-muted-foreground flex items-center gap-1">
-                                <Clock className="w-3 h-3" />
-                                <span>Total Est: {totalDuration} min</span>
-                            </div>
-                        </div>
-
-                        <AgendaItemList items={agendaItems || []} showNotes={true} />
-                    </div>
-                </div>
-
-                {/* Right Sidebar - Mobile: shows below content, Desktop: fixed width right column */}
-                <div className="lg:sticky lg:top-6 lg:self-start">
-                    <MeetingSidebar
-                        meeting={meeting}
-                        agendaItems={agendaItems || []}
-                        workspaceSlug={workspaceSlug}
-                        isLeader={isLeader}
-                        totalDuration={totalDuration}
-                    />
-                </div>
-            </div>
+            {/* Client Component for Interactive Content */}
+            <MeetingDetailContent
+                meeting={meeting}
+                agendaItems={agendaItems || []}
+                workspaceSlug={workspaceSlug}
+                isLeader={isLeader}
+                totalDuration={totalDuration}
+            />
         </div>
     );
 }

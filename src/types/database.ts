@@ -429,6 +429,7 @@ export type Database = {
           business_item_id: string | null;
           announcement_id: string | null;
           speaker_id: string | null;
+          hymn_id: string | null;
           title: string;
           description: string | null;
           order_index: number;
@@ -449,6 +450,7 @@ export type Database = {
           business_item_id?: string | null;
           announcement_id?: string | null;
           speaker_id?: string | null;
+          hymn_id?: string | null;
           title: string;
           description?: string | null;
           order_index: number;
@@ -469,6 +471,7 @@ export type Database = {
           business_item_id?: string | null;
           announcement_id?: string | null;
           speaker_id?: string | null;
+          hymn_id?: string | null;
           title?: string;
           description?: string | null;
           order_index?: number;
