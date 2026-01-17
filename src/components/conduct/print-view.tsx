@@ -17,20 +17,20 @@ export function PrintView({ meeting, items }: PrintViewProps) {
   const { globalNotes, itemNotes } = useConductMeetingStore();
 
   return (
-    <div className="print-view hidden print:block">
+    <div className="print-view">
       {/* Header */}
-      <header className="print-header mb-8 border-b pb-4">
-        <h1 className="text-2xl font-bold">{meeting.title}</h1>
-        <p className="text-sm text-gray-600">
+      <header className="print-header">
+        <h1>{meeting.title}</h1>
+        <p>
           {format(new Date(meeting.scheduled_date), "EEEE, MMMM d, yyyy")}
         </p>
       </header>
 
       {/* Global Notes Section */}
       {globalNotes && globalNotes.blocks.length > 0 && (
-        <section className="mb-8">
-          <h2 className="text-lg font-semibold mb-3 border-b pb-1">Meeting Notes</h2>
-          <div className="prose prose-sm max-w-none">
+        <section>
+          <h2>Meeting Notes</h2>
+          <div className="prose">
             <EditorDataRenderer data={globalNotes} />
           </div>
         </section>
@@ -38,7 +38,7 @@ export function PrintView({ meeting, items }: PrintViewProps) {
 
       {/* Agenda Items */}
       <section>
-        <h2 className="text-lg font-semibold mb-4 border-b pb-1">Agenda</h2>
+        <h2>Agenda</h2>
         <div className="space-y-6">
           {items.map((item, idx) => {
             const notes = itemNotes[item.id];
@@ -46,33 +46,33 @@ export function PrintView({ meeting, items }: PrintViewProps) {
 
             return (
               <div key={item.id} className="print-agenda-item">
-                <div className="flex items-start gap-3 mb-2">
-                  <span className="text-lg font-bold text-gray-400">
+                <div className="flex items-start gap-3">
+                  <span className="text-gray-400">
                     {idx + 1}.
                   </span>
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
-                      <h3 className="font-semibold">{item.title}</h3>
-                      <span className="text-xs text-gray-500 uppercase">
+                      <h3>{item.title}</h3>
+                      <span className="text-gray-500" style={{ fontSize: '10pt', textTransform: 'uppercase' }}>
                         {item.item_type}
                       </span>
                       {item.is_completed && (
-                        <span className="text-xs text-green-600">[Completed]</span>
+                        <span className="text-green-600" style={{ fontSize: '10pt' }}>[Completed]</span>
                       )}
                     </div>
                     {item.description && (
-                      <p className="text-sm text-gray-600 mt-1">
+                      <p className="text-gray-600" style={{ fontSize: '11pt', marginTop: '0.25rem' }}>
                         {item.description}
                       </p>
                     )}
                     {item.participant_name && (
-                      <p className="text-sm text-gray-500 mt-1">
+                      <p className="text-gray-500" style={{ fontSize: '10pt', marginTop: '0.25rem' }}>
                         Assigned to: {item.participant_name}
                       </p>
                     )}
                   </div>
                   {item.duration_minutes && (
-                    <span className="text-sm text-gray-500">
+                    <span className="text-gray-500" style={{ fontSize: '10pt' }}>
                       {item.duration_minutes} min
                     </span>
                   )}
@@ -80,8 +80,8 @@ export function PrintView({ meeting, items }: PrintViewProps) {
 
                 {/* Item Notes */}
                 {hasNotes && (
-                  <div className="ml-8 mt-2 pl-4 border-l-2 border-gray-200">
-                    <div className="prose prose-sm max-w-none">
+                  <div className="border-l-2" style={{ marginLeft: '2rem', marginTop: '0.5rem', paddingLeft: '1rem' }}>
+                    <div className="prose">
                       <EditorDataRenderer data={notes} />
                     </div>
                   </div>
@@ -93,7 +93,7 @@ export function PrintView({ meeting, items }: PrintViewProps) {
       </section>
 
       {/* Footer */}
-      <footer className="mt-12 pt-4 border-t text-xs text-gray-500 text-center">
+      <footer>
         <p>Generated from Beespo</p>
         <p>{format(new Date(), "MMMM d, yyyy 'at' h:mm a")}</p>
       </footer>
@@ -127,22 +127,21 @@ function BlockRenderer({ block }: BlockRendererProps) {
     case "paragraph":
       return (
         <p
-          className="mb-2"
           dangerouslySetInnerHTML={{ __html: block.data.text || "" }}
         />
       );
 
     case "header": {
       const level = block.data.level || 3;
-      if (level === 2) return <h2 className="font-semibold mb-2">{block.data.text}</h2>;
-      if (level === 3) return <h3 className="font-semibold mb-2">{block.data.text}</h3>;
-      return <h4 className="font-semibold mb-2">{block.data.text}</h4>;
+      if (level === 2) return <h2>{block.data.text}</h2>;
+      if (level === 3) return <h3>{block.data.text}</h3>;
+      return <h4>{block.data.text}</h4>;
     }
 
     case "list":
       const ListTag = block.data.style === "ordered" ? "ol" : "ul";
       return (
-        <ListTag className={ListTag === "ol" ? "list-decimal" : "list-disc"} style={{ paddingLeft: "1.5rem" }}>
+        <ListTag className={ListTag === "ol" ? "list-decimal" : "list-disc"}>
           {block.data.items?.map((item: string, i: number) => (
             <li key={i} dangerouslySetInnerHTML={{ __html: item }} />
           ))}
@@ -151,9 +150,9 @@ function BlockRenderer({ block }: BlockRendererProps) {
 
     case "checklist":
       return (
-        <div className="space-y-1">
+        <div>
           {block.data.items?.map((item: { text: string; checked: boolean }, i: number) => (
-            <div key={i} className="flex items-center gap-2">
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
               <span>{item.checked ? "☑" : "☐"}</span>
               <span dangerouslySetInnerHTML={{ __html: item.text }} />
             </div>
@@ -163,17 +162,17 @@ function BlockRenderer({ block }: BlockRendererProps) {
 
     case "quote":
       return (
-        <blockquote className="border-l-4 border-gray-300 pl-4 italic my-2">
+        <blockquote>
           <p dangerouslySetInnerHTML={{ __html: block.data.text || "" }} />
           {block.data.caption && (
-            <cite className="text-sm text-gray-500">— {block.data.caption}</cite>
+            <cite style={{ fontSize: '10pt', color: '#666' }}>— {block.data.caption}</cite>
           )}
         </blockquote>
       );
 
     case "code":
       return (
-        <pre className="bg-gray-100 p-2 rounded text-sm overflow-x-auto my-2">
+        <pre>
           <code>{block.data.code}</code>
         </pre>
       );

@@ -146,7 +146,7 @@ export function ScribeView({
   return (
     <div className="flex-1 flex overflow-hidden">
       {/* Left Panel: Agenda Items */}
-      <div className="w-80 border-r bg-muted/10 overflow-y-auto hidden md:block">
+      <div className="w-80 border-r bg-muted/10 overflow-y-auto hidden md:block no-print">
         <div className="p-4">
           <h3 className="font-semibold text-sm text-muted-foreground mb-4 uppercase tracking-wider">
             Agenda Items
@@ -192,7 +192,7 @@ export function ScribeView({
               <MeetingTypeBadge type={currentItem.item_type} />
               <h2 className="font-semibold">{currentItem.title}</h2>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 no-print">
               <CompactItemTimer
                 meetingId={meeting.id}
                 itemId={currentItem.id}
@@ -232,7 +232,7 @@ export function ScribeView({
             onValueChange={(v) => setActiveTab(v as NotesTab)}
             className="flex-1 flex flex-col"
           >
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-4 no-print">
               <TabsList>
                 <TabsTrigger value="item">Item Notes</TabsTrigger>
                 <TabsTrigger value="global">Meeting Notes</TabsTrigger>
@@ -265,7 +265,7 @@ export function ScribeView({
         </div>
 
         {/* Bottom Actions */}
-        <div className="border-t p-4 bg-card flex gap-2">
+        <div className="border-t p-4 bg-card flex gap-2 no-print">
           <Button
             size="sm"
             className={cn(

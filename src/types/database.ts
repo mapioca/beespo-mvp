@@ -377,6 +377,7 @@ export type Database = {
           workspace_id: string;
           template_id: string | null;
           title: string;
+          description: string | null;
           scheduled_date: string;
           status: "scheduled" | "in_progress" | "completed" | "cancelled";
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -392,6 +393,7 @@ export type Database = {
           workspace_id: string;
           template_id?: string | null;
           title: string;
+          description?: string | null;
           scheduled_date: string;
           status?: "scheduled" | "in_progress" | "completed" | "cancelled";
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -407,6 +409,7 @@ export type Database = {
           workspace_id?: string;
           template_id?: string | null;
           title?: string;
+          description?: string | null;
           scheduled_date?: string;
           status?: "scheduled" | "in_progress" | "completed" | "cancelled";
           // eslint-disable-next-line @typescript-eslint/no-explicit-any

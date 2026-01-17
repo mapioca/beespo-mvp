@@ -1,21 +1,33 @@
 /* Print styles for Conduct Meeting page */
 
 @media print {
+  /* Override CSS custom properties for clean white backgrounds */
+  :root {
+    --background: 0 0% 100% !important;
+    --foreground: 0 0% 0% !important;
+    --muted: 0 0% 100% !important;
+    --muted-foreground: 0 0% 40% !important;
+    --card: 0 0% 100% !important;
+    --accent: 0 0% 100% !important;
+    --border: 0 0% 90% !important;
+  }
+
   /* Reset body styles */
   body {
     background: white !important;
     color: black !important;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
     font-size: 12pt !important;
     line-height: 1.5 !important;
   }
 
-  /* Page setup */
+  /* Page setup with formal document margins */
   @page {
     size: letter;
-    margin: 1in;
+    margin: 0.75in 1in;
   }
 
-  /* Hide interactive elements */
+  /* Comprehensive UI chrome removal */
   header,
   .view-toggle,
   .timer-controls,
@@ -26,7 +38,11 @@
   .timestamp-button,
   .action-buttons,
   button,
+  input,
+  textarea,
+  select,
   [role="button"],
+  [role="dialog"],
   .no-print {
     display: none !important;
   }
@@ -41,88 +57,213 @@
     display: none !important;
   }
 
-  /* Typography */
-  .print-header h1 {
-    font-size: 18pt;
-    margin-bottom: 0.25rem;
+  /* Remove all backgrounds, borders, shadows, and rounded corners */
+  * {
+    background-color: transparent !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+  }
+
+  /* Professional Typography System */
+
+  /* Headers - Serif fonts for formal document feel */
+  .print-header h1,
+  h1 {
+    font-family: Georgia, "Times New Roman", Times, serif !important;
+    font-size: 20pt !important;
+    font-weight: bold !important;
+    letter-spacing: -0.02em !important;
+    margin-bottom: 0.5rem !important;
+    color: black !important;
+  }
+
+  .print-header {
+    margin-bottom: 2rem !important;
+    padding-bottom: 1rem !important;
+    border-bottom: 2pt solid black !important;
   }
 
   .print-header p {
-    font-size: 10pt;
-    color: #666;
+    font-size: 10pt !important;
+    color: #666 !important;
+    margin: 0 !important;
   }
 
-  /* Agenda items */
+  h2,
+  .prose h2 {
+    font-family: Georgia, "Times New Roman", Times, serif !important;
+    font-size: 16pt !important;
+    font-weight: 600 !important;
+    margin-top: 1.5rem !important;
+    margin-bottom: 0.5rem !important;
+    color: black !important;
+    page-break-after: avoid !important;
+  }
+
+  h3,
+  .prose h3 {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+    font-size: 14pt !important;
+    font-weight: 600 !important;
+    margin-top: 1rem !important;
+    margin-bottom: 0.5rem !important;
+    color: black !important;
+    page-break-after: avoid !important;
+  }
+
+  h4,
+  .prose h4 {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+    font-size: 12pt !important;
+    font-weight: 600 !important;
+    margin-top: 0.75rem !important;
+    margin-bottom: 0.25rem !important;
+    color: black !important;
+    page-break-after: avoid !important;
+  }
+
+  /* Agenda items with formal spacing */
   .print-agenda-item {
-    page-break-inside: avoid;
+    page-break-inside: avoid !important;
+    margin-bottom: 1.5rem !important;
   }
 
-  /* Notes styling */
+  .print-agenda-item h3 {
+    color: black !important;
+  }
+
+  .print-agenda-item .text-gray-400,
+  .print-agenda-item .text-gray-500,
+  .print-agenda-item .text-gray-600 {
+    color: #666 !important;
+  }
+
+  /* Notes styling - readable prose */
   .prose {
-    font-size: 11pt;
+    font-size: 11pt !important;
+    line-height: 1.5 !important;
+    color: black !important;
   }
 
   .prose p {
-    margin-bottom: 0.5rem;
-  }
-
-  .prose h2,
-  .prose h3,
-  .prose h4 {
-    margin-top: 0.75rem;
-    margin-bottom: 0.25rem;
-    page-break-after: avoid;
+    margin-bottom: 0.5rem !important;
+    color: black !important;
   }
 
   .prose ul,
   .prose ol {
-    margin-left: 1.5rem;
+    margin-left: 1.5rem !important;
+    padding-left: 0 !important;
+  }
+
+  .prose li {
+    margin-bottom: 0.25rem !important;
+    color: black !important;
   }
 
   .prose blockquote {
-    border-left: 2pt solid #ccc;
-    padding-left: 0.5rem;
-    font-style: italic;
+    border-left: 2pt solid #333 !important;
+    padding-left: 0.5rem !important;
+    margin: 0.5rem 0 !important;
+    font-style: italic !important;
+    color: #333 !important;
   }
 
-  .prose pre {
-    background: #f5f5f5;
-    padding: 0.5rem;
-    border-radius: 4px;
-    font-size: 9pt;
-    overflow-x: auto;
+  /* Code blocks - minimal styling */
+  .prose pre,
+  .prose code,
+  pre {
+    background: white !important;
+    border: 1pt solid #ddd !important;
+    padding: 0.5rem !important;
+    font-family: "Courier New", Courier, monospace !important;
+    font-size: 9pt !important;
+    overflow-x: auto !important;
+    color: black !important;
   }
 
-  /* Timestamps in notes (highlighted) */
+  /* Timestamps in notes (preserved with yellow highlight) */
   .prose mark,
   .cdx-marker {
     background-color: #fff3cd !important;
-    padding: 0 2px;
-    print-color-adjust: exact;
-    -webkit-print-color-adjust: exact;
+    padding: 0 2px !important;
+    color: black !important;
+    print-color-adjust: exact !important;
+    -webkit-print-color-adjust: exact !important;
   }
 
-  /* Footer */
+  /* Footer with formal styling */
   footer {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    text-align: center;
-    font-size: 8pt;
-    color: #999;
+    margin-top: 3rem !important;
+    padding-top: 1rem !important;
+    border-top: 1pt solid #ddd !important;
+    text-align: center !important;
+    font-size: 8pt !important;
+    color: #999 !important;
   }
 
-  /* Links */
+  footer p {
+    margin: 0.25rem 0 !important;
+  }
+
+  /* Links - no decoration in print */
   a {
-    text-decoration: none;
-    color: inherit;
+    text-decoration: none !important;
+    color: inherit !important;
   }
 
-  /* Ensure backgrounds print */
+  /* Remove Tailwind utility backgrounds */
+  .bg-muted,
+  .bg-card,
+  .bg-accent,
+  .bg-background,
+  .bg-gray-100,
+  .bg-gray-200 {
+    background: transparent !important;
+  }
+
+  /* Remove borders except where explicitly needed */
+  .border,
+  .border-t,
+  .border-b,
+  .border-l,
+  .border-r {
+    border: none !important;
+  }
+
+  /* Keep structural borders */
+  .print-header {
+    border-bottom: 2pt solid black !important;
+  }
+
+  .print-agenda-item .border-l-2 {
+    border-left: 2pt solid #ddd !important;
+  }
+
+  /* Text colors - convert to print-appropriate */
+  .text-muted-foreground,
+  .text-gray-400,
+  .text-gray-500 {
+    color: #666 !important;
+  }
+
+  .text-gray-600 {
+    color: #555 !important;
+  }
+
+  .text-green-600 {
+    color: #2d5016 !important;
+  }
+
+  /* Spacing utilities */
+  .space-y-6 > * + * {
+    margin-top: 1.5rem !important;
+  }
+
+  /* Ensure print color adjustment */
   * {
-    print-color-adjust: exact;
-    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact !important;
+    -webkit-print-color-adjust: exact !important;
   }
 }
 

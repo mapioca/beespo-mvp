@@ -3,11 +3,9 @@ import { notFound } from "next/navigation";
 import { formatMeetingDateTime } from "@/lib/meeting-helpers";
 import { MeetingStatusBadge } from "@/components/meetings/meeting-status-badge";
 import { AgendaItemList } from "@/components/meetings/agenda-item-list";
-import { MeetingDashboardActions } from "@/components/meetings/meeting-dashboard-actions";
-import { LinkedNotesList } from "@/components/notes/linked-notes-list";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { MeetingSidebar } from "@/components/meetings/sidebar";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Clock, CalendarDays, User } from "lucide-react";
+import { ArrowLeft, Clock, CalendarDays } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
@@ -25,20 +23,21 @@ export default async function MeetingDetailPage({ params }: MeetingDetailPagePro
     const { data: { user } } = await supabase.auth.getUser();
     const { data: profile } = await (supabase
         .from("profiles") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
-        .select("role, full_name")
+        .select("role, full_name, workspace_id")
         .eq("id", user?.id || "")
         .single();
 
     const isLeader = profile?.role === "leader";
 
-    // Fetch meeting details
+    // Fetch meeting details with workspace for slug
     const { data: meeting, error } = await (supabase
         .from("meetings") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
         .select(`
-      *,
-      templates (name),
-      profiles (full_name)
-    `)
+            *,
+            templates (name),
+            profiles (full_name),
+            workspaces!inner(slug)
+        `)
         .eq("id", id)
         .single();
 
@@ -46,10 +45,16 @@ export default async function MeetingDetailPage({ params }: MeetingDetailPagePro
         notFound();
     }
 
-    // Fetch agenda items
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const workspaceSlug = (meeting.workspaces as any)?.slug || null;
+
+    // Fetch agenda items with hymn data for PDF generation
     const { data: agendaItems } = await (supabase
         .from("agenda_items") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
-        .select("*")
+        .select(`
+            *,
+            hymn:hymns(title, hymn_number)
+        `)
         .eq("meeting_id", id)
         .order("order_index", { ascending: true });
 
@@ -57,7 +62,7 @@ export default async function MeetingDetailPage({ params }: MeetingDetailPagePro
     const totalDuration = agendaItems?.reduce((acc: number, item: any) => acc + (item.duration_minutes || 0), 0) || 0;
 
     return (
-        <div className="flex flex-col gap-8 p-8 max-w-5xl mx-auto">
+        <div className="flex flex-col gap-6 p-6 lg:p-8 max-w-6xl mx-auto">
             {/* Header / Nav */}
             <div className="flex items-center gap-4 text-muted-foreground">
                 <Button variant="ghost" size="sm" asChild className="-ml-2">
@@ -68,12 +73,14 @@ export default async function MeetingDetailPage({ params }: MeetingDetailPagePro
                 </Button>
             </div>
 
-            <div className="grid gap-6 md:grid-cols-[2fr_1fr]">
-                <div className="space-y-6">
-                    {/* Main Title Area */}
+            {/* Main Layout - Sidebar on right */}
+            <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
+                {/* Main Content Area */}
+                <div className="space-y-6 min-w-0">
+                    {/* Title Section */}
                     <div>
-                        <div className="flex items-center gap-3 mb-2">
-                            <h1 className="text-3xl font-bold tracking-tight">{meeting.title}</h1>
+                        <div className="flex items-center gap-3 mb-2 flex-wrap">
+                            <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">{meeting.title}</h1>
                             <MeetingStatusBadge status={meeting.status} />
                         </div>
                         <p className="text-muted-foreground flex items-center gap-2">
@@ -98,43 +105,15 @@ export default async function MeetingDetailPage({ params }: MeetingDetailPagePro
                     </div>
                 </div>
 
-                {/* Sidebar */}
-                <div className="space-y-6">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="text-lg">Actions</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <MeetingDashboardActions meeting={meeting} isLeader={isLeader} />
-                        </CardContent>
-                    </Card>
-
-                    <LinkedNotesList entityId={id} entityType="meeting" />
-
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="text-lg">Details</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4 text-sm">
-                            <div>
-                                <span className="text-muted-foreground block text-xs uppercase tracking-wider font-semibold mb-1">Formatted From</span>
-                                <div className="font-medium">
-                                    {meeting.templates?.name || "No Template (Blank)"}
-                                </div>
-                            </div>
-                            <div>
-                                <span className="text-muted-foreground block text-xs uppercase tracking-wider font-semibold mb-1">Created By</span>
-                                <div className="flex items-center gap-2">
-                                    <User className="w-3 h-3" />
-                                    {meeting.profiles?.full_name || "Unknown"}
-                                </div>
-                            </div>
-                            <div>
-                                <span className="text-muted-foreground block text-xs uppercase tracking-wider font-semibold mb-1">Meeting ID</span>
-                                <code className="text-xs bg-muted px-1 py-0.5 rounded">{meeting.id.slice(0, 8)}...</code>
-                            </div>
-                        </CardContent>
-                    </Card>
+                {/* Right Sidebar - Mobile: shows below content, Desktop: fixed width right column */}
+                <div className="lg:sticky lg:top-6 lg:self-start">
+                    <MeetingSidebar
+                        meeting={meeting}
+                        agendaItems={agendaItems || []}
+                        workspaceSlug={workspaceSlug}
+                        isLeader={isLeader}
+                        totalDuration={totalDuration}
+                    />
                 </div>
             </div>
         </div>

@@ -6,9 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Database } from "@/types/database";
 import { ArrowLeft, StopCircle, Printer } from "lucide-react";
-import { ViewToggle } from "@/components/conduct/view-toggle";
 import { ConductorView } from "@/components/conduct/conductor-view";
-import { ScribeView } from "@/components/conduct/scribe-view";
 import { CompactGlobalTimer } from "@/components/conduct/global-timer";
 import { ShareDialog } from "@/components/conduct/share-dialog";
 import { PrintView } from "@/components/conduct/print-view";
@@ -36,7 +34,6 @@ export default function ConductMeetingPage({ params }: ConductMeetingProps) {
   const [isLoading, setIsLoading] = useState(true);
 
   const {
-    viewMode,
     setMeetingId,
     setActiveItem,
     startGlobalTimer,
@@ -199,10 +196,7 @@ export default function ConductMeetingPage({ params }: ConductMeetingProps) {
           </div>
         </div>
 
-        <div className="flex items-center gap-4">
-          <ViewToggle />
-
-          <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2">
             <ShareDialog
               meeting={meeting}
               workspaceSlug={workspaceSlug}
@@ -223,24 +217,15 @@ export default function ConductMeetingPage({ params }: ConductMeetingProps) {
               <StopCircle className="mr-2 h-4 w-4" />
               End Meeting
             </Button>
-          </div>
         </div>
       </header>
 
-      {/* Main Content - switches between Conductor and Scribe views */}
-      {viewMode === "conductor" ? (
-        <ConductorView
-          meeting={meeting}
-          items={items}
-          onItemComplete={handleItemComplete}
-        />
-      ) : (
-        <ScribeView
-          meeting={meeting}
-          items={items}
-          onItemComplete={handleItemComplete}
-        />
-      )}
+      {/* Main Content - Interactive Document View */}
+      <ConductorView
+        meeting={meeting}
+        items={items}
+        onItemComplete={handleItemComplete}
+      />
 
       {/* Print View - hidden on screen, visible when printing */}
       <PrintView meeting={meeting} items={items} />
