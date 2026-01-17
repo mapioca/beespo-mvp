@@ -30,8 +30,13 @@ export function DayView({
   const dateKey = format(currentDate, "yyyy-MM-dd");
   const dayEvents = eventsByDate.get(dateKey) || [];
   const allDayEvents = dayEvents.filter((e) => e.isAllDay);
-    dayEvents.filter((e) => !e.isAllDay);
-    const isCurrentDay = isToday(currentDate);
+  const timedEvents = dayEvents.filter((e) => !e.isAllDay);
+  const isCurrentDay = isToday(currentDate);
+
+  // Get events that start at a specific hour
+  const getEventsAtHour = (hour: number): CalendarEvent[] => {
+    return timedEvents.filter((e) => getHours(e.startDate) === hour);
+  };
 
   // Calculate current time indicator position
   const now = new Date();
@@ -85,22 +90,35 @@ export function DayView({
 
         {/* Hours */}
         <div className="divide-y">
-          {HOURS.map((hour) => (
-            <div
-              key={hour}
-              className="flex h-20 hover:bg-muted/30 cursor-pointer"
-              onClick={() => onDateClick(setHours(currentDate, hour))}
-            >
-              {/* Time label */}
-              <div className="w-20 p-2 text-sm text-muted-foreground text-right border-r flex-shrink-0">
-                {format(setHours(new Date(), hour), "h a")}
+          {HOURS.map((hour) => {
+            const hourEvents = getEventsAtHour(hour);
+            return (
+              <div
+                key={hour}
+                className="flex min-h-20 hover:bg-muted/30 cursor-pointer"
+                onClick={() => onDateClick(setHours(currentDate, hour))}
+              >
+                {/* Time label */}
+                <div className="w-20 p-2 text-sm text-muted-foreground text-right border-r flex-shrink-0">
+                  {format(setHours(new Date(), hour), "h a")}
+                </div>
+                {/* Event area */}
+                <div className="flex-1 p-1">
+                  {hourEvents.length > 0 && (
+                    <div className="space-y-1">
+                      {hourEvents.map((event) => (
+                        <CalendarEventChip
+                          key={event.id}
+                          event={event}
+                          onClick={onEventClick}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
-              {/* Event area */}
-              <div className="flex-1 p-1">
-                {/* We'd position timed events here based on their start time */}
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>
