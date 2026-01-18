@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { Separator } from "@/components/ui/separator";
 import { CalendarDays, Clock } from "lucide-react";
 import { MeetingStatusBadge } from "@/components/meetings/meeting-status-badge";
 import { EditableAgendaItemList } from "@/components/meetings/editable";
@@ -50,14 +49,19 @@ export function MeetingDetailContent({
             {/* ============================================
                 Pane 1: Main Content (Agenda)
                 - flex-1: Grows to fill available space
-                - overflow-y-auto: Independent scrolling
-                - Internal max-width for readable content
+                - flex flex-col: Stack header + scrollable body
+                - overflow-hidden: Prevent outer scroll
             ============================================ */}
-            <div className="flex-1 min-w-0 overflow-y-auto bg-background">
-                {/* Inner container with max-width for readability */}
-                <div className="max-w-3xl mx-auto px-6 lg:px-8 py-6">
-                    {/* Title Section */}
-                    <div>
+            <div className="flex-1 min-w-0 flex flex-col overflow-hidden bg-background">
+                {/* ----------------------------------------
+                    Header Container (Sticky)
+                    - shrink-0: Fixed height based on content
+                    - bg-background: Solid background so content scrolls underneath
+                    - border-b: Visual separation from scrolling content
+                    - z-10: Ensure header stays above scrolling content
+                ---------------------------------------- */}
+                <div className="shrink-0 bg-background border-b border-border z-10">
+                    <div className="max-w-3xl mx-auto px-6 lg:px-8 py-6">
                         <div className="flex items-center gap-3 mb-2 flex-wrap">
                             <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">
                                 {meeting.title}
@@ -69,25 +73,32 @@ export function MeetingDetailContent({
                             {formatMeetingDateTime(meeting.scheduled_date)}
                         </p>
                     </div>
+                </div>
 
-                    <Separator className="my-6" />
-
-                    {/* Agenda Section */}
-                    <div className="space-y-4">
-                        <div className="flex items-center justify-between">
-                            <h2 className="text-xl font-semibold">Agenda</h2>
-                            <div className="text-sm text-muted-foreground flex items-center gap-1">
-                                <Clock className="w-3 h-3" />
-                                <span>Total Est: {totalDuration} min</span>
+                {/* ----------------------------------------
+                    Scrollable Body
+                    - flex-1: Takes remaining height
+                    - overflow-y-auto: Independent scrolling for agenda
+                ---------------------------------------- */}
+                <div className="flex-1 overflow-y-auto">
+                    <div className="max-w-3xl mx-auto px-6 lg:px-8 py-6">
+                        {/* Agenda Section */}
+                        <div className="space-y-4">
+                            <div className="flex items-center justify-between">
+                                <h2 className="text-xl font-semibold">Agenda</h2>
+                                <div className="text-sm text-muted-foreground flex items-center gap-1">
+                                    <Clock className="w-3 h-3" />
+                                    <span>Total Est: {totalDuration} min</span>
+                                </div>
                             </div>
-                        </div>
 
-                        <EditableAgendaItemList
-                            items={agendaItems}
-                            meetingId={meeting.id}
-                            isEditable={isEditable}
-                            onItemsChange={setAgendaItems}
-                        />
+                            <EditableAgendaItemList
+                                items={agendaItems}
+                                meetingId={meeting.id}
+                                isEditable={isEditable}
+                                onItemsChange={setAgendaItems}
+                            />
+                        </div>
                     </div>
                 </div>
             </div>
