@@ -46,9 +46,9 @@ export default async function DashboardLayout({
   ];
 
   return (
-    <div className="flex h-screen">
+    <div className="flex h-screen-dynamic">
       {/* Sidebar */}
-      <aside className="w-64 border-r bg-card">
+      <aside className="w-64 border-r bg-card shrink-0">
         <div className="flex h-full flex-col">
           {/* Logo/Header */}
           <div className="border-b p-4">
@@ -87,8 +87,8 @@ export default async function DashboardLayout({
         </div>
       </aside>
 
-      {/* Main Content */}
-      <main className="flex-1 overflow-auto">{children}</main>
+      {/* Main Content - flex-1 fills remaining width, overflow-hidden contains internal scrolling */}
+      <main className="flex-1 min-w-0 overflow-hidden">{children}</main>
     </div>
   );
 }

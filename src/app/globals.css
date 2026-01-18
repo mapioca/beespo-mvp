@@ -64,3 +64,24 @@
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
+
+/* ============================================
+   Dynamic Viewport Height Utilities
+   Uses dvh with vh fallback for older browsers
+============================================ */
+@layer utilities {
+  .h-screen-dynamic {
+    /*height: 100vh; !* Fallback for older browsers *!*/
+    height: 100dvh; /* Modern browsers with dynamic viewport */
+  }
+
+  .min-h-screen-dynamic {
+    /*min-height: 100vh;*/
+    min-height: 100dvh;
+  }
+
+  .max-h-screen-dynamic {
+    /*max-height: 100vh;*/
+    max-height: 100dvh;
+  }
+}

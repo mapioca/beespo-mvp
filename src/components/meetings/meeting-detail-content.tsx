@@ -45,20 +45,21 @@ export function MeetingDetailContent({
         meeting.status !== "cancelled";
 
     return (
-        <div className="flex flex-1 min-h-0">
+        <div className="flex flex-1 min-h-0 overflow-hidden">
             {/* ============================================
                 Pane 1: Main Content (Agenda)
                 - flex-1: Grows to fill available space
+                - min-w-0: Prevents flex item from overflowing
                 - flex flex-col: Stack header + scrollable body
-                - overflow-hidden: Prevent outer scroll
+                - overflow-hidden: Contain internal scrolling
             ============================================ */}
             <div className="flex-1 min-w-0 flex flex-col overflow-hidden bg-background">
                 {/* ----------------------------------------
-                    Header Container (Sticky)
-                    - shrink-0: Fixed height based on content
-                    - bg-background: Solid background so content scrolls underneath
-                    - border-b: Visual separation from scrolling content
-                    - z-10: Ensure header stays above scrolling content
+                    Header Container (Pinned)
+                    - shrink-0: Never shrinks, always visible
+                    - bg-background: Solid background
+                    - border-b: Visual separation
+                    - z-10: Stays above scrolling content
                 ---------------------------------------- */}
                 <div className="shrink-0 bg-background border-b border-border z-10">
                     <div className="max-w-3xl mx-auto px-6 lg:px-8 py-6">
@@ -76,11 +77,12 @@ export function MeetingDetailContent({
                 </div>
 
                 {/* ----------------------------------------
-                    Scrollable Body
-                    - flex-1: Takes remaining height
-                    - overflow-y-auto: Independent scrolling for agenda
+                    Scrollable Body (Reactive)
+                    - flex-1: Expands/contracts with viewport
+                    - min-h-0: Critical for nested flex scrolling
+                    - overflow-y-auto: Independent internal scrolling
                 ---------------------------------------- */}
-                <div className="flex-1 overflow-y-auto">
+                <div className="flex-1 min-h-0 overflow-y-auto">
                     <div className="max-w-3xl mx-auto px-6 lg:px-8 py-6">
                         {/* Agenda Section */}
                         <div className="space-y-4">
@@ -105,13 +107,12 @@ export function MeetingDetailContent({
 
             {/* ============================================
                 Pane 2: Inspector Panel (Right Sidebar)
-                - Fixed width (400px)
-                - h-full: Full height
-                - border-l: Divider line
-                - No margin-right: Touches screen edge
-                - shrink-0: Prevents shrinking
+                - Fixed width (350-400px responsive)
+                - shrink-0: Maintains width, never shrinks
+                - flex flex-col: Enable internal flex layout
+                - overflow-hidden: Contain internal scrolling
             ============================================ */}
-            <div className="w-[350px] lg:w-[400px] shrink-0 h-full">
+            <div className="w-[350px] lg:w-[400px] shrink-0 flex flex-col overflow-hidden">
                 <MeetingContextPanel
                     meeting={meeting}
                     agendaItems={agendaItems}

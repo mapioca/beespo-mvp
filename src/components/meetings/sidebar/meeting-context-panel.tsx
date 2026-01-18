@@ -153,9 +153,13 @@ export function MeetingContextPanel({
     }, [notes, currentMeeting.id, currentMeeting.notes, toast]);
 
     return (
-        <div className="bg-muted/30 border-l h-full">
-            <div className="p-6 space-y-6 h-full overflow-y-auto">
-                {/* Section A: Action Toolbar */}
+        <div className="bg-muted/30 border-l h-full flex flex-col overflow-hidden">
+            {/* ============================================
+                Section A: Action Toolbar (Pinned)
+                - shrink-0: Never shrinks, always visible at top
+                - Sticky actions remain accessible regardless of scroll
+            ============================================ */}
+            <div className="shrink-0 p-6 pb-4 border-b border-border/50">
                 <ActionToolbar
                     meeting={currentMeeting}
                     agendaItems={agendaItems}
@@ -163,69 +167,81 @@ export function MeetingContextPanel({
                     isLeader={isLeader}
                     onMeetingUpdate={setCurrentMeeting}
                 />
+            </div>
 
-                {/* Section B: Meeting Description (Editable) */}
-                <div className="space-y-2">
-                    <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                        Description
-                    </h3>
-                    {isEditable ? (
-                        <AutoExpandTextarea
-                            value={description}
-                            onChange={setDescription}
-                            onBlur={saveDescription}
-                            placeholder="Add a description..."
-                            isSaving={isSavingDescription}
+            {/* ============================================
+                Scrollable Content Area (Reactive)
+                - flex-1: Expands/contracts with viewport height
+                - min-h-0: Critical for nested flex scrolling
+                - overflow-y-auto: Independent internal scrolling
+                On small screens (13" laptop), this area shrinks
+                and becomes scrollable while keeping toolbar visible
+            ============================================ */}
+            <div className="flex-1 min-h-0 overflow-y-auto">
+                <div className="p-6 pt-4 space-y-6">
+                    {/* Section B: Meeting Description (Editable) */}
+                    <div className="space-y-2">
+                        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                            Description
+                        </h3>
+                        {isEditable ? (
+                            <AutoExpandTextarea
+                                value={description}
+                                onChange={setDescription}
+                                onBlur={saveDescription}
+                                placeholder="Add a description..."
+                                isSaving={isSavingDescription}
+                            />
+                        ) : description ? (
+                            <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                                {description}
+                            </p>
+                        ) : (
+                            <p className="text-sm text-muted-foreground italic">
+                                No description
+                            </p>
+                        )}
+                    </div>
+
+                    {/* Section C: Collapsible Details Card */}
+                    <div className="bg-card border rounded-lg p-4">
+                        <CollapsibleDetails
+                            templateName={currentMeeting.templates?.name}
+                            createdByName={currentMeeting.profiles?.full_name}
+                            meetingId={currentMeeting.id}
+                            scheduledDate={currentMeeting.scheduled_date}
+                            totalDuration={totalDuration}
+                            defaultOpen={true}
                         />
-                    ) : description ? (
-                        <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
-                            {description}
-                        </p>
-                    ) : (
-                        <p className="text-sm text-muted-foreground italic">
-                            No description
-                        </p>
-                    )}
-                </div>
+                    </div>
 
-                {/* Section C: Collapsible Details Card */}
-                <div className="bg-card border rounded-lg p-4">
-                    <CollapsibleDetails
-                        templateName={currentMeeting.templates?.name}
-                        createdByName={currentMeeting.profiles?.full_name}
-                        meetingId={currentMeeting.id}
-                        scheduledDate={currentMeeting.scheduled_date}
-                        totalDuration={totalDuration}
-                        defaultOpen={true}
-                    />
-                </div>
+                    {/* Section D: Meeting Notes (Editable) */}
+                    <div className="space-y-2">
+                        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                            Notes
+                        </h3>
+                        {isEditable ? (
+                            <AutoExpandTextarea
+                                value={notes}
+                                onChange={setNotes}
+                                onBlur={saveNotes}
+                                placeholder="Add notes..."
+                                isSaving={isSavingNotes}
+                            />
+                        ) : notes ? (
+                            <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">
+                                {notes}
+                            </p>
+                        ) : (
+                            <p className="text-sm text-muted-foreground italic">
+                                No notes
+                            </p>
+                        )}
+                    </div>
 
-                {/* Section D: Meeting Notes (Editable) */}
-                <div className="space-y-2">
-                    <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                        Notes
-                    </h3>
-                    {isEditable ? (
-                        <AutoExpandTextarea
-                            value={notes}
-                            onChange={setNotes}
-                            onBlur={saveNotes}
-                            placeholder="Add notes..."
-                            isSaving={isSavingNotes}
-                        />
-                    ) : notes ? (
-                        <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">
-                            {notes}
-                        </p>
-                    ) : (
-                        <p className="text-sm text-muted-foreground italic">
-                            No notes
-                        </p>
-                    )}
+                    {/* Section E: Linked Notes */}
+                    <LinkedNotesList entityId={currentMeeting.id} entityType="meeting" />
                 </div>
-
-                {/* Section E: Linked Notes */}
-                <LinkedNotesList entityId={currentMeeting.id} entityType="meeting" />
             </div>
         </div>
     );

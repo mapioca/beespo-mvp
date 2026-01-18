@@ -58,9 +58,9 @@ export default async function MeetingDetailPage({ params }: MeetingDetailPagePro
     const totalDuration = agendaItems?.reduce((acc: number, item: any) => acc + (item.duration_minutes || 0), 0) || 0;
 
     return (
-        <div className="flex flex-col h-[calc(100vh-4rem)]">
-            {/* Header / Nav - Full width with internal padding */}
-            <div className="shrink-0 px-6 py-4 border-b bg-background">
+        <div className="flex flex-col h-full overflow-hidden">
+            {/* Header / Nav - Pinned at top, never scrolls */}
+            <div className="shrink-0 px-6 py-4 border-b bg-background z-10">
                 <Button variant="ghost" size="sm" asChild className="-ml-2">
                     <Link href="/meetings">
                         <ArrowLeft className="w-4 h-4 mr-2" />
@@ -69,7 +69,7 @@ export default async function MeetingDetailPage({ params }: MeetingDetailPagePro
                 </Button>
             </div>
 
-            {/* App Shell: Main Content + Sidebar */}
+            {/* App Shell: Main Content + Sidebar - Takes remaining height */}
             <MeetingDetailContent
                 meeting={meeting}
                 agendaItems={agendaItems || []}
