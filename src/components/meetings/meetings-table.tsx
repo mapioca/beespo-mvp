@@ -10,7 +10,6 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import {
     ArrowUp,
     ArrowDown,
@@ -23,20 +22,23 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { MeetingRowActions } from "./meeting-row-actions";
+import { Database } from "@/types/database";
 
-export interface Meeting {
-    id: string;
-    title: string;
-    status: string;
-    scheduled_date: string;
+type MeetingRow = Database["public"]["Tables"]["meetings"]["Row"];
+
+export interface Meeting extends MeetingRow {
     workspace_meeting_id?: string | null;
-    templates: { name: string } | null;
+    templates: { id: string; name: string } | null;
 }
 
 interface MeetingsTableProps {
     meetings: Meeting[];
+    workspaceSlug: string | null;
+    isLeader: boolean;
     sortConfig?: { key: string; direction: 'asc' | 'desc' } | null;
     onSort?: (key: string) => void;
+    onMeetingDelete?: (meetingId: string) => void;
 }
 
 function getStatusIcon(status: string) {
@@ -56,14 +58,21 @@ function formatStatus(status: string): string {
 function getStatusVariant(status: string): "default" | "secondary" | "destructive" | "outline" {
     switch (status) {
         case "scheduled": return "default";
-        case "in_progress": return "secondary"; // Using secondary for yellow/ongoing feels appropriate
-        case "completed": return "outline";     // Outline for done/historical
-        case "cancelled": return "destructive"; // Destructive for cancelled
+        case "in_progress": return "secondary";
+        case "completed": return "outline";
+        case "cancelled": return "destructive";
         default: return "default";
     }
 }
 
-export function MeetingsTable({ meetings, sortConfig, onSort }: MeetingsTableProps) {
+export function MeetingsTable({
+    meetings,
+    workspaceSlug,
+    isLeader,
+    sortConfig,
+    onSort,
+    onMeetingDelete,
+}: MeetingsTableProps) {
     const SortHeader = ({ column, label, className }: { column: string; label: string; className?: string }) => (
         <TableHead
             className={cn("cursor-pointer bg-white hover:bg-gray-50 transition-colors", className)}
@@ -133,9 +142,12 @@ export function MeetingsTable({ meetings, sortConfig, onSort }: MeetingsTablePro
                                         : "-"}
                                 </TableCell>
                                 <TableCell className="text-right">
-                                    <Button variant="ghost" size="sm" asChild>
-                                        <Link href={`/meetings/${meeting.id}`}>View</Link>
-                                    </Button>
+                                    <MeetingRowActions
+                                        meeting={meeting}
+                                        workspaceSlug={workspaceSlug}
+                                        isLeader={isLeader}
+                                        onDelete={onMeetingDelete}
+                                    />
                                 </TableCell>
                             </TableRow>
                         ))

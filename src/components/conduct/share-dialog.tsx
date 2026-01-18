@@ -23,10 +23,26 @@ interface ShareDialogProps {
   meeting: Meeting;
   workspaceSlug: string | null;
   onUpdate?: (meeting: Meeting) => void;
+  // Controlled mode props
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  // If true, renders without trigger button (for external control)
+  hideTrigger?: boolean;
 }
 
-export function ShareDialog({ meeting, workspaceSlug, onUpdate }: ShareDialogProps) {
-  const [isOpen, setIsOpen] = useState(false);
+export function ShareDialog({
+  meeting,
+  workspaceSlug,
+  onUpdate,
+  open: controlledOpen,
+  onOpenChange: controlledOnOpenChange,
+  hideTrigger = false,
+}: ShareDialogProps) {
+  const [internalOpen, setInternalOpen] = useState(false);
+
+  // Support both controlled and uncontrolled modes
+  const isOpen = controlledOpen !== undefined ? controlledOpen : internalOpen;
+  const setIsOpen = controlledOnOpenChange || setInternalOpen;
   const [isShared, setIsShared] = useState(meeting.is_publicly_shared);
   const [shareToken, setShareToken] = useState(meeting.public_share_token);
   const [copied, setCopied] = useState(false);
@@ -119,12 +135,14 @@ export function ShareDialog({ meeting, workspaceSlug, onUpdate }: ShareDialogPro
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
-          <Share2 className="h-4 w-4 mr-2" />
-          Share
-        </Button>
-      </DialogTrigger>
+      {!hideTrigger && (
+        <DialogTrigger asChild>
+          <Button variant="outline" size="sm">
+            <Share2 className="h-4 w-4 mr-2" />
+            Share
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Share Meeting</DialogTitle>

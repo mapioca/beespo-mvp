@@ -1,25 +1,35 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Plus } from "lucide-react";
-import { MeetingsFilters, MeetingStatus } from "./meetings-filters";
+import { MeetingsFilters, MeetingStatus, Template } from "./meetings-filters";
 import { MeetingsTable, Meeting } from "./meetings-table";
 
 interface MeetingsClientProps {
     meetings: Meeting[];
+    templates: Template[];
+    workspaceSlug: string | null;
     isLeader: boolean;
 }
 
-export function MeetingsClient({ meetings, isLeader }: MeetingsClientProps) {
+export function MeetingsClient({
+    meetings: initialMeetings,
+    templates,
+    workspaceSlug,
+    isLeader,
+}: MeetingsClientProps) {
+    const [meetings, setMeetings] = useState(initialMeetings);
     const [filters, setFilters] = useState<{
         search: string;
         status: MeetingStatus[];
+        templateIds: string[];
     }>({
         search: "",
         status: [],
+        templateIds: [],
     });
     const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>(null);
 
@@ -36,9 +46,28 @@ export function MeetingsClient({ meetings, isLeader }: MeetingsClientProps) {
             }
 
             // Status filter
-            return !(filters.status.length > 0 && !filters.status.includes(meeting.status as MeetingStatus));
+            if (filters.status.length > 0 && !filters.status.includes(meeting.status as MeetingStatus)) {
+                return false;
+            }
 
+            // Template filter
+            if (filters.templateIds.length > 0) {
+                const meetingTemplateId = meeting.templates?.id || "no-template";
+                const hasNoTemplate = meeting.templates === null;
 
+                if (filters.templateIds.includes("no-template") && hasNoTemplate) {
+                    return true;
+                }
+                if (meeting.templates && filters.templateIds.includes(meeting.templates.id)) {
+                    return true;
+                }
+                // If template filters are active but this meeting doesn't match any
+                if (!filters.templateIds.includes(meetingTemplateId)) {
+                    return false;
+                }
+            }
+
+            return true;
         });
 
         if (sortConfig) {
@@ -81,6 +110,24 @@ export function MeetingsClient({ meetings, isLeader }: MeetingsClientProps) {
         return counts;
     }, [meetings]);
 
+    // Calculate template counts
+    const templateCounts = useMemo(() => {
+        const counts: Record<string, number> = { "no-template": 0 };
+        meetings.forEach((m) => {
+            if (m.templates?.id) {
+                counts[m.templates.id] = (counts[m.templates.id] || 0) + 1;
+            } else {
+                counts["no-template"]++;
+            }
+        });
+        return counts;
+    }, [meetings]);
+
+    // Handle meeting deletion (optimistic update)
+    const handleMeetingDelete = useCallback((meetingId: string) => {
+        setMeetings((prev) => prev.filter((m) => m.id !== meetingId));
+    }, []);
+
     return (
         <div className="p-8 max-w-7xl mx-auto space-y-6">
             <div className="flex justify-between items-center">
@@ -105,11 +152,15 @@ export function MeetingsClient({ meetings, isLeader }: MeetingsClientProps) {
             <MeetingsFilters
                 onFilterChange={setFilters}
                 statusCounts={statusCounts}
+                templates={templates}
+                templateCounts={templateCounts}
             />
 
             <div className="mt-6">
                 <MeetingsTable
                     meetings={filteredMeetings}
+                    workspaceSlug={workspaceSlug}
+                    isLeader={isLeader}
                     sortConfig={sortConfig}
                     onSort={(key) => {
                         setSortConfig(current => {
@@ -120,6 +171,7 @@ export function MeetingsClient({ meetings, isLeader }: MeetingsClientProps) {
                             return { key, direction: 'asc' };
                         });
                     }}
+                    onMeetingDelete={handleMeetingDelete}
                 />
             </div>
         </div>
