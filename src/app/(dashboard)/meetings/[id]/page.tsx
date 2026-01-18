@@ -23,7 +23,7 @@ export default async function MeetingDetailPage({ params }: MeetingDetailPagePro
         .eq("id", user?.id || "")
         .single();
 
-    const isLeader = profile?.role === "leader";
+    const isLeader = profile?.role === "leader" || profile?.role === "admin";
 
     // Fetch meeting details with workspace for slug
     const { data: meeting, error } = await (supabase
@@ -76,6 +76,7 @@ export default async function MeetingDetailPage({ params }: MeetingDetailPagePro
                 workspaceSlug={workspaceSlug}
                 isLeader={isLeader}
                 totalDuration={totalDuration}
+                currentUserName={profile?.full_name || ""}
             />
         </div>
     );

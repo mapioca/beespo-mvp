@@ -22,6 +22,7 @@ interface MeetingDetailContentProps {
     workspaceSlug: string | null;
     isLeader: boolean;
     totalDuration: number;
+    currentUserName: string;
 }
 
 export function MeetingDetailContent({
@@ -29,6 +30,7 @@ export function MeetingDetailContent({
     agendaItems: initialAgendaItems,
     workspaceSlug,
     isLeader,
+    currentUserName,
 }: MeetingDetailContentProps) {
     const [agendaItems, setAgendaItems] = useState(initialAgendaItems);
 
@@ -119,6 +121,7 @@ export function MeetingDetailContent({
                     workspaceSlug={workspaceSlug}
                     isLeader={isLeader}
                     totalDuration={totalDuration}
+                    currentUserName={currentUserName}
                 />
             </div>
         </div>
