@@ -1,4 +1,5 @@
 export { EditableAgendaItemList } from "./editable-agenda-item-list";
+export { AgendaItemDivider } from "./agenda-item-divider";
 export { ParticipantPopover } from "./participant-popover";
 export { HymnPopover, type HymnSelection } from "./hymn-popover";
 export { InlineInput, type InlineInputProps } from "./inline-input";

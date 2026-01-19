@@ -4,9 +4,54 @@ import { useState, useCallback, useEffect } from "react";
 import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Clock, Music, User } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+    Clock,
+    Music,
+    User,
+    GripVertical,
+    Trash2,
+    MoreVertical,
+    Plus,
+    Loader2,
+} from "lucide-react";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+    DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+    DndContext,
+    closestCenter,
+    KeyboardSensor,
+    PointerSensor,
+    useSensor,
+    useSensors,
+    DragEndEvent,
+} from "@dnd-kit/core";
+import {
+    arrayMove,
+    SortableContext,
+    sortableKeyboardCoordinates,
+    useSortable,
+    verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { InlineInput } from "./inline-input";
 import { InlineCombobox, ComboboxOption } from "./inline-combobox";
+import { AgendaItemDivider } from "./agenda-item-divider";
 import { MeetingTypeBadge } from "../meeting-type-badge";
 import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/lib/hooks/use-toast";
@@ -68,7 +113,7 @@ interface Hymn {
     book_id: string;
 }
 
-interface InlineAgendaRowProps {
+interface SortableAgendaRowProps {
     item: AgendaItem;
     isEditable: boolean;
     isUpdating: boolean;
@@ -77,6 +122,7 @@ interface InlineAgendaRowProps {
         updates: Partial<AgendaItem>,
         optimisticItem: AgendaItem
     ) => Promise<boolean>;
+    onDelete: (itemId: string) => void;
     participants: Participant[];
     hymns: Hymn[];
     onLoadParticipants: () => void;
@@ -86,11 +132,12 @@ interface InlineAgendaRowProps {
     onCreateParticipant: (name: string) => Promise<Participant | null>;
 }
 
-function InlineAgendaRow({
+function SortableAgendaRow({
     item,
     isEditable,
     isUpdating,
     onUpdate,
+    onDelete,
     participants,
     hymns,
     onLoadParticipants,
@@ -98,7 +145,21 @@ function InlineAgendaRow({
     isLoadingParticipants,
     isLoadingHymns,
     onCreateParticipant,
-}: InlineAgendaRowProps) {
+}: SortableAgendaRowProps) {
+    const {
+        attributes,
+        listeners,
+        setNodeRef,
+        transform,
+        transition,
+        isDragging,
+    } = useSortable({ id: item.id });
+
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+    };
+
     const showParticipant = PARTICIPANT_ITEM_TYPES.includes(item.item_type);
     const showHymn = isHymnItem(item);
 
@@ -227,12 +288,26 @@ function InlineAgendaRow({
 
     return (
         <div
+            ref={setNodeRef}
+            style={style}
             className={cn(
-                "flex gap-4 p-4 rounded-lg border bg-card transition-all",
+                "flex gap-2 p-4 rounded-lg border bg-card transition-all",
                 item.is_completed && "bg-muted/50 opacity-80",
-                isUpdating && "ring-2 ring-primary/20"
+                isUpdating && "ring-2 ring-primary/20",
+                isDragging && "opacity-50 shadow-lg ring-2 ring-primary/40"
             )}
         >
+            {/* Drag Handle */}
+            {isEditable && (
+                <div
+                    {...attributes}
+                    {...listeners}
+                    className="flex-none pt-1 cursor-grab active:cursor-grabbing touch-none"
+                >
+                    <GripVertical className="w-5 h-5 text-muted-foreground/50 hover:text-muted-foreground" />
+                </div>
+            )}
+
             {/* Order Number */}
             <div className="flex-none pt-1">
                 <div className="flex items-center justify-center w-6 h-6 rounded-full bg-muted text-xs font-medium text-muted-foreground">
@@ -306,7 +381,33 @@ function InlineAgendaRow({
                             </p>
                         )}
                     </div>
-                    <MeetingTypeBadge type={item.item_type} />
+                    <div className="flex items-center gap-2">
+                        <MeetingTypeBadge type={item.item_type} />
+                        {/* Row Actions */}
+                        {isEditable && (
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100 data-[state=open]:opacity-100 transition-opacity"
+                                    >
+                                        <MoreVertical className="h-4 w-4" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem
+                                        onClick={() => onDelete(item.id)}
+                                        className="text-destructive focus:text-destructive"
+                                    >
+                                        <Trash2 className="mr-2 h-4 w-4" />
+                                        Delete Item
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        )}
+                    </div>
                 </div>
 
                 {/* Editable Fields Row */}
@@ -396,6 +497,7 @@ function InlineAgendaRow({
 
 export function EditableAgendaItemList({
     items: initialItems,
+    meetingId,
     isEditable = true,
     onItemsChange,
 }: EditableAgendaItemListProps) {
@@ -407,7 +509,22 @@ export function EditableAgendaItemList({
     const [isLoadingHymns, setIsLoadingHymns] = useState(false);
     const [participantsLoaded, setParticipantsLoaded] = useState(false);
     const [hymnsLoaded, setHymnsLoaded] = useState(false);
+    const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [isAddingBottom, setIsAddingBottom] = useState(false);
     const { toast } = useToast();
+
+    // dnd-kit sensors
+    const sensors = useSensors(
+        useSensor(PointerSensor, {
+            activationConstraint: {
+                distance: 8,
+            },
+        }),
+        useSensor(KeyboardSensor, {
+            coordinateGetter: sortableKeyboardCoordinates,
+        })
+    );
 
     // Sync with external items changes
     useEffect(() => {
@@ -572,32 +689,327 @@ export function EditableAgendaItemList({
         [items, onItemsChange, toast]
     );
 
+    // Insert item at specific position
+    const insertItemAtPosition = useCallback(
+        async (
+            data: { title: string; item_type: string; duration_minutes: number | null },
+            insertAtIndex: number
+        ): Promise<boolean> => {
+            const supabase = createClient();
+
+            // Insert the new item
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const { data: newItem, error: insertError } = await (supabase.from("agenda_items") as any)
+                .insert({
+                    meeting_id: meetingId,
+                    title: data.title,
+                    item_type: data.item_type,
+                    duration_minutes: data.duration_minutes,
+                    order_index: insertAtIndex,
+                })
+                .select()
+                .single();
+
+            if (insertError || !newItem) {
+                toast({
+                    title: "Failed to add item",
+                    description: insertError?.message || "Could not add item. Please try again.",
+                    variant: "destructive",
+                });
+                return false;
+            }
+
+            // Shift existing items that come after the insertion point
+            const itemsToShift = items.filter((item) => item.order_index >= insertAtIndex);
+            if (itemsToShift.length > 0) {
+                const updates = itemsToShift.map((item) => ({
+                    id: item.id,
+                    order_index: item.order_index + 1,
+                }));
+
+                for (const update of updates) {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    await (supabase.from("agenda_items") as any)
+                        .update({ order_index: update.order_index })
+                        .eq("id", update.id);
+                }
+            }
+
+            // Update local state
+            const updatedItems = items.map((item) =>
+                item.order_index >= insertAtIndex
+                    ? { ...item, order_index: item.order_index + 1 }
+                    : item
+            );
+            updatedItems.push(newItem as AgendaItem);
+            updatedItems.sort((a, b) => a.order_index - b.order_index);
+
+            setItems(updatedItems);
+            onItemsChange?.(updatedItems);
+
+            toast({
+                title: "Item added",
+                description: `"${data.title}" has been added to the agenda.`,
+            });
+            return true;
+        },
+        [items, meetingId, onItemsChange, toast]
+    );
+
+    // Add item at bottom
+    const addItemAtBottom = useCallback(async () => {
+        const nextIndex = items.length > 0
+            ? Math.max(...items.map((i) => i.order_index)) + 1
+            : 0;
+
+        const supabase = createClient();
+        setIsAddingBottom(true);
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: newItem, error } = await (supabase.from("agenda_items") as any)
+            .insert({
+                meeting_id: meetingId,
+                title: "New Item",
+                item_type: "procedural",
+                order_index: nextIndex,
+            })
+            .select()
+            .single();
+
+        setIsAddingBottom(false);
+
+        if (error || !newItem) {
+            toast({
+                title: "Failed to add item",
+                description: error?.message || "Could not add item. Please try again.",
+                variant: "destructive",
+            });
+            return;
+        }
+
+        const updatedItems = [...items, newItem as AgendaItem];
+        setItems(updatedItems);
+        onItemsChange?.(updatedItems);
+
+        toast({
+            title: "Item added",
+            description: "New item added to the agenda.",
+        });
+    }, [items, meetingId, onItemsChange, toast]);
+
+    // Delete item
+    const handleDeleteItem = useCallback(async () => {
+        if (!deletingItemId) return;
+
+        setIsDeleting(true);
+        const supabase = createClient();
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { error } = await (supabase.from("agenda_items") as any)
+            .delete()
+            .eq("id", deletingItemId);
+
+        setIsDeleting(false);
+
+        if (error) {
+            toast({
+                title: "Failed to delete",
+                description: error.message || "Could not delete item. Please try again.",
+                variant: "destructive",
+            });
+            setDeletingItemId(null);
+            return;
+        }
+
+        // Update local state and re-index
+        const filteredItems = items.filter((item) => item.id !== deletingItemId);
+        const reindexedItems = filteredItems.map((item, idx) => ({
+            ...item,
+            order_index: idx,
+        }));
+
+        setItems(reindexedItems);
+        onItemsChange?.(reindexedItems);
+        setDeletingItemId(null);
+
+        // Update order_index in database
+        for (const item of reindexedItems) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            await (supabase.from("agenda_items") as any)
+                .update({ order_index: item.order_index })
+                .eq("id", item.id);
+        }
+
+        toast({
+            title: "Item deleted",
+            description: "The agenda item has been removed.",
+        });
+    }, [deletingItemId, items, onItemsChange, toast]);
+
+    // Handle drag end for reordering
+    const handleDragEnd = useCallback(
+        async (event: DragEndEvent) => {
+            const { active, over } = event;
+
+            if (!over || active.id === over.id) return;
+
+            const oldIndex = items.findIndex((item) => item.id === active.id);
+            const newIndex = items.findIndex((item) => item.id === over.id);
+
+            // Optimistic update
+            const reorderedItems = arrayMove(items, oldIndex, newIndex).map(
+                (item, idx) => ({ ...item, order_index: idx })
+            );
+
+            setItems(reorderedItems);
+            onItemsChange?.(reorderedItems);
+
+            // Persist to database
+            const supabase = createClient();
+            const updates = reorderedItems.map((item) => ({
+                id: item.id,
+                order_index: item.order_index,
+            }));
+
+            for (const update of updates) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                await (supabase.from("agenda_items") as any)
+                    .update({ order_index: update.order_index })
+                    .eq("id", update.id);
+            }
+
+            toast({
+                title: "Order updated",
+                description: "Agenda order has been saved.",
+            });
+        },
+        [items, onItemsChange, toast]
+    );
+
     if (items.length === 0) {
         return (
-            <div className="text-center py-8 text-muted-foreground bg-muted/20 rounded-lg border border-dashed text-sm">
-                No agenda items added yet.
+            <div className="space-y-4">
+                <div className="text-center py-8 text-muted-foreground bg-muted/20 rounded-lg border border-dashed text-sm">
+                    No agenda items added yet.
+                </div>
+                {isEditable && (
+                    <Button
+                        variant="outline"
+                        className="w-full"
+                        onClick={addItemAtBottom}
+                        disabled={isAddingBottom}
+                    >
+                        {isAddingBottom ? (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                            <Plus className="mr-2 h-4 w-4" />
+                        )}
+                        Add Agenda Item
+                    </Button>
+                )}
             </div>
         );
     }
 
     return (
-        <div className="space-y-3">
-            {items.map((item) => (
-                <InlineAgendaRow
-                    key={item.id}
-                    item={item}
-                    isEditable={isEditable}
-                    isUpdating={updatingItemId === item.id}
-                    onUpdate={updateItem}
-                    participants={participants}
-                    hymns={hymns}
-                    onLoadParticipants={loadParticipants}
-                    onLoadHymns={loadHymns}
-                    isLoadingParticipants={isLoadingParticipants}
-                    isLoadingHymns={isLoadingHymns}
-                    onCreateParticipant={createParticipant}
-                />
-            ))}
-        </div>
+        <>
+            <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
+            >
+                <SortableContext
+                    items={items.map((item) => item.id)}
+                    strategy={verticalListSortingStrategy}
+                >
+                    <div className="space-y-1">
+                        {items.map((item, index) => (
+                            <div key={item.id} className="group">
+                                {/* Ghost Divider before each item */}
+                                {isEditable && (
+                                    <AgendaItemDivider
+                                        insertAtIndex={index}
+                                        onInsert={insertItemAtPosition}
+                                        disabled={!isEditable}
+                                    />
+                                )}
+                                {/* The agenda row */}
+                                <SortableAgendaRow
+                                    item={item}
+                                    isEditable={isEditable}
+                                    isUpdating={updatingItemId === item.id}
+                                    onUpdate={updateItem}
+                                    onDelete={setDeletingItemId}
+                                    participants={participants}
+                                    hymns={hymns}
+                                    onLoadParticipants={loadParticipants}
+                                    onLoadHymns={loadHymns}
+                                    isLoadingParticipants={isLoadingParticipants}
+                                    isLoadingHymns={isLoadingHymns}
+                                    onCreateParticipant={createParticipant}
+                                />
+                            </div>
+                        ))}
+                        {/* Ghost Divider after last item */}
+                        {isEditable && (
+                            <AgendaItemDivider
+                                insertAtIndex={items.length}
+                                onInsert={insertItemAtPosition}
+                                disabled={!isEditable}
+                            />
+                        )}
+                    </div>
+                </SortableContext>
+            </DndContext>
+
+            {/* Add Item Button at Bottom */}
+            {isEditable && (
+                <div className="mt-4">
+                    <Button
+                        variant="outline"
+                        className="w-full"
+                        onClick={addItemAtBottom}
+                        disabled={isAddingBottom}
+                    >
+                        {isAddingBottom ? (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                            <Plus className="mr-2 h-4 w-4" />
+                        )}
+                        Add Agenda Item
+                    </Button>
+                </div>
+            )}
+
+            {/* Delete Confirmation Dialog */}
+            <AlertDialog open={!!deletingItemId} onOpenChange={() => setDeletingItemId(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Agenda Item?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This will permanently remove this item from the agenda.
+                            This action cannot be undone.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleDeleteItem}
+                            disabled={isDeleting}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                            {isDeleting ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Deleting...
+                                </>
+                            ) : (
+                                "Delete"
+                            )}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+        </>
     );
 }

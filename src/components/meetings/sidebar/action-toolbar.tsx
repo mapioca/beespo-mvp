@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Play, Download, Edit, StopCircle, RotateCcw, Loader2 } from "lucide-react";
+import { Play, Download, StopCircle, RotateCcw, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { pdf } from "@react-pdf/renderer";
@@ -166,15 +166,6 @@ export function ActionToolbar({
             {/* Status-specific actions */}
             {isLeader && (
                 <div className="flex gap-2">
-                    {meeting.status === "scheduled" && (
-                        <Button asChild variant="outline" className="flex-1" size="sm">
-                            <Link href={`/meetings/${meeting.id}/edit`}>
-                                <Edit className="w-4 h-4 mr-2" />
-                                Edit Agenda
-                            </Link>
-                        </Button>
-                    )}
-
                     {meeting.status === "in_progress" && (
                         <Button
                             variant="outline"
