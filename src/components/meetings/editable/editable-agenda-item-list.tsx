@@ -52,6 +52,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { InlineInput } from "./inline-input";
 import { InlineCombobox, ComboboxOption } from "./inline-combobox";
 import { AgendaItemDivider } from "./agenda-item-divider";
+import { AddMeetingItemDialog, SelectedItem } from "../add-meeting-item-dialog";
 import { MeetingTypeBadge } from "../meeting-type-badge";
 import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/lib/hooks/use-toast";
@@ -511,7 +512,9 @@ export function EditableAgendaItemList({
     const [hymnsLoaded, setHymnsLoaded] = useState(false);
     const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
-    const [isAddingBottom, setIsAddingBottom] = useState(false);
+    // Modal state for item picker
+    const [isPickerOpen, setIsPickerOpen] = useState(false);
+    const [insertAtIndex, setInsertAtIndex] = useState<number | null>(null);
     const { toast } = useToast();
 
     // dnd-kit sensors
@@ -689,11 +692,46 @@ export function EditableAgendaItemList({
         [items, onItemsChange, toast]
     );
 
+    // Open the item picker modal at a specific position
+    const openPickerAtPosition = useCallback((index: number) => {
+        setInsertAtIndex(index);
+        setIsPickerOpen(true);
+    }, []);
+
+    // Handle item selected from modal
+    const handleItemSelected = useCallback(
+        async (selectedItem: SelectedItem) => {
+            const targetIndex = insertAtIndex ?? items.length;
+            await insertItemAtPosition({
+                title: selectedItem.title,
+                item_type: selectedItem.category === "procedural" ? "procedural" : selectedItem.category,
+                duration_minutes: selectedItem.duration_minutes,
+                discussion_id: selectedItem.discussion_id,
+                business_item_id: selectedItem.business_item_id,
+                announcement_id: selectedItem.announcement_id,
+                speaker_id: selectedItem.speaker_id,
+                hymn_id: selectedItem.is_hymn ? selectedItem.procedural_item_type_id : undefined,
+            }, targetIndex);
+            setInsertAtIndex(null);
+        },
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [insertAtIndex, items.length]
+    );
+
     // Insert item at specific position
     const insertItemAtPosition = useCallback(
         async (
-            data: { title: string; item_type: string; duration_minutes: number | null },
-            insertAtIndex: number
+            data: {
+                title: string;
+                item_type: string;
+                duration_minutes: number | null;
+                discussion_id?: string;
+                business_item_id?: string;
+                announcement_id?: string;
+                speaker_id?: string;
+                hymn_id?: string;
+            },
+            targetIndex: number
         ): Promise<boolean> => {
             const supabase = createClient();
 
@@ -705,7 +743,11 @@ export function EditableAgendaItemList({
                     title: data.title,
                     item_type: data.item_type,
                     duration_minutes: data.duration_minutes,
-                    order_index: insertAtIndex,
+                    order_index: targetIndex,
+                    discussion_id: data.discussion_id || null,
+                    business_item_id: data.business_item_id || null,
+                    announcement_id: data.announcement_id || null,
+                    speaker_id: data.speaker_id || null,
                 })
                 .select()
                 .single();
@@ -720,7 +762,7 @@ export function EditableAgendaItemList({
             }
 
             // Shift existing items that come after the insertion point
-            const itemsToShift = items.filter((item) => item.order_index >= insertAtIndex);
+            const itemsToShift = items.filter((item) => item.order_index >= targetIndex);
             if (itemsToShift.length > 0) {
                 const updates = itemsToShift.map((item) => ({
                     id: item.id,
@@ -737,7 +779,7 @@ export function EditableAgendaItemList({
 
             // Update local state
             const updatedItems = items.map((item) =>
-                item.order_index >= insertAtIndex
+                item.order_index >= targetIndex
                     ? { ...item, order_index: item.order_index + 1 }
                     : item
             );
@@ -755,47 +797,14 @@ export function EditableAgendaItemList({
         },
         [items, meetingId, onItemsChange, toast]
     );
-
-    // Add item at bottom
-    const addItemAtBottom = useCallback(async () => {
+    // Open picker for adding at bottom
+    const openPickerAtBottom = useCallback(() => {
         const nextIndex = items.length > 0
             ? Math.max(...items.map((i) => i.order_index)) + 1
             : 0;
-
-        const supabase = createClient();
-        setIsAddingBottom(true);
-
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { data: newItem, error } = await (supabase.from("agenda_items") as any)
-            .insert({
-                meeting_id: meetingId,
-                title: "New Item",
-                item_type: "procedural",
-                order_index: nextIndex,
-            })
-            .select()
-            .single();
-
-        setIsAddingBottom(false);
-
-        if (error || !newItem) {
-            toast({
-                title: "Failed to add item",
-                description: error?.message || "Could not add item. Please try again.",
-                variant: "destructive",
-            });
-            return;
-        }
-
-        const updatedItems = [...items, newItem as AgendaItem];
-        setItems(updatedItems);
-        onItemsChange?.(updatedItems);
-
-        toast({
-            title: "Item added",
-            description: "New item added to the agenda.",
-        });
-    }, [items, meetingId, onItemsChange, toast]);
+        setInsertAtIndex(nextIndex);
+        setIsPickerOpen(true);
+    }, [items]);
 
     // Delete item
     const handleDeleteItem = useCallback(async () => {
@@ -888,26 +897,32 @@ export function EditableAgendaItemList({
 
     if (items.length === 0) {
         return (
-            <div className="space-y-4">
-                <div className="text-center py-8 text-muted-foreground bg-muted/20 rounded-lg border border-dashed text-sm">
-                    No agenda items added yet.
-                </div>
-                {isEditable && (
-                    <Button
-                        variant="outline"
-                        className="w-full"
-                        onClick={addItemAtBottom}
-                        disabled={isAddingBottom}
-                    >
-                        {isAddingBottom ? (
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        ) : (
+            <>
+                <div className="space-y-4">
+                    <div className="text-center py-8 text-muted-foreground bg-muted/20 rounded-lg border border-dashed text-sm">
+                        No agenda items added yet.
+                    </div>
+                    {isEditable && (
+                        <Button
+                            variant="outline"
+                            className="w-full"
+                            onClick={openPickerAtBottom}
+                        >
                             <Plus className="mr-2 h-4 w-4" />
-                        )}
-                        Add Agenda Item
-                    </Button>
-                )}
-            </div>
+                            Add Agenda Item
+                        </Button>
+                    )}
+                </div>
+                {/* Add Meeting Item Dialog */}
+                <AddMeetingItemDialog
+                    open={isPickerOpen}
+                    onClose={() => {
+                        setIsPickerOpen(false);
+                        setInsertAtIndex(null);
+                    }}
+                    onAddItem={handleItemSelected}
+                />
+            </>
         );
     }
 
@@ -928,8 +943,7 @@ export function EditableAgendaItemList({
                                 {/* Ghost Divider before each item */}
                                 {isEditable && (
                                     <AgendaItemDivider
-                                        insertAtIndex={index}
-                                        onInsert={insertItemAtPosition}
+                                        onAddClick={() => openPickerAtPosition(index)}
                                         disabled={!isEditable}
                                     />
                                 )}
@@ -953,8 +967,7 @@ export function EditableAgendaItemList({
                         {/* Ghost Divider after last item */}
                         {isEditable && (
                             <AgendaItemDivider
-                                insertAtIndex={items.length}
-                                onInsert={insertItemAtPosition}
+                                onAddClick={() => openPickerAtPosition(items.length)}
                                 disabled={!isEditable}
                             />
                         )}
@@ -968,14 +981,9 @@ export function EditableAgendaItemList({
                     <Button
                         variant="outline"
                         className="w-full"
-                        onClick={addItemAtBottom}
-                        disabled={isAddingBottom}
+                        onClick={openPickerAtBottom}
                     >
-                        {isAddingBottom ? (
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        ) : (
-                            <Plus className="mr-2 h-4 w-4" />
-                        )}
+                        <Plus className="mr-2 h-4 w-4" />
                         Add Agenda Item
                     </Button>
                 </div>
@@ -1010,6 +1018,16 @@ export function EditableAgendaItemList({
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+
+            {/* Add Meeting Item Dialog */}
+            <AddMeetingItemDialog
+                open={isPickerOpen}
+                onClose={() => {
+                    setIsPickerOpen(false);
+                    setInsertAtIndex(null);
+                }}
+                onAddItem={handleItemSelected}
+            />
         </>
     );
 }
