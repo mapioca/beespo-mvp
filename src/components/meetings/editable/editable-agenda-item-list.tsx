@@ -166,8 +166,10 @@ function SortableAgendaRow({
         transition,
     };
 
-    const showParticipant = PARTICIPANT_ITEM_TYPES.includes(item.item_type);
-    const showHymn = isHymnItem(item);
+    const isHymn = isHymnItem(item);
+    // Hymns should NOT show participant selector, only hymn selector
+    const showParticipant = PARTICIPANT_ITEM_TYPES.includes(item.item_type) && !isHymn;
+    const showHymn = isHymn;
 
     // Convert participants to ComboboxOption
     const participantOptions: ComboboxOption[] = participants.map((p) => ({

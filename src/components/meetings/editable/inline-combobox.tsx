@@ -2,7 +2,6 @@
 
 import { useState, useRef, useEffect, useCallback, KeyboardEvent } from "react";
 import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import {
     Tooltip,
     TooltipContent,
@@ -175,8 +174,29 @@ export function InlineCombobox({
     if (isOpen) {
         return (
             <div ref={containerRef} className={cn("relative", className)}>
-                <div className="min-w-[200px] bg-popover border rounded-md shadow-md">
-                    <div className="p-2 border-b">
+                {/* Keep the trigger visible */}
+                <button
+                    type="button"
+                    onClick={() => setIsOpen(false)}
+                    className={cn(
+                        "inline-flex items-center gap-1.5 px-1.5 py-0.5 -mx-1.5 rounded text-sm",
+                        "bg-muted transition-colors cursor-pointer text-left",
+                        "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1"
+                    )}
+                >
+                    {icon}
+                    <span className={cn(
+                        !value && "text-muted-foreground italic",
+                        displayClassName
+                    )}>
+                        {value?.label || emptyText}
+                    </span>
+                    <Pencil className="h-3 w-3 text-muted-foreground shrink-0" />
+                </button>
+
+                {/* Floating dropdown */}
+                <div className="absolute top-full left-0 mt-1 z-50 min-w-[280px] bg-popover border rounded-md shadow-lg">
+                    <div className="p-2 border-b sticky top-0 bg-popover">
                         <Input
                             ref={inputRef}
                             value={search}
@@ -187,7 +207,7 @@ export function InlineCombobox({
                             disabled={isSaving || isCreating}
                         />
                     </div>
-                    <ScrollArea className="max-h-[200px]">
+                    <div className="max-h-[200px] overflow-y-auto">
                         {isLoading ? (
                             <div className="p-3 text-center text-sm text-muted-foreground">
                                 <Loader2 className="h-4 w-4 animate-spin inline mr-2" />
@@ -236,7 +256,7 @@ export function InlineCombobox({
                                 ))}
                             </div>
                         )}
-                    </ScrollArea>
+                    </div>
                     <div className="border-t p-1 space-y-1">
                         {onCreateNew && search.trim() && (
                             <button
