@@ -1,11 +1,11 @@
 "use client";
 
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Users, AlertCircle, Check } from "lucide-react";
+import { Users, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { CallingProcessStage, CallingProcessStatus, CallingCandidateStatus } from "@/types/database";
+import type { PipelineColumn } from "./callings-kanban-board";
 
 interface CallingCandidate {
     id: string;
@@ -36,7 +36,7 @@ interface Calling {
 interface CallingBoardCardProps {
     calling: Calling;
     onClick?: () => void;
-    columnType: 'needs_attention' | 'in_progress' | 'filled';
+    columnType: PipelineColumn;
 }
 
 // Stage progression for the mini stepper
@@ -69,7 +69,7 @@ function getInitials(name: string): string {
         .slice(0, 2);
 }
 
-// Mini linear stepper component for In Progress cards
+// Mini linear stepper component showing progress visually
 function MiniProgressStepper({ currentStage }: { currentStage: CallingProcessStage }) {
     const currentIndex = PROCESS_STAGES.indexOf(currentStage);
     const totalStages = PROCESS_STAGES.length;
@@ -86,7 +86,7 @@ function MiniProgressStepper({ currentStage }: { currentStage: CallingProcessSta
                         <div
                             key={stage}
                             className={cn(
-                                "h-1.5 flex-1 rounded-full transition-colors",
+                                "h-1 flex-1 rounded-full transition-colors",
                                 isPast && "bg-green-500",
                                 isCurrent && "bg-primary",
                                 isFuture && "bg-muted"
@@ -96,12 +96,9 @@ function MiniProgressStepper({ currentStage }: { currentStage: CallingProcessSta
                     );
                 })}
             </div>
-            <div className="flex items-center justify-between mt-1">
-                <span className="text-[10px] text-muted-foreground">
-                    Step {currentIndex + 1} of {totalStages}
-                </span>
-                <span className="text-[10px] font-medium text-primary">
-                    {stageLabels[currentStage]}
+            <div className="flex items-center justify-between mt-0.5">
+                <span className="text-[9px] text-muted-foreground">
+                    Step {currentIndex + 1}/{totalStages}
                 </span>
             </div>
         </div>
@@ -113,79 +110,68 @@ export function CallingBoardCard({ calling, onClick, columnType }: CallingBoardC
     const candidateCount = calling.candidates.filter(c => c.status !== 'archived').length;
     const hasNoCandidates = candidateCount === 0 && !activeProcess && !calling.is_filled;
 
+    // For pipeline columns (not needs_candidates), show the candidate info
+    const showCandidateInfo = columnType !== 'needs_candidates' && activeProcess?.candidate;
+
     return (
         <Card
             className={cn(
-                "p-3 cursor-pointer transition-all hover:shadow-md hover:scale-[1.02] group",
+                "p-2.5 cursor-pointer transition-all hover:shadow-md hover:scale-[1.01] group",
                 "border shadow-sm rounded-md bg-white",
-                hasNoCandidates && "border-amber-200 bg-amber-50/50"
+                hasNoCandidates && columnType === 'needs_candidates' && "border-amber-200 bg-amber-50/50"
             )}
             onClick={onClick}
         >
             {/* Header - Title & Org */}
-            <div className="space-y-0.5 mb-2">
-                <h4 className="font-semibold text-sm leading-tight truncate pr-2" title={calling.title}>
+            <div className="space-y-0.5 mb-1.5">
+                <h4 className="font-semibold text-xs leading-tight truncate" title={calling.title}>
                     {calling.title}
                 </h4>
                 {calling.organization && (
-                    <p className="text-xs text-muted-foreground truncate">
+                    <p className="text-[10px] text-muted-foreground truncate">
                         {calling.organization}
                     </p>
                 )}
             </div>
 
-            {/* State Indicator */}
-            <div className="mb-2">
-                {columnType === 'needs_attention' && (
+            {/* Candidate/State Info */}
+            <div className="mb-1.5">
+                {columnType === 'needs_candidates' && (
                     <>
                         {hasNoCandidates ? (
-                            <div className="flex items-center gap-1.5">
-                                <AlertCircle className="w-3.5 h-3.5 text-amber-600" />
-                                <span className="text-xs text-amber-700 font-medium">
-                                    No candidates yet
+                            <div className="flex items-center gap-1">
+                                <AlertCircle className="w-3 h-3 text-amber-600" />
+                                <span className="text-[10px] text-amber-700 font-medium">
+                                    No candidates
                                 </span>
                             </div>
                         ) : candidateCount > 0 ? (
-                            <Badge variant="secondary" className="text-xs font-normal">
-                                <Users className="w-3 h-3 mr-1" />
-                                {candidateCount} Candidate{candidateCount !== 1 ? 's' : ''}
-                            </Badge>
+                            <div className="flex items-center gap-1 text-muted-foreground">
+                                <Users className="w-3 h-3" />
+                                <span className="text-[10px]">
+                                    {candidateCount} name{candidateCount !== 1 ? 's' : ''}
+                                </span>
+                            </div>
                         ) : null}
                     </>
                 )}
 
-                {columnType === 'in_progress' && activeProcess?.candidate && (
-                    <div className="flex items-center gap-2">
-                        <Avatar className="h-6 w-6">
-                            <AvatarFallback className="text-[10px] bg-primary/10 text-primary">
+                {showCandidateInfo && activeProcess?.candidate && (
+                    <div className="flex items-center gap-1.5">
+                        <Avatar className="h-5 w-5">
+                            <AvatarFallback className="text-[8px] bg-primary/10 text-primary">
                                 {getInitials(activeProcess.candidate.name)}
                             </AvatarFallback>
                         </Avatar>
-                        <span className="text-sm font-medium text-foreground truncate">
+                        <span className="text-xs font-medium text-foreground truncate">
                             {activeProcess.candidate.name}
                         </span>
                     </div>
                 )}
-
-                {columnType === 'filled' && calling.filled_by_name && (
-                    <div className="flex items-center gap-2">
-                        <Avatar className="h-6 w-6">
-                            <AvatarFallback className="text-[10px] bg-green-100 text-green-700">
-                                {getInitials(calling.filled_by_name.name)}
-                            </AvatarFallback>
-                        </Avatar>
-                        <div className="flex items-center gap-1 min-w-0">
-                            <Check className="w-3 h-3 text-green-600 shrink-0" />
-                            <span className="text-sm font-medium text-green-700 truncate">
-                                {calling.filled_by_name.name}
-                            </span>
-                        </div>
-                    </div>
-                )}
             </div>
 
-            {/* Mini Progress Bar (only for In Progress) */}
-            {columnType === 'in_progress' && activeProcess && (
+            {/* Mini Progress Bar (for all pipeline stages) */}
+            {activeProcess && (
                 <MiniProgressStepper currentStage={activeProcess.current_stage} />
             )}
         </Card>

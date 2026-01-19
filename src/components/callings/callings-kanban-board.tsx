@@ -3,7 +3,13 @@
 import * as React from "react";
 import { CallingBoardCard } from "./calling-board-card";
 import { cn } from "@/lib/utils";
-import { AlertTriangle, Clock, CheckCircle2 } from "lucide-react";
+import {
+    Users,
+    Phone,
+    Hand,
+    Sparkles,
+    FileCheck
+} from "lucide-react";
 import type { CallingProcessStage, CallingProcessStatus, CallingCandidateStatus } from "@/types/database";
 
 interface CallingCandidate {
@@ -34,6 +40,7 @@ interface Calling {
 
 interface KanbanColumnProps {
     title: string;
+    subtitle: string;
     count: number;
     icon: React.ReactNode;
     headerColor: string;
@@ -44,39 +51,44 @@ interface KanbanColumnProps {
 
 function KanbanColumn({
     title,
+    subtitle,
     count,
     icon,
     headerColor,
     countBgColor,
     children,
-    emptyMessage = "No items"
+    emptyMessage = "No callings at this stage"
 }: KanbanColumnProps) {
     return (
-        <div className="flex flex-col min-w-[300px] max-w-[350px] flex-1">
+        <div className="flex flex-col min-w-[240px] max-w-[280px] flex-1">
             {/* Column Header */}
             <div
                 className={cn(
-                    "flex items-center gap-2 px-3 py-2 rounded-t-lg border border-b-0",
+                    "px-3 py-2 rounded-t-lg border border-b-0",
                     headerColor
                 )}
             >
-                {icon}
-                <span className="font-semibold text-sm">{title}</span>
-                <span
-                    className={cn(
-                        "ml-auto px-2 py-0.5 rounded-full text-xs font-medium",
-                        countBgColor
-                    )}
-                >
-                    {count}
-                </span>
+                <div className="flex items-center gap-2">
+                    {icon}
+                    <span className="font-semibold text-sm">{title}</span>
+                    <span
+                        className={cn(
+                            "ml-auto px-2 py-0.5 rounded-full text-xs font-medium",
+                            countBgColor
+                        )}
+                    >
+                        {count}
+                    </span>
+                </div>
+                <p className="text-[10px] text-muted-foreground mt-0.5">{subtitle}</p>
             </div>
 
             {/* Column Body */}
-            <div className="flex-1 p-2 border border-t-0 rounded-b-lg bg-muted/30 min-h-[400px] overflow-y-auto">
+            <div className="flex-1 p-2 border border-t-0 rounded-b-lg bg-muted/30 min-h-[350px] overflow-y-auto">
                 {React.Children.count(children) === 0 ? (
-                    <div className="flex items-center justify-center h-32 text-muted-foreground text-sm">
-                        {emptyMessage}
+                    <div className="flex flex-col items-center justify-center h-24 text-center">
+                        <div className="w-full h-12 bg-muted/50 rounded-md border-2 border-dashed border-muted-foreground/20 mb-2" />
+                        <span className="text-[11px] text-muted-foreground">{emptyMessage}</span>
                     </div>
                 ) : (
                     <div className="space-y-2">
@@ -88,106 +100,169 @@ function KanbanColumn({
     );
 }
 
+// Define column types for the pipeline
+export type PipelineColumn =
+    | 'needs_candidates'
+    | 'to_extend'
+    | 'to_sustain'
+    | 'to_set_apart'
+    | 'to_record';
+
 interface CallingsKanbanBoardProps {
     callings: Calling[];
     onCallingClick: (calling: Calling) => void;
 }
 
 export function CallingsKanbanBoard({ callings, onCallingClick }: CallingsKanbanBoardProps) {
-    // Get the date 30 days ago for filtering filled callings
-    const thirtyDaysAgo = React.useMemo(() => {
-        const date = new Date();
-        date.setDate(date.getDate() - 30);
-        return date;
-    }, []);
-
-    // Group callings into the three columns
+    // Group callings into the 5 pipeline columns
     const columns = React.useMemo(() => {
-        const needsAttention: Calling[] = [];
-        const inProgress: Calling[] = [];
-        const filled: Calling[] = [];
+        const needsCandidates: Calling[] = [];
+        const toExtend: Calling[] = [];
+        const toSustain: Calling[] = [];
+        const toSetApart: Calling[] = [];
+        const toRecord: Calling[] = [];
 
         callings.forEach(calling => {
             const activeProcess = calling.processes.find(p => p.status === 'active');
 
+            // Skip filled callings - they're done
             if (calling.is_filled) {
-                // Column C: Filled - only show callings filled in the last 30 days
-                if (calling.filled_at) {
-                    const filledDate = new Date(calling.filled_at);
-                    if (filledDate >= thirtyDaysAgo) {
-                        filled.push(calling);
-                    }
-                } else {
-                    // If no filled_at date, include it anyway
-                    filled.push(calling);
-                }
-            } else if (activeProcess) {
-                // Column B: In Progress - has an active process (candidate is selected)
-                inProgress.push(calling);
+                return;
+            }
+
+            if (!activeProcess) {
+                // No active process = needs candidates (brainstorming)
+                needsCandidates.push(calling);
             } else {
-                // Column A: Needs Attention - open OR has no candidates
-                // This includes callings that are open but may have candidates in brainstorming
-                needsAttention.push(calling);
+                // Route based on current stage
+                const stage = activeProcess.current_stage;
+
+                switch (stage) {
+                    case 'defined':
+                    case 'approved':
+                        // Ready to be extended (Bishop interview)
+                        toExtend.push(calling);
+                        break;
+                    case 'extended':
+                    case 'accepted':
+                        // Ready to be sustained (Ward business)
+                        toSustain.push(calling);
+                        break;
+                    case 'sustained':
+                        // Ready to be set apart (Blessings)
+                        toSetApart.push(calling);
+                        break;
+                    case 'set_apart':
+                        // Ready to be recorded (Clerk enters in LCR)
+                        toRecord.push(calling);
+                        break;
+                    case 'recorded_lcr':
+                        // Already recorded, should not appear on board
+                        break;
+                }
             }
         });
 
-        return { needsAttention, inProgress, filled };
-    }, [callings, thirtyDaysAgo]);
+        return { needsCandidates, toExtend, toSustain, toSetApart, toRecord };
+    }, [callings]);
 
     return (
-        <div className="flex gap-4 overflow-x-auto pb-4 -mx-4 px-4">
-            {/* Column A: Needs Attention */}
+        <div className="flex gap-3 overflow-x-auto pb-4 -mx-4 px-4">
+            {/* Column 1: Needs Candidates */}
             <KanbanColumn
-                title="Needs Attention"
-                count={columns.needsAttention.length}
-                icon={<AlertTriangle className="w-4 h-4 text-amber-600" />}
+                title="Needs Candidates"
+                subtitle="Vacancies that need names"
+                count={columns.needsCandidates.length}
+                icon={<Users className="w-4 h-4 text-amber-600" />}
                 headerColor="bg-amber-50 text-amber-900"
                 countBgColor="bg-amber-200 text-amber-800"
-                emptyMessage="All callings have candidates!"
+                emptyMessage="All callings have candidates"
             >
-                {columns.needsAttention.map(calling => (
+                {columns.needsCandidates.map(calling => (
                     <CallingBoardCard
                         key={calling.id}
                         calling={calling}
-                        columnType="needs_attention"
+                        columnType="needs_candidates"
                         onClick={() => onCallingClick(calling)}
                     />
                 ))}
             </KanbanColumn>
 
-            {/* Column B: In Progress */}
+            {/* Column 2: To Extend */}
             <KanbanColumn
-                title="In Progress"
-                count={columns.inProgress.length}
-                icon={<Clock className="w-4 h-4 text-blue-600" />}
+                title="To Extend"
+                subtitle="Bishop needs to interview"
+                count={columns.toExtend.length}
+                icon={<Phone className="w-4 h-4 text-blue-600" />}
                 headerColor="bg-blue-50 text-blue-900"
                 countBgColor="bg-blue-200 text-blue-800"
-                emptyMessage="No active processes"
+                emptyMessage="No interviews pending"
             >
-                {columns.inProgress.map(calling => (
+                {columns.toExtend.map(calling => (
                     <CallingBoardCard
                         key={calling.id}
                         calling={calling}
-                        columnType="in_progress"
+                        columnType="to_extend"
                         onClick={() => onCallingClick(calling)}
                     />
                 ))}
             </KanbanColumn>
 
-            {/* Column C: Filled (Last 30 Days) */}
+            {/* Column 3: To Sustain */}
             <KanbanColumn
-                title="Recently Filled"
-                count={columns.filled.length}
-                icon={<CheckCircle2 className="w-4 h-4 text-green-600" />}
-                headerColor="bg-green-50 text-green-900"
-                countBgColor="bg-green-200 text-green-800"
-                emptyMessage="No recently filled callings"
+                title="To Sustain"
+                subtitle="Add to Sunday agenda"
+                count={columns.toSustain.length}
+                icon={<Hand className="w-4 h-4 text-purple-600" />}
+                headerColor="bg-purple-50 text-purple-900"
+                countBgColor="bg-purple-200 text-purple-800"
+                emptyMessage="No sustainings pending"
             >
-                {columns.filled.map(calling => (
+                {columns.toSustain.map(calling => (
                     <CallingBoardCard
                         key={calling.id}
                         calling={calling}
-                        columnType="filled"
+                        columnType="to_sustain"
+                        onClick={() => onCallingClick(calling)}
+                    />
+                ))}
+            </KanbanColumn>
+
+            {/* Column 4: To Set Apart */}
+            <KanbanColumn
+                title="To Set Apart"
+                subtitle="Needs priesthood blessing"
+                count={columns.toSetApart.length}
+                icon={<Sparkles className="w-4 h-4 text-orange-600" />}
+                headerColor="bg-orange-50 text-orange-900"
+                countBgColor="bg-orange-200 text-orange-800"
+                emptyMessage="No blessings pending"
+            >
+                {columns.toSetApart.map(calling => (
+                    <CallingBoardCard
+                        key={calling.id}
+                        calling={calling}
+                        columnType="to_set_apart"
+                        onClick={() => onCallingClick(calling)}
+                    />
+                ))}
+            </KanbanColumn>
+
+            {/* Column 5: To Record */}
+            <KanbanColumn
+                title="To Record"
+                subtitle="Enter into LCR"
+                count={columns.toRecord.length}
+                icon={<FileCheck className="w-4 h-4 text-green-600" />}
+                headerColor="bg-green-50 text-green-900"
+                countBgColor="bg-green-200 text-green-800"
+                emptyMessage="No entries pending"
+            >
+                {columns.toRecord.map(calling => (
+                    <CallingBoardCard
+                        key={calling.id}
+                        calling={calling}
+                        columnType="to_record"
                         onClick={() => onCallingClick(calling)}
                     />
                 ))}
