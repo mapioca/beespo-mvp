@@ -73,6 +73,31 @@ export interface ExternalEventLink {
 // Invitation status
 export type InvitationStatus = 'pending' | 'accepted' | 'revoked' | 'expired';
 
+// Calling candidate status
+export type CallingCandidateStatus = 'proposed' | 'discussing' | 'selected' | 'archived';
+
+// Calling process stage
+export type CallingProcessStage =
+  | 'defined'
+  | 'approved'
+  | 'extended'
+  | 'accepted'
+  | 'sustained'
+  | 'set_apart'
+  | 'recorded_lcr';
+
+// Calling process status
+export type CallingProcessStatus = 'active' | 'completed' | 'dropped';
+
+// Calling history action types
+export type CallingHistoryAction =
+  | 'process_started'
+  | 'stage_changed'
+  | 'status_changed'
+  | 'comment_added'
+  | 'task_created'
+  | 'task_completed';
+
 export type Database = {
   public: {
     Tables: {
@@ -494,6 +519,7 @@ export type Database = {
           agenda_item_id: string | null;
           discussion_id: string | null;
           business_item_id: string | null;
+          calling_process_id: string | null;
           title: string;
           description: string | null;
           assigned_to: string | null;
@@ -514,6 +540,7 @@ export type Database = {
           agenda_item_id?: string | null;
           discussion_id?: string | null;
           business_item_id?: string | null;
+          calling_process_id?: string | null;
           title: string;
           description?: string | null;
           assigned_to?: string | null;
@@ -534,6 +561,7 @@ export type Database = {
           agenda_item_id?: string | null;
           discussion_id?: string | null;
           business_item_id?: string | null;
+          calling_process_id?: string | null;
           title?: string;
           description?: string | null;
           assigned_to?: string | null;
@@ -1151,6 +1179,201 @@ export type Database = {
           ended_at?: string | null;
           duration_seconds?: number | null;
           created_at?: string;
+        };
+      };
+      // =====================================================
+      // CALLINGS FEATURE TABLES
+      // =====================================================
+      candidate_names: {
+        Row: {
+          id: string;
+          workspace_id: string;
+          name: string;
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          workspace_id: string;
+          name: string;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          workspace_id?: string;
+          name?: string;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      callings: {
+        Row: {
+          id: string;
+          workspace_id: string;
+          title: string;
+          organization: string | null;
+          is_filled: boolean;
+          filled_by: string | null;
+          filled_at: string | null;
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          workspace_id: string;
+          title: string;
+          organization?: string | null;
+          is_filled?: boolean;
+          filled_by?: string | null;
+          filled_at?: string | null;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          workspace_id?: string;
+          title?: string;
+          organization?: string | null;
+          is_filled?: boolean;
+          filled_by?: string | null;
+          filled_at?: string | null;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      calling_candidates: {
+        Row: {
+          id: string;
+          calling_id: string;
+          candidate_name_id: string;
+          status: CallingCandidateStatus;
+          notes: string | null;
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          calling_id: string;
+          candidate_name_id: string;
+          status?: CallingCandidateStatus;
+          notes?: string | null;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          calling_id?: string;
+          candidate_name_id?: string;
+          status?: CallingCandidateStatus;
+          notes?: string | null;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      calling_processes: {
+        Row: {
+          id: string;
+          calling_id: string;
+          candidate_name_id: string;
+          calling_candidate_id: string | null;
+          current_stage: CallingProcessStage;
+          status: CallingProcessStatus;
+          dropped_reason: string | null;
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          calling_id: string;
+          candidate_name_id: string;
+          calling_candidate_id?: string | null;
+          current_stage?: CallingProcessStage;
+          status?: CallingProcessStatus;
+          dropped_reason?: string | null;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          calling_id?: string;
+          candidate_name_id?: string;
+          calling_candidate_id?: string | null;
+          current_stage?: CallingProcessStage;
+          status?: CallingProcessStatus;
+          dropped_reason?: string | null;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      calling_history_log: {
+        Row: {
+          id: string;
+          calling_process_id: string;
+          action: CallingHistoryAction;
+          from_value: string | null;
+          to_value: string | null;
+          notes: string | null;
+          created_by: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          calling_process_id: string;
+          action: CallingHistoryAction;
+          from_value?: string | null;
+          to_value?: string | null;
+          notes?: string | null;
+          created_by?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          calling_process_id?: string;
+          action?: CallingHistoryAction;
+          from_value?: string | null;
+          to_value?: string | null;
+          notes?: string | null;
+          created_by?: string | null;
+          created_at?: string;
+        };
+      };
+      calling_comments: {
+        Row: {
+          id: string;
+          calling_process_id: string;
+          content: string;
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          calling_process_id: string;
+          content: string;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          calling_process_id?: string;
+          content?: string;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
         };
       };
     };
