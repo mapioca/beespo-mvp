@@ -210,30 +210,16 @@ export function AddMeetingItemDialog({
                     break;
                 }
                 case "speaker": {
-                    // Get speakers from user's organization
-                    // First get organization_id from profile
-                    const { data: profile } = await supabase
-                        .from("profiles")
-                        .select("organization_id")
-                        .eq("id", user?.id)
-                        .single();
-
-                    const organizationId = profile?.organization_id;
-
-                    if (!organizationId) {
-                        console.error("No organization_id found for user");
-                        setSpeakers([]);
-                        break;
-                    }
-
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    const { data, error } = await (supabase.from("speakers") as any)
-                        .select("id, name, topic, is_confirmed")
-                        .eq("organization_id", organizationId)
-                        .order("name");
-
-                    if (error) console.error("Error loading speakers:", error);
-                    if (data) setSpeakers(data);
+                    // Use static templates for speakers instead of fetching from DB
+                    // This avoids the issue where we need a valid speaker_id for the 'speaker' item_type
+                    const templates: Speaker[] = [
+                        { id: "tmpl_speaker", name: "Speaker", topic: "Standard speaker assignment", is_confirmed: false },
+                        { id: "tmpl_youth", name: "Youth Speaker", topic: "Youth speaker assignment", is_confirmed: false },
+                        { id: "tmpl_high_council", name: "High Council Speaker", topic: "High Council assignment", is_confirmed: false },
+                        { id: "tmpl_missionary", name: "Returning Missionary", topic: "Missionary report", is_confirmed: false },
+                        { id: "tmpl_investigator", name: "Investigator", topic: "Investigator sharing", is_confirmed: false },
+                    ];
+                    setSpeakers(templates);
                     break;
                 }
             }
@@ -376,11 +362,13 @@ export function AddMeetingItemDialog({
                             }
                             onClick={() =>
                                 handleSelectItem({
-                                    category: "speaker",
-                                    title: `Speaker: ${speaker.name}`,
+                                    // Create as procedural item initially since we don't have a specific person (speaker_id) yet.
+                                    // The database constraint requires speaker_id to be non-null for item_type 'speaker'.
+                                    category: "procedural",
+                                    title: speaker.name,
                                     description: speaker.topic,
                                     duration_minutes: 10,
-                                    speaker_id: speaker.id,
+                                    // No speaker_id needed for procedural item
                                 })
                             }
                         />
