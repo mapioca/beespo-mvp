@@ -132,18 +132,18 @@ function InlineAgendaRow({
     // Current participant as ComboboxOption
     const currentParticipant: ComboboxOption | null = item.participant_id
         ? {
-              id: item.participant_id,
-              label: item.participant_name || "Unknown",
-          }
+            id: item.participant_id,
+            label: item.participant_name || "Unknown",
+        }
         : null;
 
     // Current hymn as ComboboxOption
     const currentHymn: ComboboxOption | null = item.hymn_id && item.hymn
         ? {
-              id: item.hymn_id,
-              label: item.hymn.title,
-              sublabel: `#${item.hymn.hymn_number}`,
-          }
+            id: item.hymn_id,
+            label: item.hymn.title,
+            sublabel: `#${item.hymn.hymn_number}`,
+        }
         : null;
 
     // Handle title save
@@ -200,9 +200,9 @@ function InlineAgendaRow({
                 hymn_id: option?.id || null,
                 hymn: selectedHymn
                     ? {
-                          title: selectedHymn.title,
-                          hymn_number: selectedHymn.hymn_number,
-                      }
+                        title: selectedHymn.title,
+                        hymn_number: selectedHymn.hymn_number,
+                    }
                     : null,
             };
             return onUpdate(item.id, { hymn_id: option?.id || null }, optimisticItem);
@@ -530,25 +530,43 @@ export function EditableAgendaItemList({
             setUpdatingItemId(itemId);
             const supabase = createClient();
 
+            // Use .select() to return updated data and detect RLS failures
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const { error } = await (supabase.from("agenda_items") as any)
+            const { data, error } = await (supabase.from("agenda_items") as any)
                 .update(updates)
-                .eq("id", itemId);
+                .eq("id", itemId)
+                .select();
 
             setUpdatingItemId(null);
 
             if (error) {
-                // Revert on error
+                // Database error
                 setItems(previousItems);
                 onItemsChange?.(previousItems);
                 toast({
                     title: "Update failed",
-                    description: "Could not save changes. Please try again.",
+                    description: error.message || "Could not save changes. Please try again.",
                     variant: "destructive",
                 });
                 return false;
             }
 
+            if (!data || data.length === 0) {
+                // RLS policy blocked the update (no rows affected)
+                setItems(previousItems);
+                onItemsChange?.(previousItems);
+                toast({
+                    title: "Update failed",
+                    description: "You don't have permission to edit this item.",
+                    variant: "destructive",
+                });
+                return false;
+            }
+
+            toast({
+                title: "Saved",
+                description: "Changes saved successfully.",
+            });
             return true;
         },
         [items, onItemsChange, toast]

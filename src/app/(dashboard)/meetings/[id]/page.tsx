@@ -5,6 +5,9 @@ import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
+// Force dynamic rendering to ensure fresh data on each request
+export const dynamic = "force-dynamic";
+
 interface MeetingDetailPageProps {
     params: Promise<{
         id: string;
