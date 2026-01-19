@@ -19,7 +19,7 @@ import {
 import { RecurrenceType, RecurrenceConfig } from "@/types/database";
 
 // Calendar event source types
-export type EventSource = "announcement" | "meeting" | "task" | "external";
+export type EventSource = "announcement" | "meeting" | "task" | "external" | "event";
 
 // Calendar event representation
 export interface CalendarEvent {
@@ -69,6 +69,21 @@ export interface CalendarTask {
   due_date: string | null;
   status: "pending" | "in_progress" | "completed" | "cancelled";
   priority: "low" | "medium" | "high";
+}
+
+// Internal event type for calendar (from events table)
+export interface CalendarInternalEvent {
+  id: string;
+  title: string;
+  description: string | null;
+  location: string | null;
+  start_at: string;
+  end_at: string;
+  is_all_day: boolean;
+  workspace_event_id: string | null;
+  external_source_id: string | null;
+  external_source_type: string | null;
+  announcements?: Array<{ id: string; title: string; status: string }> | null;
 }
 
 // Get visible date range for calendar view
@@ -264,6 +279,44 @@ export function tasksToEvents(tasks: CalendarTask[]): CalendarEvent[] {
     }));
 }
 
+// Convert internal events (from events table) to calendar events
+export function internalEventsToCalendarEvents(
+  events: CalendarInternalEvent[]
+): CalendarEvent[] {
+  return events.map((event) => ({
+    id: event.id,
+    title: event.title,
+    description: event.description,
+    startDate: parseISO(event.start_at),
+    endDate: parseISO(event.end_at),
+    isAllDay: event.is_all_day,
+    source: "event" as EventSource,
+    sourceId: event.id,
+    location: event.location || undefined,
+  }));
+}
+
+// Shadowing: Get claimed external source IDs from internal events
+// Used to filter out external events that have been imported
+export function getClaimedExternalIds(events: CalendarInternalEvent[]): Set<string> {
+  return new Set(
+    events
+      .filter((e) => e.external_source_id)
+      .map((e) => e.external_source_id!)
+  );
+}
+
+// Apply shadowing: filter external events to exclude those that have been imported
+export function applyExternalEventShadowing<T extends { external_uid?: string; id?: string }>(
+  externalEvents: T[],
+  claimedIds: Set<string>
+): T[] {
+  return externalEvents.filter((extEvent) => {
+    const uid = extEvent.external_uid || extEvent.id;
+    return uid ? !claimedIds.has(uid) : true;
+  });
+}
+
 // Group events by date for display
 export function groupEventsByDate(
   events: CalendarEvent[]
@@ -343,6 +396,12 @@ export function getEventColorClass(source: EventSource): {
         border: "border-l-green-400",
         bg: "bg-green-50",
         text: "text-green-900",
+      };
+    case "event":
+      return {
+        border: "border-l-indigo-400",
+        bg: "bg-indigo-50",
+        text: "text-indigo-900",
       };
     case "external":
       return {

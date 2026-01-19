@@ -850,6 +850,8 @@ export type Database = {
           end_at: string;
           is_all_day: boolean;
           workspace_event_id: string | null;
+          external_source_id: string | null;
+          external_source_type: "google" | "outlook" | "ics" | "apple" | "other" | null;
           created_by: string | null;
           created_at: string;
           updated_at: string;
@@ -864,6 +866,8 @@ export type Database = {
           end_at: string;
           is_all_day?: boolean;
           workspace_event_id?: string | null;
+          external_source_id?: string | null;
+          external_source_type?: "google" | "outlook" | "ics" | "apple" | "other" | null;
           created_by?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -878,6 +882,8 @@ export type Database = {
           end_at?: string;
           is_all_day?: boolean;
           workspace_event_id?: string | null;
+          external_source_id?: string | null;
+          external_source_type?: "google" | "outlook" | "ics" | "apple" | "other" | null;
           created_by?: string | null;
           created_at?: string;
           updated_at?: string;

@@ -45,6 +45,12 @@ function getNotionAgendaColors(source: EventSource): {
         bg: "bg-green-50/80 dark:bg-green-950/30",
         text: "text-green-900 dark:text-green-100",
       };
+    case "event":
+      return {
+        border: "border-l-indigo-400",
+        bg: "bg-indigo-50/80 dark:bg-indigo-950/30",
+        text: "text-indigo-900 dark:text-indigo-100",
+      };
     case "external":
       return {
         border: "border-l-purple-400",

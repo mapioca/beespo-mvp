@@ -7,11 +7,15 @@ import {
   CalendarAnnouncement,
   CalendarMeeting,
   CalendarTask,
+  CalendarInternalEvent,
   expandRecurringEvents,
   meetingsToEvents,
   tasksToEvents,
+  internalEventsToCalendarEvents,
   getVisibleDateRange,
   groupEventsByDate,
+  getClaimedExternalIds,
+  applyExternalEventShadowing,
   EventSource,
 } from "@/lib/calendar-helpers";
 import { CalendarToolbar } from "./calendar-toolbar";
@@ -20,7 +24,8 @@ import { MonthView } from "./views/month-view";
 import { WeekView } from "./views/week-view";
 import { DayView } from "./views/day-view";
 import { AgendaView } from "./views/agenda-view";
-import { CreateEventDialog } from "./create-event-dialog";
+import { CreateEventDialog, CalendarEventData } from "./create-event-dialog";
+import { ExternalEventPreview, ExternalEventData } from "./external-event-preview";
 import { UserRole, ExternalCalendarEvent } from "@/types/database";
 import { createClient } from "@/lib/supabase/client";
 
@@ -30,17 +35,20 @@ interface CalendarVisibility {
   announcements: boolean;
   meetings: boolean;
   tasks: boolean;
+  events: boolean;
   external: boolean;
 }
 
 interface ExternalEventWithColor extends ExternalCalendarEvent {
   color?: string;
+  subscription_name?: string;
 }
 
 interface CalendarClientProps {
   initialAnnouncements: CalendarAnnouncement[];
   initialMeetings: CalendarMeeting[];
   initialTasks: CalendarTask[];
+  initialEvents?: CalendarInternalEvent[];
   userRole: UserRole;
 }
 
@@ -48,6 +56,7 @@ export function CalendarClient({
   initialAnnouncements,
   initialMeetings,
   initialTasks,
+  initialEvents = [],
   userRole,
 }: CalendarClientProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -56,6 +65,7 @@ export function CalendarClient({
     announcements: true,
     meetings: true,
     tasks: true,
+    events: true,
     external: true,
   });
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -63,13 +73,21 @@ export function CalendarClient({
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
   // Local state for data (can be updated after creating events)
-  const [announcements, setAnnouncements] = useState(initialAnnouncements);
+  const [announcements] = useState(initialAnnouncements);
   const [meetings] = useState(initialMeetings);
   const [tasks] = useState(initialTasks);
+  const [internalEvents, setInternalEvents] = useState(initialEvents);
 
   // External events state
   const [externalEvents, setExternalEvents] = useState<ExternalEventWithColor[]>([]);
   const [linkedEventIds, setLinkedEventIds] = useState<Set<string>>(new Set());
+
+  // External event preview state
+  const [previewEvent, setPreviewEvent] = useState<ExternalEventData | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
+
+  // Import mode - when importing from external event
+  const [importingEvent, setImportingEvent] = useState<ExternalEventData | null>(null);
 
   // Fetch external events and links
   useEffect(() => {
@@ -95,13 +113,14 @@ export function CalendarClient({
           calendar_subscriptions!inner (
             workspace_id,
             color,
+            name,
             is_enabled
           )
         `)
         .eq("calendar_subscriptions.workspace_id", profile.workspace_id)
         .eq("calendar_subscriptions.is_enabled", true);
 
-      // Fetch linked events (for de-duplication)
+      // Fetch linked events (for legacy de-duplication)
       const { data: links } = await (supabase
         .from("external_event_links") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
         .select("external_event_id");
@@ -109,16 +128,65 @@ export function CalendarClient({
       const linkedIds = new Set<string>(links?.map((l: { external_event_id: string }) => l.external_event_id) || []);
       setLinkedEventIds(linkedIds);
 
-      // Add color from subscription to events
-      const eventsWithColor = (events || []).map((e: { calendar_subscriptions?: { color: string } }) => ({
+      // Add color and name from subscription to events
+      const eventsWithColor = (events || []).map((e: {
+        calendar_subscriptions?: { color: string; name: string };
+        external_uid?: string;
+      }) => ({
         ...e,
         color: e.calendar_subscriptions?.color,
+        subscription_name: e.calendar_subscriptions?.name,
       }));
 
       setExternalEvents(eventsWithColor);
     };
 
     fetchExternalEvents();
+  }, []);
+
+  // Fetch internal events
+  useEffect(() => {
+    const fetchInternalEvents = async () => {
+      const supabase = createClient();
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: profile } = await (supabase
+        .from("profiles") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+        .select("workspace_id")
+        .eq("id", user.id)
+        .single();
+
+      if (!profile?.workspace_id) return;
+
+      const { data: events } = await (supabase
+        .from("events") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+        .select(`
+          id,
+          title,
+          description,
+          location,
+          start_at,
+          end_at,
+          is_all_day,
+          workspace_event_id,
+          external_source_id,
+          external_source_type,
+          announcements (
+            id,
+            title,
+            status
+          )
+        `)
+        .eq("workspace_id", profile.workspace_id);
+
+      if (events) {
+        setInternalEvents(events);
+      }
+    };
+
+    fetchInternalEvents();
   }, []);
 
   // Check if user can create events
@@ -130,25 +198,41 @@ export function CalendarClient({
     [currentDate, view]
   );
 
-  // Convert external events to calendar events
+  // Get claimed external IDs from internal events (for shadowing)
+  const claimedExternalIds = useMemo(
+    () => getClaimedExternalIds(internalEvents),
+    [internalEvents]
+  );
+
+  // Convert external events to calendar events with shadowing applied
   const externalToCalendarEvents = useCallback(
     (events: ExternalEventWithColor[]): CalendarEvent[] => {
-      return events
-        .filter((e) => !linkedEventIds.has(e.id)) // De-duplicate: exclude linked events
-        .map((event) => ({
-          id: event.id,
-          title: event.title,
-          description: event.description,
-          startDate: parseISO(event.start_date),
-          endDate: event.end_date ? parseISO(event.end_date) : undefined,
-          isAllDay: event.is_all_day,
-          source: "external" as EventSource,
-          sourceId: event.id,
-          location: event.location || undefined,
-          color: event.color,
-        }));
+      // First filter by legacy linked event IDs
+      const legacyFiltered = events.filter((e) => !linkedEventIds.has(e.id));
+
+      // Then apply new shadowing logic (filter by claimed external source IDs)
+      const shadowed = applyExternalEventShadowing(
+        legacyFiltered.map((e) => ({
+          ...e,
+          external_uid: e.external_uid || e.id,
+        })),
+        claimedExternalIds
+      );
+
+      return shadowed.map((event) => ({
+        id: event.id,
+        title: event.title,
+        description: event.description,
+        startDate: parseISO(event.start_date),
+        endDate: event.end_date ? parseISO(event.end_date) : undefined,
+        isAllDay: event.is_all_day ?? false,
+        source: "external" as EventSource,
+        sourceId: event.id,
+        location: event.location || undefined,
+        color: event.color,
+      }));
     },
-    [linkedEventIds]
+    [linkedEventIds, claimedExternalIds]
   );
 
   // Expand recurring announcements and create calendar events
@@ -172,12 +256,16 @@ export function CalendarClient({
       events.push(...tasksToEvents(tasks));
     }
 
+    if (visibility.events) {
+      events.push(...internalEventsToCalendarEvents(internalEvents));
+    }
+
     if (visibility.external) {
       events.push(...externalToCalendarEvents(externalEvents));
     }
 
     return events;
-  }, [announcements, meetings, tasks, externalEvents, visibility, dateRange, externalToCalendarEvents]);
+  }, [announcements, meetings, tasks, internalEvents, externalEvents, visibility, dateRange, externalToCalendarEvents]);
 
   // Group events by date for display
   const eventsByDate = useMemo(
@@ -229,6 +317,7 @@ export function CalendarClient({
     (date: Date) => {
       if (canCreateEvents) {
         setSelectedDate(date);
+        setImportingEvent(null);
         setCreateDialogOpen(true);
       }
     },
@@ -237,15 +326,37 @@ export function CalendarClient({
 
   // Handle event click
   const handleEventClick = useCallback((event: CalendarEvent) => {
-    // External events don't have a detail page yet
+    // External events show preview modal
     if (event.source === "external") {
-      // Could show a popover or modal with event details in the future
+      const extEvent = externalEvents.find((e) => e.id === event.sourceId);
+      if (extEvent) {
+        setPreviewEvent({
+          id: extEvent.id,
+          title: extEvent.title,
+          description: extEvent.description,
+          location: extEvent.location,
+          start_date: extEvent.start_date,
+          end_date: extEvent.end_date,
+          is_all_day: extEvent.is_all_day ?? false,
+          external_uid: extEvent.external_uid || extEvent.id,
+          subscription_name: extEvent.subscription_name,
+          subscription_color: extEvent.color,
+        });
+        setPreviewOpen(true);
+      }
       return;
     }
+
+    // Internal events from events table navigate to events page
+    if (event.source === "event") {
+      window.location.href = `/events`;
+      return;
+    }
+
     // Navigate to the source entity
     const basePath = `/${event.source === "announcement" ? "announcements" : event.source === "meeting" ? "meetings" : "tasks"}`;
     window.location.href = `${basePath}/${event.sourceId}`;
-  }, []);
+  }, [externalEvents]);
 
   // Toggle calendar visibility
   const toggleVisibility = useCallback(
@@ -255,14 +366,23 @@ export function CalendarClient({
     []
   );
 
-  // Handle new announcement created
-  const handleAnnouncementCreated = useCallback(
-    (newAnnouncement: CalendarAnnouncement) => {
-      setAnnouncements((prev) => [...prev, newAnnouncement]);
+  // Handle new event created from dialog
+  const handleEventCreated = useCallback(
+    (newEvent: CalendarEventData) => {
+      setInternalEvents((prev) => [...prev, newEvent]);
       setCreateDialogOpen(false);
+      setImportingEvent(null);
     },
     []
   );
+
+  // Handle import from external event preview
+  const handleImportExternal = useCallback((event: ExternalEventData) => {
+    setImportingEvent(event);
+    setSelectedDate(new Date(event.start_date));
+    setPreviewOpen(false);
+    setCreateDialogOpen(true);
+  }, []);
 
   // Render the appropriate view
   const renderView = () => {
@@ -310,6 +430,7 @@ export function CalendarClient({
           canCreateEvents={canCreateEvents}
           onCreateEvent={() => {
             setSelectedDate(new Date());
+            setImportingEvent(null);
             setCreateDialogOpen(true);
           }}
         />
@@ -323,9 +444,18 @@ export function CalendarClient({
           open={createDialogOpen}
           onOpenChange={setCreateDialogOpen}
           selectedDate={selectedDate}
-          onCreated={handleAnnouncementCreated}
+          onCreated={handleEventCreated}
+          externalEvent={importingEvent}
         />
       )}
+
+      {/* External event preview */}
+      <ExternalEventPreview
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+        event={previewEvent}
+        onImport={handleImportExternal}
+      />
     </div>
   );
 }

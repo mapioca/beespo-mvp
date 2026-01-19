@@ -116,6 +116,8 @@ export async function POST(request: NextRequest) {
         end_at,
         is_all_day = false,
         promote_to_announcement = false,
+        external_source_id = null,
+        external_source_type = null,
     } = body;
 
     // Validate required fields
@@ -137,6 +139,8 @@ export async function POST(request: NextRequest) {
             start_at: normalizedTimes.start_at,
             end_at: normalizedTimes.end_at,
             is_all_day,
+            external_source_id: external_source_id || null,
+            external_source_type: external_source_type || null,
             created_by: user.id,
         })
         .select()

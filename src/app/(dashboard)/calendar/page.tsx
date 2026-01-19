@@ -61,11 +61,36 @@ export default async function CalendarPage() {
     .lte("due_date", rangeEnd)
     .neq("status", "cancelled");
 
+  // Fetch events from the new events table
+  const { data: events } = await (supabase
+    .from("events") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+    .select(`
+      id,
+      title,
+      description,
+      location,
+      start_at,
+      end_at,
+      is_all_day,
+      workspace_event_id,
+      external_source_id,
+      external_source_type,
+      announcements (
+        id,
+        title,
+        status
+      )
+    `)
+    .eq("workspace_id", profile.workspace_id)
+    .gte("start_at", rangeStart)
+    .lte("start_at", rangeEnd);
+
   return (
     <CalendarClient
       initialAnnouncements={announcements || []}
       initialMeetings={meetings || []}
       initialTasks={tasks || []}
+      initialEvents={events || []}
       userRole={profile.role}
     />
   );

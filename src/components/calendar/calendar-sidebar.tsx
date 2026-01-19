@@ -15,6 +15,7 @@ interface CalendarVisibility {
   announcements: boolean;
   meetings: boolean;
   tasks: boolean;
+  events: boolean;
   external: boolean;
 }
 
@@ -102,6 +103,20 @@ export function CalendarSidebar({
               Beespo Calendar
             </h3>
             <div className="space-y-2">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="events"
+                  checked={visibility.events}
+                  onCheckedChange={() => onToggleVisibility("events")}
+                />
+                <Label
+                  htmlFor="events"
+                  className="flex items-center gap-2 cursor-pointer"
+                >
+                  <span className="w-3 h-3 rounded-sm bg-indigo-400" />
+                  Events
+                </Label>
+              </div>
               <div className="flex items-center space-x-2">
                 <Checkbox
                   id="announcements"

@@ -49,6 +49,13 @@ function getNotionColors(source: EventSource, customColor?: string): {
         text: "text-green-900 dark:text-green-100",
         hoverBg: "hover:bg-green-100 dark:hover:bg-green-900/40",
       };
+    case "event":
+      return {
+        border: "border-l-indigo-400",
+        bg: "bg-indigo-50 dark:bg-indigo-950/30",
+        text: "text-indigo-900 dark:text-indigo-100",
+        hoverBg: "hover:bg-indigo-100 dark:hover:bg-indigo-900/40",
+      };
     case "external":
       return {
         border: "border-l-purple-400",

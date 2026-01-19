@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import {
   Dialog,
@@ -14,25 +14,50 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
-import { RecurrencePicker } from "./recurrence-picker";
-import { CalendarAnnouncement } from "@/lib/calendar-helpers";
-import { RecurrenceType, RecurrenceConfig } from "@/types/database";
-import { createClient } from "@/lib/supabase/client";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/lib/hooks/use-toast";
+import { createClient } from "@/lib/supabase/client";
+import { Megaphone, CalendarDays, MapPin, X } from "lucide-react";
+
+// Event type returned from API
+export interface CalendarEventData {
+  id: string;
+  title: string;
+  description: string | null;
+  location: string | null;
+  start_at: string;
+  end_at: string;
+  is_all_day: boolean;
+  workspace_event_id: string | null;
+  external_source_id: string | null;
+  external_source_type: string | null;
+  announcements?: Array<{ id: string; title: string; status: string }> | null;
+}
+
+interface TemplateStub {
+  id: string;
+  name: string;
+}
 
 interface CreateEventDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   selectedDate: Date | null;
-  onCreated: (announcement: CalendarAnnouncement) => void;
+  onCreated: (event: CalendarEventData) => void;
+  // For importing external events
+  externalEvent?: {
+    id: string;
+    title: string;
+    description: string | null;
+    location: string | null;
+    start_date: string;
+    end_date: string | null;
+    is_all_day: boolean;
+    external_uid?: string;
+  } | null;
 }
 
 export function CreateEventDialog({
@@ -40,57 +65,110 @@ export function CreateEventDialog({
   onOpenChange,
   selectedDate,
   onCreated,
+  externalEvent,
 }: CreateEventDialogProps) {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
 
   // Form state
   const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
-  const [priority, setPriority] = useState<"low" | "medium" | "high">("medium");
-  const [status, setStatus] = useState<"draft" | "active">("active");
-  const [scheduleDate, setScheduleDate] = useState("");
-  const [deadline, setDeadline] = useState("");
-  const [sameAsSchedule, setSameAsSchedule] = useState(false);
-  const [recurrenceType, setRecurrenceType] = useState<RecurrenceType>("none");
-  const [recurrenceEndDate, setRecurrenceEndDate] = useState("");
-  const [recurrenceConfig, setRecurrenceConfig] = useState<RecurrenceConfig>({});
+  const [description, setDescription] = useState("");
+  const [location, setLocation] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [startTime, setStartTime] = useState("09:00");
+  const [endDate, setEndDate] = useState("");
+  const [endTime, setEndTime] = useState("10:00");
+  const [isAllDay, setIsAllDay] = useState(false);
 
-  // Update schedule date when selectedDate changes
-  useState(() => {
-    if (selectedDate) {
-      setScheduleDate(format(selectedDate, "yyyy-MM-dd"));
-    }
-  });
+  // Promotion state
+  const [promoteToAnnouncement, setPromoteToAnnouncement] = useState(false);
+  const [selectedTemplates, setSelectedTemplates] = useState<string[]>([]);
+  const [templates, setTemplates] = useState<TemplateStub[]>([]);
+  const [loadingTemplates, setLoadingTemplates] = useState(false);
 
-  // Handle "same as schedule" checkbox
-  const handleSameAsScheduleChange = (checked: boolean) => {
-    setSameAsSchedule(checked);
-    if (checked && scheduleDate) {
-      setDeadline(scheduleDate);
-    }
-  };
+  // Initialize form when selectedDate or externalEvent changes
+  useEffect(() => {
+    if (externalEvent) {
+      // Pre-fill from external event
+      setTitle(externalEvent.title);
+      setDescription(externalEvent.description || "");
+      setLocation(externalEvent.location || "");
+      setIsAllDay(externalEvent.is_all_day);
 
-  // Handle schedule date change
-  const handleScheduleDateChange = (value: string) => {
-    setScheduleDate(value);
-    if (sameAsSchedule) {
-      setDeadline(value);
+      const start = new Date(externalEvent.start_date);
+      setStartDate(format(start, "yyyy-MM-dd"));
+      setStartTime(format(start, "HH:mm"));
+
+      if (externalEvent.end_date) {
+        const end = new Date(externalEvent.end_date);
+        setEndDate(format(end, "yyyy-MM-dd"));
+        setEndTime(format(end, "HH:mm"));
+      } else {
+        setEndDate(format(start, "yyyy-MM-dd"));
+        setEndTime(format(start, "HH:mm"));
+      }
+    } else if (selectedDate) {
+      // Initialize from selected date
+      const dateStr = format(selectedDate, "yyyy-MM-dd");
+      setStartDate(dateStr);
+      setEndDate(dateStr);
+      setTitle("");
+      setDescription("");
+      setLocation("");
+      setStartTime("09:00");
+      setEndTime("10:00");
+      setIsAllDay(false);
     }
-  };
+    setPromoteToAnnouncement(false);
+    setSelectedTemplates([]);
+  }, [selectedDate, externalEvent, open]);
+
+  // Fetch templates when promotion is enabled
+  useEffect(() => {
+    const fetchTemplates = async () => {
+      if (!promoteToAnnouncement) return;
+
+      setLoadingTemplates(true);
+      const supabase = createClient();
+
+      const { data, error } = await supabase
+        .from("templates")
+        .select("id, name")
+        .order("name");
+
+      if (error) {
+        console.error("Error fetching templates:", error);
+      } else {
+        setTemplates(data || []);
+      }
+      setLoadingTemplates(false);
+    };
+
+    fetchTemplates();
+  }, [promoteToAnnouncement]);
 
   // Reset form
   const resetForm = () => {
+    const today = format(new Date(), "yyyy-MM-dd");
     setTitle("");
-    setContent("");
-    setPriority("medium");
-    setStatus("active");
-    setScheduleDate(selectedDate ? format(selectedDate, "yyyy-MM-dd") : "");
-    setDeadline("");
-    setSameAsSchedule(false);
-    setRecurrenceType("none");
-    setRecurrenceEndDate("");
-    setRecurrenceConfig({});
+    setDescription("");
+    setLocation("");
+    setStartDate(today);
+    setStartTime("09:00");
+    setEndDate(today);
+    setEndTime("10:00");
+    setIsAllDay(false);
+    setPromoteToAnnouncement(false);
+    setSelectedTemplates([]);
+  };
+
+  // Handle template toggle
+  const toggleTemplate = (templateId: string) => {
+    setSelectedTemplates((prev) =>
+      prev.includes(templateId)
+        ? prev.filter((id) => id !== templateId)
+        : [...prev, templateId]
+    );
   };
 
   // Handle submit
@@ -98,83 +176,104 @@ export function CreateEventDialog({
     e.preventDefault();
     setIsLoading(true);
 
-    const supabase = createClient();
+    // Construct start_at and end_at timestamps
+    const startAt = isAllDay
+      ? `${startDate}T00:00:00`
+      : `${startDate}T${startTime}:00`;
+    const endAt = isAllDay
+      ? `${endDate}T23:59:59`
+      : `${endDate}T${endTime}:00`;
 
-    // Get current user
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      toast({
-        title: "Error",
-        description: "Not authenticated. Please log in again.",
-        variant: "destructive",
-      });
-      setIsLoading(false);
-      return;
+    const payload: Record<string, unknown> = {
+      title,
+      description: description || null,
+      location: location || null,
+      start_at: new Date(startAt).toISOString(),
+      end_at: new Date(endAt).toISOString(),
+      is_all_day: isAllDay,
+      promote_to_announcement: promoteToAnnouncement,
+    };
+
+    // Add external source info if importing
+    if (externalEvent?.external_uid) {
+      payload.external_source_id = externalEvent.external_uid;
+      payload.external_source_type = "ics"; // Default to ICS for now
     }
 
-    // Get user profile
-    const { data: profile } = await (supabase
-      .from("profiles") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
-      .select("workspace_id, role")
-      .eq("id", user.id)
-      .single();
+    try {
+      const response = await fetch("/api/events", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
 
-    if (!profile || !["leader", "admin"].includes(profile.role)) {
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to create event");
+      }
+
+      // If promotion is enabled and templates selected, link to templates
+      if (promoteToAnnouncement && selectedTemplates.length > 0 && data.announcement) {
+        const supabase = createClient();
+
+        // Create announcement_templates entries
+        for (const templateId of selectedTemplates) {
+          await (supabase
+            .from("announcement_templates") as ReturnType<typeof supabase.from>)
+            .insert({
+              announcement_id: data.announcement.id,
+              template_id: templateId,
+            });
+        }
+      }
+
+      toast({
+        title: "Success",
+        description: externalEvent
+          ? "External event imported successfully."
+          : "Event created successfully.",
+      });
+
+      if (data.announcement) {
+        toast({
+          title: "Announcement Created",
+          description: `Event will be announced until it starts.${
+            selectedTemplates.length > 0
+              ? ` Linked to ${selectedTemplates.length} template(s).`
+              : ""
+          }`,
+        });
+      }
+
+      onCreated(data.event);
+      onOpenChange(false);
+      resetForm();
+    } catch (error) {
       toast({
         title: "Error",
-        description: "Only leaders and admins can create announcements.",
+        description: error instanceof Error ? error.message : "Failed to create event.",
         variant: "destructive",
       });
+    } finally {
       setIsLoading(false);
-      return;
     }
-
-    // Create announcement
-    const { data: announcement, error } = await (supabase
-      .from("announcements") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
-      .insert({
-        title,
-        content: content || null,
-        priority,
-        status,
-        schedule_date: scheduleDate ? new Date(scheduleDate).toISOString() : null,
-        deadline: deadline || null,
-        recurrence_type: recurrenceType,
-        recurrence_end_date: recurrenceEndDate || null,
-        recurrence_config: recurrenceConfig,
-        workspace_id: profile.workspace_id,
-        created_by: user.id,
-      })
-      .select()
-      .single();
-
-    if (error) {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to create announcement.",
-        variant: "destructive",
-      });
-      setIsLoading(false);
-      return;
-    }
-
-    toast({
-      title: "Success",
-      description: "Announcement created and added to calendar.",
-    });
-
-    onCreated(announcement);
-    resetForm();
-    setIsLoading(false);
   };
+
+  const isImporting = !!externalEvent;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Create Calendar Event</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            <CalendarDays className="h-5 w-5" />
+            {isImporting ? "Import to Beespo" : "Create Event"}
+          </DialogTitle>
           <DialogDescription>
-            Create a new announcement that will appear on the calendar.
+            {isImporting
+              ? "Create a Beespo event from this external calendar entry."
+              : "Create a new calendar event for your workspace."}
           </DialogDescription>
         </DialogHeader>
 
@@ -193,106 +292,184 @@ export function CreateEventDialog({
             />
           </div>
 
-          {/* Content */}
+          {/* All Day Toggle */}
+          <div className="flex items-center justify-between">
+            <Label htmlFor="isAllDay" className="cursor-pointer">All-day event</Label>
+            <Switch
+              id="isAllDay"
+              checked={isAllDay}
+              onCheckedChange={setIsAllDay}
+              disabled={isLoading}
+            />
+          </div>
+
+          {/* Start Date/Time */}
+          <div className={`grid gap-4 ${isAllDay ? "grid-cols-1" : "grid-cols-2"}`}>
+            <div className="space-y-2">
+              <Label htmlFor="startDate">Start Date *</Label>
+              <Input
+                id="startDate"
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                required
+                disabled={isLoading}
+              />
+            </div>
+            {!isAllDay && (
+              <div className="space-y-2">
+                <Label htmlFor="startTime">Start Time *</Label>
+                <Input
+                  id="startTime"
+                  type="time"
+                  value={startTime}
+                  onChange={(e) => setStartTime(e.target.value)}
+                  required
+                  disabled={isLoading}
+                />
+              </div>
+            )}
+          </div>
+
+          {/* End Date/Time */}
+          <div className={`grid gap-4 ${isAllDay ? "grid-cols-1" : "grid-cols-2"}`}>
+            <div className="space-y-2">
+              <Label htmlFor="endDate">End Date *</Label>
+              <Input
+                id="endDate"
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                required
+                disabled={isLoading}
+              />
+            </div>
+            {!isAllDay && (
+              <div className="space-y-2">
+                <Label htmlFor="endTime">End Time *</Label>
+                <Input
+                  id="endTime"
+                  type="time"
+                  value={endTime}
+                  onChange={(e) => setEndTime(e.target.value)}
+                  required
+                  disabled={isLoading}
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Location */}
           <div className="space-y-2">
-            <Label htmlFor="content">Description</Label>
+            <Label htmlFor="location" className="flex items-center gap-1.5">
+              <MapPin className="h-3.5 w-3.5" />
+              Location
+            </Label>
+            <Input
+              id="location"
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              placeholder="Event location"
+              disabled={isLoading}
+            />
+          </div>
+
+          {/* Description */}
+          <div className="space-y-2">
+            <Label htmlFor="description">Description</Label>
             <Textarea
-              id="content"
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
+              id="description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
               placeholder="Event details..."
               rows={3}
               disabled={isLoading}
             />
           </div>
 
-          {/* Schedule Date */}
-          <div className="space-y-2">
-            <Label htmlFor="scheduleDate">Schedule Date *</Label>
-            <Input
-              id="scheduleDate"
-              type="date"
-              value={scheduleDate}
-              onChange={(e) => handleScheduleDateChange(e.target.value)}
-              required
-              disabled={isLoading}
-            />
-          </div>
+          <Separator />
 
-          {/* Priority & Status */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="priority">Priority</Label>
-              <Select
-                value={priority}
-                onValueChange={(v) => setPriority(v as typeof priority)}
-                disabled={isLoading}
-              >
-                <SelectTrigger id="priority">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="high">High</SelectItem>
-                  <SelectItem value="medium">Medium</SelectItem>
-                  <SelectItem value="low">Low</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="status">Status</Label>
-              <Select
-                value={status}
-                onValueChange={(v) => setStatus(v as typeof status)}
-                disabled={isLoading}
-              >
-                <SelectTrigger id="status">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="draft">Draft</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          {/* Deadline */}
-          <div className="space-y-2">
-            <Label htmlFor="deadline">Deadline</Label>
-            <div className="flex items-center gap-2">
-              <Input
-                id="deadline"
-                type="date"
-                value={deadline}
-                onChange={(e) => setDeadline(e.target.value)}
-                disabled={isLoading || sameAsSchedule}
-                className="flex-1"
-              />
-            </div>
-            <div className="flex items-center space-x-2 mt-2">
-              <Checkbox
-                id="sameAsSchedule"
-                checked={sameAsSchedule}
-                onCheckedChange={handleSameAsScheduleChange}
+          {/* Announce in Meetings Section */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Megaphone className="h-4 w-4 text-amber-500" />
+                <Label htmlFor="promoteToAnnouncement" className="cursor-pointer font-medium">
+                  Announce in Meetings
+                </Label>
+              </div>
+              <Switch
+                id="promoteToAnnouncement"
+                checked={promoteToAnnouncement}
+                onCheckedChange={setPromoteToAnnouncement}
                 disabled={isLoading}
               />
-              <Label htmlFor="sameAsSchedule" className="text-sm cursor-pointer">
-                Set deadline same as schedule date
-              </Label>
             </div>
-          </div>
 
-          {/* Recurrence */}
-          <RecurrencePicker
-            recurrenceType={recurrenceType}
-            recurrenceEndDate={recurrenceEndDate}
-            recurrenceConfig={recurrenceConfig}
-            onRecurrenceTypeChange={setRecurrenceType}
-            onRecurrenceEndDateChange={setRecurrenceEndDate}
-            onRecurrenceConfigChange={setRecurrenceConfig}
-            disabled={isLoading}
-          />
+            {promoteToAnnouncement && (
+              <div className="space-y-3 pl-6 border-l-2 border-amber-200">
+                <p className="text-sm text-muted-foreground">
+                  An announcement will be created and displayed until the event starts.
+                </p>
+
+                {/* Template Selection */}
+                <div className="space-y-2">
+                  <Label className="text-sm">Applies to Templates</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Select which meeting types should include this announcement.
+                  </p>
+
+                  {loadingTemplates ? (
+                    <p className="text-sm text-muted-foreground">Loading templates...</p>
+                  ) : templates.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">No templates available.</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {/* Selected templates as badges */}
+                      {selectedTemplates.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 mb-2">
+                          {selectedTemplates.map((id) => {
+                            const template = templates.find((t) => t.id === id);
+                            return template ? (
+                              <Badge
+                                key={id}
+                                variant="secondary"
+                                className="cursor-pointer"
+                                onClick={() => toggleTemplate(id)}
+                              >
+                                {template.name}
+                                <X className="h-3 w-3 ml-1" />
+                              </Badge>
+                            ) : null;
+                          })}
+                        </div>
+                      )}
+
+                      {/* Template checkboxes */}
+                      <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto p-2 border rounded-md">
+                        {templates.map((template) => (
+                          <div key={template.id} className="flex items-center space-x-2">
+                            <Checkbox
+                              id={`template-${template.id}`}
+                              checked={selectedTemplates.includes(template.id)}
+                              onCheckedChange={() => toggleTemplate(template.id)}
+                              disabled={isLoading}
+                            />
+                            <Label
+                              htmlFor={`template-${template.id}`}
+                              className="text-sm cursor-pointer"
+                            >
+                              {template.name}
+                            </Label>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
 
           <DialogFooter className="gap-2 sm:gap-0">
             <Button
@@ -303,8 +480,15 @@ export function CreateEventDialog({
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isLoading || !title || !scheduleDate}>
-              {isLoading ? "Creating..." : "Create Event"}
+            <Button
+              type="submit"
+              disabled={isLoading || !title || !startDate || !endDate}
+            >
+              {isLoading
+                ? "Creating..."
+                : isImporting
+                  ? "Import Event"
+                  : "Create Event"}
             </Button>
           </DialogFooter>
         </form>
