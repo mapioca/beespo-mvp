@@ -60,7 +60,7 @@ function KanbanColumn({
     emptyMessage = "No callings at this stage"
 }: KanbanColumnProps) {
     return (
-        <div className="flex flex-col min-w-[240px] max-w-[280px] flex-1">
+        <div className="flex flex-col w-80 shrink-0">
             {/* Column Header */}
             <div
                 className={cn(
@@ -167,7 +167,7 @@ export function CallingsKanbanBoard({ callings, onCallingClick }: CallingsKanban
     }, [callings]);
 
     return (
-        <div className="flex gap-3 overflow-x-auto pb-4 -mx-4 px-4">
+        <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory">
             {/* Column 1: Needs Candidates */}
             <KanbanColumn
                 title="Needs Candidates"
