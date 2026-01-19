@@ -3,6 +3,12 @@
 import { useState, useRef, useEffect, useCallback, KeyboardEvent } from "react";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Pencil, Loader2, Check, X, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -29,6 +35,10 @@ export interface InlineComboboxProps {
     displayClassName?: string;
     icon?: React.ReactNode;
     showClearButton?: boolean;
+    /** Compact mode: icon-only button with tooltip when unassigned */
+    compact?: boolean;
+    /** Tooltip text for compact mode */
+    tooltipText?: string;
 }
 
 export function InlineCombobox({
@@ -37,7 +47,7 @@ export function InlineCombobox({
     onSelect,
     onSearch,
     onCreateNew,
-                                   emptyText = "Not set",
+    emptyText = "Not set",
     searchPlaceholder = "Search...",
     noResultsText = "No results found",
     disabled = false,
@@ -46,6 +56,8 @@ export function InlineCombobox({
     displayClassName,
     icon,
     showClearButton = true,
+    compact = false,
+    tooltipText,
 }: InlineComboboxProps) {
     const [isOpen, setIsOpen] = useState(false);
     const [search, setSearch] = useState("");
@@ -263,6 +275,44 @@ export function InlineCombobox({
                     </div>
                 </div>
             </div>
+        );
+    }
+
+    // Compact mode for unassigned state: icon-only button with tooltip
+    if (compact && !value) {
+        return (
+            <TooltipProvider delayDuration={300}>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <button
+                            type="button"
+                            onClick={handleClick}
+                            disabled={isSaving}
+                            className={cn(
+                                "inline-flex items-center justify-center gap-0.5 rounded-full",
+                                "h-7 w-7 p-0",
+                                "text-muted-foreground/60 hover:text-muted-foreground",
+                                "hover:bg-muted transition-colors cursor-pointer",
+                                "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1",
+                                isSaving && "opacity-50 cursor-not-allowed",
+                                className
+                            )}
+                        >
+                            {isSaving ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                                <>
+                                    <Plus className="h-2.5 w-2.5" />
+                                    <span className="[&>svg]:h-3.5 [&>svg]:w-3.5">{icon}</span>
+                                </>
+                            )}
+                        </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="text-xs">
+                        <p>{tooltipText || emptyText}</p>
+                    </TooltipContent>
+                </Tooltip>
+            </TooltipProvider>
         );
     }
 

@@ -418,7 +418,7 @@ function SortableAgendaRow({
 
                 {/* Editable Fields Row */}
                 {(showParticipant || showHymn) && (
-                    <div className="flex flex-wrap gap-x-4 gap-y-2 pt-1">
+                    <div className="flex flex-wrap gap-x-2 gap-y-2 pt-1">
                         {/* Participant Selector */}
                         {showParticipant && (
                             <div
@@ -438,6 +438,8 @@ function SortableAgendaRow({
                                         disabled={isUpdating}
                                         isLoading={isLoadingParticipants}
                                         icon={<User className="h-3.5 w-3.5 text-muted-foreground" />}
+                                        compact
+                                        tooltipText="Assign participant"
                                     />
                                 ) : item.participant_name ? (
                                     <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
@@ -466,6 +468,8 @@ function SortableAgendaRow({
                                         disabled={isUpdating}
                                         isLoading={isLoadingHymns}
                                         icon={<Music className="h-3.5 w-3.5 text-muted-foreground" />}
+                                        compact
+                                        tooltipText="Assign hymn"
                                     />
                                 ) : item.hymn ? (
                                     <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
