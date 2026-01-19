@@ -6,15 +6,22 @@ import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
+import {
+    Card,
+    CardContent,
+    CardHeader,
+    CardTitle,
+    CardDescription,
+} from "@/components/ui/card";
 import { useToast } from "@/lib/hooks/use-toast";
-import { Loader2, ArrowLeft, Save } from "lucide-react";
-import { AgendaEditor } from "@/components/meetings/agenda-editor";
+import { Loader2, ArrowLeft } from "lucide-react";
+import { AgendaBuilder } from "@/components/meetings/agenda-builder";
 import { Database } from "@/types/database";
 import Link from "next/link";
 
-type AgendaItem = Database['public']['Tables']['agenda_items']['Row'];
-type Meeting = Database['public']['Tables']['meetings']['Row'];
+type AgendaItem = Database["public"]["Tables"]["agenda_items"]["Row"];
+type Meeting = Database["public"]["Tables"]["meetings"]["Row"];
 
 interface EditMeetingProps {
     params: Promise<{
@@ -34,6 +41,7 @@ export default function EditMeetingPage({ params }: EditMeetingProps) {
     const [deletedItemIds, setDeletedItemIds] = useState<string[]>([]);
 
     const [title, setTitle] = useState("");
+    const [description, setDescription] = useState("");
     const [scheduledDate, setScheduledDate] = useState("");
 
     useEffect(() => {
@@ -41,27 +49,33 @@ export default function EditMeetingPage({ params }: EditMeetingProps) {
             const supabase = createClient();
 
             const { data: meetingData, error: mError } = await supabase
-                .from('meetings')
-                .select('*')
-                .eq('id', id)
+                .from("meetings")
+                .select("*")
+                .eq("id", id)
                 .single();
 
             const { data: itemsData, error: iError } = await supabase
-                .from('agenda_items')
-                .select('*')
-                .eq('meeting_id', id)
-                .order('order_index');
+                .from("agenda_items")
+                .select("*")
+                .eq("meeting_id", id)
+                .order("order_index");
 
             if (mError || iError) {
-                toast({ title: "Error loading meeting", variant: "destructive" });
+                toast({
+                    title: "Error loading meeting",
+                    variant: "destructive",
+                });
                 return;
             }
 
             const mData = meetingData as Meeting;
             setMeeting(mData);
             setTitle(mData.title);
+            setDescription(mData.description || "");
             // Format for datetime-local input: YYYY-MM-DDThh:mm
-            setScheduledDate(new Date(mData.scheduled_date).toISOString().slice(0, 16));
+            setScheduledDate(
+                new Date(mData.scheduled_date).toISOString().slice(0, 16)
+            );
             setItems((itemsData as AgendaItem[]) || []);
             setLoading(false);
         };
@@ -75,19 +89,21 @@ export default function EditMeetingPage({ params }: EditMeetingProps) {
         const supabase = createClient();
 
         // 1. Update Meeting Metadata
-        const { error: mError } = await (supabase
-            .from('meetings') as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+        const { error: mError } = await (
+            supabase.from("meetings") as any // eslint-disable-line @typescript-eslint/no-explicit-any
+        )
             .update({
                 title,
-                scheduled_date: new Date(scheduledDate).toISOString()
+                description: description || null,
+                scheduled_date: new Date(scheduledDate).toISOString(),
             })
-            .eq('id', id);
+            .eq("id", id);
 
         if (mError) {
             toast({
                 title: "Error saving meeting",
                 description: mError.message || "Unknown error",
-                variant: "destructive"
+                variant: "destructive",
             });
             setSaving(false);
             return;
@@ -96,16 +112,17 @@ export default function EditMeetingPage({ params }: EditMeetingProps) {
         // 2. Process Agenda Items
         // A. Delete removed items
         if (deletedItemIds.length > 0) {
-            const { error: dError } = await (supabase
-                .from('agenda_items') as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+            const { error: dError } = await (
+                supabase.from("agenda_items") as any // eslint-disable-line @typescript-eslint/no-explicit-any
+            )
                 .delete()
-                .in('id', deletedItemIds);
+                .in("id", deletedItemIds);
 
             if (dError) {
                 toast({
                     title: "Error deleting items",
                     description: dError.message || "Unknown error",
-                    variant: "destructive"
+                    variant: "destructive",
                 });
                 setSaving(false);
                 return;
@@ -127,26 +144,28 @@ export default function EditMeetingPage({ params }: EditMeetingProps) {
                 business_item_id: item.business_item_id,
                 announcement_id: item.announcement_id,
                 speaker_id: item.speaker_id,
+                hymn_id: item.hymn_id,
+                participant_id: item.participant_id,
             };
 
             // If it's a temp ID, remove the ID field so Supabase generates a new UUID
             // If it's a real ID, keep it to update
-            if (item.id.startsWith('temp-')) {
+            if (item.id.startsWith("temp-")) {
                 return dbItem;
             } else {
                 return { ...dbItem, id: item.id };
             }
         });
 
-        const { error: uError } = await (supabase
-            .from('agenda_items') as any) // eslint-disable-line @typescript-eslint/no-explicit-any
-            .upsert(upsertData);
+        const { error: uError } = await (
+            supabase.from("agenda_items") as any // eslint-disable-line @typescript-eslint/no-explicit-any
+        ).upsert(upsertData);
 
         if (uError) {
             toast({
                 title: "Error saving agenda items",
                 description: uError.message || "Unknown error",
-                variant: "destructive"
+                variant: "destructive",
             });
             setSaving(false);
             return;
@@ -160,68 +179,114 @@ export default function EditMeetingPage({ params }: EditMeetingProps) {
 
     const handleDeleteItem = (itemId: string, isNew: boolean) => {
         // Remove from UI state
-        setItems(items.filter(i => i.id !== itemId));
+        setItems(items.filter((i) => i.id !== itemId));
         // If it exists in DB (not isNew), mark for deletion
         if (!isNew) {
             setDeletedItemIds([...deletedItemIds, itemId]);
         }
     };
 
-    if (loading) return <div className="flex justify-center p-8"><Loader2 className="animate-spin" /></div>;
+    if (loading)
+        return (
+            <div className="flex justify-center items-center min-h-[400px]">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+        );
 
     return (
-        <div className="max-w-4xl mx-auto p-8 space-y-8">
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                    <Button variant="ghost" size="icon" asChild>
-                        <Link href={`/meetings/${id}`}><ArrowLeft className="w-4 h-4" /></Link>
+        <div className="h-full overflow-auto">
+            <div className="container mx-auto p-6 max-w-4xl">
+                {/* Header */}
+                <div className="mb-6">
+                    <Button variant="ghost" asChild>
+                        <Link href={`/meetings/${id}`}>
+                            <ArrowLeft className="mr-2 h-4 w-4" />
+                            Back to Meeting
+                        </Link>
                     </Button>
-                    <h1 className="text-2xl font-bold">Edit Meeting</h1>
                 </div>
-                <Button onClick={handleSave} disabled={saving}>
-                    {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    <Save className="mr-2 h-4 w-4" />
-                    Save Changes
-                </Button>
-            </div>
 
-            <div className="grid gap-8 md:grid-cols-[1fr_2fr]">
                 <div className="space-y-6">
+                    {/* Metadata Card */}
                     <Card>
-                        <CardHeader><CardTitle>Metadata</CardTitle></CardHeader>
+                        <CardHeader>
+                            <CardTitle>Edit Meeting</CardTitle>
+                            <CardDescription>
+                                Update your meeting details and agenda items
+                            </CardDescription>
+                        </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="space-y-2">
-                                <Label>Title</Label>
-                                <Input value={title} onChange={(e) => setTitle(e.target.value)} />
-                            </div>
-                            <div className="space-y-2">
-                                <Label>Date & Time</Label>
+                                <Label htmlFor="title">Meeting Title *</Label>
                                 <Input
+                                    id="title"
+                                    value={title}
+                                    onChange={(e) => setTitle(e.target.value)}
+                                    placeholder="e.g., Ward Council Meeting"
+                                    required
+                                    disabled={saving}
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="description">Description</Label>
+                                <Textarea
+                                    id="description"
+                                    value={description}
+                                    onChange={(e) => setDescription(e.target.value)}
+                                    placeholder="Brief description of this meeting"
+                                    rows={3}
+                                    disabled={saving}
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="scheduledDate">
+                                    Date & Time *
+                                </Label>
+                                <Input
+                                    id="scheduledDate"
                                     type="datetime-local"
                                     value={scheduledDate}
-                                    onChange={(e) => setScheduledDate(e.target.value)}
+                                    onChange={(e) =>
+                                        setScheduledDate(e.target.value)
+                                    }
+                                    required
+                                    disabled={saving}
                                 />
                             </div>
                         </CardContent>
                     </Card>
-                </div>
 
-                <div className="space-y-6">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex justify-between items-center">
-                                Agenda
-                                <span className="text-sm font-normal text-muted-foreground">{items.length} items</span>
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <AgendaEditor
-                                items={items}
-                                setItems={setItems}
-                                onDeleteItem={handleDeleteItem}
-                            />
-                        </CardContent>
-                    </Card>
+                    {/* Agenda Builder */}
+                    <AgendaBuilder
+                        items={items}
+                        setItems={setItems}
+                        onDeleteItem={handleDeleteItem}
+                        isLoading={saving}
+                    />
+
+                    {/* Action Buttons */}
+                    <div className="flex justify-end gap-3">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => router.push(`/meetings/${id}`)}
+                            disabled={saving}
+                        >
+                            Cancel
+                        </Button>
+                        <Button onClick={handleSave} disabled={saving}>
+                            {saving ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Saving...
+                                </>
+                            ) : (
+                                "Save Changes"
+                            )}
+                        </Button>
+                    </div>
                 </div>
             </div>
         </div>
