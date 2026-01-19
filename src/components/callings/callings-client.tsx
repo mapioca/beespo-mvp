@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { Badge } from "@/components/ui/badge";
 import {
     Dialog,
     DialogContent,
@@ -22,6 +21,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+import { CallingsKanbanBoard } from "./callings-kanban-board";
 import { CallingCard } from "./calling-card";
 import { CallingDetailModal } from "./calling-detail-modal";
 import {
@@ -30,8 +30,6 @@ import {
     LayoutGrid,
     List,
     Loader2,
-    UserCheck,
-    Clock,
     Users
 } from "lucide-react";
 import { createCalling } from "@/lib/actions/calling-actions";
@@ -57,6 +55,7 @@ interface Calling {
     title: string;
     organization: string | null;
     is_filled: boolean;
+    filled_at: string | null;
     filled_by_name: { id: string; name: string } | null;
     candidates: CallingCandidate[];
     processes: CallingProcess[];
@@ -70,7 +69,6 @@ interface CallingsClientProps {
 }
 
 type ViewMode = 'board' | 'list';
-type FilterStatus = 'all' | 'open' | 'in_progress' | 'filled';
 
 const COMMON_ORGANIZATIONS = [
     "Bishopric",
@@ -87,7 +85,6 @@ const COMMON_ORGANIZATIONS = [
 export function CallingsClient({ callings, teamMembers, userRole }: CallingsClientProps) {
     const router = useRouter();
     const [search, setSearch] = useState("");
-    const [filterStatus, setFilterStatus] = useState<FilterStatus>('all');
     const [filterOrg, setFilterOrg] = useState<string>('all');
     const [viewMode, setViewMode] = useState<ViewMode>('board');
     const [showNewDialog, setShowNewDialog] = useState(false);
@@ -126,50 +123,10 @@ export function CallingsClient({ callings, teamMembers, userRole }: CallingsClie
                 }
             }
 
-            // Status filter
-            const activeProcess = calling.processes.find(p => p.status === 'active');
-            if (filterStatus !== 'all') {
-                if (filterStatus === 'open' && (calling.is_filled || activeProcess)) return false;
-                if (filterStatus === 'in_progress' && !activeProcess) return false;
-                if (filterStatus === 'filled' && !calling.is_filled) return false;
-            }
-
             // Organization filter
             return !(filterOrg !== 'all' && calling.organization !== filterOrg);
-
-
         });
-    }, [callings, search, filterStatus, filterOrg]);
-
-    // Group callings by status for board view
-    const groupedCallings = useMemo(() => {
-        const groups = {
-            open: [] as Calling[],
-            in_progress: [] as Calling[],
-            filled: [] as Calling[],
-        };
-
-        filteredCallings.forEach(calling => {
-            const activeProcess = calling.processes.find(p => p.status === 'active');
-            if (calling.is_filled) {
-                groups.filled.push(calling);
-            } else if (activeProcess) {
-                groups.in_progress.push(calling);
-            } else {
-                groups.open.push(calling);
-            }
-        });
-
-        return groups;
-    }, [filteredCallings]);
-
-    // Stats
-    const stats = useMemo(() => ({
-        total: callings.length,
-        open: callings.filter(c => !c.is_filled && !c.processes.some(p => p.status === 'active')).length,
-        inProgress: callings.filter(c => c.processes.some(p => p.status === 'active')).length,
-        filled: callings.filter(c => c.is_filled).length,
-    }), [callings]);
+    }, [callings, search, filterOrg]);
 
     const handleCreateCalling = async () => {
         if (!newTitle.trim()) return;
@@ -205,7 +162,7 @@ export function CallingsClient({ callings, teamMembers, userRole }: CallingsClie
                 <div>
                     <h1 className="text-2xl font-bold tracking-tight">Callings</h1>
                     <p className="text-muted-foreground">
-                        Brainstorm candidates and track calling processes
+                        Visualize your pipeline and track calling processes
                     </p>
                 </div>
                 {canEdit && (
@@ -218,60 +175,17 @@ export function CallingsClient({ callings, teamMembers, userRole }: CallingsClie
 
             <Separator />
 
-            {/* Stats */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                <div className="p-4 rounded-lg border bg-card">
-                    <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                        <Users className="w-4 h-4" />
-                        Total
-                    </div>
-                    <p className="text-2xl font-bold mt-1">{stats.total}</p>
-                </div>
-                <div className="p-4 rounded-lg border bg-card">
-                    <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                        <Plus className="w-4 h-4" />
-                        Open
-                    </div>
-                    <p className="text-2xl font-bold mt-1">{stats.open}</p>
-                </div>
-                <div className="p-4 rounded-lg border bg-card">
-                    <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                        <Clock className="w-4 h-4" />
-                        In Progress
-                    </div>
-                    <p className="text-2xl font-bold mt-1">{stats.inProgress}</p>
-                </div>
-                <div className="p-4 rounded-lg border bg-card">
-                    <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                        <UserCheck className="w-4 h-4" />
-                        Filled
-                    </div>
-                    <p className="text-2xl font-bold mt-1">{stats.filled}</p>
-                </div>
-            </div>
-
-            {/* Filters */}
+            {/* Filters - Simplified */}
             <div className="flex flex-wrap items-center gap-4">
                 <div className="relative flex-1 min-w-[200px] max-w-sm">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <Input
-                        placeholder="Search callings..."
+                        placeholder="Search callings, candidates..."
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         className="pl-9"
                     />
                 </div>
-                <Select value={filterStatus} onValueChange={(v) => setFilterStatus(v as FilterStatus)}>
-                    <SelectTrigger className="w-[140px]">
-                        <SelectValue placeholder="Status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="all">All Status</SelectItem>
-                        <SelectItem value="open">Open</SelectItem>
-                        <SelectItem value="in_progress">In Progress</SelectItem>
-                        <SelectItem value="filled">Filled</SelectItem>
-                    </SelectContent>
-                </Select>
                 <Select value={filterOrg} onValueChange={setFilterOrg}>
                     <SelectTrigger className="w-[180px]">
                         <SelectValue placeholder="Organization" />
@@ -291,6 +205,7 @@ export function CallingsClient({ callings, teamMembers, userRole }: CallingsClie
                         size="icon"
                         className="h-8 w-8"
                         onClick={() => setViewMode('board')}
+                        title="Board View"
                     >
                         <LayoutGrid className="w-4 h-4" />
                     </Button>
@@ -299,6 +214,7 @@ export function CallingsClient({ callings, teamMembers, userRole }: CallingsClie
                         size="icon"
                         className="h-8 w-8"
                         onClick={() => setViewMode('list')}
+                        title="List View"
                     >
                         <List className="w-4 h-4" />
                     </Button>
@@ -323,70 +239,10 @@ export function CallingsClient({ callings, teamMembers, userRole }: CallingsClie
                     )}
                 </div>
             ) : viewMode === 'board' ? (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {/* Open Column */}
-                    <div className="space-y-4">
-                        <div className="flex items-center gap-2">
-                            <Badge variant="outline" className="font-normal">
-                                Open
-                            </Badge>
-                            <span className="text-sm text-muted-foreground">
-                                {groupedCallings.open.length}
-                            </span>
-                        </div>
-                        <div className="space-y-3">
-                            {groupedCallings.open.map((calling) => (
-                                <CallingCard
-                                    key={calling.id}
-                                    calling={calling}
-                                    onClick={() => handleCallingClick(calling)}
-                                />
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* In Progress Column */}
-                    <div className="space-y-4">
-                        <div className="flex items-center gap-2">
-                            <Badge variant="default" className="font-normal">
-                                In Progress
-                            </Badge>
-                            <span className="text-sm text-muted-foreground">
-                                {groupedCallings.in_progress.length}
-                            </span>
-                        </div>
-                        <div className="space-y-3">
-                            {groupedCallings.in_progress.map((calling) => (
-                                <CallingCard
-                                    key={calling.id}
-                                    calling={calling}
-                                    onClick={() => handleCallingClick(calling)}
-                                />
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Filled Column */}
-                    <div className="space-y-4">
-                        <div className="flex items-center gap-2">
-                            <Badge variant="secondary" className="font-normal bg-green-100 text-green-800">
-                                Filled
-                            </Badge>
-                            <span className="text-sm text-muted-foreground">
-                                {groupedCallings.filled.length}
-                            </span>
-                        </div>
-                        <div className="space-y-3">
-                            {groupedCallings.filled.map((calling) => (
-                                <CallingCard
-                                    key={calling.id}
-                                    calling={calling}
-                                    onClick={() => handleCallingClick(calling)}
-                                />
-                            ))}
-                        </div>
-                    </div>
-                </div>
+                <CallingsKanbanBoard
+                    callings={filteredCallings}
+                    onCallingClick={handleCallingClick}
+                />
             ) : (
                 <div className="space-y-3">
                     {filteredCallings.map((calling) => (
