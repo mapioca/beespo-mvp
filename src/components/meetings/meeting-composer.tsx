@@ -659,6 +659,7 @@ export function MeetingComposer({
                 item_type: item.category,
                 hymn_id: item.hymn_id || null,
                 speaker_id: item.speaker_id || null,
+                participant_id: item.participant_id || null,
                 discussion_id: item.discussion_id || null,
                 business_item_id: item.business_item_id || null,
                 announcement_id: item.announcement_id || null,

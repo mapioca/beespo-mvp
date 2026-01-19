@@ -2,7 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { Home, FileText, Calendar, CheckSquare, MessageSquare, Briefcase, Megaphone, Mic, StickyNote, Users } from "lucide-react";
+import { Home, FileText, Calendar, CalendarDays, CheckSquare, MessageSquare, Briefcase, Megaphone, Mic, StickyNote, Users } from "lucide-react";
 import { SidebarUserProfile } from "@/components/dashboard/sidebar-user-profile";
 
 export default async function DashboardLayout({
@@ -33,8 +33,9 @@ export default async function DashboardLayout({
 
   const navItems = [
     { href: "/dashboard", icon: Home, label: "Dashboard" },
+    { href: "/calendar", icon: Calendar, label: "Calendar" },
     { href: "/templates", icon: FileText, label: "Templates" },
-    { href: "/meetings", icon: Calendar, label: "Meetings" },
+    { href: "/meetings", icon: CalendarDays, label: "Meetings" },
     { href: "/discussions", icon: MessageSquare, label: "Discussions" },
     { href: "/notes", icon: StickyNote, label: "Notes" },
     { href: "/business", icon: Briefcase, label: "Business" },
@@ -45,9 +46,9 @@ export default async function DashboardLayout({
   ];
 
   return (
-    <div className="flex h-screen">
+    <div className="flex h-screen-dynamic">
       {/* Sidebar */}
-      <aside className="w-64 border-r bg-card">
+      <aside className="w-64 border-r bg-card shrink-0">
         <div className="flex h-full flex-col">
           {/* Logo/Header */}
           <div className="border-b p-4">
@@ -86,8 +87,8 @@ export default async function DashboardLayout({
         </div>
       </aside>
 
-      {/* Main Content */}
-      <main className="flex-1 overflow-auto">{children}</main>
+      {/* Main Content - flex-1 fills remaining width, overflow-hidden contains internal scrolling */}
+      <main className="flex-1 min-w-0 overflow-hidden">{children}</main>
     </div>
   );
 }

@@ -4,15 +4,12 @@ import {useEffect, useRef} from "react";
 import EditorJS, {OutputData} from "@editorjs/editorjs";
 import Header from "@editorjs/header";
 import List from "@editorjs/list";
-// @ts-expect-error: No types available
 import Checklist from "@editorjs/checklist";
 import Quote from "@editorjs/quote";
 import Code from "@editorjs/code";
 import InlineCode from "@editorjs/inline-code";
 import Table from "@editorjs/table";
-// @ts-expect-error: No types available
 import Embed from "@editorjs/embed";
-// @ts-expect-error: No types available
 import LinkTool from "@editorjs/link";
 
 interface EditorProps {

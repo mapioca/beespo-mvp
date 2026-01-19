@@ -92,17 +92,17 @@ export async function POST(request: NextRequest) {
       .select("id, external_uid")
       .eq("subscription_id", subscriptionId);
 
-    const existingUids = new Set(existingEvents?.map((e: any) => e.external_uid) || []);
+    const existingUids = new Set(existingEvents?.map((e: { external_uid: string }) => e.external_uid) || []);
     const newUids = new Set(events.map((e) => e.uid));
 
     // Find events to delete (no longer in feed)
     const eventsToDelete = existingEvents?.filter(
-      (e: any) => !newUids.has(e.external_uid)
+      (e: { external_uid: string }) => !newUids.has(e.external_uid)
     ) || [];
 
     // Delete removed events
     if (eventsToDelete.length > 0) {
-      const deleteIds = eventsToDelete.map((e: any) => e.id);
+      const deleteIds = eventsToDelete.map((e: { id: string }) => e.id);
 
       // First, delete any linked announcements
       const { data: links } = await (supabase
@@ -111,7 +111,7 @@ export async function POST(request: NextRequest) {
         .in("external_event_id", deleteIds);
 
       if (links && links.length > 0) {
-        const announcementIds = links.map((l: any) => l.announcement_id);
+        const announcementIds = links.map((l: { announcement_id: string }) => l.announcement_id);
         await (supabase
           .from("announcements") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
           .delete()

@@ -106,11 +106,11 @@ export function CalendarClient({
         .from("external_event_links") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
         .select("external_event_id");
 
-      const linkedIds = new Set<string>(links?.map((l: any) => l.external_event_id) || []);
+      const linkedIds = new Set<string>(links?.map((l: { external_event_id: string }) => l.external_event_id) || []);
       setLinkedEventIds(linkedIds);
 
       // Add color from subscription to events
-      const eventsWithColor = (events || []).map((e: any) => ({
+      const eventsWithColor = (events || []).map((e: { calendar_subscriptions?: { color: string } }) => ({
         ...e,
         color: e.calendar_subscriptions?.color,
       }));

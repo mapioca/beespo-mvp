@@ -199,6 +199,7 @@ export type Database = {
           name: string;
           type: WorkspaceType;
           organization_type: OrganizationType;
+          slug: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -207,6 +208,7 @@ export type Database = {
           name: string;
           type: WorkspaceType;
           organization_type: OrganizationType;
+          slug?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -215,6 +217,7 @@ export type Database = {
           name?: string;
           type?: WorkspaceType;
           organization_type?: OrganizationType;
+          slug?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -297,6 +300,8 @@ export type Database = {
           description: string | null;
           calling_type: string | null;
           is_shared: boolean;
+          tags: string[];
+          slug: string | null;
           created_by: string | null;
           created_at: string;
           updated_at: string;
@@ -308,6 +313,8 @@ export type Database = {
           description?: string | null;
           calling_type?: string | null;
           is_shared?: boolean;
+          tags?: string[];
+          slug?: string | null;
           created_by?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -319,6 +326,8 @@ export type Database = {
           description?: string | null;
           calling_type?: string | null;
           is_shared?: boolean;
+          tags?: string[];
+          slug?: string | null;
           created_by?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -368,8 +377,13 @@ export type Database = {
           workspace_id: string;
           template_id: string | null;
           title: string;
+          description: string | null;
           scheduled_date: string;
           status: "scheduled" | "in_progress" | "completed" | "cancelled";
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          notes: any | null; // Editor.js JSON
+          public_share_token: string | null;
+          is_publicly_shared: boolean;
           created_by: string | null;
           created_at: string;
           updated_at: string;
@@ -379,8 +393,13 @@ export type Database = {
           workspace_id: string;
           template_id?: string | null;
           title: string;
+          description?: string | null;
           scheduled_date: string;
           status?: "scheduled" | "in_progress" | "completed" | "cancelled";
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          notes?: any | null;
+          public_share_token?: string | null;
+          is_publicly_shared?: boolean;
           created_by?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -390,8 +409,13 @@ export type Database = {
           workspace_id?: string;
           template_id?: string | null;
           title?: string;
+          description?: string | null;
           scheduled_date?: string;
           status?: "scheduled" | "in_progress" | "completed" | "cancelled";
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          notes?: any | null;
+          public_share_token?: string | null;
+          is_publicly_shared?: boolean;
           created_by?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -405,13 +429,17 @@ export type Database = {
           business_item_id: string | null;
           announcement_id: string | null;
           speaker_id: string | null;
+          hymn_id: string | null;
           title: string;
           description: string | null;
           order_index: number;
           duration_minutes: number | null;
-          notes: string | null;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          notes: any | null; // Editor.js JSON
           is_completed: boolean;
           item_type: AgendaItemType;
+          participant_id: string | null;
+          participant_name: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -422,13 +450,17 @@ export type Database = {
           business_item_id?: string | null;
           announcement_id?: string | null;
           speaker_id?: string | null;
+          hymn_id?: string | null;
           title: string;
           description?: string | null;
           order_index: number;
           duration_minutes?: number | null;
-          notes?: string | null;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          notes?: any | null;
           is_completed?: boolean;
           item_type?: AgendaItemType;
+          participant_id?: string | null;
+          participant_name?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -439,13 +471,17 @@ export type Database = {
           business_item_id?: string | null;
           announcement_id?: string | null;
           speaker_id?: string | null;
+          hymn_id?: string | null;
           title?: string;
           description?: string | null;
           order_index?: number;
           duration_minutes?: number | null;
-          notes?: string | null;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          notes?: any | null;
           is_completed?: boolean;
           item_type?: AgendaItemType;
+          participant_id?: string | null;
+          participant_name?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -881,6 +917,166 @@ export type Database = {
           note_id?: string;
           entity_type?: "discussion" | "meeting" | "task";
           entity_id?: string;
+          created_at?: string;
+        };
+      };
+      participants: {
+        Row: {
+          id: string;
+          workspace_id: string;
+          name: string;
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          workspace_id: string;
+          name: string;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          workspace_id?: string;
+          name?: string;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      calendar_subscriptions: {
+        Row: {
+          id: string;
+          workspace_id: string;
+          name: string;
+          url: string;
+          color: string | null;
+          is_enabled: boolean | null;
+          last_synced_at: string | null;
+          sync_error: string | null;
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          workspace_id: string;
+          name: string;
+          url: string;
+          color?: string | null;
+          is_enabled?: boolean | null;
+          last_synced_at?: string | null;
+          sync_error?: string | null;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          workspace_id?: string;
+          name?: string;
+          url?: string;
+          color?: string | null;
+          is_enabled?: boolean | null;
+          last_synced_at?: string | null;
+          sync_error?: string | null;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      external_calendar_events: {
+        Row: {
+          id: string;
+          subscription_id: string;
+          external_uid: string;
+          title: string;
+          description: string | null;
+          start_date: string;
+          end_date: string | null;
+          location: string | null;
+          is_all_day: boolean | null;
+          raw_ical: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          subscription_id: string;
+          external_uid: string;
+          title: string;
+          description?: string | null;
+          start_date: string;
+          end_date?: string | null;
+          location?: string | null;
+          is_all_day?: boolean | null;
+          raw_ical?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          subscription_id?: string;
+          external_uid?: string;
+          title?: string;
+          description?: string | null;
+          start_date?: string;
+          end_date?: string | null;
+          location?: string | null;
+          is_all_day?: boolean | null;
+          raw_ical?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      external_event_links: {
+        Row: {
+          id: string;
+          external_event_id: string | null;
+          announcement_id: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          external_event_id?: string | null;
+          announcement_id?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          external_event_id?: string | null;
+          announcement_id?: string | null;
+          created_at?: string;
+        };
+      };
+      time_logs: {
+        Row: {
+          id: string;
+          meeting_id: string;
+          agenda_item_id: string | null;
+          started_at: string;
+          ended_at: string | null;
+          duration_seconds: number | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          meeting_id: string;
+          agenda_item_id?: string | null;
+          started_at: string;
+          ended_at?: string | null;
+          duration_seconds?: number | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          meeting_id?: string;
+          agenda_item_id?: string | null;
+          started_at?: string;
+          ended_at?: string | null;
+          duration_seconds?: number | null;
           created_at?: string;
         };
       };

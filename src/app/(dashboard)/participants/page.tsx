@@ -12,11 +12,12 @@ export default async function ParticipantsPage() {
     }
 
     // Get user's profile and workspace
-    const { data: profile } = await supabase
+    const { data: profile } = await (supabase
         .from("profiles")
         .select("workspace_id, role")
         .eq("id", user.id)
-        .single();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .single() as any);
 
     if (!profile?.workspace_id) {
         redirect("/onboarding");
