@@ -6,6 +6,7 @@ import { MeetingStatusBadge } from "@/components/meetings/meeting-status-badge";
 import { EditableAgendaItemList } from "@/components/meetings/editable";
 import { MeetingContextPanel } from "@/components/meetings/sidebar";
 import { formatMeetingDateTime } from "@/lib/meeting-helpers";
+import { calculateTotalDurationWithGrouping } from "@/lib/agenda-grouping";
 import { Database } from "@/types/database";
 
 type Meeting = Database["public"]["Tables"]["meetings"]["Row"] & {
@@ -34,11 +35,9 @@ export function MeetingDetailContent({
 }: MeetingDetailContentProps) {
     const [agendaItems, setAgendaItems] = useState(initialAgendaItems);
 
-    // Recalculate total duration when items change
-    const totalDuration = agendaItems.reduce(
-        (acc, item) => acc + (item.duration_minutes || 0),
-        0
-    );
+    // Recalculate total duration using grouped logic (time-boxing)
+    // Groups use their fixed duration, not sum of children
+    const totalDuration = calculateTotalDurationWithGrouping(agendaItems);
 
     // Only allow editing if user is a leader and meeting is not completed/cancelled
     const isEditable =

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -52,8 +52,13 @@ import { CSS } from "@dnd-kit/utilities";
 import { InlineInput } from "./inline-input";
 import { InlineCombobox, ComboboxOption } from "./inline-combobox";
 import { AgendaItemDivider } from "./agenda-item-divider";
-import { AddMeetingItemDialog, SelectedItem } from "../add-meeting-item-dialog";
+import { AgendaGroupRow } from "./agenda-group-row";
+import { AddMeetingItemDialog, SelectedItem, CategoryType } from "../add-meeting-item-dialog";
 import { MeetingTypeBadge } from "../meeting-type-badge";
+import {
+    groupAgendaItems,
+    getGroupedItemIds,
+} from "@/lib/agenda-grouping";
 import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/lib/hooks/use-toast";
 import { cn } from "@/lib/utils";
@@ -515,7 +520,12 @@ export function EditableAgendaItemList({
     // Modal state for item picker
     const [isPickerOpen, setIsPickerOpen] = useState(false);
     const [insertAtIndex, setInsertAtIndex] = useState<number | null>(null);
+    const [preFilterCategory, setPreFilterCategory] = useState<CategoryType | undefined>(undefined);
     const { toast } = useToast();
+
+    // Compute grouped entries for rendering
+    const groupedEntries = useMemo(() => groupAgendaItems(items), [items]);
+    const groupedIds = useMemo(() => getGroupedItemIds(groupedEntries), [groupedEntries]);
 
     // dnd-kit sensors
     const sensors = useSensors(
@@ -803,6 +813,32 @@ export function EditableAgendaItemList({
             ? Math.max(...items.map((i) => i.order_index)) + 1
             : 0;
         setInsertAtIndex(nextIndex);
+        setPreFilterCategory(undefined); // No pre-filter
+        setIsPickerOpen(true);
+    }, [items]);
+
+    // Open picker pre-filtered for a specific group type
+    const openPickerForGroup = useCallback((groupType: string) => {
+        // Find the last item of this type to insert after it
+        const itemsOfType = items.filter((i) => i.item_type === groupType);
+        const lastItemOfType = itemsOfType.length > 0
+            ? itemsOfType[itemsOfType.length - 1]
+            : null;
+
+        const insertIdx = lastItemOfType
+            ? lastItemOfType.order_index + 1
+            : items.length > 0
+                ? Math.max(...items.map((i) => i.order_index)) + 1
+                : 0;
+
+        setInsertAtIndex(insertIdx);
+        // Map groupType to picker category
+        const categoryMap: Record<string, CategoryType> = {
+            announcement: "announcement",
+            business: "business",
+            discussion: "discussion",
+        };
+        setPreFilterCategory(categoryMap[groupType] || undefined);
         setIsPickerOpen(true);
     }, [items]);
 
@@ -919,8 +955,10 @@ export function EditableAgendaItemList({
                     onClose={() => {
                         setIsPickerOpen(false);
                         setInsertAtIndex(null);
+                        setPreFilterCategory(undefined);
                     }}
                     onAddItem={handleItemSelected}
+                    initialCategory={preFilterCategory}
                 />
             </>
         );
@@ -934,37 +972,92 @@ export function EditableAgendaItemList({
                 onDragEnd={handleDragEnd}
             >
                 <SortableContext
-                    items={items.map((item) => item.id)}
+                    items={groupedIds}
                     strategy={verticalListSortingStrategy}
                 >
-                    <div className="space-y-1">
-                        {items.map((item, index) => (
-                            <div key={item.id} className="group">
-                                {/* Ghost Divider before each item */}
-                                {isEditable && (
-                                    <AgendaItemDivider
-                                        onAddClick={() => openPickerAtPosition(index)}
-                                        disabled={!isEditable}
-                                    />
-                                )}
-                                {/* The agenda row */}
-                                <SortableAgendaRow
-                                    item={item}
-                                    isEditable={isEditable}
-                                    isUpdating={updatingItemId === item.id}
-                                    onUpdate={updateItem}
-                                    onDelete={setDeletingItemId}
-                                    participants={participants}
-                                    hymns={hymns}
-                                    onLoadParticipants={loadParticipants}
-                                    onLoadHymns={loadHymns}
-                                    isLoadingParticipants={isLoadingParticipants}
-                                    isLoadingHymns={isLoadingHymns}
-                                    onCreateParticipant={createParticipant}
-                                />
-                            </div>
-                        ))}
-                        {/* Ghost Divider after last item */}
+                    <div className="space-y-2">
+                        {groupedEntries.map((entry) => {
+                            if (entry.type === "group") {
+                                return (
+                                    <div key={entry.id}>
+                                        {/* Ghost Divider before group */}
+                                        {isEditable && (
+                                            <AgendaItemDivider
+                                                onAddClick={() => openPickerAtPosition(entry.order_index)}
+                                                disabled={!isEditable}
+                                            />
+                                        )}
+                                        <AgendaGroupRow
+                                            group={entry}
+                                            isEditable={isEditable}
+                                            onAddToGroup={openPickerForGroup}
+                                            renderChildItem={(item) => (
+                                                <div className="bg-background rounded-md border p-3">
+                                                    <div className="flex items-center gap-2">
+                                                        <MeetingTypeBadge type={item.item_type} />
+                                                        <span className="text-sm font-medium flex-1 truncate">
+                                                            {item.title}
+                                                        </span>
+                                                        {isEditable && (
+                                                            <DropdownMenu>
+                                                                <DropdownMenuTrigger asChild>
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="sm"
+                                                                        className="h-6 w-6 p-0"
+                                                                    >
+                                                                        <MoreVertical className="h-3 w-3" />
+                                                                    </Button>
+                                                                </DropdownMenuTrigger>
+                                                                <DropdownMenuContent align="end">
+                                                                    <DropdownMenuItem
+                                                                        onClick={() => setDeletingItemId(item.id)}
+                                                                        className="text-destructive focus:text-destructive"
+                                                                    >
+                                                                        <Trash2 className="mr-2 h-3 w-3" />
+                                                                        Delete
+                                                                    </DropdownMenuItem>
+                                                                </DropdownMenuContent>
+                                                            </DropdownMenu>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        />
+                                    </div>
+                                );
+                            } else {
+                                // Single item
+                                const item = entry.item;
+                                const flatIndex = items.findIndex((i) => i.id === item.id);
+                                return (
+                                    <div key={item.id} className="group">
+                                        {/* Ghost Divider before item */}
+                                        {isEditable && (
+                                            <AgendaItemDivider
+                                                onAddClick={() => openPickerAtPosition(flatIndex)}
+                                                disabled={!isEditable}
+                                            />
+                                        )}
+                                        <SortableAgendaRow
+                                            item={item}
+                                            isEditable={isEditable}
+                                            isUpdating={updatingItemId === item.id}
+                                            onUpdate={updateItem}
+                                            onDelete={setDeletingItemId}
+                                            participants={participants}
+                                            hymns={hymns}
+                                            onLoadParticipants={loadParticipants}
+                                            onLoadHymns={loadHymns}
+                                            isLoadingParticipants={isLoadingParticipants}
+                                            isLoadingHymns={isLoadingHymns}
+                                            onCreateParticipant={createParticipant}
+                                        />
+                                    </div>
+                                );
+                            }
+                        })}
+                        {/* Ghost Divider after last entry */}
                         {isEditable && (
                             <AgendaItemDivider
                                 onAddClick={() => openPickerAtPosition(items.length)}
@@ -1025,8 +1118,10 @@ export function EditableAgendaItemList({
                 onClose={() => {
                     setIsPickerOpen(false);
                     setInsertAtIndex(null);
+                    setPreFilterCategory(undefined);
                 }}
                 onAddItem={handleItemSelected}
+                initialCategory={preFilterCategory}
             />
         </>
     );

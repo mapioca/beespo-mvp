@@ -86,6 +86,7 @@ interface AddMeetingItemDialogProps {
     onAddItem: (item: SelectedItem) => void;
     templateId?: string; // For filtering linked items
     meetingDate?: Date;
+    initialCategory?: CategoryType; // Pre-select a category when opening
 }
 
 const categories = [
@@ -103,6 +104,7 @@ export function AddMeetingItemDialog({
     onAddItem,
     templateId, // Reserved for future filtering
     meetingDate, // Reserved for future filtering
+    initialCategory,
 }: AddMeetingItemDialogProps) {
     // These props are intentionally unused for now, reserved for future filtering
     void templateId;
@@ -121,10 +123,14 @@ export function AddMeetingItemDialog({
 
     useEffect(() => {
         if (open) {
-            loadCategoryData(selectedCategory);
+            // Set initial category if provided, otherwise default to procedural
+            if (initialCategory) {
+                setSelectedCategory(initialCategory);
+            }
+            loadCategoryData(initialCategory || selectedCategory);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [open, selectedCategory]);
+    }, [open, initialCategory]);
 
     const loadCategoryData = async (category: CategoryType) => {
         setIsLoading(true);
