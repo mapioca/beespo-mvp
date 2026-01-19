@@ -793,6 +793,9 @@ export type Database = {
           recurrence_type: RecurrenceType | null;
           recurrence_end_date: string | null;
           recurrence_config: RecurrenceConfig;
+          event_id: string | null;
+          display_start: string | null;
+          display_until: string | null;
           created_by: string | null;
           created_at: string;
           updated_at: string;
@@ -809,6 +812,9 @@ export type Database = {
           recurrence_type?: RecurrenceType | null;
           recurrence_end_date?: string | null;
           recurrence_config?: RecurrenceConfig;
+          event_id?: string | null;
+          display_start?: string | null;
+          display_until?: string | null;
           created_by?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -825,9 +831,70 @@ export type Database = {
           recurrence_type?: RecurrenceType | null;
           recurrence_end_date?: string | null;
           recurrence_config?: RecurrenceConfig;
+          event_id?: string | null;
+          display_start?: string | null;
+          display_until?: string | null;
           created_by?: string | null;
           created_at?: string;
           updated_at?: string;
+        };
+      };
+      events: {
+        Row: {
+          id: string;
+          workspace_id: string;
+          title: string;
+          description: string | null;
+          location: string | null;
+          start_at: string;
+          end_at: string;
+          is_all_day: boolean;
+          workspace_event_id: string | null;
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          workspace_id: string;
+          title: string;
+          description?: string | null;
+          location?: string | null;
+          start_at: string;
+          end_at: string;
+          is_all_day?: boolean;
+          workspace_event_id?: string | null;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          workspace_id?: string;
+          title?: string;
+          description?: string | null;
+          location?: string | null;
+          start_at?: string;
+          end_at?: string;
+          is_all_day?: boolean;
+          workspace_event_id?: string | null;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      workspace_event_counters: {
+        Row: {
+          workspace_id: string;
+          counter: number;
+        };
+        Insert: {
+          workspace_id: string;
+          counter?: number;
+        };
+        Update: {
+          workspace_id?: string;
+          counter?: number;
         };
       };
       speakers: {
