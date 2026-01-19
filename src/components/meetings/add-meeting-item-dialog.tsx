@@ -210,17 +210,28 @@ export function AddMeetingItemDialog({
                     break;
                 }
                 case "speaker": {
-                    // Get unassigned speakers - explicitly filter by workspace_id
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    let query = (supabase.from("speakers") as any)
-                        .select("id, name, topic, is_confirmed")
-                        .is("meeting_id", null);
+                    // Get speakers from user's organization
+                    // First get organization_id from profile
+                    const { data: profile } = await supabase
+                        .from("profiles")
+                        .select("organization_id")
+                        .eq("id", user?.id)
+                        .single();
 
-                    if (workspaceId) {
-                        query = query.eq("workspace_id", workspaceId);
+                    const organizationId = profile?.organization_id;
+
+                    if (!organizationId) {
+                        console.error("No organization_id found for user");
+                        setSpeakers([]);
+                        break;
                     }
 
-                    const { data, error } = await query.order("name");
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    const { data, error } = await (supabase.from("speakers") as any)
+                        .select("id, name, topic, is_confirmed")
+                        .eq("organization_id", organizationId)
+                        .order("name");
+
                     if (error) console.error("Error loading speakers:", error);
                     if (data) setSpeakers(data);
                     break;

@@ -14,6 +14,9 @@ import {
     MoreVertical,
     Plus,
     Loader2,
+    MessageSquare,
+    Briefcase,
+    Megaphone,
 } from "lucide-react";
 import {
     DropdownMenu,
@@ -54,7 +57,6 @@ import { InlineCombobox, ComboboxOption } from "./inline-combobox";
 import { AgendaItemDivider } from "./agenda-item-divider";
 import { AgendaGroupRow } from "./agenda-group-row";
 import { AddMeetingItemDialog, SelectedItem, CategoryType } from "../add-meeting-item-dialog";
-import { MeetingTypeBadge } from "../meeting-type-badge";
 import {
     groupAgendaItems,
     getGroupedItemIds,
@@ -390,7 +392,23 @@ function SortableAgendaRow({
                         )}
                     </div>
                     <div className="flex items-center gap-2">
-                        <MeetingTypeBadge type={item.item_type} />
+                        {/* Subtle icon for non-procedural standalone items */}
+                        {item.item_type !== "procedural" && (
+                            <span
+                                className="text-muted-foreground/50"
+                                title={{
+                                    discussion: "Discussion",
+                                    business: "Business Item",
+                                    announcement: "Announcement",
+                                    speaker: "Speaker",
+                                }[item.item_type] || item.item_type}
+                            >
+                                {item.item_type === "discussion" && <MessageSquare className="h-4 w-4" />}
+                                {item.item_type === "business" && <Briefcase className="h-4 w-4" />}
+                                {item.item_type === "announcement" && <Megaphone className="h-4 w-4" />}
+                                {item.item_type === "speaker" && <User className="h-4 w-4" />}
+                            </span>
+                        )}
                         {/* Row Actions */}
                         {isEditable && (
                             <DropdownMenu>
@@ -1000,7 +1018,7 @@ export function EditableAgendaItemList({
                                             renderChildItem={(item) => (
                                                 <div className="bg-background rounded-md border p-3">
                                                     <div className="flex items-center gap-2">
-                                                        <MeetingTypeBadge type={item.item_type} />
+                                                        {/* No badge for grouped items - group header provides context */}
                                                         <span className="text-sm font-medium flex-1 truncate">
                                                             {item.title}
                                                         </span>
