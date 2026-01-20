@@ -672,13 +672,15 @@ export function CallingDetailModal({
                             <AlertTriangle className="w-5 h-5 text-amber-500" />
                             Record in LCR
                         </AlertDialogTitle>
-                        <AlertDialogDescription className="space-y-2">
-                            <p>
-                                Please verify that this calling has been recorded in the official Church LCR system.
-                            </p>
-                            <p className="font-medium text-foreground">
-                                This action will mark the process as complete and the calling as filled.
-                            </p>
+                        <AlertDialogDescription asChild>
+                            <div className="text-sm text-muted-foreground space-y-2">
+                                <p>
+                                    Please verify that this calling has been recorded in the official Church LCR system.
+                                </p>
+                                <p className="font-medium text-foreground">
+                                    This action will mark the process as complete and the calling as filled.
+                                </p>
+                            </div>
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
