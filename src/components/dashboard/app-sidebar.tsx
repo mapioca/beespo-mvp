@@ -20,6 +20,7 @@ import {
   UserCog,
   PanelLeftClose,
   PanelLeft,
+  LifeBuoy,
   LucideIcon,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -31,6 +32,7 @@ import {
 } from "@/components/ui/tooltip"
 import { SidebarUserProfile } from "@/components/dashboard/sidebar-user-profile"
 import { Button } from "@/components/ui/button"
+import { SupportModal } from "@/components/support/support-modal"
 
 interface NavItem {
   href: string
@@ -93,6 +95,7 @@ export function AppSidebar({
   userAvatarUrl,
 }: AppSidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false)
+  const [supportModalOpen, setSupportModalOpen] = useState(false)
   const pathname = usePathname()
 
   return (
@@ -103,31 +106,71 @@ export function AppSidebar({
           isCollapsed ? "w-16" : "w-64"
         )}
       >
-        {/* Logo/Header */}
-        <div className="border-b p-4 flex items-center justify-between">
-          <Link href="/dashboard" className="block">
-            <div
-              className={cn(
-                "relative transition-all duration-300 ease-in-out overflow-hidden",
-                isCollapsed ? "h-8 w-8" : "h-12 w-48"
-              )}
-            >
-              <Image
-                src={
-                  isCollapsed
-                    ? "/images/beespo-logo-icon.svg"
-                    : "/images/beespo-logo-full.svg"
-                }
-                alt="Beespo"
-                fill
-                className="object-contain object-left"
-              />
-            </div>
-          </Link>
+        {/* Header with Logo and Toggle */}
+        <div className="border-b">
+          <div
+            className={cn(
+              "flex transition-all duration-300 ease-in-out",
+              isCollapsed
+                ? "flex-col items-center justify-center gap-4 py-4"
+                : "flex-row items-center justify-between px-4 py-2"
+            )}
+          >
+            <Link href="/dashboard" className="block">
+              <div
+                className={cn(
+                  "relative transition-all duration-300 ease-in-out overflow-hidden",
+                  isCollapsed ? "h-8 w-8" : "h-12 w-48"
+                )}
+              >
+                <Image
+                  src={
+                    isCollapsed
+                      ? "/images/beespo-logo-icon.svg"
+                      : "/images/beespo-logo-full.svg"
+                  }
+                  alt="Beespo"
+                  fill
+                  className={cn(
+                    "object-contain",
+                    isCollapsed ? "object-center" : "object-left"
+                  )}
+                />
+              </div>
+            </Link>
+
+            {/* Toggle Button */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setIsCollapsed(!isCollapsed)}
+                  className="h-8 w-8 text-muted-foreground hover:text-foreground shrink-0"
+                >
+                  {isCollapsed ? (
+                    <PanelLeft className="h-4 w-4" />
+                  ) : (
+                    <PanelLeftClose className="h-4 w-4" />
+                  )}
+                  <span className="sr-only">
+                    {isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+                  </span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="right">
+                {isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+              </TooltipContent>
+            </Tooltip>
+          </div>
+
+          {/* Workspace Name - Below Logo */}
           {!isCollapsed && (
-            <p className="text-sm text-muted-foreground pl-1 truncate flex-1">
-              {workspaceName}
-            </p>
+            <div className="px-4 pb-4">
+              <p className="text-xs font-medium text-muted-foreground truncate">
+                {workspaceName}
+              </p>
+            </div>
           )}
         </div>
 
@@ -185,29 +228,25 @@ export function AppSidebar({
           ))}
         </nav>
 
-        {/* Toggle Button */}
+        {/* Help & Support Button */}
         <div className={cn("border-t p-2", isCollapsed && "flex justify-center")}>
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
                 variant="ghost"
-                size="icon"
-                onClick={() => setIsCollapsed(!isCollapsed)}
-                className="h-8 w-8 text-muted-foreground hover:text-foreground"
-              >
-                {isCollapsed ? (
-                  <PanelLeft className="h-4 w-4" />
-                ) : (
-                  <PanelLeftClose className="h-4 w-4" />
+                size={isCollapsed ? "icon" : "default"}
+                onClick={() => setSupportModalOpen(true)}
+                className={cn(
+                  "text-muted-foreground hover:text-foreground hover:bg-accent",
+                  isCollapsed ? "h-8 w-8" : "w-full justify-start gap-3"
                 )}
-                <span className="sr-only">
-                  {isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-                </span>
+              >
+                <LifeBuoy className="h-4 w-4" />
+                {!isCollapsed && <span>Help & Support</span>}
+                <span className="sr-only">Help & Support</span>
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="right">
-              {isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-            </TooltipContent>
+            <TooltipContent side="right">Help & Support</TooltipContent>
           </Tooltip>
         </div>
 
@@ -219,6 +258,14 @@ export function AppSidebar({
           isCollapsed={isCollapsed}
         />
       </aside>
+
+      {/* Support Modal */}
+      <SupportModal
+        open={supportModalOpen}
+        onOpenChange={setSupportModalOpen}
+        userEmail={userEmail}
+        userName={userName}
+      />
     </TooltipProvider>
   )
 }
