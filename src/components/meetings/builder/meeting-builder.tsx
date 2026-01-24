@@ -560,7 +560,7 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
                         id: item.id,
                         title: item.title,
                         status: "warning",
-                        message: "No items selected (will be omitted)",
+                        message: "No items selected (placeholder will be saved)",
                     });
                 } else {
                     items.push({
@@ -620,33 +620,30 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
             const scheduledDate = new Date(date!);
             scheduledDate.setHours(hours, minutes);
 
-            // Flatten containers
-            const flattenedAgenda: CanvasItem[] = [];
+            // Build agenda items (preserving containers as container items)
+            const agendaItems: CanvasItem[] = [];
             let orderIndex = 0;
 
             for (const item of canvasItems) {
                 if (item.isContainer) {
-                    if (item.childItems && item.childItems.length > 0) {
-                        for (const child of item.childItems) {
-                            flattenedAgenda.push({
-                                id: child.id,
-                                category: item.containerType!,
-                                title: child.title,
-                                description: child.description,
-                                duration_minutes: 5,
-                                order_index: orderIndex++,
-                                discussion_id: child.discussion_id,
-                                business_item_id: child.business_item_id,
-                                announcement_id: child.announcement_id,
-                            });
-                        }
-                    }
+                    // Always include containers (even if empty - they may be populated from template associations)
+                    agendaItems.push({
+                        id: item.id,
+                        category: item.containerType!,
+                        title: item.title,
+                        description: item.description,
+                        duration_minutes: item.duration_minutes,
+                        order_index: orderIndex++,
+                        isContainer: true,
+                        containerType: item.containerType,
+                        childItems: item.childItems || [],
+                    });
                 } else {
-                    flattenedAgenda.push({ ...item, order_index: orderIndex++ });
+                    agendaItems.push({ ...item, order_index: orderIndex++ });
                 }
             }
 
-            const agendaJson = flattenedAgenda.map((item) => ({
+            const agendaJson = agendaItems.map((item) => ({
                 title: item.title,
                 description: item.description,
                 duration_minutes: item.duration_minutes,
@@ -659,6 +656,14 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
                 discussion_id: item.discussion_id || null,
                 business_item_id: item.business_item_id || null,
                 announcement_id: item.announcement_id || null,
+                // Include child items for containers
+                child_items: item.isContainer && item.childItems ? item.childItems.map((child) => ({
+                    title: child.title,
+                    description: child.description,
+                    discussion_id: child.discussion_id || null,
+                    business_item_id: child.business_item_id || null,
+                    announcement_id: child.announcement_id || null,
+                })) : null,
             }));
 
 
