@@ -21,7 +21,7 @@ import {
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { cn } from "@/lib/utils";
-import { AgendaGroup } from "@/lib/agenda-grouping";
+import { AgendaGroup, StoredContainer, StoredChildItem } from "@/lib/agenda-grouping";
 import { Database } from "@/types/database";
 
 type AgendaItem = Database["public"]["Tables"]["agenda_items"]["Row"] & {
@@ -29,10 +29,16 @@ type AgendaItem = Database["public"]["Tables"]["agenda_items"]["Row"] & {
 };
 
 interface AgendaGroupRowProps {
-    group: AgendaGroup;
+    /** Auto-grouped items (from sequential items of same type) */
+    group?: AgendaGroup;
+    /** Stored container (from meeting builder with child_items) */
+    container?: StoredContainer;
     isEditable: boolean;
     onAddToGroup: (groupType: string) => void;
-    renderChildItem: (item: AgendaItem) => React.ReactNode;
+    /** Render function for auto-grouped AgendaItem children */
+    renderChildItem?: (item: AgendaItem) => React.ReactNode;
+    /** Render function for stored container children */
+    renderStoredChildItem?: (childItem: StoredChildItem, index: number) => React.ReactNode;
 }
 
 const GROUP_STYLES: Record<string, { bg: string; border: string; icon: React.ReactNode; iconColor: string }> = {
@@ -58,11 +64,21 @@ const GROUP_STYLES: Record<string, { bg: string; border: string; icon: React.Rea
 
 export function AgendaGroupRow({
     group,
+    container,
     isEditable,
     onAddToGroup,
     renderChildItem,
+    renderStoredChildItem,
 }: AgendaGroupRowProps) {
     const [isOpen, setIsOpen] = useState(true);
+
+    // Use either group or container data
+    const isContainer = !!container;
+    const entryId = group?.id || container?.id || "";
+    const entryType = group?.groupType || container?.containerType || "announcement";
+    const entryTitle = group?.title || container?.title || "";
+    const entryDuration = group?.duration_minutes || container?.duration_minutes || 5;
+    const itemCount = group?.items.length || container?.childItems.length || 0;
 
     const {
         attributes,
@@ -71,14 +87,14 @@ export function AgendaGroupRow({
         transform,
         transition,
         isDragging,
-    } = useSortable({ id: group.id });
+    } = useSortable({ id: entryId });
 
     const style = {
         transform: CSS.Transform.toString(transform),
         transition,
     };
 
-    const groupStyle = GROUP_STYLES[group.groupType] || GROUP_STYLES.announcement;
+    const groupStyle = GROUP_STYLES[entryType] || GROUP_STYLES.announcement;
 
     return (
         <div
@@ -123,9 +139,9 @@ export function AgendaGroupRow({
 
                     {/* Title + Count */}
                     <div className="flex-1 flex items-center gap-2 min-w-0">
-                        <span className="font-medium text-sm">{group.title}</span>
+                        <span className="font-medium text-sm">{entryTitle}</span>
                         <Badge variant="secondary" className="text-[10px] px-1.5 h-5">
-                            {group.items.length} {group.items.length === 1 ? "item" : "items"}
+                            {itemCount} {itemCount === 1 ? "item" : "items"}
                         </Badge>
                     </div>
 
@@ -135,17 +151,17 @@ export function AgendaGroupRow({
                         className="text-[10px] px-1.5 h-5 font-normal text-muted-foreground shrink-0"
                     >
                         <Clock className="w-3 h-3 mr-1" />
-                        {group.duration_minutes}m
+                        {entryDuration}m
                     </Badge>
 
-                    {/* Add to Group Button */}
-                    {isEditable && (
+                    {/* Add to Group Button - only show for auto-grouped items, not stored containers */}
+                    {isEditable && !isContainer && (
                         <Button
                             variant="ghost"
                             size="sm"
                             className="h-7 w-7 p-0 shrink-0"
-                            onClick={() => onAddToGroup(group.groupType)}
-                            title={`Add ${group.groupType}`}
+                            onClick={() => onAddToGroup(entryType)}
+                            title={`Add ${entryType}`}
                         >
                             <Plus className="h-4 w-4" />
                         </Button>
@@ -156,11 +172,20 @@ export function AgendaGroupRow({
                 <CollapsibleContent>
                     <div className="px-3 pb-3">
                         <div className="space-y-2 pl-8 border-l-2 border-muted/50 ml-4">
-                            {group.items.map((item) => (
+                            {/* Render auto-grouped items */}
+                            {group && renderChildItem && group.items.map((item) => (
                                 <div key={item.id} className="relative">
                                     {/* Connecting line dot */}
                                     <div className="absolute -left-[9px] top-4 w-2 h-2 rounded-full bg-muted-foreground/30" />
                                     {renderChildItem(item)}
+                                </div>
+                            ))}
+                            {/* Render stored container children */}
+                            {container && renderStoredChildItem && container.childItems.map((childItem, index) => (
+                                <div key={index} className="relative">
+                                    {/* Connecting line dot */}
+                                    <div className="absolute -left-[9px] top-4 w-2 h-2 rounded-full bg-muted-foreground/30" />
+                                    {renderStoredChildItem(childItem, index)}
                                 </div>
                             ))}
                         </div>

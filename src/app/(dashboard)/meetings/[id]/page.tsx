@@ -47,12 +47,13 @@ export default async function MeetingDetailPage({ params }: MeetingDetailPagePro
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const workspaceSlug = (meeting.workspaces as any)?.slug || null;
 
-    // Fetch agenda items with hymn data for PDF generation and editing
+    // Fetch agenda items with hymn data and child_items for PDF generation and editing
     const { data: agendaItems } = await (supabase
         .from("agenda_items") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
         .select(`
             *,
-            hymn:hymns(title, hymn_number)
+            hymn:hymns(title, hymn_number),
+            child_items
         `)
         .eq("meeting_id", id)
         .order("order_index", { ascending: true });

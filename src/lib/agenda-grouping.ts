@@ -1,7 +1,17 @@
 import { Database } from "@/types/database";
 
+/** Child item stored in the child_items JSONB column */
+export interface StoredChildItem {
+    title: string;
+    description?: string | null;
+    discussion_id?: string | null;
+    business_item_id?: string | null;
+    announcement_id?: string | null;
+}
+
 type AgendaItem = Database["public"]["Tables"]["agenda_items"]["Row"] & {
     hymn?: { title: string; hymn_number: number } | null;
+    child_items?: StoredChildItem[] | null;
 };
 
 // Types that can be grouped when sequential
@@ -25,7 +35,20 @@ export interface SingleAgendaItem {
     item: AgendaItem;
 }
 
-export type GroupedAgendaEntry = AgendaGroup | SingleAgendaItem;
+/** A container with pre-stored child items (from the meeting builder) */
+export interface StoredContainer {
+    type: "container";
+    containerType: GroupableType;
+    title: string;
+    duration_minutes: number;
+    id: string;
+    order_index: number;
+    childItems: StoredChildItem[];
+    /** The original agenda item for reference */
+    originalItem: AgendaItem;
+}
+
+export type GroupedAgendaEntry = AgendaGroup | SingleAgendaItem | StoredContainer;
 
 /**
  * Get the pluralized display title for a groupable type
@@ -51,8 +74,16 @@ function isGroupableType(itemType: string): itemType is GroupableType {
 }
 
 /**
+ * Check if an item has stored child items (is a container from the meeting builder)
+ */
+function hasStoredChildren(item: AgendaItem): boolean {
+    return Array.isArray(item.child_items) && item.child_items.length > 0;
+}
+
+/**
  * Transform a flat list of agenda items into a grouped structure.
  * Sequential items of the same groupable type are bundled together.
+ * Items with child_items are treated as stored containers and not auto-grouped.
  */
 export function groupAgendaItems(items: AgendaItem[]): GroupedAgendaEntry[] {
     if (items.length === 0) return [];
@@ -88,8 +119,23 @@ export function groupAgendaItems(items: AgendaItem[]): GroupedAgendaEntry[] {
     };
 
     for (const item of sorted) {
-        if (isGroupableType(item.item_type)) {
-            // Groupable item
+        // Check if this item has stored children (a container from the meeting builder)
+        if (hasStoredChildren(item) && isGroupableType(item.item_type)) {
+            // Flush any current auto-group first
+            flushGroup();
+            // Add as a stored container
+            result.push({
+                type: "container",
+                containerType: item.item_type,
+                title: getGroupTitle(item.item_type),
+                duration_minutes: item.duration_minutes || 5,
+                id: `container-${item.id}`,
+                order_index: item.order_index,
+                childItems: item.child_items as StoredChildItem[],
+                originalItem: item,
+            });
+        } else if (isGroupableType(item.item_type)) {
+            // Groupable item (without stored children)
             if (currentGroupType === item.item_type) {
                 // Same type as current group - add to it
                 currentGroup.push(item);
@@ -114,12 +160,12 @@ export function groupAgendaItems(items: AgendaItem[]): GroupedAgendaEntry[] {
 
 /**
  * Calculate total duration from grouped agenda entries.
- * Groups use their fixed duration, not the sum of children.
+ * Groups and containers use their fixed duration, not the sum of children.
  */
 export function calculateGroupedDuration(entries: GroupedAgendaEntry[]): number {
     return entries.reduce((total, entry) => {
-        if (entry.type === "group") {
-            // Use the group's fixed time-box duration
+        if (entry.type === "group" || entry.type === "container") {
+            // Use the group's/container's fixed time-box duration
             return total + entry.duration_minutes;
         } else {
             // Use the item's duration
@@ -142,7 +188,7 @@ export function calculateTotalDurationWithGrouping(items: AgendaItem[]): number 
  */
 export function getGroupedItemIds(entries: GroupedAgendaEntry[]): string[] {
     return entries.map((entry) => {
-        if (entry.type === "group") {
+        if (entry.type === "group" || entry.type === "container") {
             return entry.id;
         }
         return entry.item.id;
@@ -157,6 +203,9 @@ export function flattenGroupedEntries(entries: GroupedAgendaEntry[]): AgendaItem
     for (const entry of entries) {
         if (entry.type === "group") {
             result.push(...entry.items);
+        } else if (entry.type === "container") {
+            // Stored containers are single items with child_items
+            result.push(entry.originalItem);
         } else {
             result.push(entry.item);
         }
