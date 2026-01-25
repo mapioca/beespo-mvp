@@ -19,49 +19,59 @@ interface TasksClientProps {
     tasks: Task[];
     userId: string;
     profiles: { id: string; full_name: string; email?: string }[];
+    totalCount: number;
+    statusCounts: Record<string, number>;
+    priorityCounts: Record<string, number>;
+    currentFilters: {
+        search: string;
+        status: string[];
+    };
 }
 
-export function TasksClient({ tasks, profiles }: TasksClientProps) {
-    const [filters, setFilters] = useState<{
+export function TasksClient({
+    tasks,
+    profiles,
+    totalCount,
+    statusCounts,
+    priorityCounts,
+    currentFilters,
+}: TasksClientProps) {
+    // Client-side filters for priority and assignees (not in URL yet)
+    const [localFilters, setLocalFilters] = useState<{
         search: string;
         status: TaskStatus[];
         priority: TaskPriority[];
         assignees: string[];
     }>({
-        search: "",
-        status: [],
+        search: currentFilters.search,
+        status: currentFilters.status as TaskStatus[],
         priority: [],
         assignees: [],
     });
     const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>(null);
 
-    // Apply filters and sort
+    // Apply client-side filters (priority, assignees) and sort
+    // Server already filtered by search and status
     const filteredTasks = useMemo(() => {
-        const result = tasks.filter((task) => {
-            // Search filter
-            if (filters.search) {
-                const searchLower = filters.search.toLowerCase();
-                const matchesSearch =
-                    task.title?.toLowerCase().includes(searchLower) ||
-                    task.description?.toLowerCase().includes(searchLower) ||
-                    task.workspace_task_id?.toLowerCase().includes(searchLower);
-                if (!matchesSearch) return false;
-            }
+        let result = tasks;
 
-            // Status filter
-            if (filters.status.length > 0) {
-                const effectiveStatus = task.status === 'in_progress' ? 'pending' : task.status;
-                if (!filters.status.includes(effectiveStatus as TaskStatus)) {
-                    return false;
-                }
-            }
+        // Priority filter (client-side)
+        if (localFilters.priority.length > 0) {
+            result = result.filter((task) =>
+                task.priority && localFilters.priority.includes(task.priority as TaskPriority)
+            );
+        }
 
-            // Assignee filter
-            return filters.assignees.length === 0 || (task.assigned_to !== null && filters.assignees.includes(task.assigned_to));
-        });
+        // Assignee filter (client-side)
+        if (localFilters.assignees.length > 0) {
+            result = result.filter((task) =>
+                task.assigned_to !== null && localFilters.assignees.includes(task.assigned_to)
+            );
+        }
 
+        // Sort
         if (sortConfig) {
-            result.sort((a, b) => {
+            result = [...result].sort((a, b) => {
                 const { key, direction } = sortConfig;
                 let aValue: string | number | null | undefined;
                 let bValue: string | number | null | undefined;
@@ -89,40 +99,9 @@ export function TasksClient({ tasks, profiles }: TasksClientProps) {
             });
         }
         return result;
-    }, [tasks, filters, sortConfig]);
+    }, [tasks, localFilters.priority, localFilters.assignees, sortConfig]);
 
-    // Calculate counts for filter dropdowns
-    const statusCounts = useMemo(() => {
-        const counts: Record<TaskStatus, number> = {
-            pending: 0,
-            in_progress: 0,
-            completed: 0,
-            cancelled: 0,
-        };
-        tasks.forEach((task) => {
-            const effectiveStatus = task.status === 'in_progress' ? 'pending' : task.status;
-            if (effectiveStatus in counts) {
-                counts[effectiveStatus as TaskStatus]++;
-            }
-        });
-        return counts;
-    }, [tasks]);
-
-    const priorityCounts = useMemo(() => {
-        const counts: Record<TaskPriority, number> = {
-            low: 0,
-            medium: 0,
-            high: 0,
-        };
-        tasks.forEach((task) => {
-            if (task.priority in counts) {
-                counts[task.priority as TaskPriority]++;
-            }
-        });
-        return counts;
-    }, [tasks]);
-
-    // Get unique assignees
+    // Get unique assignees from current page tasks
     const assignees = useMemo(() => {
         const uniqueAssignees = new Map();
         tasks.forEach((task) => {
@@ -152,11 +131,16 @@ export function TasksClient({ tasks, profiles }: TasksClientProps) {
 
             {/* Filters */}
             <TaskFilters
-                onFilterChange={setFilters}
-                statusCounts={statusCounts}
-                priorityCounts={priorityCounts}
+                onFilterChange={setLocalFilters}
+                statusCounts={statusCounts as Record<TaskStatus, number>}
+                priorityCounts={priorityCounts as Record<TaskPriority, number>}
                 assignees={assignees}
             />
+
+            {/* Task count */}
+            <div className="text-sm text-muted-foreground">
+                {totalCount} task{totalCount !== 1 ? 's' : ''} total
+            </div>
 
             {/* Tasks Table */}
             <div className="mt-6">

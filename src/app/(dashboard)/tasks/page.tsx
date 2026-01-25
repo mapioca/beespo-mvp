@@ -1,16 +1,29 @@
 import { createClient } from "@/lib/supabase/server";
 import { TasksClient } from "./tasks-client";
+import { PaginationControls } from "@/components/ui/pagination-controls";
 import { Database } from "@/types/database";
+import { Metadata } from "next";
 
-// Enable caching with revalidation every 60 seconds
-export const revalidate = 60;
+export const metadata: Metadata = {
+    title: "Tasks | Beespo",
+    description: "Manage your action items and assignments",
+};
+
+// Force dynamic rendering to ensure searchParams trigger fresh data fetch
+export const dynamic = "force-dynamic";
+
+const ITEMS_PER_PAGE = 10;
 
 type TaskWithRelations = Database['public']['Tables']['tasks']['Row'] & {
     assignee: { full_name: string; email: string } | null;
     labels: { label: { id: string; name: string; color: string } }[];
 };
 
-export default async function TasksPage() {
+interface TasksPageProps {
+    searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}
+
+export default async function TasksPage({ searchParams }: TasksPageProps) {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
@@ -18,40 +31,63 @@ export default async function TasksPage() {
         return null;
     }
 
-    // Pagination settings
-    const ITEMS_PER_PAGE = 50;
+    // Await searchParams (Next.js 15 requirement)
+    const params = await searchParams;
 
-    // Parallelize all queries to reduce load time
-    const [
-        { data: rawTasks, error },
-        { data: rawProfile },
-    ] = await Promise.all([
-        // Fetch tasks with relations (using * due to complex joins)
-        // Limited to first 50 for performance
-        supabase
-            .from('tasks')
-            .select(`
-                *,
-                assignee:profiles!tasks_assigned_to_fkey(full_name, email),
-                labels:task_label_assignments(
-                    label:task_labels(id, name, color)
-                )
-            `)
-            .order('created_at', { ascending: false })
-            .limit(ITEMS_PER_PAGE),
-        // Get workspace_id
-        supabase
-            .from('profiles')
-            .select('workspace_id')
-            .eq('id', user.id)
-            .single(),
-    ]);
+    // Parse pagination
+    const rawPage = params?.page;
+    const currentPage = Number(rawPage) || 1;
+    const from = (currentPage - 1) * ITEMS_PER_PAGE;
+    const to = from + ITEMS_PER_PAGE - 1;
+
+    // Parse search param
+    const searchQuery = typeof params?.search === "string" ? params.search : "";
+
+    // Parse filter params
+    const statusParam = params?.status;
+    const statusFilters: string[] = statusParam
+        ? (Array.isArray(statusParam) ? statusParam : statusParam.split(","))
+        : [];
+
+    // Get workspace_id first
+    const { data: rawProfile } = await supabase
+        .from('profiles')
+        .select('workspace_id')
+        .eq('id', user.id)
+        .single();
+
+    const currentUserProfile = rawProfile as { workspace_id: string | null } | null;
+
+    // Build query with filters
+    let query = supabase
+        .from('tasks')
+        .select(`
+            *,
+            assignee:profiles!tasks_assigned_to_fkey(full_name, email),
+            labels:task_label_assignments(
+                label:task_labels(id, name, color)
+            )
+        `, { count: "exact" });
+
+    // Apply search filter
+    if (searchQuery) {
+        query = query.or(`title.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%,workspace_task_id.ilike.%${searchQuery}%`);
+    }
+
+    // Apply status filter
+    if (statusFilters.length > 0) {
+        query = query.in("status", statusFilters);
+    }
+
+    // Apply sorting and pagination
+    const { data: rawTasks, count, error } = await query
+        .order('created_at', { ascending: false })
+        .range(from, to);
 
     if (error) {
         console.error("Error fetching tasks:", error);
+        return <div className="p-8">Error loading tasks. Please try again.</div>;
     }
-
-    const currentUserProfile = rawProfile as { workspace_id: string | null } | null;
 
     // Fetch workspace profiles if needed
     let profiles: { id: string; full_name: string; email: string }[] = [];
@@ -67,6 +103,28 @@ export default async function TasksPage() {
         }
     }
 
+    // Fetch counts for filter badges (unfiltered counts)
+    const { data: allTasks } = await supabase
+        .from('tasks')
+        .select('status, priority, assigned_to');
+
+    const statusCounts: Record<string, number> = {
+        pending: 0,
+        in_progress: 0,
+        completed: 0,
+        cancelled: 0,
+    };
+    const priorityCounts: Record<string, number> = {
+        low: 0,
+        medium: 0,
+        high: 0,
+    };
+
+    allTasks?.forEach((task: { status: string; priority: string | null }) => {
+        if (task.status in statusCounts) statusCounts[task.status]++;
+        if (task.priority && task.priority in priorityCounts) priorityCounts[task.priority]++;
+    });
+
     // Transform to match Table props
     const typedTasks = rawTasks as unknown as TaskWithRelations[] | null;
     const tasks = (typedTasks || []).map((t) => {
@@ -81,5 +139,41 @@ export default async function TasksPage() {
         };
     });
 
-    return <TasksClient tasks={tasks} userId={user?.id || ""} profiles={profiles} />;
+    const totalPages = Math.ceil((count || 0) / ITEMS_PER_PAGE);
+    const hasNextPage = to < (count || 0) - 1;
+    const hasPrevPage = currentPage > 1;
+
+    // Current filter state to pass to client
+    const currentFilters = {
+        search: searchQuery,
+        status: statusFilters,
+    };
+
+    return (
+        <>
+            <TasksClient
+                key={`${currentPage}-${searchQuery}-${statusFilters.join()}`}
+                tasks={tasks}
+                userId={user?.id || ""}
+                profiles={profiles}
+                totalCount={count || 0}
+                statusCounts={statusCounts}
+                priorityCounts={priorityCounts}
+                currentFilters={currentFilters}
+            />
+            <div className="px-8 pb-8 max-w-7xl mx-auto">
+                <PaginationControls
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    hasNextPage={hasNextPage}
+                    hasPrevPage={hasPrevPage}
+                />
+                <p className="text-xs text-muted-foreground mt-2 text-center font-mono">
+                    Page {currentPage} | Showing {tasks?.length || 0} of {count} tasks
+                    {searchQuery && ` | Search: "${searchQuery}"`}
+                    {statusFilters.length > 0 && ` | Status: ${statusFilters.join(", ")}`}
+                </p>
+            </div>
+        </>
+    );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback, useTransition, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
@@ -18,18 +18,23 @@ import { Plus, Search } from "lucide-react";
 import { EventsTable, Event } from "./events-table";
 import { EventDialog } from "./event-dialog";
 import { useToast } from "@/lib/hooks/use-toast";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 
 interface EventsClientProps {
     events: Event[];
+    totalCount: number;
+    currentSearch: string;
 }
 
-export function EventsClient({ events: initialEvents }: EventsClientProps) {
+export function EventsClient({ events: initialEvents, totalCount, currentSearch }: EventsClientProps) {
     const router = useRouter();
+    const pathname = usePathname();
+    const searchParams = useSearchParams();
     const { toast } = useToast();
+    const [isPending, startTransition] = useTransition();
+    const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     const [events, setEvents] = useState<Event[]>(initialEvents);
-    const [searchQuery, setSearchQuery] = useState("");
     const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>({
         key: 'start_at',
         direction: 'desc',
@@ -40,20 +45,38 @@ export function EventsClient({ events: initialEvents }: EventsClientProps) {
     const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
     const [eventToDelete, setEventToDelete] = useState<Event | null>(null);
 
-    // Filter and sort events
-    const filteredEvents = useMemo(() => {
-        let result = events;
+    // Cleanup timeout on unmount
+    useEffect(() => {
+        return () => {
+            if (searchTimeoutRef.current) {
+                clearTimeout(searchTimeoutRef.current);
+            }
+        };
+    }, []);
 
-        // Search filter
-        if (searchQuery) {
-            const query = searchQuery.toLowerCase();
-            result = result.filter((event) =>
-                event.title.toLowerCase().includes(query) ||
-                event.description?.toLowerCase().includes(query) ||
-                event.location?.toLowerCase().includes(query) ||
-                event.workspace_event_id?.toLowerCase().includes(query)
-            );
+    // Debounced search - updates URL params for server-side filtering
+    const handleSearchChange = useCallback((value: string) => {
+        if (searchTimeoutRef.current) {
+            clearTimeout(searchTimeoutRef.current);
         }
+        searchTimeoutRef.current = setTimeout(() => {
+            startTransition(() => {
+                const params = new URLSearchParams(searchParams.toString());
+                if (value) {
+                    params.set("search", value);
+                } else {
+                    params.delete("search");
+                }
+                // Reset to page 1 when searching
+                params.delete("page");
+                router.push(`${pathname}?${params.toString()}`);
+            });
+        }, 300);
+    }, [router, pathname, searchParams]);
+
+    // Sort events (client-side sorting within the current page)
+    const sortedEvents = useMemo(() => {
+        let result = events;
 
         // Sort
         if (sortConfig) {
@@ -80,7 +103,7 @@ export function EventsClient({ events: initialEvents }: EventsClientProps) {
         }
 
         return result;
-    }, [events, searchQuery, sortConfig]);
+    }, [events, sortConfig]);
 
     // Handlers
     const handleCreateNew = () => {
@@ -172,20 +195,21 @@ export function EventsClient({ events: initialEvents }: EventsClientProps) {
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
                         placeholder="Search events..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
+                        defaultValue={currentSearch}
+                        onChange={(e) => handleSearchChange(e.target.value)}
                         className="pl-9"
                     />
                 </div>
                 <div className="text-sm text-muted-foreground">
-                    {filteredEvents.length} event{filteredEvents.length !== 1 ? 's' : ''}
+                    {totalCount} event{totalCount !== 1 ? 's' : ''}
+                    {isPending && " (loading...)"}
                 </div>
             </div>
 
             {/* Table */}
             <div className="mt-6">
                 <EventsTable
-                    events={filteredEvents}
+                    events={sortedEvents}
                     sortConfig={sortConfig}
                     onSort={handleSort}
                     onEdit={handleEdit}

@@ -1,11 +1,24 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { EventsClient } from "@/components/events/events-client";
+import { PaginationControls } from "@/components/ui/pagination-controls";
+import { Metadata } from "next";
 
-// Disable caching to ensure new events appear immediately
-export const revalidate = 0;
+export const metadata: Metadata = {
+    title: "Events | Beespo",
+    description: "Manage calendar events for your workspace",
+};
 
-export default async function EventsPage() {
+// Force dynamic rendering to ensure searchParams trigger fresh data fetch
+export const dynamic = "force-dynamic";
+
+const ITEMS_PER_PAGE = 5;
+
+interface EventsPageProps {
+    searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}
+
+export default async function EventsPage({ searchParams }: EventsPageProps) {
     const supabase = await createClient();
 
     const {
@@ -15,6 +28,18 @@ export default async function EventsPage() {
     if (!user) {
         redirect("/login");
     }
+
+    // Await searchParams (Next.js 15 requirement)
+    const params = await searchParams;
+
+    // Parse pagination
+    const rawPage = params?.page;
+    const currentPage = Number(rawPage) || 1;
+    const from = (currentPage - 1) * ITEMS_PER_PAGE;
+    const to = from + ITEMS_PER_PAGE - 1;
+
+    // Parse search param
+    const searchQuery = typeof params?.search === "string" ? params.search : "";
 
     // Get user profile to check role
     const { data: profile } = await (supabase
@@ -28,13 +53,10 @@ export default async function EventsPage() {
         redirect("/setup");
     }
 
-    // Pagination settings
-    const ITEMS_PER_PAGE = 50;
-
-    // Get events with related announcements
-    const { data: events, error } = await (supabase
+    // Build query with filters
+    let query = supabase
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .from("events") as any)
+        .from("events" as any)
         .select(`
             id,
             title,
@@ -50,15 +72,49 @@ export default async function EventsPage() {
                 title,
                 status
             )
-        `)
-        .eq("workspace_id", profile.workspace_id)
+        `, { count: "exact" })
+        .eq("workspace_id", profile.workspace_id);
+
+    // Apply search filter
+    if (searchQuery) {
+        query = query.or(`title.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%,location.ilike.%${searchQuery}%,workspace_event_id.ilike.%${searchQuery}%`);
+    }
+
+    // Apply sorting and pagination
+    const { data: events, count, error } = await query
         .order("start_at", { ascending: false })
-        .limit(ITEMS_PER_PAGE);
+        .range(from, to);
 
     // Log for debugging
     if (error) {
         console.error("Events query error:", error);
+        return <div className="p-8">Error loading events. Please try again.</div>;
     }
 
-    return <EventsClient events={events || []} />;
+    const totalPages = Math.ceil((count || 0) / ITEMS_PER_PAGE);
+    const hasNextPage = to < (count || 0) - 1;
+    const hasPrevPage = currentPage > 1;
+
+    return (
+        <>
+            <EventsClient
+                key={`${currentPage}-${searchQuery}`}
+                events={events || []}
+                totalCount={count || 0}
+                currentSearch={searchQuery}
+            />
+            <div className="px-8 pb-8 max-w-7xl mx-auto">
+                <PaginationControls
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    hasNextPage={hasNextPage}
+                    hasPrevPage={hasPrevPage}
+                />
+                <p className="text-xs text-muted-foreground mt-2 text-center font-mono">
+                    Page {currentPage} | Showing {events?.length || 0} of {count} events
+                    {searchQuery && ` | Search: "${searchQuery}"`}
+                </p>
+            </div>
+        </>
+    );
 }
