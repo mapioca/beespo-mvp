@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useTransition } from "react";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
     DropdownMenu,
@@ -17,6 +18,7 @@ import {
     CheckCheck,
     XCircle,
     FileText,
+    Loader2,
 } from "lucide-react";
 
 export type MeetingStatus = "scheduled" | "in_progress" | "completed" | "cancelled";
@@ -27,14 +29,14 @@ export interface Template {
 }
 
 interface MeetingFiltersProps {
-    onFilterChange: (filters: {
-        search: string;
-        status: MeetingStatus[];
-        templateIds: string[];
-    }) => void;
     statusCounts?: Record<MeetingStatus, number>;
     templates?: Template[];
     templateCounts?: Record<string, number>;
+    currentFilters: {
+        search: string;
+        status: string[];
+        templateIds: string[];
+    };
 }
 
 const STATUS_OPTIONS: { value: MeetingStatus; label: string; icon: React.ReactNode }[] = [
@@ -45,48 +47,65 @@ const STATUS_OPTIONS: { value: MeetingStatus; label: string; icon: React.ReactNo
 ];
 
 export function MeetingsFilters({
-    onFilterChange,
     statusCounts,
     templates = [],
     templateCounts = {},
+    currentFilters,
 }: MeetingFiltersProps) {
-    const [search, setSearch] = useState("");
-    const [selectedStatuses, setSelectedStatuses] = useState<MeetingStatus[]>([]);
-    const [selectedTemplates, setSelectedTemplates] = useState<string[]>([]);
+    const router = useRouter();
+    const pathname = usePathname();
+    const searchParams = useSearchParams();
+    const [isPending, startTransition] = useTransition();
 
-    const handleSearchChange = (value: string) => {
-        setSearch(value);
-        onFilterChange({
-            search: value,
-            status: selectedStatuses,
-            templateIds: selectedTemplates,
+    // Helper to update URL params
+    const updateUrlParams = useCallback((updates: Record<string, string | null>) => {
+        const params = new URLSearchParams(searchParams.toString());
+
+        // Reset to page 1 when filters change
+        params.set("page", "1");
+
+        Object.entries(updates).forEach(([key, value]) => {
+            if (value === null || value === "") {
+                params.delete(key);
+            } else {
+                params.set(key, value);
+            }
         });
-    };
 
-    const toggleStatus = (status: MeetingStatus) => {
-        const newStatuses = selectedStatuses.includes(status)
-            ? selectedStatuses.filter((s) => s !== status)
-            : [...selectedStatuses, status];
-        setSelectedStatuses(newStatuses);
-        onFilterChange({ search, status: newStatuses, templateIds: selectedTemplates });
-    };
+        startTransition(() => {
+            router.push(`${pathname}?${params.toString()}`);
+        });
+    }, [router, pathname, searchParams]);
 
-    const toggleTemplate = (templateId: string) => {
-        const newTemplates = selectedTemplates.includes(templateId)
-            ? selectedTemplates.filter((t) => t !== templateId)
-            : [...selectedTemplates, templateId];
-        setSelectedTemplates(newTemplates);
-        onFilterChange({ search, status: selectedStatuses, templateIds: newTemplates });
-    };
+    const handleSearchChange = useCallback((value: string) => {
+        updateUrlParams({ search: value || null });
+    }, [updateUrlParams]);
 
-    const clearFilters = () => {
-        setSearch("");
-        setSelectedStatuses([]);
-        setSelectedTemplates([]);
-        onFilterChange({ search: "", status: [], templateIds: [] });
-    };
+    const toggleStatus = useCallback((status: MeetingStatus) => {
+        const currentStatuses = currentFilters.status;
+        const newStatuses = currentStatuses.includes(status)
+            ? currentStatuses.filter((s) => s !== status)
+            : [...currentStatuses, status];
 
-    const hasActiveFilters = search || selectedStatuses.length > 0 || selectedTemplates.length > 0;
+        updateUrlParams({ status: newStatuses.length > 0 ? newStatuses.join(",") : null });
+    }, [currentFilters.status, updateUrlParams]);
+
+    const toggleTemplate = useCallback((templateId: string) => {
+        const currentTemplates = currentFilters.templateIds;
+        const newTemplates = currentTemplates.includes(templateId)
+            ? currentTemplates.filter((t) => t !== templateId)
+            : [...currentTemplates, templateId];
+
+        updateUrlParams({ template: newTemplates.length > 0 ? newTemplates.join(",") : null });
+    }, [currentFilters.templateIds, updateUrlParams]);
+
+    const clearFilters = useCallback(() => {
+        startTransition(() => {
+            router.push(`${pathname}`);
+        });
+    }, [router, pathname]);
+
+    const hasActiveFilters = currentFilters.search || currentFilters.status.length > 0 || currentFilters.templateIds.length > 0;
 
     // Get template name by ID
     const getTemplateName = (id: string) => {
@@ -96,12 +115,22 @@ export function MeetingsFilters({
 
     return (
         <div className="flex items-center gap-2 flex-wrap">
-            <Input
-                placeholder="Filter meetings..."
-                value={search}
-                onChange={(e) => handleSearchChange(e.target.value)}
-                className="max-w-xs"
-            />
+            <div className="relative">
+                <Input
+                    placeholder="Filter meetings..."
+                    defaultValue={currentFilters.search}
+                    onChange={(e) => {
+                        // Debounce search input
+                        const value = e.target.value;
+                        const timeoutId = setTimeout(() => handleSearchChange(value), 300);
+                        return () => clearTimeout(timeoutId);
+                    }}
+                    className="max-w-xs"
+                />
+                {isPending && (
+                    <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
+                )}
+            </div>
 
             {/* Status Filter */}
             <DropdownMenu>
@@ -109,9 +138,9 @@ export function MeetingsFilters({
                     <Button variant="outline" size="sm" className="h-9">
                         <CirclePlus className="mr-2 h-4 w-4" />
                         Status
-                        {selectedStatuses.length > 0 && (
+                        {currentFilters.status.length > 0 && (
                             <span className="ml-2 rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground">
-                                {selectedStatuses.length}
+                                {currentFilters.status.length}
                             </span>
                         )}
                     </Button>
@@ -126,7 +155,7 @@ export function MeetingsFilters({
                                     className="flex w-full items-center justify-between rounded-sm px-2 py-1.5 text-sm hover:bg-accent"
                                 >
                                     <div className="flex items-center gap-2">
-                                        {selectedStatuses.includes(option.value) ? (
+                                        {currentFilters.status.includes(option.value) ? (
                                             <div className="h-4 w-4 rounded-sm border border-primary bg-primary flex items-center justify-center">
                                                 <CheckCircle2 className="h-3 w-3 text-primary-foreground" />
                                             </div>
@@ -155,9 +184,9 @@ export function MeetingsFilters({
                         <Button variant="outline" size="sm" className="h-9">
                             <FileText className="mr-2 h-4 w-4" />
                             Template
-                            {selectedTemplates.length > 0 && (
+                            {currentFilters.templateIds.length > 0 && (
                                 <span className="ml-2 rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground">
-                                    {selectedTemplates.length}
+                                    {currentFilters.templateIds.length}
                                 </span>
                             )}
                         </Button>
@@ -171,7 +200,7 @@ export function MeetingsFilters({
                                     className="flex w-full items-center justify-between rounded-sm px-2 py-1.5 text-sm hover:bg-accent"
                                 >
                                     <div className="flex items-center gap-2">
-                                        {selectedTemplates.includes("no-template") ? (
+                                        {currentFilters.templateIds.includes("no-template") ? (
                                             <div className="h-4 w-4 rounded-sm border border-primary bg-primary flex items-center justify-center">
                                                 <CheckCircle2 className="h-3 w-3 text-primary-foreground" />
                                             </div>
@@ -194,7 +223,7 @@ export function MeetingsFilters({
                                         className="flex w-full items-center justify-between rounded-sm px-2 py-1.5 text-sm hover:bg-accent"
                                     >
                                         <div className="flex items-center gap-2">
-                                            {selectedTemplates.includes(template.id) ? (
+                                            {currentFilters.templateIds.includes(template.id) ? (
                                                 <div className="h-4 w-4 rounded-sm border border-primary bg-primary flex items-center justify-center">
                                                     <CheckCircle2 className="h-3 w-3 text-primary-foreground" />
                                                 </div>
@@ -216,10 +245,10 @@ export function MeetingsFilters({
             )}
 
             {/* Active Filter Badges - Status */}
-            {selectedStatuses.map((status) => {
+            {currentFilters.status.map((status) => {
                 const option = STATUS_OPTIONS.find((o) => o.value === status);
                 return (
-                    <Button key={status} variant="secondary" size="sm" className="h-9" onClick={() => toggleStatus(status)}>
+                    <Button key={status} variant="secondary" size="sm" className="h-9" onClick={() => toggleStatus(status as MeetingStatus)}>
                         {option?.label}
                         <X className="ml-2 h-3 w-3" />
                     </Button>
@@ -227,7 +256,7 @@ export function MeetingsFilters({
             })}
 
             {/* Active Filter Badges - Templates */}
-            {selectedTemplates.map((templateId) => (
+            {currentFilters.templateIds.map((templateId) => (
                 <Button
                     key={templateId}
                     variant="secondary"
@@ -245,6 +274,13 @@ export function MeetingsFilters({
                     Reset
                     <X className="ml-2 h-4 w-4" />
                 </Button>
+            )}
+
+            {isPending && (
+                <span className="text-xs text-muted-foreground flex items-center gap-1">
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                    Loading...
+                </span>
             )}
         </div>
     );
