@@ -60,6 +60,7 @@ import { AddMeetingItemDialog, SelectedItem, CategoryType } from "../add-meeting
 import {
     groupAgendaItems,
     getGroupedItemIds,
+    StoredChildItem,
 } from "@/lib/agenda-grouping";
 import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/lib/hooks/use-toast";
@@ -68,6 +69,7 @@ import { Database } from "@/types/database";
 
 type AgendaItem = Database["public"]["Tables"]["agenda_items"]["Row"] & {
     hymn?: { title: string; hymn_number: number } | null;
+    child_items?: StoredChildItem[] | null;
 };
 
 interface EditableAgendaItemListProps {
@@ -1043,6 +1045,38 @@ export function EditableAgendaItemList({
                                                                     </DropdownMenuItem>
                                                                 </DropdownMenuContent>
                                                             </DropdownMenu>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        />
+                                    </div>
+                                );
+                            } else if (entry.type === "container") {
+                                // Stored container from the meeting builder (Discussions, Announcements, Business)
+                                return (
+                                    <div key={entry.id}>
+                                        {/* Ghost Divider before container */}
+                                        {isEditable && (
+                                            <AgendaItemDivider
+                                                onAddClick={() => openPickerAtPosition(entry.order_index)}
+                                                disabled={!isEditable}
+                                            />
+                                        )}
+                                        <AgendaGroupRow
+                                            container={entry}
+                                            isEditable={isEditable}
+                                            onAddToGroup={openPickerForGroup}
+                                            renderStoredChildItem={(childItem, index) => (
+                                                <div key={index} className="bg-background rounded-md border p-3">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-sm font-medium flex-1 truncate">
+                                                            {childItem.title}
+                                                        </span>
+                                                        {childItem.description && (
+                                                            <span className="text-xs text-muted-foreground truncate max-w-[200px]">
+                                                                {childItem.description}
+                                                            </span>
                                                         )}
                                                     </div>
                                                 </div>
