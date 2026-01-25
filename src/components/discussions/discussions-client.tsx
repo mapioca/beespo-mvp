@@ -10,10 +10,25 @@ import { DiscussionsTable, Discussion } from "./discussions-table";
 
 interface DiscussionsClientProps {
     discussions: Discussion[];
+    totalCount: number;
+    statusCounts: Record<string, number>;
+    priorityCounts: Record<string, number>;
+    categoryCounts: Record<string, number>;
+    currentFilters: {
+        search: string;
+        status: string[];
+    };
 }
 
-export function DiscussionsClient({ discussions }: DiscussionsClientProps) {
-    const [filters, setFilters] = useState<{
+export function DiscussionsClient({
+    discussions,
+    totalCount,
+    statusCounts,
+    priorityCounts,
+    categoryCounts,
+}: DiscussionsClientProps) {
+    // Client-side filters for priority and category (not in URL yet)
+    const [localFilters, setLocalFilters] = useState<{
         search: string;
         status: DiscussionStatus[];
         priority: DiscussionPriority[];
@@ -26,34 +41,27 @@ export function DiscussionsClient({ discussions }: DiscussionsClientProps) {
     });
     const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>(null);
 
+    // Apply client-side filters (priority, category) and sort
     const filteredDiscussions = useMemo(() => {
-        const result = discussions.filter((discussion) => {
-            // Search filter
-            if (filters.search) {
-                const searchLower = filters.search.toLowerCase();
-                const matchesSearch =
-                    discussion.title?.toLowerCase().includes(searchLower) ||
-                    discussion.description?.toLowerCase().includes(searchLower) ||
-                    discussion.workspace_discussion_id?.toLowerCase().includes(searchLower);
-                if (!matchesSearch) return false;
-            }
+        let result = discussions;
 
-            // Status filter
-            if (filters.status.length > 0 && !filters.status.includes(discussion.status as DiscussionStatus)) {
-                return false;
-            }
+        // Priority filter (client-side)
+        if (localFilters.priority.length > 0) {
+            result = result.filter((discussion) =>
+                localFilters.priority.includes(discussion.priority as DiscussionPriority)
+            );
+        }
 
-            // Priority filter
-            if (filters.priority.length > 0 && !filters.priority.includes(discussion.priority as DiscussionPriority)) {
-                return false;
-            }
+        // Category filter (client-side)
+        if (localFilters.category.length > 0) {
+            result = result.filter((discussion) =>
+                localFilters.category.includes(discussion.category as DiscussionCategory)
+            );
+        }
 
-            // Category filter
-            return filters.category.length === 0 || filters.category.includes(discussion.category as DiscussionCategory);
-        });
-
+        // Sort
         if (sortConfig) {
-            result.sort((a, b) => {
+            result = [...result].sort((a, b) => {
                 const { key, direction } = sortConfig;
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 let aValue: any = a[key as keyof Discussion];
@@ -78,36 +86,7 @@ export function DiscussionsClient({ discussions }: DiscussionsClientProps) {
         }
 
         return result;
-    }, [discussions, filters, sortConfig]);
-
-    // Calculate counts for filter dropdowns
-    const statusCounts = useMemo(() => {
-        const counts: Record<DiscussionStatus, number> = {
-            new: 0, active: 0, decision_required: 0, monitoring: 0, resolved: 0, deferred: 0,
-        };
-        discussions.forEach((d) => {
-            if (d.status in counts) counts[d.status as DiscussionStatus]++;
-        });
-        return counts;
-    }, [discussions]);
-
-    const priorityCounts = useMemo(() => {
-        const counts: Record<DiscussionPriority, number> = { low: 0, medium: 0, high: 0 };
-        discussions.forEach((d) => {
-            if (d.priority in counts) counts[d.priority as DiscussionPriority]++;
-        });
-        return counts;
-    }, [discussions]);
-
-    const categoryCounts = useMemo(() => {
-        const counts: Record<DiscussionCategory, number> = {
-            general: 0, budget: 0, personnel: 0, programs: 0, facilities: 0, welfare: 0, youth: 0, activities: 0,
-        };
-        discussions.forEach((d) => {
-            if (d.category in counts) counts[d.category as DiscussionCategory]++;
-        });
-        return counts;
-    }, [discussions]);
+    }, [discussions, localFilters.priority, localFilters.category, sortConfig]);
 
     return (
         <div className="p-8 max-w-7xl mx-auto space-y-6">
@@ -129,11 +108,16 @@ export function DiscussionsClient({ discussions }: DiscussionsClientProps) {
             <Separator />
 
             <DiscussionsFilters
-                onFilterChange={setFilters}
-                statusCounts={statusCounts}
-                priorityCounts={priorityCounts}
-                categoryCounts={categoryCounts}
+                onFilterChange={setLocalFilters}
+                statusCounts={statusCounts as Record<DiscussionStatus, number>}
+                priorityCounts={priorityCounts as Record<DiscussionPriority, number>}
+                categoryCounts={categoryCounts as Record<DiscussionCategory, number>}
             />
+
+            {/* Discussion count */}
+            <div className="text-sm text-muted-foreground">
+                {totalCount} discussion{totalCount !== 1 ? 's' : ''} total
+            </div>
 
             <div className="mt-6">
                 <DiscussionsTable

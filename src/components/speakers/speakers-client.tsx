@@ -10,10 +10,20 @@ import { SpeakersTable, Speaker } from "./speakers-table";
 
 interface SpeakersClientProps {
     speakers: Speaker[];
+    totalCount: number;
+    statusCounts: Record<string, number>;
+    currentFilters: {
+        search: string;
+    };
 }
 
-export function SpeakersClient({ speakers }: SpeakersClientProps) {
-    const [filters, setFilters] = useState<{
+export function SpeakersClient({
+    speakers,
+    totalCount,
+    statusCounts,
+}: SpeakersClientProps) {
+    // Client-side filters for status (not in URL yet)
+    const [localFilters, setLocalFilters] = useState<{
         search: string;
         status: SpeakerStatus[];
     }>({
@@ -22,24 +32,20 @@ export function SpeakersClient({ speakers }: SpeakersClientProps) {
     });
     const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>(null);
 
+    // Apply client-side filters (status) and sort
     const filteredSpeakers = useMemo(() => {
-        const result = speakers.filter((speaker) => {
-            // Search filter
-            if (filters.search) {
-                const searchLower = filters.search.toLowerCase();
-                const matchesSearch =
-                    speaker.name?.toLowerCase().includes(searchLower) ||
-                    speaker.topic?.toLowerCase().includes(searchLower) ||
-                    speaker.workspace_speaker_id?.toLowerCase().includes(searchLower);
-                if (!matchesSearch) return false;
-            }
+        let result = speakers;
 
-            // Status filter
-            return filters.status.length === 0 || filters.status.includes(speaker.is_confirmed ? "confirmed" : "pending" as SpeakerStatus);
-        });
+        // Status filter (client-side)
+        if (localFilters.status.length > 0) {
+            result = result.filter((speaker) =>
+                localFilters.status.includes(speaker.is_confirmed ? "confirmed" : "pending" as SpeakerStatus)
+            );
+        }
 
+        // Sort
         if (sortConfig) {
-            result.sort((a, b) => {
+            result = [...result].sort((a, b) => {
                 const { key, direction } = sortConfig;
                 let aValue: string | boolean | number | null | undefined;
                 let bValue: string | boolean | number | null | undefined;
@@ -62,16 +68,7 @@ export function SpeakersClient({ speakers }: SpeakersClientProps) {
         }
 
         return result;
-    }, [speakers, filters, sortConfig]);
-
-    const statusCounts = useMemo(() => {
-        const counts: Record<SpeakerStatus, number> = { confirmed: 0, pending: 0 };
-        speakers.forEach((s) => {
-            if (s.is_confirmed) counts.confirmed++;
-            else counts.pending++;
-        });
-        return counts;
-    }, [speakers]);
+    }, [speakers, localFilters.status, sortConfig]);
 
     return (
         <div className="p-8 max-w-7xl mx-auto space-y-6">
@@ -93,9 +90,14 @@ export function SpeakersClient({ speakers }: SpeakersClientProps) {
             <Separator />
 
             <SpeakersFilters
-                onFilterChange={setFilters}
-                statusCounts={statusCounts}
+                onFilterChange={setLocalFilters}
+                statusCounts={statusCounts as Record<SpeakerStatus, number>}
             />
+
+            {/* Speaker count */}
+            <div className="text-sm text-muted-foreground">
+                {totalCount} speaker{totalCount !== 1 ? 's' : ''} total
+            </div>
 
             <div className="mt-6">
                 <SpeakersTable

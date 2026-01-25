@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback, useRef, useEffect, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -14,7 +14,7 @@ import {
 import { Plus, Search, Users } from "lucide-react";
 import { ParticipantsTable } from "@/components/participants/participants-table";
 import { createClient } from "@/lib/supabase/client";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useToast } from "@/lib/hooks/use-toast";
 
 interface Participant {
@@ -28,23 +28,56 @@ interface Participant {
 interface ParticipantsClientProps {
     participants: Participant[];
     userRole: string;
+    totalCount: number;
+    currentSearch: string;
 }
 
-export function ParticipantsClient({ participants, userRole }: ParticipantsClientProps) {
-    const [search, setSearch] = useState("");
+export function ParticipantsClient({
+    participants,
+    userRole,
+    totalCount,
+    currentSearch,
+}: ParticipantsClientProps) {
     const [createDialogOpen, setCreateDialogOpen] = useState(false);
     const [newName, setNewName] = useState("");
     const [isCreating, setIsCreating] = useState(false);
     const router = useRouter();
+    const pathname = usePathname();
+    const searchParams = useSearchParams();
     const { toast } = useToast();
+    const [isPending, startTransition] = useTransition();
+    const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     const canManage = userRole === "leader" || userRole === "admin";
 
-    const filteredParticipants = search
-        ? participants.filter((p) =>
-            p.name.toLowerCase().includes(search.toLowerCase())
-        )
-        : participants;
+    // Cleanup timeout on unmount
+    useEffect(() => {
+        return () => {
+            if (searchTimeoutRef.current) {
+                clearTimeout(searchTimeoutRef.current);
+            }
+        };
+    }, []);
+
+    // Debounced search - updates URL params for server-side filtering
+    const handleSearchChange = useCallback((value: string) => {
+        if (searchTimeoutRef.current) {
+            clearTimeout(searchTimeoutRef.current);
+        }
+        searchTimeoutRef.current = setTimeout(() => {
+            startTransition(() => {
+                const params = new URLSearchParams(searchParams.toString());
+                if (value) {
+                    params.set("search", value);
+                } else {
+                    params.delete("search");
+                }
+                // Reset to page 1 when searching
+                params.delete("page");
+                router.push(`${pathname}?${params.toString()}`);
+            });
+        }, 300);
+    }, [router, pathname, searchParams]);
 
     const handleCreate = async () => {
         if (!newName.trim()) return;
@@ -115,19 +148,25 @@ export function ParticipantsClient({ participants, userRole }: ParticipantsClien
             </div>
 
             {/* Search */}
-            <div className="relative max-w-sm">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                    placeholder="Search participants..."
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    className="pl-9"
-                />
+            <div className="flex items-center gap-4">
+                <div className="relative max-w-sm">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                        placeholder="Search participants..."
+                        defaultValue={currentSearch}
+                        onChange={(e) => handleSearchChange(e.target.value)}
+                        className="pl-9"
+                    />
+                </div>
+                <div className="text-sm text-muted-foreground">
+                    {totalCount} participant{totalCount !== 1 ? 's' : ''} total
+                    {isPending && " (loading...)"}
+                </div>
             </div>
 
             {/* Table */}
             <ParticipantsTable
-                participants={filteredParticipants}
+                participants={participants}
                 canManage={canManage}
             />
 
