@@ -130,19 +130,21 @@ export default async function DiscussionsPage({ searchParams }: DiscussionsPageP
                 categoryCounts={categoryCounts}
                 currentFilters={currentFilters}
             />
-            <div className="px-8 pb-8 max-w-7xl mx-auto">
-                <PaginationControls
-                    currentPage={currentPage}
-                    totalPages={totalPages}
-                    hasNextPage={hasNextPage}
-                    hasPrevPage={hasPrevPage}
-                />
-                <p className="text-xs text-muted-foreground mt-2 text-center font-mono">
-                    Page {currentPage} | Showing {discussions?.length || 0} of {count} discussions
-                    {searchQuery && ` | Search: "${searchQuery}"`}
-                    {statusFilters.length > 0 && ` | Status: ${statusFilters.join(", ")}`}
-                </p>
-            </div>
+            {(count || 0) > 0 && (
+                <div className="px-8 pb-8 max-w-7xl mx-auto">
+                    <div className="flex items-center justify-between border-t pt-4">
+                        <p className="text-sm text-muted-foreground">
+                            Showing {from + 1}-{Math.min(to + 1, count || 0)} of {count} discussions
+                        </p>
+                        <PaginationControls
+                            currentPage={currentPage}
+                            totalPages={totalPages}
+                            hasNextPage={hasNextPage}
+                            hasPrevPage={hasPrevPage}
+                        />
+                    </div>
+                </div>
+            )}
         </>
     );
 }
