@@ -10,10 +10,23 @@ import { AnnouncementsTable, Announcement } from "./announcements-table";
 
 interface AnnouncementsClientProps {
     announcements: Announcement[];
+    totalCount: number;
+    statusCounts: Record<string, number>;
+    priorityCounts: Record<string, number>;
+    currentFilters: {
+        search: string;
+        status: string[];
+    };
 }
 
-export function AnnouncementsClient({ announcements }: AnnouncementsClientProps) {
-    const [filters, setFilters] = useState<{
+export function AnnouncementsClient({
+    announcements,
+    totalCount,
+    statusCounts,
+    priorityCounts,
+}: AnnouncementsClientProps) {
+    // Client-side filters for priority (not in URL yet)
+    const [localFilters, setLocalFilters] = useState<{
         search: string;
         status: AnnouncementStatus[];
         priority: AnnouncementPriority[];
@@ -24,29 +37,21 @@ export function AnnouncementsClient({ announcements }: AnnouncementsClientProps)
     });
     const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>(null);
 
+    // Apply client-side filters (priority) and sort
+    // Server already filtered by search and status
     const filteredAnnouncements = useMemo(() => {
-        const result = announcements.filter((announcement) => {
-            // Search filter
-            if (filters.search) {
-                const searchLower = filters.search.toLowerCase();
-                const matchesSearch =
-                    announcement.title?.toLowerCase().includes(searchLower) ||
-                    announcement.content?.toLowerCase().includes(searchLower) ||
-                    announcement.workspace_announcement_id?.toLowerCase().includes(searchLower);
-                if (!matchesSearch) return false;
-            }
+        let result = announcements;
 
-            // Status filter
-            if (filters.status.length > 0 && !filters.status.includes(announcement.status as AnnouncementStatus)) {
-                return false;
-            }
+        // Priority filter (client-side)
+        if (localFilters.priority.length > 0) {
+            result = result.filter((announcement) =>
+                localFilters.priority.includes(announcement.priority as AnnouncementPriority)
+            );
+        }
 
-            // Priority filter
-            return filters.priority.length === 0 || filters.priority.includes(announcement.priority as AnnouncementPriority);
-        });
-
+        // Sort
         if (sortConfig) {
-            result.sort((a, b) => {
+            result = [...result].sort((a, b) => {
                 const { key, direction } = sortConfig;
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 let aValue: any = a[key as keyof Announcement];
@@ -70,23 +75,7 @@ export function AnnouncementsClient({ announcements }: AnnouncementsClientProps)
         }
 
         return result;
-    }, [announcements, filters, sortConfig]);
-
-    const statusCounts = useMemo(() => {
-        const counts: Record<AnnouncementStatus, number> = { draft: 0, active: 0, stopped: 0 };
-        announcements.forEach((a) => {
-            if (a.status in counts) counts[a.status as AnnouncementStatus]++;
-        });
-        return counts;
-    }, [announcements]);
-
-    const priorityCounts = useMemo(() => {
-        const counts: Record<AnnouncementPriority, number> = { low: 0, medium: 0, high: 0 };
-        announcements.forEach((a) => {
-            if (a.priority in counts) counts[a.priority as AnnouncementPriority]++;
-        });
-        return counts;
-    }, [announcements]);
+    }, [announcements, localFilters.priority, sortConfig]);
 
     return (
         <div className="p-8 max-w-7xl mx-auto space-y-6">
@@ -108,10 +97,15 @@ export function AnnouncementsClient({ announcements }: AnnouncementsClientProps)
             <Separator />
 
             <AnnouncementsFilters
-                onFilterChange={setFilters}
-                statusCounts={statusCounts}
-                priorityCounts={priorityCounts}
+                onFilterChange={setLocalFilters}
+                statusCounts={statusCounts as Record<AnnouncementStatus, number>}
+                priorityCounts={priorityCounts as Record<AnnouncementPriority, number>}
             />
+
+            {/* Announcement count */}
+            <div className="text-sm text-muted-foreground">
+                {totalCount} announcement{totalCount !== 1 ? 's' : ''} total
+            </div>
 
             <div className="mt-6">
                 <AnnouncementsTable
