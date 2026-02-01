@@ -15,9 +15,9 @@ import {
     ArrowDown,
     ArrowUpDown,
     Calendar,
-    PlayCircle,
+    CirclePlay,
     CheckCheck,
-    XCircle,
+    CircleX,
     CalendarDays
 } from "lucide-react";
 import { format } from "date-fns";
@@ -44,9 +44,9 @@ interface MeetingsTableProps {
 function getStatusIcon(status: string) {
     switch (status) {
         case "scheduled": return <Calendar className="h-4 w-4 text-blue-500" />;
-        case "in_progress": return <PlayCircle className="h-4 w-4 text-yellow-500" />;
+        case "in_progress": return <CirclePlay className="h-4 w-4 text-yellow-500" />;
         case "completed": return <CheckCheck className="h-4 w-4 text-green-500" />;
-        case "cancelled": return <XCircle className="h-4 w-4 text-muted-foreground" />;
+        case "cancelled": return <CircleX className="h-4 w-4 text-red-500" />;
         default: return <Calendar className="h-4 w-4" />;
     }
 }

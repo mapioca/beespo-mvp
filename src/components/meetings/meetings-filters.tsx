@@ -10,13 +10,13 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import {
-    CirclePlus,
-    CheckCircle2,
+    PlusCircle,
+    CircleCheck,
     X,
     Calendar,
-    PlayCircle,
+    CirclePlay,
     CheckCheck,
-    XCircle,
+    CircleX,
     FileText,
     Loader2,
 } from "lucide-react";
@@ -41,9 +41,9 @@ interface MeetingFiltersProps {
 
 const STATUS_OPTIONS: { value: MeetingStatus; label: string; icon: React.ReactNode }[] = [
     { value: "scheduled", label: "Scheduled", icon: <Calendar className="h-4 w-4 text-blue-500" /> },
-    { value: "in_progress", label: "In Progress", icon: <PlayCircle className="h-4 w-4 text-yellow-500" /> },
+    { value: "in_progress", label: "In Progress", icon: <CirclePlay className="h-4 w-4 text-yellow-500" /> },
     { value: "completed", label: "Completed", icon: <CheckCheck className="h-4 w-4 text-green-500" /> },
-    { value: "cancelled", label: "Cancelled", icon: <XCircle className="h-4 w-4 text-muted-foreground" /> },
+    { value: "cancelled", label: "Cancelled", icon: <CircleX className="h-4 w-4 text-red-500" /> },
 ];
 
 export function MeetingsFilters({
@@ -120,10 +120,10 @@ export function MeetingsFilters({
                     placeholder="Filter meetings..."
                     defaultValue={currentFilters.search}
                     onChange={(e) => {
-                        // Debounce search input
+                        // Use a local timeout for debouncing
                         const value = e.target.value;
-                        const timeoutId = setTimeout(() => handleSearchChange(value), 300);
-                        return () => clearTimeout(timeoutId);
+                        setTimeout(() => handleSearchChange(value), 300);
+// No return here
                     }}
                     className="max-w-xs"
                 />
@@ -136,7 +136,7 @@ export function MeetingsFilters({
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                     <Button variant="outline" size="sm" className="h-9">
-                        <CirclePlus className="mr-2 h-4 w-4" />
+                        <PlusCircle className="mr-2 h-4 w-4" />
                         Status
                         {currentFilters.status.length > 0 && (
                             <span className="ml-2 rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground">
@@ -157,7 +157,7 @@ export function MeetingsFilters({
                                     <div className="flex items-center gap-2">
                                         {currentFilters.status.includes(option.value) ? (
                                             <div className="h-4 w-4 rounded-sm border border-primary bg-primary flex items-center justify-center">
-                                                <CheckCircle2 className="h-3 w-3 text-primary-foreground" />
+                                                <CircleCheck className="h-3 w-3 text-primary-foreground" />
                                             </div>
                                         ) : (
                                             <div className="h-4 w-4 rounded-sm border border-input" />
@@ -202,7 +202,7 @@ export function MeetingsFilters({
                                     <div className="flex items-center gap-2">
                                         {currentFilters.templateIds.includes("no-template") ? (
                                             <div className="h-4 w-4 rounded-sm border border-primary bg-primary flex items-center justify-center">
-                                                <CheckCircle2 className="h-3 w-3 text-primary-foreground" />
+                                                <CircleCheck className="h-3 w-3 text-primary-foreground" />
                                             </div>
                                         ) : (
                                             <div className="h-4 w-4 rounded-sm border border-input" />
@@ -225,7 +225,7 @@ export function MeetingsFilters({
                                         <div className="flex items-center gap-2">
                                             {currentFilters.templateIds.includes(template.id) ? (
                                                 <div className="h-4 w-4 rounded-sm border border-primary bg-primary flex items-center justify-center">
-                                                    <CheckCircle2 className="h-3 w-3 text-primary-foreground" />
+                                                    <CircleCheck className="h-3 w-3 text-primary-foreground" />
                                                 </div>
                                             ) : (
                                                 <div className="h-4 w-4 rounded-sm border border-input" />

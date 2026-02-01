@@ -11,7 +11,7 @@ import { UserRole, CalendarSubscription } from "@/types/database";
 import { CalendarSettingsDialog } from "./calendar-settings-dialog";
 import { createClient } from "@/lib/supabase/client";
 
-import { CalendarVisibility } from "./calendar-types";
+import type { CalendarVisibility } from "./calendar-types";
 
 interface CalendarSidebarProps {
   isOpen: boolean;

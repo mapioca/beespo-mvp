@@ -22,7 +22,7 @@ import { DayView } from "./views/day-view";
 import { AgendaView } from "./views/agenda-view";
 import { CreateEventDialog, CalendarEventData } from "./create-event-dialog";
 import { ExternalEventPreview, ExternalEventData } from "./external-event-preview";
-import {
+import type {
   CalendarViewType,
   CalendarVisibility,
   ExternalEventWithColor,

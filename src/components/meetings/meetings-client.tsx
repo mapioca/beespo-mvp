@@ -5,8 +5,10 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Plus } from "lucide-react";
-import { MeetingsFilters, MeetingStatus, Template } from "./meetings-filters";
-import { MeetingsTable, Meeting } from "./meetings-table";
+import { MeetingsFilters } from "./meetings-filters";
+import type { MeetingStatus, Template } from "./meetings-filters";
+import { MeetingsTable } from "./meetings-table";
+import type { Meeting } from "./meetings-table";
 
 interface MeetingsClientProps {
     meetings: Meeting[];

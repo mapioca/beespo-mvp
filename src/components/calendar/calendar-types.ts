@@ -1,5 +1,5 @@
-import { ExternalCalendarEvent, UserRole } from "@/types/database";
-import {
+import type { ExternalCalendarEvent, UserRole } from "@/types/database";
+import type {
     CalendarInternalEvent,
     CalendarAnnouncement,
     CalendarMeeting,
