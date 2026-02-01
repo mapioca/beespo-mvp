@@ -1,11 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { TemplatesList } from "./templates-list";
 import { TemplateDetailView } from "./template-detail-view";
 import { Database } from "@/types/database";
 import { cn } from "@/lib/utils";
+import { createClient } from "@/lib/supabase/client";
+import { useToast } from "@/lib/hooks/use-toast";
 
 export type Template = Database['public']['Tables']['templates']['Row'] & {
     items?: Database['public']['Tables']['template_items']['Row'][];
@@ -20,6 +22,7 @@ interface TemplatesLayoutProps {
 export function TemplatesLayout({ templates, userRole }: TemplatesLayoutProps) {
     const router = useRouter();
     const searchParams = useSearchParams();
+    const { toast } = useToast();
     const [selectedId, setSelectedId] = useState<string | null>(searchParams.get('id'));
     const [isMobileDetailOpen, setIsMobileDetailOpen] = useState(false);
 
@@ -41,11 +44,43 @@ export function TemplatesLayout({ templates, userRole }: TemplatesLayoutProps) {
         router.push(`/templates?${newParams.toString()}`);
     };
 
-    const handleCloseDetail = () => {
+    const handleCloseDetail = useCallback(() => {
         const newParams = new URLSearchParams(searchParams.toString());
         newParams.delete('id');
         router.push(`/templates?${newParams.toString()}`);
-    };
+    }, [router, searchParams]);
+
+    const handleDeleteTemplate = useCallback(async (templateId: string) => {
+        const supabase = createClient();
+
+        // Delete template items first (cascade)
+        await (supabase.from("template_items") as ReturnType<typeof supabase.from>)
+            .delete()
+            .eq("template_id", templateId);
+
+        // Delete template
+        const { error } = await (supabase.from("templates") as ReturnType<typeof supabase.from>)
+            .delete()
+            .eq("id", templateId);
+
+        if (error) {
+            toast({
+                title: "Error",
+                description: "Failed to delete template. Please try again.",
+                variant: "destructive",
+            });
+            throw error;
+        }
+
+        toast({
+            title: "Template deleted",
+            description: "The template has been permanently deleted.",
+        });
+
+        // Close detail view and refresh list
+        handleCloseDetail();
+        router.refresh();
+    }, [toast, router, handleCloseDetail]);
 
     const selectedTemplate = templates.find(t => t.id === selectedId);
 
@@ -72,6 +107,7 @@ export function TemplatesLayout({ templates, userRole }: TemplatesLayoutProps) {
                     <TemplateDetailView
                         template={selectedTemplate}
                         onClose={handleCloseDetail}
+                        onDelete={handleDeleteTemplate}
                         userRole={userRole}
                     />
                 ) : (
