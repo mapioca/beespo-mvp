@@ -1,19 +1,27 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 
-// Jira Issue Type mapping
-const JIRA_ISSUE_TYPES: Record<string, string> = {
-  'Bug Report': 'Bug',
-  'Feature Request': 'Story',
-  'General Question': 'Task',
-};
-
 // Jira Priority mapping
 const JIRA_PRIORITIES: Record<string, string> = {
   'Low': 'Low',
   'Medium': 'Medium',
   'High': 'High',
 };
+
+// Get issue type ID from environment variables
+// These IDs are specific to each JIRA project and must be configured
+function getJiraIssueTypeId(requestType: string): string | null {
+  switch (requestType) {
+    case 'Bug Report':
+      return process.env.JIRA_ISSUE_TYPE_BUG_ID || null;
+    case 'Feature Request':
+      return process.env.JIRA_ISSUE_TYPE_STORY_ID || null;
+    case 'General Question':
+      return process.env.JIRA_ISSUE_TYPE_TASK_ID || null;
+    default:
+      return process.env.JIRA_ISSUE_TYPE_TASK_ID || null;
+  }
+}
 
 interface SupportRequestBody {
   requestType: string;
@@ -141,15 +149,23 @@ export async function POST(request: NextRequest) {
     };
 
     // Construct Jira issue payload
-    const jiraIssueType = JIRA_ISSUE_TYPES[requestType] || 'Task';
+    const jiraIssueTypeId = getJiraIssueTypeId(requestType);
     const jiraPriority = priority ? JIRA_PRIORITIES[priority] : undefined;
+
+    if (!jiraIssueTypeId) {
+      console.error('Jira issue type ID not configured for request type:', requestType);
+      return NextResponse.json(
+        { error: 'Support system is not properly configured. Please contact an administrator.' },
+        { status: 500 }
+      );
+    }
 
     const jiraPayload: {
       fields: {
         project: { key: string };
         summary: string;
         description: typeof jiraDescription;
-        issuetype: { name: string };
+        issuetype: { id: string };
         priority?: { name: string };
       };
     } = {
@@ -160,7 +176,7 @@ export async function POST(request: NextRequest) {
         summary: `[${requestType}] ${subject}`,
         description: jiraDescription,
         issuetype: {
-          name: jiraIssueType,
+          id: jiraIssueTypeId,
         },
       },
     };
