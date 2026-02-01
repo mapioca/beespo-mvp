@@ -8,7 +8,7 @@ import {
   Plus,
 } from "lucide-react";
 import { formatMonthYear, formatDayOfWeek, formatShortDate } from "@/lib/calendar-helpers";
-import { CalendarViewType } from "./calendar-client";
+import { CalendarViewType } from "./calendar-types";
 import { cn } from "@/lib/utils";
 
 interface CalendarToolbarProps {

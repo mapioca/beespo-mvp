@@ -1,4 +1,5 @@
-import { useState } from "react";
+"use client";
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -10,6 +11,23 @@ import { TemplateItem } from "./types";
 import { AddTemplateItemDialog, NewItemData } from "./add-template-item-dialog";
 import { getItemTypeBadgeVariant, getItemTypeLabel } from "@/types/agenda";
 import { cn } from "@/lib/utils";
+import {
+    DndContext,
+    closestCenter,
+    KeyboardSensor,
+    PointerSensor,
+    useSensor,
+    useSensors,
+    DragEndEvent,
+} from "@dnd-kit/core";
+import {
+    arrayMove,
+    SortableContext,
+    sortableKeyboardCoordinates,
+    useSortable,
+    verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 interface TemplateBuilderProps {
     items: TemplateItem[];
@@ -17,9 +35,131 @@ interface TemplateBuilderProps {
     isLoading?: boolean;
 }
 
+interface SortableTemplateItemProps {
+    item: TemplateItem;
+    isLoading?: boolean;
+    onRemove: (id: string) => void;
+    onUpdate: (id: string, field: keyof TemplateItem, value: string | number) => void;
+    getIcon: (item: TemplateItem) => React.ReactNode;
+}
+
+function SortableTemplateItem({
+    item,
+    isLoading,
+    onRemove,
+    onUpdate,
+    getIcon,
+}: SortableTemplateItemProps) {
+    const {
+        attributes,
+        listeners,
+        setNodeRef,
+        transform,
+        transition,
+        isDragging,
+    } = useSortable({ id: item.id });
+
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+    };
+
+    return (
+        <div
+            ref={setNodeRef}
+            style={style}
+            className={cn(
+                "flex gap-4 p-4 border rounded-lg bg-card group hover:border-sidebar-accent transition-all relative",
+                isDragging && "opacity-50 shadow-lg ring-2 ring-primary/40 z-50"
+            )}
+        >
+            <div
+                {...attributes}
+                {...listeners}
+                className="flex items-center pt-2 cursor-grab active:cursor-grabbing touch-none"
+            >
+                <GripVertical className="h-5 w-5 text-muted-foreground" />
+            </div>
+            <div className="flex-1 space-y-3">
+                <div className="flex gap-3 items-start">
+                    <div className="flex-1 space-y-2">
+                        <div className="flex items-center gap-2 mb-1">
+                            {getIcon(item)}
+                            <Badge variant={getItemTypeBadgeVariant(item.item_type)} className="capitalize">
+                                {getItemTypeLabel(item.item_type)}
+                            </Badge>
+                        </div>
+
+                        <div>
+                            <Label htmlFor={`item-title-${item.id}`} className="sr-only">Title</Label>
+                            <Input
+                                id={`item-title-${item.id}`}
+                                value={item.title}
+                                onChange={(e) => onUpdate(item.id, "title", e.target.value)}
+                                placeholder="Item Title"
+                                className="font-medium"
+                                disabled={isLoading}
+                            />
+                        </div>
+                    </div>
+
+                    <div className="w-24 space-y-2">
+                        <Label htmlFor={`item-duration-${item.id}`} className="text-xs text-muted-foreground">
+                            Min
+                        </Label>
+                        <Input
+                            id={`item-duration-${item.id}`}
+                            type="number"
+                            min="1"
+                            value={item.duration_minutes}
+                            onChange={(e) => onUpdate(item.id, "duration_minutes", parseInt(e.target.value) || 5)}
+                            disabled={isLoading}
+                        />
+                    </div>
+                </div>
+
+                <div>
+                    <Label htmlFor={`item-desc-${item.id}`} className="sr-only">Description</Label>
+                    <Textarea
+                        id={`item-desc-${item.id}`}
+                        value={item.description || ""}
+                        onChange={(e) => onUpdate(item.id, "description", e.target.value)}
+                        placeholder="Optional description or instructions..."
+                        rows={1}
+                        className="min-h-[40px] text-sm resize-y"
+                        disabled={isLoading}
+                    />
+                </div>
+            </div>
+
+            <div className="flex items-start pt-1">
+                <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => onRemove(item.id)}
+                    disabled={isLoading}
+                    className="text-muted-foreground hover:text-destructive"
+                >
+                    <Trash2 className="h-4 w-4" />
+                </Button>
+            </div>
+        </div>
+    );
+}
+
 export function TemplateBuilder({ items, onChange, isLoading }: TemplateBuilderProps) {
-    const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
-    const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+    // dnd-kit sensors
+    const sensors = useSensors(
+        useSensor(PointerSensor, {
+            activationConstraint: {
+                distance: 8,
+            },
+        }),
+        useSensor(KeyboardSensor, {
+            coordinateGetter: sortableKeyboardCoordinates,
+        })
+    );
 
     const handleAddItem = (newItem: NewItemData) => {
         const item: TemplateItem = {
@@ -40,47 +180,21 @@ export function TemplateBuilder({ items, onChange, isLoading }: TemplateBuilderP
         onChange(items.filter((item) => item.id !== id));
     };
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const handleUpdateItem = (id: string, field: keyof TemplateItem, value: any) => {
+    const handleUpdateItem = (id: string, field: keyof TemplateItem, value: string | number) => {
         onChange(
             items.map((item) => (item.id === id ? { ...item, [field]: value } : item))
         );
     };
 
-    const handleDragStart = (index: number) => {
-        setDraggedIndex(index);
-    };
+    const handleDragEnd = (event: DragEndEvent) => {
+        const { active, over } = event;
 
-    const handleDragOver = (e: React.DragEvent, index: number) => {
-        e.preventDefault();
-        setDragOverIndex(index);
-    };
+        if (!over || active.id === over.id) return;
 
-    const handleDrop = (e: React.DragEvent, dropIndex: number) => {
-        e.preventDefault();
+        const oldIndex = items.findIndex((item) => item.id === active.id);
+        const newIndex = items.findIndex((item) => item.id === over.id);
 
-        if (draggedIndex === null || draggedIndex === dropIndex) {
-            setDraggedIndex(null);
-            setDragOverIndex(null);
-            return;
-        }
-
-        const newItems = [...items];
-        const draggedItem = newItems[draggedIndex];
-
-        // Remove from old position
-        newItems.splice(draggedIndex, 1);
-        // Insert at new position
-        newItems.splice(dropIndex, 0, draggedItem);
-
-        onChange(newItems);
-        setDraggedIndex(null);
-        setDragOverIndex(null);
-    };
-
-    const handleDragEnd = () => {
-        setDraggedIndex(null);
-        setDragOverIndex(null);
+        onChange(arrayMove(items, oldIndex, newIndex));
     };
 
     const getIcon = (item: TemplateItem) => {
@@ -116,94 +230,35 @@ export function TemplateBuilder({ items, onChange, isLoading }: TemplateBuilderP
                 </div>
             </CardHeader>
             <CardContent className="space-y-4">
-                {items.length === 0 && (
+                {items.length === 0 ? (
                     <div className="text-center py-8 text-muted-foreground border-2 border-dashed rounded-lg">
                         No items added yet. Click &quot;Add Item&quot; to start building your template.
                     </div>
-                )}
-                {items.map((item, index) => (
-                    <div
-                        key={item.id}
-                        draggable={!isLoading}
-                        onDragStart={() => handleDragStart(index)}
-                        onDragOver={(e) => handleDragOver(e, index)}
-                        onDrop={(e) => handleDrop(e, index)}
+                ) : (
+                    <DndContext
+                        sensors={sensors}
+                        collisionDetection={closestCenter}
                         onDragEnd={handleDragEnd}
-                        className={cn(
-                            "flex gap-4 p-4 border rounded-lg bg-card group hover:border-sidebar-accent transition-all relative",
-                            draggedIndex === index && "opacity-50 scale-95",
-                            dragOverIndex === index && draggedIndex !== null && draggedIndex !== index && "border-primary border-2"
-                        )}
                     >
-                        <div className="flex items-center pt-2 cursor-move">
-                            <GripVertical className="h-5 w-5 text-muted-foreground" />
-                        </div>
-                        <div className="flex-1 space-y-3">
-                            <div className="flex gap-3 items-start">
-                                <div className="flex-1 space-y-2">
-                                    <div className="flex items-center gap-2 mb-1">
-                                        {getIcon(item)}
-                                        <Badge variant={getItemTypeBadgeVariant(item.item_type)} className="capitalize">
-                                            {getItemTypeLabel(item.item_type)}
-                                        </Badge>
-                                    </div>
-
-                                    <div>
-                                        <Label htmlFor={`item-title-${item.id}`} className="sr-only">Title</Label>
-                                        <Input
-                                            id={`item-title-${item.id}`}
-                                            value={item.title}
-                                            onChange={(e) => handleUpdateItem(item.id, "title", e.target.value)}
-                                            placeholder="Item Title"
-                                            className="font-medium"
-                                            disabled={isLoading}
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="w-24 space-y-2">
-                                    <Label htmlFor={`item-duration-${item.id}`} className="text-xs text-muted-foreground">
-                                        Min
-                                    </Label>
-                                    <Input
-                                        id={`item-duration-${item.id}`}
-                                        type="number"
-                                        min="1"
-                                        value={item.duration_minutes}
-                                        onChange={(e) => handleUpdateItem(item.id, "duration_minutes", parseInt(e.target.value) || 5)}
-                                        disabled={isLoading}
+                        <SortableContext
+                            items={items.map((item) => item.id)}
+                            strategy={verticalListSortingStrategy}
+                        >
+                            <div className="space-y-2">
+                                {items.map((item) => (
+                                    <SortableTemplateItem
+                                        key={item.id}
+                                        item={item}
+                                        isLoading={isLoading}
+                                        onRemove={handleRemoveItem}
+                                        onUpdate={handleUpdateItem}
+                                        getIcon={getIcon}
                                     />
-                                </div>
+                                ))}
                             </div>
-
-                            <div>
-                                <Label htmlFor={`item-desc-${item.id}`} className="sr-only">Description</Label>
-                                <Textarea
-                                    id={`item-desc-${item.id}`}
-                                    value={item.description || ""}
-                                    onChange={(e) => handleUpdateItem(item.id, "description", e.target.value)}
-                                    placeholder="Optional description or instructions..."
-                                    rows={1}
-                                    className="min-h-[40px] text-sm resize-y"
-                                    disabled={isLoading}
-                                />
-                            </div>
-                        </div>
-
-                        <div className="flex items-start pt-1">
-                            <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleRemoveItem(item.id)}
-                                disabled={isLoading}
-                                className="text-muted-foreground hover:text-destructive"
-                            >
-                                <Trash2 className="h-4 w-4" />
-                            </Button>
-                        </div>
-                    </div>
-                ))}
+                        </SortableContext>
+                    </DndContext>
+                )}
             </CardContent>
         </Card>
     );

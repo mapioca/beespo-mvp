@@ -11,13 +11,7 @@ import { UserRole, CalendarSubscription } from "@/types/database";
 import { CalendarSettingsDialog } from "./calendar-settings-dialog";
 import { createClient } from "@/lib/supabase/client";
 
-interface CalendarVisibility {
-  announcements: boolean;
-  meetings: boolean;
-  tasks: boolean;
-  events: boolean;
-  external: boolean;
-}
+import { CalendarVisibility } from "./calendar-types";
 
 interface CalendarSidebarProps {
   isOpen: boolean;
@@ -26,6 +20,7 @@ interface CalendarSidebarProps {
   onToggleVisibility: (key: keyof CalendarVisibility) => void;
   userRole: UserRole;
 }
+
 
 export function CalendarSidebar({
   isOpen,

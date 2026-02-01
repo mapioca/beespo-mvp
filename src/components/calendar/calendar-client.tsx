@@ -4,10 +4,6 @@ import { useState, useMemo, useCallback, useEffect } from "react";
 import { addMonths, subMonths, addWeeks, subWeeks, addDays, subDays, parseISO } from "date-fns";
 import {
   CalendarEvent,
-  CalendarAnnouncement,
-  CalendarMeeting,
-  CalendarTask,
-  CalendarInternalEvent,
   expandRecurringEvents,
   meetingsToEvents,
   tasksToEvents,
@@ -26,31 +22,13 @@ import { DayView } from "./views/day-view";
 import { AgendaView } from "./views/agenda-view";
 import { CreateEventDialog, CalendarEventData } from "./create-event-dialog";
 import { ExternalEventPreview, ExternalEventData } from "./external-event-preview";
-import { UserRole, ExternalCalendarEvent } from "@/types/database";
+import {
+  CalendarViewType,
+  CalendarVisibility,
+  ExternalEventWithColor,
+  CalendarClientProps
+} from "./calendar-types";
 import { createClient } from "@/lib/supabase/client";
-
-export type CalendarViewType = "month" | "week" | "day" | "agenda";
-
-interface CalendarVisibility {
-  announcements: boolean;
-  meetings: boolean;
-  tasks: boolean;
-  events: boolean;
-  external: boolean;
-}
-
-interface ExternalEventWithColor extends ExternalCalendarEvent {
-  color?: string;
-  subscription_name?: string;
-}
-
-interface CalendarClientProps {
-  initialAnnouncements: CalendarAnnouncement[];
-  initialMeetings: CalendarMeeting[];
-  initialTasks: CalendarTask[];
-  initialEvents?: CalendarInternalEvent[];
-  userRole: UserRole;
-}
 
 export function CalendarClient({
   initialAnnouncements,
