@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { TemplateCanvasItem } from "./types";
+import { ContainerType } from "@/components/meetings/container-agenda-item";
 
 interface TemplateCanvasProps {
     items: TemplateCanvasItem[];
@@ -44,6 +45,15 @@ const getCategoryIcon = (category: CategoryType, isHymn?: boolean) => {
         speaker: <User className="h-4 w-4 text-pink-500" />,
     };
     return icons[category];
+};
+
+const getContainerColors = (type: ContainerType) => {
+    const colors: Record<ContainerType, { bg: string; border: string; text: string }> = {
+        discussion: { bg: "bg-green-50", border: "border-green-200", text: "text-green-700" },
+        business: { bg: "bg-purple-50", border: "border-purple-200", text: "text-purple-700" },
+        announcement: { bg: "bg-orange-50", border: "border-orange-200", text: "text-orange-700" },
+    };
+    return colors[type];
 };
 
 // Sortable Template Item Row
@@ -74,6 +84,79 @@ function SortableTemplateRow({
         transition,
     };
 
+    // Container item - render with colored background
+    if (item.isContainer && item.containerType) {
+        const colors = getContainerColors(item.containerType);
+
+        return (
+            <div
+                ref={setNodeRef}
+                style={style}
+                className={cn(
+                    "rounded-lg border-2 transition-all",
+                    colors.bg,
+                    colors.border,
+                    isDragging && "opacity-50 shadow-lg ring-2 ring-primary/40 z-50"
+                )}
+            >
+                <div className="flex items-center gap-3 p-3">
+                    {/* Drag Handle */}
+                    <div
+                        {...attributes}
+                        {...listeners}
+                        className="cursor-grab active:cursor-grabbing touch-none shrink-0"
+                    >
+                        <GripVertical className="h-4 w-4 text-muted-foreground/50" />
+                    </div>
+
+                    {/* Category Icon */}
+                    <div className="shrink-0">
+                        {getCategoryIcon(item.category as CategoryType)}
+                    </div>
+
+                    {/* Title - Editable */}
+                    <div className="flex-1 min-w-0">
+                        <Input
+                            value={item.title}
+                            onChange={(e) => onUpdateTitle(e.target.value)}
+                            className={cn(
+                                "h-8 text-sm font-medium border-0 px-0 focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent",
+                                colors.text
+                            )}
+                            placeholder="Container title..."
+                        />
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                            Items will be added when creating a meeting
+                        </p>
+                    </div>
+
+                    {/* Duration */}
+                    <div className="flex items-center gap-1 shrink-0">
+                        <Input
+                            type="number"
+                            min="1"
+                            value={item.duration_minutes}
+                            onChange={(e) => onUpdateDuration(parseInt(e.target.value) || 5)}
+                            className="w-14 h-8 text-xs text-center bg-white/50"
+                        />
+                        <span className="text-xs text-muted-foreground">min</span>
+                    </div>
+
+                    {/* Remove Button */}
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 shrink-0 text-destructive hover:text-destructive hover:bg-white/50"
+                        onClick={onRemove}
+                    >
+                        <Trash2 className="h-4 w-4" />
+                    </Button>
+                </div>
+            </div>
+        );
+    }
+
+    // Regular item
     return (
         <div
             ref={setNodeRef}

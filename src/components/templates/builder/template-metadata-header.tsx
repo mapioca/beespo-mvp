@@ -33,6 +33,7 @@ interface TemplateMetadataHeaderProps {
     onTagsChange: (tags: string[]) => void;
     onSave: () => void;
     isSaving: boolean;
+    isRedirecting?: boolean;
     isValid: boolean;
     itemCount: number;
     totalDuration: number;
@@ -59,6 +60,7 @@ export function TemplateMetadataHeader({
     onTagsChange,
     onSave,
     isSaving,
+    isRedirecting = false,
     isValid,
     itemCount,
     totalDuration,
@@ -130,7 +132,12 @@ export function TemplateMetadataHeader({
                         disabled={isSaving || !isValid}
                         className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
                     >
-                        {isSaving ? (
+                        {isRedirecting ? (
+                            <>
+                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                Redirecting...
+                            </>
+                        ) : isSaving ? (
                             <>
                                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                                 Creating...

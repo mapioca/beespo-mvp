@@ -43,6 +43,7 @@ export function TemplateBuilderPage() {
 
     // Saving state
     const [isSaving, setIsSaving] = useState(false);
+    const [isRedirecting, setIsRedirecting] = useState(false);
 
     // DnD sensors
     const sensors = useSensors(
@@ -96,16 +97,6 @@ export function TemplateBuilderPage() {
         if (data?.type === "toolbox_item") {
             const toolboxItem = data.item as ToolboxItem;
 
-            // Skip containers for templates (they're for meetings only)
-            if (toolboxItem.type === "container") {
-                toast({
-                    title: "Not available for templates",
-                    description: "Container blocks are only used when creating meetings.",
-                    variant: "destructive",
-                });
-                return;
-            }
-
             // Determine insert index
             let insertIndex = canvasItems.length;
             if (over.id !== "template-canvas-drop-zone") {
@@ -115,7 +106,7 @@ export function TemplateBuilderPage() {
                 }
             }
 
-            // Create new canvas item
+            // Create new canvas item (including containers)
             const newItem: TemplateCanvasItem = {
                 id: `template-item-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
                 category: toolboxItem.category,
@@ -126,6 +117,9 @@ export function TemplateBuilderPage() {
                 procedural_item_type_id: toolboxItem.procedural_item_type_id,
                 is_hymn: toolboxItem.is_hymn,
                 isNew: true,
+                // Container support
+                isContainer: toolboxItem.type === "container",
+                containerType: toolboxItem.containerType,
             };
 
             // Insert and reindex
@@ -150,7 +144,7 @@ export function TemplateBuilderPage() {
                 setCanvasItems(reordered);
             }
         }
-    }, [canvasItems, toast]);
+    }, [canvasItems]);
 
     // Canvas item handlers
     const handleRemoveItem = useCallback((id: string) => {
@@ -267,9 +261,13 @@ export function TemplateBuilderPage() {
             }
 
             toast({
-                title: "Success",
-                description: "Template created successfully!",
+                title: "Template created",
+                description: "Redirecting to templates...",
             });
+
+            // Show redirecting state and delay to ensure toast is visible
+            setIsRedirecting(true);
+            await new Promise((resolve) => setTimeout(resolve, 500));
 
             router.push("/templates");
             router.refresh();
@@ -309,6 +307,7 @@ export function TemplateBuilderPage() {
                     onTagsChange={setTags}
                     onSave={handleSave}
                     isSaving={isSaving}
+                    isRedirecting={isRedirecting}
                     isValid={isValid}
                     itemCount={canvasItems.length}
                     totalDuration={totalDuration}
