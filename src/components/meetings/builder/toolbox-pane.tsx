@@ -1,18 +1,20 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from "@/components/ui/button";
 import {
     Accordion,
     AccordionContent,
     AccordionItem,
     AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Search, Music, BookOpen, User, Megaphone } from "lucide-react";
+import { Search, Layers, Puzzle, Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { DraggableToolboxItem } from "./draggable-toolbox-item";
-import { ToolboxItem, ProceduralItemType } from "./types";
+import { ToolboxItem, ProceduralItemType, ItemConfig } from "./types";
+import { CreateItemTypeDialog } from "./create-item-type-dialog";
 
 interface ToolboxPaneProps {
     onItemsLoaded?: (items: ToolboxItem[]) => void;
@@ -23,108 +25,180 @@ interface CategoryGroup {
     label: string;
     icon: React.ReactNode;
     items: ToolboxItem[];
+    showAddButton?: boolean;
+}
+
+// Define the order of core items for Standard Elements
+const CORE_ITEM_ORDER = [
+    "core-prayer",
+    "core-speaker",
+    "core-hymn",
+    "core-discussions",
+    "core-ward-business",
+    "core-announcements",
+];
+
+// Helper to get item config from procedural type
+function getItemConfigFromType(pt: ProceduralItemType): ItemConfig {
+    return {
+        requires_assignee: pt.requires_assignee ?? false,
+        requires_resource: pt.requires_resource ?? false,
+        has_rich_text: pt.has_rich_text ?? false,
+    };
+}
+
+// Determine the toolbox item type based on the procedural item
+function getToolboxItemType(pt: ProceduralItemType): "procedural" | "container" | "speaker" {
+    // Speaker type
+    if (pt.id === "core-speaker" || pt.has_rich_text) {
+        return "speaker";
+    }
+    // Container types
+    if (pt.id === "core-discussions" || pt.id === "core-ward-business" || pt.id === "core-announcements") {
+        return "container";
+    }
+    return "procedural";
+}
+
+// Get container type for container items
+function getContainerType(pt: ProceduralItemType): "discussion" | "business" | "announcement" | undefined {
+    if (pt.id === "core-discussions") return "discussion";
+    if (pt.id === "core-ward-business") return "business";
+    if (pt.id === "core-announcements") return "announcement";
+    return undefined;
 }
 
 export function ToolboxPane({ onItemsLoaded }: ToolboxPaneProps) {
     const [search, setSearch] = useState("");
-    const [proceduralTypes, setProceduralTypes] = useState<ProceduralItemType[]>([]);
+    const [coreTypes, setCoreTypes] = useState<ProceduralItemType[]>([]);
+    const [customTypes, setCustomTypes] = useState<ProceduralItemType[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+    const [workspaceId, setWorkspaceId] = useState<string | null>(null);
 
+    // Load item types
     useEffect(() => {
-        const loadProceduralTypes = async () => {
+        const loadItemTypes = async () => {
             const supabase = createClient();
+
+            // Get user's workspace ID
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const { data: profile } = await (supabase.from("profiles") as any)
+                    .select("workspace_id")
+                    .eq("id", user.id)
+                    .single();
+
+                if (profile?.workspace_id) {
+                    setWorkspaceId(profile.workspace_id);
+                }
+            }
+
+            // Fetch core items (global)
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const { data, error } = await (supabase.from("procedural_item_types") as any)
+            const { data: coreData, error: coreError } = await (supabase.from("procedural_item_types") as any)
                 .select("*")
+                .eq("is_core", true)
                 .order("order_hint");
 
-            if (!error && data) {
-                setProceduralTypes(data);
+            if (!coreError && coreData) {
+                setCoreTypes(coreData);
             }
+
+            // Fetch custom items (workspace-scoped)
+            if (workspaceId) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const { data: customData, error: customError } = await (supabase.from("procedural_item_types") as any)
+                    .select("*")
+                    .eq("workspace_id", workspaceId)
+                    .eq("is_custom", true)
+                    .order("name");
+
+                if (!customError && customData) {
+                    setCustomTypes(customData);
+                }
+            }
+
             setIsLoading(false);
         };
 
-        loadProceduralTypes();
-    }, []);
+        loadItemTypes();
+    }, [workspaceId]);
+
+    // Reload custom types when workspace changes or dialog closes
+    const reloadCustomTypes = useCallback(async () => {
+        if (!workspaceId) return;
+
+        const supabase = createClient();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data, error } = await (supabase.from("procedural_item_types") as any)
+            .select("*")
+            .eq("workspace_id", workspaceId)
+            .eq("is_custom", true)
+            .order("name");
+
+        if (!error && data) {
+            setCustomTypes(data);
+        }
+    }, [workspaceId]);
 
     // Transform procedural types into toolbox items
     const toolboxItems = useMemo((): ToolboxItem[] => {
         const items: ToolboxItem[] = [];
 
-        // Add procedural items
-        proceduralTypes.forEach((pt) => {
-            const itemName = pt.name.toLowerCase();
-            const isHymn = pt.is_hymn || itemName.includes("hymn") || itemName.includes("song");
-            const requiresParticipant =
-                itemName.includes("prayer") ||
-                itemName.includes("preside") ||
-                itemName.includes("conduct") ||
-                itemName.includes("invocation") ||
-                itemName.includes("benediction") ||
-                itemName.includes("spiritual thought") ||
-                itemName.includes("testimony");
+        // Add core items in defined order
+        const sortedCoreTypes = [...coreTypes].sort((a, b) => {
+            const aIndex = CORE_ITEM_ORDER.indexOf(a.id);
+            const bIndex = CORE_ITEM_ORDER.indexOf(b.id);
+            return aIndex - bIndex;
+        });
+
+        sortedCoreTypes.forEach((pt) => {
+            const itemType = getToolboxItemType(pt);
+            const containerType = getContainerType(pt);
 
             items.push({
                 id: pt.id,
-                type: "procedural",
-                category: "procedural",
+                type: itemType,
+                category: containerType || (itemType === "speaker" ? "speaker" : "procedural"),
                 title: pt.name,
                 description: pt.description,
                 duration_minutes: pt.default_duration_minutes || 5,
                 procedural_item_type_id: pt.id,
-                is_hymn: isHymn,
-                requires_participant: requiresParticipant,
+                is_hymn: pt.is_hymn ?? false,
+                requires_participant: pt.requires_assignee ?? false,
+                containerType,
+                config: getItemConfigFromType(pt),
+                is_core: true,
+                is_custom: false,
+                icon: pt.icon,
             });
         });
 
-        // Add speaker templates
-        const speakerTemplates = [
-            { id: "speaker-template", title: "Speaker", duration: 10 },
-            { id: "youth-speaker-template", title: "Youth Speaker", duration: 5 },
-            { id: "high-council-template", title: "High Council Speaker", duration: 15 },
-            { id: "missionary-template", title: "Returning Missionary", duration: 10 },
-        ];
+        // Add custom items
+        customTypes.forEach((pt) => {
+            const itemType = pt.has_rich_text ? "speaker" : "procedural";
 
-        speakerTemplates.forEach((st) => {
             items.push({
-                id: st.id,
-                type: "speaker",
-                category: "speaker",
-                title: st.title,
-                duration_minutes: st.duration,
+                id: pt.id,
+                type: itemType,
+                category: itemType === "speaker" ? "speaker" : "procedural",
+                title: pt.name,
+                description: pt.description,
+                duration_minutes: pt.default_duration_minutes || 5,
+                procedural_item_type_id: pt.id,
+                is_hymn: pt.requires_resource ?? false,
+                requires_participant: pt.requires_assignee ?? false,
+                config: getItemConfigFromType(pt),
+                is_core: false,
+                is_custom: true,
+                icon: pt.icon,
             });
-        });
-
-        // Add container templates
-        items.push({
-            id: "discussion-container",
-            type: "container",
-            category: "discussion",
-            title: "Discussions",
-            duration_minutes: 15,
-            containerType: "discussion",
-        });
-
-        items.push({
-            id: "business-container",
-            type: "container",
-            category: "business",
-            title: "Ward Business",
-            duration_minutes: 10,
-            containerType: "business",
-        });
-
-        items.push({
-            id: "announcement-container",
-            type: "container",
-            category: "announcement",
-            title: "Announcements",
-            duration_minutes: 5,
-            containerType: "announcement",
         });
 
         return items;
-    }, [proceduralTypes]);
+    }, [coreTypes, customTypes]);
 
     // Notify parent when items are loaded
     useEffect(() => {
@@ -133,55 +207,30 @@ export function ToolboxPane({ onItemsLoaded }: ToolboxPaneProps) {
         }
     }, [isLoading, toolboxItems, onItemsLoaded]);
 
-    // Group items by category
+    // Group items into 2 categories
     const categoryGroups = useMemo((): CategoryGroup[] => {
         const groups: CategoryGroup[] = [];
 
-        // Worship (hymns)
-        const hymnItems = toolboxItems.filter((i) => i.is_hymn);
-        if (hymnItems.length > 0) {
+        // Standard Items (core items)
+        const standardItems = toolboxItems.filter((i) => i.is_core);
+        if (standardItems.length > 0) {
             groups.push({
-                id: "worship",
-                label: "Worship & Music",
-                icon: <Music className="h-4 w-4 text-blue-500" />,
-                items: hymnItems,
+                id: "standard",
+                label: "Standard Items",
+                icon: <Layers className="h-4 w-4 text-blue-500" />,
+                items: standardItems,
             });
         }
 
-        // Procedural (non-hymn)
-        const proceduralItems = toolboxItems.filter(
-            (i) => i.category === "procedural" && !i.is_hymn
-        );
-        if (proceduralItems.length > 0) {
-            groups.push({
-                id: "procedural",
-                label: "Procedural",
-                icon: <BookOpen className="h-4 w-4 text-slate-500" />,
-                items: proceduralItems,
-            });
-        }
-
-        // Speakers
-        const speakerItems = toolboxItems.filter((i) => i.category === "speaker");
-        if (speakerItems.length > 0) {
-            groups.push({
-                id: "speakers",
-                label: "Speakers",
-                icon: <User className="h-4 w-4 text-pink-500" />,
-                items: speakerItems,
-            });
-        }
-
-        // Containers (Business, Announcements, Discussions)
-        const containerItems = toolboxItems.filter((i) => i.type === "container");
-        if (containerItems.length > 0) {
-            groups.push({
-                id: "containers",
-                label: "Business & Announcements",
-                icon: <Megaphone className="h-4 w-4 text-orange-500" />,
-                items: containerItems,
-            });
-        }
+        // Custom Items (workspace-scoped)
+        const customItems = toolboxItems.filter((i) => i.is_custom);
+        groups.push({
+            id: "custom",
+            label: "Custom Items",
+            icon: <Puzzle className="h-4 w-4 text-purple-500" />,
+            items: customItems,
+            showAddButton: true,
+        });
 
         return groups;
     }, [toolboxItems]);
@@ -198,8 +247,14 @@ export function ToolboxPane({ onItemsLoaded }: ToolboxPaneProps) {
                     item.title.toLowerCase().includes(searchLower)
                 ),
             }))
-            .filter((group) => group.items.length > 0);
+            .filter((group) => group.items.length > 0 || group.showAddButton);
     }, [categoryGroups, search]);
+
+    // Handle custom item created
+    const handleItemCreated = useCallback(() => {
+        reloadCustomTypes();
+        setIsCreateDialogOpen(false);
+    }, [reloadCustomTypes]);
 
     return (
         <div className="flex flex-col h-full bg-muted/30 border-r">
@@ -241,7 +296,7 @@ export function ToolboxPane({ onItemsLoaded }: ToolboxPaneProps) {
                                     className="border rounded-md bg-background"
                                 >
                                     <AccordionTrigger className="px-3 py-2 text-sm hover:no-underline">
-                                        <div className="flex items-center gap-2">
+                                        <div className="flex items-center gap-2 flex-1">
                                             {group.icon}
                                             <span>{group.label}</span>
                                             <span className="text-xs text-muted-foreground">
@@ -257,6 +312,22 @@ export function ToolboxPane({ onItemsLoaded }: ToolboxPaneProps) {
                                                     item={item}
                                                 />
                                             ))}
+                                            {group.showAddButton && (
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    className="w-full mt-2 text-muted-foreground hover:text-foreground"
+                                                    onClick={() => setIsCreateDialogOpen(true)}
+                                                >
+                                                    <Plus className="h-3.5 w-3.5 mr-1.5" />
+                                                    New Item Type
+                                                </Button>
+                                            )}
+                                            {group.items.length === 0 && !group.showAddButton && (
+                                                <div className="text-xs text-muted-foreground text-center py-2">
+                                                    No items in this category
+                                                </div>
+                                            )}
                                         </div>
                                     </AccordionContent>
                                 </AccordionItem>
@@ -272,6 +343,14 @@ export function ToolboxPane({ onItemsLoaded }: ToolboxPaneProps) {
                     Drag items onto the agenda canvas
                 </p>
             </div>
+
+            {/* Create Item Type Dialog */}
+            <CreateItemTypeDialog
+                open={isCreateDialogOpen}
+                onOpenChange={setIsCreateDialogOpen}
+                workspaceId={workspaceId}
+                onCreated={handleItemCreated}
+            />
         </div>
     );
 }

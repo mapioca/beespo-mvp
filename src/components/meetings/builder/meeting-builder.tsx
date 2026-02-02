@@ -329,6 +329,11 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
                 isContainer: toolboxItem.type === "container",
                 containerType: toolboxItem.containerType,
                 childItems: toolboxItem.type === "container" ? [] : undefined,
+                // Pass through config-driven fields for proper icon/behavior rendering
+                config: toolboxItem.config,
+                is_core: toolboxItem.is_core,
+                is_custom: toolboxItem.is_custom,
+                icon: toolboxItem.icon,
             };
 
             // Insert and reindex

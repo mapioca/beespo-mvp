@@ -10,6 +10,8 @@ import {
     Briefcase,
     Megaphone,
     User,
+    Layers,
+    Puzzle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ToolboxItem } from "./types";
@@ -20,10 +22,24 @@ interface DraggableToolboxItemProps {
     disabled?: boolean;
 }
 
-const getCategoryIcon = (category: CategoryType, isHymn?: boolean) => {
-    if (category === "procedural" && isHymn) {
+const getCategoryIcon = (item: ToolboxItem) => {
+    // Custom items get puzzle icon
+    if (item.is_custom) {
+        // But if they have specific config, show appropriate icon
+        if (item.config?.requires_resource) {
+            return <Music className="h-4 w-4 text-purple-500" />;
+        }
+        if (item.config?.requires_assignee) {
+            return <User className="h-4 w-4 text-purple-500" />;
+        }
+        return <Puzzle className="h-4 w-4 text-purple-500" />;
+    }
+
+    // Core items
+    if (item.is_hymn || item.config?.requires_resource) {
         return <Music className="h-4 w-4 text-blue-500" />;
     }
+
     const icons: Record<CategoryType, React.ReactNode> = {
         procedural: <BookOpen className="h-4 w-4 text-slate-500" />,
         discussion: <MessageSquare className="h-4 w-4 text-green-500" />,
@@ -31,7 +47,7 @@ const getCategoryIcon = (category: CategoryType, isHymn?: boolean) => {
         announcement: <Megaphone className="h-4 w-4 text-orange-500" />,
         speaker: <User className="h-4 w-4 text-pink-500" />,
     };
-    return icons[category];
+    return icons[item.category] || <Layers className="h-4 w-4 text-blue-500" />;
 };
 
 export function DraggableToolboxItem({ item, disabled }: DraggableToolboxItemProps) {
@@ -70,7 +86,7 @@ export function DraggableToolboxItem({ item, disabled }: DraggableToolboxItemPro
             )}
         >
             <GripVertical className="h-3.5 w-3.5 text-muted-foreground/50 shrink-0" />
-            {getCategoryIcon(item.category, item.is_hymn)}
+            {getCategoryIcon(item)}
             <span className="text-sm font-medium truncate flex-1">{item.title}</span>
             <span className="text-xs text-muted-foreground shrink-0">{item.duration_minutes}m</span>
         </div>
@@ -82,7 +98,7 @@ export function ToolboxItemDragOverlay({ item }: { item: ToolboxItem }) {
     return (
         <div className="flex items-center gap-2 p-2 bg-white border-2 border-primary rounded-md shadow-lg">
             <GripVertical className="h-3.5 w-3.5 text-muted-foreground/50 shrink-0" />
-            {getCategoryIcon(item.category, item.is_hymn)}
+            {getCategoryIcon(item)}
             <span className="text-sm font-medium truncate flex-1">{item.title}</span>
             <span className="text-xs text-muted-foreground shrink-0">{item.duration_minutes}m</span>
         </div>

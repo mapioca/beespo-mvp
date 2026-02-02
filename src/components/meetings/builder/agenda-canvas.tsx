@@ -23,6 +23,8 @@ import {
     ChevronRight,
     UserPlus,
     Mic,
+    Puzzle,
+    Layers,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CanvasItem } from "./types";
@@ -42,10 +44,33 @@ interface AgendaCanvasProps {
     isOver?: boolean;
 }
 
-const getCategoryIcon = (category: CategoryType, isHymn?: boolean) => {
-    if (category === "procedural" && isHymn) {
+// Check if item is a custom item (with fallback to procedural_item_type_id check)
+const isCustomItem = (item: CanvasItem): boolean => {
+    if (item.is_custom === true) return true;
+    // Fallback: custom items have IDs starting with "custom-"
+    return !!item.procedural_item_type_id?.startsWith("custom-");
+
+};
+
+// Get icon for canvas item - supports custom items with config
+const getCanvasItemIcon = (item: CanvasItem) => {
+    // Custom items get purple-themed icons
+    if (isCustomItem(item)) {
+        if (item.config?.requires_resource) {
+            return <Music className="h-4 w-4 text-purple-500" />;
+        }
+        if (item.config?.requires_assignee) {
+            return <User className="h-4 w-4 text-purple-500" />;
+        }
+        return <Puzzle className="h-4 w-4 text-purple-500" />;
+    }
+
+    // Core/standard items - check for hymn
+    if (item.is_hymn || item.config?.requires_resource) {
         return <Music className="h-4 w-4 text-blue-500" />;
     }
+
+    // Category-based icons
     const icons: Record<CategoryType, React.ReactNode> = {
         procedural: <BookOpen className="h-4 w-4 text-slate-500" />,
         discussion: <MessageSquare className="h-4 w-4 text-green-500" />,
@@ -53,7 +78,49 @@ const getCategoryIcon = (category: CategoryType, isHymn?: boolean) => {
         announcement: <Megaphone className="h-4 w-4 text-orange-500" />,
         speaker: <User className="h-4 w-4 text-pink-500" />,
     };
-    return icons[category];
+    return icons[item.category] || <Layers className="h-4 w-4 text-blue-500" />;
+};
+
+// Get helper text for items that will be assigned when creating meeting
+const getItemHelperText = (item: CanvasItem): string | null => {
+    const title = item.title.toLowerCase();
+
+    // Items with hymn/resource requirements
+    if (item.is_hymn || item.config?.requires_resource || title.includes("hymn")) {
+        return "Hymn will be selected when creating meeting";
+    }
+
+    // Speaker items (check category OR title)
+    if (item.category === "speaker" || title.includes("speaker")) {
+        return "Speaker will be assigned when creating meeting";
+    }
+
+    // Custom items with requires_assignee
+    if (isCustomItem(item) && item.config?.requires_assignee) {
+        return "Person will be assigned when creating meeting";
+    }
+
+    // Items that require participant assignment - check explicit flags OR title patterns
+    if (item.requires_participant || item.config?.requires_assignee) {
+        return "Person will be assigned when creating meeting";
+    }
+
+    // Legacy fallback: check title for known participant-requiring items
+    if (
+        title.includes("prayer") ||
+        title.includes("testimony") ||
+        title.includes("testimonies") ||
+        title.includes("presid") ||
+        title.includes("conduct") ||
+        title.includes("invocation") ||
+        title.includes("benediction") ||
+        title.includes("spiritual thought") ||
+        title.includes("sacrament")
+    ) {
+        return "Person will be assigned when creating meeting";
+    }
+
+    return null;
 };
 
 const getContainerColors = (type: ContainerType) => {
@@ -140,7 +207,7 @@ function SortableAgendaRow({
                         )}
                     </button>
 
-                    {getCategoryIcon(item.category)}
+                    {getCanvasItemIcon(item)}
 
                     <span className={cn("font-medium text-sm flex-1", colors.text)}>
                         {item.title}
@@ -244,29 +311,42 @@ function SortableAgendaRow({
                 <GripVertical className="h-4 w-4 text-muted-foreground/50" />
             </div>
 
-            {getCategoryIcon(item.category, item.is_hymn)}
+            {getCanvasItemIcon(item)}
 
             <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                     <span className="font-medium text-sm truncate">{item.title}</span>
                 </div>
 
-                {/* Hymn selector */}
-                {item.is_hymn && (
+                {/* Helper text - shown for items that will be configured when creating meeting */}
+                {(() => {
+                    const helperText = getItemHelperText(item);
+                    // Don't show helper text if item already has selection
+                    const hasSelection = item.hymn_title || item.participant_name || item.speaker_name;
+                    if (helperText && !hasSelection) {
+                        return (
+                            <p className="text-xs text-blue-600 mt-1">
+                                {helperText}
+                            </p>
+                        );
+                    }
+                    return null;
+                })()}
+
+                {/* Hymn selector - show if hymn already selected */}
+                {item.is_hymn && item.hymn_title && (
                     <Button
                         variant="ghost"
                         size="sm"
                         className="h-6 text-xs mt-1 text-blue-600 p-0"
                         onClick={onSelectHymn}
                     >
-                        {item.hymn_title
-                            ? `#${item.hymn_number} ${item.hymn_title}`
-                            : "Select Hymn →"}
+                        #{item.hymn_number} {item.hymn_title}
                     </Button>
                 )}
 
-                {/* Participant selector */}
-                {item.requires_participant && !item.is_hymn && (
+                {/* Participant selector - show if participant already selected */}
+                {item.requires_participant && !item.is_hymn && item.participant_name && (
                     <Button
                         variant="ghost"
                         size="sm"
@@ -274,12 +354,12 @@ function SortableAgendaRow({
                         onClick={onSelectParticipant}
                     >
                         <UserPlus className="h-3 w-3 mr-1" />
-                        {item.participant_name || "Select participant →"}
+                        {item.participant_name}
                     </Button>
                 )}
 
-                {/* Speaker selector */}
-                {item.category === "speaker" && (
+                {/* Speaker selector - show if speaker already selected */}
+                {item.category === "speaker" && item.speaker_name && (
                     <Button
                         variant="ghost"
                         size="sm"
@@ -287,7 +367,7 @@ function SortableAgendaRow({
                         onClick={onSelectSpeaker}
                     >
                         <Mic className="h-3 w-3 mr-1" />
-                        {item.speaker_name || "Select speaker →"}
+                        {item.speaker_name}
                     </Button>
                 )}
             </div>

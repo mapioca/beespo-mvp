@@ -5,6 +5,7 @@ import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import {
     Clock,
     Music,
@@ -17,6 +18,7 @@ import {
     MessageSquare,
     Briefcase,
     Megaphone,
+    FileText,
 } from "lucide-react";
 import {
     DropdownMenu,
@@ -70,6 +72,12 @@ import { Database } from "@/types/database";
 type AgendaItem = Database["public"]["Tables"]["agenda_items"]["Row"] & {
     hymn?: { title: string; hymn_number: number } | null;
     child_items?: StoredChildItem[] | null;
+    // Config passed from procedural item type
+    config?: {
+        requires_assignee: boolean;
+        requires_resource: boolean;
+        has_rich_text: boolean;
+    };
 };
 
 interface EditableAgendaItemListProps {
@@ -79,11 +87,15 @@ interface EditableAgendaItemListProps {
     onItemsChange?: (items: AgendaItem[]) => void;
 }
 
-// Item types that support participant assignment
-const PARTICIPANT_ITEM_TYPES = ["procedural", "speaker"];
+// Item config type
+interface ItemConfig {
+    requires_assignee: boolean;
+    requires_resource: boolean;
+    has_rich_text: boolean;
+}
 
-// Item types that support hymn assignment
-const isHymnItem = (item: AgendaItem): boolean => {
+// Legacy fallback: Check if item is a hymn based on title
+const isLegacyHymnItem = (item: AgendaItem): boolean => {
     const title = item.title.toLowerCase();
     return (
         item.item_type === "procedural" &&
@@ -95,6 +107,24 @@ const isHymnItem = (item: AgendaItem): boolean => {
             title.includes("intermediate hymn"))
     );
 };
+
+// Get item config - uses stored config or falls back to legacy heuristics
+function getItemConfig(item: AgendaItem): ItemConfig {
+    // If item has stored config, use it
+    if (item.config) {
+        return item.config;
+    }
+
+    // Legacy fallback for backward compatibility
+    const isHymn = isLegacyHymnItem(item);
+
+    return {
+        requires_assignee: item.item_type === "speaker" ||
+            (item.item_type === "procedural" && !isHymn),
+        requires_resource: isHymn,
+        has_rich_text: item.item_type === "speaker",
+    };
+}
 
 // Hymn book logos
 const getHymnBookLogo = (bookId: string) => {
@@ -170,10 +200,11 @@ function SortableAgendaRow({
         transition,
     };
 
-    const isHymn = isHymnItem(item);
-    // Hymns should NOT show participant selector, only hymn selector
-    const showParticipant = PARTICIPANT_ITEM_TYPES.includes(item.item_type) && !isHymn;
-    const showHymn = isHymn;
+    // Config-driven rendering
+    const config = getItemConfig(item);
+    const showParticipant = config.requires_assignee;
+    const showHymn = config.requires_resource;
+    const showRichText = config.has_rich_text;
 
     // Convert participants to ComboboxOption
     const participantOptions: ComboboxOption[] = participants.map((p) => ({
@@ -439,7 +470,7 @@ function SortableAgendaRow({
                 </div>
 
                 {/* Editable Fields Row */}
-                {(showParticipant || showHymn) && (
+                {(showParticipant || showHymn || showRichText) && (
                     <div className="flex flex-wrap gap-x-2 gap-y-2 pt-1">
                         {/* Participant Selector */}
                         {showParticipant && (
@@ -501,6 +532,36 @@ function SortableAgendaRow({
                                 ) : null}
                             </div>
                         )}
+                    </div>
+                )}
+
+                {/* Rich Text / Description Editor */}
+                {showRichText && (
+                    <div className="pt-2">
+                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1.5">
+                            <FileText className="h-3.5 w-3.5" />
+                            <span>Topic / Notes</span>
+                        </div>
+                        {isEditable ? (
+                            <Textarea
+                                value={item.description || ""}
+                                onChange={(e) => {
+                                    const optimisticItem: AgendaItem = {
+                                        ...item,
+                                        description: e.target.value,
+                                    };
+                                    onUpdate(item.id, { description: e.target.value }, optimisticItem);
+                                }}
+                                placeholder="Enter topic or notes..."
+                                disabled={isUpdating}
+                                className="min-h-[60px] text-sm resize-none"
+                                rows={2}
+                            />
+                        ) : item.description ? (
+                            <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                                {item.description}
+                            </p>
+                        ) : null}
                     </div>
                 )}
 

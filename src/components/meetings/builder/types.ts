@@ -3,6 +3,13 @@
 import { CategoryType } from "../add-meeting-item-dialog";
 import { ContainerChildItem, ContainerType } from "../container-agenda-item";
 
+// Item behavior configuration
+export interface ItemConfig {
+    requires_assignee: boolean;
+    requires_resource: boolean;
+    has_rich_text: boolean;
+}
+
 // Toolbox item that can be dragged onto the canvas
 export interface ToolboxItem {
     id: string;
@@ -15,6 +22,11 @@ export interface ToolboxItem {
     is_hymn?: boolean;
     requires_participant?: boolean;
     containerType?: ContainerType;
+    // New config-driven fields
+    config?: ItemConfig;
+    is_core?: boolean;
+    is_custom?: boolean;
+    icon?: string | null;
 }
 
 // Canvas item that is on the agenda
@@ -50,6 +62,11 @@ export interface CanvasItem {
     status?: string;
     business_type?: string;
     priority?: string;
+    // Config-driven fields (from ToolboxItem)
+    config?: ItemConfig;
+    is_core?: boolean;
+    is_custom?: boolean;
+    icon?: string | null;
 }
 
 // DnD payload types
@@ -74,6 +91,14 @@ export interface ProceduralItemType {
     default_duration_minutes: number | null;
     is_hymn: boolean | null;
     order_hint: number | null;
+    // New config fields
+    requires_assignee: boolean | null;
+    requires_resource: boolean | null;
+    has_rich_text: boolean | null;
+    is_core: boolean | null;
+    is_custom: boolean | null;
+    workspace_id: string | null;
+    icon: string | null;
 }
 
 // Category groups for toolbox

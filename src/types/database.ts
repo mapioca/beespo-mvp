@@ -138,6 +138,12 @@ export type Database = {
           is_hymn: boolean | null;
           created_at: string;
           workspace_id: string | null;
+          // Config flags for item behavior
+          requires_assignee: boolean | null;
+          requires_resource: boolean | null;
+          has_rich_text: boolean | null;
+          is_core: boolean | null;
+          icon: string | null;
         };
         Insert: {
           id: string;
@@ -149,6 +155,12 @@ export type Database = {
           is_hymn?: boolean | null;
           created_at?: string;
           workspace_id?: string | null;
+          // Config flags for item behavior
+          requires_assignee?: boolean | null;
+          requires_resource?: boolean | null;
+          has_rich_text?: boolean | null;
+          is_core?: boolean | null;
+          icon?: string | null;
         };
         Update: {
           id?: string;
@@ -160,6 +172,12 @@ export type Database = {
           is_hymn?: boolean | null;
           created_at?: string;
           workspace_id?: string | null;
+          // Config flags for item behavior
+          requires_assignee?: boolean | null;
+          requires_resource?: boolean | null;
+          has_rich_text?: boolean | null;
+          is_core?: boolean | null;
+          icon?: string | null;
         };
       };
       discussion_templates: {
