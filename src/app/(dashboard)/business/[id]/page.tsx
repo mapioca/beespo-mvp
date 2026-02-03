@@ -10,13 +10,20 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Edit, Calendar } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { ArrowLeft, Edit, Calendar, FileText } from "lucide-react";
 import { format } from "date-fns";
 import {
   formatBusinessCategory,
   getBusinessStatusVariant,
 } from "@/lib/business-helpers";
 import { BusinessQuickActions } from "@/components/business/business-quick-actions";
+import {
+  generateBusinessScript,
+  formatOffice,
+  formatPriesthood,
+  type BusinessItemDetails,
+} from "@/lib/business-script-generator";
 
 export default async function BusinessDetailPage({
   params,
@@ -140,6 +147,49 @@ export default async function BusinessDetailPage({
                 Created {format(new Date(businessItem.created_at), "MMM d, yyyy 'at' h:mm a")}
               </div>
             </CardHeader>
+          </Card>
+
+          {/* Conducting Script Card */}
+          <Card className="border-2 border-blue-200 bg-blue-50/50">
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-2">
+                <FileText className="h-5 w-5 text-blue-600" />
+                <CardTitle className="text-lg text-blue-900">
+                  Conducting Script
+                </CardTitle>
+              </div>
+              <CardDescription>
+                Official wording for the conducting leader
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {/* Show ordination details if applicable */}
+              {businessItem.category === "ordination" && businessItem.details && (
+                <div className="mb-4 p-3 bg-blue-100 rounded-md border border-blue-200">
+                  <p className="text-sm text-blue-800">
+                    <strong>Priesthood Office:</strong>{" "}
+                    {formatOffice((businessItem.details as BusinessItemDetails).office)} in the{" "}
+                    {formatPriesthood((businessItem.details as BusinessItemDetails).priesthood)} Priesthood
+                  </p>
+                </div>
+              )}
+
+              <ScrollArea className="h-[200px]">
+                <div className="p-4 bg-white rounded-md border shadow-inner font-serif text-base leading-relaxed whitespace-pre-wrap">
+                  {generateBusinessScript({
+                    person_name: businessItem.person_name,
+                    position_calling: businessItem.position_calling,
+                    category: businessItem.category,
+                    notes: businessItem.notes,
+                    details: businessItem.details as BusinessItemDetails | null,
+                  })}
+                </div>
+              </ScrollArea>
+
+              <p className="text-xs text-muted-foreground mt-3 italic">
+                Text in [brackets] indicates where to pause or take action.
+              </p>
+            </CardContent>
           </Card>
         </div>
 
