@@ -7,6 +7,17 @@ export interface StoredChildItem {
     discussion_id?: string | null;
     business_item_id?: string | null;
     announcement_id?: string | null;
+    // Business item specific fields for conducting script generation
+    business_category?: string | null;
+    business_details?: {
+        gender?: "male" | "female";
+        office?: string;
+        priesthood?: string;
+        customScript?: string;
+    } | null;
+    // For display - the person's name separate from calling
+    person_name?: string | null;
+    position_calling?: string | null;
 }
 
 type AgendaItem = Database["public"]["Tables"]["agenda_items"]["Row"] & {

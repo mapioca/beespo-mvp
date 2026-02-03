@@ -26,6 +26,16 @@ export interface ContainerChildItem {
     // For business items
     business_item_id?: string;
     business_type?: string;
+    // For conducting script generation
+    person_name?: string;
+    position_calling?: string;
+    business_category?: string;
+    business_details?: {
+        gender?: "male" | "female";
+        office?: string;
+        priesthood?: string;
+        customScript?: string;
+    } | null;
     // For announcements
     announcement_id?: string;
     priority?: string;

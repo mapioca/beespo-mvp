@@ -135,7 +135,7 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
 
             const { data: linkedBusiness } = await (supabase
                 .from("business_templates") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
-                .select("business_item_id, business_items(id, person_name, position_calling, category, notes, status)")
+                .select("business_item_id, business_items(id, person_name, position_calling, category, notes, status, details)")
                 .eq("template_id", templateId);
 
             const { data: linkedAnnouncements } = await (supabase
@@ -205,6 +205,11 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
                                     description: biz.notes,
                                     business_item_id: biz.id,
                                     business_type: biz.category,
+                                    // Additional fields for conducting script generation
+                                    person_name: biz.person_name,
+                                    position_calling: biz.position_calling,
+                                    business_category: biz.category,
+                                    business_details: biz.details,
                                 });
                             }
                         }
@@ -668,6 +673,11 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
                     discussion_id: child.discussion_id || null,
                     business_item_id: child.business_item_id || null,
                     announcement_id: child.announcement_id || null,
+                    // Business item fields for conducting script
+                    person_name: child.person_name || null,
+                    position_calling: child.position_calling || null,
+                    business_category: child.business_category || null,
+                    business_details: child.business_details || null,
                 })) : null,
             }));
 

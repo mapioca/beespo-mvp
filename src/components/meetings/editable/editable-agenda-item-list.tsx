@@ -19,6 +19,9 @@ import {
     Briefcase,
     Megaphone,
     FileText,
+    ChevronDown,
+    ChevronRight,
+    ScrollText,
 } from "lucide-react";
 import {
     DropdownMenu,
@@ -68,6 +71,10 @@ import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/lib/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { Database } from "@/types/database";
+import {
+    generateBusinessScript,
+    BUSINESS_CATEGORIES,
+} from "@/lib/business-script-generator";
 
 type AgendaItem = Database["public"]["Tables"]["agenda_items"]["Row"] & {
     hymn?: { title: string; hymn_number: number } | null;
@@ -1128,20 +1135,62 @@ export function EditableAgendaItemList({
                                             container={entry}
                                             isEditable={isEditable}
                                             onAddToGroup={openPickerForGroup}
-                                            renderStoredChildItem={(childItem, index) => (
-                                                <div key={index} className="bg-background rounded-md border p-3">
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="text-sm font-medium flex-1 truncate">
-                                                            {childItem.title}
-                                                        </span>
-                                                        {childItem.description && (
-                                                            <span className="text-xs text-muted-foreground truncate max-w-[200px]">
-                                                                {childItem.description}
+                                            renderStoredChildItem={(childItem, index) => {
+                                                // Check if this is a business item with script data
+                                                const isBusinessItem = !!childItem.business_item_id && !!childItem.business_category;
+                                                const conductingScript = isBusinessItem
+                                                    ? generateBusinessScript({
+                                                          person_name: childItem.person_name || childItem.title.split(" - ")[0] || "",
+                                                          position_calling: childItem.position_calling || null,
+                                                          category: childItem.business_category || "other",
+                                                          notes: childItem.description || null,
+                                                          // Cast to correct type since it comes from JSONB
+                                                          details: childItem.business_details as Parameters<typeof generateBusinessScript>[0]["details"],
+                                                      })
+                                                    : null;
+
+                                                return (
+                                                    <div key={index} className="bg-background rounded-md border overflow-hidden">
+                                                        {/* Header with title */}
+                                                        <div className="flex items-center gap-2 p-3">
+                                                            <span className="text-sm font-medium flex-1">
+                                                                {childItem.title}
                                                             </span>
+                                                            {isBusinessItem && childItem.business_category && (
+                                                                <Badge variant="outline" className="text-xs shrink-0">
+                                                                    {BUSINESS_CATEGORIES[childItem.business_category as keyof typeof BUSINESS_CATEGORIES] || childItem.business_category}
+                                                                </Badge>
+                                                            )}
+                                                        </div>
+
+                                                        {/* Conducting Script for business items */}
+                                                        {isBusinessItem && conductingScript && (
+                                                            <details className="group border-t">
+                                                                <summary className="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-muted/50 text-sm text-blue-600 font-medium">
+                                                                    <ScrollText className="h-4 w-4" />
+                                                                    <span>Conducting Script</span>
+                                                                    <ChevronRight className="h-4 w-4 ml-auto group-open:hidden" />
+                                                                    <ChevronDown className="h-4 w-4 ml-auto hidden group-open:block" />
+                                                                </summary>
+                                                                <div className="px-3 pb-3">
+                                                                    <div className="p-3 bg-blue-50 rounded-md border border-blue-200 text-sm font-serif leading-relaxed whitespace-pre-wrap">
+                                                                        {conductingScript}
+                                                                    </div>
+                                                                </div>
+                                                            </details>
+                                                        )}
+
+                                                        {/* Description/Notes for non-business items */}
+                                                        {!isBusinessItem && childItem.description && (
+                                                            <div className="px-3 pb-3 pt-0">
+                                                                <p className="text-xs text-muted-foreground">
+                                                                    {childItem.description}
+                                                                </p>
+                                                            </div>
                                                         )}
                                                     </div>
-                                                </div>
-                                            )}
+                                                );
+                                            }}
                                         />
                                     </div>
                                 );
