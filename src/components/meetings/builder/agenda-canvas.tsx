@@ -81,48 +81,6 @@ const getCanvasItemIcon = (item: CanvasItem) => {
     return icons[item.category] || <Layers className="h-4 w-4 text-blue-500" />;
 };
 
-// Get helper text for items that will be assigned when creating meeting
-const getItemHelperText = (item: CanvasItem): string | null => {
-    const title = item.title.toLowerCase();
-
-    // Items with hymn/resource requirements
-    if (item.is_hymn || item.config?.requires_resource || title.includes("hymn")) {
-        return "Hymn will be selected when creating meeting";
-    }
-
-    // Speaker items (check category OR title)
-    if (item.category === "speaker" || title.includes("speaker")) {
-        return "Speaker will be assigned when creating meeting";
-    }
-
-    // Custom items with requires_assignee
-    if (isCustomItem(item) && item.config?.requires_assignee) {
-        return "Person will be assigned when creating meeting";
-    }
-
-    // Items that require participant assignment - check explicit flags OR title patterns
-    if (item.requires_participant || item.config?.requires_assignee) {
-        return "Person will be assigned when creating meeting";
-    }
-
-    // Legacy fallback: check title for known participant-requiring items
-    if (
-        title.includes("prayer") ||
-        title.includes("testimony") ||
-        title.includes("testimonies") ||
-        title.includes("presid") ||
-        title.includes("conduct") ||
-        title.includes("invocation") ||
-        title.includes("benediction") ||
-        title.includes("spiritual thought") ||
-        title.includes("sacrament")
-    ) {
-        return "Person will be assigned when creating meeting";
-    }
-
-    return null;
-};
-
 const getContainerColors = (type: ContainerType) => {
     const colors: Record<ContainerType, { bg: string; border: string; text: string }> = {
         discussion: { bg: "bg-green-50", border: "border-green-200", text: "text-green-700" },
@@ -318,56 +276,59 @@ function SortableAgendaRow({
                     <span className="font-medium text-sm truncate">{item.title}</span>
                 </div>
 
-                {/* Helper text - shown for items that will be configured when creating meeting */}
-                {(() => {
-                    const helperText = getItemHelperText(item);
-                    // Don't show helper text if item already has selection
-                    const hasSelection = item.hymn_title || item.participant_name || item.speaker_name;
-                    if (helperText && !hasSelection) {
-                        return (
-                            <p className="text-xs text-blue-600 mt-1">
-                                {helperText}
-                            </p>
-                        );
-                    }
-                    return null;
-                })()}
-
-                {/* Hymn selector - show if hymn already selected */}
-                {item.is_hymn && item.hymn_title && (
+                {/* Hymn selector - always show for hymn items */}
+                {item.is_hymn && (
                     <Button
                         variant="ghost"
                         size="sm"
-                        className="h-6 text-xs mt-1 text-blue-600 p-0"
+                        className={cn(
+                            "h-6 text-xs mt-1 p-0",
+                            item.hymn_title
+                                ? "text-blue-600"
+                                : "text-blue-500 hover:text-blue-700"
+                        )}
                         onClick={onSelectHymn}
                     >
-                        #{item.hymn_number} {item.hymn_title}
+                        <Music className="h-3 w-3 mr-1" />
+                        {item.hymn_title
+                            ? `#${item.hymn_number} ${item.hymn_title}`
+                            : "Select Hymn"}
                     </Button>
                 )}
 
-                {/* Participant selector - show if participant already selected */}
-                {item.requires_participant && !item.is_hymn && item.participant_name && (
+                {/* Participant selector - always show for participant items */}
+                {(item.requires_participant || item.config?.requires_assignee) && !item.is_hymn && item.category !== "speaker" && (
                     <Button
                         variant="ghost"
                         size="sm"
-                        className="h-6 text-xs mt-1 text-slate-600 p-0"
+                        className={cn(
+                            "h-6 text-xs mt-1 p-0",
+                            item.participant_name
+                                ? "text-slate-600"
+                                : "text-slate-500 hover:text-slate-700"
+                        )}
                         onClick={onSelectParticipant}
                     >
                         <UserPlus className="h-3 w-3 mr-1" />
-                        {item.participant_name}
+                        {item.participant_name || "Select Person"}
                     </Button>
                 )}
 
-                {/* Speaker selector - show if speaker already selected */}
-                {item.category === "speaker" && item.speaker_name && (
+                {/* Speaker selector - always show for speaker items */}
+                {item.category === "speaker" && (
                     <Button
                         variant="ghost"
                         size="sm"
-                        className="h-6 text-xs mt-1 text-indigo-600 p-0"
+                        className={cn(
+                            "h-6 text-xs mt-1 p-0",
+                            item.speaker_name
+                                ? "text-indigo-600"
+                                : "text-indigo-500 hover:text-indigo-700"
+                        )}
                         onClick={onSelectSpeaker}
                     >
                         <Mic className="h-3 w-3 mr-1" />
-                        {item.speaker_name}
+                        {item.speaker_name || "Select Speaker"}
                     </Button>
                 )}
             </div>
@@ -468,7 +429,7 @@ export function AgendaCanvas({
                                                 item.is_hymn ? () => onSelectHymn(item.id) : undefined
                                             }
                                             onSelectParticipant={
-                                                item.requires_participant && !item.is_hymn
+                                                (item.requires_participant || item.config?.requires_assignee) && !item.is_hymn && item.category !== "speaker"
                                                     ? () => onSelectParticipant(item.id)
                                                     : undefined
                                             }

@@ -56,6 +56,49 @@ const getContainerColors = (type: ContainerType) => {
     return colors[type];
 };
 
+// Get helper text for items that will be configured when creating a meeting
+const getItemHelperText = (item: TemplateCanvasItem): string | null => {
+    const title = item.title.toLowerCase();
+    const category = item.category.toLowerCase();
+
+    // Items with hymn/resource requirements
+    if (item.is_hymn || item.config?.requires_resource || title.includes("hymn")) {
+        return "Hymn will be selected when creating meeting";
+    }
+
+    // Speaker items (check category OR title)
+    if (category === "speaker" || title.includes("speaker")) {
+        return "Speaker will be assigned when creating meeting";
+    }
+
+    // Custom items with requires_assignee
+    if (item.is_custom && item.config?.requires_assignee) {
+        return "Person will be assigned when creating meeting";
+    }
+
+    // Items that require participant assignment - check explicit flags OR title patterns
+    if (item.requires_participant || item.config?.requires_assignee) {
+        return "Person will be assigned when creating meeting";
+    }
+
+    // Legacy fallback: check title for known participant-requiring items
+    if (
+        title.includes("prayer") ||
+        title.includes("testimony") ||
+        title.includes("testimonies") ||
+        title.includes("presid") ||
+        title.includes("conduct") ||
+        title.includes("invocation") ||
+        title.includes("benediction") ||
+        title.includes("spiritual thought") ||
+        title.includes("sacrament")
+    ) {
+        return "Person will be assigned when creating meeting";
+    }
+
+    return null;
+};
+
 // Sortable Template Item Row
 interface SortableTemplateRowProps {
     item: TemplateCanvasItem;
@@ -189,11 +232,18 @@ function SortableTemplateRow({
                     className="h-8 text-sm font-medium border-0 px-0 focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent"
                     placeholder="Item title..."
                 />
-                {item.is_hymn && (
-                    <p className="text-xs text-blue-600 mt-0.5">
-                        Hymn will be selected when creating meeting
-                    </p>
-                )}
+                {/* Helper text - shown for items that will be configured when creating meeting */}
+                {(() => {
+                    const helperText = getItemHelperText(item);
+                    if (helperText) {
+                        return (
+                            <p className="text-xs text-blue-600 mt-0.5">
+                                {helperText}
+                            </p>
+                        );
+                    }
+                    return null;
+                })()}
             </div>
 
             {/* Duration */}
