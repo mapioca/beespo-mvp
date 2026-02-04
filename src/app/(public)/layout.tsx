@@ -3,6 +3,14 @@ import { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Beespo - Public View",
   description: "View shared meeting agendas",
+  robots: {
+    index: false,
+    follow: false,
+    googleBot: {
+      index: false,
+      follow: false,
+    },
+  },
 };
 
 export default function PublicLayout({

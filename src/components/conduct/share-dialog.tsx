@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Share2, Copy, Check, Globe, Lock } from "lucide-react";
+import { Share2, Mail, Link2, Download } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -11,11 +11,11 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-import { createClient } from "@/lib/supabase/client";
-import { generateShareToken, getPublicMeetingUrl, copyToClipboard } from "@/lib/slug-helpers";
-import { Database } from "@/types/database";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { InviteTab, PublicLinkTab, ExportTab, ShareAnalyticsBadge } from "@/components/share";
+import { useShareDialogStore } from "@/stores/share-dialog-store";
+import type { Database } from "@/types/database";
+import type { ShareDialogTab } from "@/types/share";
 
 type Meeting = Database["public"]["Tables"]["meetings"]["Row"];
 
@@ -28,6 +28,8 @@ interface ShareDialogProps {
   onOpenChange?: (open: boolean) => void;
   // If true, renders without trigger button (for external control)
   hideTrigger?: boolean;
+  // Default tab to show
+  defaultTab?: ShareDialogTab;
 }
 
 export function ShareDialog({
@@ -37,101 +39,106 @@ export function ShareDialog({
   open: controlledOpen,
   onOpenChange: controlledOnOpenChange,
   hideTrigger = false,
+  defaultTab = "public-link",
 }: ShareDialogProps) {
   const [internalOpen, setInternalOpen] = useState(false);
 
   // Support both controlled and uncontrolled modes
   const isOpen = controlledOpen !== undefined ? controlledOpen : internalOpen;
   const setIsOpen = controlledOnOpenChange || setInternalOpen;
-  const [isShared, setIsShared] = useState(meeting.is_publicly_shared);
-  const [shareToken, setShareToken] = useState(meeting.public_share_token);
-  const [copied, setCopied] = useState(false);
-  const [isUpdating, setIsUpdating] = useState(false);
 
+  const {
+    activeTab,
+    setActiveTab,
+    setInvitations,
+    setSettings,
+    setAnalytics,
+    setLoadingInvitations,
+    setLoadingSettings,
+    setLoadingAnalytics,
+    reset,
+  } = useShareDialogStore();
+
+  // Set default tab on mount
   useEffect(() => {
-    setIsShared(meeting.is_publicly_shared);
-    setShareToken(meeting.public_share_token);
-  }, [meeting]);
+    setActiveTab(defaultTab);
+  }, [defaultTab, setActiveTab]);
 
-  const publicUrl = workspaceSlug && shareToken
-    ? getPublicMeetingUrl(workspaceSlug, meeting.id)
-    : null;
-
-  const handleToggleShare = async () => {
-    setIsUpdating(true);
-    try {
-      const supabase = createClient();
-      const newIsShared = !isShared;
-      let newToken = shareToken;
-
-      // Generate token if enabling sharing and no token exists
-      if (newIsShared && !newToken) {
-        newToken = generateShareToken();
-      }
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (supabase.from("meetings") as any)
-        .update({
-          is_publicly_shared: newIsShared,
-          public_share_token: newIsShared ? newToken : shareToken,
-        })
-        .eq("id", meeting.id)
-        .select()
-        .single();
-
-      if (error) {
-        console.error("Failed to update sharing settings:", error);
-        return;
-      }
-
-      setIsShared(newIsShared);
-      setShareToken(newToken);
-
-      if (onUpdate && data) {
-        onUpdate(data);
-      }
-    } finally {
-      setIsUpdating(false);
+  // Fetch data when dialog opens
+  useEffect(() => {
+    if (!isOpen) {
+      return;
     }
-  };
 
-  const handleCopyLink = async () => {
-    if (!publicUrl) return;
-
-    const success = await copyToClipboard(publicUrl);
-    if (success) {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
-  };
-
-  const handleRegenerateToken = async () => {
-    setIsUpdating(true);
-    try {
-      const supabase = createClient();
-      const newToken = generateShareToken();
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (supabase.from("meetings") as any)
-        .update({ public_share_token: newToken })
-        .eq("id", meeting.id)
-        .select()
-        .single();
-
-      if (error) {
-        console.error("Failed to regenerate token:", error);
-        return;
+    const fetchInvitations = async () => {
+      setLoadingInvitations(true);
+      try {
+        const response = await fetch(`/api/share/invite?meeting_id=${meeting.id}`);
+        if (response.ok) {
+          const data = await response.json();
+          setInvitations(data.invitations || []);
+        }
+      } catch (error) {
+        console.error("Failed to fetch invitations:", error);
+      } finally {
+        setLoadingInvitations(false);
       }
+    };
 
-      setShareToken(newToken);
-
-      if (onUpdate && data) {
-        onUpdate(data);
+    const fetchSettings = async () => {
+      setLoadingSettings(true);
+      try {
+        const response = await fetch(`/api/share/${meeting.id}/settings`);
+        if (response.ok) {
+          const data = await response.json();
+          setSettings(data.settings);
+        }
+      } catch (error) {
+        console.error("Failed to fetch settings:", error);
+      } finally {
+        setLoadingSettings(false);
       }
-    } finally {
-      setIsUpdating(false);
+    };
+
+    const fetchAnalytics = async () => {
+      setLoadingAnalytics(true);
+      try {
+        const response = await fetch(`/api/share/${meeting.id}/analytics`);
+        if (response.ok) {
+          const data = await response.json();
+          setAnalytics(data.analytics);
+        }
+      } catch (error) {
+        console.error("Failed to fetch analytics:", error);
+      } finally {
+        setLoadingAnalytics(false);
+      }
+    };
+
+    fetchInvitations();
+    fetchSettings();
+    fetchAnalytics();
+  }, [
+    isOpen,
+    meeting.id,
+    setInvitations,
+    setSettings,
+    setAnalytics,
+    setLoadingInvitations,
+    setLoadingSettings,
+    setLoadingAnalytics,
+  ]);
+
+  // Reset store when dialog closes
+  useEffect(() => {
+    if (!isOpen) {
+      // Delay reset to allow closing animation
+      const timer = setTimeout(() => {
+        reset();
+      }, 200);
+      return () => clearTimeout(timer);
     }
-  };
+  }, [isOpen, reset]);
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -143,112 +150,60 @@ export function ShareDialog({
           </Button>
         </DialogTrigger>
       )}
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Share Meeting</DialogTitle>
+          <div className="flex items-center justify-between">
+            <DialogTitle>Share Meeting</DialogTitle>
+            {meeting.is_publicly_shared && (
+              <ShareAnalyticsBadge meetingId={meeting.id} variant="badge" />
+            )}
+          </div>
           <DialogDescription>
-            Share the meeting agenda publicly. Only the agenda structure is visible, notes remain private.
+            Share the meeting agenda via link, email invitation, or export.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6 py-4">
-          {/* Toggle Public Sharing */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              {isShared ? (
-                <Globe className="h-5 w-5 text-green-500" />
-              ) : (
-                <Lock className="h-5 w-5 text-muted-foreground" />
-              )}
-              <div>
-                <Label htmlFor="public-share" className="font-medium">
-                  Public Access
-                </Label>
-                <p className="text-sm text-muted-foreground">
-                  {isShared
-                    ? "Anyone with the link can view"
-                    : "Only workspace members can access"}
-                </p>
-              </div>
-            </div>
-            <Switch
-              id="public-share"
-              checked={isShared}
-              onCheckedChange={handleToggleShare}
-              disabled={isUpdating || !workspaceSlug}
-            />
+        <Tabs
+          value={activeTab}
+          onValueChange={(value) => setActiveTab(value as ShareDialogTab)}
+          className="mt-4"
+        >
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="public-link" className="flex items-center gap-1.5">
+              <Link2 className="h-4 w-4" />
+              <span className="hidden sm:inline">Public Link</span>
+              <span className="sm:hidden">Link</span>
+            </TabsTrigger>
+            <TabsTrigger value="invite" className="flex items-center gap-1.5">
+              <Mail className="h-4 w-4" />
+              <span className="hidden sm:inline">Invite</span>
+              <span className="sm:hidden">Invite</span>
+            </TabsTrigger>
+            <TabsTrigger value="export" className="flex items-center gap-1.5">
+              <Download className="h-4 w-4" />
+              <span className="hidden sm:inline">Export</span>
+              <span className="sm:hidden">Export</span>
+            </TabsTrigger>
+          </TabsList>
+
+          <div className="mt-4">
+            <TabsContent value="public-link" className="m-0">
+              <PublicLinkTab
+                meeting={meeting}
+                workspaceSlug={workspaceSlug}
+                onUpdate={onUpdate}
+              />
+            </TabsContent>
+
+            <TabsContent value="invite" className="m-0">
+              <InviteTab meetingId={meeting.id} />
+            </TabsContent>
+
+            <TabsContent value="export" className="m-0">
+              <ExportTab meetingId={meeting.id} />
+            </TabsContent>
           </div>
-
-          {/* Share Link */}
-          {isShared && publicUrl && (
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <input
-                  type="text"
-                  readOnly
-                  value={publicUrl}
-                  className="flex-1 px-3 py-2 text-sm bg-muted rounded-md border"
-                />
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={handleCopyLink}
-                  disabled={isUpdating}
-                >
-                  {copied ? (
-                    <Check className="h-4 w-4 text-green-500" />
-                  ) : (
-                    <Copy className="h-4 w-4" />
-                  )}
-                </Button>
-              </div>
-
-              <div className="text-xs text-muted-foreground">
-                <Button
-                  variant="link"
-                  size="sm"
-                  className="p-0 h-auto text-xs"
-                  onClick={handleRegenerateToken}
-                  disabled={isUpdating}
-                >
-                  Regenerate link
-                </Button>
-                <span className="mx-1">•</span>
-                <span>This will invalidate the current link</span>
-              </div>
-            </div>
-          )}
-
-          {/* No workspace slug warning */}
-          {!workspaceSlug && (
-            <div className="text-sm text-yellow-600 bg-yellow-50 p-3 rounded-md">
-              Sharing is not available. The workspace needs a URL slug configured.
-            </div>
-          )}
-
-          {/* What's visible */}
-          <div className="border-t pt-4">
-            <h4 className="text-sm font-medium mb-2">What&apos;s visible publicly:</h4>
-            <ul className="text-sm text-muted-foreground space-y-1">
-              <li className="flex items-center gap-2">
-                <Check className="h-3 w-3 text-green-500" />
-                Meeting title and date
-              </li>
-              <li className="flex items-center gap-2">
-                <Check className="h-3 w-3 text-green-500" />
-                Agenda item titles and descriptions
-              </li>
-              <li className="flex items-center gap-2">
-                <Lock className="h-3 w-3 text-red-500" />
-                Notes and discussions (hidden)
-              </li>
-              <li className="flex items-center gap-2">
-                <Lock className="h-3 w-3 text-red-500" />
-                Tasks and assignments (hidden)
-              </li>
-            </ul>
-          </div>
-        </div>
+        </Tabs>
       </DialogContent>
     </Dialog>
   );

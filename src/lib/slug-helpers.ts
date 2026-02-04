@@ -16,6 +16,7 @@ export function generateSlug(name: string): string {
 
 /**
  * Generate a random token for public sharing
+ * @deprecated Use generateSecureShareToken() for better security
  */
 export function generateShareToken(): string {
   const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
@@ -24,6 +25,23 @@ export function generateShareToken(): string {
     token += chars.charAt(Math.floor(Math.random() * chars.length));
   }
   return token;
+}
+
+/**
+ * Generate a cryptographically secure UUID for share tokens
+ * Uses crypto.randomUUID() for non-sequential, unpredictable tokens
+ */
+export function generateSecureShareToken(): string {
+  // Use native crypto API for secure random UUID
+  if (typeof crypto !== "undefined" && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  // Fallback for older environments
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === "x" ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
 }
 
 /**
