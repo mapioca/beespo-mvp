@@ -15,10 +15,33 @@ import type { Database } from "@/types/database";
 type Meeting = Database["public"]["Tables"]["meetings"]["Row"];
 type AgendaItem = Database["public"]["Tables"]["agenda_items"]["Row"];
 
+// Child item stored in containers (Discussions, Announcements, Business)
+interface StoredChildItem {
+  title: string;
+  description?: string | null;
+  discussion_id?: string | null;
+  business_item_id?: string | null;
+  announcement_id?: string | null;
+  person_name?: string | null;
+  position_calling?: string | null;
+}
+
+// Extended type with hymn join data and child items
+interface AgendaItemWithExtras extends AgendaItem {
+  hymns?: {
+    title: string;
+    hymn_number: number;
+  } | null;
+  child_items?: StoredChildItem[] | null;
+}
+
+// Container types that have child items
+const CONTAINER_TYPES = ["announcement", "business", "discussion"] as const;
+
 interface LiveMeetingViewProps {
   meetingId: string;
   initialMeeting: Meeting;
-  initialAgendaItems: AgendaItem[];
+  initialAgendaItems: AgendaItemWithExtras[];
 }
 
 export function LiveMeetingView({
@@ -112,13 +135,12 @@ export function LiveMeetingView({
           <span
             className={`
             px-2 py-0.5 rounded-full text-xs font-medium
-            ${
-              meeting.status === "completed"
+            ${meeting.status === "completed"
                 ? "bg-green-100 text-green-700"
                 : meeting.status === "in_progress"
-                ? "bg-yellow-100 text-yellow-700"
-                : "bg-blue-100 text-blue-700"
-            }
+                  ? "bg-yellow-100 text-yellow-700"
+                  : "bg-blue-100 text-blue-700"
+              }
           `}
           >
             {meeting.status.replace("_", " ")}
@@ -132,51 +154,89 @@ export function LiveMeetingView({
 
         {agendaItems && agendaItems.length > 0 ? (
           <div className="space-y-3">
-            {agendaItems.map((item, idx) => (
-              <div
-                key={item.id}
-                className={`
-                  p-4 rounded-lg border bg-card transition-opacity
-                  ${item.is_completed ? "opacity-60" : ""}
-                `}
-              >
-                <div className="flex items-start gap-4">
-                  <span className="text-2xl font-bold text-muted-foreground/30">
-                    {idx + 1}
-                  </span>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-semibold">{item.title}</h3>
-                      <span className="text-xs bg-muted px-2 py-0.5 rounded capitalize">
-                        {item.item_type}
-                      </span>
-                      {item.is_completed && (
-                        <span className="flex items-center gap-1 text-xs text-green-600">
-                          <Check className="h-3 w-3" />
-                          Completed
-                        </span>
+            {(agendaItems as AgendaItemWithExtras[]).map((item: AgendaItemWithExtras, idx: number) => {
+              const isContainer = CONTAINER_TYPES.includes(item.item_type as typeof CONTAINER_TYPES[number]);
+              const childItems = item.child_items || [];
+              const hasChildren = childItems.length > 0;
+
+              return (
+                <div
+                  key={item.id}
+                  className={`
+                    p-4 rounded-lg border bg-card transition-opacity
+                    ${item.is_completed ? "opacity-60" : ""}
+                  `}
+                >
+                  <div className="flex items-start gap-4">
+                    <span className="text-2xl font-bold text-muted-foreground/30">
+                      {idx + 1}
+                    </span>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="font-semibold">{item.title}</h3>
+                        {item.is_completed && (
+                          <span className="flex items-center gap-1 text-xs text-green-600">
+                            <Check className="h-3 w-3" />
+                            Completed
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Container items (Discussions, Announcements, Business) */}
+                      {isContainer ? (
+                        <>
+                          {item.item_type === "business" ? (
+                            // Business items - hide details, show placeholder
+                            <p className="text-sm text-muted-foreground italic">
+                              Ward business will be conducted.
+                            </p>
+                          ) : hasChildren ? (
+                            // Announcements/Discussions with items - show bulleted list
+                            <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
+                              {childItems.map((child: StoredChildItem, childIdx: number) => (
+                                <li key={childIdx}>{child.title}</li>
+                              ))}
+                            </ul>
+                          ) : (
+                            // Empty container
+                            <p className="text-sm text-muted-foreground italic">
+                              {item.item_type === "announcement" && "No announcements"}
+                              {item.item_type === "discussion" && "No discussions"}
+                            </p>
+                          )}
+                        </>
+                      ) : (
+                        <>
+                          {/* Show hymn name if available */}
+                          {item.hymns?.title && (
+                            <p className="text-sm text-muted-foreground">
+                              #{item.hymns?.hymn_number} - {item.hymns?.title}
+                            </p>
+                          )}
+                          {/* Show participant name if available */}
+                          {item.participant_name && (
+                            <p className="text-sm text-muted-foreground">
+                              {item.participant_name}
+                            </p>
+                          )}
+                        </>
                       )}
                     </div>
-                    {item.description && (
-                      <p className="text-sm text-muted-foreground">
-                        {item.description}
-                      </p>
-                    )}
-                    {item.participant_name && (
-                      <p className="text-sm text-muted-foreground mt-1">
-                        Presenter: {item.participant_name}
-                      </p>
-                    )}
+                    {/* Duration - show "·" for empty containers, otherwise show minutes */}
+                    {isContainer && !hasChildren ? (
+                      <div className="flex items-center text-sm text-muted-foreground">
+                        <span className="text-lg">·</span>
+                      </div>
+                    ) : item.duration_minutes ? (
+                      <div className="flex items-center text-sm text-muted-foreground">
+                        <Clock className="h-4 w-4 mr-1" />
+                        {item.duration_minutes} min
+                      </div>
+                    ) : null}
                   </div>
-                  {item.duration_minutes && (
-                    <div className="flex items-center text-sm text-muted-foreground">
-                      <Clock className="h-4 w-4 mr-1" />
-                      {item.duration_minutes} min
-                    </div>
-                  )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         ) : (
           <p className="text-muted-foreground py-8 text-center">

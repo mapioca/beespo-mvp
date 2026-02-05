@@ -100,19 +100,6 @@ export async function GET(
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
   const redirectUrl = `${baseUrl}/${workspaceSlug}/meeting/${invitation.meeting_id}`;
 
-  // Return invitation details with redirect URL
-  return NextResponse.json({
-    success: true,
-    invitation: {
-      id: invitation.id,
-      email: invitation.email,
-      permission: invitation.permission,
-      status: "accepted",
-    },
-    meeting: {
-      id: invitation.meeting_id,
-      title: meetingInfo?.title,
-    },
-    redirect_url: redirectUrl,
-  });
+  // Redirect user to the meeting page
+  return NextResponse.redirect(redirectUrl);
 }

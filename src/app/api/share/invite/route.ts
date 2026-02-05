@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 import type { SharePermission } from "@/types/share";
+import { sendMeetingShareInviteEmail } from "@/lib/email/send-meeting-share-email";
 
 // GET /api/share/invite - List invitations for a meeting
 export async function GET(request: NextRequest) {
@@ -175,9 +176,24 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: insertError.message }, { status: 500 });
   }
 
-  // TODO: Send email notification via Resend
-  // For now, we'll just return the invitation
-  // In a production app, you would integrate with Resend here
+  // Send email notification via Resend
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const workspaceData = meeting.workspaces as { name: string; slug: string } | null;
+  const inviteLink = `${appUrl}/api/share/invite/${invitation.token}`;
+
+  const emailResult = await sendMeetingShareInviteEmail({
+    toEmail: email,
+    inviterName: profile.full_name || "Someone",
+    meetingTitle: meeting.title,
+    workspaceName: workspaceData?.name || "Beespo",
+    permission,
+    inviteLink,
+  });
+
+  if (!emailResult.success) {
+    console.error("Failed to send meeting share email:", emailResult.error);
+    // Non-blocking: invitation was still created successfully
+  }
 
   return NextResponse.json(
     {

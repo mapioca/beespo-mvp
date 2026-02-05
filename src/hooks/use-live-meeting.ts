@@ -74,7 +74,13 @@ export function useLiveMeeting({
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data, error } = await (supabase.from("agenda_items") as any)
-      .select("*")
+      .select(`
+        *,
+        hymns (
+          title,
+          hymn_number
+        )
+      `)
       .eq("meeting_id", meetingId)
       .order("order_index", { ascending: true });
 

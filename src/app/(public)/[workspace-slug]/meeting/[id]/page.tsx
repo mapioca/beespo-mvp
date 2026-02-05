@@ -5,7 +5,6 @@ import { LiveMeetingView } from "./live-meeting-view";
 import type { Database } from "@/types/database";
 
 type Meeting = Database["public"]["Tables"]["meetings"]["Row"];
-type AgendaItem = Database["public"]["Tables"]["agenda_items"]["Row"];
 
 interface PublicMeetingPageProps {
   params: Promise<{
@@ -74,12 +73,18 @@ export default async function PublicMeetingPage({
     notFound();
   }
 
-  // Fetch agenda items
-  const { data: items } = await supabase
-    .from("agenda_items")
-    .select("*")
+  // Fetch agenda items with hymn data
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: items } = await (supabase.from("agenda_items") as any)
+    .select(`
+      *,
+      hymns (
+        title,
+        hymn_number
+      )
+    `)
     .eq("meeting_id", meetingId)
-    .order("order_index") as { data: AgendaItem[] | null };
+    .order("order_index");
 
   // Remove workspace join data for the client component
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
