@@ -91,6 +91,50 @@ export async function getOrCreateCandidateName(name: string) {
     return createCandidateName(name);
 }
 
+// Get all active calling processes for pipeline view
+export async function getActiveProcesses() {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: "Unauthorized" };
+
+    const { data: profile } = await (supabase
+        .from("profiles") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+        .select("workspace_id")
+        .eq("id", user.id)
+        .single();
+
+    if (!profile?.workspace_id) return { error: "Profile not found" };
+
+    const { data, error } = await (supabase
+        .from("calling_processes") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+        .select(`
+            id,
+            current_stage,
+            status,
+            created_at,
+            updated_at,
+            candidate:candidate_names(id, name),
+            calling:callings!calling_processes_calling_id_fkey(
+                id,
+                title,
+                organization,
+                workspace_id
+            )
+        `)
+        .eq("calling.workspace_id", profile.workspace_id)
+        .order("updated_at", { ascending: false });
+
+    if (error) {
+        console.error("Get active processes error:", error);
+        return { error: error.message };
+    }
+
+    // Filter to only processes belonging to user's workspace
+    const filteredData = (data || []).filter((p: any) => p.calling !== null); // eslint-disable-line @typescript-eslint/no-explicit-any
+
+    return { success: true, processes: filteredData };
+}
+
 // =====================================================
 // CALLINGS (The Roles)
 // =====================================================

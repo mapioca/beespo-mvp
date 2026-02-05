@@ -8,11 +8,11 @@ import {
   Home,
   Calendar,
   CalendarDays,
-  Users,
   BookOpen,
   PanelLeftClose,
   PanelLeft,
   LifeBuoy,
+  HandHeart,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { TooltipProvider } from "@/components/ui/tooltip"
@@ -36,8 +36,8 @@ const navSections: NavSection[] = [
       { href: "/dashboard", icon: Home, label: "Dashboard" },
       { href: "/calendar", icon: Calendar, label: "Calendar" },
       { href: "/meetings/overview", icon: CalendarDays, label: "Meetings" },
+      { href: "/callings", icon: HandHeart, label: "Callings" },
       { href: "/notebooks", icon: BookOpen, label: "Notebooks" },
-      { href: "/directory", icon: Users, label: "Directory" },
     ],
   },
 ]

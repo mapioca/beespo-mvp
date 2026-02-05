@@ -9,6 +9,8 @@ import {
   Megaphone,
   MessageSquare,
   FileText,
+  Mic,
+  UsersRound,
   LucideIcon,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -25,6 +27,8 @@ const HUB_TABS: HubTab[] = [
   { slug: "business", label: "Business", icon: Briefcase },
   { slug: "announcements", label: "Announcements", icon: Megaphone },
   { slug: "discussions", label: "Discussions", icon: MessageSquare },
+  { slug: "speakers", label: "Speakers", icon: Mic },
+  { slug: "participants", label: "Participants", icon: UsersRound },
   { slug: "templates", label: "Templates", icon: FileText },
 ]
 

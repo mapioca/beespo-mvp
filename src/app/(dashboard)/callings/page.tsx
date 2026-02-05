@@ -1,8 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { CallingsClient } from "@/components/callings/callings-client";
+import { CallingsPageClient } from "./callings-page-client";
 
-// Disable caching to ensure new callings appear immediately
+// Disable caching to ensure updates appear immediately
 export const revalidate = 0;
 
 export default async function CallingsPage() {
@@ -28,38 +28,35 @@ export default async function CallingsPage() {
         redirect("/setup");
     }
 
-    // Get callings with candidates and processes
-    const { data: callings, error } = await (supabase
+    // Get all active processes with their callings for pipeline view
+    const { data: processes, error: processesError } = await (supabase
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .from("callings") as any)
+        .from("calling_processes") as any)
         .select(`
             id,
-            title,
-            organization,
-            is_filled,
-            filled_at,
+            current_stage,
+            status,
             created_at,
             updated_at,
-            filled_by_name:candidate_names!callings_filled_by_fkey(id, name),
-            candidates:calling_candidates(
+            candidate:candidate_names(id, name),
+            calling:callings!calling_processes_calling_id_fkey(
                 id,
-                status,
-                notes,
-                candidate:candidate_names(id, name)
-            ),
-            processes:calling_processes(
-                id,
-                current_stage,
-                status,
-                candidate:candidate_names(id, name)
+                title,
+                organization,
+                workspace_id
             )
         `)
-        .eq("workspace_id", profile.workspace_id)
-        .order("created_at", { ascending: false });
+        .order("updated_at", { ascending: false });
 
-    if (error) {
-        console.error("Callings query error:", error);
+    if (processesError) {
+        console.error("Processes query error:", processesError);
     }
+
+    // Filter to only processes in this workspace
+    const workspaceProcesses = (processes || []).filter(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (p: any) => p.calling?.workspace_id === profile.workspace_id
+    );
 
     // Get team members for task assignment
     const { data: teamMembers } = await (supabase
@@ -70,10 +67,9 @@ export default async function CallingsPage() {
         .order("full_name");
 
     return (
-        <CallingsClient
-            callings={callings || []}
+        <CallingsPageClient
+            initialProcesses={workspaceProcesses}
             teamMembers={teamMembers || []}
-            userRole={profile.role}
         />
     );
 }
