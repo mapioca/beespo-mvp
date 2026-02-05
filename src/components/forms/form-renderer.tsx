@@ -49,10 +49,11 @@ export function FormRenderer({
 
     // Generate Zod schema from form schema
     const zodSchema = useMemo(() => schemaToZod(schema), [schema]);
+    const resolver = useMemo(() => zodResolver(zodSchema), [zodSchema]);
     const defaultValues = useMemo(() => getSchemaDefaults(schema), [schema]);
 
     const form = useForm({
-        resolver: zodResolver(zodSchema),
+        resolver,
         defaultValues,
         mode: "onBlur",
     });

@@ -27,6 +27,7 @@ import { Button } from "@/components/ui/button"
 import { SupportModal } from "@/components/support/support-modal"
 import { NavSection } from "./sidebar-types"
 import { SidebarNavSection } from "./sidebar-nav-section"
+import { SidebarAppsSection } from "./sidebar-apps-section"
 import { useSidebarState } from "@/hooks/use-sidebar-state"
 
 const navSections: NavSection[] = [
@@ -44,9 +45,10 @@ const navSections: NavSection[] = [
   },
 ]
 
-// Default expanded groups (Agenda is open by default)
+// Default expanded groups (Agenda is open by default, Apps collapsed)
 const defaultExpandedGroups: Record<string, boolean> = {
   "management-agenda": true,
+  "apps-section": false,
 }
 
 interface AppSidebarProps {
@@ -161,6 +163,13 @@ export function AppSidebar({
               isFirst={index === 0}
             />
           ))}
+
+          {/* Apps Section */}
+          <SidebarAppsSection
+            isCollapsed={isCollapsed}
+            isExpanded={isGroupExpanded("apps-section")}
+            onToggle={() => toggleGroup("apps-section")}
+          />
         </nav>
 
         {/* Help & Support Button */}
