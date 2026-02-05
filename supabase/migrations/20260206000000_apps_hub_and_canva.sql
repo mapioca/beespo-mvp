@@ -260,9 +260,9 @@ CREATE POLICY "Leaders and admins can delete event designs"
 INSERT INTO apps (slug, name, description, icon_url, category, requires_oauth, oauth_scopes, features)
 VALUES (
     'canva',
-    'Canva Design Studio',
+    'Canva',
     'Create beautiful event invitations, flyers, and graphics with Canva''s powerful design tools.',
-    '/icons/canva.svg',
+    '/icons/canva.png',
     'design',
     true,
     ARRAY['design:content:write', 'design:content:read'],
