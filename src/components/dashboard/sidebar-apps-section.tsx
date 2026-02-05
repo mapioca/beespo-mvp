@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AppWindow, ChevronRight, Plus, Puzzle } from "lucide-react";
@@ -15,7 +15,7 @@ import {
     TooltipContent,
     TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useAppsStore, useConnectedApps } from "@/stores/apps-store";
+import type { WorkspaceAppWithApp } from "@/types/apps";
 
 interface SidebarAppsSectionProps {
     isCollapsed: boolean;
@@ -29,28 +29,34 @@ export function SidebarAppsSection({
     onToggle,
 }: SidebarAppsSectionProps) {
     const pathname = usePathname();
-    const connectedApps = useConnectedApps();
-    const { isLoadingWorkspaceApps, setWorkspaceApps, setLoadingWorkspaceApps } = useAppsStore();
+    const [connectedApps, setConnectedApps] = useState<WorkspaceAppWithApp[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const hasFetched = useRef(false);
 
-    // Fetch workspace apps and populate the global store
+    // Fetch workspace apps on mount
     useEffect(() => {
+        if (hasFetched.current) return;
+        hasFetched.current = true;
+
         async function fetchApps() {
-            setLoadingWorkspaceApps(true);
             try {
                 const response = await fetch("/api/workspace-apps");
                 if (response.ok) {
                     const data = await response.json();
-                    setWorkspaceApps(data.workspaceApps || []);
+                    const connected = (data.workspaceApps || []).filter(
+                        (wa: WorkspaceAppWithApp) => wa.status === "connected"
+                    );
+                    setConnectedApps(connected);
                 }
             } catch (error) {
                 console.error("Failed to fetch workspace apps:", error);
             } finally {
-                setLoadingWorkspaceApps(false);
+                setIsLoading(false);
             }
         }
 
         fetchApps();
-    }, [setWorkspaceApps, setLoadingWorkspaceApps]);
+    }, []);
 
     const isAppsPageActive = pathname === "/apps";
 
@@ -121,7 +127,7 @@ export function SidebarAppsSection({
                 >
                     <div className="mt-1 space-y-1">
                         {/* Connected Apps */}
-                        {!isLoadingWorkspaceApps &&
+                        {!isLoading &&
                             connectedApps.map((wa) => (
                                 <Link
                                     key={wa.id}

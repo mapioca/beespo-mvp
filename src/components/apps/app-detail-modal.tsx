@@ -71,6 +71,13 @@ export function AppDetailModal({
         setConnectingApp(app.slug);
 
         try {
+            // If already pending, go directly to OAuth
+            if (isPending && app.requires_oauth) {
+                onClose();
+                window.location.href = `/api/apps/${app.slug}/authorize`;
+                return;
+            }
+
             // First, create the workspace app record
             const response = await fetch("/api/workspace-apps", {
                 method: "POST",
@@ -264,12 +271,17 @@ export function AppDetailModal({
                         <Button
                             className="w-full gap-2"
                             onClick={handleConnect}
-                            disabled={isConnecting || isPending || !canManage}
+                            disabled={isConnecting || !canManage}
                         >
-                            {isConnecting || isPending ? (
+                            {isConnecting ? (
                                 <>
                                     <Loader2 className="h-4 w-4 animate-spin" />
-                                    {isPending ? "Connection Pending..." : "Connecting..."}
+                                    Connecting...
+                                </>
+                            ) : isPending ? (
+                                <>
+                                    <ExternalLink className="h-4 w-4" />
+                                    Continue Setup
                                 </>
                             ) : (
                                 <>

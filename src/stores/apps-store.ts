@@ -102,23 +102,26 @@ export const useAppsStore = create<AppsState>()((set, get) => ({
   reset: () => set(initialState),
 }));
 
-// Selector hooks
+// Selector hooks - only use for primitive values to avoid infinite loops
+// For arrays/objects, access the store directly in components
+
 export const useApps = () => useAppsStore((state) => state.apps);
 
 export const useWorkspaceApps = () => useAppsStore((state) => state.workspaceApps);
 
-export const useConnectedApps = () =>
-  useAppsStore((state) => state.workspaceApps.filter((wa) => wa.status === "connected"));
+// DEPRECATED: Don't use this - it causes infinite loops. Use useWorkspaceApps and filter in component.
+// export const useConnectedApps = () => ...
 
+// Returns a primitive boolean - safe to use directly
 export const useIsCanvaConnected = () =>
   useAppsStore((state) =>
-    state.workspaceApps.some((wa) => wa.app.slug === "canva" && wa.status === "connected")
+    state.workspaceApps.some((wa) => wa.app?.slug === "canva" && wa.status === "connected")
   );
 
 export const useHasFeature = (feature: AppFeature) =>
   useAppsStore((state) =>
     state.workspaceApps.some(
-      (wa) => wa.status === "connected" && wa.app.features.includes(feature)
+      (wa) => wa.status === "connected" && wa.app?.features?.includes(feature)
     )
   );
 

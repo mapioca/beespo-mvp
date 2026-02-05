@@ -3,6 +3,11 @@ import { redirect } from "next/navigation";
 import { AppsClient } from "./apps-client";
 import type { App, WorkspaceAppWithApp } from "@/types/apps";
 
+type Profile = {
+    workspace_id: string;
+    role: string;
+};
+
 export default async function AppsPage() {
     const supabase = await createClient();
 
@@ -15,11 +20,11 @@ export default async function AppsPage() {
     }
 
     // Get current user's profile
-    const { data: profile } = await supabase
-        .from("profiles")
+    const { data: profile } = await (supabase
+        .from("profiles") as ReturnType<typeof supabase.from>)
         .select("workspace_id, role")
         .eq("id", user.id)
-        .single();
+        .single() as { data: Profile | null };
 
     if (!profile || !profile.workspace_id) {
         redirect("/setup");
