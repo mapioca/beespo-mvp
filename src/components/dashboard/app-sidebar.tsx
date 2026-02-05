@@ -6,80 +6,46 @@ import { usePathname } from "next/navigation"
 import { useState } from "react"
 import {
   Home,
-  FileText,
   Calendar,
   CalendarDays,
-  CheckSquare,
-  MessageSquare,
-  Briefcase,
-  Megaphone,
-  Mic,
-  StickyNote,
   Users,
-  Ticket,
-  UserCog,
+  BookOpen,
   PanelLeftClose,
   PanelLeft,
   LifeBuoy,
-  LucideIcon,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { TooltipProvider } from "@/components/ui/tooltip"
 import {
   Tooltip,
   TooltipContent,
-  TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { SidebarUserProfile } from "@/components/dashboard/sidebar-user-profile"
 import { Button } from "@/components/ui/button"
 import { SupportModal } from "@/components/support/support-modal"
+import { NavSection } from "./sidebar-types"
+import { SidebarNavSection } from "./sidebar-nav-section"
+import { useSidebarState } from "@/hooks/use-sidebar-state"
 
-interface NavItem {
-  href: string
-  icon: LucideIcon
-  label: string
-}
-
-interface NavGroup {
-  title: string
-  items: NavItem[]
-}
-
-const navGroups: NavGroup[] = [
+const navSections: NavSection[] = [
   {
-    title: "Overview",
+    id: "main",
+    title: "", // No section header for clean look
     items: [
       { href: "/dashboard", icon: Home, label: "Dashboard" },
       { href: "/calendar", icon: Calendar, label: "Calendar" },
-      { href: "/events", icon: Ticket, label: "Events" },
-      { href: "/tasks", icon: CheckSquare, label: "Tasks" },
-    ],
-  },
-  {
-    title: "Meetings",
-    items: [
-      { href: "/meetings", icon: CalendarDays, label: "Meetings" },
-      { href: "/templates", icon: FileText, label: "Templates" },
-    ],
-  },
-  {
-    title: "Leadership",
-    items: [
-      { href: "/callings", icon: UserCog, label: "Callings" },
-      { href: "/business", icon: Briefcase, label: "Business" },
-      { href: "/announcements", icon: Megaphone, label: "Announcements" },
-      { href: "/discussions", icon: MessageSquare, label: "Discussions" },
-      { href: "/notes", icon: StickyNote, label: "Notes" },
-    ],
-  },
-  {
-    title: "People",
-    items: [
-      { href: "/speakers", icon: Mic, label: "Speakers" },
-      { href: "/participants", icon: Users, label: "Participants" },
+      { href: "/meetings/overview", icon: CalendarDays, label: "Meetings" },
+      { href: "/notebooks", icon: BookOpen, label: "Notebooks" },
+      { href: "/directory", icon: Users, label: "Directory" },
     ],
   },
 ]
+
+// Default expanded groups (Agenda is open by default)
+const defaultExpandedGroups: Record<string, boolean> = {
+  "management-agenda": true,
+}
 
 interface AppSidebarProps {
   workspaceName: string
@@ -94,9 +60,15 @@ export function AppSidebar({
   userEmail,
   userAvatarUrl,
 }: AppSidebarProps) {
-  const [isCollapsed, setIsCollapsed] = useState(false)
   const [supportModalOpen, setSupportModalOpen] = useState(false)
   const pathname = usePathname()
+
+  const {
+    isCollapsed,
+    toggleCollapsed,
+    isGroupExpanded,
+    toggleGroup,
+  } = useSidebarState(defaultExpandedGroups)
 
   return (
     <TooltipProvider delayDuration={0}>
@@ -145,7 +117,7 @@ export function AppSidebar({
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => setIsCollapsed(!isCollapsed)}
+                  onClick={toggleCollapsed}
                   className="h-8 w-8 text-muted-foreground hover:text-foreground shrink-0"
                 >
                   {isCollapsed ? (
@@ -176,55 +148,16 @@ export function AppSidebar({
 
         {/* Navigation */}
         <nav className="flex-1 overflow-y-auto py-4">
-          {navGroups.map((group, groupIndex) => (
-            <div key={group.title} className={groupIndex > 0 ? "mt-6" : ""}>
-              {/* Group Header - Hidden when collapsed */}
-              {!isCollapsed && (
-                <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 px-3">
-                  {group.title}
-                </h3>
-              )}
-
-              {/* Group Items */}
-              <div className="space-y-1 px-2">
-                {group.items.map((item) => {
-                  const isActive =
-                    pathname === item.href ||
-                    (item.href !== "/dashboard" &&
-                      pathname.startsWith(item.href))
-
-                  const linkContent = (
-                    <Link
-                      href={item.href}
-                      className={cn(
-                        "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                        isActive
-                          ? "bg-accent text-accent-foreground"
-                          : "hover:bg-accent hover:text-accent-foreground",
-                        isCollapsed && "justify-center px-2"
-                      )}
-                    >
-                      <item.icon className="h-4 w-4 shrink-0" />
-                      {!isCollapsed && <span>{item.label}</span>}
-                    </Link>
-                  )
-
-                  // Wrap in tooltip only when collapsed
-                  if (isCollapsed) {
-                    return (
-                      <Tooltip key={item.href}>
-                        <TooltipTrigger asChild>{linkContent}</TooltipTrigger>
-                        <TooltipContent side="right" className="font-medium">
-                          {item.label}
-                        </TooltipContent>
-                      </Tooltip>
-                    )
-                  }
-
-                  return <div key={item.href}>{linkContent}</div>
-                })}
-              </div>
-            </div>
+          {navSections.map((section, index) => (
+            <SidebarNavSection
+              key={section.id}
+              section={section}
+              pathname={pathname}
+              isCollapsed={isCollapsed}
+              isGroupExpanded={isGroupExpanded}
+              toggleGroup={toggleGroup}
+              isFirst={index === 0}
+            />
           ))}
         </nav>
 

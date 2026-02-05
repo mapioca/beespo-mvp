@@ -19,6 +19,8 @@ import {
     Megaphone,
     User,
     Trash2,
+    Puzzle,
+    Layers,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { TemplateCanvasItem } from "./types";
@@ -33,10 +35,32 @@ interface TemplateCanvasProps {
 
 type CategoryType = "procedural" | "discussion" | "business" | "announcement" | "speaker";
 
-const getCategoryIcon = (category: CategoryType, isHymn?: boolean) => {
-    if (category === "procedural" && isHymn) {
+// Check if item is a custom item (with fallback to procedural_item_type_id check)
+const isCustomItem = (item: TemplateCanvasItem): boolean => {
+    if (item.is_custom === true) return true;
+    // Fallback: custom items have IDs starting with "custom-"
+    return !!item.procedural_item_type_id?.startsWith("custom-");
+};
+
+// Get icon for canvas item - supports custom items with Puzzle icon
+const getCanvasItemIcon = (item: TemplateCanvasItem) => {
+    // Custom items get purple-themed icons with Puzzle as default
+    if (isCustomItem(item)) {
+        if (item.config?.requires_resource) {
+            return <Music className="h-4 w-4 text-purple-500" />;
+        }
+        if (item.config?.requires_assignee) {
+            return <User className="h-4 w-4 text-purple-500" />;
+        }
+        return <Puzzle className="h-4 w-4 text-purple-500" />;
+    }
+
+    // Core/standard items - check for hymn
+    if (item.is_hymn || item.config?.requires_resource) {
         return <Music className="h-4 w-4 text-blue-500" />;
     }
+
+    // Category-based icons
     const icons: Record<CategoryType, React.ReactNode> = {
         procedural: <BookOpen className="h-4 w-4 text-slate-500" />,
         discussion: <MessageSquare className="h-4 w-4 text-green-500" />,
@@ -44,7 +68,7 @@ const getCategoryIcon = (category: CategoryType, isHymn?: boolean) => {
         announcement: <Megaphone className="h-4 w-4 text-orange-500" />,
         speaker: <User className="h-4 w-4 text-pink-500" />,
     };
-    return icons[category];
+    return icons[item.category as CategoryType] || <Layers className="h-4 w-4 text-blue-500" />;
 };
 
 const getContainerColors = (type: ContainerType) => {
@@ -154,7 +178,7 @@ function SortableTemplateRow({
 
                     {/* Category Icon */}
                     <div className="shrink-0">
-                        {getCategoryIcon(item.category as CategoryType)}
+                        {getCanvasItemIcon(item)}
                     </div>
 
                     {/* Title - Editable */}
@@ -221,7 +245,7 @@ function SortableTemplateRow({
 
             {/* Category Icon */}
             <div className="shrink-0">
-                {getCategoryIcon(item.category as CategoryType, item.is_hymn)}
+                {getCanvasItemIcon(item)}
             </div>
 
             {/* Title - Editable */}
