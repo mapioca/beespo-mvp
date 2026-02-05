@@ -1,5 +1,6 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { format, parseISO } from "date-fns"
 import {
     Sheet,
@@ -11,13 +12,22 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
+import { TooltipProvider } from "@/components/ui/tooltip"
 import {
     Calendar,
     MapPin,
     ExternalLink,
     CalendarDays,
+    Palette,
 } from "lucide-react"
 import Link from "next/link"
+import { DesignInvitationModal } from "@/components/canva/design-invitation-modal"
+import { useIsCanvaConnected } from "@/stores/apps-store"
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+} from "@/components/ui/tooltip"
 import type { EventListItem } from "./events-list-client"
 
 interface EventDetailDrawerProps {
@@ -31,11 +41,31 @@ export function EventDetailDrawer({
     open,
     onOpenChange,
 }: EventDetailDrawerProps) {
+    const [showDesignModal, setShowDesignModal] = useState(false)
+    const isCanvaConnected = useIsCanvaConnected()
+
+    // Close design modal when drawer closes
+    useEffect(() => {
+        if (!open) {
+            setShowDesignModal(false)
+        }
+    }, [open])
+
     if (!event) return null
 
     const startDate = parseISO(event.start_at)
     const endDate = parseISO(event.end_at)
     const isMeeting = event.source_type === "meeting"
+
+    // Prepare event data for the design modal
+    const eventData = {
+        date: format(startDate, "EEEE, MMMM d, yyyy"),
+        time: event.is_all_day
+            ? "All day"
+            : `${format(startDate, "h:mm a")} - ${format(endDate, "h:mm a")}`,
+        location: event.location || null,
+        description: event.description || null,
+    }
 
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
@@ -132,6 +162,53 @@ export function EventDetailDrawer({
                         </>
                     )}
 
+                    {/* Create Invitation - Only for standalone events */}
+                    {!isMeeting && (
+                        <>
+                            <Separator />
+                            <div className="space-y-3">
+                                <h4 className="text-sm font-medium text-muted-foreground">
+                                    Design Tools
+                                </h4>
+                                <TooltipProvider>
+                                    {isCanvaConnected ? (
+                                        <Button
+                                            variant="outline"
+                                            className="w-full gap-2"
+                                            onClick={() => setShowDesignModal(true)}
+                                        >
+                                            <Palette className="h-4 w-4" />
+                                            Create Invitation
+                                        </Button>
+                                    ) : (
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <span className="block w-full">
+                                                    <Button
+                                                        variant="outline"
+                                                        className="w-full gap-2"
+                                                        disabled
+                                                    >
+                                                        <Palette className="h-4 w-4" />
+                                                        Create Invitation
+                                                    </Button>
+                                                </span>
+                                            </TooltipTrigger>
+                                            <TooltipContent>
+                                                <p>Add Canva from the Apps Hub to enable this feature</p>
+                                            </TooltipContent>
+                                        </Tooltip>
+                                    )}
+                                </TooltipProvider>
+                                <p className="text-xs text-muted-foreground text-center">
+                                    {isCanvaConnected
+                                        ? "Design an invitation with Canva"
+                                        : "Connect Canva in Apps Hub to design invitations"}
+                                </p>
+                            </div>
+                        </>
+                    )}
+
                     {/* Close Button */}
                     <Separator />
                     <Button
@@ -143,6 +220,15 @@ export function EventDetailDrawer({
                     </Button>
                 </div>
             </SheetContent>
+
+            {/* Design Invitation Modal */}
+            <DesignInvitationModal
+                eventId={event.id}
+                eventTitle={event.title}
+                eventData={eventData}
+                isOpen={showDesignModal}
+                onClose={() => setShowDesignModal(false)}
+            />
         </Sheet>
     )
 }
