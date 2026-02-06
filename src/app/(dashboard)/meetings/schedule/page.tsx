@@ -69,6 +69,17 @@ export default async function SchedulePage({ searchParams }: SchedulePageProps) 
     workspaceSlug = workspace?.slug || null
   }
 
+  // SECURITY: Ensure user has a workspace before querying meetings
+  if (!profile?.workspace_id) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-muted-foreground">
+          No workspace found. Please set up your workspace first.
+        </p>
+      </div>
+    )
+  }
+
   // Build the query with filters
   let query = supabase.from("meetings").select(
     `
@@ -80,6 +91,9 @@ export default async function SchedulePage({ searchParams }: SchedulePageProps) 
         `,
     { count: "exact" }
   )
+
+  // SECURITY: Always filter by workspace_id (defense-in-depth with RLS)
+  query = query.eq("workspace_id", profile.workspace_id)
 
   // Apply search filter (ilike for case-insensitive partial match)
   if (searchQuery) {

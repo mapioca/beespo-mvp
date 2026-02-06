@@ -83,11 +83,15 @@ export function SidebarUserProfile({ name, email, avatarUrl, isCollapsed = false
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
-                    className="cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-100/50"
-                    onClick={() => signOutAction()}
+                    className="cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-100/50 p-0"
+                    asChild
                 >
-                    <LogOut className="mr-2 h-4 w-4" />
-                    <span>Log out</span>
+                    <form action={signOutAction} className="w-full">
+                        <button type="submit" className="flex items-center w-full px-2 py-1.5">
+                            <LogOut className="mr-2 h-4 w-4" />
+                            <span>Log out</span>
+                        </button>
+                    </form>
                 </DropdownMenuItem>
             </DropdownMenuContent>
         </DropdownMenu>
