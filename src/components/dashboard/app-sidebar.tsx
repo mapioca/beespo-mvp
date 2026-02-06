@@ -14,6 +14,7 @@ import {
   LifeBuoy,
   HandHeart,
   ClipboardList,
+  Table2,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { TooltipProvider } from "@/components/ui/tooltip"
@@ -40,6 +41,7 @@ const navSections: NavSection[] = [
       { href: "/meetings/overview", icon: CalendarDays, label: "Meetings" },
       { href: "/callings", icon: HandHeart, label: "Callings" },
       { href: "/forms", icon: ClipboardList, label: "Forms" },
+      { href: "/tables", icon: Table2, label: "Tables" },
       { href: "/notebooks", icon: BookOpen, label: "Notebooks" },
     ],
   },

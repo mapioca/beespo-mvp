@@ -93,6 +93,7 @@ export async function validateAndConsumeInviteCode(
 export async function validateInviteCode(
     supabase: SupabaseClient,
     code: string,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _ipAddress?: string
 ): Promise<ValidateInviteCodeResult> {
     const normalizedCode = normalizeInviteCode(code);

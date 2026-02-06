@@ -40,6 +40,7 @@ export default function SignupPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isConsumingCode, setIsConsumingCode] = useState(false);
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleInviteValidation = useCallback((isValid: boolean, _invitationId: string | null) => {
     setInviteCodeValid(isValid);
   }, []);
