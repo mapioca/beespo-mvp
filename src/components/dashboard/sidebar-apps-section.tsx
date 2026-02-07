@@ -63,7 +63,7 @@ export function SidebarAppsSection({
     // When sidebar is collapsed, show tooltip
     if (isCollapsed) {
         return (
-            <div className="px-2 mt-6">
+            <div className="px-2 mt-1">
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <Link
@@ -100,7 +100,7 @@ export function SidebarAppsSection({
     }
 
     return (
-        <div className="px-2 mt-6">
+        <div className="px-2 mt-1">
             <Collapsible open={isExpanded} onOpenChange={onToggle}>
                 <CollapsibleTrigger
                     className={cn(
