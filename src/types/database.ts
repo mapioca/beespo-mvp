@@ -6,7 +6,10 @@
 export type AgendaItemType = 'procedural' | 'discussion' | 'business' | 'announcement' | 'speaker';
 
 // Workspace types
-export type WorkspaceType = 'ward' | 'branch' | 'stake' | 'district';
+export type WorkspaceType = 'group' | 'branch' | 'ward' | 'district' | 'stake';
+
+// Feature tier for role-based access
+export type FeatureTier = 'bishopric' | 'organization' | 'support';
 export type OrganizationType =
   | 'bishopric'
   | 'elders_quorum'
@@ -243,6 +246,7 @@ export type Database = {
           type: WorkspaceType;
           organization_type: OrganizationType;
           slug: string | null;
+          unit_name: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -252,6 +256,7 @@ export type Database = {
           type: WorkspaceType;
           organization_type: OrganizationType;
           slug?: string | null;
+          unit_name?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -261,6 +266,7 @@ export type Database = {
           type?: WorkspaceType;
           organization_type?: OrganizationType;
           slug?: string | null;
+          unit_name?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -273,6 +279,9 @@ export type Database = {
           workspace_id: string | null;
           role: UserRole;
           is_sys_admin: boolean;
+          role_title: string | null;
+          feature_interests: string[] | null;
+          feature_tier: FeatureTier | null;
           created_at: string;
           updated_at: string;
         };
@@ -283,6 +292,9 @@ export type Database = {
           workspace_id?: string | null;
           role: UserRole;
           is_sys_admin?: boolean;
+          role_title?: string | null;
+          feature_interests?: string[] | null;
+          feature_tier?: FeatureTier | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -293,6 +305,9 @@ export type Database = {
           workspace_id?: string | null;
           role?: UserRole;
           is_sys_admin?: boolean;
+          role_title?: string | null;
+          feature_interests?: string[] | null;
+          feature_tier?: FeatureTier | null;
           created_at?: string;
           updated_at?: string;
         };

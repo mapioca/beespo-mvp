@@ -32,9 +32,9 @@ export async function GET(request: Request) {
           .eq('id', user.id)
           .single()
 
-        // If no profile, redirect to setup
+        // If no profile, redirect to onboarding
         if (!profile) {
-          return NextResponse.redirect(`${origin}/setup`)
+          return NextResponse.redirect(`${origin}/onboarding`)
         }
 
         // Profile exists, redirect to next or dashboard

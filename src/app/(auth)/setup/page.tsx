@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,123 +13,15 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/lib/hooks/use-toast";
-import { createClient } from "@/lib/supabase/client";
-import type { WorkspaceType, OrganizationType } from "@/types/database";
-
-const workspaceTypes: { value: WorkspaceType; label: string }[] = [
-  { value: "ward", label: "Ward" },
-  { value: "branch", label: "Branch" },
-  { value: "stake", label: "Stake" },
-  { value: "district", label: "District" },
-];
-
-const organizationTypes: { value: OrganizationType; label: string }[] = [
-  { value: "bishopric", label: "Bishopric" },
-  { value: "elders_quorum", label: "Elders Quorum" },
-  { value: "relief_society", label: "Relief Society" },
-  { value: "young_men", label: "Young Men" },
-  { value: "young_women", label: "Young Women" },
-  { value: "primary", label: "Primary" },
-  { value: "missionary_work", label: "Missionary Work" },
-  { value: "temple_family_history", label: "Temple & Family History" },
-  { value: "sunday_school", label: "Sunday School" },
-];
+import { ArrowRight, Sparkles, Users } from "lucide-react";
 
 export default function SetupPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-
-  // Create new workspace
-  const [workspaceName, setWorkspaceName] = useState("");
-  const [workspaceType, setWorkspaceType] = useState<WorkspaceType>("ward");
-  const [organizationType, setOrganizationType] = useState<OrganizationType>("bishopric");
-
-  // Join existing workspace
   const [inviteToken, setInviteToken] = useState("");
-
-  const handleCreateWorkspace = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-
-    const supabase = createClient();
-
-    // Get current user
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-
-    if (userError || !user) {
-      toast({
-        title: "Error",
-        description: "Not authenticated. Please log in again.",
-        variant: "destructive",
-      });
-      setIsLoading(false);
-      return;
-    }
-
-    // Create workspace
-    const { data: workspace, error: workspaceError } = await supabase
-      .from("workspaces")
-      // @ts-expect-error - Supabase type inference issue
-      .insert({
-        name: workspaceName,
-        type: workspaceType,
-        organization_type: organizationType,
-      })
-      .select()
-      .single();
-
-    if (workspaceError || !workspace) {
-      toast({
-        title: "Error",
-        description: workspaceError?.message || "Failed to create workspace.",
-        variant: "destructive",
-      });
-      setIsLoading(false);
-      return;
-    }
-
-    // Create profile for user as admin (owner)
-    const { error: profileError } = await supabase
-      .from("profiles")
-      // @ts-expect-error - Supabase type inference issue
-      .insert({
-        id: user.id,
-        email: user.email!,
-        full_name: user.user_metadata.full_name || user.email?.split("@")[0] || "User",
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        workspace_id: (workspace as any).id,
-        role: "admin",
-      });
-
-    if (profileError) {
-      toast({
-        title: "Error",
-        description: profileError.message || "Failed to create profile.",
-        variant: "destructive",
-      });
-      setIsLoading(false);
-      return;
-    }
-
-    toast({
-      title: "Success",
-      description: `${workspaceName} has been created successfully!`,
-    });
-
-    setIsLoading(false);
-    router.push("/dashboard");
-    router.refresh();
-  };
+  const [showJoinForm, setShowJoinForm] = useState(false);
 
   const handleJoinWorkspace = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -182,79 +75,70 @@ export default function SetupPage() {
   };
 
   return (
-    <Card className="border-border">
-      <CardHeader className="space-y-1">
-        <CardTitle className="text-2xl font-bold">Set up your workspace</CardTitle>
-        <CardDescription>
-          Create a new workspace for your organization, or join an existing one
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Tabs defaultValue="create" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="create">Create New</TabsTrigger>
-            <TabsTrigger value="join">Join Existing</TabsTrigger>
-          </TabsList>
-          <TabsContent value="create" className="space-y-4 pt-4">
-            <form onSubmit={handleCreateWorkspace} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="workspaceName">Workspace Name</Label>
-                <Input
-                  id="workspaceName"
-                  type="text"
-                  placeholder="e.g., Riverside Ward"
-                  value={workspaceName}
-                  onChange={(e) => setWorkspaceName(e.target.value)}
-                  required
-                  disabled={isLoading}
-                />
+    <div className="flex flex-col gap-6">
+      <div className="text-center space-y-2">
+        <h1 className="text-2xl font-bold">Get Started with Beespo</h1>
+        <p className="text-muted-foreground">
+          Create your organization&apos;s workspace or join an existing one
+        </p>
+      </div>
+
+      {/* Primary CTA - Create New Workspace */}
+      <Link href="/onboarding">
+        <Card className="border-2 border-primary/20 hover:border-primary/50 transition-colors cursor-pointer group">
+          <CardHeader className="pb-2">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                <Sparkles className="h-5 w-5 text-primary" />
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="workspaceType">Unit Type</Label>
-                  <Select
-                    value={workspaceType}
-                    onValueChange={(value: WorkspaceType) => setWorkspaceType(value)}
-                    disabled={isLoading}
-                  >
-                    <SelectTrigger id="workspaceType">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {workspaceTypes.map((type) => (
-                        <SelectItem key={type.value} value={type.value}>
-                          {type.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="organizationType">Organization</Label>
-                  <Select
-                    value={organizationType}
-                    onValueChange={(value: OrganizationType) => setOrganizationType(value)}
-                    disabled={isLoading}
-                  >
-                    <SelectTrigger id="organizationType">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {organizationTypes.map((type) => (
-                        <SelectItem key={type.value} value={type.value}>
-                          {type.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+              <div className="flex-1">
+                <CardTitle className="text-lg">Create a New Workspace</CardTitle>
+                <CardDescription>
+                  Set up a workspace for your bishopric, presidency, or organization
+                </CardDescription>
               </div>
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Creating..." : "Create Workspace"}
-              </Button>
-            </form>
-          </TabsContent>
-          <TabsContent value="join" className="space-y-4 pt-4">
+              <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+            </div>
+          </CardHeader>
+        </Card>
+      </Link>
+
+      {/* Divider */}
+      <div className="relative">
+        <div className="absolute inset-0 flex items-center">
+          <span className="w-full border-t" />
+        </div>
+        <div className="relative flex justify-center text-xs uppercase">
+          <span className="bg-background px-2 text-muted-foreground">
+            Or if you have an invitation
+          </span>
+        </div>
+      </div>
+
+      {/* Secondary - Join Existing */}
+      {!showJoinForm ? (
+        <Button
+          variant="outline"
+          className="w-full gap-2 h-auto py-4"
+          onClick={() => setShowJoinForm(true)}
+        >
+          <Users className="h-5 w-5" />
+          <div className="text-left">
+            <div className="font-medium">Join an Existing Workspace</div>
+            <div className="text-xs text-muted-foreground font-normal">
+              Enter an invitation token from your admin
+            </div>
+          </div>
+        </Button>
+      ) : (
+        <Card className="border-border">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg">Join a Workspace</CardTitle>
+            <CardDescription>
+              Enter your invitation token to join
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
             <form onSubmit={handleJoinWorkspace} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="inviteToken">Invitation Token</Label>
@@ -266,18 +150,39 @@ export default function SetupPage() {
                   onChange={(e) => setInviteToken(e.target.value)}
                   required
                   disabled={isLoading}
+                  autoFocus
                 />
-                <p className="text-sm text-muted-foreground">
-                  You can find this in the invitation email, or ask your workspace admin for the token.
+                <p className="text-xs text-muted-foreground">
+                  Check your email or ask your workspace admin for the token.
                 </p>
               </div>
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Joining..." : "Join Workspace"}
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => setShowJoinForm(false)}
+                  disabled={isLoading}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" className="flex-1 gap-2" disabled={isLoading || !inviteToken.trim()}>
+                  {isLoading ? (
+                    <>
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                      Joining...
+                    </>
+                  ) : (
+                    <>
+                      Join Workspace
+                      <ArrowRight className="h-4 w-4" />
+                    </>
+                  )}
+                </Button>
+              </div>
             </form>
-          </TabsContent>
-        </Tabs>
-      </CardContent>
-    </Card>
+          </CardContent>
+        </Card>
+      )}
+    </div>
   );
 }
