@@ -4,9 +4,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-interface StickyNavigationProps {
-  currentStep: number;
-  totalSteps: number;
+interface InlineNavigationProps {
   canGoBack: boolean;
   canSkip: boolean;
   canContinue: boolean;
@@ -17,9 +15,7 @@ interface StickyNavigationProps {
   className?: string;
 }
 
-export function StickyNavigation({
-  currentStep,
-  totalSteps,
+export function InlineNavigation({
   canGoBack,
   canSkip,
   canContinue,
@@ -28,29 +24,14 @@ export function StickyNavigation({
   onSkip,
   onContinue,
   className,
-}: StickyNavigationProps) {
-  const progress = (currentStep / totalSteps) * 100;
-
+}: InlineNavigationProps) {
   return (
     <div
       className={cn(
-        'sticky bottom-0 left-0 right-0',
-        'bg-background/95 backdrop-blur-sm',
-        'border-t border-border',
-        'py-4 px-6',
+        'mt-12 max-w-[640px] mx-auto',
         className
       )}
     >
-      {/* Progress bar only - no text */}
-      <div className="mb-4">
-        <div className="h-2 bg-muted rounded-full overflow-hidden">
-          <div
-            className="h-full bg-primary transition-all duration-300 ease-out rounded-full"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
-      </div>
-
       {/* Navigation buttons */}
       <div className="flex items-center justify-between">
         <div>

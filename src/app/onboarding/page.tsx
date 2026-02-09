@@ -6,8 +6,8 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { TileSelector } from '@/components/onboarding/tile-selector';
-import { StickyNavigation } from '@/components/onboarding/sticky-navigation';
+import { PillSelector } from '@/components/onboarding/pill-selector';
+import { WizardFooter } from '@/components/onboarding/wizard-footer';
 import { useToast } from '@/lib/hooks/use-toast';
 import { UNIT_TYPES, FEATURES } from '@/lib/onboarding/constants';
 import {
@@ -284,24 +284,21 @@ export default function OnboardingPage() {
   return (
     <div className="min-h-screen flex">
       {/* Left pane - Content */}
-      <div className="w-full lg:w-[55%] flex flex-col bg-background">
-        {/* Header */}
-        <div className="p-6 lg:p-8">
-          <div className="flex items-center gap-2">
-            <Image
-              src="/images/beespo-logo-full.svg"
-              alt="Beespo"
-              width={120}
-              height={32}
-              className="h-8 w-auto"
-            />
-          </div>
-        </div>
-
+      <div className="w-full lg:w-1/2 flex flex-col bg-background">
         {/* Content */}
-        <div className="flex-1 flex flex-col px-6 lg:px-12 xl:px-16 pb-32">
-          {/* Step content */}
-          <div className="flex-1">
+        <div className="flex-1 flex flex-col px-6 lg:px-12 xl:px-16 pt-8 pb-8">
+          {/* Step content wrapper - scrollable area */}
+          <div className="max-w-[640px] mx-auto w-full flex flex-col flex-1 overflow-y-auto pr-1">
+            {/* Logo - aligned with content */}
+            <div className="mb-8">
+              <Image
+                src="/images/beespo-logo-full.svg"
+                alt="Beespo"
+                width={140}
+                height={40}
+                className="h-10 w-auto"
+              />
+            </div>
             {step === 1 && (
               <div className="space-y-6">
                 <div className="space-y-2">
@@ -312,7 +309,7 @@ export default function OnboardingPage() {
                     Select the type of church unit your organization belongs to.
                   </p>
                 </div>
-                <TileSelector
+                <PillSelector
                   options={UNIT_TYPES.map((type) => ({
                     ...type,
                     icon: unitIconMap[type.icon] || null,
@@ -334,7 +331,7 @@ export default function OnboardingPage() {
                     Select the organization you serve in.
                   </p>
                 </div>
-                <TileSelector
+                <PillSelector
                   options={getOrganizationsForUnit(formData.unitType).map((org) => ({
                     ...org,
                     icon: orgIconMap[org.icon] || null,
@@ -356,7 +353,7 @@ export default function OnboardingPage() {
                     Select your role in the organization.
                   </p>
                 </div>
-                <TileSelector
+                <PillSelector
                   options={getRolesForOrganization(
                     formData.organization as OrganizationKey,
                     formData.unitType
@@ -507,7 +504,7 @@ export default function OnboardingPage() {
                     Select up to 3 features you&apos;d like to explore first.
                   </p>
                 </div>
-                <TileSelector
+                <PillSelector
                   options={FEATURES.map((feature) => ({
                     ...feature,
                     icon: featureIconMap[feature.icon] || null,
@@ -525,26 +522,27 @@ export default function OnboardingPage() {
                 )}
               </div>
             )}
+
           </div>
 
+          {/* Wizard Footer - anchored at bottom */}
+          <WizardFooter
+            currentStep={step}
+            totalSteps={TOTAL_STEPS}
+            canGoBack={step > 1}
+            canSkip={canSkip()}
+            canContinue={isStepValid()}
+            isLastStep={step === TOTAL_STEPS}
+            onBack={handleBack}
+            onSkip={handleSkip}
+            onContinue={handleNext}
+            className="max-w-[640px] mx-auto w-full pt-8 pb-4 flex-shrink-0"
+          />
         </div>
-
-        {/* Sticky Navigation */}
-        <StickyNavigation
-          currentStep={step}
-          totalSteps={TOTAL_STEPS}
-          canGoBack={step > 1}
-          canSkip={canSkip()}
-          canContinue={isStepValid()}
-          isLastStep={step === TOTAL_STEPS}
-          onBack={handleBack}
-          onSkip={handleSkip}
-          onContinue={handleNext}
-        />
       </div>
 
       {/* Right pane - Decorative */}
-      <div className="hidden lg:flex lg:w-[45%] bg-gradient-to-br from-amber-400 via-amber-500 to-orange-500 relative overflow-hidden">
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-amber-400 via-amber-500 to-orange-500 relative overflow-hidden">
         {/* Pattern */}
         <div className="absolute inset-0 opacity-10">
           <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
