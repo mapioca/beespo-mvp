@@ -288,7 +288,7 @@ export default function OnboardingPage() {
         {/* Content */}
         <div className="flex-1 flex flex-col px-6 lg:px-12 xl:px-16 pt-8 pb-8">
           {/* Step content wrapper - scrollable area */}
-          <div className="max-w-[640px] mx-auto w-full flex flex-col flex-1 overflow-y-auto pr-1">
+          <div className="max-w-[640px] mx-auto w-full flex flex-col flex-1 overflow-y-auto px-1 -mx-1">
             {/* Logo - aligned with content */}
             <div className="mb-8">
               <Image
@@ -414,7 +414,7 @@ export default function OnboardingPage() {
               <div className="space-y-6">
                 <div className="space-y-2">
                   <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">
-                    Invite your presidency or team members
+                    Invite people to your workspace
                   </h1>
                   <p className="text-muted-foreground">
                     Add up to 5 teammates to collaborate with. You can always invite more later.
