@@ -56,7 +56,7 @@ export default function LoginPage() {
             title: "Complete Setup",
             description: "Please complete your profile setup.",
           });
-          router.push("/setup");
+          router.push("/onboarding");
         } else {
           toast({
             title: "Success",

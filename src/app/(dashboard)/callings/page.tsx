@@ -25,7 +25,7 @@ export default async function CallingsPage() {
         .single();
 
     if (!profile || !profile.workspace_id) {
-        redirect("/setup");
+        redirect("/onboarding");
     }
 
     // Get all active processes with their callings for pipeline view

@@ -41,7 +41,7 @@ export default async function TablesPage() {
         .single();
 
     if (!profile?.workspace_id) {
-        redirect("/setup");
+        redirect("/onboarding");
     }
 
     // Get tables with row counts

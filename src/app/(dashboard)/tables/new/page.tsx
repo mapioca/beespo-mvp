@@ -21,7 +21,7 @@ export default async function NewTablePage() {
         .single();
 
     if (!profile?.workspace_id) {
-        redirect("/setup");
+        redirect("/onboarding");
     }
 
     return (

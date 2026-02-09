@@ -14,6 +14,7 @@ interface WizardFooterProps {
   onBack: () => void;
   onSkip: () => void;
   onContinue: () => void;
+  continueLabel?: string;
   className?: string;
 }
 
@@ -27,6 +28,7 @@ export function WizardFooter({
   onBack,
   onSkip,
   onContinue,
+  continueLabel,
   className,
 }: WizardFooterProps) {
   const progress = (currentStep / totalSteps) * 100;
@@ -59,7 +61,7 @@ export function WizardFooter({
             disabled={!canContinue}
             className="gap-2"
           >
-            {isLastStep ? 'Complete Setup' : 'Continue'}
+            {continueLabel || (isLastStep ? 'Complete Setup' : 'Continue')}
             <ArrowRight className="h-4 w-4" />
           </Button>
         </div>

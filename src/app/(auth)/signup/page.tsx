@@ -171,7 +171,7 @@ export default function SignupPage() {
                 title: "Complete Setup",
                 description: "Please complete your profile setup.",
               });
-              router.push("/setup");
+              router.push("/onboarding");
             } else {
               // User has profile - redirect to dashboard
               router.push("/dashboard");
@@ -190,7 +190,7 @@ export default function SignupPage() {
           title: "Success",
           description: "Account created successfully! Please complete your profile.",
         });
-        router.push("/setup");
+        router.push("/onboarding");
         router.refresh();
       }
     } catch (error) {

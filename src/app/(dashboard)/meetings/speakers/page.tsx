@@ -50,7 +50,7 @@ export default async function SpeakersPage({ searchParams }: SpeakersPageProps) 
         .single();
 
     if (!profile) {
-        redirect("/setup");
+        redirect("/onboarding");
     }
 
     // Build query with filters

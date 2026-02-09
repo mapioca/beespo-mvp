@@ -27,7 +27,7 @@ export default async function AppsPage() {
         .single() as { data: Profile | null };
 
     if (!profile || !profile.workspace_id) {
-        redirect("/setup");
+        redirect("/onboarding");
     }
 
     // Get all available apps

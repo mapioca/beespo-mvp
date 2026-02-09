@@ -34,7 +34,7 @@ export default async function SettingsPage() {
         .single() as { data: Profile | null };
 
     if (!profile || !profile.workspace_id) {
-        redirect("/setup");
+        redirect("/onboarding");
     }
 
     // Get workspace details

@@ -31,7 +31,7 @@ export default async function EventsPage() {
         .single()
 
     if (!profile || !profile.workspace_id) {
-        redirect("/setup")
+        redirect("/onboarding")
     }
 
     // Fetch date range: 3 months back to 6 months forward for events list

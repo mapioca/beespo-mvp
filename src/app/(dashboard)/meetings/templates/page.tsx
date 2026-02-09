@@ -30,7 +30,7 @@ export default async function TemplatesPage() {
     .single()
 
   if (!profile) {
-    redirect("/setup")
+    redirect("/onboarding")
   }
 
   // Get all templates with their items

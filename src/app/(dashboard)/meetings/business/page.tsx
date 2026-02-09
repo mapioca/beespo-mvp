@@ -31,7 +31,7 @@ export default async function BusinessPage() {
     .single()
 
   if (!profile || !profile.workspace_id) {
-    redirect("/setup")
+    redirect("/onboarding")
   }
 
   // Pagination settings

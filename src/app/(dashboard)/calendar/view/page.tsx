@@ -30,7 +30,7 @@ export default async function CalendarViewPage() {
         .single();
 
     if (!profile || !profile.workspace_id) {
-        redirect("/setup");
+        redirect("/onboarding");
     }
 
     // Fetch date range for initial load (current month +/- 1 month buffer)

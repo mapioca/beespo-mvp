@@ -27,7 +27,7 @@ export default async function TableDetailPage({ params }: Props) {
         .single();
 
     if (!profile?.workspace_id) {
-        redirect("/setup");
+        redirect("/onboarding");
     }
 
     // Get table

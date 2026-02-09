@@ -42,7 +42,7 @@ export default async function FormsPage() {
         .single();
 
     if (!profile?.workspace_id) {
-        redirect("/setup");
+        redirect("/onboarding");
     }
 
     // Get forms

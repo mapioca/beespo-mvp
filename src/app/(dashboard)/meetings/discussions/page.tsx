@@ -60,7 +60,7 @@ export default async function DiscussionsPage({
     .single()
 
   if (!profile || !profile.workspace_id) {
-    redirect("/setup")
+    redirect("/onboarding")
   }
 
   // Build query with filters
