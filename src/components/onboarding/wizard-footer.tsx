@@ -15,6 +15,7 @@ interface WizardFooterProps {
   onSkip: () => void;
   onContinue: () => void;
   continueLabel?: string;
+  hideNavigation?: boolean;
   className?: string;
 }
 
@@ -29,6 +30,7 @@ export function WizardFooter({
   onSkip,
   onContinue,
   continueLabel,
+  hideNavigation = false,
   className,
 }: WizardFooterProps) {
   const progress = (currentStep / totalSteps) * 100;
@@ -36,41 +38,43 @@ export function WizardFooter({
   return (
     <div className={cn('w-full', className)}>
       {/* Navigation buttons */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          {canGoBack && (
-            <Button variant="outline" onClick={onBack} className="gap-2">
-              <ArrowLeft className="h-4 w-4" />
-              Back
-            </Button>
-          )}
-        </div>
+      {!hideNavigation && (
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            {canGoBack && (
+              <Button variant="outline" onClick={onBack} className="gap-2 font-medium">
+                <ArrowLeft className="h-4 w-4" />
+                Back
+              </Button>
+            )}
+          </div>
 
-        <div className="flex items-center gap-4">
-          {canSkip && (
+          <div className="flex items-center gap-4">
+            {canSkip && (
+              <Button
+                variant="ghost"
+                onClick={onSkip}
+                className="text-gray-500 font-medium hover:text-gray-900"
+              >
+                Skip this step
+              </Button>
+            )}
             <Button
-              variant="ghost"
-              onClick={onSkip}
-              className="text-muted-foreground"
+              onClick={onContinue}
+              disabled={!canContinue}
+              className="gap-2 font-medium bg-black hover:bg-gray-900 text-white"
             >
-              Skip this step
+              {continueLabel || (isLastStep ? 'Complete Setup' : 'Continue')}
+              <ArrowRight className="h-4 w-4" />
             </Button>
-          )}
-          <Button
-            onClick={onContinue}
-            disabled={!canContinue}
-            className="gap-2"
-          >
-            {continueLabel || (isLastStep ? 'Complete Setup' : 'Continue')}
-            <ArrowRight className="h-4 w-4" />
-          </Button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Progress bar */}
-      <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+      <div className="h-1 bg-gray-100 rounded-full overflow-hidden">
         <div
-          className="h-full bg-primary transition-all duration-300 ease-out rounded-full"
+          className="h-full bg-black transition-all duration-300 ease-out rounded-full"
           style={{ width: `${progress}%` }}
         />
       </div>

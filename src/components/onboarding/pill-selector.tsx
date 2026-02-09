@@ -79,26 +79,25 @@ export function PillSelector({
             onClick={() => !disabled && handleSelect(option.value)}
             disabled={disabled}
             className={cn(
-              'flex items-center gap-2.5',
-              'px-5 py-2.5 whitespace-nowrap',
-              'rounded-full border transition-all duration-150',
-              'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',
-              // Default state - darker border for WCAG 3:1 contrast
-              'border-gray-400 bg-background',
-              // Hover state
-              'hover:border-primary/50 hover:bg-accent/30',
-              // Selected state
-              selected && 'border-primary bg-primary/5 ring-1 ring-primary',
+              'flex items-center gap-2',
+              'px-4 py-2.5 whitespace-nowrap',
+              'rounded-xl border transition-all duration-200 ease-in-out',
+              'focus:outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2',
+              // Default state
+              !selected && 'border-gray-200 bg-white text-gray-700',
+              // Hover state (unselected)
+              !selected && !disabled && 'hover:border-gray-400 hover:bg-gray-50',
+              // Selected state - inverted (solid black)
+              selected && 'border-black bg-black text-white',
               // Disabled state
-              disabled && 'opacity-50 cursor-not-allowed hover:border-gray-400 hover:bg-transparent'
+              disabled && 'opacity-40 cursor-not-allowed hover:border-gray-200 hover:bg-white'
             )}
           >
             {/* Label */}
             <span
               className={cn(
                 'text-sm font-medium',
-                'transition-colors duration-150',
-                selected ? 'text-primary' : 'text-foreground'
+                'transition-colors duration-200'
               )}
             >
               {option.label}
@@ -109,11 +108,11 @@ export function PillSelector({
               className={cn(
                 'flex-shrink-0 w-4 h-4',
                 'flex items-center justify-center',
-                'transition-transform duration-150',
-                selected ? 'scale-100' : 'scale-0'
+                'transition-all duration-200',
+                selected ? 'scale-100 opacity-100' : 'scale-0 opacity-0'
               )}
             >
-              <Check className="h-4 w-4 text-primary" />
+              <Check className="h-3.5 w-3.5" strokeWidth={2.5} />
             </div>
           </button>
         );

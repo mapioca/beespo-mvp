@@ -52,8 +52,6 @@ import {
   X,
   Mail,
   Loader2,
-  Sparkles,
-  ArrowRight,
 } from 'lucide-react';
 
 const unitIconMap: Record<string, React.ReactNode> = {
@@ -140,8 +138,9 @@ export default function OnboardingPage() {
 
   // Check if current step is valid for navigation
   const isStepValid = (): boolean => {
+    // Step 1 uses instant selection, no validation needed
     if (step === 1) {
-      return flow !== null;
+      return false;
     }
 
     if (flow === 'join') {
@@ -315,6 +314,8 @@ export default function OnboardingPage() {
 
   const handleSelectFlow = (selectedFlow: OnboardingFlow) => {
     setFlow(selectedFlow);
+    // Immediately advance to step 2
+    setStep(2);
   };
 
   // Email handling for teammates step
@@ -367,7 +368,7 @@ export default function OnboardingPage() {
             <h2 className="text-xl font-semibold">
               {isComplete ? 'All set!' : messages[loadingMessageIndex]}
             </h2>
-            <p className="text-muted-foreground">
+            <p className="text-gray-500">
               {isComplete ? 'Redirecting you to your dashboard...' : 'This will only take a moment'}
             </p>
           </div>
@@ -378,7 +379,7 @@ export default function OnboardingPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100/50 backdrop-blur-sm p-6">
-      <div className="w-full max-w-3xl flex flex-col min-h-[600px] bg-background rounded-2xl shadow-lg p-8 md:p-12">
+      <div className="w-full max-w-3xl flex flex-col min-h-[600px] bg-white rounded-2xl border border-gray-100 shadow-xl shadow-gray-200/50 p-8 md:p-12">
         {/* Logo */}
         <div className="mb-8">
           <Image
@@ -392,89 +393,37 @@ export default function OnboardingPage() {
 
         {/* Step content - flex-1 to fill available space */}
         <div className="flex-1">
-          {/* Step 1: Choose path */}
+          {/* Step 1: Choose path - "Fork in the Road" */}
           {step === 1 && (
-            <div className="space-y-6">
-              <div className="space-y-2">
+            <div className="space-y-10">
+              <div className="text-center">
                 <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">
                   Get Started with Beespo
                 </h1>
-                <p className="text-muted-foreground">
-                  Create your organization&apos;s workspace or join an existing one
-                </p>
               </div>
 
-              <div className="space-y-4">
-                {/* Create New Workspace */}
+              {/* Split Choice Tiles - 2 Column Grid */}
+              <div className="grid grid-cols-2 gap-6">
+                {/* Create New Workspace Tile */}
                 <button
                   type="button"
                   onClick={() => handleSelectFlow('create')}
-                  className={`w-full p-4 rounded-xl border-2 text-left transition-all group ${
-                    flow === 'create'
-                      ? 'border-primary bg-primary/5 ring-1 ring-primary'
-                      : 'border-border hover:border-primary/50 hover:bg-accent/30'
-                  }`}
+                  className="flex items-center justify-center h-44 px-6 rounded-2xl border border-gray-100 bg-gray-50 transition-all duration-200 ease-in-out hover:border-black hover:bg-white hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]"
                 >
-                  <div className="flex items-center gap-4">
-                    <div className={`h-12 w-12 rounded-lg flex items-center justify-center transition-colors ${
-                      flow === 'create' ? 'bg-primary/20' : 'bg-primary/10 group-hover:bg-primary/20'
-                    }`}>
-                      <Sparkles className="h-6 w-6 text-primary" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className={`font-semibold ${flow === 'create' ? 'text-primary' : ''}`}>
-                        Create a New Workspace
-                      </h3>
-                      <p className="text-sm text-muted-foreground">
-                        Set up a workspace for your bishopric, presidency, or organization
-                      </p>
-                    </div>
-                    <ArrowRight className={`h-5 w-5 transition-all ${
-                      flow === 'create' ? 'text-primary translate-x-1' : 'text-muted-foreground group-hover:text-primary group-hover:translate-x-1'
-                    }`} />
-                  </div>
+                  <span className="text-xl font-semibold text-gray-900 text-center leading-tight">
+                    Create a New<br />Workspace
+                  </span>
                 </button>
 
-                {/* Divider */}
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t" />
-                  </div>
-                  <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-background px-2 text-muted-foreground">
-                      Or if you have an invitation
-                    </span>
-                  </div>
-                </div>
-
-                {/* Join Existing Workspace */}
+                {/* Join Existing Workspace Tile */}
                 <button
                   type="button"
                   onClick={() => handleSelectFlow('join')}
-                  className={`w-full p-4 rounded-xl border-2 text-left transition-all group ${
-                    flow === 'join'
-                      ? 'border-primary bg-primary/5 ring-1 ring-primary'
-                      : 'border-border hover:border-primary/50 hover:bg-accent/30'
-                  }`}
+                  className="flex items-center justify-center h-44 px-6 rounded-2xl border border-gray-100 bg-gray-50 transition-all duration-200 ease-in-out hover:border-black hover:bg-white hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]"
                 >
-                  <div className="flex items-center gap-4">
-                    <div className={`h-12 w-12 rounded-lg flex items-center justify-center transition-colors ${
-                      flow === 'join' ? 'bg-primary/20' : 'bg-muted group-hover:bg-primary/10'
-                    }`}>
-                      <Users className="h-6 w-6 text-muted-foreground group-hover:text-primary" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className={`font-semibold ${flow === 'join' ? 'text-primary' : ''}`}>
-                        Join an Existing Workspace
-                      </h3>
-                      <p className="text-sm text-muted-foreground">
-                        Enter an invitation token from your admin
-                      </p>
-                    </div>
-                    <ArrowRight className={`h-5 w-5 transition-all ${
-                      flow === 'join' ? 'text-primary translate-x-1' : 'text-muted-foreground group-hover:text-primary group-hover:translate-x-1'
-                    }`} />
-                  </div>
+                  <span className="text-xl font-semibold text-gray-900 text-center leading-tight">
+                    Join an Existing<br />Workspace
+                  </span>
                 </button>
               </div>
             </div>
@@ -487,13 +436,13 @@ export default function OnboardingPage() {
                 <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">
                   Join a Workspace
                 </h1>
-                <p className="text-muted-foreground">
+                <p className="text-gray-500">
                   Enter your invitation token to join an existing workspace
                 </p>
               </div>
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="inviteToken">Invitation Token</Label>
+                  <Label htmlFor="inviteToken" className="text-sm text-gray-500 font-medium">Invitation Token</Label>
                   <Input
                     id="inviteToken"
                     type="text"
@@ -503,13 +452,13 @@ export default function OnboardingPage() {
                       setInviteToken(e.target.value);
                       setInviteError(null);
                     }}
-                    className={`text-lg h-12 ${inviteError ? 'border-destructive' : ''}`}
+                    className={`text-base h-12 rounded-lg border-gray-200 focus:border-black focus:ring-2 focus:ring-black focus:ring-offset-0 ${inviteError ? 'border-destructive' : ''}`}
                     autoFocus
                   />
                   {inviteError && (
                     <p className="text-sm text-destructive">{inviteError}</p>
                   )}
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-gray-500">
                     Check your email or ask your workspace admin for the token.
                   </p>
                 </div>
@@ -526,7 +475,7 @@ export default function OnboardingPage() {
                     <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">
                       What type of unit are you serving in?
                     </h1>
-                    <p className="text-muted-foreground">
+                    <p className="text-gray-500">
                       Select the type of church unit your organization belongs to.
                     </p>
                   </div>
@@ -548,7 +497,7 @@ export default function OnboardingPage() {
                     <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">
                       Which organization are you part of?
                     </h1>
-                    <p className="text-muted-foreground">
+                    <p className="text-gray-500">
                       Select the organization you serve in.
                     </p>
                   </div>
@@ -570,7 +519,7 @@ export default function OnboardingPage() {
                     <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">
                       What is your calling or role?
                     </h1>
-                    <p className="text-muted-foreground">
+                    <p className="text-gray-500">
                       Select your role in the organization.
                     </p>
                   </div>
@@ -596,29 +545,29 @@ export default function OnboardingPage() {
                     <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">
                       What is the name of your unit?
                     </h1>
-                    <p className="text-muted-foreground">
+                    <p className="text-gray-500">
                       {getUnitNameHelperText(formData.unitType)}
                     </p>
                   </div>
                   <div className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="unitName">Unit Name</Label>
+                      <Label htmlFor="unitName" className="text-sm text-gray-500 font-medium">Unit Name</Label>
                       <Input
                         id="unitName"
                         type="text"
                         placeholder={getUnitNamePlaceholder(formData.unitType)}
                         value={formData.unitName}
                         onChange={(e) => updateFormData('unitName', e.target.value)}
-                        className="text-lg h-12"
+                        className="text-base h-12 rounded-lg border-gray-200 focus:border-black focus:ring-2 focus:ring-black focus:ring-offset-0"
                         autoFocus
                       />
                     </div>
                     {formData.unitName.trim() && (
-                      <div className="p-4 bg-muted/50 rounded-lg space-y-1">
-                        <p className="text-sm font-medium text-muted-foreground">
+                      <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 space-y-1">
+                        <p className="text-sm font-medium text-gray-500">
                           Your workspace will be named:
                         </p>
-                        <p className="font-semibold text-foreground">
+                        <p className="font-semibold text-gray-900">
                           {generateWorkspaceName(
                             formData.unitName.trim(),
                             formData.organization as OrganizationKey,
@@ -637,13 +586,13 @@ export default function OnboardingPage() {
                     <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">
                       Invite people to your workspace
                     </h1>
-                    <p className="text-muted-foreground">
+                    <p className="text-gray-500">
                       Add up to 5 teammates to collaborate with. You can always invite more later.
                     </p>
                   </div>
                   <div className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="email">Email Address</Label>
+                      <Label htmlFor="email" className="text-sm text-gray-500 font-medium">Email Address</Label>
                       <div className="flex gap-2">
                         <Input
                           id="email"
@@ -660,13 +609,14 @@ export default function OnboardingPage() {
                               handleAddEmail();
                             }
                           }}
-                          className={emailError ? 'border-destructive' : ''}
+                          className={`h-12 rounded-lg border-gray-200 focus:border-black focus:ring-2 focus:ring-black focus:ring-offset-0 ${emailError ? 'border-destructive' : ''}`}
                         />
                         <Button
                           type="button"
                           onClick={handleAddEmail}
                           disabled={formData.teammateEmails.length >= 5}
                           variant="secondary"
+                          className="h-12 px-4 font-medium"
                         >
                           <Plus className="h-4 w-4 mr-1" />
                           Add
@@ -679,23 +629,23 @@ export default function OnboardingPage() {
 
                     {formData.teammateEmails.length > 0 ? (
                       <div className="space-y-2">
-                        <Label>Invitations ({formData.teammateEmails.length}/5)</Label>
+                        <Label className="text-sm text-gray-500 font-medium">Invitations ({formData.teammateEmails.length}/5)</Label>
                         <div className="space-y-2">
                           {formData.teammateEmails.map((email) => (
                             <div
                               key={email}
-                              className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
+                              className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100"
                             >
                               <div className="flex items-center gap-2">
-                                <Mail className="h-4 w-4 text-muted-foreground" />
-                                <span className="text-sm">{email}</span>
+                                <Mail className="h-4 w-4 text-gray-400" />
+                                <span className="text-sm font-medium text-gray-700">{email}</span>
                               </div>
                               <Button
                                 type="button"
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => handleRemoveEmail(email)}
-                                className="h-8 w-8 p-0"
+                                className="h-8 w-8 p-0 text-gray-400 hover:text-gray-900"
                               >
                                 <X className="h-4 w-4" />
                               </Button>
@@ -704,9 +654,9 @@ export default function OnboardingPage() {
                         </div>
                       </div>
                     ) : (
-                      <div className="p-8 border-2 border-dashed rounded-lg text-center">
-                        <Mail className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-                        <p className="text-sm text-muted-foreground">
+                      <div className="p-8 border-2 border-dashed border-gray-200 rounded-xl text-center bg-gray-50/50">
+                        <Mail className="h-8 w-8 mx-auto text-gray-300 mb-2" />
+                        <p className="text-sm text-gray-500">
                           No teammates added yet. Add email addresses above or skip this step.
                         </p>
                       </div>
@@ -721,7 +671,7 @@ export default function OnboardingPage() {
                     <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">
                       What features are you most interested in?
                     </h1>
-                    <p className="text-muted-foreground">
+                    <p className="text-gray-500">
                       Select up to 3 features you&apos;d like to explore first.
                     </p>
                   </div>
@@ -737,7 +687,7 @@ export default function OnboardingPage() {
                     ariaLabel="Select features you're interested in"
                   />
                   {formData.featureInterests.length > 0 && (
-                    <p className="text-sm text-muted-foreground text-center">
+                    <p className="text-sm text-gray-500 text-center">
                       {formData.featureInterests.length} of 3 selected
                     </p>
                   )}
@@ -759,6 +709,7 @@ export default function OnboardingPage() {
           onSkip={handleSkip}
           onContinue={handleNext}
           continueLabel={flow === 'join' && step === TOTAL_STEPS ? 'Join Workspace' : undefined}
+          hideNavigation={step === 1}
           className="pt-8 flex-shrink-0"
         />
       </div>
