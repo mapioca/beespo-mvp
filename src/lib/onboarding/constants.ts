@@ -196,13 +196,6 @@ export const ROLES: RoleOption[] = [
   },
   // Organization roles
   {
-    value: 'org_president',
-    label: 'Organization President',
-    description: 'President of an auxiliary organization',
-    availableFor: ['elders_quorum', 'relief_society', 'young_men', 'young_women', 'primary', 'sunday_school'],
-    featureTier: 'organization',
-  },
-  {
     value: 'secretary',
     label: 'Secretary',
     description: 'Organization secretary',

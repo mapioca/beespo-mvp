@@ -6,6 +6,13 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { PillSelector } from '@/components/onboarding/pill-selector';
 import { WizardFooter } from '@/components/onboarding/wizard-footer';
 import { useToast } from '@/lib/hooks/use-toast';
@@ -23,9 +30,9 @@ import type {
   OrganizationKey,
   RoleKey,
   FeatureKey,
-  OnboardingFlow,
+  WorkspaceMemberRole,
 } from '@/types/onboarding';
-import { ONBOARDING_STEPS_CREATE, ONBOARDING_STEPS_JOIN } from '@/types/onboarding';
+import { ONBOARDING_STEPS } from '@/types/onboarding';
 import {
   Users,
   Building2,
@@ -50,7 +57,6 @@ import {
   MessageSquare,
   Plus,
   X,
-  Mail,
   Loader2,
 } from 'lucide-react';
 
@@ -93,44 +99,36 @@ const LOADING_MESSAGES = [
   'Almost there...',
 ];
 
-const LOADING_MESSAGES_JOIN = [
-  'Joining workspace...',
-  'Setting up your profile...',
-  'Almost there...',
-];
-
 export default function OnboardingPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [step, setStep] = useState(1);
-  const [flow, setFlow] = useState<OnboardingFlow | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
   const [loadingMessageIndex, setLoadingMessageIndex] = useState(0);
-  const [emailInput, setEmailInput] = useState('');
-  const [emailError, setEmailError] = useState<string | null>(null);
-  const [inviteToken, setInviteToken] = useState('');
-  const [inviteError, setInviteError] = useState<string | null>(null);
+  // Invite rows state - start with 2 empty rows
+  const [inviteRows, setInviteRows] = useState<Array<{ email: string; role: WorkspaceMemberRole }>>([
+    { email: '', role: 'leader' },
+    { email: '', role: 'leader' },
+  ]);
+  const [inviteErrors, setInviteErrors] = useState<Record<number, string>>({});
 
   const [formData, setFormData] = useState<OnboardingFormData>({
     unitType: 'ward',
     organization: '',
     role: '',
     unitName: '',
-    teammateEmails: [],
+    teammateInvites: [],
     featureInterests: [],
   });
 
-  // Get current steps based on flow
-  const currentSteps = flow === 'join' ? ONBOARDING_STEPS_JOIN : ONBOARDING_STEPS_CREATE;
-  const TOTAL_STEPS = currentSteps.length;
+  const TOTAL_STEPS = ONBOARDING_STEPS.length;
 
   // Loading message rotation
   useState(() => {
     if (isSubmitting && !isComplete) {
       const interval = setInterval(() => {
-        const messages = flow === 'join' ? LOADING_MESSAGES_JOIN : LOADING_MESSAGES;
-        setLoadingMessageIndex((prev) => (prev + 1) % messages.length);
+        setLoadingMessageIndex((prev) => (prev + 1) % LOADING_MESSAGES.length);
       }, 2000);
       return () => clearInterval(interval);
     }
@@ -138,27 +136,17 @@ export default function OnboardingPage() {
 
   // Check if current step is valid for navigation
   const isStepValid = (): boolean => {
-    // Step 1 uses instant selection, no validation needed
-    if (step === 1) {
-      return false;
-    }
-
-    if (flow === 'join') {
-      return step === 2 ? inviteToken.trim().length > 0 : false;
-    }
-
-    // Create flow validation
     switch (step) {
-      case 2:
+      case 1:
         return Boolean(formData.unitType);
-      case 3:
+      case 2:
         return Boolean(formData.organization);
-      case 4:
+      case 3:
         return Boolean(formData.role);
-      case 5:
+      case 4:
         return formData.unitName.trim().length >= 2;
+      case 5:
       case 6:
-      case 7:
         return true;
       default:
         return false;
@@ -166,7 +154,7 @@ export default function OnboardingPage() {
   };
 
   const canSkip = (): boolean => {
-    const currentStep = currentSteps.find((s) => s.id === step);
+    const currentStep = ONBOARDING_STEPS.find((s) => s.id === step);
     return currentStep?.canSkip ?? false;
   };
 
@@ -223,66 +211,18 @@ export default function OnboardingPage() {
     }
   };
 
-  const handleSubmitJoin = async () => {
-    setIsSubmitting(true);
-    setInviteError(null);
-
-    try {
-      const response = await fetch('/api/invitations/accept', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token: inviteToken }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        const errorMessage = typeof data.error === 'string' ? data.error : 'Failed to accept invitation';
-        throw new Error(errorMessage);
-      }
-
-      if (data.needsAuth) {
-        toast({
-          title: 'Error',
-          description: 'Please sign up or log in first.',
-          variant: 'destructive',
-        });
-        setIsSubmitting(false);
-        return;
-      }
-
-      setIsComplete(true);
-
-      toast({
-        title: 'Welcome to Beespo!',
-        description: `You've joined ${data.workspaceName}!`,
-      });
-
-      setTimeout(() => {
-        router.push('/dashboard');
-        router.refresh();
-      }, 1500);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to join workspace';
-      setInviteError(message);
-      toast({
-        title: 'Error',
-        description: message,
-        variant: 'destructive',
-      });
-      setIsSubmitting(false);
-    }
-  };
-
   const handleNext = () => {
     if (!isStepValid()) return;
 
-    if (step === TOTAL_STEPS) {
-      if (flow === 'join') {
-        handleSubmitJoin();
-      } else {
-        handleSubmitCreate();
+    // Sync invite rows to formData on step 5
+    if (step === 5) {
+      if (!syncInvitesToFormData()) {
+        return; // Validation errors exist
       }
+    }
+
+    if (step === TOTAL_STEPS) {
+      handleSubmitCreate();
     } else {
       setStep((prev) => prev + 1);
     }
@@ -290,32 +230,24 @@ export default function OnboardingPage() {
 
   const handleBack = () => {
     if (step > 1) {
-      if (step === 2) {
-        // Going back to step 1, reset flow selection
-        setFlow(null);
-        setInviteToken('');
-        setInviteError(null);
-      }
       setStep((prev) => prev - 1);
+    } else {
+      // Go back to welcome page
+      router.push('/welcome');
     }
   };
 
   const handleSkip = () => {
+    // On step 5, sync valid invites even when skipping
+    if (step === 5) {
+      syncInvitesToFormData();
+    }
+
     if (step === TOTAL_STEPS) {
-      if (flow === 'join') {
-        handleSubmitJoin();
-      } else {
-        handleSubmitCreate();
-      }
+      handleSubmitCreate();
     } else {
       setStep((prev) => prev + 1);
     }
-  };
-
-  const handleSelectFlow = (selectedFlow: OnboardingFlow) => {
-    setFlow(selectedFlow);
-    // Immediately advance to step 2
-    setStep(2);
   };
 
   // Email handling for teammates step
@@ -324,37 +256,70 @@ export default function OnboardingPage() {
     return emailRegex.test(email);
   };
 
-  const handleAddEmail = () => {
-    const email = emailInput.trim().toLowerCase();
-    if (!email) return;
-
-    if (!validateEmail(email)) {
-      setEmailError('Please enter a valid email address');
-      return;
+  const updateInviteRow = (index: number, field: 'email' | 'role', value: string) => {
+    setInviteRows((prev) => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], [field]: value };
+      return updated;
+    });
+    // Clear error for this row when user types
+    if (field === 'email') {
+      setInviteErrors((prev) => {
+        const updated = { ...prev };
+        delete updated[index];
+        return updated;
+      });
     }
-
-    if (formData.teammateEmails.includes(email)) {
-      setEmailError('This email has already been added');
-      return;
-    }
-
-    if (formData.teammateEmails.length >= 5) {
-      setEmailError('You can invite up to 5 teammates');
-      return;
-    }
-
-    updateFormData('teammateEmails', [...formData.teammateEmails, email]);
-    setEmailInput('');
-    setEmailError(null);
   };
 
-  const handleRemoveEmail = (email: string) => {
-    updateFormData('teammateEmails', formData.teammateEmails.filter((e) => e !== email));
+  const addInviteRow = () => {
+    if (inviteRows.length < 5) {
+      setInviteRows((prev) => [...prev, { email: '', role: 'leader' }]);
+    }
+  };
+
+  const removeInviteRow = (index: number) => {
+    if (inviteRows.length > 1) {
+      setInviteRows((prev) => prev.filter((_, i) => i !== index));
+      setInviteErrors((prev) => {
+        const updated = { ...prev };
+        delete updated[index];
+        return updated;
+      });
+    }
+  };
+
+  // Sync invite rows to formData before submission
+  const syncInvitesToFormData = () => {
+    const validInvites = inviteRows
+      .filter((row) => row.email.trim() !== '')
+      .map((row) => ({ email: row.email.trim().toLowerCase(), role: row.role }));
+
+    // Check for validation errors
+    const errors: Record<number, string> = {};
+    const seenEmails = new Set<string>();
+
+    inviteRows.forEach((row, index) => {
+      const email = row.email.trim().toLowerCase();
+      if (email && !validateEmail(email)) {
+        errors[index] = 'Invalid email';
+      } else if (email && seenEmails.has(email)) {
+        errors[index] = 'Duplicate';
+      }
+      if (email) seenEmails.add(email);
+    });
+
+    setInviteErrors(errors);
+
+    if (Object.keys(errors).length === 0) {
+      updateFormData('teammateInvites', validInvites);
+      return true;
+    }
+    return false;
   };
 
   // Loading state
   if (isSubmitting) {
-    const messages = flow === 'join' ? LOADING_MESSAGES_JOIN : LOADING_MESSAGES;
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100/50 backdrop-blur-sm">
         <div className="text-center space-y-8">
@@ -366,7 +331,7 @@ export default function OnboardingPage() {
           </div>
           <div className="space-y-2">
             <h2 className="text-xl font-semibold">
-              {isComplete ? 'All set!' : messages[loadingMessageIndex]}
+              {isComplete ? 'All set!' : LOADING_MESSAGES[loadingMessageIndex]}
             </h2>
             <p className="text-gray-500">
               {isComplete ? 'Redirecting you to your dashboard...' : 'This will only take a moment'}
@@ -393,83 +358,8 @@ export default function OnboardingPage() {
 
         {/* Step content - flex-1 to fill available space */}
         <div className="flex-1">
-          {/* Step 1: Choose path - "Fork in the Road" */}
+          {/* Step 1: Unit Type */}
           {step === 1 && (
-            <div className="space-y-10">
-              <div className="text-center">
-                <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">
-                  Get Started with Beespo
-                </h1>
-              </div>
-
-              {/* Split Choice Tiles - 2 Column Grid */}
-              <div className="grid grid-cols-2 gap-6">
-                {/* Create New Workspace Tile */}
-                <button
-                  type="button"
-                  onClick={() => handleSelectFlow('create')}
-                  className="flex items-center justify-center h-44 px-6 rounded-2xl border border-gray-100 bg-gray-50 transition-all duration-200 ease-in-out hover:border-black hover:bg-white hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]"
-                >
-                  <span className="text-xl font-semibold text-gray-900 text-center leading-tight">
-                    Create a New<br />Workspace
-                  </span>
-                </button>
-
-                {/* Join Existing Workspace Tile */}
-                <button
-                  type="button"
-                  onClick={() => handleSelectFlow('join')}
-                  className="flex items-center justify-center h-44 px-6 rounded-2xl border border-gray-100 bg-gray-50 transition-all duration-200 ease-in-out hover:border-black hover:bg-white hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]"
-                >
-                  <span className="text-xl font-semibold text-gray-900 text-center leading-tight">
-                    Join an Existing<br />Workspace
-                  </span>
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Step 2 for Join flow: Enter invitation token */}
-          {step === 2 && flow === 'join' && (
-            <div className="space-y-6">
-              <div className="space-y-2">
-                <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">
-                  Join a Workspace
-                </h1>
-                <p className="text-gray-500">
-                  Enter your invitation token to join an existing workspace
-                </p>
-              </div>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="inviteToken" className="text-sm text-gray-500 font-medium">Invitation Token</Label>
-                  <Input
-                    id="inviteToken"
-                    type="text"
-                    placeholder="Paste your invitation token here"
-                    value={inviteToken}
-                    onChange={(e) => {
-                      setInviteToken(e.target.value);
-                      setInviteError(null);
-                    }}
-                    className={`text-base h-12 rounded-lg border-gray-200 focus:border-black focus:ring-2 focus:ring-black focus:ring-offset-0 ${inviteError ? 'border-destructive' : ''}`}
-                    autoFocus
-                  />
-                  {inviteError && (
-                    <p className="text-sm text-destructive">{inviteError}</p>
-                  )}
-                  <p className="text-sm text-gray-500">
-                    Check your email or ask your workspace admin for the token.
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Create flow steps */}
-          {flow === 'create' && (
-            <>
-              {step === 2 && (
                 <div className="space-y-6">
                   <div className="space-y-2">
                     <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">
@@ -491,7 +381,7 @@ export default function OnboardingPage() {
                 </div>
               )}
 
-              {step === 3 && (
+              {step === 2 && (
                 <div className="space-y-6">
                   <div className="space-y-2">
                     <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">
@@ -513,7 +403,7 @@ export default function OnboardingPage() {
                 </div>
               )}
 
-              {step === 4 && (
+              {step === 3 && (
                 <div className="space-y-6">
                   <div className="space-y-2">
                     <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">
@@ -539,7 +429,7 @@ export default function OnboardingPage() {
                 </div>
               )}
 
-              {step === 5 && (
+              {step === 4 && (
                 <div className="space-y-6">
                   <div className="space-y-2">
                     <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">
@@ -580,7 +470,7 @@ export default function OnboardingPage() {
                 </div>
               )}
 
-              {step === 6 && (
+              {step === 5 && (
                 <div className="space-y-6">
                   <div className="space-y-2">
                     <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">
@@ -590,82 +480,67 @@ export default function OnboardingPage() {
                       Add up to 5 teammates to collaborate with. You can always invite more later.
                     </p>
                   </div>
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="email" className="text-sm text-gray-500 font-medium">Email Address</Label>
-                      <div className="flex gap-2">
-                        <Input
-                          id="email"
-                          type="email"
-                          placeholder="colleague@example.com"
-                          value={emailInput}
-                          onChange={(e) => {
-                            setEmailInput(e.target.value);
-                            setEmailError(null);
-                          }}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                              e.preventDefault();
-                              handleAddEmail();
-                            }
-                          }}
-                          className={`h-12 rounded-lg border-gray-200 focus:border-black focus:ring-2 focus:ring-black focus:ring-offset-0 ${emailError ? 'border-destructive' : ''}`}
-                        />
-                        <Button
-                          type="button"
-                          onClick={handleAddEmail}
-                          disabled={formData.teammateEmails.length >= 5}
-                          variant="secondary"
-                          className="h-12 px-4 font-medium"
-                        >
-                          <Plus className="h-4 w-4 mr-1" />
-                          Add
-                        </Button>
-                      </div>
-                      {emailError && (
-                        <p className="text-sm text-destructive">{emailError}</p>
-                      )}
-                    </div>
 
-                    {formData.teammateEmails.length > 0 ? (
-                      <div className="space-y-2">
-                        <Label className="text-sm text-gray-500 font-medium">Invitations ({formData.teammateEmails.length}/5)</Label>
-                        <div className="space-y-2">
-                          {formData.teammateEmails.map((email) => (
-                            <div
-                              key={email}
-                              className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100"
-                            >
-                              <div className="flex items-center gap-2">
-                                <Mail className="h-4 w-4 text-gray-400" />
-                                <span className="text-sm font-medium text-gray-700">{email}</span>
-                              </div>
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleRemoveEmail(email)}
-                                className="h-8 w-8 p-0 text-gray-400 hover:text-gray-900"
-                              >
-                                <X className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          ))}
+                  {/* Invite rows */}
+                  <div className="space-y-3">
+                    {inviteRows.map((row, index) => (
+                      <div key={index} className="flex gap-2 items-start">
+                        <div className="flex-1">
+                          <Input
+                            type="email"
+                            placeholder="colleague@example.com"
+                            value={row.email}
+                            onChange={(e) => updateInviteRow(index, 'email', e.target.value)}
+                            className={`h-10 ${inviteErrors[index] ? 'border-destructive' : ''}`}
+                          />
+                          {inviteErrors[index] && (
+                            <p className="text-xs text-destructive mt-1">{inviteErrors[index]}</p>
+                          )}
                         </div>
+                        <Select
+                          value={row.role}
+                          onValueChange={(value) => updateInviteRow(index, 'role', value)}
+                        >
+                          <SelectTrigger className="w-[120px] h-10">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="admin">Admin</SelectItem>
+                            <SelectItem value="leader">Leader</SelectItem>
+                            <SelectItem value="guest">Guest</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        {inviteRows.length > 1 && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => removeInviteRow(index)}
+                            className="h-10 w-10 text-gray-400 hover:text-gray-900"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        )}
                       </div>
-                    ) : (
-                      <div className="p-8 border-2 border-dashed border-gray-200 rounded-xl text-center bg-gray-50/50">
-                        <Mail className="h-8 w-8 mx-auto text-gray-300 mb-2" />
-                        <p className="text-sm text-gray-500">
-                          No teammates added yet. Add email addresses above or skip this step.
-                        </p>
-                      </div>
-                    )}
+                    ))}
                   </div>
+
+                  {/* Add another button */}
+                  {inviteRows.length < 5 && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={addInviteRow}
+                      className="text-gray-500 hover:text-gray-900"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add another
+                    </Button>
+                  )}
                 </div>
               )}
 
-              {step === 7 && (
+              {step === 6 && (
                 <div className="space-y-6">
                   <div className="space-y-2">
                     <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">
@@ -693,23 +568,19 @@ export default function OnboardingPage() {
                   )}
                 </div>
               )}
-            </>
-          )}
         </div>
 
         {/* Wizard Footer - anchored at bottom */}
         <WizardFooter
           currentStep={step}
           totalSteps={TOTAL_STEPS}
-          canGoBack={step > 1}
+          canGoBack={true}
           canSkip={canSkip()}
           canContinue={isStepValid()}
           isLastStep={step === TOTAL_STEPS}
           onBack={handleBack}
           onSkip={handleSkip}
           onContinue={handleNext}
-          continueLabel={flow === 'join' && step === TOTAL_STEPS ? 'Join Workspace' : undefined}
-          hideNavigation={step === 1}
           className="pt-8 flex-shrink-0"
         />
       </div>

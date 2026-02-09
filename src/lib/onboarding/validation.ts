@@ -30,7 +30,6 @@ export const roleSchema = z.enum([
   'clerk',
   'assistant_clerk_finance',
   'assistant_clerk_membership',
-  'org_president',
   'secretary',
   'leader',
   'assistant',
@@ -49,6 +48,15 @@ export const featureSchema = z.enum([
 // Email validation for teammate invites
 export const emailSchema = z.string().email('Please enter a valid email address');
 
+// Workspace member role for invitations
+export const workspaceMemberRoleSchema = z.enum(['admin', 'leader', 'guest']);
+
+// Teammate invite schema
+export const teammateInviteSchema = z.object({
+  email: emailSchema,
+  role: workspaceMemberRoleSchema,
+});
+
 // Complete onboarding form schema
 export const onboardingFormSchema = z.object({
   unitType: unitTypeSchema,
@@ -58,8 +66,8 @@ export const onboardingFormSchema = z.object({
     .string()
     .min(2, 'Unit name must be at least 2 characters')
     .max(100, 'Unit name must be less than 100 characters'),
-  teammateEmails: z
-    .array(emailSchema)
+  teammateInvites: z
+    .array(teammateInviteSchema)
     .max(5, 'You can invite up to 5 teammates')
     .optional()
     .default([]),
@@ -94,8 +102,8 @@ export const step4Schema = z.object({
 });
 
 export const step5Schema = z.object({
-  teammateEmails: z
-    .array(emailSchema)
+  teammateInvites: z
+    .array(teammateInviteSchema)
     .max(5, 'You can invite up to 5 teammates'),
 });
 

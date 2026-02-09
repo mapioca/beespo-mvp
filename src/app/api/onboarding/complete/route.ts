@@ -120,37 +120,47 @@ export async function POST(request: NextRequest) {
   const inviterName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'Your colleague';
 
   // Create invitations for teammates
-  const invitationResults: { email: string; success: boolean; error?: string }[] = [];
+  const invitationResults: { email: string; role: string; success: boolean; error?: string }[] = [];
 
-  for (const email of formData.teammateEmails) {
+  // Helper to format role for display
+  const formatRoleLabel = (role: string) => {
+    switch (role) {
+      case 'admin': return 'Admin';
+      case 'leader': return 'Leader';
+      case 'guest': return 'Guest';
+      default: return 'Member';
+    }
+  };
+
+  for (const invite of formData.teammateInvites) {
     // Check if there's already a pending invitation
     const { data: existingInvite } = await (supabase
       .from('workspace_invitations') as ReturnType<typeof supabase.from>)
       .select('id')
-      .eq('email', email)
+      .eq('email', invite.email)
       .eq('workspace_id', workspaceId)
       .eq('status', 'pending')
       .single();
 
     if (existingInvite) {
-      invitationResults.push({ email, success: false, error: 'Already invited' });
+      invitationResults.push({ email: invite.email, role: invite.role, success: false, error: 'Already invited' });
       continue;
     }
 
-    // Create invitation
+    // Create invitation with the specified role
     const { data: invitation, error: inviteError } = await (supabase
       .from('workspace_invitations') as ReturnType<typeof supabase.from>)
       .insert({
         workspace_id: workspaceId,
-        email,
-        role: 'leader', // Default role for teammates
+        email: invite.email,
+        role: invite.role,
         invited_by: user.id,
       })
       .select()
       .single();
 
     if (inviteError || !invitation) {
-      invitationResults.push({ email, success: false, error: 'Failed to create invitation' });
+      invitationResults.push({ email: invite.email, role: invite.role, success: false, error: 'Failed to create invitation' });
       continue;
     }
 
@@ -160,14 +170,14 @@ export async function POST(request: NextRequest) {
     const inviteLink = `${baseUrl}/accept-invite?token=${(invitation as any).token}`;
 
     const emailResult = await sendInviteEmail({
-      toEmail: email,
+      toEmail: invite.email,
       inviterName,
       workspaceName,
-      role: 'Leader',
+      role: formatRoleLabel(invite.role),
       inviteLink,
     });
 
-    invitationResults.push({ email, success: emailResult.success, error: emailResult.error });
+    invitationResults.push({ email: invite.email, role: invite.role, success: emailResult.success, error: emailResult.error });
   }
 
   return NextResponse.json({

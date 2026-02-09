@@ -29,7 +29,6 @@ export type RoleKey =
   | 'clerk'
   | 'assistant_clerk_finance'
   | 'assistant_clerk_membership'
-  | 'org_president'
   | 'secretary'
   | 'leader'
   | 'assistant';
@@ -80,12 +79,21 @@ export interface FeatureOption {
 }
 
 // Complete form data for onboarding
+// Workspace member role for invitations
+export type WorkspaceMemberRole = 'admin' | 'leader' | 'guest';
+
+// Teammate invite with email and role
+export interface TeammateInvite {
+  email: string;
+  role: WorkspaceMemberRole;
+}
+
 export interface OnboardingFormData {
   unitType: UnitType;
   organization: OrganizationKey | '';
   role: RoleKey | '';
   unitName: string;
-  teammateEmails: string[];
+  teammateInvites: TeammateInvite[];
   featureInterests: FeatureKey[];
 }
 
@@ -97,70 +105,42 @@ export interface OnboardingStep {
   canSkip: boolean;
 }
 
-// Onboarding flow type
-export type OnboardingFlow = 'create' | 'join';
-
-// Step configuration for "create workspace" flow
-export const ONBOARDING_STEPS_CREATE: OnboardingStep[] = [
+// Step configuration for workspace creation flow
+export const ONBOARDING_STEPS: OnboardingStep[] = [
   {
     id: 1,
-    title: 'Get Started',
-    description: 'Create or join a workspace',
-    canSkip: false,
-  },
-  {
-    id: 2,
     title: 'Unit Type',
     description: 'What type of unit are you serving in?',
     canSkip: false,
   },
   {
-    id: 3,
+    id: 2,
     title: 'Organization',
     description: 'Which organization are you part of?',
     canSkip: false,
   },
   {
-    id: 4,
+    id: 3,
     title: 'Role',
     description: 'What is your calling or role?',
     canSkip: false,
   },
   {
-    id: 5,
+    id: 4,
     title: 'Unit Name',
     description: 'What is the name of your unit?',
     canSkip: false,
   },
   {
-    id: 6,
+    id: 5,
     title: 'Teammates',
     description: 'Invite your presidency or team members',
     canSkip: true,
   },
   {
-    id: 7,
+    id: 6,
     title: 'Features',
     description: 'What features are you most interested in?',
     canSkip: true,
   },
 ];
-
-// Step configuration for "join workspace" flow
-export const ONBOARDING_STEPS_JOIN: OnboardingStep[] = [
-  {
-    id: 1,
-    title: 'Get Started',
-    description: 'Create or join a workspace',
-    canSkip: false,
-  },
-  {
-    id: 2,
-    title: 'Join Workspace',
-    description: 'Enter your invitation token',
-    canSkip: false,
-  },
-];
-
-// Legacy export for backwards compatibility
-export const ONBOARDING_STEPS = ONBOARDING_STEPS_CREATE;
