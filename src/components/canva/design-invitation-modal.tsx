@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
     Dialog,
     DialogContent,
@@ -65,14 +65,7 @@ export function DesignInvitationModal({
 
     const [selectedPreset, setSelectedPreset] = useState("0");
 
-    // Fetch designs when modal opens
-    useEffect(() => {
-        if (isOpen && eventId) {
-            fetchDesigns();
-        }
-    }, [isOpen, eventId]);
-
-    const fetchDesigns = async () => {
+    const fetchDesigns = useCallback(async () => {
         if (!eventId) return;
 
         setLoadingDesigns(true);
@@ -87,7 +80,14 @@ export function DesignInvitationModal({
         } finally {
             setLoadingDesigns(false);
         }
-    };
+    }, [eventId, setDesigns, setLoadingDesigns]);
+
+    // Fetch designs when modal opens
+    useEffect(() => {
+        if (isOpen && eventId) {
+            fetchDesigns();
+        }
+    }, [isOpen, eventId, fetchDesigns]);
 
     const handleCreateDesign = async () => {
         if (!eventId || !eventTitle) return;

@@ -22,6 +22,7 @@ import {
     Sparkles,
     Trash2,
 } from "lucide-react";
+import Image from "next/image";
 import type { App, WorkspaceAppWithApp } from "@/types/apps";
 
 interface AppDetailModalProps {
@@ -169,10 +170,13 @@ export function AppDetailModal({
                     <div className="flex items-start gap-4">
                         <div className="flex h-14 w-14 items-center justify-center rounded-lg bg-muted">
                             {app.icon_url ? (
-                                <img
+                                <Image
                                     src={app.icon_url}
                                     alt={app.name}
+                                    width={40}
+                                    height={40}
                                     className="h-10 w-10"
+                                    unoptimized
                                 />
                             ) : (
                                 <Puzzle className="h-7 w-7 text-muted-foreground" />

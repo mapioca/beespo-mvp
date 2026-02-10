@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { CheckCircle, AlertCircle, Clock, Puzzle } from "lucide-react";
+import Image from "next/image";
 import type { App, WorkspaceAppStatus } from "@/types/apps";
 
 interface AppCardProps {
@@ -62,10 +63,13 @@ export function AppCard({ app, status, onClick }: AppCardProps) {
                 <div className="flex items-start justify-between">
                     <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-muted">
                         {app.icon_url ? (
-                            <img
+                            <Image
                                 src={app.icon_url}
                                 alt={app.name}
+                                width={32}
+                                height={32}
                                 className="h-8 w-8"
+                                unoptimized
                             />
                         ) : (
                             <Puzzle className="h-6 w-6 text-muted-foreground" />

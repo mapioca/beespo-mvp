@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { Puzzle } from "lucide-react";
+import Image from "next/image";
 import type { WorkspaceAppWithApp } from "@/types/apps";
 
 interface ConnectedAppsListProps {
@@ -31,10 +32,13 @@ export function ConnectedAppsList({ apps, isCollapsed }: ConnectedAppsListProps)
                 >
                     <div className="flex h-5 w-5 items-center justify-center">
                         {wa.app.icon_url ? (
-                            <img
+                            <Image
                                 src={wa.app.icon_url}
                                 alt={wa.app.name}
+                                width={20}
+                                height={20}
                                 className="h-5 w-5"
+                                unoptimized
                             />
                         ) : (
                             <Puzzle className="h-4 w-4 text-muted-foreground" />

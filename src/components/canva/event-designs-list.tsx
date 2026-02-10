@@ -7,12 +7,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
     Download,
     ExternalLink,
-    Image,
+    Image as ImageIcon,
     Loader2,
     CheckCircle,
     AlertCircle,
     Clock,
 } from "lucide-react";
+import Image from "next/image";
 import type { EventDesign, ExportStatus } from "@/types/canva";
 
 interface EventDesignsListProps {
@@ -75,7 +76,7 @@ export function EventDesignsList({
     if (designs.length === 0) {
         return (
             <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-8">
-                <Image className="h-10 w-10 text-muted-foreground/50" />
+                <ImageIcon className="h-10 w-10 text-muted-foreground/50" />
                 <p className="mt-3 text-sm text-muted-foreground">
                     No designs yet. Create your first invitation above.
                 </p>
@@ -96,14 +97,16 @@ export function EventDesignsList({
                             {/* Preview */}
                             <div className="relative aspect-[3/4] w-full rounded-md bg-muted overflow-hidden">
                                 {design.public_url ? (
-                                    <img
+                                    <Image
                                         src={design.public_url}
                                         alt={design.title}
-                                        className="h-full w-full object-cover"
+                                        fill
+                                        className="object-cover"
+                                        unoptimized
                                     />
                                 ) : (
                                     <div className="flex h-full w-full items-center justify-center">
-                                        <Image className="h-8 w-8 text-muted-foreground/50" />
+                                        <ImageIcon className="h-8 w-8 text-muted-foreground/50" />
                                     </div>
                                 )}
                             </div>
@@ -117,9 +120,8 @@ export function EventDesignsList({
                                     </span>
                                     <Badge variant={statusInfo.variant} className="gap-1 text-xs">
                                         <StatusIcon
-                                            className={`h-3 w-3 ${
-                                                design.export_status === "processing" ? "animate-spin" : ""
-                                            }`}
+                                            className={`h-3 w-3 ${design.export_status === "processing" ? "animate-spin" : ""
+                                                }`}
                                         />
                                         {statusInfo.label}
                                     </Badge>

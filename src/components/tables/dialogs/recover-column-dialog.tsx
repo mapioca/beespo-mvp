@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -35,20 +35,20 @@ export function RecoverColumnDialog({
   const [isLoading, setIsLoading] = useState(false);
   const [restoringId, setRestoringId] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (open) {
-      fetchDeletedColumns();
-    }
-  }, [open, tableId]);
-
-  const fetchDeletedColumns = async () => {
+  const fetchDeletedColumns = useCallback(async () => {
     setIsLoading(true);
     const result = await getDeletedColumns(tableId);
     if (result.data) {
       setDeletedColumns(result.data);
     }
     setIsLoading(false);
-  };
+  }, [tableId]);
+
+  useEffect(() => {
+    if (open) {
+      fetchDeletedColumns();
+    }
+  }, [open, fetchDeletedColumns]);
 
   const handleRestore = async (column: Column) => {
     setRestoringId(column.id);

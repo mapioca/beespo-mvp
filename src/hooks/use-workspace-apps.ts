@@ -47,7 +47,7 @@ export function useWorkspaceApps() {
         return () => {
             isMounted = false;
         };
-    }, []);
+    }, [workspaceApps.length, setLoadingWorkspaceApps, setWorkspaceApps]);
 
     const connectedApps = workspaceApps.filter(
         (wa: WorkspaceAppWithApp) => wa.status === "connected"

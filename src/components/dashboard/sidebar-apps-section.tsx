@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AppWindow, ChevronRight, Plus, Puzzle } from "lucide-react";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 import {
     Collapsible,
@@ -139,10 +140,13 @@ export function SidebarAppsSection({
                                 >
                                     <div className="flex h-4 w-4 items-center justify-center">
                                         {wa.app.icon_url ? (
-                                            <img
+                                            <Image
                                                 src={wa.app.icon_url}
                                                 alt={wa.app.name}
+                                                width={16}
+                                                height={16}
                                                 className="h-4 w-4"
+                                                unoptimized
                                             />
                                         ) : (
                                             <Puzzle className="h-4 w-4 text-muted-foreground" />
