@@ -1,5 +1,5 @@
 export { CallingCard } from './calling-card';
-export { CallingDetailModal } from './calling-detail-modal';
+export { CallingDetailDrawer } from './calling-detail-drawer';
 export { CallingProcessStepper, CallingProcessStepperVertical } from './calling-process-stepper';
 export { CandidateAutocomplete } from './candidate-autocomplete';
 export { CallingsClient } from './callings-client';

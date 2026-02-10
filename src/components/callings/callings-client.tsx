@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/select";
 import { CallingsKanbanBoard } from "./callings-kanban-board";
 import { CallingCard } from "./calling-card";
-import { CallingDetailModal } from "./calling-detail-modal";
+import { CallingDetailDrawer } from "./calling-detail-drawer";
 import {
     Plus,
     Search,
@@ -307,7 +307,7 @@ export function CallingsClient({ callings, teamMembers, userRole }: CallingsClie
             </Dialog>
 
             {/* Detail Modal */}
-            <CallingDetailModal
+            <CallingDetailDrawer
                 callingId={selectedCallingId}
                 open={!!selectedCallingId}
                 onOpenChange={() => handleModalClose()}

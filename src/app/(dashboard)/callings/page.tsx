@@ -58,6 +58,20 @@ export default async function CallingsPage() {
         (p: any) => p.calling?.workspace_id === profile.workspace_id
     );
 
+    // Get all callings in this workspace
+    const { data: callings } = await (supabase
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .from("callings") as any)
+        .select(`
+            id,
+            title,
+            organization,
+            is_filled,
+            created_at
+        `)
+        .eq("workspace_id", profile.workspace_id)
+        .order("created_at", { ascending: false });
+
     // Get team members for task assignment
     const { data: teamMembers } = await (supabase
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -69,6 +83,7 @@ export default async function CallingsPage() {
     return (
         <CallingsPageClient
             initialProcesses={workspaceProcesses}
+            initialCallings={callings || []}
             teamMembers={teamMembers || []}
         />
     );

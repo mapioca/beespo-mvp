@@ -25,19 +25,20 @@ export async function GET(request: Request) {
       const { data: { user } } = await supabase.auth.getUser()
 
       if (user) {
-        // Check if profile exists
-        const { data: profile } = await supabase
+        // Check if profile exists and has completed onboarding (has workspace_id)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: profile } = await (supabase as any)
           .from('profiles')
-          .select('id')
+          .select('id, workspace_id')
           .eq('id', user.id)
-          .single()
+          .single() as { data: { id: string; workspace_id: string | null } | null }
 
-        // If no profile, redirect to onboarding
-        if (!profile) {
+        // If no profile or no workspace_id, redirect to onboarding
+        if (!profile || !profile.workspace_id) {
           return NextResponse.redirect(`${origin}/onboarding`)
         }
 
-        // Profile exists, redirect to next or dashboard
+        // Profile exists with workspace, redirect to next or dashboard
         return NextResponse.redirect(`${origin}${next}`)
       }
     }

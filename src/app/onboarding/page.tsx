@@ -54,6 +54,7 @@ import {
   Loader2,
   PartyPopper,
 } from 'lucide-react';
+import { createClient } from '@/lib/supabase/client';
 
 const unitIconMap: Record<string, React.ReactNode> = {
   Users: <Users className="h-5 w-5" />,
@@ -98,6 +99,7 @@ export default function OnboardingPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
   const [loadingMessageIndex, setLoadingMessageIndex] = useState(0);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
   // Invited user state
   const [isInvitedUser, setIsInvitedUser] = useState(false);
@@ -120,6 +122,38 @@ export default function OnboardingPage() {
     teammateInvites: [],
     featureInterests: [],
   });
+
+  // Check if user already has a workspace (existing user) - redirect to dashboard
+  useEffect(() => {
+    const checkExistingUser = async () => {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (!user) {
+        // Not logged in, redirect to login
+        router.push('/login');
+        return;
+      }
+
+      // Check if user already has a workspace
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: profile } = await (supabase as any)
+        .from('profiles')
+        .select('workspace_id')
+        .eq('id', user.id)
+        .single();
+
+      if (profile?.workspace_id) {
+        // User already has a workspace, redirect to dashboard
+        router.push('/dashboard');
+        return;
+      }
+
+      setIsCheckingAuth(false);
+    };
+
+    checkExistingUser();
+  }, [router]);
 
   // Check for pending workspace invitation on mount
   useEffect(() => {
@@ -450,6 +484,15 @@ export default function OnboardingPage() {
         return 'Member';
     }
   };
+
+  // Loading state while checking auth
+  if (isCheckingAuth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-100/50 backdrop-blur-sm">
+        <Loader2 className="h-8 w-8 text-primary animate-spin" />
+      </div>
+    );
+  }
 
   // Loading state
   if (isSubmitting) {

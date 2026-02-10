@@ -20,13 +20,23 @@ interface Process {
     } | null;
 }
 
+interface CallingItem {
+    id: string;
+    title: string;
+    organization: string | null;
+    is_filled: boolean;
+    created_at: string;
+}
+
 interface CallingsPageClientProps {
     initialProcesses: Process[];
+    initialCallings: CallingItem[];
     teamMembers: { id: string; full_name: string }[];
 }
 
 export function CallingsPageClient({
     initialProcesses,
+    initialCallings,
     teamMembers,
 }: CallingsPageClientProps) {
     const [processes, setProcesses] = useState<Process[]>(initialProcesses);
@@ -45,6 +55,7 @@ export function CallingsPageClient({
     return (
         <CallingsPipeline
             processes={processes}
+            callings={initialCallings}
             onRefresh={handleRefresh}
             teamMembers={teamMembers}
         />
