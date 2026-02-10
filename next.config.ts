@@ -35,7 +35,7 @@ export default withSentryConfig(nextConfig, {
 
   org: "bishopric-technologies",
 
-  project: "javascript-nextjs",
+  project: process.env.SENTRY_PROJECT || "javascript-nextjs",
 
   // Only print logs for uploading source maps in CI
   silent: !process.env.CI,
