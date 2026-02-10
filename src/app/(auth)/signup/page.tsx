@@ -228,11 +228,14 @@ function SignupContent() {
         userMetadata.platform_invitation_id = consumedInvitationId;
       }
 
+      const baseUrl = window.location.origin;
+
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: userMetadata,
+          emailRedirectTo: `${baseUrl}/auth/confirm`,
         },
       });
 
@@ -291,14 +294,28 @@ function SignupContent() {
           sessionStorage.setItem("pending_workspace_invitation_token", invitationToken);
         }
 
-        toast({
-          title: "Success",
-          description: isWorkspaceInvite
-            ? `Account created! Let's get you set up to join ${workspaceInviteData?.workspaceName}.`
-            : "Account created successfully! Please complete your profile.",
-        });
-        router.push("/onboarding");
-        router.refresh();
+        // Check if email confirmation is required
+        // When email confirmation is enabled, identities will be empty until confirmed
+        const needsEmailConfirmation =
+          data.user.identities?.length === 0 ||
+          !data.user.email_confirmed_at;
+
+        if (needsEmailConfirmation) {
+          toast({
+            title: "Check your email",
+            description: "We've sent a confirmation link to your email address.",
+          });
+          router.push(`/check-email?email=${encodeURIComponent(email)}`);
+        } else {
+          toast({
+            title: "Success",
+            description: isWorkspaceInvite
+              ? `Account created! Let's get you set up to join ${workspaceInviteData?.workspaceName}.`
+              : "Account created successfully! Please complete your profile.",
+          });
+          router.push("/onboarding");
+          router.refresh();
+        }
       }
     } catch (error) {
       toast({

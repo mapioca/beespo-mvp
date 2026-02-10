@@ -38,11 +38,20 @@ export default function LoginPage() {
       });
 
       if (error) {
-        toast({
-          title: "Error",
-          description: error.message,
-          variant: "destructive",
-        });
+        if (error.message.toLowerCase().includes("email not confirmed")) {
+          toast({
+            title: "Email not confirmed",
+            description: "Please check your inbox for the confirmation link.",
+            variant: "destructive",
+          });
+          router.push(`/check-email?email=${encodeURIComponent(email)}`);
+        } else {
+          toast({
+            title: "Error",
+            description: error.message,
+            variant: "destructive",
+          });
+        }
       } else if (data.user) {
         // Check if user has completed profile setup
         const { data: profile } = await supabase
