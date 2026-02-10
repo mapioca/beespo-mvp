@@ -20,7 +20,7 @@ export default async function DashboardLayout({
   const { data: profile } = await (supabase
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     .from("profiles") as any)
-    .select("full_name, workspace_id, role, workspaces(name)")
+    .select("full_name, workspace_id, role, role_title, workspaces(name)")
     .eq("id", user.id)
     .single();
 
@@ -35,6 +35,7 @@ export default async function DashboardLayout({
         workspaceName={profile?.workspaces?.name || "Workspace"}
         userName={profile?.full_name || ""}
         userEmail={user?.email || ""}
+        userRoleTitle={profile?.role_title || ""}
       />
 
       {/* Main Content - flex-1 fills remaining width, overflow-hidden contains internal scrolling */}

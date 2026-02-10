@@ -60,14 +60,6 @@ export const ORGANIZATIONS: OrganizationOption[] = [
     dbValue: 'bishopric', // Maps to bishopric for non-ward units
   },
   {
-    value: 'clerk',
-    label: 'Clerk',
-    description: 'Ward or stake clerks office',
-    icon: 'FileText',
-    availableFor: ['branch', 'ward', 'district', 'stake'],
-    dbValue: 'bishopric', // Clerks work with bishopric
-  },
-  {
     value: 'elders_quorum',
     label: 'Elders Quorum',
     description: 'Priesthood quorum for adult men',
@@ -80,7 +72,7 @@ export const ORGANIZATIONS: OrganizationOption[] = [
     label: 'Relief Society',
     description: 'Women\'s organization',
     icon: 'Heart',
-    availableFor: ['branch', 'ward'],
+    availableFor: ['branch', 'ward', 'district', 'stake'],
     dbValue: 'relief_society',
   },
   {
@@ -88,7 +80,7 @@ export const ORGANIZATIONS: OrganizationOption[] = [
     label: 'Young Men',
     description: 'Youth organization for young men',
     icon: 'Zap',
-    availableFor: ['branch', 'ward'],
+    availableFor: ['branch', 'ward', 'district', 'stake'],
     dbValue: 'young_men',
   },
   {
@@ -96,7 +88,7 @@ export const ORGANIZATIONS: OrganizationOption[] = [
     label: 'Young Women',
     description: 'Youth organization for young women',
     icon: 'Star',
-    availableFor: ['branch', 'ward'],
+    availableFor: ['branch', 'ward', 'district', 'stake'],
     dbValue: 'young_women',
   },
   {
@@ -104,7 +96,7 @@ export const ORGANIZATIONS: OrganizationOption[] = [
     label: 'Primary',
     description: 'Children\'s organization',
     icon: 'Smile',
-    availableFor: ['branch', 'ward'],
+    availableFor: ['branch', 'ward', 'district', 'stake'],
     dbValue: 'primary',
   },
   {
@@ -112,7 +104,7 @@ export const ORGANIZATIONS: OrganizationOption[] = [
     label: 'Sunday School',
     description: 'Gospel teaching organization',
     icon: 'BookOpen',
-    availableFor: ['branch', 'ward'],
+    availableFor: ['branch', 'ward', 'district', 'stake'],
     dbValue: 'sunday_school',
   },
   {
@@ -120,7 +112,7 @@ export const ORGANIZATIONS: OrganizationOption[] = [
     label: 'Missionary Work',
     description: 'Ward or stake missionary coordination',
     icon: 'Globe',
-    availableFor: ['group', 'branch', 'ward'],
+    availableFor: ['group', 'branch', 'ward', 'district', 'stake'],
     dbValue: 'missionary_work',
   },
   {
@@ -128,7 +120,7 @@ export const ORGANIZATIONS: OrganizationOption[] = [
     label: 'Temple & Family History',
     description: 'Temple and family history coordination',
     icon: 'Building',
-    availableFor: ['group', 'branch', 'ward'],
+    availableFor: ['group', 'branch', 'ward', 'district', 'stake'],
     dbValue: 'temple_family_history',
   },
 ];
@@ -172,26 +164,26 @@ export const ROLES: RoleOption[] = [
     unitRestrictions: ['ward', 'district', 'stake'],
     featureTier: 'support',
   },
-  // Clerk roles
+  // Clerk roles (under bishopric/presidency)
   {
     value: 'clerk',
     label: 'Clerk',
     description: 'Ward or stake clerk',
-    availableFor: ['clerk'],
+    availableFor: ['bishopric', 'presidency'],
     featureTier: 'support',
   },
   {
     value: 'assistant_clerk_finance',
     label: 'Assistant Clerk - Finance',
     description: 'Handles financial records',
-    availableFor: ['clerk'],
+    availableFor: ['bishopric', 'presidency'],
     featureTier: 'support',
   },
   {
     value: 'assistant_clerk_membership',
     label: 'Assistant Clerk - Membership',
     description: 'Handles membership records',
-    availableFor: ['clerk'],
+    availableFor: ['bishopric', 'presidency'],
     featureTier: 'support',
   },
   // Organization roles
@@ -263,7 +255,6 @@ export const FEATURES: FeatureOption[] = [
 export const ORGANIZATION_DISPLAY_NAMES: Record<string, string> = {
   bishopric: 'Bishopric',
   presidency: 'Presidency',
-  clerk: 'Clerks',
   elders_quorum: 'Elders Quorum',
   relief_society: 'Relief Society',
   young_men: 'Young Men',

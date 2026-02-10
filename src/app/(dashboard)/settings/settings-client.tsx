@@ -20,7 +20,8 @@ import { InviteMemberDialog } from "@/components/team/invite-member-dialog";
 import { TeamMembersList } from "@/components/team/team-members-list";
 import { PendingInvitations } from "@/components/team/pending-invitations";
 import { ChangePasswordForm } from "@/components/auth/change-password-form";
-import { Building2, Users, Save, Loader2, User } from "lucide-react";
+import { DeleteAccountDialog } from "@/components/auth/delete-account-dialog";
+import { Building2, Users, Save, Loader2, User, AlertTriangle } from "lucide-react";
 
 interface Workspace {
     id: string;
@@ -57,6 +58,7 @@ interface SettingsClientProps {
     currentUserDetails: {
         fullName: string;
         email: string;
+        roleTitle: string;
     };
 }
 
@@ -91,9 +93,12 @@ export function SettingsClient({
     const { toast } = useToast();
     const [workspaceName, setWorkspaceName] = useState(workspace.name);
     const [userFullName, setUserFullName] = useState(currentUserDetails.fullName);
+    const [userRoleTitle, setUserRoleTitle] = useState(currentUserDetails.roleTitle);
     const [isSaving, setIsSaving] = useState(false);
     const [isSavingProfile, setIsSavingProfile] = useState(false);
     const isAdmin = currentUserRole === "admin";
+
+    const hasProfileChanges = userFullName !== currentUserDetails.fullName || userRoleTitle !== currentUserDetails.roleTitle;
 
     const handleSaveWorkspace = async () => {
         if (!isAdmin || workspaceName === workspace.name) return;
@@ -125,14 +130,17 @@ export function SettingsClient({
     };
 
     const handleSaveProfile = async () => {
-        if (userFullName === currentUserDetails.fullName) return;
+        if (!hasProfileChanges) return;
 
         setIsSavingProfile(true);
         const supabase = createClient();
 
         const { error } = await (supabase
             .from("profiles") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
-            .update({ full_name: userFullName })
+            .update({
+                full_name: userFullName,
+                role_title: userRoleTitle || null,
+            })
             .eq("id", currentUserId);
 
         if (error) {
@@ -157,6 +165,7 @@ export function SettingsClient({
     };
 
     return (
+        <div className="h-full overflow-y-auto">
         <div className="p-6 max-w-5xl mx-auto space-y-6">
             <div>
                 <h1 className="text-3xl font-bold">Settings</h1>
@@ -192,25 +201,25 @@ export function SettingsClient({
                         <CardContent className="space-y-4">
                             <div className="space-y-2">
                                 <Label htmlFor="fullName">Full Name</Label>
-                                <div className="flex gap-2">
-                                    <Input
-                                        id="fullName"
-                                        value={userFullName}
-                                        onChange={(e) => setUserFullName(e.target.value)}
-                                        disabled={isSavingProfile}
-                                        className="max-w-md"
-                                    />
-                                    {userFullName !== currentUserDetails.fullName && (
-                                        <Button onClick={handleSaveProfile} disabled={isSavingProfile}>
-                                            {isSavingProfile ? (
-                                                <Loader2 className="h-4 w-4 animate-spin" />
-                                            ) : (
-                                                <Save className="h-4 w-4" />
-                                            )}
-                                            <span className="ml-2">Save</span>
-                                        </Button>
-                                    )}
-                                </div>
+                                <Input
+                                    id="fullName"
+                                    value={userFullName}
+                                    onChange={(e) => setUserFullName(e.target.value)}
+                                    disabled={isSavingProfile}
+                                    className="max-w-md"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="roleTitle">Role / Calling</Label>
+                                <Input
+                                    id="roleTitle"
+                                    value={userRoleTitle}
+                                    onChange={(e) => setUserRoleTitle(e.target.value)}
+                                    disabled={isSavingProfile}
+                                    placeholder="e.g., Relief Society President"
+                                    className="max-w-md"
+                                />
+                                <p className="text-xs text-muted-foreground">Your calling or role in the organization.</p>
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="email">Email Address</Label>
@@ -222,9 +231,44 @@ export function SettingsClient({
                                 />
                                 <p className="text-xs text-muted-foreground">Email address cannot be changed currently.</p>
                             </div>
+                            {hasProfileChanges && (
+                                <Button onClick={handleSaveProfile} disabled={isSavingProfile}>
+                                    {isSavingProfile ? (
+                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                    ) : (
+                                        <Save className="h-4 w-4" />
+                                    )}
+                                    <span className="ml-2">Save Changes</span>
+                                </Button>
+                            )}
                         </CardContent>
                     </Card>
                     <ChangePasswordForm email={currentUserDetails.email} />
+
+                    {/* Danger Zone */}
+                    <Card className="border-destructive/50">
+                        <CardHeader>
+                            <div className="flex items-center gap-2">
+                                <AlertTriangle className="h-5 w-5 text-destructive" />
+                                <CardTitle className="text-destructive">Danger Zone</CardTitle>
+                            </div>
+                            <CardDescription>
+                                Irreversible and destructive actions
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="flex items-center justify-between p-4 rounded-lg border border-destructive/30 bg-destructive/5">
+                                <div>
+                                    <p className="font-medium">Delete Account</p>
+                                    <p className="text-sm text-muted-foreground">
+                                        Permanently delete your account and remove your personal data.
+                                        Your workspace content will remain visible as &quot;Former Member&quot;.
+                                    </p>
+                                </div>
+                                <DeleteAccountDialog userEmail={currentUserDetails.email} />
+                            </div>
+                        </CardContent>
+                    </Card>
                 </TabsContent>
 
                 <TabsContent value="general" className="space-y-6">
@@ -325,6 +369,7 @@ export function SettingsClient({
                     )}
                 </TabsContent>
             </Tabs>
+        </div>
         </div>
     );
 }

@@ -9,7 +9,6 @@ export type UnitType = 'group' | 'branch' | 'ward' | 'district' | 'stake';
 export type OrganizationKey =
   | 'bishopric'
   | 'presidency'
-  | 'clerk'
   | 'elders_quorum'
   | 'relief_society'
   | 'young_men'
@@ -105,7 +104,7 @@ export interface OnboardingStep {
   canSkip: boolean;
 }
 
-// Step configuration for workspace creation flow
+// Step configuration for workspace creation flow (5 steps)
 export const ONBOARDING_STEPS: OnboardingStep[] = [
   {
     id: 1,
@@ -135,12 +134,35 @@ export const ONBOARDING_STEPS: OnboardingStep[] = [
     id: 5,
     title: 'Teammates',
     description: 'Invite your presidency or team members',
-    canSkip: true,
+    canSkip: false,
+  },
+];
+
+// Abbreviated onboarding for invited users
+export interface InvitedUserOnboardingData {
+  roleTitle: string;
+  workspaceInvitationToken: string;
+}
+
+// Workspace invitation data returned from validate API
+export interface WorkspaceInvitationData {
+  email: string;
+  workspaceName: string;
+  role: WorkspaceMemberRole;
+}
+
+// Step configuration for invited users (abbreviated flow)
+export const INVITED_USER_ONBOARDING_STEPS: OnboardingStep[] = [
+  {
+    id: 1,
+    title: 'Welcome',
+    description: 'You have been invited to join a workspace',
+    canSkip: false,
   },
   {
-    id: 6,
-    title: 'Features',
-    description: 'What features are you most interested in?',
-    canSkip: true,
+    id: 2,
+    title: 'Your Role',
+    description: 'What is your calling or position?',
+    canSkip: false,
   },
 ];

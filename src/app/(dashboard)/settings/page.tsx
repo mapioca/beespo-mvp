@@ -6,6 +6,7 @@ type Profile = {
     workspace_id: string;
     role: string;
     full_name: string;
+    role_title: string | null;
 };
 
 export type Workspace = {
@@ -29,7 +30,7 @@ export default async function SettingsPage() {
     // Get current user's profile
     const { data: profile } = await supabase
         .from("profiles")
-        .select("workspace_id, role, full_name")
+        .select("workspace_id, role, full_name, role_title")
         .eq("id", user.id)
         .single() as { data: Profile | null };
 
@@ -82,6 +83,7 @@ export default async function SettingsPage() {
             currentUserDetails={{
                 fullName: profile.full_name,
                 email: user.email || "",
+                roleTitle: profile.role_title || "",
             }}
         />
     );

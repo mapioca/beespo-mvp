@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useCallback, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,13 +21,25 @@ import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/lib/hooks/use-toast";
 import { createClient } from "@/lib/supabase/client";
-import { ShieldCheck, Loader2 } from "lucide-react";
+import { ShieldCheck, Loader2, Users, CheckCircle } from "lucide-react";
+import type { WorkspaceInvitationData } from "@/types/onboarding";
 
-export default function SignupPage() {
+function SignupContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
 
-  // Invite code state
+  // Check for workspace invitation token in URL
+  const invitationToken = searchParams.get("invitation_token");
+  const invitedEmail = searchParams.get("email");
+
+  // Workspace invitation state
+  const [isWorkspaceInvite, setIsWorkspaceInvite] = useState(false);
+  const [workspaceInviteValid, setWorkspaceInviteValid] = useState(false);
+  const [workspaceInviteData, setWorkspaceInviteData] = useState<WorkspaceInvitationData | null>(null);
+  const [isValidatingToken, setIsValidatingToken] = useState(false);
+
+  // Platform invite code state (for non-workspace-invite flow)
   const [inviteCode, setInviteCode] = useState("");
   const [inviteCodeValid, setInviteCodeValid] = useState(false);
 
@@ -39,6 +51,58 @@ export default function SignupPage() {
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isConsumingCode, setIsConsumingCode] = useState(false);
+
+  // Validate workspace invitation token on mount
+  useEffect(() => {
+    if (invitationToken) {
+      setIsWorkspaceInvite(true);
+      setIsValidatingToken(true);
+
+      const validateToken = async () => {
+        try {
+          const response = await fetch("/api/workspace-invitations/validate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ token: invitationToken }),
+          });
+
+          const data = await response.json();
+
+          if (data.valid) {
+            setWorkspaceInviteValid(true);
+            setWorkspaceInviteData({
+              email: data.email,
+              workspaceName: data.workspaceName,
+              role: data.role,
+            });
+            // Pre-fill email from invitation
+            if (data.email) {
+              setEmail(data.email);
+            }
+          } else {
+            toast({
+              title: "Invalid Invitation",
+              description: data.error || "This invitation link is no longer valid.",
+              variant: "destructive",
+            });
+            // Redirect to regular signup
+            router.replace("/signup");
+          }
+        } catch {
+          toast({
+            title: "Error",
+            description: "Failed to validate invitation. Please try again.",
+            variant: "destructive",
+          });
+          router.replace("/signup");
+        } finally {
+          setIsValidatingToken(false);
+        }
+      };
+
+      validateToken();
+    }
+  }, [invitationToken, invitedEmail, router, toast]);
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleInviteValidation = useCallback((isValid: boolean, _invitationId: string | null) => {
@@ -70,10 +134,30 @@ export default function SignupPage() {
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!inviteCodeValid) {
+    // Validate based on flow type
+    if (!isWorkspaceInvite && !inviteCodeValid) {
       toast({
         title: "Invalid Invite Code",
         description: "Please enter a valid invite code to continue.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (isWorkspaceInvite && !workspaceInviteValid) {
+      toast({
+        title: "Invalid Invitation",
+        description: "Your workspace invitation is no longer valid.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // For workspace invites, validate email matches
+    if (isWorkspaceInvite && workspaceInviteData && email.toLowerCase() !== workspaceInviteData.email.toLowerCase()) {
+      toast({
+        title: "Email Mismatch",
+        description: "Please use the email address the invitation was sent to.",
         variant: "destructive",
       });
       return;
@@ -110,32 +194,45 @@ export default function SignupPage() {
     setIsConsumingCode(true);
 
     try {
-      // First, consume the invite code atomically
-      const consumedInvitationId = await consumeInviteCode();
+      let consumedInvitationId: string | null = null;
 
-      if (!consumedInvitationId) {
-        toast({
-          title: "Invite Code Error",
-          description: "The invite code is no longer valid. Please get a new code.",
-          variant: "destructive",
-        });
-        setInviteCodeValid(false);
-        setIsLoading(false);
-        setIsConsumingCode(false);
-        return;
+      // Only consume platform invite code for non-workspace-invite flow
+      if (!isWorkspaceInvite) {
+        consumedInvitationId = await consumeInviteCode();
+
+        if (!consumedInvitationId) {
+          toast({
+            title: "Invite Code Error",
+            description: "The invite code is no longer valid. Please get a new code.",
+            variant: "destructive",
+          });
+          setInviteCodeValid(false);
+          setIsLoading(false);
+          setIsConsumingCode(false);
+          return;
+        }
       }
 
       setIsConsumingCode(false);
 
       const supabase = createClient();
+
+      // Build metadata based on flow type
+      const userMetadata: Record<string, string> = {
+        full_name: fullName,
+      };
+
+      if (isWorkspaceInvite && invitationToken) {
+        userMetadata.workspace_invitation_token = invitationToken;
+      } else if (consumedInvitationId) {
+        userMetadata.platform_invitation_id = consumedInvitationId;
+      }
+
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          data: {
-            full_name: fullName,
-            platform_invitation_id: consumedInvitationId,
-          },
+          data: userMetadata,
         },
       });
 
@@ -166,7 +263,10 @@ export default function SignupPage() {
               .single();
 
             if (!profile) {
-              // User exists but no profile - redirect to setup
+              // User exists but no profile - store token and redirect to setup
+              if (isWorkspaceInvite && invitationToken) {
+                sessionStorage.setItem("pending_workspace_invitation_token", invitationToken);
+              }
               toast({
                 title: "Complete Setup",
                 description: "Please complete your profile setup.",
@@ -186,9 +286,16 @@ export default function SignupPage() {
           });
         }
       } else if (data.user) {
+        // Store workspace invitation token for onboarding
+        if (isWorkspaceInvite && invitationToken) {
+          sessionStorage.setItem("pending_workspace_invitation_token", invitationToken);
+        }
+
         toast({
           title: "Success",
-          description: "Account created successfully! Please complete your profile.",
+          description: isWorkspaceInvite
+            ? `Account created! Let's get you set up to join ${workspaceInviteData?.workspaceName}.`
+            : "Account created successfully! Please complete your profile.",
         });
         router.push("/onboarding");
         router.refresh();
@@ -206,10 +313,20 @@ export default function SignupPage() {
   };
 
   const handleGoogleSignIn = async () => {
-    if (!inviteCodeValid) {
+    // Validate based on flow type
+    if (!isWorkspaceInvite && !inviteCodeValid) {
       toast({
         title: "Invalid Invite Code",
         description: "Please enter a valid invite code before signing up with Google.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (isWorkspaceInvite && !workspaceInviteValid) {
+      toast({
+        title: "Invalid Invitation",
+        description: "Your workspace invitation is no longer valid.",
         variant: "destructive",
       });
       return;
@@ -219,23 +336,28 @@ export default function SignupPage() {
     setIsConsumingCode(true);
 
     try {
-      // First, consume the invite code atomically
-      const consumedInvitationId = await consumeInviteCode();
+      // For workspace invites, just store the token
+      if (isWorkspaceInvite && invitationToken) {
+        sessionStorage.setItem("pending_workspace_invitation_token", invitationToken);
+      } else {
+        // For platform invites, consume the code first
+        const consumedInvitationId = await consumeInviteCode();
 
-      if (!consumedInvitationId) {
-        toast({
-          title: "Invite Code Error",
-          description: "The invite code is no longer valid. Please get a new code.",
-          variant: "destructive",
-        });
-        setInviteCodeValid(false);
-        setIsLoading(false);
-        setIsConsumingCode(false);
-        return;
+        if (!consumedInvitationId) {
+          toast({
+            title: "Invite Code Error",
+            description: "The invite code is no longer valid. Please get a new code.",
+            variant: "destructive",
+          });
+          setInviteCodeValid(false);
+          setIsLoading(false);
+          setIsConsumingCode(false);
+          return;
+        }
+
+        // Store the invitation ID in sessionStorage for the callback to use
+        sessionStorage.setItem("pending_platform_invitation_id", consumedInvitationId);
       }
-
-      // Store the invitation ID in sessionStorage for the callback to use
-      sessionStorage.setItem("pending_platform_invitation_id", consumedInvitationId);
 
       const supabase = createClient();
       const { error } = await supabase.auth.signInWithOAuth({
@@ -250,8 +372,9 @@ export default function SignupPage() {
       });
 
       if (error) {
-        // Clear the stored invitation ID if OAuth fails
+        // Clear the stored IDs if OAuth fails
         sessionStorage.removeItem("pending_platform_invitation_id");
+        sessionStorage.removeItem("pending_workspace_invitation_token");
         toast({
           title: "Error",
           description: error.message || "Failed to sign in with Google",
@@ -262,6 +385,7 @@ export default function SignupPage() {
       // If no error, browser will redirect to Google
     } catch {
       sessionStorage.removeItem("pending_platform_invitation_id");
+      sessionStorage.removeItem("pending_workspace_invitation_token");
       toast({
         title: "Error",
         description: "An unexpected error occurred. Please try again.",
@@ -271,33 +395,72 @@ export default function SignupPage() {
     }
   };
 
-  const isFormDisabled = isLoading || !inviteCodeValid;
+  // Determine if form should show based on validation status
+  const showForm = isWorkspaceInvite ? workspaceInviteValid : inviteCodeValid;
+  const isFormDisabled = isLoading || !showForm;
+
+  // Show loading state while validating workspace invitation
+  if (isValidatingToken) {
+    return (
+      <Card className="border-border">
+        <CardHeader className="text-center">
+          <CardTitle className="text-2xl font-bold">Validating Invitation</CardTitle>
+          <CardDescription>Please wait while we verify your invitation...</CardDescription>
+        </CardHeader>
+        <CardContent className="flex justify-center py-8">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="border-border">
       <CardHeader className="space-y-1">
         <CardTitle className="text-2xl font-bold">Create an account</CardTitle>
         <CardDescription>
-          Enter your invite code and information to get started
+          {isWorkspaceInvite && workspaceInviteData
+            ? `Join ${workspaceInviteData.workspaceName} on Beespo`
+            : "Enter your invite code and information to get started"}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Invite Code Section */}
-        <Alert className="bg-muted/50">
-          <ShieldCheck className="h-4 w-4" />
-          <AlertDescription>
-            Beespo is currently invite-only. Enter your invite code to continue.
-          </AlertDescription>
-        </Alert>
+        {/* Workspace Invitation Banner */}
+        {isWorkspaceInvite && workspaceInviteValid && workspaceInviteData && (
+          <Alert className="bg-primary/5 border-primary/20">
+            <Users className="h-4 w-4 text-primary" />
+            <AlertDescription className="text-sm">
+              <div className="flex items-center gap-2">
+                <CheckCircle className="h-4 w-4 text-green-500" />
+                <span>
+                  You&apos;ve been invited to join <strong>{workspaceInviteData.workspaceName}</strong> as{" "}
+                  <span className="capitalize font-medium">{workspaceInviteData.role}</span>
+                </span>
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
 
-        <InviteCodeInput
-          value={inviteCode}
-          onChange={setInviteCode}
-          onValidationComplete={handleInviteValidation}
-          disabled={isLoading}
-        />
+        {/* Platform Invite Code Section (only for non-workspace-invite flow) */}
+        {!isWorkspaceInvite && (
+          <>
+            <Alert className="bg-muted/50">
+              <ShieldCheck className="h-4 w-4" />
+              <AlertDescription>
+                Beespo is currently invite-only. Enter your invite code to continue.
+              </AlertDescription>
+            </Alert>
 
-        {inviteCodeValid && (
+            <InviteCodeInput
+              value={inviteCode}
+              onChange={setInviteCode}
+              onValidationComplete={handleInviteValidation}
+              disabled={isLoading}
+            />
+          </>
+        )}
+
+        {showForm && (
           <>
             <Separator />
 
@@ -353,7 +516,7 @@ export default function SignupPage() {
         )}
       </CardContent>
 
-      {inviteCodeValid && (
+      {showForm && (
         <form onSubmit={handleSignup}>
           <CardContent className="space-y-4">
             <div className="space-y-2">
@@ -377,8 +540,14 @@ export default function SignupPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                disabled={isFormDisabled}
+                disabled={isFormDisabled || (isWorkspaceInvite && workspaceInviteValid)}
+                className={isWorkspaceInvite && workspaceInviteValid ? "bg-muted" : ""}
               />
+              {isWorkspaceInvite && workspaceInviteValid && (
+                <p className="text-xs text-muted-foreground">
+                  This email was used for your invitation and cannot be changed.
+                </p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
@@ -426,8 +595,10 @@ export default function SignupPage() {
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  {isConsumingCode ? "Verifying code..." : "Creating account..."}
+                  {isConsumingCode ? "Verifying..." : "Creating account..."}
                 </>
+              ) : isWorkspaceInvite ? (
+                "Create account & join workspace"
               ) : (
                 "Create account"
               )}
@@ -445,7 +616,7 @@ export default function SignupPage() {
         </form>
       )}
 
-      {!inviteCodeValid && (
+      {!showForm && !isWorkspaceInvite && (
         <CardFooter>
           <p className="text-center text-sm text-muted-foreground w-full">
             Already have an account?{" "}
@@ -459,5 +630,23 @@ export default function SignupPage() {
         </CardFooter>
       )}
     </Card>
+  );
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense fallback={
+      <Card className="border-border">
+        <CardHeader className="text-center">
+          <CardTitle className="text-2xl font-bold">Loading</CardTitle>
+          <CardDescription>Please wait...</CardDescription>
+        </CardHeader>
+        <CardContent className="flex justify-center py-8">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </CardContent>
+      </Card>
+    }>
+      <SignupContent />
+    </Suspense>
   );
 }

@@ -21,6 +21,8 @@ function AcceptInviteContent() {
     const [status, setStatus] = useState<"loading" | "needsAuth" | "success" | "error">("loading");
     const [message, setMessage] = useState("");
     const [workspaceName, setWorkspaceName] = useState("");
+    const [invitedEmail, setInvitedEmail] = useState("");
+    const [invitedRole, setInvitedRole] = useState("");
 
     useEffect(() => {
         if (!token) {
@@ -49,6 +51,8 @@ function AcceptInviteContent() {
                     // User needs to sign up/login first
                     setStatus("needsAuth");
                     setWorkspaceName(data.invitation?.workspaceName || "the workspace");
+                    setInvitedEmail(data.invitation?.email || "");
+                    setInvitedRole(data.invitation?.role || "member");
                     return;
                 }
 
@@ -96,6 +100,9 @@ function AcceptInviteContent() {
                             <p className="text-center text-muted-foreground">
                                 Please sign up or log in to accept this invitation.
                             </p>
+                            <p className="text-sm text-center text-muted-foreground">
+                                You&apos;ll be joining as <span className="font-medium capitalize">{invitedRole}</span>
+                            </p>
                             <div className="flex gap-4">
                                 <Button asChild>
                                     <Link href={`/login?redirect=/accept-invite?token=${token}`}>
@@ -103,7 +110,7 @@ function AcceptInviteContent() {
                                     </Link>
                                 </Button>
                                 <Button variant="outline" asChild>
-                                    <Link href={`/signup?redirect=/accept-invite?token=${token}`}>
+                                    <Link href={`/signup?invitation_token=${token}&email=${encodeURIComponent(invitedEmail)}`}>
                                         Sign Up
                                     </Link>
                                 </Button>

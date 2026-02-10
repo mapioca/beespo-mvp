@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Parse and validate request body
+  // Parse request body
   let body;
   try {
     body = await request.json();
@@ -41,6 +41,99 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
   }
 
+  // Check if this is an invited user flow
+  if (body.workspaceInvitationToken) {
+    return handleInvitedUserOnboarding(supabase, user, body);
+  }
+
+  // Regular workspace creation flow
+  return handleWorkspaceCreation(supabase, user, body);
+}
+
+// Handle invited user onboarding (abbreviated flow)
+async function handleInvitedUserOnboarding(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  user: { id: string; email?: string; user_metadata?: { full_name?: string } },
+  body: { workspaceInvitationToken: string; roleTitle?: string }
+) {
+  const { workspaceInvitationToken, roleTitle } = body;
+
+  // Validate the invitation token
+  const { data: invitation, error: fetchError } = await (supabase
+    .from('workspace_invitations') as ReturnType<typeof supabase.from>)
+    .select('*, workspaces(name)')
+    .eq('token', workspaceInvitationToken)
+    .single();
+
+  if (fetchError || !invitation) {
+    return NextResponse.json({ error: 'Invalid invitation token' }, { status: 400 });
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const inv = invitation as any;
+
+  if (inv.status !== 'pending') {
+    return NextResponse.json({
+      error: 'Invitation has already been used or revoked'
+    }, { status: 400 });
+  }
+
+  if (new Date(inv.expires_at) < new Date()) {
+    // Mark as expired
+    await (supabase
+      .from('workspace_invitations') as ReturnType<typeof supabase.from>)
+      .update({ status: 'expired' })
+      .eq('id', inv.id);
+    return NextResponse.json({ error: 'Invitation has expired' }, { status: 400 });
+  }
+
+  // Verify email matches (case-insensitive)
+  if (user.email?.toLowerCase() !== inv.email.toLowerCase()) {
+    return NextResponse.json({
+      error: 'Email mismatch. Please use the email address the invitation was sent to.'
+    }, { status: 400 });
+  }
+
+  // Create profile for the invited user
+  const { error: profileError } = await (supabase
+    .from('profiles') as ReturnType<typeof supabase.from>)
+    .insert({
+      id: user.id,
+      email: user.email!,
+      full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
+      workspace_id: inv.workspace_id,
+      role: inv.role, // Role from invitation (admin, leader, guest)
+      role_title: roleTitle?.trim() || null, // User-provided display title
+    });
+
+  if (profileError) {
+    console.error('Profile creation error:', profileError);
+    return NextResponse.json(
+      { error: 'Failed to create profile' },
+      { status: 500 }
+    );
+  }
+
+  // Mark invitation as accepted
+  await (supabase
+    .from('workspace_invitations') as ReturnType<typeof supabase.from>)
+    .update({ status: 'accepted' })
+    .eq('id', inv.id);
+
+  return NextResponse.json({
+    success: true,
+    workspaceId: inv.workspace_id,
+    workspaceName: inv.workspaces?.name || 'Workspace',
+    role: inv.role,
+  }, { status: 201 });
+}
+
+// Handle regular workspace creation flow
+async function handleWorkspaceCreation(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  user: { id: string; email?: string; user_metadata?: { full_name?: string } },
+  body: unknown
+) {
   const validation = onboardingFormSchema.safeParse(body);
   if (!validation.success) {
     return NextResponse.json(

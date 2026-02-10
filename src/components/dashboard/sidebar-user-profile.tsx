@@ -24,11 +24,12 @@ import { cn } from "@/lib/utils"
 interface SidebarUserProfileProps {
     name?: string
     email?: string
+    roleTitle?: string
     avatarUrl?: string
     isCollapsed?: boolean
 }
 
-export function SidebarUserProfile({ name, email, avatarUrl, isCollapsed = false }: SidebarUserProfileProps) {
+export function SidebarUserProfile({ name, email, roleTitle, avatarUrl, isCollapsed = false }: SidebarUserProfileProps) {
     const initials = name
         ?.split(" ")
         .map((n) => n[0])
@@ -61,6 +62,9 @@ export function SidebarUserProfile({ name, email, avatarUrl, isCollapsed = false
                 <DropdownMenuLabel className="font-normal">
                     <div className="flex flex-col space-y-1">
                         <p className="text-sm font-medium leading-none">{name}</p>
+                        {roleTitle && (
+                            <p className="text-xs leading-none text-muted-foreground">{roleTitle}</p>
+                        )}
                         <p className="text-xs leading-none text-muted-foreground">{email}</p>
                     </div>
                 </DropdownMenuLabel>
@@ -106,6 +110,7 @@ export function SidebarUserProfile({ name, email, avatarUrl, isCollapsed = false
                     </TooltipTrigger>
                     <TooltipContent side="right">
                         <p className="font-medium">{name}</p>
+                        {roleTitle && <p className="text-xs text-muted-foreground">{roleTitle}</p>}
                         <p className="text-xs text-muted-foreground">{email}</p>
                     </TooltipContent>
                 </Tooltip>
@@ -120,7 +125,9 @@ export function SidebarUserProfile({ name, email, avatarUrl, isCollapsed = false
                     {avatarElement}
                     <div className="grid gap-0.5 text-left text-sm leading-tight">
                         <span className="font-semibold truncate w-32">{name}</span>
-                        <span className="text-xs text-muted-foreground truncate w-32">{email}</span>
+                        {roleTitle && (
+                            <span className="text-xs text-muted-foreground truncate w-32">{roleTitle}</span>
+                        )}
                     </div>
                 </div>
                 {dropdownMenu}

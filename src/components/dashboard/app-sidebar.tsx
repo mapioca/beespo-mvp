@@ -60,6 +60,7 @@ interface AppSidebarProps {
   userName: string
   userEmail: string
   userAvatarUrl?: string
+  userRoleTitle?: string
 }
 
 export function AppSidebar({
@@ -67,6 +68,7 @@ export function AppSidebar({
   userName,
   userEmail,
   userAvatarUrl,
+  userRoleTitle,
 }: AppSidebarProps) {
   const [supportModalOpen, setSupportModalOpen] = useState(false)
   const pathname = usePathname()
@@ -202,6 +204,7 @@ export function AppSidebar({
         <SidebarUserProfile
           name={userName}
           email={userEmail}
+          roleTitle={userRoleTitle}
           avatarUrl={userAvatarUrl}
           isCollapsed={isCollapsed}
         />

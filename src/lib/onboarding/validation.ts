@@ -9,7 +9,6 @@ export const unitTypeSchema = z.enum(['group', 'branch', 'ward', 'district', 'st
 export const organizationSchema = z.enum([
   'bishopric',
   'presidency',
-  'clerk',
   'elders_quorum',
   'relief_society',
   'young_men',
@@ -107,12 +106,6 @@ export const step5Schema = z.object({
     .max(5, 'You can invite up to 5 teammates'),
 });
 
-export const step6Schema = z.object({
-  featureInterests: z
-    .array(featureSchema)
-    .max(3, 'You can select up to 3 features'),
-});
-
 // Validation helper functions
 export function validateStep(step: number, data: Partial<OnboardingFormInput>): {
   valid: boolean;
@@ -124,7 +117,6 @@ export function validateStep(step: number, data: Partial<OnboardingFormInput>): 
     3: step3Schema,
     4: step4Schema,
     5: step5Schema,
-    6: step6Schema,
   };
 
   const schema = schemas[step];
