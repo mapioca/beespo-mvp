@@ -9,11 +9,13 @@ SELECT
     indexdef
 FROM pg_indexes
 WHERE schemaname = 'public'
-AND indexname LIKE 'idx_%_created%'
-   OR indexname LIKE 'idx_%_workspace_%'
-   OR indexname LIKE 'idx_task_label%'
-   OR indexname LIKE 'idx_task_comments%'
-   OR indexname LIKE 'idx_profiles_workspace_role'
+AND (
+    indexname LIKE 'idx_%_created%'
+    OR indexname LIKE 'idx_%_workspace_%'
+    OR indexname LIKE 'idx_task_label%'
+    OR indexname LIKE 'idx_task_comments%'
+    OR indexname LIKE 'idx_profiles_workspace_role'
+)
 ORDER BY tablename, indexname;
 
 -- Should return approximately 20-25 indexes
@@ -25,10 +27,11 @@ ORDER BY tablename, indexname;
 -- etc., then the migration was successful!
 
 -- Also check index sizes to see they're being used
+-- Fixed column names: relname (table), indexrelname (index)
 SELECT
     schemaname,
-    tablename,
-    indexname,
+    relname as tablename,
+    indexrelname as indexname,
     pg_size_pretty(pg_relation_size(indexrelid)) as index_size
 FROM pg_stat_user_indexes
 WHERE schemaname = 'public'
