@@ -1,3 +1,1 @@
-export { OverviewContent } from "./overview-content"
-export { PlaceholderWidget } from "./placeholder-widget"
-export { WidgetGrid } from "./widget-grid"
+export { OverviewContentClient } from "./overview-content"
