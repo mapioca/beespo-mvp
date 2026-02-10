@@ -2,145 +2,170 @@
 
 This directory contains the database schema and seed data for the Beespo MVP.
 
-## Files
+## Project References
 
-- `migrations/20260103000000_initial_schema.sql` - Complete database schema with tables, indexes, RLS policies, and helper functions
-- `seed.sql` - Pre-built templates for 7 common LDS church leadership meetings
+| Environment | Project Reference | Description |
+|-------------|-------------------|-------------|
+| **Development** | `tuekpooasofqfawmpdxj` | beespo-mvp |
+| **Production** | `ojublgytgutvlxcmgvkj` | beespo-prod |
+
+## Directory Structure
+
+```
+supabase/
+├── migrations/
+│   └── 0000_production_baseline.sql   # Single source of truth (schema + seed data)
+├── archived_migrations/               # Historical migrations (reference only)
+├── seed.sql                          # Legacy seed file
+└── README.md                         # This file
+```
+
+## Migration Strategy
+
+This project uses a **Schema Snapshot** approach:
+- `0000_production_baseline.sql` contains the complete database schema dumped from Development
+- Legacy migrations (74 files with timestamp collisions) are archived for reference
+- New changes should be added as sequential migrations after the baseline
 
 ## Deployment Steps
 
-### Method 1: Using Supabase Dashboard (Recommended for MVP)
-
-1. Go to your Supabase project: https://app.supabase.com/project/tuekpooasofqfawmpdxj
-2. Click on "SQL Editor" in the left sidebar
-3. Click "+ New query"
-4. Copy the contents of `migrations/20260103000000_initial_schema.sql`
-5. Paste into the editor and click "Run"
-6. Wait for completion (should see "Success" message)
-7. Create another new query
-8. Copy the contents of `seed.sql`
-9. Paste and click "Run"
-10. Verify the templates were created successfully
-
-### Method 2: Using Supabase CLI (Advanced)
-
-If you have Supabase CLI installed:
+### Deploy to a New Environment
 
 ```bash
-# Link to your project
-npx supabase link --project-ref tuekpooasofqfawmpdxj
+# 1. Link to the target project
+supabase link --project-ref <PROJECT_REF>
 
-# Push migrations
-npx supabase db push
+# 2. Push the baseline migration
+supabase db push
 
-# Seed the database
-npx supabase db execute --file supabase/seed.sql
+# 3. Verify deployment
+supabase migration list
 ```
 
-## Verification
+### Add New Migrations
 
-After deployment, verify the setup:
+```bash
+# Create a new migration
+supabase migration new <migration_name>
 
-### Check Tables
+# Edit the migration file in supabase/migrations/
+# Then push to the linked project
+supabase db push
+```
 
-Go to "Table Editor" in Supabase dashboard and verify these tables exist:
-- organizations
-- profiles
-- templates
-- template_items
-- meetings
-- agenda_items
-- tasks
+## Verification Queries
 
-### Check RLS Policies
+After deployment, run these queries to verify the setup:
 
-Go to "Authentication" > "Policies" and verify each table has RLS policies enabled.
-
-### Check Pre-built Templates
-
-Run this query in SQL Editor:
-
+### Table Count Verification
 ```sql
-SELECT name, calling_type, is_shared
-FROM templates
-WHERE is_shared = true
-ORDER BY name;
+SELECT schemaname, COUNT(*) as table_count
+FROM pg_tables
+WHERE schemaname IN ('public', 'auth', 'storage')
+GROUP BY schemaname;
 ```
 
-You should see 7 templates:
-1. Bishopric Meeting
-2. Elder Quorum Presidency Meeting
-3. Primary Presidency Meeting
-4. Relief Society Presidency Meeting
-5. Ward Council
-6. Young Men Presidency Meeting
-7. Young Women Presidency Meeting
+Expected: `public: 63`, `auth: 20`, `storage: 8`
 
-### Check Template Items
-
+### Seed Data Verification
 ```sql
-SELECT t.name, COUNT(ti.id) as item_count
-FROM templates t
-LEFT JOIN template_items ti ON t.id = ti.template_id
-WHERE t.is_shared = true
-GROUP BY t.id, t.name
-ORDER BY t.name;
+SELECT 'apps' as table_name, COUNT(*) FROM apps
+UNION ALL
+SELECT 'hymns', COUNT(*) FROM hymns
+UNION ALL
+SELECT 'procedural_item_types', COUNT(*) FROM procedural_item_types;
 ```
 
-Each template should have 6-8 agenda items.
+Expected: `apps: 1`, `hymns: 398`, `procedural_item_types: 12`
+
+### Storage Bucket Verification
+```sql
+SELECT id, name, public FROM storage.buckets WHERE id = 'event-invitations';
+```
+
+Expected: `event-invitations | event-invitations | true`
+
+### Constraint Verification
+```sql
+SELECT COUNT(*) as constraint_count
+FROM information_schema.table_constraints
+WHERE constraint_schema = 'public';
+```
+
+Expected: ~498 constraints
 
 ## Updating TypeScript Types
 
-After deploying the schema, regenerate the TypeScript types:
+After schema changes, regenerate TypeScript types:
 
 ```bash
+# Development
 npx supabase gen types typescript --project-id tuekpooasofqfawmpdxj > src/types/database.ts
-```
 
-**Note:** The types have been manually created for now. After deployment, you can regenerate them using the command above if needed.
+# Production
+npx supabase gen types typescript --project-id ojublgytgutvlxcmgvkj > src/types/database.ts
+```
 
 ## Schema Overview
 
-### Core Tables
+### Core Tables (63 tables in public schema)
 
-**organizations** - Wards and Stakes (multi-tenancy)
-**profiles** - User profiles linked to auth.users
-**templates** - Reusable agenda templates
-**template_items** - Default agenda items in templates
-**meetings** - Meeting instances created from templates
-**agenda_items** - Specific agenda items for each meeting
-**tasks** - Action items with assignments and due dates
+**Workspaces & Users:**
+- `workspaces` - Multi-tenant organizations
+- `profiles` - User profiles linked to auth.users
+- `workspace_members` - Workspace membership
+
+**Meetings:**
+- `meetings` - Meeting instances
+- `agenda_items` - Meeting agenda items
+- `speakers`, `hymns`, `procedural_item_types` - Meeting components
+
+**Tasks & Notes:**
+- `tasks`, `task_comments` - Task management
+- `notes`, `notebooks` - Note-taking system
+
+**Events & Forms:**
+- `events`, `event_invitations` - Event management
+- `forms`, `form_fields`, `form_responses` - Dynamic forms
+
+**Apps & Templates:**
+- `apps` - Integrated applications (Canva, etc.)
+- `templates`, `template_items` - Meeting templates
+
+### Storage Buckets
+
+- `event-invitations` - Public bucket for Canva design exports (5MB limit, PNG/JPEG/WebP)
 
 ### Key Features
 
-- **Row Level Security (RLS)**: All tables have RLS policies to enforce multi-tenancy
-- **Multi-organization support**: Each ward/stake is isolated
-- **Role-based access**: Leaders have full access, Members have read-only (+ can update assigned tasks)
-- **Pre-built templates**: 7 shared templates available to all organizations
-- **Helper functions**: `create_meeting_from_template()` to streamline meeting creation
-
-### Calling Types
-
-The `calling_type` field uses these values:
-- `bishopric` - Bishopric Meeting
-- `ward_council` - Ward Council
-- `rs_presidency` - Relief Society Presidency
-- `ym_presidency` - Young Men Presidency
-- `yw_presidency` - Young Women Presidency
-- `eq_presidency` - Elders Quorum Presidency
-- `primary_presidency` - Primary Presidency
+- **Row Level Security (RLS)**: All tables have RLS policies
+- **Multi-workspace support**: Isolated data per workspace
+- **Seed data included**: Apps, hymns, procedural item types
 
 ## Troubleshooting
 
-**Error: relation "auth.users" does not exist**
-- This shouldn't happen on Supabase (auth is built-in)
-- If it does, check that you're running on Supabase, not a local Postgres
+**Error: permission denied for schema storage**
+- Storage schema is managed by Supabase - don't include storage schema structure in migrations
+- Only INSERT into storage.buckets is allowed
 
-**Error: permission denied**
-- Make sure you're using the service role key for admin operations
-- Check that you're logged in to Supabase CLI with correct credentials
+**Error: foreign key constraint violation**
+- Check that seed data doesn't reference workspace-specific entities
+- Only include global/core reference data in baseline
 
-**RLS blocking operations**
-- RLS policies require authenticated users
-- Service role bypasses RLS
-- Check policies match your use case in migration file
+**Docker not running**
+- `supabase db diff` requires Docker
+- Use direct psql queries for verification if Docker is unavailable
+
+**Version mismatch with pg_dump**
+- Supabase uses PostgreSQL 17
+- Install postgresql@17 via Homebrew: `brew install postgresql@17`
+- Use `/opt/homebrew/opt/postgresql@17/bin/pg_dump`
+
+## Archived Migrations
+
+The `archived_migrations/` directory contains 74 historical migration files for reference. These are not executed but preserved for:
+- Understanding historical changes
+- Forensic analysis if needed
+- Reference for future migrations
+
+**Do not move files from archived_migrations back to migrations.**
