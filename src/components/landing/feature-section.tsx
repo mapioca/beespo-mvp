@@ -8,51 +8,6 @@ import { FeatureCalendar } from "./feature-calendar";
 import { FeatureTasks } from "./feature-tasks";
 import { FeatureNotes } from "./feature-notes";
 
-const features = [
-  {
-    number: "01",
-    title: "Meeting Builder",
-    description:
-      "Drag-and-drop agenda items with automatic time-boxing. Assign speakers, hymns, and facilitators. Color-coded by type: procedural, discussion, business, announcements.",
-    visual: <FeatureToggle />,
-  },
-  {
-    number: "02",
-    title: "Calling Pipeline",
-    description:
-      "Track every calling through 7 stages: Defined, Approved, Extended, Accepted, Sustained, Set Apart, Recorded. Visual progress for each candidate.",
-    visual: <FeatureKanban />,
-  },
-  {
-    number: "03",
-    title: "Calendar",
-    description:
-      "Week view with color-coded meetings and events. Subscribe to external calendars from Google, Outlook, or iCal. Set recurring events for weekly meetings.",
-    visual: <FeatureCalendar />,
-  },
-  {
-    number: "04",
-    title: "Tasks",
-    description:
-      "Tasks with context. Created from meetings, linked to discussions or callings. Priority levels, due dates, assignees. See overdue items at a glance.",
-    visual: <FeatureTasks />,
-  },
-  {
-    number: "05",
-    title: "Custom Tables",
-    description:
-      "Build databases without code. Text, selects, dates, checkboxes, user assignments. Filter, sort, and save views. Member directories, event RSVPs, anything.",
-    visual: <FeatureTable />,
-  },
-  {
-    number: "06",
-    title: "Notebooks",
-    description:
-      "Organized notes by meeting type or topic. Rich text with action items. Search across all notes. Keep institutional knowledge in one place.",
-    visual: <FeatureNotes />,
-  },
-];
-
 export function FeatureSection() {
   return (
     <section className="py-16 md:py-24 px-4 border-t border-neutral-100">
@@ -66,32 +21,131 @@ export function FeatureSection() {
           </h2>
         </AnimateOnScroll>
 
-        <div className="space-y-20">
-          {features.map((feature, index) => (
-            <AnimateOnScroll key={feature.title} delay={index * 0.05}>
-              <div
-                className={`grid md:grid-cols-2 gap-8 md:gap-12 items-center ${
-                  index % 2 === 1 ? "md:flex-row-reverse" : ""
-                }`}
-              >
-                <div className={index % 2 === 1 ? "md:order-2" : ""}>
-                  <span className="text-xs font-mono text-neutral-400 tracking-widest">
-                    {feature.number}
-                  </span>
-                  <h3 className="text-xl font-semibold mt-2 mb-3 text-neutral-900">
-                    {feature.title}
-                  </h3>
-                  <p className="text-neutral-500 leading-relaxed">
-                    {feature.description}
-                  </p>
-                </div>
-                <div className={index % 2 === 1 ? "md:order-1" : ""}>
-                  {feature.visual}
-                </div>
+        {/* Feature 01 - Meeting Builder (Left text, Right demo) */}
+        <AnimateOnScroll className="mb-20">
+          <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-center">
+            <div>
+              <span className="text-xs font-mono text-neutral-400 tracking-widest">
+                01
+              </span>
+              <h3 className="text-xl font-semibold mt-2 mb-3 text-neutral-900">
+                Meeting Builder
+              </h3>
+              <p className="text-neutral-500 leading-relaxed">
+                Drag-and-drop agenda items with automatic time-boxing. Assign
+                speakers, hymns, and facilitators. Color-coded by type:
+                procedural, discussion, business, announcements.
+              </p>
+            </div>
+            <div>
+              <FeatureToggle />
+            </div>
+          </div>
+        </AnimateOnScroll>
+
+        {/* Feature 02 - Calling Pipeline (Right text, Left demo) */}
+        <AnimateOnScroll className="mb-20">
+          <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-center">
+            <div className="md:order-2">
+              <span className="text-xs font-mono text-neutral-400 tracking-widest">
+                02
+              </span>
+              <h3 className="text-xl font-semibold mt-2 mb-3 text-neutral-900">
+                Calling Pipeline
+              </h3>
+              <p className="text-neutral-500 leading-relaxed">
+                Track every calling through 7 stages: Defined, Approved,
+                Extended, Accepted, Sustained, Set Apart, Recorded. Visual
+                progress for each candidate.
+              </p>
+            </div>
+            <div className="md:order-1">
+              <FeatureKanban />
+            </div>
+          </div>
+        </AnimateOnScroll>
+
+        {/* Feature 03 - Calendar (Full width hero style) */}
+        <AnimateOnScroll className="mb-20">
+          <div className="relative">
+            {/* Text overlay card */}
+            <div className="md:absolute md:top-8 md:left-0 md:z-10 md:max-w-xs bg-white p-6 border border-neutral-200 shadow-lg mb-6 md:mb-0">
+              <span className="text-xs font-mono text-neutral-400 tracking-widest">
+                03
+              </span>
+              <h3 className="text-xl font-semibold mt-2 mb-3 text-neutral-900">
+                Calendar
+              </h3>
+              <p className="text-neutral-500 leading-relaxed text-sm">
+                Week view with color-coded meetings. Subscribe to Google,
+                Outlook, or iCal feeds. Recurring events for weekly meetings.
+              </p>
+            </div>
+            {/* Demo - larger and offset */}
+            <div className="md:ml-auto md:w-[85%]">
+              <FeatureCalendar />
+            </div>
+          </div>
+        </AnimateOnScroll>
+
+        {/* Feature 04 & 05 - Tasks & Tables (Side by side) */}
+        <AnimateOnScroll className="mb-20">
+          <div className="grid md:grid-cols-2 gap-8">
+            {/* Tasks */}
+            <div>
+              <div className="mb-4">
+                <span className="text-xs font-mono text-neutral-400 tracking-widest">
+                  04
+                </span>
+                <h3 className="text-lg font-semibold mt-1 mb-2 text-neutral-900">
+                  Tasks
+                </h3>
+                <p className="text-neutral-500 text-sm leading-relaxed">
+                  Created from meetings, linked to discussions. Priority levels,
+                  due dates, assignees.
+                </p>
               </div>
-            </AnimateOnScroll>
-          ))}
-        </div>
+              <FeatureTasks />
+            </div>
+
+            {/* Tables */}
+            <div>
+              <div className="mb-4">
+                <span className="text-xs font-mono text-neutral-400 tracking-widest">
+                  05
+                </span>
+                <h3 className="text-lg font-semibold mt-1 mb-2 text-neutral-900">
+                  Custom Tables
+                </h3>
+                <p className="text-neutral-500 text-sm leading-relaxed">
+                  Build databases without code. Text, selects, dates, users.
+                  Filter, sort, save views.
+                </p>
+              </div>
+              <FeatureTable />
+            </div>
+          </div>
+        </AnimateOnScroll>
+
+        {/* Feature 06 - Notebooks (Centered with demo below) */}
+        <AnimateOnScroll>
+          <div className="text-center max-w-2xl mx-auto mb-6">
+            <span className="text-xs font-mono text-neutral-400 tracking-widest">
+              06
+            </span>
+            <h3 className="text-xl font-semibold mt-2 mb-3 text-neutral-900">
+              Notebooks
+            </h3>
+            <p className="text-neutral-500 leading-relaxed">
+              Organized notes by meeting type or topic. Rich text with action
+              items. Search across all notes. Keep institutional knowledge in
+              one place.
+            </p>
+          </div>
+          <div className="max-w-2xl mx-auto">
+            <FeatureNotes />
+          </div>
+        </AnimateOnScroll>
       </div>
     </section>
   );
