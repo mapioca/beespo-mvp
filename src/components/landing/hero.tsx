@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { WaitlistForm } from "./waitlist-form";
 import { DashboardPreview } from "./dashboard-preview";
+import { ChevronDown } from "lucide-react";
 
 export function Hero() {
   return (
@@ -33,10 +34,27 @@ export function Hero() {
           className="mt-10 flex flex-col items-center"
         >
           <WaitlistForm />
-          <p className="mt-4 text-xs text-muted-foreground max-w-sm">
-            Independent software. Not affiliated with The Church of Jesus Christ
-            of Latter-day Saints.
+          <p className="mt-4 text-xs text-muted-foreground">
+            Built by church members who&apos;ve been there.
           </p>
+        </motion.div>
+
+        {/* Transition to demo */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.8, delay: 0.6, ease: [0.16, 1, 0.3, 1] }}
+          className="mt-16 flex flex-col items-center"
+        >
+          <p className="text-sm text-muted-foreground mb-3">
+            See what&apos;s possible
+          </p>
+          <motion.div
+            animate={{ y: [0, 6, 0] }}
+            transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+          >
+            <ChevronDown className="w-5 h-5 text-muted-foreground" />
+          </motion.div>
         </motion.div>
 
         <DashboardPreview />
