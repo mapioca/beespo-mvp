@@ -48,7 +48,7 @@ export function Hero() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.3 }}
-              className="inline"
+              className="inline underline decoration-2 underline-offset-4"
             >
               {rotatingTools[currentIndex]}
             </motion.span>

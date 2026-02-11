@@ -6,21 +6,21 @@ import { EditorialCard } from "./editorial-card";
 const benefits = [
   {
     number: "01",
-    title: "Cross-Organization Unity",
+    title: "No more 'I didn't know about that.'",
     description:
-      "Break down the silos between the Bishopric and the organizations. Ensure the Elders Quorum, Relief Society, and Young Women move as one.",
+      "Each organization gets their own workspace—connected to the others. When the Relief Society plans a service project, the Elders Quorum sees it. When the Bishop needs follow-up, everyone knows.",
   },
   {
     number: "02",
-    title: "The End of Fragmentation",
+    title: "Stop asking 'where's that spreadsheet?'",
     description:
-      "Stop chasing spreadsheets, Google Docs, and productivity apps. Beespo is the only tool you need for agendas, callings, and revelation.",
+      "The agenda, the calling tracker, the task list—all in one place. No more digging through emails, drives, or group chats to find what you need.",
   },
   {
     number: "03",
-    title: "Intelligent Automation",
+    title: "Get your Sunday nights back.",
     description:
-      "Automate the repetitive administrative work. Free up your presidency to focus on what matters: ministering to the one.",
+      "Less time formatting agendas. Less time chasing confirmations. More time for the people who actually need you.",
   },
 ];
 
