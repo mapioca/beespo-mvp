@@ -21,8 +21,8 @@ export function FeatureCalendar() {
   const [hoveredEvent, setHoveredEvent] = useState<string | null>(null);
 
   return (
-    <div className="space-y-4">
-      <div className="border border-neutral-200 bg-white overflow-hidden">
+    <div>
+      <div className="border border-neutral-200 bg-white overflow-hidden rounded-sm shadow-lg">
         {/* Header */}
         <div className="flex items-center justify-between px-3 py-2 border-b border-neutral-200 bg-neutral-50">
           <div className="flex items-center gap-2">
@@ -123,9 +123,6 @@ export function FeatureCalendar() {
           })}
         </div>
       </div>
-      <p className="text-xs text-neutral-400 font-mono text-center">
-        Week view with color-coded events
-      </p>
     </div>
   );
 }

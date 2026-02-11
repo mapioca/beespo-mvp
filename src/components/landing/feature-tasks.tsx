@@ -59,8 +59,8 @@ export function FeatureTasks() {
   const [hoveredTask, setHoveredTask] = useState<string | null>(null);
 
   return (
-    <div className="space-y-4">
-      <div className="border border-neutral-200 bg-white overflow-hidden">
+    <div>
+      <div className="border border-neutral-200 bg-white overflow-hidden rounded-sm shadow-lg">
         {/* Header */}
         <div className="px-4 py-3 bg-neutral-50 border-b border-neutral-200 flex items-center justify-between">
           <span className="text-xs font-medium text-neutral-700">My Tasks</span>
@@ -135,9 +135,6 @@ export function FeatureTasks() {
           })}
         </div>
       </div>
-      <p className="text-xs text-neutral-400 font-mono text-center">
-        Tasks with priorities and due dates
-      </p>
     </div>
   );
 }

@@ -65,85 +65,89 @@ export function FeatureSection() {
           </div>
         </AnimateOnScroll>
 
-        {/* Feature 03 - Calendar (Full width hero style) */}
+        {/* Feature 03 - Calendar (Full width, text above) */}
         <AnimateOnScroll className="mb-20">
-          <div className="relative">
-            {/* Text overlay card */}
-            <div className="md:absolute md:top-8 md:left-0 md:z-10 md:max-w-xs bg-white p-6 border border-neutral-200 shadow-lg mb-6 md:mb-0">
+          <div className="text-center max-w-2xl mx-auto mb-8">
+            <span className="text-xs font-mono text-neutral-400 tracking-widest">
+              03
+            </span>
+            <h3 className="text-xl font-semibold mt-2 mb-3 text-neutral-900">
+              Calendar
+            </h3>
+            <p className="text-neutral-500 leading-relaxed">
+              Week view with color-coded meetings and events. Subscribe to
+              Google, Outlook, or iCal feeds. Set recurring events for weekly
+              meetings.
+            </p>
+          </div>
+          <div className="max-w-4xl mx-auto">
+            <FeatureCalendar />
+          </div>
+        </AnimateOnScroll>
+
+        {/* Feature 04 - Tasks (Left text, Right demo) */}
+        <AnimateOnScroll className="mb-20">
+          <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-center">
+            <div>
               <span className="text-xs font-mono text-neutral-400 tracking-widest">
-                03
+                04
               </span>
               <h3 className="text-xl font-semibold mt-2 mb-3 text-neutral-900">
-                Calendar
+                Tasks
               </h3>
-              <p className="text-neutral-500 leading-relaxed text-sm">
-                Week view with color-coded meetings. Subscribe to Google,
-                Outlook, or iCal feeds. Recurring events for weekly meetings.
+              <p className="text-neutral-500 leading-relaxed">
+                Tasks with context. Created from meetings, linked to discussions
+                or callings. Priority levels, due dates, and assignees. See
+                overdue items at a glance.
               </p>
             </div>
-            {/* Demo - larger and offset */}
-            <div className="md:ml-auto md:w-[85%]">
-              <FeatureCalendar />
+            <div>
+              <FeatureTasks />
             </div>
           </div>
         </AnimateOnScroll>
 
-        {/* Feature 04 & 05 - Tasks & Tables (Side by side) */}
+        {/* Feature 05 - Custom Tables (Right text, Left demo) */}
         <AnimateOnScroll className="mb-20">
-          <div className="grid md:grid-cols-2 gap-8">
-            {/* Tasks */}
-            <div>
-              <div className="mb-4">
-                <span className="text-xs font-mono text-neutral-400 tracking-widest">
-                  04
-                </span>
-                <h3 className="text-lg font-semibold mt-1 mb-2 text-neutral-900">
-                  Tasks
-                </h3>
-                <p className="text-neutral-500 text-sm leading-relaxed">
-                  Created from meetings, linked to discussions. Priority levels,
-                  due dates, assignees.
-                </p>
-              </div>
-              <FeatureTasks />
+          <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-center">
+            <div className="md:order-2">
+              <span className="text-xs font-mono text-neutral-400 tracking-widest">
+                05
+              </span>
+              <h3 className="text-xl font-semibold mt-2 mb-3 text-neutral-900">
+                Custom Tables
+              </h3>
+              <p className="text-neutral-500 leading-relaxed">
+                Build databases without code. Text, selects, dates, checkboxes,
+                user assignments. Filter, sort, and save views. Member
+                directories, event RSVPs, anything.
+              </p>
             </div>
-
-            {/* Tables */}
-            <div>
-              <div className="mb-4">
-                <span className="text-xs font-mono text-neutral-400 tracking-widest">
-                  05
-                </span>
-                <h3 className="text-lg font-semibold mt-1 mb-2 text-neutral-900">
-                  Custom Tables
-                </h3>
-                <p className="text-neutral-500 text-sm leading-relaxed">
-                  Build databases without code. Text, selects, dates, users.
-                  Filter, sort, save views.
-                </p>
-              </div>
+            <div className="md:order-1">
               <FeatureTable />
             </div>
           </div>
         </AnimateOnScroll>
 
-        {/* Feature 06 - Notebooks (Centered with demo below) */}
+        {/* Feature 06 - Notebooks (Left text, Right demo) */}
         <AnimateOnScroll>
-          <div className="text-center max-w-2xl mx-auto mb-6">
-            <span className="text-xs font-mono text-neutral-400 tracking-widest">
-              06
-            </span>
-            <h3 className="text-xl font-semibold mt-2 mb-3 text-neutral-900">
-              Notebooks
-            </h3>
-            <p className="text-neutral-500 leading-relaxed">
-              Organized notes by meeting type or topic. Rich text with action
-              items. Search across all notes. Keep institutional knowledge in
-              one place.
-            </p>
-          </div>
-          <div className="max-w-2xl mx-auto">
-            <FeatureNotes />
+          <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-center">
+            <div>
+              <span className="text-xs font-mono text-neutral-400 tracking-widest">
+                06
+              </span>
+              <h3 className="text-xl font-semibold mt-2 mb-3 text-neutral-900">
+                Notebooks
+              </h3>
+              <p className="text-neutral-500 leading-relaxed">
+                Organized notes by meeting type or topic. Rich text with action
+                items. Search across all notes. Keep institutional knowledge in
+                one place.
+              </p>
+            </div>
+            <div>
+              <FeatureNotes />
+            </div>
           </div>
         </AnimateOnScroll>
       </div>

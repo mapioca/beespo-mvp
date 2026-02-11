@@ -43,8 +43,8 @@ export function FeatureTable() {
   } | null>(null);
 
   return (
-    <div className="space-y-4">
-      <div className="border border-neutral-200 bg-white overflow-hidden">
+    <div>
+      <div className="border border-neutral-200 bg-white overflow-hidden rounded-sm shadow-lg">
         {/* Header */}
         <div className="grid grid-cols-4 bg-neutral-50 border-b border-neutral-200">
           {columns.map((col) => (
@@ -124,9 +124,6 @@ export function FeatureTable() {
           <span className="text-xs text-neutral-400">+ New row</span>
         </div>
       </div>
-      <p className="text-xs text-neutral-400 font-mono text-center">
-        Custom tables with inline editing
-      </p>
     </div>
   );
 }

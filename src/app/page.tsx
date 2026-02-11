@@ -7,13 +7,13 @@ import { FAQSection } from "@/components/landing/faq-section";
 import { Footer } from "@/components/landing/footer";
 
 export const metadata: Metadata = {
-  title: "Beespo — The Operating System for Church Leadership",
+  title: "Beespo — The Workspace for Church Leaders",
   description:
-    "Replace scattered spreadsheets, texts, and loose papers with a single operating system. Unify your Bishopric, Quorums, and Presidencies in one secure environment.",
+    "Still running your presidency on spreadsheets and group texts? One shared workspace for meetings, callings, tasks, and notes. Built for church leaders.",
   openGraph: {
-    title: "Beespo — The Operating System for Church Leadership",
+    title: "Beespo — The Workspace for Church Leaders",
     description:
-      "Replace scattered spreadsheets, texts, and loose papers with a single operating system. Unify your Bishopric, Quorums, and Presidencies in one secure environment.",
+      "Still running your presidency on spreadsheets and group texts? One shared workspace for meetings, callings, tasks, and notes. Built for church leaders.",
     type: "website",
   },
 };

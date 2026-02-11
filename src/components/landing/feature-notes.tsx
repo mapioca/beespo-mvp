@@ -25,8 +25,8 @@ export function FeatureNotes() {
   const [selectedNote, setSelectedNote] = useState("Feb 9 - Welfare Coordination");
 
   return (
-    <div className="space-y-4">
-      <div className="border border-neutral-200 bg-white overflow-hidden">
+    <div>
+      <div className="border border-neutral-200 bg-white overflow-hidden rounded-sm shadow-lg">
         <div className="flex min-h-[240px]">
           {/* Sidebar */}
           <div className="w-44 border-r border-neutral-200 bg-neutral-50 p-2">
@@ -131,9 +131,6 @@ export function FeatureNotes() {
           </div>
         </div>
       </div>
-      <p className="text-xs text-neutral-400 font-mono text-center">
-        Organized notebooks with action items
-      </p>
     </div>
   );
 }
