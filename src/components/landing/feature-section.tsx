@@ -10,7 +10,7 @@ import { FeatureNotes } from "./feature-notes";
 
 export function FeatureSection() {
   return (
-    <section className="py-16 md:py-24 px-4 border-t border-neutral-100">
+    <section id="features" className="py-16 md:py-24 px-4 border-t border-neutral-100">
       <div className="container mx-auto max-w-5xl">
         <AnimateOnScroll className="text-center mb-16">
           <span className="text-xs font-mono text-neutral-400 tracking-widest uppercase">
