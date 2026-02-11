@@ -13,6 +13,9 @@ const rotatingTools = [
   "text chains and printouts?",
 ];
 
+// Use the longest text to reserve consistent space
+const longestText = "shared folders and sticky notes?";
+
 export function Hero() {
   const [currentIndex, setCurrentIndex] = useState(0);
 
@@ -34,26 +37,38 @@ export function Hero() {
   return (
     <section className="pt-32 pb-16 md:pt-40 md:pb-24 px-4">
       <div className="container mx-auto text-center">
-        <motion.h1
+        <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-          className="text-hero font-bold tracking-tighter max-w-4xl mx-auto"
+          className="max-w-4xl mx-auto"
         >
-          Still running your presidency on{" "}
-          <AnimatePresence mode="wait">
-            <motion.span
-              key={currentIndex}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.3 }}
-              className="inline underline decoration-2 underline-offset-4"
-            >
-              {rotatingTools[currentIndex]}
-            </motion.span>
-          </AnimatePresence>
-        </motion.h1>
+          <h1 className="text-hero font-bold tracking-tighter">
+            Still running your presidency on
+          </h1>
+          {/* Fixed height container for rotating text */}
+          <div className="relative inline-block w-full">
+            {/* Invisible longest text to reserve height */}
+            <span className="text-hero font-bold tracking-tighter invisible block">
+              {longestText}
+            </span>
+            {/* Visible rotating text - absolutely positioned */}
+            <span className="absolute inset-0 flex items-center justify-center">
+              <AnimatePresence mode="wait">
+                <motion.span
+                  key={currentIndex}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.3 }}
+                  className="text-hero font-bold tracking-tighter underline decoration-2 underline-offset-4"
+                >
+                  {rotatingTools[currentIndex]}
+                </motion.span>
+              </AnimatePresence>
+            </span>
+          </div>
+        </motion.div>
 
         <motion.p
           initial={{ opacity: 0, y: 20 }}
