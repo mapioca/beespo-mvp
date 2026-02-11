@@ -4,28 +4,52 @@ import { AnimateOnScroll } from "./animate-on-scroll";
 import { FeatureKanban } from "./feature-kanban";
 import { FeatureToggle } from "./feature-toggle";
 import { FeatureTable } from "./feature-table";
+import { FeatureCalendar } from "./feature-calendar";
+import { FeatureTasks } from "./feature-tasks";
+import { FeatureNotes } from "./feature-notes";
 
 const features = [
   {
     number: "01",
-    title: "Calling Pipeline",
-    description:
-      "Track every calling through 7 stages: Defined, Approved, Extended, Accepted, Sustained, Set Apart, Recorded. Never lose a candidate in the process.",
-    visual: <FeatureKanban />,
-  },
-  {
-    number: "02",
     title: "Meeting Builder",
     description:
-      "Drag-and-drop agenda items with automatic time-boxing. Assign speakers, hymns, and facilitators. Works for Sacrament, Ward Council, or any meeting.",
+      "Drag-and-drop agenda items with automatic time-boxing. Assign speakers, hymns, and facilitators. Color-coded by type: procedural, discussion, business, announcements.",
     visual: <FeatureToggle />,
   },
   {
+    number: "02",
+    title: "Calling Pipeline",
+    description:
+      "Track every calling through 7 stages: Defined, Approved, Extended, Accepted, Sustained, Set Apart, Recorded. Visual progress for each candidate.",
+    visual: <FeatureKanban />,
+  },
+  {
     number: "03",
+    title: "Calendar",
+    description:
+      "Week view with color-coded meetings and events. Subscribe to external calendars from Google, Outlook, or iCal. Set recurring events for weekly meetings.",
+    visual: <FeatureCalendar />,
+  },
+  {
+    number: "04",
+    title: "Tasks",
+    description:
+      "Tasks with context. Created from meetings, linked to discussions or callings. Priority levels, due dates, assignees. See overdue items at a glance.",
+    visual: <FeatureTasks />,
+  },
+  {
+    number: "05",
     title: "Custom Tables",
     description:
       "Build databases without code. Text, selects, dates, checkboxes, user assignments. Filter, sort, and save views. Member directories, event RSVPs, anything.",
     visual: <FeatureTable />,
+  },
+  {
+    number: "06",
+    title: "Notebooks",
+    description:
+      "Organized notes by meeting type or topic. Rich text with action items. Search across all notes. Keep institutional knowledge in one place.",
+    visual: <FeatureNotes />,
   },
 ];
 
@@ -44,7 +68,7 @@ export function FeatureSection() {
 
         <div className="space-y-20">
           {features.map((feature, index) => (
-            <AnimateOnScroll key={feature.title} delay={index * 0.1}>
+            <AnimateOnScroll key={feature.title} delay={index * 0.05}>
               <div
                 className={`grid md:grid-cols-2 gap-8 md:gap-12 items-center ${
                   index % 2 === 1 ? "md:flex-row-reverse" : ""

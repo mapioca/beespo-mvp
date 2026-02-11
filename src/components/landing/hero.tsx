@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import { WaitlistForm } from "./waitlist-form";
-import { AbstractInterface } from "./abstract-interface";
+import { DashboardPreview } from "./dashboard-preview";
 
 export function Hero() {
   return (
@@ -41,7 +41,7 @@ export function Hero() {
           </p>
         </motion.div>
 
-        <AbstractInterface />
+        <DashboardPreview />
       </div>
     </section>
   );
