@@ -53,7 +53,7 @@ export function Hero() {
               {longestText}
             </span>
             {/* Visible rotating text - absolutely positioned */}
-            <span className="absolute inset-0 flex items-center justify-center">
+            <span className="absolute inset-0 flex items-start justify-center">
               <AnimatePresence mode="wait">
                 <motion.span
                   key={currentIndex}

@@ -5,45 +5,38 @@ export function Footer() {
 
   return (
     <footer className="py-12 px-4 border-t">
-      <div className="container mx-auto">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="flex flex-col items-center md:items-start gap-2">
-            <Link href="/" className="text-lg font-bold tracking-tight">
-              Beespo
-            </Link>
-            <p className="text-sm text-muted-foreground">
-              &copy; {currentYear} Beespo. All rights reserved.
-            </p>
-          </div>
+      <div className="container mx-auto text-center">
+        <Link href="/" className="text-lg font-bold tracking-tight">
+          Beespo
+        </Link>
+        <p className="text-sm text-muted-foreground mt-2">
+          A product of Bishopric Technologies LLC
+        </p>
 
-          <nav className="flex gap-6">
-            <Link
-              href="#"
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Terms
-            </Link>
-            <Link
-              href="#"
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Privacy
-            </Link>
-            <Link
-              href="/login"
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Sign In
-            </Link>
-          </nav>
-        </div>
+        <nav className="flex justify-center gap-6 mt-6">
+          <Link
+            href="#"
+            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Terms
+          </Link>
+          <Link
+            href="#"
+            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Privacy
+          </Link>
+          <Link
+            href="/login"
+            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Sign In
+          </Link>
+        </nav>
 
-        <div className="mt-8 pt-8 border-t">
-          <p className="text-xs text-muted-foreground text-center">
-            Independent software. Not affiliated with The Church of Jesus Christ
-            of Latter-day Saints.
-          </p>
-        </div>
+        <p className="text-xs text-muted-foreground mt-8">
+          &copy; {currentYear} Beespo. All rights reserved.
+        </p>
       </div>
     </footer>
   );

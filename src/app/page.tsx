@@ -4,6 +4,7 @@ import { Hero } from "@/components/landing/hero";
 import { BenefitGrid } from "@/components/landing/benefit-grid";
 import { FeatureSection } from "@/components/landing/feature-section";
 import { FAQSection } from "@/components/landing/faq-section";
+import { CTASection } from "@/components/landing/cta-section";
 import { Footer } from "@/components/landing/footer";
 
 export const metadata: Metadata = {
@@ -26,6 +27,7 @@ export default function Home() {
         <Hero />
         <BenefitGrid />
         <FeatureSection />
+        <CTASection />
         <FAQSection />
       </main>
       <Footer />
