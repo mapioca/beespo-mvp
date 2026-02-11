@@ -8,37 +8,37 @@ import { FeatureTable } from "./feature-table";
 const features = [
   {
     number: "01",
-    title: "Cross-Organization Unity",
+    title: "Calling Pipeline",
     description:
-      "Break down the silos between the Bishopric and the organizations. Ensure the Elders Quorum, Relief Society, and Young Women move as one.",
+      "Track every calling through 7 stages: Defined, Approved, Extended, Accepted, Sustained, Set Apart, Recorded. Never lose a candidate in the process.",
     visual: <FeatureKanban />,
   },
   {
     number: "02",
-    title: "Intelligent Automation",
+    title: "Meeting Builder",
     description:
-      "Automate the repetitive administrative work. Free up your presidency to focus on what matters: ministering to the one.",
+      "Drag-and-drop agenda items with automatic time-boxing. Assign speakers, hymns, and facilitators. Works for Sacrament, Ward Council, or any meeting.",
     visual: <FeatureToggle />,
   },
   {
     number: "03",
-    title: "The End of Fragmentation",
+    title: "Custom Tables",
     description:
-      "Stop chasing spreadsheets, Google Docs, and productivity apps. Beespo is the only tool you need for agendas, callings, and revelation.",
+      "Build databases without code. Text, selects, dates, checkboxes, user assignments. Filter, sort, and save views. Member directories, event RSVPs, anything.",
     visual: <FeatureTable />,
   },
 ];
 
 export function FeatureSection() {
   return (
-    <section className="py-16 md:py-24 px-4">
+    <section className="py-16 md:py-24 px-4 border-t border-neutral-100">
       <div className="container mx-auto max-w-5xl">
         <AnimateOnScroll className="text-center mb-16">
           <span className="text-xs font-mono text-neutral-400 tracking-widest uppercase">
             Features
           </span>
           <h2 className="text-2xl md:text-3xl font-semibold mt-2 tracking-tight">
-            A workspace that works like you think
+            Everything you need, nothing you don&apos;t
           </h2>
         </AnimateOnScroll>
 
