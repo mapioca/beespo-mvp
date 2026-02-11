@@ -1,50 +1,32 @@
-import { createClient } from "@/lib/supabase/server";
-import { redirect } from "next/navigation";
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import type { Metadata } from "next";
+import { Nav } from "@/components/landing/nav";
+import { Hero } from "@/components/landing/hero";
+import { BenefitGrid } from "@/components/landing/benefit-grid";
+import { FeatureSection } from "@/components/landing/feature-section";
+import { Footer } from "@/components/landing/footer";
 
-export default async function Home() {
-  const supabase = await createClient();
+export const metadata: Metadata = {
+  title: "Beespo — The Operating System for Church Leadership",
+  description:
+    "Replace scattered spreadsheets, texts, and loose papers with a single operating system. Unify your Bishopric, Quorums, and Presidencies in one secure environment.",
+  openGraph: {
+    title: "Beespo — The Operating System for Church Leadership",
+    description:
+      "Replace scattered spreadsheets, texts, and loose papers with a single operating system. Unify your Bishopric, Quorums, and Presidencies in one secure environment.",
+    type: "website",
+  },
+};
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  // Redirect authenticated users to dashboard
-  if (user) {
-    redirect("/dashboard");
-  }
-
+export default function Home() {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center p-8 sm:p-24">
-      <div className="text-center space-y-8 max-w-3xl">
-        <div className="space-y-4">
-          <h1 className="text-6xl sm:text-7xl font-bold tracking-tight">
-            Beespo
-          </h1>
-          <p className="text-xl sm:text-2xl text-muted-foreground">
-            Leadership Management Platform
-          </p>
-          <p className="text-sm sm:text-base text-muted-foreground max-w-2xl mx-auto">
-            A comprehensive agenda and leadership management platform designed
-            for leaders in The Church of Jesus Christ of Latter-day Saints.
-          </p>
-        </div>
-
-        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-          <Button asChild size="lg">
-            <Link href="/signup">Get Started</Link>
-          </Button>
-          <Button asChild variant="outline" size="lg">
-            <Link href="/login">Sign In</Link>
-          </Button>
-        </div>
-
-        <p className="text-xs text-muted-foreground">
-          Independent software - not affiliated with The Church of Jesus Christ
-          of Latter-day Saints
-        </p>
-      </div>
+    <div className="min-h-screen flex flex-col">
+      <Nav />
+      <main className="flex-1 pt-16">
+        <Hero />
+        <BenefitGrid />
+        <FeatureSection />
+      </main>
+      <Footer />
     </div>
   );
 }
