@@ -26,7 +26,7 @@ const benefits = [
 
 export function BenefitGrid() {
   return (
-    <section className="py-16 md:py-24 px-4">
+    <section id="benefits" className="py-16 md:py-24 px-4">
       <div className="container mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-neutral-100">
           {benefits.map((benefit, index) => (

@@ -27,10 +27,10 @@ export function Hero() {
     return () => clearInterval(interval);
   }, []);
 
-  const scrollToFeatures = () => {
-    const featuresSection = document.getElementById("features");
-    if (featuresSection) {
-      featuresSection.scrollIntoView({ behavior: "smooth", block: "start" });
+  const scrollToBenefits = () => {
+    const benefitsSection = document.getElementById("benefits");
+    if (benefitsSection) {
+      benefitsSection.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   };
 
@@ -99,7 +99,7 @@ export function Hero() {
           className="mt-20 flex flex-col items-center"
         >
           <button
-            onClick={scrollToFeatures}
+            onClick={scrollToBenefits}
             className="group flex flex-col items-center cursor-pointer hover:opacity-70 transition-opacity"
           >
             <span className="text-sm text-muted-foreground mb-3">
