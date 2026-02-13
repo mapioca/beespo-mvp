@@ -350,10 +350,48 @@ export type Database = {
           updated_at?: string;
         };
       };
+      platform_invitations: {
+        Row: {
+          id: string;
+          code: string;
+          description: string | null;
+          max_uses: number;
+          uses_count: number;
+          expires_at: string | null;
+          status: 'active' | 'exhausted' | 'expired' | 'revoked';
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          code: string;
+          description?: string | null;
+          max_uses?: number;
+          uses_count?: number;
+          expires_at?: string | null;
+          status?: 'active' | 'exhausted' | 'expired' | 'revoked';
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          code?: string;
+          description?: string | null;
+          max_uses?: number;
+          uses_count?: number;
+          expires_at?: string | null;
+          status?: 'active' | 'exhausted' | 'expired' | 'revoked';
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
       templates: {
         Row: {
           id: string;
-          workspace_id: string;
+          workspace_id: string | null;
           name: string;
           description: string | null;
           calling_type: string | null;
@@ -366,7 +404,7 @@ export type Database = {
         };
         Insert: {
           id?: string;
-          workspace_id: string;
+          workspace_id?: string | null;
           name: string;
           description?: string | null;
           calling_type?: string | null;
@@ -379,7 +417,7 @@ export type Database = {
         };
         Update: {
           id?: string;
-          workspace_id?: string;
+          workspace_id?: string | null;
           name?: string;
           description?: string | null;
           calling_type?: string | null;

@@ -257,17 +257,17 @@ export function ToolboxPane({ onItemsLoaded }: ToolboxPaneProps) {
     }, [reloadCustomTypes]);
 
     return (
-        <div className="flex flex-col h-full bg-muted/30 border-r">
+        <div className="flex flex-col h-full bg-muted/50 border-r border-border">
             {/* Header */}
-            <div className="p-4 border-b bg-background">
-                <h3 className="font-semibold text-sm mb-3">Item Library</h3>
+            <div className="p-4 border-b border-border bg-background">
+                <h3 className="font-semibold text-sm mb-3 text-foreground">Item Library</h3>
                 <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
                         placeholder="Search items..."
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
-                        className="pl-9 h-9"
+                        className="pl-9 h-9 bg-background border-input"
                     />
                 </div>
             </div>
@@ -293,9 +293,9 @@ export function ToolboxPane({ onItemsLoaded }: ToolboxPaneProps) {
                                 <AccordionItem
                                     key={group.id}
                                     value={group.id}
-                                    className="border rounded-md bg-background"
+                                    className="border border-border rounded-md bg-card"
                                 >
-                                    <AccordionTrigger className="px-3 py-2 text-sm hover:no-underline">
+                                    <AccordionTrigger className="px-3 py-2 text-sm hover:no-underline text-foreground">
                                         <div className="flex items-center gap-2 flex-1">
                                             {group.icon}
                                             <span>{group.label}</span>
@@ -316,7 +316,7 @@ export function ToolboxPane({ onItemsLoaded }: ToolboxPaneProps) {
                                                 <Button
                                                     variant="outline"
                                                     size="sm"
-                                                    className="w-full mt-2 text-muted-foreground hover:text-foreground"
+                                                    className="w-full mt-2 text-muted-foreground hover:text-foreground border-border hover:bg-accent hover:text-accent-foreground"
                                                     onClick={() => setIsCreateDialogOpen(true)}
                                                 >
                                                     <Plus className="h-3.5 w-3.5 mr-1.5" />
@@ -338,7 +338,7 @@ export function ToolboxPane({ onItemsLoaded }: ToolboxPaneProps) {
             </ScrollArea>
 
             {/* Hint */}
-            <div className="p-3 border-t bg-background">
+            <div className="p-3 border-t border-border bg-background">
                 <p className="text-xs text-muted-foreground text-center">
                     Drag items onto the agenda canvas
                 </p>
