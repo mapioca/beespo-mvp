@@ -94,7 +94,7 @@ export function TemplateMetadataHeader({
             <div className="flex items-center gap-4 px-6 py-4">
                 {/* Back Button */}
                 <Button variant="ghost" size="sm" asChild className="-ml-2">
-                    <Link href="/templates">
+                    <Link href="/meetings/templates">
                         <ArrowLeft className="w-4 h-4 mr-2" />
                         Back
                     </Link>

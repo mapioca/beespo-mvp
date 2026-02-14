@@ -41,13 +41,13 @@ export function TemplatesLayout({ templates, userRole }: TemplatesLayoutProps) {
     const handleSelect = (id: string) => {
         const newParams = new URLSearchParams(searchParams.toString());
         newParams.set('id', id);
-        router.push(`/templates?${newParams.toString()}`);
+        router.push(`/meetings/templates?${newParams.toString()}`);
     };
 
     const handleCloseDetail = useCallback(() => {
         const newParams = new URLSearchParams(searchParams.toString());
         newParams.delete('id');
-        router.push(`/templates?${newParams.toString()}`);
+        router.push(`/meetings/templates?${newParams.toString()}`);
     }, [router, searchParams]);
 
     const handleDeleteTemplate = useCallback(async (templateId: string) => {
