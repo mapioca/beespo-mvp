@@ -45,6 +45,7 @@ export async function middleware(request: NextRequest) {
 
     // Admin public routes (no auth required)
     const isAdminLoginPage = pathname === "/login";
+    const isAuthCallback = pathname.startsWith("/auth/callback");
 
     // Authenticated admin user on login page → redirect to dashboard
     if (user && isAdminLoginPage) {
@@ -60,8 +61,8 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(url);
     }
 
-    // Protected admin routes: everything except login and MFA pages
-    if (!user && !isAdminLoginPage) {
+    // Protected admin routes: everything except login, auth callback, and MFA pages
+    if (!user && !isAdminLoginPage && !isAuthCallback) {
       const url = request.nextUrl.clone();
       url.pathname = "/login";
       return NextResponse.redirect(url);

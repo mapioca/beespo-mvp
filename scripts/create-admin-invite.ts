@@ -61,9 +61,10 @@ async function main() {
     // 2. Invite user by email
     console.log("User not found. Sending invite email...");
 
-    const redirectTo = process.env.NEXT_PUBLIC_ADMIN_HOST
-      ? `http://${process.env.NEXT_PUBLIC_ADMIN_HOST}/login`
-      : "http://admin.localhost:3000/login";
+    // Use https in production, http for localhost
+    const adminHost = process.env.NEXT_PUBLIC_ADMIN_HOST || "admin.localhost:3000";
+    const protocol = adminHost.includes("localhost") ? "http" : "https";
+    const redirectTo = `${protocol}://${adminHost}/auth/callback?next=/dashboard`;
 
     const { data: inviteData, error: inviteError } =
       await supabase.auth.admin.inviteUserByEmail(email, {
