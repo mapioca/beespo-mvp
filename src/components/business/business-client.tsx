@@ -91,7 +91,7 @@ export function BusinessClient({ items }: BusinessClientProps) {
                     </p>
                 </div>
                 <Button asChild>
-                    <Link href="/business/new">
+                    <Link href="/meetings/business/new">
                         <Plus className="mr-2 h-4 w-4" />
                         New Business Item
                     </Link>
