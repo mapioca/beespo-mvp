@@ -28,15 +28,27 @@ interface CategoryGroup {
     showAddButton?: boolean;
 }
 
-// Define the order of core items for Standard Elements
-const CORE_ITEM_ORDER = [
-    "core-prayer",
-    "core-speaker",
-    "core-hymn",
-    "core-discussions",
-    "core-ward-business",
-    "core-announcements",
+// Display order for standard items by name
+const STANDARD_ITEM_ORDER = [
+    "Hymn",
+    "Prayer",
+    "Speaker",
+    "Discussions",
+    "Ward Business",
+    "Announcements",
 ];
+
+// Container names mapped to their container types
+const CONTAINER_NAME_MAP: Record<string, "discussion" | "business" | "announcement"> = {
+    "Discussions": "discussion",
+    "Ward Business": "business",
+    "Announcements": "announcement",
+};
+
+// Helper to check if a procedural type is a standard (global) item
+function isStandardItem(pt: ProceduralItemType): boolean {
+    return !pt.is_custom && pt.workspace_id === null;
+}
 
 // Helper to get item config from procedural type
 function getItemConfigFromType(pt: ProceduralItemType): ItemConfig {
@@ -47,30 +59,27 @@ function getItemConfigFromType(pt: ProceduralItemType): ItemConfig {
     };
 }
 
-// Determine the toolbox item type based on the procedural item
+// Determine the toolbox item type based on the procedural item's properties
 function getToolboxItemType(pt: ProceduralItemType): "procedural" | "container" | "speaker" {
-    // Speaker type
-    if (pt.id === "core-speaker" || pt.has_rich_text) {
-        return "speaker";
-    }
-    // Container types
-    if (pt.id === "core-discussions" || pt.id === "core-ward-business" || pt.id === "core-announcements") {
+    // Container types: detected by name
+    if (pt.name in CONTAINER_NAME_MAP) {
         return "container";
+    }
+    // Speaker type: items with rich text OR named "Speaker"
+    if (pt.has_rich_text || pt.name === "Speaker") {
+        return "speaker";
     }
     return "procedural";
 }
 
-// Get container type for container items
+// Get container type for container items based on name
 function getContainerType(pt: ProceduralItemType): "discussion" | "business" | "announcement" | undefined {
-    if (pt.id === "core-discussions") return "discussion";
-    if (pt.id === "core-ward-business") return "business";
-    if (pt.id === "core-announcements") return "announcement";
-    return undefined;
+    return CONTAINER_NAME_MAP[pt.name];
 }
 
 export function ToolboxPane({ onItemsLoaded }: ToolboxPaneProps) {
     const [search, setSearch] = useState("");
-    const [coreTypes, setCoreTypes] = useState<ProceduralItemType[]>([]);
+    const [standardTypes, setStandardTypes] = useState<ProceduralItemType[]>([]);
     const [customTypes, setCustomTypes] = useState<ProceduralItemType[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -105,14 +114,14 @@ export function ToolboxPane({ onItemsLoaded }: ToolboxPaneProps) {
                 .order("order_hint");
 
             if (!error && allTypes) {
-                // Split into core and custom using client-side filtering
-                const core = (allTypes as ProceduralItemType[]).filter(
-                    (t) => t.is_core === true
+                // Split into standard and custom using client-side filtering
+                const standard = (allTypes as ProceduralItemType[]).filter(
+                    (t) => isStandardItem(t)
                 );
                 const custom = (allTypes as ProceduralItemType[]).filter(
                     (t) => t.is_custom === true && t.workspace_id === userWorkspaceId
                 );
-                setCoreTypes(core);
+                setStandardTypes(standard);
                 setCustomTypes(custom);
             }
 
@@ -144,14 +153,17 @@ export function ToolboxPane({ onItemsLoaded }: ToolboxPaneProps) {
     const toolboxItems = useMemo((): ToolboxItem[] => {
         const items: ToolboxItem[] = [];
 
-        // Add core items in defined order
-        const sortedCoreTypes = [...coreTypes].sort((a, b) => {
-            const aIndex = CORE_ITEM_ORDER.indexOf(a.id);
-            const bIndex = CORE_ITEM_ORDER.indexOf(b.id);
-            return aIndex - bIndex;
+        // Add standard items sorted by defined display order
+        const sortedStandardTypes = [...standardTypes].sort((a, b) => {
+            const aIndex = STANDARD_ITEM_ORDER.indexOf(a.name);
+            const bIndex = STANDARD_ITEM_ORDER.indexOf(b.name);
+            // Items not in the order list go to the end, sorted by order_hint
+            const aPos = aIndex === -1 ? 999 + (a.order_hint ?? 0) : aIndex;
+            const bPos = bIndex === -1 ? 999 + (b.order_hint ?? 0) : bIndex;
+            return aPos - bPos;
         });
 
-        sortedCoreTypes.forEach((pt) => {
+        sortedStandardTypes.forEach((pt) => {
             const itemType = getToolboxItemType(pt);
             const containerType = getContainerType(pt);
 
@@ -175,18 +187,20 @@ export function ToolboxPane({ onItemsLoaded }: ToolboxPaneProps) {
 
         // Add custom items
         customTypes.forEach((pt) => {
-            const itemType = pt.has_rich_text ? "speaker" : "procedural";
+            const itemType = getToolboxItemType(pt);
+            const containerType = getContainerType(pt);
 
             items.push({
                 id: pt.id,
                 type: itemType,
-                category: itemType === "speaker" ? "speaker" : "procedural",
+                category: containerType || (itemType === "speaker" ? "speaker" : "procedural"),
                 title: pt.name,
                 description: pt.description,
                 duration_minutes: pt.default_duration_minutes || 5,
                 procedural_item_type_id: pt.id,
-                is_hymn: pt.requires_resource ?? false,
+                is_hymn: pt.is_hymn ?? (pt.requires_resource ?? false),
                 requires_participant: pt.requires_assignee ?? false,
+                containerType,
                 config: getItemConfigFromType(pt),
                 is_core: false,
                 is_custom: true,
@@ -195,7 +209,7 @@ export function ToolboxPane({ onItemsLoaded }: ToolboxPaneProps) {
         });
 
         return items;
-    }, [coreTypes, customTypes]);
+    }, [standardTypes, customTypes]);
 
     // Notify parent when items are loaded
     useEffect(() => {
