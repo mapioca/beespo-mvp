@@ -83,6 +83,8 @@ export function ToolboxPane({ onItemsLoaded }: ToolboxPaneProps) {
 
             // Get user's workspace ID
             const { data: { user } } = await supabase.auth.getUser();
+            let userWorkspaceId: string | null = null;
+
             if (user) {
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const { data: profile } = await (supabase.from("profiles") as any)
@@ -91,40 +93,35 @@ export function ToolboxPane({ onItemsLoaded }: ToolboxPaneProps) {
                     .single();
 
                 if (profile?.workspace_id) {
+                    userWorkspaceId = profile.workspace_id;
                     setWorkspaceId(profile.workspace_id);
                 }
             }
 
-            // Fetch core items (global)
+            // Fetch all accessible procedural item types in one query
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const { data: coreData, error: coreError } = await (supabase.from("procedural_item_types") as any)
+            const { data: allTypes, error } = await (supabase.from("procedural_item_types") as any)
                 .select("*")
-                .eq("is_core", true)
                 .order("order_hint");
 
-            if (!coreError && coreData) {
-                setCoreTypes(coreData);
-            }
-
-            // Fetch custom items (workspace-scoped)
-            if (workspaceId) {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const { data: customData, error: customError } = await (supabase.from("procedural_item_types") as any)
-                    .select("*")
-                    .eq("workspace_id", workspaceId)
-                    .eq("is_custom", true)
-                    .order("name");
-
-                if (!customError && customData) {
-                    setCustomTypes(customData);
-                }
+            if (!error && allTypes) {
+                // Split into core and custom using client-side filtering
+                const core = (allTypes as ProceduralItemType[]).filter(
+                    (t) => t.is_core === true
+                );
+                const custom = (allTypes as ProceduralItemType[]).filter(
+                    (t) => t.is_custom === true && t.workspace_id === userWorkspaceId
+                );
+                setCoreTypes(core);
+                setCustomTypes(custom);
             }
 
             setIsLoading(false);
         };
 
         loadItemTypes();
-    }, [workspaceId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     // Reload custom types when workspace changes or dialog closes
     const reloadCustomTypes = useCallback(async () => {
