@@ -122,7 +122,7 @@ export function TemplateMetadataHeader({
                 <div className="flex items-center gap-2">
                     <Button
                         variant="outline"
-                        onClick={() => router.push("/templates")}
+                        onClick={() => router.push("/meetings/templates")}
                         disabled={isSaving}
                     >
                         Cancel

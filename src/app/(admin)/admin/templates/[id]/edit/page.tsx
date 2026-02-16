@@ -31,7 +31,7 @@ export default function EditTemplatePage() {
 
       if (!template) {
         toast.error("Template not found.");
-        router.push("/templates");
+        router.push("/admin/templates");
         return;
       }
 

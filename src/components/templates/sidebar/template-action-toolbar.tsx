@@ -55,11 +55,11 @@ export function TemplateActionToolbar({
         }
 
         toast.success("Template deleted", { description: "The template has been permanently deleted." });
-        router.push("/templates");
+        router.push("/meetings/templates");
     };
 
     const handleCancel = () => {
-        router.push(`/templates/${templateId}`);
+        router.push(`/meetings/templates/${templateId}`);
     };
 
     return (

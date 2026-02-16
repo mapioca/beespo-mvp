@@ -445,7 +445,7 @@ export function AdminTemplateBuilder({
             ? `"${name}" has been updated.`
             : `"${name}" is now available to all workspaces.`,
         });
-        router.push("/templates");
+        router.push("/admin/templates");
       } else {
         toast.error(result.error || `Failed to ${isEdit ? "update" : "create"} template.`);
       }
@@ -460,7 +460,7 @@ export function AdminTemplateBuilder({
     <div className="p-8">
       {/* Header */}
       <div className="flex items-center gap-4 mb-8">
-        <Link href="/templates">
+        <Link href="/admin/templates">
           <Button variant="ghost" size="icon" className="text-zinc-400 hover:text-zinc-200">
             <ArrowLeft className="h-5 w-5" />
           </Button>
