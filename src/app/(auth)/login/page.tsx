@@ -15,13 +15,12 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { useToast } from "@/lib/hooks/use-toast";
+import { toast } from "@/lib/toast";
 import { createClient } from "@/lib/supabase/client";
 import { GoogleOAuthButton } from "@/components/auth/google-oauth-button";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { toast } = useToast();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -39,18 +38,10 @@ export default function LoginPage() {
 
       if (error) {
         if (error.message.toLowerCase().includes("email not confirmed")) {
-          toast({
-            title: "Email not confirmed",
-            description: "Please check your inbox for the confirmation link.",
-            variant: "destructive",
-          });
+          toast.error("Email not confirmed", { description: "Please check your inbox for the confirmation link." });
           router.push(`/check-email?email=${encodeURIComponent(email)}`);
         } else {
-          toast({
-            title: "Error",
-            description: error.message,
-            variant: "destructive",
-          });
+          toast.error(error.message);
         }
       } else if (data.user) {
         // Check if user has completed profile setup
@@ -61,26 +52,16 @@ export default function LoginPage() {
           .single();
 
         if (!profile) {
-          toast({
-            title: "Complete Setup",
-            description: "Please complete your profile setup.",
-          });
+          toast.info("Complete Setup", { description: "Please complete your profile setup." });
           router.push("/onboarding");
         } else {
-          toast({
-            title: "Success",
-            description: "You&apos;ve been logged in successfully.",
-          });
+          toast.success("You've been logged in successfully.");
           router.push("/dashboard");
         }
         router.refresh();
       }
     } catch {
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred. Please try again.",
-        variant: "destructive",
-      });
+      toast.error("An unexpected error occurred. Please try again.");
     } finally {
       setIsLoading(false);
     }

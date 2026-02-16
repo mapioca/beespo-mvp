@@ -13,13 +13,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { useToast } from "@/lib/hooks/use-toast";
+import { toast } from "@/lib/toast";
 import { createClient } from "@/lib/supabase/client";
 import { Shield } from "lucide-react";
 
 export default function AdminLoginPage() {
   const router = useRouter();
-  const { toast } = useToast();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -36,11 +35,7 @@ export default function AdminLoginPage() {
       });
 
       if (error) {
-        toast({
-          title: "Error",
-          description: error.message,
-          variant: "destructive",
-        });
+        toast.error(error.message);
         return;
       }
 
@@ -55,11 +50,7 @@ export default function AdminLoginPage() {
         if (!profile?.is_sys_admin) {
           // Sign out non-admin users immediately
           await supabase.auth.signOut();
-          toast({
-            title: "Access Denied",
-            description: "You do not have administrator privileges.",
-            variant: "destructive",
-          });
+          toast.error("Access Denied", { description: "You do not have administrator privileges." });
           return;
         }
 
@@ -82,11 +73,7 @@ export default function AdminLoginPage() {
         router.refresh();
       }
     } catch {
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred. Please try again.",
-        variant: "destructive",
-      });
+      toast.error("An unexpected error occurred. Please try again.");
     } finally {
       setIsLoading(false);
     }

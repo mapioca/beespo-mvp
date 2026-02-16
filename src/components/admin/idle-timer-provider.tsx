@@ -3,7 +3,7 @@
 import { useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { useToast } from "@/lib/hooks/use-toast";
+import { toast } from "@/lib/toast";
 
 const IDLE_WARNING_MS = 25 * 60 * 1000; // 25 minutes
 const IDLE_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
@@ -11,7 +11,6 @@ const ACTIVITY_EVENTS = ["mousemove", "keydown", "scroll", "touchstart", "click"
 
 export function IdleTimerProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const { toast } = useToast();
   const warningTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const timeoutTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hasWarnedRef = useRef(false);
@@ -31,17 +30,13 @@ export function IdleTimerProvider({ children }: { children: React.ReactNode }) {
 
     warningTimerRef.current = setTimeout(() => {
       hasWarnedRef.current = true;
-      toast({
-        title: "Session Expiring",
-        description: "Your session will expire in 5 minutes due to inactivity.",
-        variant: "destructive",
-      });
+      toast.warning("Session Expiring", { description: "Your session will expire in 5 minutes due to inactivity." });
     }, IDLE_WARNING_MS);
 
     timeoutTimerRef.current = setTimeout(() => {
       handleSignOut();
     }, IDLE_TIMEOUT_MS);
-  }, [toast, handleSignOut]);
+  }, [handleSignOut]);
 
   useEffect(() => {
     resetTimers();

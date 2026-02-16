@@ -10,7 +10,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Plus, Trash2, GripVertical } from "lucide-react";
 import { ColumnTypePicker } from "@/components/tables";
 import { createTable } from "@/lib/actions/table-actions";
-import { useToast } from "@/lib/hooks/use-toast";
+import { toast } from "@/lib/toast";
 import type { ColumnType, CreateColumnRequest } from "@/types/table-types";
 
 interface ColumnDraft {
@@ -21,8 +21,6 @@ interface ColumnDraft {
 
 export function TableBuilder() {
   const router = useRouter();
-  const { toast } = useToast();
-
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [columns, setColumns] = useState<ColumnDraft[]>([
@@ -43,11 +41,7 @@ export function TableBuilder() {
 
   const handleRemoveColumn = (id: string) => {
     if (columns.length === 1) {
-      toast({
-        title: "Cannot remove",
-        description: "Table must have at least one column",
-        variant: "destructive",
-      });
+      toast.error("Cannot remove", { description: "Table must have at least one column" });
       return;
     }
     setColumns(columns.filter((c) => c.id !== id));
@@ -63,11 +57,7 @@ export function TableBuilder() {
     e.preventDefault();
 
     if (!name.trim()) {
-      toast({
-        title: "Name required",
-        description: "Please enter a name for the table",
-        variant: "destructive",
-      });
+      toast.error("Name required", { description: "Please enter a name for the table" });
       return;
     }
 
@@ -86,19 +76,12 @@ export function TableBuilder() {
     });
 
     if (result.error) {
-      toast({
-        title: "Failed to create table",
-        description: result.error,
-        variant: "destructive",
-      });
+      toast.error("Failed to create table", { description: result.error });
       setIsSubmitting(false);
       return;
     }
 
-    toast({
-      title: "Table created",
-      description: `"${name}" has been created successfully`,
-    });
+    toast.success("Table created", { description: `"${name}" has been created successfully` });
 
     router.push(`/tables/${result.data?.id}`);
   };

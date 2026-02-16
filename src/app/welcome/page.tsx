@@ -13,12 +13,11 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { useToast } from '@/lib/hooks/use-toast';
+import { toast } from '@/lib/toast';
 import { Plus, Users, ArrowRight, Loader2 } from 'lucide-react';
 
 export default function WelcomePage() {
   const router = useRouter();
-  const { toast } = useToast();
   const [showJoinForm, setShowJoinForm] = useState(false);
   const [inviteToken, setInviteToken] = useState('');
   const [inviteError, setInviteError] = useState<string | null>(null);
@@ -49,30 +48,19 @@ export default function WelcomePage() {
       }
 
       if (data.needsAuth) {
-        toast({
-          title: 'Error',
-          description: 'Please sign up or log in first.',
-          variant: 'destructive',
-        });
+        toast.error('Please sign up or log in first.');
         setIsSubmitting(false);
         return;
       }
 
-      toast({
-        title: 'Welcome to Beespo!',
-        description: `You've joined ${data.workspaceName}!`,
-      });
+      toast.success('Welcome to Beespo!', { description: `You've joined ${data.workspaceName}!` });
 
       router.push('/dashboard');
       router.refresh();
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to join workspace';
       setInviteError(message);
-      toast({
-        title: 'Error',
-        description: message,
-        variant: 'destructive',
-      });
+      toast.error(message);
       setIsSubmitting(false);
     }
   };

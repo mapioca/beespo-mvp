@@ -15,7 +15,7 @@ import { Plus, Search, Users } from "lucide-react";
 import { ParticipantsTable } from "@/components/participants/participants-table";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
-import { useToast } from "@/lib/hooks/use-toast";
+import { toast } from "@/lib/toast";
 
 interface Participant {
     id: string;
@@ -44,7 +44,6 @@ export function ParticipantsClient({
     const router = useRouter();
     const pathname = usePathname();
     const searchParams = useSearchParams();
-    const { toast } = useToast();
     const [isPending, startTransition] = useTransition();
     const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -111,13 +110,9 @@ export function ParticipantsClient({
             });
 
         if (error) {
-            toast({
-                title: "Error",
-                description: "Failed to create participant",
-                variant: "destructive",
-            });
+            toast.error("Failed to create participant");
         } else {
-            toast({ title: "Participant created" });
+            toast.success("Participant created");
             setNewName("");
             setCreateDialogOpen(false);
             router.refresh();

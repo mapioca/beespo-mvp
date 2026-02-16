@@ -20,12 +20,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useToast } from "@/lib/hooks/use-toast";
+import { toast } from "@/lib/toast";
 import { createInvitationAction } from "@/app/(admin)/admin/invitations/actions";
 import { Plus, Copy, Check } from "lucide-react";
 
 export function CreateInvitationDialog() {
-  const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [description, setDescription] = useState("");
   const [maxUses, setMaxUses] = useState("1");
@@ -48,23 +47,12 @@ export function CreateInvitationDialog() {
 
       if (result.success && result.code) {
         setCreatedCode(result.code);
-        toast({
-          title: "Invitation Created",
-          description: `Code: ${result.code}`,
-        });
+        toast.success("Invitation Created", { description: `Code: ${result.code}` });
       } else {
-        toast({
-          title: "Error",
-          description: result.error || "Failed to create invitation.",
-          variant: "destructive",
-        });
+        toast.error(result.error || "Failed to create invitation.");
       }
     } catch {
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred.",
-        variant: "destructive",
-      });
+      toast.error("An unexpected error occurred.");
     } finally {
       setIsLoading(false);
     }

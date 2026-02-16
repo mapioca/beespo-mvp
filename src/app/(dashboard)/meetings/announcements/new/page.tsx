@@ -20,14 +20,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useToast } from "@/lib/hooks/use-toast";
+import { toast } from "@/lib/toast";
 import { createClient } from "@/lib/supabase/client";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 
 export default function NewAnnouncementPage() {
   const router = useRouter();
-  const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
 
   // Form fields
@@ -49,11 +48,7 @@ export default function NewAnnouncementPage() {
     } = await supabase.auth.getUser();
 
     if (!user) {
-      toast({
-        title: "Error",
-        description: "Not authenticated. Please log in again.",
-        variant: "destructive",
-      });
+      toast.error("Not authenticated. Please log in again.");
       setIsLoading(false);
       return;
     }
@@ -67,11 +62,7 @@ export default function NewAnnouncementPage() {
       .single();
 
     if (!profile || !["leader", "admin"].includes(profile.role)) {
-      toast({
-        title: "Error",
-        description: "Only leaders and admins can create announcements.",
-        variant: "destructive",
-      });
+      toast.error("Only leaders and admins can create announcements.");
       setIsLoading(false);
       return;
     }
@@ -92,19 +83,12 @@ export default function NewAnnouncementPage() {
       });
 
     if (error) {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to create announcement.",
-        variant: "destructive",
-      });
+      toast.error(error.message || "Failed to create announcement.");
       setIsLoading(false);
       return;
     }
 
-    toast({
-      title: "Success",
-      description: "Announcement created successfully!",
-    });
+    toast.success("Announcement created successfully!");
 
     setIsLoading(false);
     router.push("/meetings/announcements");

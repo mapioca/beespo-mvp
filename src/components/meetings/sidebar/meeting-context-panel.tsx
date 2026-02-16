@@ -9,7 +9,7 @@ import { AutoSaveTextarea } from "@/components/ui/auto-save-textarea";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
-import { useToast } from "@/lib/hooks/use-toast";
+import { toast } from "@/lib/toast";
 import { Plus } from "lucide-react";
 import { Database } from "@/types/database";
 
@@ -50,7 +50,6 @@ export function MeetingContextPanel({
 }: MeetingContextPanelProps) {
     const [currentMeeting, setCurrentMeeting] = useState(meeting);
     const [isAddingDescription, setIsAddingDescription] = useState(false);
-    const { toast } = useToast();
 
     // Sync meeting state when prop changes (e.g., external updates)
     useEffect(() => {
@@ -75,11 +74,7 @@ export function MeetingContextPanel({
             .eq("id", currentMeeting.id);
 
         if (error) {
-            toast({
-                title: "Save failed",
-                description: "Could not save description. Please try again.",
-                variant: "destructive",
-            });
+            toast.error("Save failed", { description: "Could not save description. Please try again." });
             throw error; // Trigger revert in AutoSaveTextarea
         }
 
@@ -90,7 +85,7 @@ export function MeetingContextPanel({
         if (!value?.trim()) {
             setIsAddingDescription(false);
         }
-    }, [currentMeeting.id, toast]);
+    }, [currentMeeting.id]);
 
     // Save notes to database (now expects HTML from TipTap)
     const saveNotes = useCallback(async (value: string) => {
@@ -102,17 +97,13 @@ export function MeetingContextPanel({
             .eq("id", currentMeeting.id);
 
         if (error) {
-            toast({
-                title: "Save failed",
-                description: "Could not save notes. Please try again.",
-                variant: "destructive",
-            });
+            toast.error("Save failed", { description: "Could not save notes. Please try again." });
             throw error;
         }
 
         // Update local state optimistically
         setCurrentMeeting((prev) => ({ ...prev, notes: value || null }));
-    }, [currentMeeting.id, toast]);
+    }, [currentMeeting.id]);
 
     return (
         <div className="bg-muted/30 border-l h-full flex flex-col overflow-hidden">

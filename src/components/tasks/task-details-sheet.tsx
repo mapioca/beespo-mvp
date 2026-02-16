@@ -11,7 +11,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { Loader2, Send, MessageSquare, Activity as ActivityIcon, Check, X, Calendar as CalendarIcon } from "lucide-react";
 import { addTaskComment, getTaskActivity, updateTask } from "@/lib/actions/task-actions";
-import { useToast } from "@/lib/hooks/use-toast";
+import { toast } from "@/lib/toast";
 import { Database } from "@/types/database";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
@@ -53,8 +53,6 @@ export function TaskDetailsSheet({ open, onOpenChange, task }: TaskDetailsSheetP
 
     const [isSaving, setIsSaving] = useState(false);
     const [isDirty, setIsDirty] = useState(false);
-
-    const { toast } = useToast();
 
     // Load available profiles
     useEffect(() => {
@@ -129,9 +127,9 @@ export function TaskDetailsSheet({ open, onOpenChange, task }: TaskDetailsSheetP
         setIsSaving(false);
 
         if (result.error) {
-            toast({ title: "Failed to update task", description: result.error, variant: "destructive" });
+            toast.error("Failed to update task", { description: result.error });
         } else {
-            toast({ title: "Task updated" });
+            toast.success("Task updated");
             setIsDirty(false);
         }
     };
@@ -143,10 +141,10 @@ export function TaskDetailsSheet({ open, onOpenChange, task }: TaskDetailsSheetP
         setSending(false);
 
         if (result.error) {
-            toast({ title: "Failed to send comment", variant: "destructive" });
+            toast.error("Failed to send comment");
         } else {
             setNewComment("");
-            toast({ title: "Comment added" });
+            toast.success("Comment added");
             fetchActivity();
         }
     };

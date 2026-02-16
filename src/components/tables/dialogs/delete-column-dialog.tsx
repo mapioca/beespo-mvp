@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { deleteColumn } from "@/lib/actions/table-actions";
 import { useTablesStore } from "@/stores/tables-store";
-import { useToast } from "@/lib/hooks/use-toast";
+import { toast } from "@/lib/toast";
 import type { Column } from "@/types/table-types";
 
 interface DeleteColumnDialogProps {
@@ -29,7 +29,6 @@ export function DeleteColumnDialog({
   open,
   onOpenChange,
 }: DeleteColumnDialogProps) {
-  const { toast } = useToast();
   const { removeColumn } = useTablesStore();
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -41,17 +40,10 @@ export function DeleteColumnDialog({
     const result = await deleteColumn(tableId, column.id);
 
     if (result.error) {
-      toast({
-        title: "Failed to delete column",
-        description: result.error,
-        variant: "destructive",
-      });
+      toast.error("Failed to delete column", { description: result.error });
     } else {
       removeColumn(column.id);
-      toast({
-        title: "Column deleted",
-        description: `"${column.name}" has been deleted. You can restore it within 30 days.`,
-      });
+      toast.success("Column deleted", { description: `"${column.name}" has been deleted. You can restore it within 30 days.` });
       onOpenChange(false);
     }
 

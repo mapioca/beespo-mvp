@@ -21,7 +21,7 @@ import {
     createLabel,
     deleteLabel,
 } from "@/lib/actions/task-actions";
-import { useToast } from "@/lib/hooks/use-toast";
+import { toast } from "@/lib/toast";
 
 interface TaskLabelsDialogProps {
     open: boolean;
@@ -67,8 +67,6 @@ export function TaskLabelsDialog({
     const [newLabelName, setNewLabelName] = useState("");
     const [selectedColor, setSelectedColor] = useState(PRESET_COLORS[0]);
     const [isLoading, setIsLoading] = useState(false);
-    const { toast } = useToast();
-
     const loadLabels = useCallback(async () => {
         setIsLoading(true);
         try {
@@ -85,12 +83,12 @@ export function TaskLabelsDialog({
                 setAssignedLabelIds(new Set((taskLabelsResult.labels as Label[]).map((l) => l.id)));
             }
         } catch (error) {
-            toast({ title: "Error", description: "Failed to load labels", variant: "destructive" });
+            toast.error("Failed to load labels");
             console.error(error);
         } finally {
             setIsLoading(false);
         }
-    }, [taskId, toast]);
+    }, [taskId]);
 
     useEffect(() => {
         if (open) {
@@ -112,13 +110,13 @@ export function TaskLabelsDialog({
         if (!result.success) {
             // Revert on error
             setAssignedLabelIds(assignedLabelIds);
-            toast({ title: "Error", description: result.error || "Failed to update labels", variant: "destructive" });
+            toast.error(result.error || "Failed to update labels");
         }
     };
 
     const handleCreateLabel = async () => {
         if (!newLabelName.trim()) {
-            toast({ title: "Error", description: "Label name is required", variant: "destructive" });
+            toast.error("Label name is required");
             return;
         }
 
@@ -128,9 +126,9 @@ export function TaskLabelsDialog({
             setNewLabelName("");
             setSelectedColor(PRESET_COLORS[0]);
             setIsCreating(false);
-            toast({ title: "Label created" });
+            toast.success("Label created");
         } else {
-            toast({ title: "Error", description: result.error || "Failed to create label", variant: "destructive" });
+            toast.error(result.error || "Failed to create label");
         }
     };
 
@@ -143,9 +141,9 @@ export function TaskLabelsDialog({
                 newSet.delete(labelId);
                 return newSet;
             });
-            toast({ title: "Label deleted" });
+            toast.success("Label deleted");
         } else {
-            toast({ title: "Error", description: result.error || "Failed to delete label", variant: "destructive" });
+            toast.error(result.error || "Failed to delete label");
         }
     };
 

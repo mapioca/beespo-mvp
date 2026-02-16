@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { CalendarSubscription } from "@/types/database";
 import { createClient } from "@/lib/supabase/client";
-import { useToast } from "@/lib/hooks/use-toast";
+import { toast } from "@/lib/toast";
 import { isValidICalUrl } from "@/lib/ical-parser";
 import { AlertCircle, Calendar, Loader2 } from "lucide-react";
 
@@ -27,7 +27,6 @@ const PRESET_COLORS = [
 ];
 
 export function AddSubscriptionForm({ onCreated }: AddSubscriptionFormProps) {
-  const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [name, setName] = useState("");
   const [url, setUrl] = useState("");
@@ -51,20 +50,12 @@ export function AddSubscriptionForm({ onCreated }: AddSubscriptionFormProps) {
     e.preventDefault();
 
     if (!name || !url) {
-      toast({
-        title: "Error",
-        description: "Name and URL are required",
-        variant: "destructive",
-      });
+      toast.error("Name and URL are required");
       return;
     }
 
     if (!isValidICalUrl(url)) {
-      toast({
-        title: "Error",
-        description: "Please enter a valid HTTPS calendar URL",
-        variant: "destructive",
-      });
+      toast.error("Please enter a valid HTTPS calendar URL");
       return;
     }
 
@@ -75,11 +66,7 @@ export function AddSubscriptionForm({ onCreated }: AddSubscriptionFormProps) {
     // Get current user
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
-      toast({
-        title: "Error",
-        description: "Not authenticated",
-        variant: "destructive",
-      });
+      toast.error("Not authenticated");
       setIsLoading(false);
       return;
     }
@@ -92,11 +79,7 @@ export function AddSubscriptionForm({ onCreated }: AddSubscriptionFormProps) {
       .single();
 
     if (!profile || profile.role !== "admin") {
-      toast({
-        title: "Error",
-        description: "Only admins can add calendar subscriptions",
-        variant: "destructive",
-      });
+      toast.error("Only admins can add calendar subscriptions");
       setIsLoading(false);
       return;
     }
@@ -115,19 +98,12 @@ export function AddSubscriptionForm({ onCreated }: AddSubscriptionFormProps) {
       .single();
 
     if (error) {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to create subscription",
-        variant: "destructive",
-      });
+      toast.error(error.message || "Failed to create subscription");
       setIsLoading(false);
       return;
     }
 
-    toast({
-      title: "Success",
-      description: "Calendar subscription added. Syncing events...",
-    });
+    toast.success("Calendar subscription added. Syncing events...");
 
     // Trigger initial sync
     try {
@@ -139,10 +115,7 @@ export function AddSubscriptionForm({ onCreated }: AddSubscriptionFormProps) {
 
       if (syncResponse.ok) {
         const result = await syncResponse.json();
-        toast({
-          title: "Sync Complete",
-          description: `Imported ${result.totalEvents} events`,
-        });
+        toast.success("Sync Complete", { description: `Imported ${result.totalEvents} events` });
       }
     } catch (error) {
       console.error("Initial sync failed:", error);

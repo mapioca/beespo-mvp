@@ -13,12 +13,11 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { useToast } from "@/lib/hooks/use-toast";
+import { toast } from "@/lib/toast";
 import { createPlatformInviteAction } from "@/app/(admin)/admin/users/actions";
 import { UserPlus } from "lucide-react";
 
 export function InviteUserDialog() {
-  const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState("");
   const [description, setDescription] = useState("");
@@ -32,26 +31,15 @@ export function InviteUserDialog() {
       const result = await createPlatformInviteAction(email, description);
 
       if (result.success) {
-        toast({
-          title: "Invitation Sent",
-          description: `Invite code sent to ${email}`,
-        });
+        toast.success("Invitation Sent", { description: `Invite code sent to ${email}` });
         setOpen(false);
         setEmail("");
         setDescription("");
       } else {
-        toast({
-          title: "Error",
-          description: result.error || "Failed to create invitation.",
-          variant: "destructive",
-        });
+        toast.error(result.error || "Failed to create invitation.");
       }
     } catch {
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred.",
-        variant: "destructive",
-      });
+      toast.error("An unexpected error occurred.");
     } finally {
       setIsLoading(false);
     }

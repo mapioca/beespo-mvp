@@ -21,7 +21,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/u
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { updateTask } from "@/lib/actions/task-actions";
-import { useToast } from "@/lib/hooks/use-toast";
+import { toast } from "@/lib/toast";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -65,14 +65,13 @@ function getPriorityText(priority?: 'low' | 'medium' | 'high') {
 export function TasksTable({ tasks, profiles = [], sortConfig, onSort }: TasksTableProps) {
     const [completionTask, setCompletionTask] = useState<{ id: string; title: string } | null>(null);
     const [selectedTask, setSelectedTask] = useState<Task | null>(null);
-    const { toast } = useToast();
 
     const handleUpdate = async (taskId: string, data: Record<string, unknown>) => {
         const result = await updateTask(taskId, data);
         if (result.error) {
-            toast({ title: "Failed to update", description: result.error, variant: "destructive" });
+            toast.error("Failed to update", { description: result.error });
         } else {
-            toast({ title: "Updated" });
+            toast.success("Updated");
         }
     };
 

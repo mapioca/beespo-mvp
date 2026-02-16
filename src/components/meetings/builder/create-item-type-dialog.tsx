@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { Loader2, User, Music, FileText } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { useToast } from "@/lib/hooks/use-toast";
+import { toast } from "@/lib/toast";
 
 interface CreateItemTypeDialogProps {
     open: boolean;
@@ -36,7 +36,6 @@ export function CreateItemTypeDialog({
     const [hasRichText, setHasRichText] = useState(false);
     const [defaultDuration, setDefaultDuration] = useState(5);
     const [isCreating, setIsCreating] = useState(false);
-    const { toast } = useToast();
 
     const resetForm = () => {
         setName("");
@@ -48,20 +47,12 @@ export function CreateItemTypeDialog({
 
     const handleCreate = async () => {
         if (!name.trim()) {
-            toast({
-                title: "Name required",
-                description: "Please enter a name for the item type.",
-                variant: "destructive",
-            });
+            toast.error("Name required", { description: "Please enter a name for the item type." });
             return;
         }
 
         if (!workspaceId) {
-            toast({
-                title: "No workspace",
-                description: "You must be in a workspace to create custom items.",
-                variant: "destructive",
-            });
+            toast.error("No workspace", { description: "You must be in a workspace to create custom items." });
             return;
         }
 
@@ -90,18 +81,11 @@ export function CreateItemTypeDialog({
         setIsCreating(false);
 
         if (error) {
-            toast({
-                title: "Failed to create item type",
-                description: error.message || "Please try again.",
-                variant: "destructive",
-            });
+            toast.error("Failed to create item type", { description: error.message || "Please try again." });
             return;
         }
 
-        toast({
-            title: "Item type created",
-            description: `"${name}" has been added to your custom elements.`,
-        });
+        toast.success("Item type created", { description: `"${name}" has been added to your custom elements.` });
 
         resetForm();
         onCreated();

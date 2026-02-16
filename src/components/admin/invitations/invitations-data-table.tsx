@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal, Copy, Ban } from "lucide-react";
 import { revokeInvitationAction } from "@/app/(admin)/admin/invitations/actions";
-import { useToast } from "@/lib/hooks/use-toast";
+import { toast } from "@/lib/toast";
 import { format } from "date-fns";
 
 interface Invitation {
@@ -46,11 +46,9 @@ function getStatusColor(status: string) {
 export function InvitationsDataTable({
   invitations,
 }: InvitationsDataTableProps) {
-  const { toast } = useToast();
-
   const handleCopy = async (code: string) => {
     await navigator.clipboard.writeText(code);
-    toast({ title: "Copied", description: `Code ${code} copied to clipboard.` });
+    toast.success("Copied", { description: `Code ${code} copied to clipboard.` });
   };
 
   const handleRevoke = async (id: string, code: string) => {
@@ -58,13 +56,9 @@ export function InvitationsDataTable({
 
     const result = await revokeInvitationAction(id);
     if (result.success) {
-      toast({ title: "Revoked", description: `Invitation ${code} has been revoked.` });
+      toast.success("Revoked", { description: `Invitation ${code} has been revoked.` });
     } else {
-      toast({
-        title: "Error",
-        description: result.error || "Failed to revoke invitation.",
-        variant: "destructive",
-      });
+      toast.error(result.error || "Failed to revoke invitation.");
     }
   };
 

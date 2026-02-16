@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { useToast } from "@/lib/hooks/use-toast";
+import { toast } from "@/lib/toast";
 import {
   createGlobalTemplateAction,
   updateGlobalTemplateAction,
@@ -379,7 +379,6 @@ export function AdminTemplateBuilder({
   initialItems = [],
 }: AdminTemplateBuilderProps) {
   const router = useRouter();
-  const { toast } = useToast();
   const [name, setName] = useState(initialName);
   const [description, setDescription] = useState(initialDescription);
   const [tagsInput, setTagsInput] = useState(initialTags.join(", "));
@@ -422,7 +421,7 @@ export function AdminTemplateBuilder({
 
   const handleSave = async () => {
     if (!name.trim()) {
-      toast({ title: "Error", description: "Template name is required.", variant: "destructive" });
+      toast.error("Template name is required.");
       return;
     }
 
@@ -441,18 +440,17 @@ export function AdminTemplateBuilder({
         : await createGlobalTemplateAction(payload);
 
       if (result.success) {
-        toast({
-          title: isEdit ? "Template Updated" : "Template Created",
+        toast.success(isEdit ? "Template Updated" : "Template Created", {
           description: isEdit
             ? `"${name}" has been updated.`
             : `"${name}" is now available to all workspaces.`,
         });
         router.push("/templates");
       } else {
-        toast({ title: "Error", description: result.error || `Failed to ${isEdit ? "update" : "create"} template.`, variant: "destructive" });
+        toast.error(result.error || `Failed to ${isEdit ? "update" : "create"} template.`);
       }
     } catch {
-      toast({ title: "Error", description: "An unexpected error occurred.", variant: "destructive" });
+      toast.error("An unexpected error occurred.");
     } finally {
       setIsSaving(false);
     }

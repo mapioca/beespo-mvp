@@ -14,7 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
 import { completeTask } from "@/lib/actions/task-actions";
-import { useToast } from "@/lib/hooks/use-toast";
+import { toast } from "@/lib/toast";
 
 interface TaskCompletionDialogProps {
     open: boolean;
@@ -33,7 +33,6 @@ export function TaskCompletionDialog({
 }: TaskCompletionDialogProps) {
     const [comment, setComment] = useState("");
     const [loading, setLoading] = useState(false);
-    const { toast } = useToast();
 
     const handleComplete = async () => {
         setLoading(true);
@@ -41,16 +40,9 @@ export function TaskCompletionDialog({
         setLoading(false);
 
         if (result.error) {
-            toast({
-                title: "Error completing task",
-                description: result.error,
-                variant: "destructive"
-            });
+            toast.error("Error completing task", { description: result.error });
         } else {
-            toast({
-                title: "Task completed",
-                description: "The task has been marked as complete."
-            });
+            toast.success("Task completed", { description: "The task has been marked as complete." });
             onOpenChange(false);
             setComment("");
             if (onSuccess) onSuccess();

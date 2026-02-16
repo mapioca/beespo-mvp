@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { useToast } from "@/lib/hooks/use-toast";
+import { toast } from "@/lib/toast";
 import { createClient } from "@/lib/supabase/client";
 import { ShieldCheck, Loader2, Users, CheckCircle } from "lucide-react";
 import type { WorkspaceInvitationData } from "@/types/onboarding";
@@ -27,8 +27,6 @@ import type { WorkspaceInvitationData } from "@/types/onboarding";
 function SignupContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { toast } = useToast();
-
   // Check for workspace invitation token in URL
   const invitationToken = searchParams.get("invitation_token");
   const invitedEmail = searchParams.get("email");
@@ -80,20 +78,12 @@ function SignupContent() {
               setEmail(data.email);
             }
           } else {
-            toast({
-              title: "Invalid Invitation",
-              description: data.error || "This invitation link is no longer valid.",
-              variant: "destructive",
-            });
+            toast.error("Invalid Invitation", { description: data.error || "This invitation link is no longer valid." });
             // Redirect to regular signup
             router.replace("/signup");
           }
         } catch {
-          toast({
-            title: "Error",
-            description: "Failed to validate invitation. Please try again.",
-            variant: "destructive",
-          });
+          toast.error("Failed to validate invitation. Please try again.");
           router.replace("/signup");
         } finally {
           setIsValidatingToken(false);
@@ -102,7 +92,7 @@ function SignupContent() {
 
       validateToken();
     }
-  }, [invitationToken, invitedEmail, router, toast]);
+  }, [invitationToken, invitedEmail, router]);
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleInviteValidation = useCallback((isValid: boolean, _invitationId: string | null) => {
@@ -136,57 +126,33 @@ function SignupContent() {
 
     // Validate based on flow type
     if (!isWorkspaceInvite && !inviteCodeValid) {
-      toast({
-        title: "Invalid Invite Code",
-        description: "Please enter a valid invite code to continue.",
-        variant: "destructive",
-      });
+      toast.error("Invalid Invite Code", { description: "Please enter a valid invite code to continue." });
       return;
     }
 
     if (isWorkspaceInvite && !workspaceInviteValid) {
-      toast({
-        title: "Invalid Invitation",
-        description: "Your workspace invitation is no longer valid.",
-        variant: "destructive",
-      });
+      toast.error("Invalid Invitation", { description: "Your workspace invitation is no longer valid." });
       return;
     }
 
     // For workspace invites, validate email matches
     if (isWorkspaceInvite && workspaceInviteData && email.toLowerCase() !== workspaceInviteData.email.toLowerCase()) {
-      toast({
-        title: "Email Mismatch",
-        description: "Please use the email address the invitation was sent to.",
-        variant: "destructive",
-      });
+      toast.error("Email Mismatch", { description: "Please use the email address the invitation was sent to." });
       return;
     }
 
     if (password !== confirmPassword) {
-      toast({
-        title: "Error",
-        description: "Passwords do not match.",
-        variant: "destructive",
-      });
+      toast.error("Passwords do not match.");
       return;
     }
 
     if (password.length < 6) {
-      toast({
-        title: "Error",
-        description: "Password must be at least 6 characters long.",
-        variant: "destructive",
-      });
+      toast.error("Password must be at least 6 characters long.");
       return;
     }
 
     if (!agreedToTerms) {
-      toast({
-        title: "Error",
-        description: "You must agree to the Terms and Conditions to create an account.",
-        variant: "destructive",
-      });
+      toast.error("You must agree to the Terms and Conditions to create an account.");
       return;
     }
 
@@ -201,11 +167,7 @@ function SignupContent() {
         consumedInvitationId = await consumeInviteCode();
 
         if (!consumedInvitationId) {
-          toast({
-            title: "Invite Code Error",
-            description: "The invite code is no longer valid. Please get a new code.",
-            variant: "destructive",
-          });
+          toast.error("Invite Code Error", { description: "The invite code is no longer valid. Please get a new code." });
           setInviteCodeValid(false);
           setIsLoading(false);
           setIsConsumingCode(false);
@@ -249,11 +211,7 @@ function SignupContent() {
           });
 
           if (signInError) {
-            toast({
-              title: "Error",
-              description: "This email is already registered. Please use the login page instead.",
-              variant: "destructive",
-            });
+            toast.error("This email is already registered. Please use the login page instead.");
             setTimeout(() => {
               router.push("/login");
             }, 2000);
@@ -270,10 +228,7 @@ function SignupContent() {
               if (isWorkspaceInvite && invitationToken) {
                 sessionStorage.setItem("pending_workspace_invitation_token", invitationToken);
               }
-              toast({
-                title: "Complete Setup",
-                description: "Please complete your profile setup.",
-              });
+              toast.info("Complete Setup", { description: "Please complete your profile setup." });
               router.push("/onboarding");
             } else {
               // User has profile - redirect to dashboard
@@ -282,11 +237,7 @@ function SignupContent() {
             router.refresh();
           }
         } else {
-          toast({
-            title: "Error",
-            description: error.message,
-            variant: "destructive",
-          });
+          toast.error(error.message);
         }
       } else if (data.user) {
         // Store workspace invitation token for onboarding
@@ -301,14 +252,10 @@ function SignupContent() {
           !data.user.email_confirmed_at;
 
         if (needsEmailConfirmation) {
-          toast({
-            title: "Check your email",
-            description: "We've sent a confirmation link to your email address.",
-          });
+          toast.info("Check your email", { description: "We've sent a confirmation link to your email address." });
           router.push(`/check-email?email=${encodeURIComponent(email)}`);
         } else {
-          toast({
-            title: "Success",
+          toast.success("Success", {
             description: isWorkspaceInvite
               ? `Account created! Let's get you set up to join ${workspaceInviteData?.workspaceName}.`
               : "Account created successfully! Please complete your profile.",
@@ -318,11 +265,7 @@ function SignupContent() {
         }
       }
     } catch (error) {
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "An unexpected error occurred. Please try again.",
-        variant: "destructive",
-      });
+      toast.error(error instanceof Error ? error.message : "An unexpected error occurred. Please try again.");
     } finally {
       setIsLoading(false);
       setIsConsumingCode(false);
@@ -332,20 +275,12 @@ function SignupContent() {
   const handleGoogleSignIn = async () => {
     // Validate based on flow type
     if (!isWorkspaceInvite && !inviteCodeValid) {
-      toast({
-        title: "Invalid Invite Code",
-        description: "Please enter a valid invite code before signing up with Google.",
-        variant: "destructive",
-      });
+      toast.error("Invalid Invite Code", { description: "Please enter a valid invite code before signing up with Google." });
       return;
     }
 
     if (isWorkspaceInvite && !workspaceInviteValid) {
-      toast({
-        title: "Invalid Invitation",
-        description: "Your workspace invitation is no longer valid.",
-        variant: "destructive",
-      });
+      toast.error("Invalid Invitation", { description: "Your workspace invitation is no longer valid." });
       return;
     }
 
@@ -361,11 +296,7 @@ function SignupContent() {
         const consumedInvitationId = await consumeInviteCode();
 
         if (!consumedInvitationId) {
-          toast({
-            title: "Invite Code Error",
-            description: "The invite code is no longer valid. Please get a new code.",
-            variant: "destructive",
-          });
+          toast.error("Invite Code Error", { description: "The invite code is no longer valid. Please get a new code." });
           setInviteCodeValid(false);
           setIsLoading(false);
           setIsConsumingCode(false);
@@ -392,22 +323,14 @@ function SignupContent() {
         // Clear the stored IDs if OAuth fails
         sessionStorage.removeItem("pending_platform_invitation_id");
         sessionStorage.removeItem("pending_workspace_invitation_token");
-        toast({
-          title: "Error",
-          description: error.message || "Failed to sign in with Google",
-          variant: "destructive",
-        });
+        toast.error(error.message || "Failed to sign in with Google");
         setIsLoading(false);
       }
       // If no error, browser will redirect to Google
     } catch {
       sessionStorage.removeItem("pending_platform_invitation_id");
       sessionStorage.removeItem("pending_workspace_invitation_token");
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred. Please try again.",
-        variant: "destructive",
-      });
+      toast.error("An unexpected error occurred. Please try again.");
       setIsLoading(false);
     }
   };

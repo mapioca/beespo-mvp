@@ -20,14 +20,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useToast } from "@/lib/hooks/use-toast";
+import { toast } from "@/lib/toast";
 import { createClient } from "@/lib/supabase/client";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 
 export default function NewDiscussionPage() {
   const router = useRouter();
-  const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
 
   // Form fields
@@ -48,11 +47,7 @@ export default function NewDiscussionPage() {
     } = await supabase.auth.getUser();
 
     if (!user) {
-      toast({
-        title: "Error",
-        description: "Not authenticated. Please log in again.",
-        variant: "destructive",
-      });
+      toast.error("Not authenticated. Please log in again.");
       setIsLoading(false);
       return;
     }
@@ -66,11 +61,7 @@ export default function NewDiscussionPage() {
       .single();
 
     if (!profile || !["leader", "admin"].includes(profile.role)) {
-      toast({
-        title: "Error",
-        description: "Only leaders and admins can create discussions.",
-        variant: "destructive",
-      });
+      toast.error("Only leaders and admins can create discussions.");
       setIsLoading(false);
       return;
     }
@@ -90,19 +81,12 @@ export default function NewDiscussionPage() {
       });
 
     if (error) {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to create discussion.",
-        variant: "destructive",
-      });
+      toast.error(error.message || "Failed to create discussion.");
       setIsLoading(false);
       return;
     }
 
-    toast({
-      title: "Success",
-      description: "Discussion topic created successfully!",
-    });
+    toast.success("Discussion topic created successfully!");
 
     setIsLoading(false);
     router.push("/meetings/discussions");

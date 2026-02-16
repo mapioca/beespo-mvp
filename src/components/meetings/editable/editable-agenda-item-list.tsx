@@ -68,7 +68,7 @@ import {
     StoredChildItem,
 } from "@/lib/agenda-grouping";
 import { createClient } from "@/lib/supabase/client";
-import { useToast } from "@/lib/hooks/use-toast";
+import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import { Database } from "@/types/database";
 import {
@@ -615,7 +615,6 @@ export function EditableAgendaItemList({
     const [isPickerOpen, setIsPickerOpen] = useState(false);
     const [insertAtIndex, setInsertAtIndex] = useState<number | null>(null);
     const [preFilterCategory, setPreFilterCategory] = useState<CategoryType | undefined>(undefined);
-    const { toast } = useToast();
 
     // Compute grouped entries for rendering
     const groupedEntries = useMemo(() => groupAgendaItems(items), [items]);
@@ -767,11 +766,7 @@ export function EditableAgendaItemList({
                 // Database error
                 setItems(previousItems);
                 onItemsChange?.(previousItems);
-                toast({
-                    title: "Update failed",
-                    description: error.message || "Could not save changes. Please try again.",
-                    variant: "destructive",
-                });
+                toast.error("Update failed", { description: error.message || "Could not save changes. Please try again." });
                 return false;
             }
 
@@ -779,21 +774,14 @@ export function EditableAgendaItemList({
                 // RLS policy blocked the update (no rows affected)
                 setItems(previousItems);
                 onItemsChange?.(previousItems);
-                toast({
-                    title: "Update failed",
-                    description: "You don't have permission to edit this item.",
-                    variant: "destructive",
-                });
+                toast.error("Update failed", { description: "You don't have permission to edit this item." });
                 return false;
             }
 
-            toast({
-                title: "Saved",
-                description: "Changes saved successfully.",
-            });
+            toast.success("Saved", { description: "Changes saved successfully." });
             return true;
         },
-        [items, onItemsChange, toast]
+        [items, onItemsChange]
     );
 
     // Open the item picker modal at a specific position
@@ -857,11 +845,7 @@ export function EditableAgendaItemList({
                 .single();
 
             if (insertError || !newItem) {
-                toast({
-                    title: "Failed to add item",
-                    description: insertError?.message || "Could not add item. Please try again.",
-                    variant: "destructive",
-                });
+                toast.error("Failed to add item", { description: insertError?.message || "Could not add item. Please try again." });
                 return false;
             }
 
@@ -893,13 +877,10 @@ export function EditableAgendaItemList({
             setItems(updatedItems);
             onItemsChange?.(updatedItems);
 
-            toast({
-                title: "Item added",
-                description: `"${data.title}" has been added to the agenda.`,
-            });
+            toast.success("Item added", { description: `"${data.title}" has been added to the agenda.` });
             return true;
         },
-        [items, meetingId, onItemsChange, toast]
+        [items, meetingId, onItemsChange]
     );
     // Open picker for adding at bottom
     const openPickerAtBottom = useCallback(() => {
@@ -951,11 +932,7 @@ export function EditableAgendaItemList({
         setIsDeleting(false);
 
         if (error) {
-            toast({
-                title: "Failed to delete",
-                description: error.message || "Could not delete item. Please try again.",
-                variant: "destructive",
-            });
+            toast.error("Failed to delete", { description: error.message || "Could not delete item. Please try again." });
             setDeletingItemId(null);
             return;
         }
@@ -979,11 +956,8 @@ export function EditableAgendaItemList({
                 .eq("id", item.id);
         }
 
-        toast({
-            title: "Item deleted",
-            description: "The agenda item has been removed.",
-        });
-    }, [deletingItemId, items, onItemsChange, toast]);
+        toast.success("Item deleted", { description: "The agenda item has been removed." });
+    }, [deletingItemId, items, onItemsChange]);
 
     // Handle drag end for reordering
     const handleDragEnd = useCallback(
@@ -1017,12 +991,9 @@ export function EditableAgendaItemList({
                     .eq("id", update.id);
             }
 
-            toast({
-                title: "Order updated",
-                description: "Agenda order has been saved.",
-            });
+            toast.success("Order updated", { description: "Agenda order has been saved." });
         },
-        [items, onItemsChange, toast]
+        [items, onItemsChange]
     );
 
     if (items.length === 0) {

@@ -8,7 +8,7 @@ import { CreateNotebookModal } from "./create-notebook-modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Plus, Search } from "lucide-react";
-import { useToast } from "@/lib/hooks/use-toast";
+import { toast } from "@/lib/toast";
 
 interface Notebook {
     id: string;
@@ -32,7 +32,6 @@ export function NotebookLibrary() {
     const [search, setSearch] = useState("");
     const [isModalOpen, setIsModalOpen] = useState(false);
     const router = useRouter();
-    const { toast } = useToast();
     const supabase = createClient();
 
     const fetchNotebooks = useCallback(async () => {
@@ -52,11 +51,7 @@ export function NotebookLibrary() {
 
         if (error) {
             console.error("Error fetching notebooks:", error);
-            toast({
-                title: "Error",
-                description: "Failed to load notebooks",
-                variant: "destructive",
-            });
+            toast.error("Failed to load notebooks");
         } else if (data) {
             // Transform notes count from array to number
             const transformed = data.map((notebook: NotebookWithNotes) => ({
@@ -69,7 +64,7 @@ export function NotebookLibrary() {
         }
 
         setIsLoading(false);
-    }, [supabase, toast]);
+    }, [supabase]);
 
     useEffect(() => {
         fetchNotebooks();
@@ -101,10 +96,7 @@ export function NotebookLibrary() {
 
         if (error) throw error;
 
-        toast({
-            title: "Notebook created",
-            description: `"${title}" is ready for your notes.`,
-        });
+        toast.success("Notebook created", { description: `"${title}" is ready for your notes.` });
 
         // Refresh list and navigate to new notebook
         await fetchNotebooks();

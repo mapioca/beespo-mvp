@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal, Search, Shield, ShieldOff } from "lucide-react";
 import { toggleSysAdminAction } from "@/app/(admin)/admin/users/actions";
-import { useToast } from "@/lib/hooks/use-toast";
+import { toast } from "@/lib/toast";
 import { format } from "date-fns";
 
 interface Profile {
@@ -41,7 +41,6 @@ interface UsersDataTableProps {
 const PAGE_SIZE = 20;
 
 export function UsersDataTable({ profiles }: UsersDataTableProps) {
-  const { toast } = useToast();
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("all");
   const [page, setPage] = useState(0);
@@ -61,18 +60,13 @@ export function UsersDataTable({ profiles }: UsersDataTableProps) {
   const handleToggleAdmin = async (userId: string, currentValue: boolean) => {
     const result = await toggleSysAdminAction(userId, !currentValue);
     if (result.success) {
-      toast({
-        title: currentValue ? "Admin removed" : "Admin granted",
+      toast.success(currentValue ? "Admin removed" : "Admin granted", {
         description: currentValue
           ? "User is no longer a system administrator."
           : "User is now a system administrator.",
       });
     } else {
-      toast({
-        title: "Error",
-        description: result.error || "Failed to update user.",
-        variant: "destructive",
-      });
+      toast.error(result.error || "Failed to update user.");
     }
   };
 

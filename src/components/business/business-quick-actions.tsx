@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
-import { useToast } from "@/lib/hooks/use-toast";
+import { toast } from "@/lib/toast";
 import { useRouter } from "next/navigation";
 
 export function BusinessQuickActions({
@@ -14,7 +14,6 @@ export function BusinessQuickActions({
   initialStatus: "pending" | "completed";
 }) {
   const router = useRouter();
-  const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
 
   const handleMarkComplete = async () => {
@@ -28,16 +27,9 @@ export function BusinessQuickActions({
       .eq("id", businessItemId);
 
     if (error) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast.error(error.message);
     } else {
-      toast({
-        title: "Success",
-        description: "Business item marked as complete!",
-      });
+      toast.success("Business item marked as complete!");
       router.refresh();
     }
     setIsLoading(false);
@@ -54,16 +46,9 @@ export function BusinessQuickActions({
       .eq("id", businessItemId);
 
     if (error) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast.error(error.message);
     } else {
-      toast({
-        title: "Success",
-        description: "Business item marked as pending!",
-      });
+      toast.success("Business item marked as pending!");
       router.refresh();
     }
     setIsLoading(false);
@@ -84,17 +69,10 @@ export function BusinessQuickActions({
       .eq("id", businessItemId);
 
     if (error) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast.error(error.message);
       setIsLoading(false);
     } else {
-      toast({
-        title: "Success",
-        description: "Business item deleted!",
-      });
+      toast.success("Business item deleted!");
       router.push("/business");
       router.refresh();
     }

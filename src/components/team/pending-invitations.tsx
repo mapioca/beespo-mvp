@@ -11,7 +11,7 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { useToast } from "@/lib/hooks/use-toast";
+import { toast } from "@/lib/toast";
 import { format } from "date-fns";
 import { Mail, X, RefreshCw } from "lucide-react";
 
@@ -37,7 +37,6 @@ export function PendingInvitations({
     isAdmin,
     onInvitationUpdated,
 }: PendingInvitationsProps) {
-    const { toast } = useToast();
     const [loadingId, setLoadingId] = useState<string | null>(null);
 
     const handleResend = async (id: string) => {
@@ -54,24 +53,13 @@ export function PendingInvitations({
             }
 
             if (data.emailSent) {
-                toast({
-                    title: "Invitation Resent",
-                    description: "The invitation has been sent again.",
-                });
+                toast.success("Invitation Resent", { description: "The invitation has been sent again." });
             } else {
-                toast({
-                    title: "Email Failed",
-                    description: "Invitation was updated, but the email failed to send. Check your API key.",
-                    variant: "destructive",
-                });
+                toast.error("Email Failed", { description: "Invitation was updated, but the email failed to send. Check your API key." });
             }
             onInvitationUpdated();
         } catch (error) {
-            toast({
-                title: "Error",
-                description: error instanceof Error ? error.message : "Failed to resend invitation",
-                variant: "destructive",
-            });
+            toast.error(error instanceof Error ? error.message : "Failed to resend invitation");
         } finally {
             setLoadingId(null);
         }
@@ -90,17 +78,10 @@ export function PendingInvitations({
                 throw new Error(data.error || "Failed to revoke invitation");
             }
 
-            toast({
-                title: "Invitation Revoked",
-                description: "The invitation has been cancelled.",
-            });
+            toast.success("Invitation Revoked", { description: "The invitation has been cancelled." });
             onInvitationUpdated();
         } catch (error) {
-            toast({
-                title: "Error",
-                description: error instanceof Error ? error.message : "Failed to revoke invitation",
-                variant: "destructive",
-            });
+            toast.error(error instanceof Error ? error.message : "Failed to revoke invitation");
         } finally {
             setLoadingId(null);
         }

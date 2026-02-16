@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { getCoverById } from "@/lib/notebooks/notebook-covers";
 import { NoteEditor } from "@/components/notes/note-editor";
 import { ChevronRight, Library, BookOpen } from "lucide-react";
-import { useToast } from "@/lib/hooks/use-toast";
+import { toast } from "@/lib/toast";
 
 interface Notebook {
     id: string;
@@ -24,7 +24,6 @@ export default function NoteEditorPage({ params }: NoteEditorPageProps) {
     const [notebook, setNotebook] = useState<Notebook | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const router = useRouter();
-    const { toast } = useToast();
     const supabase = createClient();
 
     const fetchNotebook = useCallback(async () => {
@@ -37,17 +36,14 @@ export default function NoteEditorPage({ params }: NoteEditorPageProps) {
             .single();
 
         if (error || !data) {
-            toast({
-                title: "Notebook not found",
-                variant: "destructive",
-            });
+            toast.error("Notebook not found");
             router.push("/notebooks");
             return;
         }
 
         setNotebook(data as Notebook);
         setIsLoading(false);
-    }, [resolvedParams.notebookId, supabase, router, toast]);
+    }, [resolvedParams.notebookId, supabase, router]);
 
     useEffect(() => {
         fetchNotebook();

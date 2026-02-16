@@ -11,14 +11,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { useToast } from "@/lib/hooks/use-toast";
+import { toast } from "@/lib/toast";
 import { createClient } from "@/lib/supabase/client";
 import { TotpInput } from "@/components/admin/mfa/totp-input";
 import { Shield, Copy, Check } from "lucide-react";
 
 export default function MfaSetupPage() {
   const router = useRouter();
-  const { toast } = useToast();
   const [qrUri, setQrUri] = useState("");
   const [secret, setSecret] = useState("");
   const [factorId, setFactorId] = useState("");
@@ -51,11 +50,7 @@ export default function MfaSetupPage() {
       });
 
       if (error) {
-        toast({
-          title: "Error",
-          description: "Failed to set up MFA. Please try again.",
-          variant: "destructive",
-        });
+        toast.error("Failed to set up MFA. Please try again.");
         return;
       }
 
@@ -68,7 +63,7 @@ export default function MfaSetupPage() {
     };
 
     enroll();
-  }, [router, toast]);
+  }, [router]);
 
   const handleVerify = async (code: string) => {
     setIsVerifying(true);
@@ -80,11 +75,7 @@ export default function MfaSetupPage() {
         await supabase.auth.mfa.challenge({ factorId });
 
       if (challengeError) {
-        toast({
-          title: "Error",
-          description: "Failed to create MFA challenge.",
-          variant: "destructive",
-        });
+        toast.error("Failed to create MFA challenge.");
         return;
       }
 
@@ -95,27 +86,16 @@ export default function MfaSetupPage() {
       });
 
       if (verifyError) {
-        toast({
-          title: "Invalid Code",
-          description: "The verification code is incorrect. Please try again.",
-          variant: "destructive",
-        });
+        toast.error("Invalid Code", { description: "The verification code is incorrect. Please try again." });
         return;
       }
 
-      toast({
-        title: "MFA Enabled",
-        description: "Two-factor authentication has been set up successfully.",
-      });
+      toast.success("MFA Enabled", { description: "Two-factor authentication has been set up successfully." });
 
       router.push("/dashboard");
       router.refresh();
     } catch {
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred.",
-        variant: "destructive",
-      });
+      toast.error("An unexpected error occurred.");
     } finally {
       setIsVerifying(false);
     }

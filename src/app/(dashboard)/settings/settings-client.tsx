@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { useToast } from "@/lib/hooks/use-toast";
+import { toast } from "@/lib/toast";
 import { createClient } from "@/lib/supabase/client";
 import { InviteMemberDialog } from "@/components/team/invite-member-dialog";
 import { TeamMembersList } from "@/components/team/team-members-list";
@@ -90,7 +90,6 @@ export function SettingsClient({
     currentUserDetails,
 }: SettingsClientProps) {
     const router = useRouter();
-    const { toast } = useToast();
     const [workspaceName, setWorkspaceName] = useState(workspace.name);
     const [userFullName, setUserFullName] = useState(currentUserDetails.fullName);
     const [userRoleTitle, setUserRoleTitle] = useState(currentUserDetails.roleTitle);
@@ -113,16 +112,9 @@ export function SettingsClient({
             .eq("id", workspace.id);
 
         if (error) {
-            toast({
-                title: "Error",
-                description: error.message || "Failed to update workspace name",
-                variant: "destructive",
-            });
+            toast.error(error.message || "Failed to update workspace name");
         } else {
-            toast({
-                title: "Saved",
-                description: "Workspace name has been updated.",
-            });
+            toast.success("Saved", { description: "Workspace name has been updated." });
             router.refresh();
         }
 
@@ -144,16 +136,9 @@ export function SettingsClient({
             .eq("id", currentUserId);
 
         if (error) {
-            toast({
-                title: "Error",
-                description: error.message || "Failed to update profile",
-                variant: "destructive",
-            });
+            toast.error(error.message || "Failed to update profile");
         } else {
-            toast({
-                title: "Saved",
-                description: "Your profile has been updated.",
-            });
+            toast.success("Saved", { description: "Your profile has been updated." });
             router.refresh();
         }
 

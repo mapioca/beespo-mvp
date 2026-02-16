@@ -10,7 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { useToast } from "@/lib/hooks/use-toast";
+import { toast } from "@/lib/toast";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
@@ -39,7 +39,6 @@ export function DiscussionNotesSection({
   currentUserId,
 }: DiscussionNotesSectionProps) {
   const router = useRouter();
-  const { toast } = useToast();
   const [notes, setNotes] = useState<Note[]>(initialNotes);
   const [newNoteContent, setNewNoteContent] = useState("");
   const [isAddingNote, setIsAddingNote] = useState(false);
@@ -69,11 +68,7 @@ export function DiscussionNotesSection({
       .single();
 
     if (error) {
-      toast({
-        title: "Error",
-        description: "Failed to add note.",
-        variant: "destructive",
-      });
+      toast.error("Failed to add note.");
       setIsAddingNote(false);
       return;
     }
@@ -81,10 +76,7 @@ export function DiscussionNotesSection({
     setNotes([data, ...notes]);
     setNewNoteContent("");
     setIsAddingNote(false);
-    toast({
-      title: "Success",
-      description: "Note added successfully!",
-    });
+    toast.success("Note added successfully!");
     router.refresh();
   };
 
@@ -103,11 +95,7 @@ export function DiscussionNotesSection({
       .eq("id", noteId);
 
     if (error) {
-      toast({
-        title: "Error",
-        description: "Failed to update note.",
-        variant: "destructive",
-      });
+      toast.error("Failed to update note.");
       return;
     }
 
@@ -117,10 +105,7 @@ export function DiscussionNotesSection({
       )
     );
     setEditingNoteId(null);
-    toast({
-      title: "Success",
-      description: "Note updated successfully!",
-    });
+    toast.success("Note updated successfully!");
     router.refresh();
   };
 
@@ -136,19 +121,12 @@ export function DiscussionNotesSection({
       .eq("id", noteId);
 
     if (error) {
-      toast({
-        title: "Error",
-        description: "Failed to delete note.",
-        variant: "destructive",
-      });
+      toast.error("Failed to delete note.");
       return;
     }
 
     setNotes(notes.filter((note) => note.id !== noteId));
-    toast({
-      title: "Success",
-      description: "Note deleted successfully!",
-    });
+    toast.success("Note deleted successfully!");
     router.refresh();
   };
 

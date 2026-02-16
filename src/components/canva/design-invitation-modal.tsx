@@ -17,7 +17,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { useCanvaStore } from "@/stores/canva-store";
-import { useToast } from "@/lib/hooks/use-toast";
+import { toast } from "@/lib/toast";
 import { EventDesignsList } from "./event-designs-list";
 import { EventReferencePanel } from "./event-reference-panel";
 import { ExportProgress } from "./export-progress";
@@ -45,7 +45,6 @@ export function DesignInvitationModal({
     isOpen,
     onClose,
 }: DesignInvitationModalProps) {
-    const { toast } = useToast();
     const {
         designs,
         isLoadingDesigns,
@@ -113,11 +112,7 @@ export function DesignInvitationModal({
 
             if (!response.ok) {
                 if (data.needsAuth) {
-                    toast({
-                        title: "Canva Connection Required",
-                        description: "Please reconnect Canva from the Apps Hub.",
-                        variant: "destructive",
-                    });
+                    toast.error("Canva Connection Required", { description: "Please reconnect Canva from the Apps Hub." });
                     return;
                 }
                 throw new Error(data.error || "Failed to create design");
@@ -131,18 +126,11 @@ export function DesignInvitationModal({
                 window.open(data.edit_url, "_blank");
             }
 
-            toast({
-                title: "Design Created",
-                description: "Canva has opened in a new tab. Design and save your invitation there.",
-            });
+            toast.success("Design Created", { description: "Canva has opened in a new tab. Design and save your invitation there." });
         } catch (error) {
             const message = error instanceof Error ? error.message : "Failed to create design";
             setCreateError(message);
-            toast({
-                title: "Error",
-                description: message,
-                variant: "destructive",
-            });
+            toast.error(message);
         } finally {
             setCreating(false);
         }
@@ -199,10 +187,7 @@ export function DesignInvitationModal({
                     }
 
                     completeExport(design.id, saveData.public_url, saveData.design.storage_path);
-                    toast({
-                        title: "Export Complete",
-                        description: "Your invitation has been exported and saved.",
-                    });
+                    toast.success("Export Complete", { description: "Your invitation has been exported and saved." });
                 } else if (statusData.status === "failed") {
                     throw new Error(statusData.error || "Export failed");
                 } else if (attempts < maxAttempts) {
@@ -217,11 +202,7 @@ export function DesignInvitationModal({
         } catch (error) {
             const message = error instanceof Error ? error.message : "Export failed";
             failExport(message);
-            toast({
-                title: "Export Failed",
-                description: message,
-                variant: "destructive",
-            });
+            toast.error("Export Failed", { description: message });
         }
     };
 

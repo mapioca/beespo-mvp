@@ -9,14 +9,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { useToast } from "@/lib/hooks/use-toast";
+import { toast } from "@/lib/toast";
 import { createClient } from "@/lib/supabase/client";
 import { TotpInput } from "@/components/admin/mfa/totp-input";
 import { Shield } from "lucide-react";
 
 export default function MfaVerifyPage() {
   const router = useRouter();
-  const { toast } = useToast();
   const [factorId, setFactorId] = useState("");
   const [isVerifying, setIsVerifying] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -60,11 +59,7 @@ export default function MfaVerifyPage() {
         await supabase.auth.mfa.challenge({ factorId });
 
       if (challengeError) {
-        toast({
-          title: "Error",
-          description: "Failed to create MFA challenge.",
-          variant: "destructive",
-        });
+        toast.error("Failed to create MFA challenge.");
         return;
       }
 
@@ -75,22 +70,14 @@ export default function MfaVerifyPage() {
       });
 
       if (verifyError) {
-        toast({
-          title: "Invalid Code",
-          description: "The verification code is incorrect. Please try again.",
-          variant: "destructive",
-        });
+        toast.error("Invalid Code", { description: "The verification code is incorrect. Please try again." });
         return;
       }
 
       router.push("/dashboard");
       router.refresh();
     } catch {
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred.",
-        variant: "destructive",
-      });
+      toast.error("An unexpected error occurred.");
     } finally {
       setIsVerifying(false);
     }

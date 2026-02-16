@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { useToast } from "@/lib/hooks/use-toast";
+import { toast } from "@/lib/toast";
 import { AdminTemplateBuilder } from "@/components/admin/templates/builder/admin-template-builder";
 import type { TemplateItem } from "@/components/templates/types";
 import { createClient } from "@/lib/supabase/client";
@@ -11,7 +11,6 @@ export default function EditTemplatePage() {
   const router = useRouter();
   const params = useParams();
   const templateId = params.id as string;
-  const { toast } = useToast();
   const [templateData, setTemplateData] = useState<{
     name: string;
     description: string;
@@ -31,11 +30,7 @@ export default function EditTemplatePage() {
         .single();
 
       if (!template) {
-        toast({
-          title: "Error",
-          description: "Template not found.",
-          variant: "destructive",
-        });
+        toast.error("Template not found.");
         router.push("/templates");
         return;
       }
@@ -69,7 +64,7 @@ export default function EditTemplatePage() {
     };
 
     loadTemplate();
-  }, [templateId, router, toast]);
+  }, [templateId, router]);
 
   if (isLoading || !templateData) {
     return (

@@ -8,7 +8,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState } from "react";
-import { useToast } from "@/lib/hooks/use-toast";
+import { toast } from "@/lib/toast";
 
 interface TemplateSelectorProps {
     value: string | null;
@@ -24,7 +24,6 @@ interface TemplateStub {
 export function TemplateSelector({ value, onChange, disabled }: TemplateSelectorProps) {
     const [templates, setTemplates] = useState<TemplateStub[]>([]);
     const [isLoading, setIsLoading] = useState(false);
-    const { toast } = useToast();
 
     useEffect(() => {
         const fetchTemplates = async () => {
@@ -38,11 +37,7 @@ export function TemplateSelector({ value, onChange, disabled }: TemplateSelector
 
             if (error) {
                 console.error("Error fetching templates:", error);
-                toast({
-                    title: "Error",
-                    description: "Failed to load templates",
-                    variant: "destructive",
-                });
+                toast.error("Failed to load templates");
             } else {
                 setTemplates(data || []);
             }

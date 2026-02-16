@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { ShareDialog } from "@/components/conduct/share-dialog";
 import { MeetingAgendaPDF, getMeetingPDFFilename } from "@/components/meetings/meeting-agenda-pdf";
 import { createClient } from "@/lib/supabase/client";
-import { useToast } from "@/lib/hooks/use-toast";
+import { toast } from "@/lib/toast";
 import { Database } from "@/types/database";
 
 type Meeting = Database["public"]["Tables"]["meetings"]["Row"] & {
@@ -35,7 +35,6 @@ export function ActionToolbar({
     onMeetingUpdate,
 }: ActionToolbarProps) {
     const router = useRouter();
-    const { toast } = useToast();
     const [isStatusLoading, setIsStatusLoading] = useState(false);
     const [isDownloading, setIsDownloading] = useState(false);
     const [currentMeeting, setCurrentMeeting] = useState(meeting);
@@ -50,17 +49,10 @@ export function ActionToolbar({
             .eq("id", meeting.id);
 
         if (error) {
-            toast({
-                title: "Error",
-                description: "Failed to update meeting status",
-                variant: "destructive",
-            });
+            toast.error("Failed to update meeting status");
         } else {
             router.refresh();
-            toast({
-                title: "Status updated",
-                description: `Meeting marked as ${newStatus}`,
-            });
+            toast.success("Status updated", { description: `Meeting marked as ${newStatus}` });
         }
         setIsStatusLoading(false);
     };
@@ -81,17 +73,10 @@ export function ActionToolbar({
             document.body.removeChild(link);
             URL.revokeObjectURL(url);
 
-            toast({
-                title: "Download started",
-                description: "Your PDF is being downloaded",
-            });
+            toast.success("Download started", { description: "Your PDF is being downloaded" });
         } catch (error) {
             console.error("PDF generation failed:", error);
-            toast({
-                title: "Download failed",
-                description: "Could not generate PDF. Please try again.",
-                variant: "destructive",
-            });
+            toast.error("Download failed", { description: "Could not generate PDF. Please try again." });
         } finally {
             setIsDownloading(false);
         }

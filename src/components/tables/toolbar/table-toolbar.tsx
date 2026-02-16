@@ -15,7 +15,7 @@ import { ViewSwitcher } from "./view-switcher";
 import { ColumnVisibility } from "./column-visibility";
 import { useTablesStore, useSelectedRowCount } from "@/stores/tables-store";
 import { bulkDeleteRows } from "@/lib/actions/table-actions";
-import { useToast } from "@/lib/hooks/use-toast";
+import { toast } from "@/lib/toast";
 import type { Column, TableView } from "@/types/table-types";
 
 interface TableToolbarProps {
@@ -31,7 +31,6 @@ export function TableToolbar({
   views,
   onViewSave,
 }: TableToolbarProps) {
-  const { toast } = useToast();
   const [showFilters, setShowFilters] = useState(false);
   const [showSorts, setShowSorts] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -53,18 +52,11 @@ export function TableToolbar({
     const result = await bulkDeleteRows(tableId, rowIds);
 
     if (result.error) {
-      toast({
-        title: "Failed to delete",
-        description: result.error,
-        variant: "destructive",
-      });
+      toast.error("Failed to delete", { description: result.error });
     } else {
       removeRows(rowIds);
       clearSelection();
-      toast({
-        title: "Rows deleted",
-        description: `${rowIds.length} row(s) deleted successfully`,
-      });
+      toast.success("Rows deleted", { description: `${rowIds.length} row(s) deleted successfully` });
     }
   };
 

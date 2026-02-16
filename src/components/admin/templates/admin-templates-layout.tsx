@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { deleteGlobalTemplateAction } from "@/app/(admin)/admin/templates/actions";
-import { useToast } from "@/lib/hooks/use-toast";
+import { toast } from "@/lib/toast";
 import { format } from "date-fns";
 
 interface Template {
@@ -29,20 +29,14 @@ interface AdminTemplatesLayoutProps {
 }
 
 export function AdminTemplatesLayout({ templates }: AdminTemplatesLayoutProps) {
-  const { toast } = useToast();
-
   const handleDelete = async (id: string, name: string) => {
     if (!confirm(`Delete template "${name}"? This cannot be undone.`)) return;
 
     const result = await deleteGlobalTemplateAction(id);
     if (result.success) {
-      toast({ title: "Template deleted", description: `"${name}" has been deleted.` });
+      toast.success("Template deleted", { description: `"${name}" has been deleted.` });
     } else {
-      toast({
-        title: "Error",
-        description: result.error || "Failed to delete template.",
-        variant: "destructive",
-      });
+      toast.error(result.error || "Failed to delete template.");
     }
   };
 

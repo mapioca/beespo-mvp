@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/lib/hooks/use-toast";
+import { toast } from "@/lib/toast";
 import { createClient } from "@/lib/supabase/client";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
@@ -11,7 +11,6 @@ import { BusinessItemForm, BusinessItemFormData } from "@/components/business/bu
 
 export default function NewBusinessItemPage() {
   const router = useRouter();
-  const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (formData: BusinessItemFormData) => {
@@ -25,11 +24,7 @@ export default function NewBusinessItemPage() {
     } = await supabase.auth.getUser();
 
     if (!user) {
-      toast({
-        title: "Error",
-        description: "Not authenticated. Please log in again.",
-        variant: "destructive",
-      });
+      toast.error("Not authenticated. Please log in again.");
       setIsLoading(false);
       return;
     }
@@ -43,11 +38,7 @@ export default function NewBusinessItemPage() {
       .single();
 
     if (!profile || !["leader", "admin"].includes(profile.role)) {
-      toast({
-        title: "Error",
-        description: "Only leaders and admins can create business items.",
-        variant: "destructive",
-      });
+      toast.error("Only leaders and admins can create business items.");
       setIsLoading(false);
       return;
     }
@@ -70,19 +61,12 @@ export default function NewBusinessItemPage() {
       });
 
     if (error) {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to create business item.",
-        variant: "destructive",
-      });
+      toast.error(error.message || "Failed to create business item.");
       setIsLoading(false);
       return;
     }
 
-    toast({
-      title: "Success",
-      description: "Business item created successfully!",
-    });
+    toast.success("Business item created successfully!");
 
     setIsLoading(false);
     router.push("/meetings/business");

@@ -20,7 +20,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { useToast } from "@/lib/hooks/use-toast";
+import { toast } from "@/lib/toast";
 import { UserPlus } from "lucide-react";
 
 interface InviteMemberDialogProps {
@@ -32,7 +32,6 @@ export function InviteMemberDialog({ onInviteSent }: InviteMemberDialogProps) {
     const [email, setEmail] = useState("");
     const [role, setRole] = useState<string>("leader");
     const [isLoading, setIsLoading] = useState(false);
-    const { toast } = useToast();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -52,16 +51,9 @@ export function InviteMemberDialog({ onInviteSent }: InviteMemberDialogProps) {
             }
 
             if (data.emailSent) {
-                toast({
-                    title: "Invitation Sent",
-                    description: `An invitation has been sent to ${email}.`,
-                });
+                toast.success("Invitation Sent", { description: `An invitation has been sent to ${email}.` });
             } else {
-                toast({
-                    title: "Invitation Created",
-                    description: `Invitation for ${email} was created, but the email failed to send. Check your server logs and API key.`,
-                    variant: "destructive",
-                });
+                toast.error("Invitation Created", { description: `Invitation for ${email} was created, but the email failed to send. Check your server logs and API key.` });
             }
 
             setEmail("");
@@ -69,11 +61,7 @@ export function InviteMemberDialog({ onInviteSent }: InviteMemberDialogProps) {
             setOpen(false);
             onInviteSent();
         } catch (error) {
-            toast({
-                title: "Error",
-                description: error instanceof Error ? error.message : "Failed to send invitation",
-                variant: "destructive",
-            });
+            toast.error(error instanceof Error ? error.message : "Failed to send invitation");
         } finally {
             setIsLoading(false);
         }

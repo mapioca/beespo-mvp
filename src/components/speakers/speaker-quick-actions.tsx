@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
-import { useToast } from "@/lib/hooks/use-toast";
+import { toast } from "@/lib/toast";
 import { useRouter } from "next/navigation";
 
 export function SpeakerQuickActions({
@@ -16,7 +16,6 @@ export function SpeakerQuickActions({
   hasRelatedMeeting: boolean;
 }) {
   const router = useRouter();
-  const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
 
   const handleToggleConfirmed = async () => {
@@ -32,18 +31,11 @@ export function SpeakerQuickActions({
       .eq("id", speakerId);
 
     if (error) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast.error(error.message);
     } else {
-      toast({
-        title: "Success",
-        description: newConfirmedStatus
+      toast.success(newConfirmedStatus
           ? "Speaker marked as confirmed!"
-          : "Speaker marked as pending!",
-      });
+          : "Speaker marked as pending!");
       router.refresh();
     }
     setIsLoading(false);
@@ -68,17 +60,10 @@ export function SpeakerQuickActions({
       .eq("id", speakerId);
 
     if (error) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast.error(error.message);
       setIsLoading(false);
     } else {
-      toast({
-        title: "Success",
-        description: "Speaker deleted!",
-      });
+      toast.success("Speaker deleted!");
       router.push("/speakers");
       router.refresh();
     }

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Save, Trash2, Link as LinkIcon, Lock, Users } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import {
     Dialog,
     DialogContent,

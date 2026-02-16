@@ -22,7 +22,7 @@ import {
     CheckCircle,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { useToast } from "@/lib/hooks/use-toast";
+import { toast } from "@/lib/toast";
 import { AddMeetingItemDialog, SelectedItem, CategoryType } from "./add-meeting-item-dialog";
 import { UnifiedSelectorModal, UnifiedSelectorMode, SpeakerSelection } from "./unified-selector-modal";
 import { ContainerAgendaItem, ContainerChildItem, ContainerType } from "./container-agenda-item";
@@ -80,7 +80,6 @@ export function MeetingComposer({
     onBack,
 }: MeetingComposerProps) {
     const router = useRouter();
-    const { toast } = useToast();
     const [agendaItems, setAgendaItems] = useState<ComposedAgendaItem[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [addDialogOpen, setAddDialogOpen] = useState(false);
@@ -689,10 +688,7 @@ export function MeetingComposer({
 
                 if (fallbackError) {
                     console.error("Fallback RPC error:", fallbackError);
-                    toast({
-                        title: "Failed to create meeting",
-                        description: fallbackError.message || "An error occurred while creating the meeting (fallback).",
-                    });
+                    toast.error("Failed to create meeting", { description: fallbackError.message || "An error occurred while creating the meeting (fallback)." });
                     setValidationItems([
                         {
                             id: "error-create",
@@ -705,10 +701,7 @@ export function MeetingComposer({
                     return;
                 }
 
-                toast({
-                    title: "Meeting created",
-                    description: "Redirecting to meeting details...",
-                });
+                toast.success("Meeting created", { description: "Redirecting to meeting details..." });
 
                 router.push(`/meetings/${fallbackData}`);
                 router.refresh();
@@ -717,10 +710,7 @@ export function MeetingComposer({
 
             if (error) {
                 console.error("RPC error:", error);
-                toast({
-                    title: "Failed to create meeting",
-                    description: (error as Error)?.message || "An error occurred while creating the meeting.",
-                });
+                toast.error("Failed to create meeting", { description: (error as Error)?.message || "An error occurred while creating the meeting." });
                 setValidationItems([
                     {
                         id: "error-create",
@@ -733,10 +723,7 @@ export function MeetingComposer({
                 return;
             }
 
-            toast({
-                title: "Meeting created",
-                description: "Redirecting to meeting details...",
-            });
+            toast.success("Meeting created", { description: "Redirecting to meeting details..." });
 
             router.push(`/meetings/${data}`);
             router.refresh();

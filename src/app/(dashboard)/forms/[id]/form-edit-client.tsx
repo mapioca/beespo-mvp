@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { FormBuilder } from "@/components/forms/builder/form-builder";
 import { ShareFormModal } from "@/components/forms/share-form-modal";
 import { updateForm } from "@/lib/actions/form-actions";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import type { Form, FormSchema } from "@/types/form-types";
 import type { BuilderField } from "@/components/forms/builder/types";
 

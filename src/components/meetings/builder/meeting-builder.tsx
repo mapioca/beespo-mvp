@@ -17,7 +17,7 @@ import {
 import { arrayMove, sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { format } from "date-fns";
 import { createClient } from "@/lib/supabase/client";
-import { useToast } from "@/lib/hooks/use-toast";
+import { toast } from "@/lib/toast";
 import { BuilderHeader } from "./builder-header";
 import { ToolboxPane } from "./toolbox-pane";
 import { AgendaCanvas } from "./agenda-canvas";
@@ -37,7 +37,6 @@ interface MeetingBuilderProps {
 
 export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
     const router = useRouter();
-    const { toast } = useToast();
 
     // Form state
     const [title, setTitle] = useState("");
@@ -705,10 +704,7 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
                 );
 
                 if (fallbackError) {
-                    toast({
-                        title: "Failed to create meeting",
-                        description: fallbackError.message,
-                    });
+                    toast.error("Failed to create meeting", { description: fallbackError.message });
                     setValidationItems([{
                         id: "error-create",
                         title: "Failed to create meeting",
@@ -719,17 +715,14 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
                     return;
                 }
 
-                toast({ title: "Meeting created", description: "Redirecting..." });
+                toast.success("Meeting created", { description: "Redirecting..." });
                 router.push(`/meetings/${fallbackData}`);
                 router.refresh();
                 return;
             }
 
             if (error) {
-                toast({
-                    title: "Failed to create meeting",
-                    description: error.message,
-                });
+                toast.error("Failed to create meeting", { description: error.message });
                 setValidationItems([{
                     id: "error-create",
                     title: "Failed to create meeting",
@@ -740,7 +733,7 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
                 return;
             }
 
-            toast({ title: "Meeting created", description: "Redirecting..." });
+            toast.success("Meeting created", { description: "Redirecting..." });
             router.push(`/meetings/${data}`);
             router.refresh();
         } catch (err: unknown) {
@@ -755,7 +748,7 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
         } finally {
             setIsCreating(false);
         }
-    }, [canvasItems, date, time, title, selectedTemplateId, router, toast]);
+    }, [canvasItems, date, time, title, selectedTemplateId, router]);
 
     const isValid = title.trim() !== "" && date !== undefined && canvasItems.length > 0;
     const selectedSpeakerIds = canvasItems
