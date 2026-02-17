@@ -89,6 +89,56 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    // Create Basic Auth header
+    const authHeader = Buffer.from(`${jiraUserEmail}:${jiraApiToken}`).toString('base64');
+    const headers = {
+      'Authorization': `Basic ${authHeader}`,
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    };
+
+    // 1. Find or Create Jira User
+    let accountId: string | undefined;
+
+    // Search for existing user
+    const searchResponse = await fetch(
+      `${jiraDomain}/rest/api/3/user/search?query=${encodeURIComponent(userEmail)}`,
+      { headers }
+    );
+
+    if (searchResponse.ok) {
+      const users = await searchResponse.json();
+      if (users.length > 0) {
+        accountId = users[0].accountId;
+      }
+    }
+
+    // If no user found, create a Service Desk Customer
+    if (!accountId) {
+      try {
+        const createCustomerResponse = await fetch(`${jiraDomain}/rest/servicedeskapi/customer`, {
+          method: 'POST',
+          headers: {
+            ...headers,
+            'X-ExperimentalApi': 'opt-in', // Required for Service Desk API
+          },
+          body: JSON.stringify({
+            email: userEmail,
+            displayName: userName,
+          }),
+        });
+
+        if (createCustomerResponse.ok) {
+          const customer = await createCustomerResponse.json();
+          accountId = customer.accountId;
+        } else {
+          console.error('Failed to create Jira customer:', await createCustomerResponse.text());
+        }
+      } catch (e) {
+        console.error('Error creating Jira customer:', e);
+      }
+    }
+
     // Construct Jira issue description with metadata
     const jiraDescription = {
       type: 'doc',
@@ -168,6 +218,7 @@ export async function POST(request: NextRequest) {
         description: typeof jiraDescription;
         issuetype: { id: string };
         priority?: { name: string };
+        reporter?: { accountId: string };
       };
     } = {
       fields: {
@@ -182,22 +233,20 @@ export async function POST(request: NextRequest) {
       },
     };
 
+    // Add reporter if found/created
+    if (accountId) {
+      jiraPayload.fields.reporter = { accountId };
+    }
+
     // Add priority only if provided (and only for bugs typically)
     if (jiraPriority && requestType === 'Bug Report') {
       jiraPayload.fields.priority = { name: jiraPriority };
     }
 
-    // Create Basic Auth header
-    const authHeader = Buffer.from(`${jiraUserEmail}:${jiraApiToken}`).toString('base64');
-
     // Make request to Jira API
     const jiraResponse = await fetch(`${jiraDomain}/rest/api/3/issue`, {
       method: 'POST',
-      headers: {
-        'Authorization': `Basic ${authHeader}`,
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
+      headers,
       body: JSON.stringify(jiraPayload),
     });
 
