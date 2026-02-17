@@ -8,19 +8,20 @@ const JIRA_PRIORITIES: Record<string, string> = {
   'High': 'High',
 };
 
-// Get issue type ID from environment variables
-// These IDs are specific to each JIRA project and must be configured
-function getJiraIssueTypeId(requestType: string): string | null {
-  switch (requestType) {
-    case 'Bug Report':
-      return process.env.JIRA_ISSUE_TYPE_BUG_ID || null;
-    case 'Feature Request':
-      return process.env.JIRA_ISSUE_TYPE_STORY_ID || null;
-    case 'General Question':
-      return process.env.JIRA_ISSUE_TYPE_TASK_ID || null;
-    default:
-      return process.env.JIRA_ISSUE_TYPE_TASK_ID || null;
-  }
+// Jira Issue Type IDs
+// Jira Issue Type IDs
+// [System] Incident: 10001
+// [System] Service request: 10002
+const JIRA_ISSUE_TYPE_IDS: Record<string, string> = {
+  'Bug Report': '10001',       // Maps to [System] Incident
+  'Feature Request': '10002',  // Maps to [System] Service request
+  'General Question': '10002', // Maps to [System] Service request
+};
+
+// Get issue type ID based on request type
+function getJiraIssueTypeId(requestType: string): string {
+  // Return the configured ID or default to 'Service request' (10002)
+  return JIRA_ISSUE_TYPE_IDS[requestType] || '10002';
 }
 
 interface SupportRequestBody {
