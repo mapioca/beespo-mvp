@@ -1447,6 +1447,29 @@ export type Database = {
           updated_at?: string;
         };
       };
+      user_settings: {
+        Row: {
+          user_id: string;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          dashboard_layout: any; // DashboardConfig JSON
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          dashboard_layout?: any;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          user_id?: string;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          dashboard_layout?: any;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
     };
   };
   Views: Record<string, never>;

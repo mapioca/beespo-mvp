@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useCallback } from "react";
+import { useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   CheckCircle2,
@@ -59,8 +59,6 @@ interface ToastPillProps {
 }
 
 export function ToastPill({ item }: ToastPillProps) {
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
   const handleDismiss = useCallback(() => {
     removeToast(item.id);
   }, [item.id]);
@@ -73,11 +71,6 @@ export function ToastPill({ item }: ToastPillProps) {
     resumeToast(item.id);
   }, [item.id]);
 
-  useEffect(() => {
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-    };
-  }, []);
 
   const { icon: IconComp, className: iconClassName } = iconMap[item.type];
 
