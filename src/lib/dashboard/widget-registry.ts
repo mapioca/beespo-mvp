@@ -2,44 +2,44 @@ import type { WidgetDefinition, DashboardConfig, WidgetPosition } from "@/types/
 import type { FeatureTier } from "@/types/database";
 
 export const WIDGET_REGISTRY: WidgetDefinition[] = [
-  // KPI cards
+  // KPI cards (3)
   {
-    type: "kpi_task_completion",
-    label: "Task Completion",
-    icon: "CheckCircle2",
+    type: "kpi_calling_fill_rate",
+    label: "Calling Fill Rate",
+    icon: "Users",
     category: "kpi",
     defaultColumn: 0,
     tiers: ["bishopric", "organization", "support"],
     mobilePriority: 1,
   },
   {
-    type: "kpi_calling_fill_rate",
-    label: "Calling Fill Rate",
-    icon: "Users",
+    type: "kpi_meeting_readiness",
+    label: "Meeting Readiness",
+    icon: "CalendarCheck",
     category: "kpi",
     defaultColumn: 1,
     tiers: ["bishopric", "organization", "support"],
     mobilePriority: 2,
   },
   {
-    type: "kpi_meeting_readiness",
-    label: "Meeting Readiness",
-    icon: "CalendarCheck",
+    type: "kpi_active_discussions",
+    label: "Active Discussions",
+    icon: "MessageSquare",
     category: "kpi",
     defaultColumn: 2,
     tiers: ["bishopric", "organization", "support"],
     mobilePriority: 3,
   },
+  // Content widgets
   {
-    type: "kpi_active_discussions",
-    label: "Active Discussions",
-    icon: "MessageSquare",
-    category: "kpi",
-    defaultColumn: 3,
+    type: "team_workload",
+    label: "Stewardship Capacity",
+    icon: "Users",
+    category: "content",
+    defaultColumn: 0,
     tiers: ["bishopric", "organization", "support"],
     mobilePriority: 4,
   },
-  // Content widgets
   {
     type: "my_tasks",
     label: "My Tasks",

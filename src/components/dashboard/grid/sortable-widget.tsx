@@ -3,6 +3,7 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import type { WidgetType, DashboardWidgetData } from "@/types/dashboard";
+import { TeamWorkloadWidget } from "../widgets/team-workload-widget";
 import { MyTasksWidget } from "../widgets/my-tasks-widget";
 import { CallingPipelineWidget } from "../widgets/calling-pipeline-widget";
 import { UpcomingMeetingsWidget } from "../widgets/upcoming-meetings-widget";
@@ -35,6 +36,13 @@ export function SortableWidget({ id, widgetType, data }: SortableWidgetProps) {
   const dragHandleProps = { attributes, listeners };
 
   const widgetMap: Partial<Record<WidgetType, React.ReactNode>> = {
+    team_workload: (
+      <TeamWorkloadWidget
+        data={data.teamWorkload}
+        dragHandleProps={dragHandleProps}
+        isDragging={isDragging}
+      />
+    ),
     my_tasks: (
       <MyTasksWidget
         data={data.myTasks}

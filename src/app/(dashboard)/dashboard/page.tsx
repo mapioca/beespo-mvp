@@ -5,7 +5,7 @@ import { getDefaultLayout } from "@/lib/dashboard/widget-registry";
 import { MissionControl } from "@/components/dashboard/mission-control";
 import type { DashboardConfig } from "@/types/dashboard";
 
-const OLD_WIDGET_TYPES = ["sunday_morning", "organizational_pulse", "action_inbox"];
+const OLD_WIDGET_TYPES = ["sunday_morning", "organizational_pulse", "action_inbox", "kpi_task_completion", "weekly_momentum"];
 
 export default async function DashboardPage() {
   const supabase = await createClient();

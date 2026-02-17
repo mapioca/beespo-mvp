@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
-  KpiTaskCompletionData,
+  TeamWorkloadData,
   KpiCallingFillRateData,
   KpiMeetingReadinessData,
   KpiActiveDiscussionsData,
@@ -13,79 +13,53 @@ import type {
   DashboardWidgetData,
 } from "@/types/dashboard";
 
-// --- KPI Fetchers ---
+// --- Team Workload Fetcher ---
 
-export async function fetchKpiTaskCompletion(
+export async function fetchTeamWorkload(
   supabase: SupabaseClient,
   workspaceId: string
-): Promise<KpiTaskCompletionData> {
-  const today = new Date().toISOString().split("T")[0];
-  const thirtyDaysAgo = new Date(Date.now() - 30 * 86400000).toISOString().split("T")[0];
+): Promise<TeamWorkloadData> {
+  // Two parallel queries: workspace members + all active tasks
+  const [profilesResult, tasksResult] = await Promise.all([
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (supabase.from("profiles") as any)
+      .select("id, full_name, role")
+      .eq("workspace_id", workspaceId)
+      .order("full_name", { ascending: true })
+      .limit(10),
 
-  const [overdueResult, highPriorityResult, completedResult, totalResult, sparklineResult] =
-    await Promise.all([
-      // Overdue tasks
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (supabase.from("tasks") as any)
-        .select("id", { count: "exact", head: true })
-        .eq("workspace_id", workspaceId)
-        .in("status", ["pending", "in_progress"])
-        .lt("due_date", today),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (supabase.from("tasks") as any)
+      .select("assigned_to")
+      .eq("workspace_id", workspaceId)
+      .in("status", ["pending", "in_progress"]),
+  ]);
 
-      // High priority pending
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (supabase.from("tasks") as any)
-        .select("id", { count: "exact", head: true })
-        .eq("workspace_id", workspaceId)
-        .in("status", ["pending", "in_progress"])
-        .eq("priority", "high"),
-
-      // Completed in last 30 days
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (supabase.from("tasks") as any)
-        .select("id", { count: "exact", head: true })
-        .eq("workspace_id", workspaceId)
-        .eq("status", "completed")
-        .gte("completed_at", thirtyDaysAgo),
-
-      // Total tasks created in last 30 days
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (supabase.from("tasks") as any)
-        .select("id", { count: "exact", head: true })
-        .eq("workspace_id", workspaceId)
-        .gte("created_at", thirtyDaysAgo),
-
-      // Sparkline: completed per day last 7 days
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (supabase.from("tasks") as any)
-        .select("completed_at")
-        .eq("workspace_id", workspaceId)
-        .eq("status", "completed")
-        .gte("completed_at", new Date(Date.now() - 7 * 86400000).toISOString()),
-    ]);
-
-  // Build sparkline from last 7 days
-  const sparkline: { value: number }[] = [];
-  for (let i = 6; i >= 0; i--) {
-    const dayStr = new Date(Date.now() - i * 86400000).toISOString().split("T")[0];
-    const count = (sparklineResult.data || []).filter(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (t: any) => t.completed_at?.startsWith(dayStr)
-    ).length;
-    sparkline.push({ value: count });
+  // Count active tasks per user in JS (avoids N+1 queries)
+  const taskCounts = new Map<string, number>();
+  for (const task of tasksResult.data || []) {
+    if (task.assigned_to) {
+      taskCounts.set(
+        task.assigned_to,
+        (taskCounts.get(task.assigned_to) ?? 0) + 1
+      );
+    }
   }
 
-  const completed = completedResult.count ?? 0;
-  const total = totalResult.count ?? 0;
-  const completionRate = total > 0 ? Math.round((completed / total) * 100) : 0;
+  const members = (profilesResult.data || []).map(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (p: any) => ({
+      id: p.id as string,
+      name: (p.full_name as string) ?? "Unknown",
+      role: (p.role as string) ?? "member",
+      activeTasks: taskCounts.get(p.id) ?? 0,
+    })
+  );
 
-  return {
-    overdueCount: overdueResult.count ?? 0,
-    completionRate,
-    highPriorityPending: highPriorityResult.count ?? 0,
-    sparkline,
-  };
+  return { members };
 }
+
+// --- KPI Fetchers ---
 
 export async function fetchKpiCallingFillRate(
   supabase: SupabaseClient,
@@ -407,7 +381,7 @@ export async function fetchDashboardData(
   userId: string
 ): Promise<DashboardWidgetData> {
   const [
-    kpiTaskCompletion,
+    teamWorkload,
     kpiCallingFillRate,
     kpiMeetingReadiness,
     kpiActiveDiscussions,
@@ -418,7 +392,7 @@ export async function fetchDashboardData(
     tables,
     forms,
   ] = await Promise.all([
-    fetchKpiTaskCompletion(supabase, workspaceId),
+    fetchTeamWorkload(supabase, workspaceId),
     fetchKpiCallingFillRate(supabase, workspaceId),
     fetchKpiMeetingReadiness(supabase, workspaceId),
     fetchKpiActiveDiscussions(supabase, workspaceId),
@@ -431,7 +405,7 @@ export async function fetchDashboardData(
   ]);
 
   return {
-    kpiTaskCompletion,
+    teamWorkload,
     kpiCallingFillRate,
     kpiMeetingReadiness,
     kpiActiveDiscussions,

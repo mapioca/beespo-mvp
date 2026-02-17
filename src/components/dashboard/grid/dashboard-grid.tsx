@@ -22,10 +22,10 @@ import type {
   WidgetType,
 } from "@/types/dashboard";
 import { DroppableColumn } from "./droppable-column";
-import { KpiTaskCompletionWidget } from "../widgets/kpi-task-completion-widget";
 import { KpiCallingFillRateWidget } from "../widgets/kpi-calling-fill-rate-widget";
 import { KpiMeetingReadinessWidget } from "../widgets/kpi-meeting-readiness-widget";
 import { KpiActiveDiscussionsWidget } from "../widgets/kpi-active-discussions-widget";
+import { TeamWorkloadWidget } from "../widgets/team-workload-widget";
 import { MyTasksWidget } from "../widgets/my-tasks-widget";
 import { CallingPipelineWidget } from "../widgets/calling-pipeline-widget";
 import { UpcomingMeetingsWidget } from "../widgets/upcoming-meetings-widget";
@@ -41,6 +41,8 @@ interface DashboardGridProps {
 
 function renderContentWidget(widgetType: WidgetType, data: DashboardWidgetData) {
   switch (widgetType) {
+    case "team_workload":
+      return <TeamWorkloadWidget data={data.teamWorkload} />;
     case "my_tasks":
       return <MyTasksWidget data={data.myTasks} />;
     case "calling_pipeline":
@@ -178,18 +180,11 @@ export function DashboardGrid({
 
   // KPI row (always rendered, outside DndContext)
   const kpiRow = kpiWidgets.length > 0 && (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
       {kpiWidgets
         .sort((a, b) => a.order - b.order)
         .map((widget) => {
           switch (widget.type) {
-            case "kpi_task_completion":
-              return (
-                <KpiTaskCompletionWidget
-                  key={widget.id}
-                  data={data.kpiTaskCompletion}
-                />
-              );
             case "kpi_calling_fill_rate":
               return (
                 <KpiCallingFillRateWidget

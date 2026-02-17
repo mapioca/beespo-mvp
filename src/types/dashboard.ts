@@ -2,7 +2,7 @@ import type { FeatureTier } from "./database";
 
 // Widget type identifiers
 export type WidgetType =
-  | "kpi_task_completion"
+  | "team_workload"
   | "kpi_calling_fill_rate"
   | "kpi_meeting_readiness"
   | "kpi_active_discussions"
@@ -41,14 +41,20 @@ export interface WidgetDefinition {
   mobilePriority: number; // Lower = shown first on mobile
 }
 
-// --- KPI data interfaces ---
+// --- Team Workload data ---
 
-export interface KpiTaskCompletionData {
-  overdueCount: number;
-  completionRate: number;
-  highPriorityPending: number;
-  sparkline: { value: number }[];
+export interface TeamWorkloadMember {
+  id: string;
+  name: string;
+  role: string;
+  activeTasks: number;
 }
+
+export interface TeamWorkloadData {
+  members: TeamWorkloadMember[];
+}
+
+// --- KPI data interfaces ---
 
 export interface KpiCallingFillRateData {
   fillRate: number;
@@ -138,7 +144,7 @@ export interface DragHandleProps {
 
 // Combined data object passed from server to client
 export interface DashboardWidgetData {
-  kpiTaskCompletion: KpiTaskCompletionData;
+  teamWorkload: TeamWorkloadData;
   kpiCallingFillRate: KpiCallingFillRateData;
   kpiMeetingReadiness: KpiMeetingReadinessData;
   kpiActiveDiscussions: KpiActiveDiscussionsData;

@@ -14,6 +14,7 @@ interface WidgetCardProps {
   dragHandleProps?: DragHandleProps;
   isDragging?: boolean;
   className?: string;
+  headerAction?: React.ReactNode;
 }
 
 class WidgetErrorBoundary extends React.Component<
@@ -52,6 +53,7 @@ export function WidgetCard({
   dragHandleProps,
   isDragging,
   className,
+  headerAction,
 }: WidgetCardProps) {
   return (
     <Card
@@ -77,6 +79,7 @@ export function WidgetCard({
             {icon}
             {title}
           </CardTitle>
+          {headerAction && <div className="ml-auto">{headerAction}</div>}
         </div>
       </CardHeader>
       <CardContent>
