@@ -73,9 +73,9 @@ const getCanvasItemIcon = (item: TemplateCanvasItem) => {
 
 const getContainerColors = (type: ContainerType) => {
     const colors: Record<ContainerType, { bg: string; border: string; text: string }> = {
-        discussion: { bg: "bg-green-50", border: "border-green-200", text: "text-green-700" },
-        business: { bg: "bg-purple-50", border: "border-purple-200", text: "text-purple-700" },
-        announcement: { bg: "bg-orange-50", border: "border-orange-200", text: "text-orange-700" },
+        discussion: { bg: "bg-green-50/50 dark:bg-green-900/20", border: "border-green-200 dark:border-green-800", text: "text-green-700 dark:text-green-300" },
+        business: { bg: "bg-purple-50/50 dark:bg-purple-900/20", border: "border-purple-200 dark:border-purple-800", text: "text-purple-700 dark:text-purple-300" },
+        announcement: { bg: "bg-orange-50/50 dark:bg-orange-900/20", border: "border-orange-200 dark:border-orange-800", text: "text-orange-700 dark:text-orange-300" },
     };
     return colors[type];
 };
@@ -204,7 +204,7 @@ function SortableTemplateRow({
                             min="1"
                             value={item.duration_minutes}
                             onChange={(e) => onUpdateDuration(parseInt(e.target.value) || 5)}
-                            className="w-14 h-8 text-xs text-center bg-white/50"
+                            className="w-14 h-8 text-xs text-center bg-background/50 border-input"
                         />
                         <span className="text-xs text-muted-foreground">min</span>
                     </div>
@@ -230,7 +230,7 @@ function SortableTemplateRow({
             style={style}
             className={cn(
                 "flex items-center gap-3 p-3 border rounded-lg bg-card transition-all group",
-                "hover:border-muted-foreground/30",
+                "hover:border-primary/50",
                 isDragging && "opacity-50 shadow-lg ring-2 ring-primary/40 z-50"
             )}
         >
@@ -253,7 +253,7 @@ function SortableTemplateRow({
                 <Input
                     value={item.title}
                     onChange={(e) => onUpdateTitle(e.target.value)}
-                    className="h-8 text-sm font-medium border-0 px-0 focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent"
+                    className="h-8 text-sm font-medium border-0 px-0 focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent text-foreground placeholder:text-muted-foreground"
                     placeholder="Item title..."
                 />
                 {/* Helper text - shown for items that will be configured when creating meeting */}
@@ -277,7 +277,7 @@ function SortableTemplateRow({
                     min="1"
                     value={item.duration_minutes}
                     onChange={(e) => onUpdateDuration(parseInt(e.target.value) || 5)}
-                    className="w-14 h-8 text-xs text-center"
+                    className="w-14 h-8 text-xs text-center bg-background border-input"
                 />
                 <span className="text-xs text-muted-foreground">min</span>
             </div>
@@ -311,8 +311,8 @@ export function TemplateCanvas({
     return (
         <div className="flex flex-col h-full bg-muted/20">
             {/* Header */}
-            <div className="px-6 py-3 border-b bg-background flex items-center justify-between">
-                <h3 className="font-semibold text-sm">Template Agenda</h3>
+            <div className="px-6 py-3 border-b border-border bg-background flex items-center justify-between">
+                <h3 className="font-semibold text-sm text-foreground">Template Agenda</h3>
                 <span className="text-sm text-muted-foreground">
                     {items.length} items • {totalDuration} min
                 </span>
@@ -344,7 +344,7 @@ export function TemplateCanvas({
                             </div>
                         </div>
                     ) : (
-                        <div className="bg-white rounded-lg shadow-sm border p-4">
+                        <div className="bg-card rounded-lg shadow-sm border border-border p-4">
                             <SortableContext
                                 items={itemIds}
                                 strategy={verticalListSortingStrategy}
@@ -371,7 +371,7 @@ export function TemplateCanvas({
             </ScrollArea>
 
             {/* Footer Hint */}
-            <div className="px-6 py-3 border-t bg-background">
+            <div className="px-6 py-3 border-t border-border bg-background">
                 <p className="text-xs text-muted-foreground text-center">
                     Drag to reorder • Edit titles and durations inline
                 </p>

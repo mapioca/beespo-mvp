@@ -22,7 +22,7 @@ import { Label } from "@/components/ui/label";
 import { ChevronDown, Plus, Check, Trash2 } from "lucide-react";
 import { useTablesStore, useActiveView } from "@/stores/tables-store";
 import { createView, deleteView } from "@/lib/actions/table-actions";
-import { useToast } from "@/lib/hooks/use-toast";
+import { toast } from "@/lib/toast";
 import type { TableView } from "@/types/table-types";
 
 interface ViewSwitcherProps {
@@ -32,7 +32,6 @@ interface ViewSwitcherProps {
 }
 
 export function ViewSwitcher({ tableId, views, onSave }: ViewSwitcherProps) {
-  const { toast } = useToast();
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   const [newViewName, setNewViewName] = useState("");
   const [isSaving, setIsSaving] = useState(false);
@@ -67,20 +66,13 @@ export function ViewSwitcher({ tableId, views, onSave }: ViewSwitcherProps) {
     });
 
     if (result.error) {
-      toast({
-        title: "Failed to save view",
-        description: result.error,
-        variant: "destructive",
-      });
+      toast.error("Failed to save view", { description: result.error });
     } else if (result.data) {
       addView(result.data);
       applyView(result.data);
       setSaveDialogOpen(false);
       setNewViewName("");
-      toast({
-        title: "View saved",
-        description: `"${newViewName}" has been saved`,
-      });
+      toast.success("View saved", { description: `"${newViewName}" has been saved` });
       onSave?.();
     }
 
@@ -89,27 +81,17 @@ export function ViewSwitcher({ tableId, views, onSave }: ViewSwitcherProps) {
 
   const handleDeleteView = async (view: TableView) => {
     if (view.is_default) {
-      toast({
-        title: "Cannot delete",
-        description: "Cannot delete the default view",
-        variant: "destructive",
-      });
+      toast.error("Cannot delete", { description: "Cannot delete the default view" });
       return;
     }
 
     const result = await deleteView(tableId, view.id);
 
     if (result.error) {
-      toast({
-        title: "Failed to delete view",
-        description: result.error,
-        variant: "destructive",
-      });
+      toast.error("Failed to delete view", { description: result.error });
     } else {
       removeView(view.id);
-      toast({
-        title: "View deleted",
-      });
+      toast.success("View deleted");
     }
   };
 

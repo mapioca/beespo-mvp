@@ -20,7 +20,7 @@ import { CalendarIcon, Loader2, Plus } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { createTask } from "@/lib/actions/task-actions";
-import { useToast } from "@/lib/hooks/use-toast";
+import { toast } from "@/lib/toast";
 import { createClient } from "@/lib/supabase/client";
 
 interface CreateTaskDialogProps {
@@ -38,7 +38,6 @@ export function CreateTaskDialog({ children, context, onTaskCreated }: CreateTas
     const [open, setOpen] = useState(false);
     const [loading, setLoading] = useState(false);
     const [profiles, setProfiles] = useState<{ id: string; full_name: string }[]>([]);
-    const { toast } = useToast();
 
     // Form State
     const [title, setTitle] = useState("");
@@ -78,16 +77,9 @@ export function CreateTaskDialog({ children, context, onTaskCreated }: CreateTas
         setLoading(false);
 
         if (result.error) {
-            toast({
-                title: "Error creating task",
-                description: result.error,
-                variant: "destructive"
-            });
+            toast.error("Error creating task", { description: result.error });
         } else {
-            toast({
-                title: "Task created",
-                description: assignee ? "Email notification sent to assignee." : "Task added to list."
-            });
+            toast.success("Task created", { description: assignee ? "Email notification sent to assignee." : "Task added to list." });
             setOpen(false);
             // Reset form
             setTitle("");

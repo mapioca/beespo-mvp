@@ -13,12 +13,11 @@ import {
     CardHeader,
     CardTitle,
 } from "@/components/ui/card";
-import { useToast } from "@/lib/hooks/use-toast";
+import { toast } from "@/lib/toast";
 import { forgotPasswordAction } from "@/lib/actions/auth-actions";
 import { ArrowLeft, Mail } from "lucide-react";
 
 export default function ForgotPasswordPage() {
-    const { toast } = useToast();
     const [email, setEmail] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
@@ -31,24 +30,13 @@ export default function ForgotPasswordPage() {
             const result = await forgotPasswordAction(email);
 
             if (result.error) {
-                toast({
-                    title: "Error",
-                    description: result.error,
-                    variant: "destructive",
-                });
+                toast.error(result.error);
             } else {
                 setIsSuccess(true);
-                toast({
-                    title: "Email Sent",
-                    description: "Check your inbox for the password reset link.",
-                });
+                toast.info("Check your inbox for the password reset link.");
             }
         } catch {
-            toast({
-                title: "Error",
-                description: "An unexpected error occurred. Please try again.",
-                variant: "destructive",
-            });
+            toast.error("An unexpected error occurred. Please try again.");
         } finally {
             setIsLoading(false);
         }

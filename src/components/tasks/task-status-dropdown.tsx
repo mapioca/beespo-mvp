@@ -10,7 +10,7 @@ import {
 import { Circle, CircleDot, CheckCircle2, CircleSlash } from "lucide-react";
 import { updateTask } from "@/lib/actions/task-actions";
 import { useRouter } from "next/navigation";
-import { useToast } from "@/lib/hooks/use-toast";
+import { toast } from "@/lib/toast";
 
 interface TaskStatusDropdownProps {
     taskId: string;
@@ -26,7 +26,6 @@ const STATUS_OPTIONS = [
 
 export function TaskStatusDropdown({ taskId, currentStatus }: TaskStatusDropdownProps) {
     const router = useRouter();
-    const { toast } = useToast();
     const [isUpdating, setIsUpdating] = useState(false);
 
     const currentOption = STATUS_OPTIONS.find((opt) => opt.value === currentStatus) || STATUS_OPTIONS[0];
@@ -40,23 +39,13 @@ export function TaskStatusDropdown({ taskId, currentStatus }: TaskStatusDropdown
         try {
             const result = await updateTask(taskId, { status: newStatus });
             if (result.success) {
-                toast({
-                    title: "Status updated",
-                });
+                toast.success("Status updated");
                 router.refresh();
             } else {
-                toast({
-                    title: "Error",
-                    description: result.error || "Failed to update status",
-                    variant: "destructive",
-                });
+                toast.error(result.error || "Failed to update status");
             }
         } catch (error) {
-            toast({
-                title: "Error",
-                description: "Failed to update status",
-                variant: "destructive",
-            });
+            toast.error("Failed to update status");
             console.error(error);
         } finally {
             setIsUpdating(false);

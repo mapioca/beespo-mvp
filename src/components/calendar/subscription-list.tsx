@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { CalendarSubscription } from "@/types/database";
 import { createClient } from "@/lib/supabase/client";
-import { useToast } from "@/lib/hooks/use-toast";
+import { toast } from "@/lib/toast";
 import {
   AlertCircle,
   Calendar,
@@ -46,7 +46,6 @@ export function SubscriptionList({
   onUpdate,
   onDelete,
 }: SubscriptionListProps) {
-  const { toast } = useToast();
   const [syncingIds, setSyncingIds] = useState<Set<string>>(new Set());
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [subscriptionToDelete, setSubscriptionToDelete] = useState<string | null>(null);
@@ -62,11 +61,7 @@ export function SubscriptionList({
       .single();
 
     if (error) {
-      toast({
-        title: "Error",
-        description: "Failed to update subscription",
-        variant: "destructive",
-      });
+      toast.error("Failed to update subscription");
       return;
     }
 
@@ -85,10 +80,7 @@ export function SubscriptionList({
 
       if (response.ok) {
         const result = await response.json();
-        toast({
-          title: "Sync Complete",
-          description: `${result.eventsCreated} created, ${result.eventsUpdated} updated, ${result.eventsDeleted} removed`,
-        });
+        toast.success("Sync Complete", { description: `${result.eventsCreated} created, ${result.eventsUpdated} updated, ${result.eventsDeleted} removed` });
 
         // Refresh subscription data
         const supabase = createClient();
@@ -103,19 +95,11 @@ export function SubscriptionList({
         }
       } else {
         const error = await response.json();
-        toast({
-          title: "Sync Failed",
-          description: error.error || "Failed to sync calendar",
-          variant: "destructive",
-        });
+        toast.error("Sync Failed", { description: error.error || "Failed to sync calendar" });
       }
     } catch (error) {
         console.error(error);
-        toast({
-        title: "Error",
-        description: "Failed to sync calendar",
-        variant: "destructive",
-      });
+        toast.error("Failed to sync calendar");
     } finally {
       setSyncingIds((prev) => {
         const next = new Set(prev);
@@ -136,16 +120,9 @@ export function SubscriptionList({
       .eq("id", subscriptionToDelete);
 
     if (error) {
-      toast({
-        title: "Error",
-        description: "Failed to delete subscription",
-        variant: "destructive",
-      });
+      toast.error("Failed to delete subscription");
     } else {
-      toast({
-        title: "Deleted",
-        description: "Calendar subscription removed",
-      });
+      toast.success("Deleted", { description: "Calendar subscription removed" });
       onDelete(subscriptionToDelete);
     }
 

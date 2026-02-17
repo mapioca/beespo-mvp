@@ -7,7 +7,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { FormBuilder } from "@/components/forms/builder/form-builder";
 import { createForm } from "@/lib/actions/form-actions";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import type { FormSchema } from "@/types/form-types";
 
 export default function NewFormPage() {

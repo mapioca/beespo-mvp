@@ -15,7 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { createClient } from "@/lib/supabase/client";
-import { useToast } from "@/lib/hooks/use-toast";
+import { toast } from "@/lib/toast";
 
 interface Speaker {
     id: string;
@@ -35,7 +35,6 @@ export function CreateSpeakerDialog({
     onClose,
     onCreated,
 }: CreateSpeakerDialogProps) {
-    const { toast } = useToast();
     const [isLoading, setIsLoading] = useState(false);
     const [name, setName] = useState("");
     const [topic, setTopic] = useState("");
@@ -64,11 +63,7 @@ export function CreateSpeakerDialog({
         } = await supabase.auth.getUser();
 
         if (!user) {
-            toast({
-                title: "Error",
-                description: "Not authenticated. Please log in again.",
-                variant: "destructive",
-            });
+            toast.error("Not authenticated. Please log in again.");
             setIsLoading(false);
             return;
         }
@@ -81,11 +76,7 @@ export function CreateSpeakerDialog({
             .single();
 
         if (!profile || !["leader", "admin"].includes(profile.role)) {
-            toast({
-                title: "Error",
-                description: "Only leaders and admins can create speakers.",
-                variant: "destructive",
-            });
+            toast.error("Only leaders and admins can create speakers.");
             setIsLoading(false);
             return;
         }
@@ -104,19 +95,12 @@ export function CreateSpeakerDialog({
             .single();
 
         if (error) {
-            toast({
-                title: "Error",
-                description: error.message || "Failed to create speaker.",
-                variant: "destructive",
-            });
+            toast.error(error.message || "Failed to create speaker.");
             setIsLoading(false);
             return;
         }
 
-        toast({
-            title: "Success",
-            description: "Speaker created and selected!",
-        });
+        toast.success("Speaker created and selected!");
 
         setIsLoading(false);
         resetForm();

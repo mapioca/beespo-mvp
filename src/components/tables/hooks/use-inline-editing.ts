@@ -3,7 +3,7 @@
 import { useCallback, useRef } from "react";
 import { useTablesStore } from "@/stores/tables-store";
 import { updateCell } from "@/lib/actions/table-actions";
-import { useToast } from "@/lib/hooks/use-toast";
+import { toast } from "@/lib/toast";
 
 /**
  * Hook to manage inline cell editing with optimistic updates
@@ -19,7 +19,6 @@ export function useInlineEditing(tableId: string) {
     rows,
   } = useTablesStore();
 
-  const { toast } = useToast();
   const pendingTimeouts = useRef<Map<string, NodeJS.Timeout>>(new Map());
 
   /**
@@ -68,21 +67,13 @@ export function useInlineEditing(tableId: string) {
           if (result.error) {
             // Revert on error
             revertCellUpdate(key);
-            toast({
-              title: "Failed to save",
-              description: result.error,
-              variant: "destructive",
-            });
+            toast.error("Failed to save", { description: result.error });
           } else {
             completeCellUpdate(key);
           }
         } catch {
           revertCellUpdate(key);
-          toast({
-            title: "Failed to save",
-            description: "Network error occurred",
-            variant: "destructive",
-          });
+          toast.error("Failed to save", { description: "Network error occurred" });
         }
 
         pendingTimeouts.current.delete(key);
@@ -90,7 +81,7 @@ export function useInlineEditing(tableId: string) {
 
       pendingTimeouts.current.set(key, timeout);
     },
-    [tableId, rows, updateCellInStore, queueCellUpdate, completeCellUpdate, revertCellUpdate, toast]
+    [tableId, rows, updateCellInStore, queueCellUpdate, completeCellUpdate, revertCellUpdate]
   );
 
   /**

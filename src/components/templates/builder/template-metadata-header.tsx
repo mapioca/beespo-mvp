@@ -89,12 +89,12 @@ export function TemplateMetadataHeader({
     };
 
     return (
-        <div className="shrink-0 border-b bg-background">
+        <div className="shrink-0 border-b border-border bg-background text-foreground">
             {/* Top Row: Back + Template Name + Actions */}
             <div className="flex items-center gap-4 px-6 py-4">
                 {/* Back Button */}
                 <Button variant="ghost" size="sm" asChild className="-ml-2">
-                    <Link href="/templates">
+                    <Link href="/meetings/templates">
                         <ArrowLeft className="w-4 h-4 mr-2" />
                         Back
                     </Link>
@@ -122,7 +122,7 @@ export function TemplateMetadataHeader({
                 <div className="flex items-center gap-2">
                     <Button
                         variant="outline"
-                        onClick={() => router.push("/templates")}
+                        onClick={() => router.push("/meetings/templates")}
                         disabled={isSaving}
                     >
                         Cancel
@@ -155,7 +155,7 @@ export function TemplateMetadataHeader({
                     <button
                         className={cn(
                             "w-full flex items-center gap-2 px-6 py-2 text-sm text-muted-foreground",
-                            "hover:bg-muted/50 transition-colors border-t",
+                            "hover:bg-muted/50 transition-colors border-t border-border",
                             isDetailsOpen && "bg-muted/30"
                         )}
                     >
@@ -176,7 +176,7 @@ export function TemplateMetadataHeader({
                     </button>
                 </CollapsibleTrigger>
                 <CollapsibleContent>
-                    <div className="px-6 py-4 bg-muted/20 border-t space-y-4">
+                    <div className="px-6 py-4 bg-muted/20 border-t border-border space-y-4">
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             {/* Description */}
                             <div className="md:col-span-2 space-y-1.5">

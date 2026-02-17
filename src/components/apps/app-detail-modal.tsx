@@ -12,7 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAppsStore } from "@/stores/apps-store";
-import { useToast } from "@/lib/hooks/use-toast";
+import { toast } from "@/lib/toast";
 import {
     CheckCircle,
     ExternalLink,
@@ -46,7 +46,6 @@ export function AppDetailModal({
     canManage,
 }: AppDetailModalProps) {
     const router = useRouter();
-    const { toast } = useToast();
     const { setConnectingApp, setConnectionError, updateWorkspaceAppStatus, removeWorkspaceApp } =
         useAppsStore();
 
@@ -60,11 +59,7 @@ export function AppDetailModal({
 
     const handleConnect = async () => {
         if (!canManage) {
-            toast({
-                title: "Permission Denied",
-                description: "Only admins and leaders can connect apps.",
-                variant: "destructive",
-            });
+            toast.error("Permission Denied", { description: "Only admins and leaders can connect apps." });
             return;
         }
 
@@ -103,19 +98,12 @@ export function AppDetailModal({
 
             // If no OAuth required, the app is now connected
             updateWorkspaceAppStatus(app.id, "connected");
-            toast({
-                title: "App Connected",
-                description: `${app.name} has been connected to your workspace.`,
-            });
+            toast.success("App Connected", { description: `${app.name} has been connected to your workspace.` });
             router.refresh();
         } catch (error) {
             const message = error instanceof Error ? error.message : "Failed to connect app";
             setConnectionError(message);
-            toast({
-                title: "Connection Failed",
-                description: message,
-                variant: "destructive",
-            });
+            toast.error("Connection Failed", { description: message });
         } finally {
             setIsConnecting(false);
             setConnectingApp(null);
@@ -124,11 +112,7 @@ export function AppDetailModal({
 
     const handleDisconnect = async () => {
         if (!canManage) {
-            toast({
-                title: "Permission Denied",
-                description: "Only admins and leaders can disconnect apps.",
-                variant: "destructive",
-            });
+            toast.error("Permission Denied", { description: "Only admins and leaders can disconnect apps." });
             return;
         }
 
@@ -145,19 +129,12 @@ export function AppDetailModal({
             }
 
             removeWorkspaceApp(app.id);
-            toast({
-                title: "App Disconnected",
-                description: `${app.name} has been disconnected from your workspace.`,
-            });
+            toast.success("App Disconnected", { description: `${app.name} has been disconnected from your workspace.` });
             router.refresh();
             onClose();
         } catch (error) {
             const message = error instanceof Error ? error.message : "Failed to disconnect app";
-            toast({
-                title: "Disconnection Failed",
-                description: message,
-                variant: "destructive",
-            });
+            toast.error("Disconnection Failed", { description: message });
         } finally {
             setIsDisconnecting(false);
         }

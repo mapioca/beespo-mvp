@@ -35,7 +35,7 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
-import { useToast } from "@/lib/hooks/use-toast";
+import { toast } from "@/lib/toast";
 import { MoreHorizontal, Shield, User, Eye, UserMinus, Crown } from "lucide-react";
 
 interface TeamMember {
@@ -65,7 +65,6 @@ export function TeamMembersList({
     currentUserRole,
     onMemberUpdated,
 }: TeamMembersListProps) {
-    const { toast } = useToast();
     const [removingId, setRemovingId] = useState<string | null>(null);
     const [transferringTo, setTransferringTo] = useState<TeamMember | null>(null);
     const [isLoading, setIsLoading] = useState(false);
@@ -86,17 +85,10 @@ export function TeamMembersList({
                 throw new Error(data.error || "Failed to update role");
             }
 
-            toast({
-                title: "Role Updated",
-                description: "Member role has been updated successfully.",
-            });
+            toast.success("Role Updated", { description: "Member role has been updated successfully." });
             onMemberUpdated();
         } catch (error) {
-            toast({
-                title: "Error",
-                description: error instanceof Error ? error.message : "Failed to update role",
-                variant: "destructive",
-            });
+            toast.error(error instanceof Error ? error.message : "Failed to update role");
         } finally {
             setIsLoading(false);
         }
@@ -116,17 +108,10 @@ export function TeamMembersList({
                 throw new Error(data.error || "Failed to remove member");
             }
 
-            toast({
-                title: "Member Removed",
-                description: "Member has been removed from the workspace.",
-            });
+            toast.success("Member Removed", { description: "Member has been removed from the workspace." });
             onMemberUpdated();
         } catch (error) {
-            toast({
-                title: "Error",
-                description: error instanceof Error ? error.message : "Failed to remove member",
-                variant: "destructive",
-            });
+            toast.error(error instanceof Error ? error.message : "Failed to remove member");
         } finally {
             setIsLoading(false);
             setRemovingId(null);
@@ -149,17 +134,10 @@ export function TeamMembersList({
                 throw new Error(data.error || "Failed to transfer ownership");
             }
 
-            toast({
-                title: "Ownership Transferred",
-                description: `${transferringTo.full_name} is now an admin.`,
-            });
+            toast.success("Ownership Transferred", { description: `${transferringTo.full_name} is now an admin.` });
             onMemberUpdated();
         } catch (error) {
-            toast({
-                title: "Error",
-                description: error instanceof Error ? error.message : "Failed to transfer ownership",
-                variant: "destructive",
-            });
+            toast.error(error instanceof Error ? error.message : "Failed to transfer ownership");
         } finally {
             setIsLoading(false);
             setTransferringTo(null);

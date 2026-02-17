@@ -33,7 +33,7 @@ import {
     removeCallingCandidate,
     startCallingProcess,
 } from "@/lib/actions/calling-actions";
-import { useToast } from "@/lib/hooks/use-toast";
+import { toast } from "@/lib/toast";
 import type { CallingCandidateStatus } from "@/types/database";
 
 interface Candidate {
@@ -70,7 +70,6 @@ export function CandidatePoolCard({
     const [selectedCandidate, setSelectedCandidate] = useState<{ id: string; name: string } | null>(null);
     const [notes, setNotes] = useState("");
     const [isLoading, setIsLoading] = useState(false);
-    const { toast } = useToast();
 
     const handleAddCandidate = async () => {
         if (!selectedCandidate) return;
@@ -80,16 +79,9 @@ export function CandidatePoolCard({
         const result = await addCandidateToCalling(callingId, selectedCandidate.id, notes || undefined);
 
         if (result.error) {
-            toast({
-                title: "Error",
-                description: result.error,
-                variant: "destructive",
-            });
+            toast.error(result.error);
         } else {
-            toast({
-                title: "Candidate added",
-                description: `${selectedCandidate.name} added to pool`,
-            });
+            toast.success("Candidate added", { description: `${selectedCandidate.name} added to pool` });
             setIsAddingCandidate(false);
             setSelectedCandidate(null);
             setNotes("");
@@ -107,13 +99,9 @@ export function CandidatePoolCard({
         const result = await updateCallingCandidate(editingCandidate.id, { notes });
 
         if (result.error) {
-            toast({
-                title: "Error",
-                description: result.error,
-                variant: "destructive",
-            });
+            toast.error(result.error);
         } else {
-            toast({ title: "Notes updated" });
+            toast.success("Notes updated");
             setEditingCandidate(null);
             setNotes("");
             onUpdate();
@@ -126,16 +114,9 @@ export function CandidatePoolCard({
         const result = await removeCallingCandidate(candidateId);
 
         if (result.error) {
-            toast({
-                title: "Error",
-                description: result.error,
-                variant: "destructive",
-            });
+            toast.error(result.error);
         } else {
-            toast({
-                title: "Candidate removed",
-                description: `${name} removed from pool`,
-            });
+            toast.success("Candidate removed", { description: `${name} removed from pool` });
             onUpdate();
         }
     };
@@ -146,16 +127,9 @@ export function CandidatePoolCard({
         const result = await startCallingProcess(callingId, candidateNameId, callingCandidateId);
 
         if (result.error) {
-            toast({
-                title: "Error",
-                description: result.error,
-                variant: "destructive",
-            });
+            toast.error(result.error);
         } else {
-            toast({
-                title: "Process started",
-                description: `Started calling process for ${name}`,
-            });
+            toast.success("Process started", { description: `Started calling process for ${name}` });
             onUpdate();
         }
 

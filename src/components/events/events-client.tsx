@@ -17,7 +17,7 @@ import {
 import { Plus, Search } from "lucide-react";
 import { EventsTable, Event } from "./events-table";
 import { EventDialog } from "./event-dialog";
-import { useToast } from "@/lib/hooks/use-toast";
+import { toast } from "@/lib/toast";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 
 interface EventsClientProps {
@@ -30,7 +30,6 @@ export function EventsClient({ events: initialEvents, totalCount, currentSearch 
     const router = useRouter();
     const pathname = usePathname();
     const searchParams = useSearchParams();
-    const { toast } = useToast();
     const [isPending, startTransition] = useTransition();
     const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -135,16 +134,9 @@ export function EventsClient({ events: initialEvents, totalCount, currentSearch 
 
             setEvents((prev) => prev.filter((e) => e.id !== eventToDelete.id));
 
-            toast({
-                title: "Event Deleted",
-                description: "The event has been successfully deleted.",
-            });
+            toast.success("Event Deleted", { description: "The event has been successfully deleted." });
         } catch (error) {
-            toast({
-                title: "Error",
-                description: error instanceof Error ? error.message : "Failed to delete event.",
-                variant: "destructive",
-            });
+            toast.error(error instanceof Error ? error.message : "Failed to delete event.");
         } finally {
             setEventToDelete(null);
         }

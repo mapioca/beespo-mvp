@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/lib/hooks/use-toast";
+import { toast } from "@/lib/toast";
 import { createClient } from "@/lib/supabase/client";
 import { Loader2, Lock } from "lucide-react";
 import {
@@ -20,7 +20,6 @@ interface ChangePasswordFormProps {
 }
 
 export function ChangePasswordForm({ email }: ChangePasswordFormProps) {
-    const { toast } = useToast();
     const [currentPassword, setCurrentPassword] = useState("");
     const [newPassword, setNewPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
@@ -31,29 +30,17 @@ export function ChangePasswordForm({ email }: ChangePasswordFormProps) {
 
         // Basic validation
         if (!email) {
-            toast({
-                title: "Error",
-                description: "User email is missing. Cannot verify identity.",
-                variant: "destructive",
-            });
+            toast.error("User email is missing. Cannot verify identity.");
             return;
         }
 
         if (newPassword.length < 6) {
-            toast({
-                title: "Invalid password",
-                description: "Password must be at least 6 characters long",
-                variant: "destructive",
-            });
+            toast.error("Invalid password", { description: "Password must be at least 6 characters long" });
             return;
         }
 
         if (newPassword !== confirmPassword) {
-            toast({
-                title: "Passwords do not match",
-                description: "Please ensure both new passwords match",
-                variant: "destructive",
-            });
+            toast.error("Passwords do not match", { description: "Please ensure both new passwords match" });
             return;
         }
 
@@ -68,11 +55,7 @@ export function ChangePasswordForm({ email }: ChangePasswordFormProps) {
             });
 
             if (signInError) {
-                toast({
-                    title: "Current password incorrect",
-                    description: "Please enter your correct current password to proceed.",
-                    variant: "destructive",
-                });
+                toast.error("Current password incorrect", { description: "Please enter your correct current password to proceed." });
                 setStatus("idle");
                 return;
             }
@@ -85,27 +68,16 @@ export function ChangePasswordForm({ email }: ChangePasswordFormProps) {
             });
 
             if (updateError) {
-                toast({
-                    title: "Error updating password",
-                    description: updateError.message || "Failed to update password",
-                    variant: "destructive",
-                });
+                toast.error("Error updating password", { description: updateError.message || "Failed to update password" });
             } else {
-                toast({
-                    title: "Success",
-                    description: "Your password has been updated successfully",
-                });
+                toast.success("Your password has been updated successfully");
                 setCurrentPassword("");
                 setNewPassword("");
                 setConfirmPassword("");
             }
         } catch (error) {
             console.error("Unexpected error during password change:", error);
-            toast({
-                title: "Unexpected Error",
-                description: "An unexpected error occurred. Please try again.",
-                variant: "destructive",
-            });
+            toast.error("Unexpected Error", { description: "An unexpected error occurred. Please try again." });
         } finally {
             setStatus("idle");
         }

@@ -1,4 +1,9 @@
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { fetchDashboardData } from "@/lib/dashboard/data-fetchers";
+import { getDefaultLayout } from "@/lib/dashboard/widget-registry";
+import { MissionControl } from "@/components/dashboard/mission-control";
+import type { DashboardConfig } from "@/types/dashboard";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -7,32 +12,39 @@ export default async function DashboardPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Get user profile with specific columns only
-  const { data: profile } = await (supabase
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    .from("profiles") as any)
-    .select("full_name, role")
-    .eq("id", user?.id)
+  if (!user) redirect("/auth/login");
+
+  // Get user profile
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: profile } = await (supabase.from("profiles") as any)
+    .select("full_name, role, workspace_id, feature_tier")
+    .eq("id", user.id)
     .single();
 
+  if (!profile?.workspace_id) redirect("/onboarding");
+
+  // Load user settings (dashboard layout) and dashboard data in parallel
+  const [settingsResult, dashboardData] = await Promise.all([
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (supabase.from("user_settings") as any)
+      .select("dashboard_layout")
+      .eq("user_id", user.id)
+      .single(),
+    fetchDashboardData(supabase, profile.workspace_id, user.id),
+  ]);
+
+  // Use saved layout or generate default from feature tier
+  const config: DashboardConfig =
+    settingsResult.data?.dashboard_layout?.version === 1
+      ? settingsResult.data.dashboard_layout
+      : getDefaultLayout(profile.feature_tier);
+
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center p-24">
-      <div className="text-center space-y-4">
-        <h1 className="text-4xl font-bold">Welcome to Beespo</h1>
-        {profile && (
-          <div className="space-y-2">
-            <p className="text-xl text-muted-foreground">
-              Hello, {profile.full_name}
-            </p>
-            <p className="text-sm text-muted-foreground capitalize">
-              Role: {profile.role}
-            </p>
-          </div>
-        )}
-        <p className="text-sm text-muted-foreground">
-          Dashboard coming soon...
-        </p>
-      </div>
-    </div>
+    <MissionControl
+      config={config}
+      data={dashboardData}
+      featureTier={profile.feature_tier}
+      profileName={profile.full_name}
+    />
   );
 }

@@ -14,7 +14,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { useToast } from "@/lib/hooks/use-toast";
+import { toast } from "@/lib/toast";
 import { createClient } from "@/lib/supabase/client";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
@@ -22,7 +22,6 @@ import Link from "next/link";
 export default function EditSpeakerPage() {
   const router = useRouter();
   const params = useParams();
-  const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(true);
 
@@ -49,11 +48,7 @@ export default function EditSpeakerPage() {
       .single();
 
     if (error || !speaker) {
-      toast({
-        title: "Error",
-        description: "Failed to load speaker.",
-        variant: "destructive",
-      });
+      toast.error("Failed to load speaker.");
       router.push("/speakers");
       return;
     }
@@ -70,11 +65,7 @@ export default function EditSpeakerPage() {
       .single();
 
     if (!["leader", "admin"].includes(profile?.role || "")) {
-      toast({
-        title: "Error",
-        description: "You don't have permission to edit this speaker.",
-        variant: "destructive",
-      });
+      toast.error("You don't have permission to edit this speaker.");
       router.push("/speakers");
       return;
     }
@@ -106,19 +97,12 @@ export default function EditSpeakerPage() {
       .eq("id", speakerId);
 
     if (error) {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to update speaker.",
-        variant: "destructive",
-      });
+      toast.error(error.message || "Failed to update speaker.");
       setIsLoading(false);
       return;
     }
 
-    toast({
-      title: "Success",
-      description: "Speaker updated successfully!",
-    });
+    toast.success("Speaker updated successfully!");
 
     setIsLoading(false);
     router.push(`/speakers/${speakerId}`);

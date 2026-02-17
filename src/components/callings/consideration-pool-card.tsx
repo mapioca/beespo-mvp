@@ -31,7 +31,7 @@ import {
     updateCallingCandidate,
     removeCallingCandidate,
 } from "@/lib/actions/calling-actions";
-import { useToast } from "@/lib/hooks/use-toast";
+import { toast } from "@/lib/toast";
 import type { CallingCandidateStatus } from "@/types/database";
 
 interface CallingConsideration {
@@ -68,7 +68,6 @@ export function ConsiderationPoolCard({
     const [editingItem, setEditingItem] = useState<CallingConsideration | null>(null);
     const [notes, setNotes] = useState("");
     const [isSaving, setIsSaving] = useState(false);
-    const { toast } = useToast();
     const supabase = createClient();
 
     const fetchConsiderations = useCallback(async () => {
@@ -106,13 +105,9 @@ export function ConsiderationPoolCard({
         const result = await updateCallingCandidate(editingItem.id, { notes });
 
         if (result.error) {
-            toast({
-                title: "Error",
-                description: result.error,
-                variant: "destructive",
-            });
+            toast.error(result.error);
         } else {
-            toast({ title: "Notes updated" });
+            toast.success("Notes updated");
             setEditingItem(null);
             setNotes("");
             fetchConsiderations();
@@ -126,16 +121,9 @@ export function ConsiderationPoolCard({
         const result = await removeCallingCandidate(itemId);
 
         if (result.error) {
-            toast({
-                title: "Error",
-                description: result.error,
-                variant: "destructive",
-            });
+            toast.error(result.error);
         } else {
-            toast({
-                title: "Removed",
-                description: `No longer considering ${candidateName} for ${callingTitle}`,
-            });
+            toast.success("Removed", { description: `No longer considering ${candidateName} for ${callingTitle}` });
             fetchConsiderations();
             onUpdate?.();
         }

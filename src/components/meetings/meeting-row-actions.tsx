@@ -35,7 +35,7 @@ import {
 import { ShareDialog } from "@/components/conduct/share-dialog";
 import { MeetingAgendaPDF, getMeetingPDFFilename } from "@/components/meetings/meeting-agenda-pdf";
 import { createClient } from "@/lib/supabase/client";
-import { useToast } from "@/lib/hooks/use-toast";
+import { toast } from "@/lib/toast";
 import { Database } from "@/types/database";
 
 type Meeting = Database["public"]["Tables"]["meetings"]["Row"] & {
@@ -56,7 +56,6 @@ export function MeetingRowActions({
     onDelete,
 }: MeetingRowActionsProps) {
     const router = useRouter();
-    const { toast } = useToast();
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [isShareOpen, setIsShareOpen] = useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -94,17 +93,10 @@ export function MeetingRowActions({
             document.body.removeChild(link);
             URL.revokeObjectURL(url);
 
-            toast({
-                title: "Download started",
-                description: "Your PDF is being downloaded",
-            });
+            toast.success("Download started", { description: "Your PDF is being downloaded" });
         } catch (error) {
             console.error("PDF generation failed:", error);
-            toast({
-                title: "Download failed",
-                description: "Could not generate PDF. Please try again.",
-                variant: "destructive",
-            });
+            toast.error("Download failed", { description: "Could not generate PDF. Please try again." });
         } finally {
             setIsDownloading(false);
             setIsDropdownOpen(false);
@@ -130,20 +122,13 @@ export function MeetingRowActions({
 
             if (error) throw error;
 
-            toast({
-                title: "Meeting deleted",
-                description: "The meeting has been permanently deleted.",
-            });
+            toast.success("Meeting deleted", { description: "The meeting has been permanently deleted." });
 
             onDelete?.(meeting.id);
             router.refresh();
         } catch (error) {
             console.error("Delete failed:", error);
-            toast({
-                title: "Delete failed",
-                description: "Could not delete meeting. Please try again.",
-                variant: "destructive",
-            });
+            toast.error("Delete failed", { description: "Could not delete meeting. Please try again." });
         } finally {
             setIsDeleting(false);
             setIsDeleteDialogOpen(false);

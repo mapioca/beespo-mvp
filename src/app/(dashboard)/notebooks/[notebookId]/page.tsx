@@ -31,7 +31,7 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { useToast } from "@/lib/hooks/use-toast";
+import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 
 interface Note {
@@ -61,7 +61,6 @@ export default function NotebookViewPage({ params }: NotebookViewPageProps) {
     const [editTitle, setEditTitle] = useState("");
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const router = useRouter();
-    const { toast } = useToast();
     const supabase = createClient();
 
     const fetchData = useCallback(async () => {
@@ -75,10 +74,7 @@ export default function NotebookViewPage({ params }: NotebookViewPageProps) {
             .single();
 
         if (notebookError || !notebookData) {
-            toast({
-                title: "Notebook not found",
-                variant: "destructive",
-            });
+            toast.error("Notebook not found");
             router.push("/notebooks");
             return;
         }
@@ -95,7 +91,7 @@ export default function NotebookViewPage({ params }: NotebookViewPageProps) {
 
         setNotes((notesData as Note[]) || []);
         setIsLoading(false);
-    }, [resolvedParams.notebookId, supabase, router, toast]);
+    }, [resolvedParams.notebookId, supabase, router]);
 
     useEffect(() => {
         fetchData();
@@ -110,7 +106,7 @@ export default function NotebookViewPage({ params }: NotebookViewPageProps) {
             .eq("id", notebook.id);
 
         if (error) {
-            toast({ title: "Failed to update title", variant: "destructive" });
+            toast.error("Failed to update title");
         } else {
             setNotebook({ ...notebook, title: editTitle.trim() });
             setIsEditing(false);
@@ -126,9 +122,9 @@ export default function NotebookViewPage({ params }: NotebookViewPageProps) {
             .eq("id", notebook.id);
 
         if (error) {
-            toast({ title: "Failed to delete notebook", variant: "destructive" });
+            toast.error("Failed to delete notebook");
         } else {
-            toast({ title: "Notebook deleted" });
+            toast.success("Notebook deleted");
             router.push("/notebooks");
         }
     };
@@ -161,7 +157,7 @@ export default function NotebookViewPage({ params }: NotebookViewPageProps) {
             .single();
 
         if (error) {
-            toast({ title: "Failed to create note", variant: "destructive" });
+            toast.error("Failed to create note");
         } else if (data) {
             router.push(`/notebooks/${notebook.id}/notes/${data.id}`);
         }

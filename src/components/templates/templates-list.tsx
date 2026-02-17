@@ -57,7 +57,7 @@ export function TemplatesList({ templates, selectedId, onSelect }: TemplatesList
                         </p>
                     </div>
                     <Button size="sm" asChild>
-                        <Link href="/templates/new">
+                        <Link href="/meetings/templates/new">
                             <Plus className="h-4 w-4" />
                             New
                         </Link>

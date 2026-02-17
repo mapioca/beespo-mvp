@@ -8,19 +8,20 @@ const JIRA_PRIORITIES: Record<string, string> = {
   'High': 'High',
 };
 
-// Get issue type ID from environment variables
-// These IDs are specific to each JIRA project and must be configured
-function getJiraIssueTypeId(requestType: string): string | null {
-  switch (requestType) {
-    case 'Bug Report':
-      return process.env.JIRA_ISSUE_TYPE_BUG_ID || null;
-    case 'Feature Request':
-      return process.env.JIRA_ISSUE_TYPE_STORY_ID || null;
-    case 'General Question':
-      return process.env.JIRA_ISSUE_TYPE_TASK_ID || null;
-    default:
-      return process.env.JIRA_ISSUE_TYPE_TASK_ID || null;
-  }
+// Jira Issue Type IDs
+// Jira Issue Type IDs
+// [System] Incident: 10001
+// [System] Service request: 10002
+const JIRA_ISSUE_TYPE_IDS: Record<string, string> = {
+  'Bug Report': '10001',       // Maps to [System] Incident
+  'Feature Request': '10002',  // Maps to [System] Service request
+  'General Question': '10002', // Maps to [System] Service request
+};
+
+// Get issue type ID based on request type
+function getJiraIssueTypeId(requestType: string): string {
+  // Return the configured ID or default to 'Service request' (10002)
+  return JIRA_ISSUE_TYPE_IDS[requestType] || '10002';
 }
 
 interface SupportRequestBody {
@@ -88,6 +89,64 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    // Create Basic Auth header
+    const authHeader = Buffer.from(`${jiraUserEmail}:${jiraApiToken}`).toString('base64');
+    const headers = {
+      'Authorization': `Basic ${authHeader}`,
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    };
+
+    // 1. Find or Create Jira User
+    let accountId: string | undefined;
+
+    console.log('[Create Ticket] Searching for Jira user:', userEmail);
+
+    // Search for existing user
+    const searchResponse = await fetch(
+      `${jiraDomain}/rest/api/3/user/search?query=${encodeURIComponent(userEmail)}`,
+      { headers }
+    );
+
+    if (searchResponse.ok) {
+      const users = await searchResponse.json();
+      console.log('[Create Ticket] Search found users:', users.length);
+      if (users.length > 0) {
+        accountId = users[0].accountId;
+        console.log('[Create Ticket] Found existing accountId:', accountId);
+      }
+    } else {
+      console.error('[Create Ticket] User search failed:', searchResponse.status, await searchResponse.text());
+    }
+
+    // If no user found, create a Service Desk Customer
+    if (!accountId) {
+      console.log('[Create Ticket] No accountId found, creating customer...');
+      try {
+        const createCustomerResponse = await fetch(`${jiraDomain}/rest/servicedeskapi/customer`, {
+          method: 'POST',
+          headers: {
+            ...headers,
+            'X-ExperimentalApi': 'opt-in', // Required for Service Desk API
+          },
+          body: JSON.stringify({
+            email: userEmail,
+            displayName: userName,
+          }),
+        });
+
+        if (createCustomerResponse.ok) {
+          const customer = await createCustomerResponse.json();
+          accountId = customer.accountId;
+          console.log('[Create Ticket] Created new customer accountId:', accountId);
+        } else {
+          console.error('[Create Ticket] Failed to create Jira customer:', await createCustomerResponse.text());
+        }
+      } catch (e) {
+        console.error('[Create Ticket] Error creating Jira customer:', e);
+      }
+    }
+
     // Construct Jira issue description with metadata
     const jiraDescription = {
       type: 'doc',
@@ -167,6 +226,7 @@ export async function POST(request: NextRequest) {
         description: typeof jiraDescription;
         issuetype: { id: string };
         priority?: { name: string };
+        reporter?: { accountId: string };
       };
     } = {
       fields: {
@@ -181,22 +241,25 @@ export async function POST(request: NextRequest) {
       },
     };
 
+    // Add reporter if found/created
+    if (accountId) {
+      jiraPayload.fields.reporter = { accountId };
+      console.log('[Create Ticket] Setting reporter to:', accountId);
+    } else {
+      console.warn('[Create Ticket] proceeding without setting reporter');
+    }
+
     // Add priority only if provided (and only for bugs typically)
     if (jiraPriority && requestType === 'Bug Report') {
       jiraPayload.fields.priority = { name: jiraPriority };
     }
 
-    // Create Basic Auth header
-    const authHeader = Buffer.from(`${jiraUserEmail}:${jiraApiToken}`).toString('base64');
+    console.log('[Create Ticket] Sending payload to Jira...');
 
     // Make request to Jira API
     const jiraResponse = await fetch(`${jiraDomain}/rest/api/3/issue`, {
       method: 'POST',
-      headers: {
-        'Authorization': `Basic ${authHeader}`,
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
+      headers,
       body: JSON.stringify(jiraPayload),
     });
 

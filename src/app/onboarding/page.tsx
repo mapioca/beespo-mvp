@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/select';
 import { PillSelector } from '@/components/onboarding/pill-selector';
 import { WizardFooter } from '@/components/onboarding/wizard-footer';
-import { useToast } from '@/lib/hooks/use-toast';
+import { toast } from '@/lib/toast';
 import { UNIT_TYPES } from '@/lib/onboarding/constants';
 import {
   getOrganizationsForUnit,
@@ -94,7 +94,6 @@ const INVITED_LOADING_MESSAGES = [
 
 export default function OnboardingPage() {
   const router = useRouter();
-  const { toast } = useToast();
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
@@ -181,26 +180,18 @@ export default function OnboardingPage() {
             });
           } else {
             // Token is no longer valid
-            toast({
-              title: 'Invitation Expired',
-              description: 'Your workspace invitation is no longer valid.',
-              variant: 'destructive',
-            });
+            toast.error('Invitation Expired', { description: 'Your workspace invitation is no longer valid.' });
             sessionStorage.removeItem('pending_workspace_invitation_token');
             router.push('/');
           }
         } catch {
-          toast({
-            title: 'Error',
-            description: 'Failed to load invitation details.',
-            variant: 'destructive',
-          });
+          toast.error('Failed to load invitation details.');
         }
       };
 
       fetchInvitationData();
     }
-  }, [router, toast]);
+  }, [router]);
 
   // Determine steps based on user type
   const currentSteps = isInvitedUser ? INVITED_USER_ONBOARDING_STEPS : ONBOARDING_STEPS;
@@ -287,21 +278,14 @@ export default function OnboardingPage() {
 
       setIsComplete(true);
 
-      toast({
-        title: 'Welcome to Beespo!',
-        description: 'Your workspace has been created successfully.',
-      });
+      toast.success('Welcome to Beespo!', { description: 'Your workspace has been created successfully.' });
 
       setTimeout(() => {
         router.push('/dashboard');
         router.refresh();
       }, 1500);
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'Something went wrong',
-        variant: 'destructive',
-      });
+      toast.error(error instanceof Error ? error.message : 'Something went wrong');
       setIsSubmitting(false);
     }
   };
@@ -330,21 +314,14 @@ export default function OnboardingPage() {
 
       setIsComplete(true);
 
-      toast({
-        title: 'Welcome to the team!',
-        description: `You've successfully joined ${invitationData?.workspaceName}.`,
-      });
+      toast.success('Welcome to the team!', { description: `You've successfully joined ${invitationData?.workspaceName}.` });
 
       setTimeout(() => {
         router.push('/dashboard');
         router.refresh();
       }, 1500);
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'Something went wrong',
-        variant: 'destructive',
-      });
+      toast.error(error instanceof Error ? error.message : 'Something went wrong');
       setIsSubmitting(false);
     }
   };

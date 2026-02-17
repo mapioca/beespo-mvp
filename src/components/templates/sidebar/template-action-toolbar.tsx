@@ -16,7 +16,7 @@ import {
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { createClient } from "@/lib/supabase/client";
-import { useToast } from "@/lib/hooks/use-toast";
+import { toast } from "@/lib/toast";
 
 interface TemplateActionToolbarProps {
     templateId: string;
@@ -32,7 +32,6 @@ export function TemplateActionToolbar({
     hasChanges = false,
 }: TemplateActionToolbarProps) {
     const router = useRouter();
-    const { toast } = useToast();
     const [isDeleting, setIsDeleting] = useState(false);
 
     const handleDelete = async () => {
@@ -50,24 +49,17 @@ export function TemplateActionToolbar({
             .eq("id", templateId);
 
         if (error) {
-            toast({
-                title: "Error",
-                description: "Failed to delete template.",
-                variant: "destructive",
-            });
+            toast.error("Failed to delete template.");
             setIsDeleting(false);
             return;
         }
 
-        toast({
-            title: "Template deleted",
-            description: "The template has been permanently deleted.",
-        });
-        router.push("/templates");
+        toast.success("Template deleted", { description: "The template has been permanently deleted." });
+        router.push("/meetings/templates");
     };
 
     const handleCancel = () => {
-        router.push(`/templates/${templateId}`);
+        router.push(`/meetings/templates/${templateId}`);
     };
 
     return (

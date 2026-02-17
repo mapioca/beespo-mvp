@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
-import { useToast } from "@/lib/hooks/use-toast";
+import { toast } from "@/lib/toast";
 import { useRouter } from "next/navigation";
 
 export function AnnouncementQuickActions({
@@ -16,7 +16,6 @@ export function AnnouncementQuickActions({
   relatedMeetingsCount: number;
 }) {
   const router = useRouter();
-  const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
 
   const handleActivate = async () => {
@@ -30,16 +29,9 @@ export function AnnouncementQuickActions({
       .eq("id", announcementId);
 
     if (error) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast.error(error.message);
     } else {
-      toast({
-        title: "Success",
-        description: "Announcement activated! It will appear in new meetings.",
-      });
+      toast.success("Announcement activated! It will appear in new meetings.");
       router.refresh();
     }
     setIsLoading(false);
@@ -56,16 +48,9 @@ export function AnnouncementQuickActions({
       .eq("id", announcementId);
 
     if (error) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast.error(error.message);
     } else {
-      toast({
-        title: "Success",
-        description: "Announcement stopped!",
-      });
+      toast.success("Announcement stopped!");
       router.refresh();
     }
     setIsLoading(false);
@@ -93,17 +78,10 @@ export function AnnouncementQuickActions({
       .eq("id", announcementId);
 
     if (error) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast.error(error.message);
       setIsLoading(false);
     } else {
-      toast({
-        title: "Success",
-        description: "Announcement deleted!",
-      });
+      toast.success("Announcement deleted!");
       router.push("/announcements");
       router.refresh();
     }

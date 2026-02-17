@@ -16,7 +16,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/lib/hooks/use-toast";
+import { toast } from "@/lib/toast";
 import { AlertTriangle, Loader2, Trash2 } from "lucide-react";
 
 interface DeleteAccountDialogProps {
@@ -25,7 +25,6 @@ interface DeleteAccountDialogProps {
 
 export function DeleteAccountDialog({ userEmail }: DeleteAccountDialogProps) {
   const router = useRouter();
-  const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
   const [confirmation, setConfirmation] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
@@ -50,10 +49,7 @@ export function DeleteAccountDialog({ userEmail }: DeleteAccountDialogProps) {
         throw new Error(data.error || "Failed to delete account");
       }
 
-      toast({
-        title: "Account Deleted",
-        description: "Your account has been permanently deleted. Redirecting...",
-      });
+      toast.info("Account Deleted", { description: "Your account has been permanently deleted. Redirecting..." });
 
       // Redirect to home page after a brief delay
       setTimeout(() => {
@@ -62,11 +58,7 @@ export function DeleteAccountDialog({ userEmail }: DeleteAccountDialogProps) {
       }, 2000);
 
     } catch (error) {
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to delete account",
-        variant: "destructive",
-      });
+      toast.error(error instanceof Error ? error.message : "Failed to delete account");
       setIsDeleting(false);
     }
   };

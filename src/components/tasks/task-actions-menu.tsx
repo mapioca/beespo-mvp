@@ -13,7 +13,7 @@ import { MoreHorizontal, Edit, Copy, Tag, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { TaskLabelsDialog } from "./task-labels-dialog";
 import { copyTask, deleteTask } from "@/lib/actions/task-actions";
-import { useToast } from "@/lib/hooks/use-toast";
+import { toast } from "@/lib/toast";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -34,7 +34,6 @@ interface TaskActionsMenuProps {
 
 export function TaskActionsMenu({ taskId, taskTitle, workspaceTaskId, onEdit }: TaskActionsMenuProps) {
     const router = useRouter();
-    const { toast } = useToast();
     const [labelsOpen, setLabelsOpen] = useState(false);
     const [deleteOpen, setDeleteOpen] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
@@ -53,13 +52,13 @@ export function TaskActionsMenu({ taskId, taskTitle, workspaceTaskId, onEdit }: 
         try {
             const result = await copyTask(taskId);
             if (result.success) {
-                toast({ title: `Task copied as ${result.newWorkspaceTaskId}` });
+                toast.success(`Task copied as ${result.newWorkspaceTaskId}`);
                 router.refresh();
             } else {
-                toast({ title: "Error", description: result.error || "Failed to copy task", variant: "destructive" });
+                toast.error(result.error || "Failed to copy task");
             }
         } catch (error) {
-            toast({ title: "Error", description: "Failed to copy task", variant: "destructive" });
+            toast.error("Failed to copy task");
             console.error(error);
         } finally {
             setIsCopying(false);
@@ -71,13 +70,13 @@ export function TaskActionsMenu({ taskId, taskTitle, workspaceTaskId, onEdit }: 
         try {
             const result = await deleteTask(taskId);
             if (result.success) {
-                toast({ title: "Task deleted" });
+                toast.success("Task deleted");
                 router.refresh();
             } else {
-                toast({ title: "Error", description: result.error || "Failed to delete task", variant: "destructive" });
+                toast.error(result.error || "Failed to delete task");
             }
         } catch (error) {
-            toast({ title: "Error", description: "Failed to delete task", variant: "destructive" });
+            toast.error("Failed to delete task");
             console.error(error);
         } finally {
             setIsDeleting(false);

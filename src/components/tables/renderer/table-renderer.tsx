@@ -17,7 +17,7 @@ import { useInlineEditing } from "@/components/tables";
 import { TableRowComponent } from "./table-row";
 import { TableHeaderCell } from "./table-header";
 import { createRow } from "@/lib/actions/table-actions";
-import { useToast } from "@/lib/hooks/use-toast";
+import { toast } from "@/lib/toast";
 import type { Column } from "@/types/table-types";
 
 interface TableRendererProps {
@@ -33,7 +33,6 @@ export function TableRenderer({
   onAddColumn,
 }: TableRendererProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
 
   const {
@@ -69,11 +68,7 @@ export function TableRenderer({
     startTransition(async () => {
       const result = await createRow(tableId, { data: {} });
       if (result.error) {
-        toast({
-          title: "Failed to add row",
-          description: result.error,
-          variant: "destructive",
-        });
+        toast.error("Failed to add row", { description: result.error });
       } else if (result.data) {
         addRow(result.data);
         // Start editing first cell of new row
@@ -84,7 +79,7 @@ export function TableRenderer({
         }
       }
     });
-  }, [tableId, addRow, visibleColumns, startEditing, toast, startTransition]);
+  }, [tableId, addRow, visibleColumns, startEditing, startTransition]);
 
   const rowIds = rows.map((r) => r.id);
 

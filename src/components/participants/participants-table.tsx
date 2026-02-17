@@ -31,7 +31,7 @@ import { MoreHorizontal, Pencil, Trash2, ArrowUp, ArrowDown, ArrowUpDown, User }
 import { format } from "date-fns";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
-import { useToast } from "@/lib/hooks/use-toast";
+import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 
 interface Participant {
@@ -56,8 +56,6 @@ export function ParticipantsTable({ participants, canManage }: ParticipantsTable
     const [editName, setEditName] = useState("");
     const [deleteId, setDeleteId] = useState<string | null>(null);
     const router = useRouter();
-    const { toast } = useToast();
-
     // Sort participants
     const sortedParticipants = [...participants].sort((a, b) => {
         if (!sortConfig) return 0;
@@ -100,13 +98,9 @@ export function ParticipantsTable({ participants, canManage }: ParticipantsTable
             .eq("id", editingId);
 
         if (error) {
-            toast({
-                title: "Error",
-                description: "Failed to update participant",
-                variant: "destructive",
-            });
+            toast.error("Failed to update participant");
         } else {
-            toast({ title: "Participant updated" });
+            toast.success("Participant updated");
             router.refresh();
         }
 
@@ -124,13 +118,9 @@ export function ParticipantsTable({ participants, canManage }: ParticipantsTable
             .eq("id", deleteId);
 
         if (error) {
-            toast({
-                title: "Error",
-                description: "Failed to delete participant",
-                variant: "destructive",
-            });
+            toast.error("Failed to delete participant");
         } else {
-            toast({ title: "Participant deleted" });
+            toast.success("Participant deleted");
             router.refresh();
         }
 

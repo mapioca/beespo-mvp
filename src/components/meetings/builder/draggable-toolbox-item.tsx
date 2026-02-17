@@ -79,15 +79,15 @@ export function DraggableToolboxItem({ item, disabled }: DraggableToolboxItemPro
             {...attributes}
             {...listeners}
             className={cn(
-                "flex items-center gap-2 p-2 bg-white border rounded-md",
-                "hover:border-primary hover:shadow-sm transition-all cursor-grab active:cursor-grabbing",
+                "flex items-center gap-2 p-2 bg-card border border-border rounded-md",
+                "hover:border-primary hover:bg-accent hover:text-accent-foreground hover:shadow-sm transition-all cursor-grab active:cursor-grabbing",
                 isDragging && "opacity-50 shadow-lg ring-2 ring-primary/40 z-50",
                 disabled && "opacity-50 cursor-not-allowed"
             )}
         >
             <GripVertical className="h-3.5 w-3.5 text-muted-foreground/50 shrink-0" />
             {getCategoryIcon(item)}
-            <span className="text-sm font-medium truncate flex-1">{item.title}</span>
+            <span className="text-sm font-medium truncate flex-1 text-foreground">{item.title}</span>
             <span className="text-xs text-muted-foreground shrink-0">{item.duration_minutes}m</span>
         </div>
     );
@@ -96,7 +96,7 @@ export function DraggableToolboxItem({ item, disabled }: DraggableToolboxItemPro
 // Overlay component for drag preview
 export function ToolboxItemDragOverlay({ item }: { item: ToolboxItem }) {
     return (
-        <div className="flex items-center gap-2 p-2 bg-white border-2 border-primary rounded-md shadow-lg">
+        <div className="flex items-center gap-2 p-2 bg-card border-2 border-primary rounded-md shadow-lg text-foreground">
             <GripVertical className="h-3.5 w-3.5 text-muted-foreground/50 shrink-0" />
             {getCategoryIcon(item)}
             <span className="text-sm font-medium truncate flex-1">{item.title}</span>

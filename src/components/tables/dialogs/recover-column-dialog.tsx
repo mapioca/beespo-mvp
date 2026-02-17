@@ -14,7 +14,7 @@ import { RefreshCw, Trash2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { getDeletedColumns, restoreColumn } from "@/lib/actions/table-actions";
 import { useTablesStore } from "@/stores/tables-store";
-import { useToast } from "@/lib/hooks/use-toast";
+import { toast } from "@/lib/toast";
 import type { Column } from "@/types/table-types";
 
 interface RecoverColumnDialogProps {
@@ -28,7 +28,6 @@ export function RecoverColumnDialog({
   open,
   onOpenChange,
 }: RecoverColumnDialogProps) {
-  const { toast } = useToast();
   const { addColumn } = useTablesStore();
 
   const [deletedColumns, setDeletedColumns] = useState<Column[]>([]);
@@ -56,18 +55,11 @@ export function RecoverColumnDialog({
     const result = await restoreColumn(tableId, column.id);
 
     if (result.error) {
-      toast({
-        title: "Failed to restore column",
-        description: result.error,
-        variant: "destructive",
-      });
+      toast.error("Failed to restore column", { description: result.error });
     } else if (result.data) {
       addColumn(result.data);
       setDeletedColumns(deletedColumns.filter((c) => c.id !== column.id));
-      toast({
-        title: "Column restored",
-        description: `"${column.name}" has been restored`,
-      });
+      toast.success("Column restored", { description: `"${column.name}" has been restored` });
     }
 
     setRestoringId(null);

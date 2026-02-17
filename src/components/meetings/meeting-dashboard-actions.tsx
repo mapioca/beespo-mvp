@@ -7,7 +7,7 @@ import { Database } from "@/types/database";
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
-import { useToast } from "@/lib/hooks/use-toast";
+import { toast } from "@/lib/toast";
 
 type Meeting = Database['public']['Tables']['meetings']['Row'];
 
@@ -18,7 +18,6 @@ interface MeetingDashboardActionsProps {
 
 export function MeetingDashboardActions({ meeting, isLeader }: MeetingDashboardActionsProps) {
     const router = useRouter();
-    const { toast } = useToast();
     const [isLoading, setIsLoading] = useState(false);
 
     if (!isLeader) return null;
@@ -32,17 +31,10 @@ export function MeetingDashboardActions({ meeting, isLeader }: MeetingDashboardA
             .eq('id', meeting.id);
 
         if (error) {
-            toast({
-                title: "Error",
-                description: "Failed to update meeting status",
-                variant: "destructive"
-            });
+            toast.error("Failed to update meeting status");
         } else {
             router.refresh();
-            toast({
-                title: "Status updated",
-                description: `Meeting marked as ${newStatus}`
-            });
+            toast.success("Status updated", { description: `Meeting marked as ${newStatus}` });
         }
         setIsLoading(false);
     };

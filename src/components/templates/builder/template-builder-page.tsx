@@ -16,7 +16,7 @@ import {
 } from "@dnd-kit/core";
 import { arrayMove, sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { createClient } from "@/lib/supabase/client";
-import { useToast } from "@/lib/hooks/use-toast";
+import { toast } from "@/lib/toast";
 import { TemplateMetadataHeader } from "./template-metadata-header";
 import { TemplateCanvas } from "./template-canvas";
 import { ToolboxPane } from "@/components/meetings/builder/toolbox-pane";
@@ -25,7 +25,6 @@ import { TemplateCanvasItem, ToolboxItem } from "./types";
 
 export function TemplateBuilderPage() {
     const router = useRouter();
-    const { toast } = useToast();
 
     // Metadata state
     const [name, setName] = useState("");
@@ -176,11 +175,7 @@ export function TemplateBuilderPage() {
             // Get current user
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) {
-                toast({
-                    title: "Error",
-                    description: "Not authenticated. Please log in again.",
-                    variant: "destructive",
-                });
+                toast.error("Not authenticated. Please log in again.");
                 setIsSaving(false);
                 return;
             }
@@ -195,11 +190,7 @@ export function TemplateBuilderPage() {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const p = profile as any;
             if (!p || !["admin", "leader"].includes(p.role)) {
-                toast({
-                    title: "Error",
-                    description: "Only admins and leaders can create templates.",
-                    variant: "destructive",
-                });
+                toast.error("Only admins and leaders can create templates.");
                 setIsSaving(false);
                 return;
             }
@@ -220,11 +211,7 @@ export function TemplateBuilderPage() {
                 .single();
 
             if (templateError) {
-                toast({
-                    title: "Error",
-                    description: templateError.message || "Failed to create template.",
-                    variant: "destructive",
-                });
+                toast.error(templateError.message || "Failed to create template.");
                 setIsSaving(false);
                 return;
             }
@@ -252,35 +239,24 @@ export function TemplateBuilderPage() {
                     .insert(templateItems);
 
                 if (itemsError) {
-                    toast({
-                        title: "Warning",
-                        description: "Template created but some items failed to save.",
-                        variant: "destructive",
-                    });
+                    toast.warning("Template created but some items failed to save.");
                 }
             }
 
-            toast({
-                title: "Template created",
-                description: "Redirecting to templates...",
-            });
+            toast.success("Template created", { description: "Redirecting to templates..." });
 
             // Show redirecting state and delay to ensure toast is visible
             setIsRedirecting(true);
             await new Promise((resolve) => setTimeout(resolve, 500));
 
-            router.push("/templates");
+            router.push("/meetings/templates");
             router.refresh();
         } catch {
-            toast({
-                title: "Error",
-                description: "An unexpected error occurred.",
-                variant: "destructive",
-            });
+            toast.error("An unexpected error occurred.");
         } finally {
             setIsSaving(false);
         }
-    }, [name, description, organization, tags, canvasItems, router, toast]);
+    }, [name, description, organization, tags, canvasItems, router]);
 
     // Validation
     const isValid = name.trim() !== "" && canvasItems.length > 0;

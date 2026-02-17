@@ -18,7 +18,7 @@ import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { useToast } from "@/lib/hooks/use-toast";
+import { toast } from "@/lib/toast";
 import { createClient } from "@/lib/supabase/client";
 import { Megaphone, CalendarDays, MapPin, X } from "lucide-react";
 
@@ -67,7 +67,6 @@ export function CreateEventDialog({
   onCreated,
   externalEvent,
 }: CreateEventDialogProps) {
-  const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
 
   // Form state
@@ -228,33 +227,23 @@ export function CreateEventDialog({
         }
       }
 
-      toast({
-        title: "Success",
-        description: externalEvent
+      toast.success(externalEvent
           ? "External event imported successfully."
-          : "Event created successfully.",
-      });
+          : "Event created successfully.");
 
       if (data.announcement) {
-        toast({
-          title: "Announcement Created",
-          description: `Event will be announced until it starts.${
+        toast.success("Announcement Created", { description: `Event will be announced until it starts.${
             selectedTemplates.length > 0
               ? ` Linked to ${selectedTemplates.length} template(s).`
               : ""
-          }`,
-        });
+          }` });
       }
 
       onCreated(data.event);
       onOpenChange(false);
       resetForm();
     } catch (error) {
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to create event.",
-        variant: "destructive",
-      });
+      toast.error(error instanceof Error ? error.message : "Failed to create event.");
     } finally {
       setIsLoading(false);
     }

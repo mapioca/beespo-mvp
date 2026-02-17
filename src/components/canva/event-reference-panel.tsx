@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/lib/hooks/use-toast";
+import { toast } from "@/lib/toast";
 import { Calendar, Clock, MapPin, FileText, Copy, Check } from "lucide-react";
 
 interface EventReferencePanelProps {
@@ -21,24 +21,16 @@ interface CopyableFieldProps {
 }
 
 function CopyableField({ icon: Icon, label, value }: CopyableFieldProps) {
-    const { toast } = useToast();
     const [copied, setCopied] = useState(false);
 
     const handleCopy = async () => {
         try {
             await navigator.clipboard.writeText(value);
             setCopied(true);
-            toast({
-                title: "Copied",
-                description: `${label} copied to clipboard`,
-            });
+            toast.success("Copied", { description: `${label} copied to clipboard` });
             setTimeout(() => setCopied(false), 2000);
         } catch {
-            toast({
-                title: "Failed to copy",
-                description: "Please try again",
-                variant: "destructive",
-            });
+            toast.error("Failed to copy", { description: "Please try again" });
         }
     };
 
@@ -72,8 +64,6 @@ export function EventReferencePanel({
     location,
     description,
 }: EventReferencePanelProps) {
-    const { toast } = useToast();
-
     const handleCopyAll = async () => {
         const text = [
             `Event: ${title}`,
@@ -87,16 +77,9 @@ export function EventReferencePanel({
 
         try {
             await navigator.clipboard.writeText(text);
-            toast({
-                title: "Copied",
-                description: "All event details copied to clipboard",
-            });
+            toast.success("Copied", { description: "All event details copied to clipboard" });
         } catch {
-            toast({
-                title: "Failed to copy",
-                description: "Please try again",
-                variant: "destructive",
-            });
+            toast.error("Failed to copy", { description: "Please try again" });
         }
     };
 

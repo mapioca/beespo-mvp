@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useToast } from "@/lib/hooks/use-toast";
+import { toast } from "@/lib/toast";
 import { Event } from "./events-table";
 
 interface EventDialogProps {
@@ -31,7 +31,6 @@ export function EventDialog({
     event,
     onSave,
 }: EventDialogProps) {
-    const { toast } = useToast();
     const [isLoading, setIsLoading] = useState(false);
     const isEditing = !!event;
 
@@ -122,29 +121,19 @@ export function EventDialog({
                 throw new Error(data.error || "Failed to save event");
             }
 
-            toast({
-                title: "Success",
-                description: isEditing
+            toast.success(isEditing
                     ? "Event updated successfully."
-                    : "Event created successfully.",
-            });
+                    : "Event created successfully.");
 
             if (data.announcement) {
-                toast({
-                    title: "Announcement Created",
-                    description: "Event has been promoted to an announcement.",
-                });
+                toast.success("Announcement Created", { description: "Event has been promoted to an announcement." });
             }
 
             onSave(data.event, !isEditing);
             onOpenChange(false);
             resetForm();
         } catch (error) {
-            toast({
-                title: "Error",
-                description: error instanceof Error ? error.message : "Failed to save event.",
-                variant: "destructive",
-            });
+            toast.error(error instanceof Error ? error.message : "Failed to save event.");
         } finally {
             setIsLoading(false);
         }

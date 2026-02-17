@@ -13,7 +13,7 @@ import {
     CardHeader,
     CardTitle,
 } from "@/components/ui/card";
-import { useToast } from "@/lib/hooks/use-toast";
+import { toast } from "@/lib/toast";
 import { createClient } from "@/lib/supabase/client";
 
 export default function ResetPasswordPage() {
@@ -21,7 +21,6 @@ export default function ResetPasswordPage() {
     // This is critical for maintaining auth state across the component lifecycle
     const supabase = useMemo(() => createClient(), []);
     const router = useRouter();
-    const { toast } = useToast();
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
     const [isLoading, setIsLoading] = useState(false);
@@ -99,11 +98,7 @@ export default function ResetPasswordPage() {
         e.preventDefault();
 
         if (password !== confirmPassword) {
-            toast({
-                title: "Error",
-                description: "Passwords do not match.",
-                variant: "destructive",
-            });
+            toast.error("Passwords do not match.");
             return;
         }
         setIsLoading(true);
@@ -118,11 +113,7 @@ export default function ResetPasswordPage() {
 
             if (!session) {
                 console.error("Session missing during submit.");
-                toast({
-                    title: "Error",
-                    description: "Your session has expired or was not found. Please request a new password reset link.",
-                    variant: "destructive",
-                });
+                toast.error("Your session has expired or was not found. Please request a new password reset link.");
                 setIsLoading(false);
                 return;
             }
@@ -132,16 +123,9 @@ export default function ResetPasswordPage() {
 
             if (error) {
                 console.error("Error updating user:", error);
-                toast({
-                    title: "Error",
-                    description: error.message,
-                    variant: "destructive",
-                });
+                toast.error(error.message);
             } else {
-                toast({
-                    title: "Success",
-                    description: "Your password has been reset successfully.",
-                });
+                toast.success("Your password has been reset successfully.");
                 router.push("/dashboard");
             }
         } catch (err: unknown) {
@@ -150,11 +134,7 @@ export default function ResetPasswordPage() {
                 message = err.message;
             }
             console.error("Unexpected error in handleSubmit:", err);
-            toast({
-                title: "Error",
-                description: message,
-                variant: "destructive",
-            });
+            toast.error(message);
         } finally {
             setIsLoading(false);
         }

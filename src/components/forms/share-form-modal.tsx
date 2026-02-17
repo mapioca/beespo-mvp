@@ -20,7 +20,7 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import type { Form } from "@/types/form-types";
 
 interface ShareFormModalProps {

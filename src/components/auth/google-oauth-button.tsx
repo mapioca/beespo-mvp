@@ -3,11 +3,10 @@
 import { Button } from "@/components/ui/button"
 import { createClient } from "@/lib/supabase/client"
 import { useState } from "react"
-import { useToast } from "@/lib/hooks/use-toast"
+import { toast } from "@/lib/toast"
 
 export function GoogleOAuthButton() {
   const [isLoading, setIsLoading] = useState(false)
-  const { toast } = useToast()
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true)
@@ -26,21 +25,13 @@ export function GoogleOAuthButton() {
       })
 
       if (error) {
-        toast({
-          title: "Error",
-          description: error.message || "Failed to sign in with Google",
-          variant: "destructive",
-        })
+        toast.error(error.message || "Failed to sign in with Google")
         setIsLoading(false)
       }
       // If no error, browser will redirect to Google
       // Don't set loading to false, page is redirecting
     } catch {
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred. Please try again.",
-        variant: "destructive",
-      })
+      toast.error("An unexpected error occurred. Please try again.")
       setIsLoading(false)
     }
   }

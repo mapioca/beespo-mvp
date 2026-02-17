@@ -17,7 +17,7 @@ import { ColumnTypePicker } from "@/components/tables";
 import { ColumnConfigPanel } from "@/components/tables";
 import { createColumn } from "@/lib/actions/table-actions";
 import { useTablesStore } from "@/stores/tables-store";
-import { useToast } from "@/lib/hooks/use-toast";
+import { toast } from "@/lib/toast";
 import type { ColumnType, ColumnConfig } from "@/types/table-types";
 
 interface AddColumnDialogProps {
@@ -31,7 +31,6 @@ export function AddColumnDialog({
   open,
   onOpenChange,
 }: AddColumnDialogProps) {
-  const { toast } = useToast();
   const { addColumn } = useTablesStore();
 
   const [name, setName] = useState("");
@@ -44,11 +43,7 @@ export function AddColumnDialog({
     e.preventDefault();
 
     if (!name.trim()) {
-      toast({
-        title: "Name required",
-        description: "Please enter a name for the column",
-        variant: "destructive",
-      });
+      toast.error("Name required", { description: "Please enter a name for the column" });
       return;
     }
 
@@ -62,17 +57,10 @@ export function AddColumnDialog({
     });
 
     if (result.error) {
-      toast({
-        title: "Failed to add column",
-        description: result.error,
-        variant: "destructive",
-      });
+      toast.error("Failed to add column", { description: result.error });
     } else if (result.data) {
       addColumn(result.data);
-      toast({
-        title: "Column added",
-        description: `"${name}" has been added`,
-      });
+      toast.success("Column added", { description: `"${name}" has been added` });
       handleClose();
     }
 

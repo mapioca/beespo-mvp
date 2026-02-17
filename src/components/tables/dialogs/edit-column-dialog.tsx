@@ -19,7 +19,7 @@ import { ColumnTypePicker } from "@/components/tables";
 import { ColumnConfigPanel } from "@/components/tables";
 import { updateColumn, validateTypeChange } from "@/lib/actions/table-actions";
 import { useTablesStore } from "@/stores/tables-store";
-import { useToast } from "@/lib/hooks/use-toast";
+import { toast } from "@/lib/toast";
 import type { Column, ColumnType, ColumnConfig } from "@/types/table-types";
 
 interface EditColumnDialogProps {
@@ -35,7 +35,6 @@ export function EditColumnDialog({
   open,
   onOpenChange,
 }: EditColumnDialogProps) {
-  const { toast } = useToast();
   const { updateColumn: updateColumnInStore } = useTablesStore();
 
   const [name, setName] = useState("");
@@ -94,20 +93,12 @@ export function EditColumnDialog({
     e.preventDefault();
 
     if (!column || !name.trim()) {
-      toast({
-        title: "Name required",
-        description: "Please enter a name for the column",
-        variant: "destructive",
-      });
+      toast.error("Name required", { description: "Please enter a name for the column" });
       return;
     }
 
     if (!canChangeType && type !== column.type) {
-      toast({
-        title: "Cannot change type",
-        description: "Please fix the incompatible values first",
-        variant: "destructive",
-      });
+      toast.error("Cannot change type", { description: "Please fix the incompatible values first" });
       return;
     }
 
@@ -121,17 +112,10 @@ export function EditColumnDialog({
     });
 
     if (result.error) {
-      toast({
-        title: "Failed to update column",
-        description: result.error,
-        variant: "destructive",
-      });
+      toast.error("Failed to update column", { description: result.error });
     } else if (result.data) {
       updateColumnInStore(column.id, result.data);
-      toast({
-        title: "Column updated",
-        description: `"${name}" has been updated`,
-      });
+      toast.success("Column updated", { description: `"${name}" has been updated` });
       onOpenChange(false);
     }
 

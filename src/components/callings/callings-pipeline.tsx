@@ -27,7 +27,7 @@ import { CallingDetailDrawer } from "./calling-detail-drawer";
 import { Loader2, Plus, Search } from "lucide-react";
 import { advanceProcessStage, createCalling, dropProcess } from "@/lib/actions/calling-actions";
 import { getStageInfo, getAllStages } from "@/lib/calling-utils";
-import { useToast } from "@/lib/hooks/use-toast";
+import { toast } from "@/lib/toast";
 import type { CallingProcessStage } from "@/types/database";
 
 interface Process {
@@ -105,7 +105,6 @@ export function CallingsPipeline({
     const [newOrg, setNewOrg] = useState("");
     const [creating, setCreating] = useState(false);
     const router = useRouter();
-    const { toast } = useToast();
 
     // Filter only active processes
     const activeProcesses = useMemo(
@@ -175,16 +174,9 @@ export function CallingsPipeline({
         const result = await advanceProcessStage(processId, nextStage);
 
         if (result.error) {
-            toast({
-                title: "Error",
-                description: result.error,
-                variant: "destructive",
-            });
+            toast.error(result.error);
         } else {
-            toast({
-                title: "Stage advanced",
-                description: `Moved to ${getStageInfo(nextStage).label}`,
-            });
+            toast.success("Stage advanced", { description: `Moved to ${getStageInfo(nextStage).label}` });
             onRefresh();
         }
     };
@@ -193,16 +185,9 @@ export function CallingsPipeline({
         const result = await dropProcess(processId);
 
         if (result.error) {
-            toast({
-                title: "Error",
-                description: result.error,
-                variant: "destructive",
-            });
+            toast.error(result.error);
         } else {
-            toast({
-                title: "Process dropped",
-                description: "The calling process has been dropped",
-            });
+            toast.success("Process dropped", { description: "The calling process has been dropped" });
             onRefresh();
         }
     };
@@ -225,20 +210,13 @@ export function CallingsPipeline({
             setShowNewDialog(false);
             setNewTitle("");
             setNewOrg("");
-            toast({
-                title: "Calling created",
-                description: `"${result.calling.title}" has been created. Add candidates to get started.`,
-            });
+            toast.success("Calling created", { description: `"${result.calling.title}" has been created. Add candidates to get started.` });
             onRefresh();
             router.refresh();
             // Auto-open the detail modal for the newly created calling
             setSelectedCallingId(result.calling.id);
         } else {
-            toast({
-                title: "Error",
-                description: result.error || "Failed to create calling",
-                variant: "destructive",
-            });
+            toast.error(result.error || "Failed to create calling");
         }
     };
 

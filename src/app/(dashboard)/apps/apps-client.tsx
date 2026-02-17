@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { AppCard } from "@/components/apps/app-card";
 import { AppDetailModal } from "@/components/apps/app-detail-modal";
 import { useAppsStore } from "@/stores/apps-store";
-import { useToast } from "@/lib/hooks/use-toast";
+import { toast } from "@/lib/toast";
 import { AppWindow, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import type { App, WorkspaceAppWithApp } from "@/types/apps";
@@ -18,7 +18,6 @@ interface AppsClientProps {
 
 export function AppsClient({ apps, workspaceApps, userRole }: AppsClientProps) {
     const searchParams = useSearchParams();
-    const { toast } = useToast();
     const { setApps, setWorkspaceApps } = useAppsStore();
 
     const [selectedApp, setSelectedApp] = useState<App | null>(null);
@@ -39,8 +38,7 @@ export function AppsClient({ apps, workspaceApps, userRole }: AppsClientProps) {
         const error = searchParams.get("error");
 
         if (connected) {
-            toast({
-                title: "App Connected",
+            toast.success("App Connected", {
                 description: `${connected.charAt(0).toUpperCase() + connected.slice(1)} has been connected to your workspace.`,
             });
             // Clear the query params
@@ -48,15 +46,11 @@ export function AppsClient({ apps, workspaceApps, userRole }: AppsClientProps) {
         }
 
         if (error) {
-            toast({
-                title: "Connection Failed",
-                description: error,
-                variant: "destructive",
-            });
+            toast.error("Connection Failed", { description: error });
             // Clear the query params
             window.history.replaceState({}, "", "/apps");
         }
-    }, [searchParams, toast]);
+    }, [searchParams]);
 
     // Filter apps by search query
     const filteredApps = apps.filter((app) =>

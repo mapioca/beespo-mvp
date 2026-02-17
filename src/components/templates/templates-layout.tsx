@@ -7,7 +7,7 @@ import { TemplateDetailView } from "./template-detail-view";
 import { Database } from "@/types/database";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
-import { useToast } from "@/lib/hooks/use-toast";
+import { toast } from "@/lib/toast";
 
 export type Template = Database['public']['Tables']['templates']['Row'] & {
     items?: Database['public']['Tables']['template_items']['Row'][];
@@ -22,7 +22,6 @@ interface TemplatesLayoutProps {
 export function TemplatesLayout({ templates, userRole }: TemplatesLayoutProps) {
     const router = useRouter();
     const searchParams = useSearchParams();
-    const { toast } = useToast();
     const [selectedId, setSelectedId] = useState<string | null>(searchParams.get('id'));
     const [isMobileDetailOpen, setIsMobileDetailOpen] = useState(false);
 
@@ -41,13 +40,13 @@ export function TemplatesLayout({ templates, userRole }: TemplatesLayoutProps) {
     const handleSelect = (id: string) => {
         const newParams = new URLSearchParams(searchParams.toString());
         newParams.set('id', id);
-        router.push(`/templates?${newParams.toString()}`);
+        router.push(`/meetings/templates?${newParams.toString()}`);
     };
 
     const handleCloseDetail = useCallback(() => {
         const newParams = new URLSearchParams(searchParams.toString());
         newParams.delete('id');
-        router.push(`/templates?${newParams.toString()}`);
+        router.push(`/meetings/templates?${newParams.toString()}`);
     }, [router, searchParams]);
 
     const handleDeleteTemplate = useCallback(async (templateId: string) => {
@@ -64,23 +63,16 @@ export function TemplatesLayout({ templates, userRole }: TemplatesLayoutProps) {
             .eq("id", templateId);
 
         if (error) {
-            toast({
-                title: "Error",
-                description: "Failed to delete template. Please try again.",
-                variant: "destructive",
-            });
+            toast.error("Failed to delete template. Please try again.");
             throw error;
         }
 
-        toast({
-            title: "Template deleted",
-            description: "The template has been permanently deleted.",
-        });
+        toast.success("Template deleted", { description: "The template has been permanently deleted." });
 
         // Close detail view and refresh list
         handleCloseDetail();
         router.refresh();
-    }, [toast, router, handleCloseDetail]);
+    }, [router, handleCloseDetail]);
 
     const selectedTemplate = templates.find(t => t.id === selectedId);
 
