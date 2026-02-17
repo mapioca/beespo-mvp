@@ -62,9 +62,18 @@ export async function GET() {
         // Fields to retrieve
         const fields = ['summary', 'status', 'created', 'updated', 'issuetype'];
 
+        // UPDATED: Using the new /rest/api/3/search/jql endpoint via POST
         const searchIssuesResponse = await fetch(
-            `${jiraDomain}/rest/api/3/search?jql=${encodeURIComponent(jql)}&fields=${fields.join(',')}`,
-            { headers }
+            `${jiraDomain}/rest/api/3/search/jql`,
+            {
+                method: 'POST',
+                headers,
+                body: JSON.stringify({
+                    jql,
+                    fields,
+                    maxResults: 50 // Optional: explicit limit
+                })
+            }
         );
 
         if (!searchIssuesResponse.ok) {

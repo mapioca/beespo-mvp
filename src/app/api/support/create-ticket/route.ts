@@ -100,6 +100,8 @@ export async function POST(request: NextRequest) {
     // 1. Find or Create Jira User
     let accountId: string | undefined;
 
+    console.log('[Create Ticket] Searching for Jira user:', userEmail);
+
     // Search for existing user
     const searchResponse = await fetch(
       `${jiraDomain}/rest/api/3/user/search?query=${encodeURIComponent(userEmail)}`,
@@ -108,13 +110,18 @@ export async function POST(request: NextRequest) {
 
     if (searchResponse.ok) {
       const users = await searchResponse.json();
+      console.log('[Create Ticket] Search found users:', users.length);
       if (users.length > 0) {
         accountId = users[0].accountId;
+        console.log('[Create Ticket] Found existing accountId:', accountId);
       }
+    } else {
+      console.error('[Create Ticket] User search failed:', searchResponse.status, await searchResponse.text());
     }
 
     // If no user found, create a Service Desk Customer
     if (!accountId) {
+      console.log('[Create Ticket] No accountId found, creating customer...');
       try {
         const createCustomerResponse = await fetch(`${jiraDomain}/rest/servicedeskapi/customer`, {
           method: 'POST',
@@ -131,11 +138,12 @@ export async function POST(request: NextRequest) {
         if (createCustomerResponse.ok) {
           const customer = await createCustomerResponse.json();
           accountId = customer.accountId;
+          console.log('[Create Ticket] Created new customer accountId:', accountId);
         } else {
-          console.error('Failed to create Jira customer:', await createCustomerResponse.text());
+          console.error('[Create Ticket] Failed to create Jira customer:', await createCustomerResponse.text());
         }
       } catch (e) {
-        console.error('Error creating Jira customer:', e);
+        console.error('[Create Ticket] Error creating Jira customer:', e);
       }
     }
 
@@ -236,12 +244,17 @@ export async function POST(request: NextRequest) {
     // Add reporter if found/created
     if (accountId) {
       jiraPayload.fields.reporter = { accountId };
+      console.log('[Create Ticket] Setting reporter to:', accountId);
+    } else {
+      console.warn('[Create Ticket] proceeding without setting reporter');
     }
 
     // Add priority only if provided (and only for bugs typically)
     if (jiraPriority && requestType === 'Bug Report') {
       jiraPayload.fields.priority = { name: jiraPriority };
     }
+
+    console.log('[Create Ticket] Sending payload to Jira...');
 
     // Make request to Jira API
     const jiraResponse = await fetch(`${jiraDomain}/rest/api/3/issue`, {

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { format } from "date-fns"
-import { AlertCircle, Loader2 } from "lucide-react"
+import { AlertCircle, Loader2, MessageSquare } from "lucide-react"
 
 import {
     Table,
@@ -15,6 +15,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { TicketDetail } from "./ticket-detail"
 
 interface Ticket {
     key: string
@@ -30,6 +31,7 @@ export function RequestHistory() {
     const [tickets, setTickets] = useState<Ticket[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState("")
+    const [selectedTicketKey, setSelectedTicketKey] = useState<string | null>(null)
 
     const fetchTickets = async () => {
         setLoading(true)
@@ -53,9 +55,18 @@ export function RequestHistory() {
         fetchTickets()
     }, [])
 
+    if (selectedTicketKey) {
+        return (
+            <TicketDetail
+                ticketKey={selectedTicketKey}
+                onBack={() => setSelectedTicketKey(null)}
+            />
+        )
+    }
+
     if (loading) {
         return (
-            <div className="flex flex-col items-center justify-center p-8 text-muted-foreground">
+            <div className="flex flex-col items-center justify-center p-8 text-muted-foreground min-h-[300px]">
                 <Loader2 className="h-8 w-8 animate-spin mb-2" />
                 <p>Loading your requests...</p>
             </div>
@@ -78,7 +89,8 @@ export function RequestHistory() {
 
     if (tickets.length === 0) {
         return (
-            <div className="text-center p-8 text-muted-foreground">
+            <div className="flex flex-col items-center justify-center p-8 text-muted-foreground min-h-[300px] text-center">
+                <MessageSquare className="h-10 w-10 mb-4 opacity-20" />
                 <p>You haven&apos;t submitted any requests yet.</p>
             </div>
         )
@@ -90,31 +102,35 @@ export function RequestHistory() {
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead className="w-[100px]">ID</TableHead>
-                            <TableHead>Subject</TableHead>
-                            <TableHead className="w-[120px]">Status</TableHead>
-                            <TableHead className="w-[120px] text-right">Date</TableHead>
+                            <TableHead className="w-[60%]">Request</TableHead>
+                            <TableHead className="w-[20%] text-center">Status</TableHead>
+                            <TableHead className="w-[20%] text-right">Date</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {tickets.map((ticket) => (
-                            <TableRow key={ticket.key}>
-                                <TableCell className="font-medium text-xs text-muted-foreground">
-                                    {ticket.key}
-                                </TableCell>
+                            <TableRow
+                                key={ticket.key}
+                                className="cursor-pointer hover:bg-muted/50"
+                                onClick={() => setSelectedTicketKey(ticket.key)}
+                            >
                                 <TableCell>
-                                    <div className="font-medium truncate max-w-[200px] sm:max-w-[300px]" title={ticket.summary}>
-                                        {ticket.summary}
-                                    </div>
-                                    <div className="text-xs text-muted-foreground hidden sm:block">
-                                        {ticket.type}
+                                    <div className="flex flex-col gap-1">
+                                        <span className="font-medium line-clamp-1" title={ticket.summary}>
+                                            {ticket.summary}
+                                        </span>
+                                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                            <span>{ticket.key}</span>
+                                            <span>•</span>
+                                            <span>{ticket.type}</span>
+                                        </div>
                                     </div>
                                 </TableCell>
-                                <TableCell>
+                                <TableCell className="text-center">
                                     <StatusBadge status={ticket.status} />
                                 </TableCell>
-                                <TableCell className="text-right text-xs text-muted-foreground">
-                                    {format(new Date(ticket.created), "MMM d, yyyy")}
+                                <TableCell className="text-right text-xs text-muted-foreground whitespace-nowrap">
+                                    {format(new Date(ticket.created), "MMM d")}
                                 </TableCell>
                             </TableRow>
                         ))}
@@ -126,21 +142,14 @@ export function RequestHistory() {
 }
 
 function StatusBadge({ status }: { status: string }) {
-    // Map Jira status colors to our UI colors if needed, or use simple logic
     let variant: "default" | "secondary" | "destructive" | "outline" = "outline";
-
-    // Simple heuristic for badge variants based on common Jira statuses
     const lowerStatus = status.toLowerCase();
+
     if (lowerStatus.includes("done") || lowerStatus.includes("resolved") || lowerStatus.includes("closed")) {
-        variant = "secondary"; // Green-ish usually, or grey for closed
-    } else if (lowerStatus.includes("progress")) {
-        variant = "default"; // Blue/Primary
-    } else if (lowerStatus.includes("review")) {
-        variant = "outline";
+        variant = "secondary";
+    } else if (lowerStatus.includes("progress") || lowerStatus.includes("waiting")) {
+        variant = "default";
     }
 
-    // Determine color class based on variant if we want more specific control
-    // For now, relying on Shadcn Badge variants is clean.
-
-    return <Badge variant={variant} className="whitespace-nowrap">{status}</Badge>
+    return <Badge variant={variant} className="whitespace-nowrap text-xs px-2 py-0.5 h-6">{status}</Badge>
 }
