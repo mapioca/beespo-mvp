@@ -5,6 +5,8 @@ import { getDefaultLayout } from "@/lib/dashboard/widget-registry";
 import { MissionControl } from "@/components/dashboard/mission-control";
 import type { DashboardConfig } from "@/types/dashboard";
 
+const OLD_WIDGET_TYPES = ["sunday_morning", "organizational_pulse", "action_inbox"];
+
 export default async function DashboardPage() {
   const supabase = await createClient();
 
@@ -34,10 +36,18 @@ export default async function DashboardPage() {
   ]);
 
   // Use saved layout or generate default from feature tier
-  const config: DashboardConfig =
-    settingsResult.data?.dashboard_layout?.version === 1
-      ? settingsResult.data.dashboard_layout
-      : getDefaultLayout(profile.feature_tier);
+  let config: DashboardConfig = getDefaultLayout(profile.feature_tier);
+
+  if (settingsResult.data?.dashboard_layout?.version === 1) {
+    const saved = settingsResult.data.dashboard_layout as DashboardConfig;
+    // Migration guard: reset if layout contains old widget types
+    const hasOldWidgets = saved.widgets.some((w) =>
+      OLD_WIDGET_TYPES.includes(w.type)
+    );
+    if (!hasOldWidgets) {
+      config = saved;
+    }
+  }
 
   return (
     <MissionControl

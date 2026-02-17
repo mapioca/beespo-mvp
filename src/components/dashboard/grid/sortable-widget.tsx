@@ -2,11 +2,13 @@
 
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import type { WidgetType } from "@/types/dashboard";
-import type { DashboardWidgetData } from "@/types/dashboard";
-import { SundayMorningWidget } from "../widgets/sunday-morning-widget";
-import { ActionInboxWidget } from "../widgets/action-inbox-widget";
-import { OrgPulseWidget } from "../widgets/org-pulse-widget";
+import type { WidgetType, DashboardWidgetData } from "@/types/dashboard";
+import { MyTasksWidget } from "../widgets/my-tasks-widget";
+import { CallingPipelineWidget } from "../widgets/calling-pipeline-widget";
+import { UpcomingMeetingsWidget } from "../widgets/upcoming-meetings-widget";
+import { NotebooksWidget } from "../widgets/notebooks-widget";
+import { TablesWidget } from "../widgets/tables-widget";
+import { FormsWidget } from "../widgets/forms-widget";
 
 interface SortableWidgetProps {
   id: string;
@@ -32,29 +34,54 @@ export function SortableWidget({ id, widgetType, data }: SortableWidgetProps) {
 
   const dragHandleProps = { attributes, listeners };
 
+  const widgetMap: Partial<Record<WidgetType, React.ReactNode>> = {
+    my_tasks: (
+      <MyTasksWidget
+        data={data.myTasks}
+        dragHandleProps={dragHandleProps}
+        isDragging={isDragging}
+      />
+    ),
+    calling_pipeline: (
+      <CallingPipelineWidget
+        data={data.callingPipeline}
+        dragHandleProps={dragHandleProps}
+        isDragging={isDragging}
+      />
+    ),
+    upcoming_meetings: (
+      <UpcomingMeetingsWidget
+        data={data.upcomingMeetings}
+        dragHandleProps={dragHandleProps}
+        isDragging={isDragging}
+      />
+    ),
+    notebooks: (
+      <NotebooksWidget
+        data={data.notebooks}
+        dragHandleProps={dragHandleProps}
+        isDragging={isDragging}
+      />
+    ),
+    tables: (
+      <TablesWidget
+        data={data.tables}
+        dragHandleProps={dragHandleProps}
+        isDragging={isDragging}
+      />
+    ),
+    forms: (
+      <FormsWidget
+        data={data.forms}
+        dragHandleProps={dragHandleProps}
+        isDragging={isDragging}
+      />
+    ),
+  };
+
   return (
     <div ref={setNodeRef} style={style}>
-      {widgetType === "sunday_morning" && (
-        <SundayMorningWidget
-          data={data.sundayMorning}
-          dragHandleProps={dragHandleProps}
-          isDragging={isDragging}
-        />
-      )}
-      {widgetType === "action_inbox" && (
-        <ActionInboxWidget
-          data={data.actionInbox}
-          dragHandleProps={dragHandleProps}
-          isDragging={isDragging}
-        />
-      )}
-      {widgetType === "organizational_pulse" && (
-        <OrgPulseWidget
-          data={data.organizationalPulse}
-          dragHandleProps={dragHandleProps}
-          isDragging={isDragging}
-        />
-      )}
+      {widgetMap[widgetType] ?? null}
     </div>
   );
 }
