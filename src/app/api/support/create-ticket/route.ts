@@ -10,10 +10,11 @@ const JIRA_PRIORITIES: Record<string, string> = {
 
 // Jira Issue Type IDs
 // Jira Issue Type IDs
-// [System] Incident: 10001
+// Task: 10004
 // [System] Service request: 10002
+// [System] Incident: 10001 (Seems to cause validation errors via create API)
 const JIRA_ISSUE_TYPE_IDS: Record<string, string> = {
-  'Bug Report': '10001',       // Maps to [System] Incident
+  'Bug Report': '10004',       // Maps to Task
   'Feature Request': '10002',  // Maps to [System] Service request
   'General Question': '10002', // Maps to [System] Service request
 };
@@ -254,7 +255,7 @@ export async function POST(request: NextRequest) {
       jiraPayload.fields.priority = { name: jiraPriority };
     }
 
-    console.log('[Create Ticket] Sending payload to Jira...');
+    console.log('[Create Ticket] Sending payload to Jira:', JSON.stringify(jiraPayload, null, 2));
 
     // Make request to Jira API
     const jiraResponse = await fetch(`${jiraDomain}/rest/api/3/issue`, {
