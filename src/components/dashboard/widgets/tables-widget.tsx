@@ -9,6 +9,7 @@ import { toast } from "@/lib/toast";
 import { createTable } from "@/lib/actions/table-actions";
 import type { TablesData, DragHandleProps } from "@/types/dashboard";
 import { WidgetCard } from "./widget-card";
+import { useTranslations } from "next-intl";
 
 interface Props {
   data: TablesData;
@@ -19,18 +20,19 @@ interface Props {
 export function TablesWidget({ data, dragHandleProps, isDragging }: Props) {
   const router = useRouter();
   const [creating, setCreating] = useState(false);
+  const t = useTranslations("Dashboard.Widgets.tables");
 
   const handleCreate = async () => {
     setCreating(true);
     try {
-      const result = await createTable({ name: "Untitled Table" });
+      const result = await createTable({ name: t("untitled") });
       if (result.error) throw new Error(result.error);
-      toast.success("Table created");
+      toast.success(t("toastCreated"));
       if (result.data) {
         router.push(`/tables/${result.data.id}`);
       }
     } catch {
-      toast.error("Failed to create table");
+      toast.error(t("toastError"));
     } finally {
       setCreating(false);
     }
@@ -38,7 +40,7 @@ export function TablesWidget({ data, dragHandleProps, isDragging }: Props) {
 
   return (
     <WidgetCard
-      title="Tables"
+      title={t("title")}
       icon={<Table2 className="h-4 w-4 text-muted-foreground" />}
       dragHandleProps={dragHandleProps}
       isDragging={isDragging}
@@ -46,7 +48,7 @@ export function TablesWidget({ data, dragHandleProps, isDragging }: Props) {
       {data.tables.length === 0 ? (
         <div className="py-4 text-center">
           <p className="text-sm text-muted-foreground mb-3">
-            Create your first table
+            {t("empty")}
           </p>
           <Button
             size="sm"
@@ -56,7 +58,7 @@ export function TablesWidget({ data, dragHandleProps, isDragging }: Props) {
             className="gap-1.5"
           >
             <Plus className="h-3.5 w-3.5" />
-            New Table
+            {t("new")}
           </Button>
         </div>
       ) : (
@@ -75,7 +77,7 @@ export function TablesWidget({ data, dragHandleProps, isDragging }: Props) {
                   {table.name}
                 </span>
                 <span className="text-xs text-muted-foreground shrink-0">
-                  {table.row_count} rows
+                  {t("rows", { count: table.row_count })}
                 </span>
               </Link>
             ))}
@@ -85,7 +87,7 @@ export function TablesWidget({ data, dragHandleProps, isDragging }: Props) {
               href="/tables"
               className="text-xs font-medium text-primary hover:text-primary/80"
             >
-              View all tables
+              {t("viewAll")}
             </Link>
             <Button
               size="sm"
@@ -95,7 +97,7 @@ export function TablesWidget({ data, dragHandleProps, isDragging }: Props) {
               className="h-7 px-2 text-xs gap-1"
             >
               <Plus className="h-3 w-3" />
-              New
+              {t("newShort")}
             </Button>
           </div>
         </>

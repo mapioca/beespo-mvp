@@ -238,6 +238,89 @@
         "printButton": "Imprimir",
         "endMeetingButton": "Finalizar reunión"
       }
+    },
+    "Widgets": {
+      "notebooks": {
+        "title": "Libretas",
+        "empty": "Crea tu primera libreta",
+        "new": "Nueva libreta",
+        "newShort": "Nueva",
+        "viewAll": "Ver todas las libretas",
+        "untitled": "Libreta sin título",
+        "toastCreated": "Libreta creada",
+        "toastError": "Error al crear libreta"
+      },
+      "upcomingMeetings": {
+        "title": "Próximas reuniones",
+        "empty": "No hay reuniones próximas",
+        "schedule": "Programar una reunión",
+        "viewAll": "Ver todas las reuniones",
+        "itemsCount": "{count} {count, plural, one {punto} other {puntos}}"
+      },
+      "myTasks": {
+        "title": "Mis tareas",
+        "empty": "No hay tareas pendientes",
+        "viewAll": "Ver todas las {count} tareas",
+        "priorityHigh": "Alta",
+        "priorityMed": "Media",
+        "priorityLow": "Baja"
+      },
+      "callingPipeline": {
+        "title": "Tubería de llamamientos",
+        "empty": "No hay procesos de llamamiento activos",
+        "viewAll": "Ver todos los {count} procesos",
+        "stages": {
+          "identified": "Identificado",
+          "contacted": "Contactado",
+          "interviewed": "Entrevistado",
+          "proposed": "Propuesto",
+          "approved": "Aprobado",
+          "sustained": "Sostenido",
+          "set_apart": "Apartado"
+        }
+      },
+      "forms": {
+        "title": "Formularios",
+        "empty": "Crea tu primer formulario",
+        "new": "Nuevo formulario",
+        "newShort": "Nuevo",
+        "viewAll": "Ver todos los formularios",
+        "responses": "{count} {count, plural, one {respuesta} other {respuestas}}",
+        "published": "Publicado",
+        "draft": "Borrador",
+        "untitled": "Formulario sin título",
+        "toastCreated": "Formulario creado",
+        "toastError": "Error al crear formulario"
+      },
+      "tables": {
+        "title": "Tablas",
+        "empty": "Crea tu primera tabla",
+        "new": "Nueva tabla",
+        "newShort": "Nueva",
+        "viewAll": "Ver todas las tablas",
+        "rows": "{count} {count, plural, one {fila} other {rows}}",
+        "untitled": "Tabla sin título",
+        "toastCreated": "Tabla creada",
+        "toastError": "Error al crear tabla"
+      },
+      "teamWorkload": {
+        "title": "Capacidad de mayordomía",
+        "empty": "No se encontraron miembros del equipo",
+        "activeCount": "{count} Activo"
+      },
+      "kpi": {
+        "activeDiscussions": "Discusiones activas",
+        "callingFillRate": "Tasa de cobertura de llamamientos",
+        "meetingReadiness": "Preparación de reuniones"
+      },
+      "error": {
+        "failed": "Error al cargar el widget",
+        "description": "Algo salió mal al mostrar este widget.",
+        "retry": "Reintentar"
+      },
+      "common": {
+        "dragHandle": "Arrastrar para reordenar"
+      }
     }
   },
   "Welcome": {

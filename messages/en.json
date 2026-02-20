@@ -238,6 +238,89 @@
         "printButton": "Print",
         "endMeetingButton": "End Meeting"
       }
+    },
+    "Widgets": {
+      "notebooks": {
+        "title": "Notebooks",
+        "empty": "Create your first notebook",
+        "new": "New Notebook",
+        "newShort": "New",
+        "viewAll": "View all notebooks",
+        "untitled": "Untitled Notebook",
+        "toastCreated": "Notebook created",
+        "toastError": "Failed to create notebook"
+      },
+      "upcomingMeetings": {
+        "title": "Upcoming Meetings",
+        "empty": "No upcoming meetings",
+        "schedule": "Schedule a meeting",
+        "viewAll": "View all meetings",
+        "itemsCount": "{count} {count, plural, one {item} other {items}}"
+      },
+      "myTasks": {
+        "title": "My Tasks",
+        "empty": "No pending tasks",
+        "viewAll": "View all {count} tasks",
+        "priorityHigh": "High",
+        "priorityMed": "Med",
+        "priorityLow": "Low"
+      },
+      "callingPipeline": {
+        "title": "Calling Pipeline",
+        "empty": "No active calling processes",
+        "viewAll": "View all {count} processes",
+        "stages": {
+          "identified": "Identified",
+          "contacted": "Contacted",
+          "interviewed": "Interviewed",
+          "proposed": "Proposed",
+          "approved": "Approved",
+          "sustained": "Sustained",
+          "set_apart": "Set Apart"
+        }
+      },
+      "forms": {
+        "title": "Forms",
+        "empty": "Create your first form",
+        "new": "New Form",
+        "newShort": "New",
+        "viewAll": "View all forms",
+        "responses": "{count} {count, plural, one {response} other {responses}}",
+        "published": "Published",
+        "draft": "Draft",
+        "untitled": "Untitled Form",
+        "toastCreated": "Form created",
+        "toastError": "Failed to create form"
+      },
+      "tables": {
+        "title": "Tables",
+        "empty": "Create your first table",
+        "new": "New Table",
+        "newShort": "New",
+        "viewAll": "View all tables",
+        "rows": "{count} {count, plural, one {row} other {rows}}",
+        "untitled": "Untitled Table",
+        "toastCreated": "Table created",
+        "toastError": "Failed to create table"
+      },
+      "teamWorkload": {
+        "title": "Stewardship Capacity",
+        "empty": "No team members found",
+        "activeCount": "{count} Active"
+      },
+      "kpi": {
+        "activeDiscussions": "Active Discussions",
+        "callingFillRate": "Calling Fill Rate",
+        "meetingReadiness": "Meeting Readiness"
+      },
+      "error": {
+        "failed": "Widget failed to load",
+        "description": "Something went wrong displaying this widget.",
+        "retry": "Retry"
+      },
+      "common": {
+        "dragHandle": "Drag to reorder"
+      }
     }
   },
   "Welcome": {

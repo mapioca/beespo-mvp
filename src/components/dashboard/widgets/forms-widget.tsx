@@ -10,6 +10,7 @@ import { toast } from "@/lib/toast";
 import { createForm } from "@/lib/actions/form-actions";
 import type { FormsData, DragHandleProps } from "@/types/dashboard";
 import { WidgetCard } from "./widget-card";
+import { useTranslations } from "next-intl";
 
 interface Props {
   data: FormsData;
@@ -20,21 +21,22 @@ interface Props {
 export function FormsWidget({ data, dragHandleProps, isDragging }: Props) {
   const router = useRouter();
   const [creating, setCreating] = useState(false);
+  const t = useTranslations("Dashboard.Widgets.forms");
 
   const handleCreate = async () => {
     setCreating(true);
     try {
       const result = await createForm({
-        title: "Untitled Form",
-        schema: { id: crypto.randomUUID(), title: "Untitled Form", fields: [] },
+        title: t("untitled"),
+        schema: { id: crypto.randomUUID(), title: t("untitled"), fields: [] },
       });
       if (result.error) throw new Error(result.error);
-      toast.success("Form created");
+      toast.success(t("toastCreated"));
       if (result.data) {
         router.push(`/forms/${result.data.id}`);
       }
     } catch {
-      toast.error("Failed to create form");
+      toast.error(t("toastError"));
     } finally {
       setCreating(false);
     }
@@ -42,7 +44,7 @@ export function FormsWidget({ data, dragHandleProps, isDragging }: Props) {
 
   return (
     <WidgetCard
-      title="Forms"
+      title={t("title")}
       icon={<FileText className="h-4 w-4 text-muted-foreground" />}
       dragHandleProps={dragHandleProps}
       isDragging={isDragging}
@@ -50,7 +52,7 @@ export function FormsWidget({ data, dragHandleProps, isDragging }: Props) {
       {data.forms.length === 0 ? (
         <div className="py-4 text-center">
           <p className="text-sm text-muted-foreground mb-3">
-            Create your first form
+            {t("empty")}
           </p>
           <Button
             size="sm"
@@ -60,7 +62,7 @@ export function FormsWidget({ data, dragHandleProps, isDragging }: Props) {
             className="gap-1.5"
           >
             <Plus className="h-3.5 w-3.5" />
-            New Form
+            {t("new")}
           </Button>
         </div>
       ) : (
@@ -77,7 +79,7 @@ export function FormsWidget({ data, dragHandleProps, isDragging }: Props) {
                     {form.title}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {form.response_count} responses
+                    {t("responses", { count: form.response_count })}
                   </p>
                 </div>
                 <span
@@ -88,7 +90,7 @@ export function FormsWidget({ data, dragHandleProps, isDragging }: Props) {
                       : "bg-gray-100 text-gray-600"
                   )}
                 >
-                  {form.is_published ? "Published" : "Draft"}
+                  {form.is_published ? t("published") : t("draft")}
                 </span>
               </Link>
             ))}
@@ -98,7 +100,7 @@ export function FormsWidget({ data, dragHandleProps, isDragging }: Props) {
               href="/forms"
               className="text-xs font-medium text-primary hover:text-primary/80"
             >
-              View all forms
+              {t("viewAll")}
             </Link>
             <Button
               size="sm"
@@ -108,7 +110,7 @@ export function FormsWidget({ data, dragHandleProps, isDragging }: Props) {
               className="h-7 px-2 text-xs gap-1"
             >
               <Plus className="h-3 w-3" />
-              New
+              {t("newShort")}
             </Button>
           </div>
         </>

@@ -3,12 +3,14 @@
 import { MessageSquare } from "lucide-react";
 import type { KpiActiveDiscussionsData } from "@/types/dashboard";
 import { KpiCard } from "./kpi-card";
+import { useTranslations } from "next-intl";
 
 interface Props {
   data: KpiActiveDiscussionsData;
 }
 
 export function KpiActiveDiscussionsWidget({ data }: Props) {
+  const t = useTranslations("Dashboard.Widgets.kpi");
   const trend =
     data.resolutionRate >= 60
       ? "up"
@@ -19,7 +21,7 @@ export function KpiActiveDiscussionsWidget({ data }: Props) {
   return (
     <KpiCard
       icon={<MessageSquare className="h-4 w-4 text-amber-600" />}
-      label="Active Discussions"
+      label={t("activeDiscussions")}
       value={`${data.openCount}`}
       subtitle={`${data.pendingDecisions} decisions · ${data.resolutionRate}% resolved`}
       trend={trend}

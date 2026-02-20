@@ -10,6 +10,7 @@ import { createClient } from "@/lib/supabase/client";
 import { getCoverById } from "@/lib/notebooks/notebook-covers";
 import type { NotebooksData, DragHandleProps } from "@/types/dashboard";
 import { WidgetCard } from "./widget-card";
+import { useTranslations } from "next-intl";
 
 interface Props {
   data: NotebooksData;
@@ -20,6 +21,7 @@ interface Props {
 export function NotebooksWidget({ data, dragHandleProps, isDragging }: Props) {
   const router = useRouter();
   const [creating, setCreating] = useState(false);
+  const t = useTranslations("Dashboard.Widgets.notebooks");
 
   const handleCreate = async () => {
     setCreating(true);
@@ -43,7 +45,7 @@ export function NotebooksWidget({ data, dragHandleProps, isDragging }: Props) {
         supabase.from("notebooks") as ReturnType<typeof supabase.from>
       )
         .insert({
-          title: "Untitled Notebook",
+          title: t("untitled"),
           cover_style: "gradient-ocean",
           workspace_id: profile.workspace_id,
           created_by: user.id,
@@ -58,7 +60,7 @@ export function NotebooksWidget({ data, dragHandleProps, isDragging }: Props) {
         router.push(`/notebooks/${(notebook as { id: string }).id}`);
       }
     } catch {
-      toast.error("Failed to create notebook");
+      toast.error(t("toastError"));
     } finally {
       setCreating(false);
     }
@@ -66,7 +68,7 @@ export function NotebooksWidget({ data, dragHandleProps, isDragging }: Props) {
 
   return (
     <WidgetCard
-      title="Notebooks"
+      title={t("title")}
       icon={<BookOpen className="h-4 w-4 text-muted-foreground" />}
       dragHandleProps={dragHandleProps}
       isDragging={isDragging}
@@ -74,7 +76,7 @@ export function NotebooksWidget({ data, dragHandleProps, isDragging }: Props) {
       {data.notebooks.length === 0 ? (
         <div className="py-4 text-center">
           <p className="text-sm text-muted-foreground mb-3">
-            Create your first notebook
+            {t("empty")}
           </p>
           <Button
             size="sm"
@@ -84,7 +86,7 @@ export function NotebooksWidget({ data, dragHandleProps, isDragging }: Props) {
             className="gap-1.5"
           >
             <Plus className="h-3.5 w-3.5" />
-            New Notebook
+            {t("new")}
           </Button>
         </div>
       ) : (
@@ -103,11 +105,10 @@ export function NotebooksWidget({ data, dragHandleProps, isDragging }: Props) {
                     style={{ background: cover.gradient }}
                   >
                     <p
-                      className={`text-sm font-medium truncate ${
-                        cover.textColor === "light"
-                          ? "text-white"
-                          : "text-gray-900"
-                      }`}
+                      className={`text-sm font-medium truncate ${cover.textColor === "light"
+                        ? "text-white"
+                        : "text-gray-900"
+                        }`}
                     >
                       {nb.title}
                     </p>
@@ -121,7 +122,7 @@ export function NotebooksWidget({ data, dragHandleProps, isDragging }: Props) {
               href="/notebooks"
               className="text-xs font-medium text-primary hover:text-primary/80"
             >
-              View all notebooks
+              {t("viewAll")}
             </Link>
             <Button
               size="sm"
@@ -131,7 +132,7 @@ export function NotebooksWidget({ data, dragHandleProps, isDragging }: Props) {
               className="h-7 px-2 text-xs gap-1"
             >
               <Plus className="h-3 w-3" />
-              New
+              {t("newShort")}
             </Button>
           </div>
         </>

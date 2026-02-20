@@ -2,6 +2,7 @@
 
 import React from "react";
 import { GripVertical } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import type { DragHandleProps } from "@/types/dashboard";
@@ -55,6 +56,7 @@ export function WidgetCard({
   className,
   headerAction,
 }: WidgetCardProps) {
+  const t = useTranslations("Dashboard.Widgets.common");
   return (
     <Card
       className={cn(
@@ -70,7 +72,7 @@ export function WidgetCard({
               {...dragHandleProps.attributes}
               {...dragHandleProps.listeners}
               className="cursor-grab active:cursor-grabbing touch-none shrink-0 -ml-1"
-              aria-label="Drag to reorder"
+              aria-label={t("dragHandle")}
             >
               <GripVertical className="h-4 w-4 text-muted-foreground/50" />
             </div>

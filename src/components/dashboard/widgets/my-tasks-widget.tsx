@@ -5,6 +5,7 @@ import { ListTodo, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { MyTasksData, DragHandleProps } from "@/types/dashboard";
 import { WidgetCard } from "./widget-card";
+import { useTranslations } from "next-intl";
 
 interface Props {
   data: MyTasksData;
@@ -19,16 +20,23 @@ const priorityConfig = {
 } as const;
 
 export function MyTasksWidget({ data, dragHandleProps, isDragging }: Props) {
+  const t = useTranslations("Dashboard.Widgets.myTasks");
+  const priorityLabels = {
+    high: t("priorityHigh"),
+    medium: t("priorityMed"),
+    low: t("priorityLow"),
+  } as const;
+
   return (
     <WidgetCard
-      title="My Tasks"
+      title={t("title")}
       icon={<ListTodo className="h-4 w-4 text-muted-foreground" />}
       dragHandleProps={dragHandleProps}
       isDragging={isDragging}
     >
       {data.tasks.length === 0 ? (
         <p className="text-sm text-muted-foreground py-4 text-center">
-          No pending tasks
+          {t("empty")}
         </p>
       ) : (
         <div className="space-y-1">
@@ -46,7 +54,7 @@ export function MyTasksWidget({ data, dragHandleProps, isDragging }: Props) {
                     priority.className
                   )}
                 >
-                  {priority.label}
+                  {priorityLabels[task.priority]}
                 </span>
                 <span className="text-sm text-gray-900 truncate flex-1">
                   {task.title}
@@ -69,7 +77,7 @@ export function MyTasksWidget({ data, dragHandleProps, isDragging }: Props) {
           href="/tasks"
           className="flex items-center gap-1 text-xs font-medium text-primary hover:text-primary/80 mt-3 pt-3 border-t"
         >
-          View all {data.totalCount} tasks
+          {t("viewAll", { count: data.totalCount })}
           <ArrowRight className="h-3 w-3" />
         </Link>
       )}

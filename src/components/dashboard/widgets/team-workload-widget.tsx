@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { TeamWorkloadData, DragHandleProps } from "@/types/dashboard";
 import { WidgetCard } from "./widget-card";
+import { useTranslations } from "next-intl";
 
 interface Props {
   data: TeamWorkloadData;
@@ -39,9 +40,11 @@ export function TeamWorkloadWidget({
   dragHandleProps,
   isDragging,
 }: Props) {
+  const t = useTranslations("Dashboard.Widgets.teamWorkload");
+
   return (
     <WidgetCard
-      title="Stewardship Capacity"
+      title={t("title")}
       icon={<Users className="h-4 w-4 text-muted-foreground" />}
       dragHandleProps={dragHandleProps}
       isDragging={isDragging}
@@ -53,7 +56,7 @@ export function TeamWorkloadWidget({
     >
       {data.members.length === 0 ? (
         <p className="text-sm text-muted-foreground py-4 text-center">
-          No team members found
+          {t("empty")}
         </p>
       ) : (
         <div className="space-y-0.5">
@@ -95,7 +98,7 @@ export function TeamWorkloadWidget({
                       level === "overburdened" && "font-medium text-amber-600"
                     )}
                   >
-                    {member.activeTasks} Active
+                    {t("activeCount", { count: member.activeTasks })}
                   </span>
                   <div className="flex gap-1">
                     {Array.from({ length: 5 }).map((_, i) => (

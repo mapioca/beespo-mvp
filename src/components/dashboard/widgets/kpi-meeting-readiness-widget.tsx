@@ -3,12 +3,14 @@
 import { CalendarCheck } from "lucide-react";
 import type { KpiMeetingReadinessData } from "@/types/dashboard";
 import { KpiCard } from "./kpi-card";
+import { useTranslations } from "next-intl";
 
 interface Props {
   data: KpiMeetingReadinessData;
 }
 
 export function KpiMeetingReadinessWidget({ data }: Props) {
+  const t = useTranslations("Dashboard.Widgets.kpi");
   let value: string;
   let subtitle: string;
 
@@ -23,7 +25,7 @@ export function KpiMeetingReadinessWidget({ data }: Props) {
     subtitle = data.nextMeeting.title;
   } else {
     value = "—";
-    subtitle = "No upcoming meetings";
+    subtitle = t("empty");
   }
 
   const trend =
@@ -36,7 +38,7 @@ export function KpiMeetingReadinessWidget({ data }: Props) {
   return (
     <KpiCard
       icon={<CalendarCheck className="h-4 w-4 text-violet-600" />}
-      label="Meeting Readiness"
+      label={t("meetingReadiness")}
       value={value}
       subtitle={subtitle}
       trend={data.nextMeeting ? trend : "neutral"}
