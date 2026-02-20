@@ -1,0 +1,9 @@
+{
+    "Dashboard": {
+        "greetingMorning": "Buenos días",
+        "greetingAfternoon": "Buenas tardes",
+        "greetingEvening": "Buenas noches",
+        "subtitle": "Tu panel de control en un vistazo",
+        "customize": "Personalizar"
+    }
+}

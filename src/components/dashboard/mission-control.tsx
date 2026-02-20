@@ -9,6 +9,7 @@ import type { DashboardConfig, DashboardWidgetData } from "@/types/dashboard";
 import type { FeatureTier } from "@/types/database";
 import { DashboardGrid } from "./grid/dashboard-grid";
 import { CustomizeDrawer } from "./grid/customize-drawer";
+import { useTranslations } from "next-intl";
 
 interface MissionControlProps {
   config: DashboardConfig;
@@ -23,6 +24,7 @@ export function MissionControl({
   featureTier,
   profileName,
 }: MissionControlProps) {
+  const t = useTranslations("Dashboard");
   const [config, setConfig] = useState<DashboardConfig>(initialConfig);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -53,7 +55,11 @@ export function MissionControl({
   // Greeting based on time of day
   const hour = new Date().getHours();
   const greeting =
-    hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+    hour < 12
+      ? t("greetingMorning")
+      : hour < 17
+        ? t("greetingAfternoon")
+        : t("greetingEvening");
 
   return (
     <div className="min-h-[calc(100vh-8rem)] bg-gray-50/50">
@@ -65,7 +71,7 @@ export function MissionControl({
               {greeting}, {profileName?.split(" ")[0] || "there"}
             </h1>
             <p className="text-muted-foreground mt-1">
-              Your mission control at a glance
+              {t("subtitle")}
             </p>
           </div>
           <Button
@@ -75,7 +81,7 @@ export function MissionControl({
             className="gap-1.5"
           >
             <Settings2 className="h-4 w-4" />
-            Customize
+            {t("customize")}
           </Button>
         </div>
 

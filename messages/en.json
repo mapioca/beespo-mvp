@@ -1,0 +1,9 @@
+{
+    "Dashboard": {
+        "greetingMorning": "Good morning",
+        "greetingAfternoon": "Good afternoon",
+        "greetingEvening": "Good evening",
+        "subtitle": "Your mission control at a glance",
+        "customize": "Customize"
+    }
+}
