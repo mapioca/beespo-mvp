@@ -15,9 +15,11 @@ import {
 } from '@/components/ui/card';
 import { toast } from '@/lib/toast';
 import { Plus, Users, ArrowRight, Loader2 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 export default function WelcomePage() {
   const router = useRouter();
+  const t = useTranslations('Welcome');
   const [showJoinForm, setShowJoinForm] = useState(false);
   const [inviteToken, setInviteToken] = useState('');
   const [inviteError, setInviteError] = useState<string | null>(null);
@@ -43,22 +45,22 @@ export default function WelcomePage() {
       const data = await response.json();
 
       if (!response.ok) {
-        const errorMessage = typeof data.error === 'string' ? data.error : 'Failed to accept invitation';
+        const errorMessage = typeof data.error === 'string' ? data.error : t('failedToAcceptInvitation');
         throw new Error(errorMessage);
       }
 
       if (data.needsAuth) {
-        toast.error('Please sign up or log in first.');
+        toast.error(t('pleaseSignUpOrLogIn'));
         setIsSubmitting(false);
         return;
       }
 
-      toast.success('Welcome to Beespo!', { description: `You've joined ${data.workspaceName}!` });
+      toast.success(t('welcomeToBeespo'), { description: t('joinedWorkspace', { workspaceName: data.workspaceName }) });
 
       router.push('/dashboard');
       router.refresh();
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to join workspace';
+      const message = error instanceof Error ? error.message : t('failedToJoinWorkspace');
       setInviteError(message);
       toast.error(message);
       setIsSubmitting(false);
@@ -80,16 +82,16 @@ export default function WelcomePage() {
             />
           </div>
           <p className="text-sm text-muted-foreground">
-            Leadership Management Platform
+            {t('tagline')}
           </p>
         </div>
 
         {/* Card */}
         <Card className="border-border">
           <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl font-bold">Welcome</CardTitle>
+            <CardTitle className="text-2xl font-bold">{t('title')}</CardTitle>
             <CardDescription>
-              How would you like to get started?
+              {t('subtitle')}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -103,8 +105,8 @@ export default function WelcomePage() {
                 <Plus className="h-4 w-4 text-background" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground">Create a Workspace</p>
-                <p className="text-xs text-muted-foreground">Start fresh with a new workspace</p>
+                <p className="text-sm font-medium text-foreground">{t('createWorkspace')}</p>
+                <p className="text-xs text-muted-foreground">{t('createWorkspaceDescription')}</p>
               </div>
               <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
             </button>
@@ -120,8 +122,8 @@ export default function WelcomePage() {
                   <Users className="h-4 w-4 text-muted-foreground" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-foreground">Join a Workspace</p>
-                  <p className="text-xs text-muted-foreground">I have an invite code</p>
+                  <p className="text-sm font-medium text-foreground">{t('joinWorkspace')}</p>
+                  <p className="text-xs text-muted-foreground">{t('joinWorkspaceDescription')}</p>
                 </div>
                 <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
               </button>
@@ -132,7 +134,7 @@ export default function WelcomePage() {
                     <Users className="h-4 w-4 text-muted-foreground" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-foreground">Join a Workspace</p>
+                    <p className="text-sm font-medium text-foreground">{t('joinWorkspace')}</p>
                   </div>
                   <button
                     type="button"
@@ -143,16 +145,16 @@ export default function WelcomePage() {
                     }}
                     className="text-xs text-muted-foreground hover:text-foreground"
                   >
-                    Cancel
+                    {t('cancel')}
                   </button>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="inviteToken">Invite Code</Label>
+                  <Label htmlFor="inviteToken">{t('inviteCodeLabel')}</Label>
                   <Input
                     id="inviteToken"
                     type="text"
-                    placeholder="Paste your invite code"
+                    placeholder={t('inviteCodePlaceholder')}
                     value={inviteToken}
                     onChange={(e) => {
                       setInviteToken(e.target.value);
@@ -180,10 +182,10 @@ export default function WelcomePage() {
                   {isSubmitting ? (
                     <>
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Joining...
+                      {t('joining')}
                     </>
                   ) : (
-                    'Join Workspace'
+                    t('joinWorkspaceButton')
                   )}
                 </Button>
               </div>

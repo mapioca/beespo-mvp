@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect, useTransition } from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -38,6 +39,7 @@ export function ParticipantsClient({
     totalCount,
     currentSearch,
 }: ParticipantsClientProps) {
+    const t = useTranslations("Dashboard.Participants");
     const [createDialogOpen, setCreateDialogOpen] = useState(false);
     const [newName, setNewName] = useState("");
     const [isCreating, setIsCreating] = useState(false);
@@ -110,9 +112,9 @@ export function ParticipantsClient({
             });
 
         if (error) {
-            toast.error("Failed to create participant");
+            toast.error(t("toastCreateError"));
         } else {
-            toast.success("Participant created");
+            toast.success(t("toastCreateSuccess"));
             setNewName("");
             setCreateDialogOpen(false);
             router.refresh();
@@ -128,16 +130,16 @@ export function ParticipantsClient({
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
                         <Users className="h-8 w-8" />
-                        Participants
+                        {t("title")}
                     </h1>
                     <p className="text-muted-foreground mt-2">
-                        Manage reusable participant names for meeting assignments
+                        {t("subtitle")}
                     </p>
                 </div>
                 {canManage && (
                     <Button onClick={() => setCreateDialogOpen(true)}>
                         <Plus className="mr-2 h-4 w-4" />
-                        Add Participant
+                        {t("buttonAddParticipant")}
                     </Button>
                 )}
             </div>
@@ -147,15 +149,16 @@ export function ParticipantsClient({
                 <div className="relative max-w-sm">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
-                        placeholder="Search participants..."
+                        placeholder={t("searchPlaceholder")}
                         defaultValue={currentSearch}
                         onChange={(e) => handleSearchChange(e.target.value)}
                         className="pl-9"
                     />
                 </div>
                 <div className="text-sm text-muted-foreground">
-                    {totalCount} participant{totalCount !== 1 ? 's' : ''} total
-                    {isPending && " (loading...)"}
+                    {isPending
+                        ? t("totalCountLoading", { count: totalCount })
+                        : t("totalCount", { count: totalCount })}
                 </div>
             </div>
 
@@ -169,14 +172,14 @@ export function ParticipantsClient({
             <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Add Participant</DialogTitle>
+                        <DialogTitle>{t("dialogAddTitle")}</DialogTitle>
                         <DialogDescription>
-                            Create a new participant name for meeting assignments
+                            {t("dialogAddDescription")}
                         </DialogDescription>
                     </DialogHeader>
                     <div className="py-4">
                         <Input
-                            placeholder="Enter name..."
+                            placeholder={t("inputNamePlaceholder")}
                             value={newName}
                             onChange={(e) => setNewName(e.target.value)}
                             onKeyDown={(e) => e.key === "Enter" && handleCreate()}
@@ -188,13 +191,13 @@ export function ParticipantsClient({
                             variant="outline"
                             onClick={() => setCreateDialogOpen(false)}
                         >
-                            Cancel
+                            {t("buttonCancel")}
                         </Button>
                         <Button
                             onClick={handleCreate}
                             disabled={!newName.trim() || isCreating}
                         >
-                            {isCreating ? "Creating..." : "Create"}
+                            {isCreating ? t("buttonCreating") : t("buttonCreate")}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

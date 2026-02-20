@@ -8,6 +8,7 @@ import { getCoverById } from "@/lib/notebooks/notebook-covers";
 import { NoteEditor } from "@/components/notes/note-editor";
 import { ChevronRight, Library, BookOpen } from "lucide-react";
 import { toast } from "@/lib/toast";
+import { useTranslations } from "next-intl";
 
 interface Notebook {
     id: string;
@@ -20,6 +21,7 @@ interface NoteEditorPageProps {
 }
 
 export default function NoteEditorPage({ params }: NoteEditorPageProps) {
+    const t = useTranslations("Dashboard.Notebooks");
     const resolvedParams = use(params);
     const [notebook, setNotebook] = useState<Notebook | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -36,14 +38,14 @@ export default function NoteEditorPage({ params }: NoteEditorPageProps) {
             .single();
 
         if (error || !data) {
-            toast.error("Notebook not found");
+            toast.error(t("notebookNotFound"));
             router.push("/notebooks");
             return;
         }
 
         setNotebook(data as Notebook);
         setIsLoading(false);
-    }, [resolvedParams.notebookId, supabase, router]);
+    }, [resolvedParams.notebookId, supabase, router, t]);
 
     useEffect(() => {
         fetchNotebook();
@@ -63,7 +65,7 @@ export default function NoteEditorPage({ params }: NoteEditorPageProps) {
     if (isLoading || !notebook || !cover) {
         return (
             <div className="flex items-center justify-center h-full">
-                <div className="text-muted-foreground">Loading...</div>
+                <div className="text-muted-foreground">{t("loading")}</div>
             </div>
         );
     }
@@ -83,7 +85,7 @@ export default function NoteEditorPage({ params }: NoteEditorPageProps) {
                         className="flex items-center gap-1 hover:text-foreground transition-colors"
                     >
                         <Library className="w-4 h-4" />
-                        <span>Library</span>
+                        <span>{t("library")}</span>
                     </Link>
                     <ChevronRight className="w-4 h-4" />
                     <Link
@@ -99,7 +101,7 @@ export default function NoteEditorPage({ params }: NoteEditorPageProps) {
                     <ChevronRight className="w-4 h-4" />
                     <span className="flex items-center gap-1 text-foreground">
                         <BookOpen className="w-4 h-4" />
-                        <span>Note</span>
+                        <span>{t("note")}</span>
                     </span>
                 </nav>
             </div>

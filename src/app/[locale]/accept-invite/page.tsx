@@ -12,11 +12,13 @@ import {
 } from "@/components/ui/card";
 import { Loader2, CheckCircle, XCircle } from "lucide-react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 
 function AcceptInviteContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const token = searchParams.get("token");
+    const t = useTranslations("AcceptInvite");
 
     const [status, setStatus] = useState<"loading" | "needsAuth" | "success" | "error">("loading");
     const [message, setMessage] = useState("");
@@ -27,7 +29,7 @@ function AcceptInviteContent() {
     useEffect(() => {
         if (!token) {
             setStatus("error");
-            setMessage("Invalid invitation link. No token provided.");
+            setMessage(t("invalidLinkNoToken"));
             return;
         }
 
@@ -43,14 +45,14 @@ function AcceptInviteContent() {
 
                 if (!response.ok) {
                     setStatus("error");
-                    setMessage(data.error || "Failed to accept invitation");
+                    setMessage(data.error || t("failedToAcceptInvitation"));
                     return;
                 }
 
                 if (data.needsAuth) {
                     // User needs to sign up/login first
                     setStatus("needsAuth");
-                    setWorkspaceName(data.invitation?.workspaceName || "the workspace");
+                    setWorkspaceName(data.invitation?.workspaceName || t("theWorkspace"));
                     setInvitedEmail(data.invitation?.email || "");
                     setInvitedRole(data.invitation?.role || "member");
                     return;
@@ -58,7 +60,7 @@ function AcceptInviteContent() {
 
                 // Success!
                 setStatus("success");
-                setWorkspaceName(data.workspaceName || "the workspace");
+                setWorkspaceName(data.workspaceName || t("theWorkspace"));
 
                 // Redirect to dashboard after 2 seconds
                 setTimeout(() => {
@@ -66,28 +68,28 @@ function AcceptInviteContent() {
                 }, 2000);
             } catch {
                 setStatus("error");
-                setMessage("An unexpected error occurred. Please try again.");
+                setMessage(t("unexpectedError"));
             }
         };
 
         acceptInvitation();
-    }, [token, router]);
+    }, [token, router, t]);
 
     return (
         <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-background to-muted">
             <Card className="max-w-md w-full">
                 <CardHeader className="text-center">
                     <CardTitle className="text-2xl">
-                        {status === "loading" && "Processing Invitation..."}
-                        {status === "needsAuth" && "Welcome to Beespo!"}
-                        {status === "success" && "You're In!"}
-                        {status === "error" && "Invitation Error"}
+                        {status === "loading" && t("titleLoading")}
+                        {status === "needsAuth" && t("titleNeedsAuth")}
+                        {status === "success" && t("titleSuccess")}
+                        {status === "error" && t("titleError")}
                     </CardTitle>
                     <CardDescription>
-                        {status === "loading" && "Please wait while we process your invitation."}
-                        {status === "needsAuth" && `You've been invited to join ${workspaceName}`}
-                        {status === "success" && `Successfully joined ${workspaceName}`}
-                        {status === "error" && "Something went wrong with your invitation."}
+                        {status === "loading" && t("descriptionLoading")}
+                        {status === "needsAuth" && t("descriptionNeedsAuth", { workspaceName })}
+                        {status === "success" && t("descriptionSuccess", { workspaceName })}
+                        {status === "error" && t("descriptionError")}
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="flex flex-col items-center space-y-4">
@@ -98,20 +100,20 @@ function AcceptInviteContent() {
                     {status === "needsAuth" && (
                         <>
                             <p className="text-center text-muted-foreground">
-                                Please sign up or log in to accept this invitation.
+                                {t("needsAuthSignUpOrLogin")}
                             </p>
                             <p className="text-sm text-center text-muted-foreground">
-                                You&apos;ll be joining as <span className="font-medium capitalize">{invitedRole}</span>
+                                {t("joiningAs")} <span className="font-medium capitalize">{invitedRole}</span>
                             </p>
                             <div className="flex gap-4">
                                 <Button asChild>
                                     <Link href={`/login?redirect=/accept-invite?token=${token}`}>
-                                        Log In
+                                        {t("logIn")}
                                     </Link>
                                 </Button>
                                 <Button variant="outline" asChild>
                                     <Link href={`/signup?invitation_token=${token}&email=${encodeURIComponent(invitedEmail)}`}>
-                                        Sign Up
+                                        {t("signUp")}
                                     </Link>
                                 </Button>
                             </div>
@@ -122,7 +124,7 @@ function AcceptInviteContent() {
                         <>
                             <CheckCircle className="h-12 w-12 text-green-500" />
                             <p className="text-center text-muted-foreground">
-                                Redirecting you to the dashboard...
+                                {t("redirectingToDashboard")}
                             </p>
                         </>
                     )}
@@ -132,7 +134,7 @@ function AcceptInviteContent() {
                             <XCircle className="h-12 w-12 text-destructive" />
                             <p className="text-center text-destructive">{message}</p>
                             <Button asChild variant="outline">
-                                <Link href="/login">Go to Login</Link>
+                                <Link href="/login">{t("goToLogin")}</Link>
                             </Button>
                         </>
                     )}
@@ -143,13 +145,14 @@ function AcceptInviteContent() {
 }
 
 export default function AcceptInvitePage() {
+    const t = useTranslations("AcceptInvite");
     return (
         <Suspense fallback={
             <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-background to-muted">
                 <Card className="max-w-md w-full">
                     <CardHeader className="text-center">
-                        <CardTitle className="text-2xl">Processing Invitation...</CardTitle>
-                        <CardDescription>Please wait while we process your invitation.</CardDescription>
+                        <CardTitle className="text-2xl">{t("titleLoading")}</CardTitle>
+                        <CardDescription>{t("descriptionLoading")}</CardDescription>
                     </CardHeader>
                     <CardContent className="flex flex-col items-center space-y-4">
                         <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -161,4 +164,3 @@ export default function AcceptInvitePage() {
         </Suspense>
     );
 }
-

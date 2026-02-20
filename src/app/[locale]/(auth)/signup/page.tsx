@@ -23,10 +23,12 @@ import { toast } from "@/lib/toast";
 import { createClient } from "@/lib/supabase/client";
 import { ShieldCheck, Loader2, Users, CheckCircle } from "lucide-react";
 import type { WorkspaceInvitationData } from "@/types/onboarding";
+import { useTranslations } from "next-intl";
 
 function SignupContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const t = useTranslations("Auth.Signup");
   // Check for workspace invitation token in URL
   const invitationToken = searchParams.get("invitation_token");
   const invitedEmail = searchParams.get("email");
@@ -78,12 +80,12 @@ function SignupContent() {
               setEmail(data.email);
             }
           } else {
-            toast.error("Invalid Invitation", { description: data.error || "This invitation link is no longer valid." });
+            toast.error(t("invalidInvitationTitle"), { description: data.error || t("invitationNoLongerValid") });
             // Redirect to regular signup
             router.replace("/signup");
           }
         } catch {
-          toast.error("Failed to validate invitation. Please try again.");
+          toast.error(t("failedToValidateInvitation"));
           router.replace("/signup");
         } finally {
           setIsValidatingToken(false);
@@ -92,7 +94,7 @@ function SignupContent() {
 
       validateToken();
     }
-  }, [invitationToken, invitedEmail, router]);
+  }, [invitationToken, invitedEmail, router, t]);
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleInviteValidation = useCallback((isValid: boolean, _invitationId: string | null) => {
@@ -114,7 +116,7 @@ function SignupContent() {
       if (data.success) {
         return data.invitationId;
       } else {
-        throw new Error(data.error || "Failed to consume invite code");
+        throw new Error(data.error || t("failedToConsumeInviteCode"));
       }
     } catch (error) {
       throw error;
@@ -126,33 +128,33 @@ function SignupContent() {
 
     // Validate based on flow type
     if (!isWorkspaceInvite && !inviteCodeValid) {
-      toast.error("Invalid Invite Code", { description: "Please enter a valid invite code to continue." });
+      toast.error(t("invalidInviteCodeTitle"), { description: t("invalidInviteCodeDescription") });
       return;
     }
 
     if (isWorkspaceInvite && !workspaceInviteValid) {
-      toast.error("Invalid Invitation", { description: "Your workspace invitation is no longer valid." });
+      toast.error(t("invalidInvitationTitle"), { description: t("workspaceInvitationNoLongerValid") });
       return;
     }
 
     // For workspace invites, validate email matches
     if (isWorkspaceInvite && workspaceInviteData && email.toLowerCase() !== workspaceInviteData.email.toLowerCase()) {
-      toast.error("Email Mismatch", { description: "Please use the email address the invitation was sent to." });
+      toast.error(t("emailMismatchTitle"), { description: t("emailMismatchDescription") });
       return;
     }
 
     if (password !== confirmPassword) {
-      toast.error("Passwords do not match.");
+      toast.error(t("passwordsDoNotMatch"));
       return;
     }
 
     if (password.length < 6) {
-      toast.error("Password must be at least 6 characters long.");
+      toast.error(t("passwordTooShort"));
       return;
     }
 
     if (!agreedToTerms) {
-      toast.error("You must agree to the Terms and Conditions to create an account.");
+      toast.error(t("mustAgreeToTerms"));
       return;
     }
 
@@ -167,7 +169,7 @@ function SignupContent() {
         consumedInvitationId = await consumeInviteCode();
 
         if (!consumedInvitationId) {
-          toast.error("Invite Code Error", { description: "The invite code is no longer valid. Please get a new code." });
+          toast.error(t("inviteCodeErrorTitle"), { description: t("inviteCodeNoLongerValid") });
           setInviteCodeValid(false);
           setIsLoading(false);
           setIsConsumingCode(false);
@@ -211,7 +213,7 @@ function SignupContent() {
           });
 
           if (signInError) {
-            toast.error("This email is already registered. Please use the login page instead.");
+            toast.error(t("emailAlreadyRegistered"));
             setTimeout(() => {
               router.push("/login");
             }, 2000);
@@ -228,7 +230,7 @@ function SignupContent() {
               if (isWorkspaceInvite && invitationToken) {
                 sessionStorage.setItem("pending_workspace_invitation_token", invitationToken);
               }
-              toast.info("Complete Setup", { description: "Please complete your profile setup." });
+              toast.info(t("completeSetupTitle"), { description: t("completeSetupDescription") });
               router.push("/onboarding");
             } else {
               // User has profile - redirect to dashboard
@@ -252,20 +254,20 @@ function SignupContent() {
           !data.user.email_confirmed_at;
 
         if (needsEmailConfirmation) {
-          toast.info("Check your email", { description: "We've sent a confirmation link to your email address." });
+          toast.info(t("checkEmailTitle"), { description: t("checkEmailDescription") });
           router.push(`/check-email?email=${encodeURIComponent(email)}`);
         } else {
-          toast.success("Success", {
+          toast.success(t("successTitle"), {
             description: isWorkspaceInvite
-              ? `Account created! Let's get you set up to join ${workspaceInviteData?.workspaceName}.`
-              : "Account created successfully! Please complete your profile.",
+              ? (t("accountCreatedJoinWorkspace", { workspaceName: workspaceInviteData?.workspaceName || "" }) as string)
+              : (t("accountCreatedCompleteProfile") as string),
           });
           router.push("/onboarding");
           router.refresh();
         }
       }
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "An unexpected error occurred. Please try again.");
+      toast.error(error instanceof Error ? error.message : t("unexpectedError"));
     } finally {
       setIsLoading(false);
       setIsConsumingCode(false);
@@ -275,12 +277,12 @@ function SignupContent() {
   const handleGoogleSignIn = async () => {
     // Validate based on flow type
     if (!isWorkspaceInvite && !inviteCodeValid) {
-      toast.error("Invalid Invite Code", { description: "Please enter a valid invite code before signing up with Google." });
+      toast.error(t("invalidInviteCodeTitle"), { description: t("invalidInviteCodeGoogleDescription") });
       return;
     }
 
     if (isWorkspaceInvite && !workspaceInviteValid) {
-      toast.error("Invalid Invitation", { description: "Your workspace invitation is no longer valid." });
+      toast.error(t("invalidInvitationTitle"), { description: t("workspaceInvitationNoLongerValid") });
       return;
     }
 
@@ -296,7 +298,7 @@ function SignupContent() {
         const consumedInvitationId = await consumeInviteCode();
 
         if (!consumedInvitationId) {
-          toast.error("Invite Code Error", { description: "The invite code is no longer valid. Please get a new code." });
+          toast.error(t("inviteCodeErrorTitle"), { description: t("inviteCodeNoLongerValid") });
           setInviteCodeValid(false);
           setIsLoading(false);
           setIsConsumingCode(false);
@@ -323,14 +325,14 @@ function SignupContent() {
         // Clear the stored IDs if OAuth fails
         sessionStorage.removeItem("pending_platform_invitation_id");
         sessionStorage.removeItem("pending_workspace_invitation_token");
-        toast.error(error.message || "Failed to sign in with Google");
+        toast.error(error.message || t("failedToSignInWithGoogle"));
         setIsLoading(false);
       }
       // If no error, browser will redirect to Google
     } catch {
       sessionStorage.removeItem("pending_platform_invitation_id");
       sessionStorage.removeItem("pending_workspace_invitation_token");
-      toast.error("An unexpected error occurred. Please try again.");
+      toast.error(t("unexpectedError"));
       setIsLoading(false);
     }
   };
@@ -344,8 +346,8 @@ function SignupContent() {
     return (
       <Card className="border-border">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">Validating Invitation</CardTitle>
-          <CardDescription>Please wait while we verify your invitation...</CardDescription>
+          <CardTitle className="text-2xl font-bold">{t("validatingInvitationTitle")}</CardTitle>
+          <CardDescription>{t("validatingInvitationDescription")}</CardDescription>
         </CardHeader>
         <CardContent className="flex justify-center py-8">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -357,11 +359,11 @@ function SignupContent() {
   return (
     <Card className="border-border">
       <CardHeader className="space-y-1">
-        <CardTitle className="text-2xl font-bold">Create an account</CardTitle>
+        <CardTitle className="text-2xl font-bold">{t("title")}</CardTitle>
         <CardDescription>
           {isWorkspaceInvite && workspaceInviteData
-            ? `Join ${workspaceInviteData.workspaceName} on Beespo`
-            : "Enter your invite code and information to get started"}
+            ? t("descriptionWorkspaceInvite", { workspaceName: workspaceInviteData.workspaceName })
+            : t("description")}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -373,7 +375,7 @@ function SignupContent() {
               <div className="flex items-center gap-2">
                 <CheckCircle className="h-4 w-4 text-green-500" />
                 <span>
-                  You&apos;ve been invited to join <strong>{workspaceInviteData.workspaceName}</strong> as{" "}
+                  {t("invitedToJoin")} <strong>{workspaceInviteData.workspaceName}</strong> {t("as")}{" "}
                   <span className="capitalize font-medium">{workspaceInviteData.role}</span>
                 </span>
               </div>
@@ -387,7 +389,7 @@ function SignupContent() {
             <Alert className="bg-muted/50">
               <ShieldCheck className="h-4 w-4" />
               <AlertDescription>
-                Beespo is currently invite-only. Enter your invite code to continue.
+                {t("inviteOnlyNotice")}
               </AlertDescription>
             </Alert>
 
@@ -415,7 +417,7 @@ function SignupContent() {
               {isConsumingCode ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Verifying...
+                  {t("verifying")}
                 </>
               ) : (
                 <>
@@ -437,7 +439,7 @@ function SignupContent() {
                       fill="#EA4335"
                     />
                   </svg>
-                  Continue with Google
+                  {t("continueWithGoogle")}
                 </>
               )}
             </Button>
@@ -448,7 +450,7 @@ function SignupContent() {
               </div>
               <div className="relative flex justify-center text-xs uppercase">
                 <span className="bg-background px-2 text-muted-foreground">
-                  Or sign up with email
+                  {t("orSignUpWithEmail")}
                 </span>
               </div>
             </div>
@@ -460,11 +462,11 @@ function SignupContent() {
         <form onSubmit={handleSignup}>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="fullName">Full Name</Label>
+              <Label htmlFor="fullName">{t("fullNameLabel")}</Label>
               <Input
                 id="fullName"
                 type="text"
-                placeholder="John Doe"
+                placeholder={t("fullNamePlaceholder")}
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 required
@@ -472,11 +474,11 @@ function SignupContent() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{t("emailLabel")}</Label>
               <Input
                 id="email"
                 type="email"
-                placeholder="name@example.com"
+                placeholder={t("emailPlaceholder")}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -485,12 +487,12 @@ function SignupContent() {
               />
               {isWorkspaceInvite && workspaceInviteValid && (
                 <p className="text-xs text-muted-foreground">
-                  This email was used for your invitation and cannot be changed.
+                  {t("emailLockedByInvitation")}
                 </p>
               )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">{t("passwordLabel")}</Label>
               <Input
                 id="password"
                 type="password"
@@ -501,7 +503,7 @@ function SignupContent() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirm Password</Label>
+              <Label htmlFor="confirmPassword">{t("confirmPasswordLabel")}</Label>
               <Input
                 id="confirmPassword"
                 type="password"
@@ -522,7 +524,7 @@ function SignupContent() {
                 htmlFor="terms"
                 className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
               >
-                I agree to the <TermsOfServiceDialog />
+                {t("agreeToThe")} <TermsOfServiceDialog />
               </label>
             </div>
           </CardContent>
@@ -535,21 +537,21 @@ function SignupContent() {
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  {isConsumingCode ? "Verifying..." : "Creating account..."}
+                  {isConsumingCode ? t("verifying") : t("creatingAccount")}
                 </>
               ) : isWorkspaceInvite ? (
-                "Create account & join workspace"
+                t("createAccountAndJoin")
               ) : (
-                "Create account"
+                t("createAccount")
               )}
             </Button>
             <p className="text-center text-sm text-muted-foreground">
-              Already have an account?{" "}
+              {t("alreadyHaveAccount")}{" "}
               <Link
                 href="/login"
                 className="font-medium underline underline-offset-4 hover:text-foreground"
               >
-                Sign in
+                {t("signInLink")}
               </Link>
             </p>
           </CardFooter>
@@ -559,12 +561,12 @@ function SignupContent() {
       {!showForm && !isWorkspaceInvite && (
         <CardFooter>
           <p className="text-center text-sm text-muted-foreground w-full">
-            Already have an account?{" "}
+            {t("alreadyHaveAccount")}{" "}
             <Link
               href="/login"
               className="font-medium underline underline-offset-4 hover:text-foreground"
             >
-              Sign in
+              {t("signInLink")}
             </Link>
           </p>
         </CardFooter>
@@ -574,12 +576,13 @@ function SignupContent() {
 }
 
 export default function SignupPage() {
+  const t = useTranslations("Auth.Signup");
   return (
     <Suspense fallback={
       <Card className="border-border">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">Loading</CardTitle>
-          <CardDescription>Please wait...</CardDescription>
+          <CardTitle className="text-2xl font-bold">{t("loading")}</CardTitle>
+          <CardDescription>{t("pleaseWait")}</CardDescription>
         </CardHeader>
         <CardContent className="flex justify-center py-8">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />

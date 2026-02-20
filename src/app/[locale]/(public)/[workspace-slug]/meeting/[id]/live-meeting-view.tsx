@@ -11,6 +11,7 @@ import {
 } from "@/hooks/use-live-meeting";
 import { getOrCreateFingerprint, getReferrer, getUserAgent } from "@/lib/share/fingerprint";
 import type { Database } from "@/types/database";
+import { useTranslations } from "next-intl";
 
 type Meeting = Database["public"]["Tables"]["meetings"]["Row"];
 type AgendaItem = Database["public"]["Tables"]["agenda_items"]["Row"];
@@ -50,6 +51,7 @@ export function LiveMeetingView({
   initialAgendaItems,
 }: LiveMeetingViewProps) {
   const hasTrackedView = useRef(false);
+  const t = useTranslations("Public.LiveMeeting");
 
   const { meeting, agendaItems, connectionStatus, lastUpdated, refresh } = useLiveMeeting({
     meetingId,
@@ -91,7 +93,7 @@ export function LiveMeetingView({
     return (
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         <div className="text-center py-12">
-          <p className="text-muted-foreground">Meeting not found or no longer shared.</p>
+          <p className="text-muted-foreground">{t("meetingNotFound")}</p>
         </div>
       </div>
     );
@@ -110,7 +112,7 @@ export function LiveMeetingView({
           <span>{getConnectionStatusLabel(connectionStatus)}</span>
           {lastUpdated && (
             <span className="text-muted-foreground/60">
-              Last updated {format(lastUpdated, "h:mm:ss a")}
+              {t("lastUpdated", { time: format(lastUpdated, "h:mm:ss a") })}
             </span>
           )}
         </div>
@@ -121,7 +123,7 @@ export function LiveMeetingView({
           className="h-6 px-2 text-xs"
         >
           <RefreshCw className="h-3 w-3 mr-1" />
-          Refresh
+          {t("refresh")}
         </Button>
       </div>
 
@@ -150,7 +152,7 @@ export function LiveMeetingView({
 
       {/* Agenda Items */}
       <div className="space-y-4">
-        <h2 className="text-xl font-semibold border-b pb-2">Agenda</h2>
+        <h2 className="text-xl font-semibold border-b pb-2">{t("agendaHeading")}</h2>
 
         {agendaItems && agendaItems.length > 0 ? (
           <div className="space-y-3">
@@ -177,7 +179,7 @@ export function LiveMeetingView({
                         {item.is_completed && (
                           <span className="flex items-center gap-1 text-xs text-green-600">
                             <Check className="h-3 w-3" />
-                            Completed
+                            {t("completed")}
                           </span>
                         )}
                       </div>
@@ -188,7 +190,7 @@ export function LiveMeetingView({
                           {item.item_type === "business" ? (
                             // Business items - hide details, show placeholder
                             <p className="text-sm text-muted-foreground italic">
-                              Ward business will be conducted.
+                              {t("wardBusinessWillBeConducted")}
                             </p>
                           ) : hasChildren ? (
                             // Announcements/Discussions with items - show bulleted list
@@ -200,8 +202,8 @@ export function LiveMeetingView({
                           ) : (
                             // Empty container
                             <p className="text-sm text-muted-foreground italic">
-                              {item.item_type === "announcement" && "No announcements"}
-                              {item.item_type === "discussion" && "No discussions"}
+                              {item.item_type === "announcement" && t("noAnnouncements")}
+                              {item.item_type === "discussion" && t("noDiscussions")}
                             </p>
                           )}
                         </>
@@ -230,7 +232,7 @@ export function LiveMeetingView({
                     ) : item.duration_minutes ? (
                       <div className="flex items-center text-sm text-muted-foreground">
                         <Clock className="h-4 w-4 mr-1" />
-                        {item.duration_minutes} min
+                        {t("durationMin", { count: item.duration_minutes })}
                       </div>
                     ) : null}
                   </div>
@@ -240,7 +242,7 @@ export function LiveMeetingView({
           </div>
         ) : (
           <p className="text-muted-foreground py-8 text-center">
-            No agenda items available.
+            {t("noAgendaItems")}
           </p>
         )}
       </div>
@@ -248,8 +250,7 @@ export function LiveMeetingView({
       {/* Info Box */}
       <div className="mt-8 p-4 bg-muted/50 rounded-lg text-sm text-muted-foreground">
         <p>
-          This is a public view of the meeting agenda. Notes and detailed
-          discussions are only visible to workspace members.
+          {t("publicViewInfo")}
         </p>
       </div>
     </div>

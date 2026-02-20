@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertCircle, RefreshCw } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 export default function Error({
     error,
@@ -12,6 +13,8 @@ export default function Error({
     error: Error & { digest?: string };
     reset: () => void;
 }) {
+    const t = useTranslations('Error');
+
     useEffect(() => {
         // Log error to console in development
         console.error('Application error:', error);
@@ -26,10 +29,10 @@ export default function Error({
                 <CardHeader>
                     <div className="flex items-center gap-2">
                         <AlertCircle className="h-5 w-5 text-destructive" />
-                        <CardTitle>Something went wrong</CardTitle>
+                        <CardTitle>{t('title')}</CardTitle>
                     </div>
                     <CardDescription>
-                        We encountered an unexpected error. Don&apos;t worry, your data is safe.
+                        {t('description')}
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -43,10 +46,10 @@ export default function Error({
                     <div className="flex gap-2">
                         <Button onClick={reset} className="flex items-center gap-2">
                             <RefreshCw className="h-4 w-4" />
-                            Try again
+                            {t('tryAgain')}
                         </Button>
                         <Button variant="outline" onClick={() => window.location.href = '/dashboard'}>
-                            Go to Dashboard
+                            {t('goToDashboard')}
                         </Button>
                     </div>
                 </CardContent>

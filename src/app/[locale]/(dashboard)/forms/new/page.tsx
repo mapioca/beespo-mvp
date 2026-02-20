@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -11,6 +12,7 @@ import { toast } from "@/lib/toast";
 import type { FormSchema } from "@/types/form-types";
 
 export default function NewFormPage() {
+    const t = useTranslations("Dashboard.Forms");
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
     const [isSaving, setIsSaving] = useState(false);
@@ -34,7 +36,7 @@ export default function NewFormPage() {
                 return;
             }
 
-            toast.success("Form created successfully");
+            toast.success(t("toastFormCreated"));
             router.push(`/forms/${result.data?.id}`);
         });
     };
@@ -46,13 +48,13 @@ export default function NewFormPage() {
                 <Button variant="ghost" size="icon" asChild>
                     <Link href="/forms">
                         <ArrowLeft className="h-4 w-4" />
-                        <span className="sr-only">Back to forms</span>
+                        <span className="sr-only">{t("backToForms")}</span>
                     </Link>
                 </Button>
                 <div>
-                    <h1 className="text-xl font-semibold">Create New Form</h1>
+                    <h1 className="text-xl font-semibold">{t("newFormTitle")}</h1>
                     <p className="text-sm text-muted-foreground">
-                        Design your form and add fields
+                        {t("newFormSubtitle")}
                     </p>
                 </div>
             </div>

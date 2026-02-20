@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/lib/toast";
 import { createClient } from "@/lib/supabase/client";
@@ -11,6 +12,7 @@ import { BusinessItemForm, BusinessItemFormData } from "@/components/business/bu
 
 export default function NewBusinessItemPage() {
   const router = useRouter();
+  const t = useTranslations("Dashboard.Meetings.Business");
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (formData: BusinessItemFormData) => {
@@ -24,7 +26,7 @@ export default function NewBusinessItemPage() {
     } = await supabase.auth.getUser();
 
     if (!user) {
-      toast.error("Not authenticated. Please log in again.");
+      toast.error(t("errorNotAuthenticated"));
       setIsLoading(false);
       return;
     }
@@ -38,7 +40,7 @@ export default function NewBusinessItemPage() {
       .single();
 
     if (!profile || !["leader", "admin"].includes(profile.role)) {
-      toast.error("Only leaders and admins can create business items.");
+      toast.error(t("errorPermission"));
       setIsLoading(false);
       return;
     }
@@ -61,12 +63,12 @@ export default function NewBusinessItemPage() {
       });
 
     if (error) {
-      toast.error(error.message || "Failed to create business item.");
+      toast.error(error.message || t("errorCreate"));
       setIsLoading(false);
       return;
     }
 
-    toast.success("Business item created successfully!");
+    toast.success(t("successCreate"));
 
     setIsLoading(false);
     router.push("/meetings/business");
@@ -79,7 +81,7 @@ export default function NewBusinessItemPage() {
         <Button variant="ghost" asChild>
           <Link href="/meetings/business">
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Business Items
+            {t("backToBusinessItems")}
           </Link>
         </Button>
       </div>

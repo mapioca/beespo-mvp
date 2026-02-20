@@ -16,8 +16,10 @@ import {
 import { toast } from "@/lib/toast";
 import { forgotPasswordAction } from "@/lib/actions/auth-actions";
 import { ArrowLeft, Mail } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 export default function ForgotPasswordPage() {
+    const t = useTranslations("Auth.ForgotPassword");
     const [email, setEmail] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
@@ -33,10 +35,10 @@ export default function ForgotPasswordPage() {
                 toast.error(result.error);
             } else {
                 setIsSuccess(true);
-                toast.info("Check your inbox for the password reset link.");
+                toast.info(t("checkInboxToast"));
             }
         } catch {
-            toast.error("An unexpected error occurred. Please try again.");
+            toast.error(t("unexpectedError"));
         } finally {
             setIsLoading(false);
         }
@@ -48,24 +50,24 @@ export default function ForgotPasswordPage() {
                 <CardHeader className="space-y-1">
                     <CardTitle className="text-2xl font-bold flex items-start gap-2">
                         <Mail className="h-6 w-6 mt-1 text-primary" />
-                        Check your email
+                        {t("successTitle")}
                     </CardTitle>
                     <CardDescription>
-                        We have sent a password reset link to <strong>{email}</strong>.
+                        {t("successDescription", { email })}
                     </CardDescription>
                 </CardHeader>
                 <CardFooter className="flex flex-col space-y-4">
                     <Button asChild className="w-full" variant="secondary">
-                        <Link href="/login">Back to Sign in</Link>
+                        <Link href="/login">{t("backToSignIn")}</Link>
                     </Button>
                     <p className="text-center text-sm text-muted-foreground">
-                        Did not receive the email? Check your spam folder or{" "}
+                        {t("didNotReceive")}{" "}
                         <button
                             type="button"
                             onClick={() => setIsSuccess(false)}
                             className="underline underline-offset-4 hover:text-foreground"
                         >
-                            try another email address
+                            {t("tryAnotherEmail")}
                         </button>
                         .
                     </p>
@@ -77,19 +79,19 @@ export default function ForgotPasswordPage() {
     return (
         <Card className="border-border">
             <CardHeader className="space-y-1">
-                <CardTitle className="text-2xl font-bold">Forgot password?</CardTitle>
+                <CardTitle className="text-2xl font-bold">{t("title")}</CardTitle>
                 <CardDescription>
-                    Enter your email address to reset your password
+                    {t("description")}
                 </CardDescription>
             </CardHeader>
             <form onSubmit={handleSubmit}>
                 <CardContent className="space-y-4">
                     <div className="space-y-2">
-                        <Label htmlFor="email">Email</Label>
+                        <Label htmlFor="email">{t("emailLabel")}</Label>
                         <Input
                             id="email"
                             type="email"
-                            placeholder="name@example.com"
+                            placeholder={t("emailPlaceholder")}
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             required
@@ -99,12 +101,12 @@ export default function ForgotPasswordPage() {
                 </CardContent>
                 <CardFooter className="flex flex-col space-y-4">
                     <Button type="submit" className="w-full" disabled={isLoading}>
-                        {isLoading ? "Sending link..." : "Send reset link"}
+                        {isLoading ? t("sendingLink") : t("sendResetLink")}
                     </Button>
                     <Button asChild variant="ghost" className="w-full">
                         <Link href="/login" className="flex items-center gap-2">
                             <ArrowLeft className="h-4 w-4" />
-                            Back to Sign in
+                            {t("backToSignIn")}
                         </Link>
                     </Button>
                 </CardFooter>

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ChevronLeft, Settings2, RefreshCw } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { TableRenderer } from "@/components/tables/renderer/table-renderer";
 import { TableToolbar } from "@/components/tables/toolbar/table-toolbar";
@@ -18,6 +19,7 @@ interface TableDetailClientProps {
 }
 
 export function TableDetailClient({ table }: TableDetailClientProps) {
+    const t = useTranslations("Dashboard.Tables");
     const {
         setActiveTable,
         setColumns,
@@ -88,12 +90,12 @@ export function TableDetailClient({ table }: TableDetailClientProps) {
                         onClick={() => setRecoverColumnOpen(true)}
                     >
                         <RefreshCw className="h-4 w-4 mr-1" />
-                        Recover
+                        {t("buttonRecover")}
                     </Button>
                     <Button variant="outline" size="sm" asChild>
                         <Link href={`/tables/${table.id}/settings`}>
                             <Settings2 className="h-4 w-4 mr-1" />
-                            Settings
+                            {t("buttonSettings")}
                         </Link>
                     </Button>
                 </div>

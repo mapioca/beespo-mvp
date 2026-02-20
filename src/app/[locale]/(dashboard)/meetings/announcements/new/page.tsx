@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,6 +28,7 @@ import Link from "next/link";
 
 export default function NewAnnouncementPage() {
   const router = useRouter();
+  const t = useTranslations("Dashboard.Meetings.Announcements");
   const [isLoading, setIsLoading] = useState(false);
 
   // Form fields
@@ -48,7 +50,7 @@ export default function NewAnnouncementPage() {
     } = await supabase.auth.getUser();
 
     if (!user) {
-      toast.error("Not authenticated. Please log in again.");
+      toast.error(t("errorNotAuthenticated"));
       setIsLoading(false);
       return;
     }
@@ -62,7 +64,7 @@ export default function NewAnnouncementPage() {
       .single();
 
     if (!profile || !["leader", "admin"].includes(profile.role)) {
-      toast.error("Only leaders and admins can create announcements.");
+      toast.error(t("errorPermission"));
       setIsLoading(false);
       return;
     }
@@ -83,12 +85,12 @@ export default function NewAnnouncementPage() {
       });
 
     if (error) {
-      toast.error(error.message || "Failed to create announcement.");
+      toast.error(error.message || t("errorCreate"));
       setIsLoading(false);
       return;
     }
 
-    toast.success("Announcement created successfully!");
+    toast.success(t("successCreate"));
 
     setIsLoading(false);
     router.push("/meetings/announcements");
@@ -101,7 +103,7 @@ export default function NewAnnouncementPage() {
         <Button variant="ghost" asChild>
           <Link href="/meetings/announcements">
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Announcements
+            {t("backToAnnouncements")}
           </Link>
         </Button>
       </div>
@@ -109,31 +111,31 @@ export default function NewAnnouncementPage() {
       <form onSubmit={handleSubmit} className="space-y-6">
         <Card>
           <CardHeader>
-            <CardTitle>Create New Announcement</CardTitle>
+            <CardTitle>{t("cardTitle")}</CardTitle>
             <CardDescription>
-              Add a time-based announcement for your organization
+              {t("cardDescription")}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="title">Title *</Label>
+              <Label htmlFor="title">{t("titleLabel")}</Label>
               <Input
                 id="title"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="e.g., Ward Activity Next Saturday"
+                placeholder={t("titlePlaceholder")}
                 required
                 disabled={isLoading}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="content">Content *</Label>
+              <Label htmlFor="content">{t("contentLabel")}</Label>
               <Textarea
                 id="content"
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
-                placeholder="Announcement details..."
+                placeholder={t("contentPlaceholder")}
                 rows={6}
                 required
                 disabled={isLoading}
@@ -141,7 +143,7 @@ export default function NewAnnouncementPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="priority">Priority</Label>
+              <Label htmlFor="priority">{t("priorityLabel")}</Label>
               <Select
                 value={priority}
                 onValueChange={(value) => setPriority(value as "low" | "medium" | "high")}
@@ -151,16 +153,16 @@ export default function NewAnnouncementPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="low">Low</SelectItem>
-                  <SelectItem value="medium">Medium</SelectItem>
-                  <SelectItem value="high">High</SelectItem>
+                  <SelectItem value="low">{t("priorityLow")}</SelectItem>
+                  <SelectItem value="medium">{t("priorityMedium")}</SelectItem>
+                  <SelectItem value="high">{t("priorityHigh")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="displayStart">Display Start (Optional)</Label>
+                <Label htmlFor="displayStart">{t("displayStartLabel")}</Label>
                 <Input
                   id="displayStart"
                   type="datetime-local"
@@ -169,12 +171,12 @@ export default function NewAnnouncementPage() {
                   disabled={isLoading}
                 />
                 <p className="text-xs text-muted-foreground">
-                  When to start showing this announcement
+                  {t("displayStartHint")}
                 </p>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="displayUntil">Display Until (Optional)</Label>
+                <Label htmlFor="displayUntil">{t("displayUntilLabel")}</Label>
                 <Input
                   id="displayUntil"
                   type="datetime-local"
@@ -183,7 +185,7 @@ export default function NewAnnouncementPage() {
                   disabled={isLoading}
                 />
                 <p className="text-xs text-muted-foreground">
-                  When to stop showing this announcement
+                  {t("displayUntilHint")}
                 </p>
               </div>
             </div>
@@ -197,10 +199,10 @@ export default function NewAnnouncementPage() {
             onClick={() => router.push("/meetings/announcements")}
             disabled={isLoading}
           >
-            Cancel
+            {t("cancelButton")}
           </Button>
           <Button type="submit" disabled={isLoading || !title || !content}>
-            {isLoading ? "Creating..." : "Create Announcement"}
+            {isLoading ? t("creatingButton") : t("createButton")}
           </Button>
         </div>
       </form>

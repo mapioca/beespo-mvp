@@ -38,6 +38,7 @@ import {
     CollapsibleContent,
     CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { useTranslations } from "next-intl";
 import type { Form, FormSubmission } from "@/types/form-types";
 
 interface ResultsDashboardClientProps {
@@ -51,6 +52,7 @@ export function ResultsDashboardClient({
     submissions,
     submissionsOverTime,
 }: ResultsDashboardClientProps) {
+    const t = useTranslations("Dashboard.Forms");
     const [isTableExpanded, setIsTableExpanded] = useState(true);
 
     // Calculate field distributions for select/radio fields
@@ -84,12 +86,12 @@ export function ResultsDashboardClient({
 
     // Export to CSV
     const handleExportCSV = () => {
-        const headers = ["Submitted At", ...form.schema.fields.map((f) => f.label)];
+        const headers = [t("submittedAt"), ...form.schema.fields.map((f) => f.label)];
         const rows = submissions.map((sub) => [
             format(new Date(sub.submitted_at), "yyyy-MM-dd HH:mm:ss"),
             ...form.schema.fields.map((f) => {
                 const value = sub.data[f.id];
-                if (typeof value === "boolean") return value ? "Yes" : "No";
+                if (typeof value === "boolean") return value ? t("yes") : t("no");
                 return String(value || "");
             }),
         ]);
@@ -117,17 +119,17 @@ export function ResultsDashboardClient({
                         <Button variant="ghost" size="icon" asChild>
                             <Link href={`/forms/${form.id}`}>
                                 <ArrowLeft className="h-4 w-4" />
-                                <span className="sr-only">Back to form</span>
+                                <span className="sr-only">{t("backToForm")}</span>
                             </Link>
                         </Button>
                         <div>
                             <h1 className="text-2xl font-bold">{form.title}</h1>
-                            <p className="text-muted-foreground">Response Analytics</p>
+                            <p className="text-muted-foreground">{t("responseAnalytics")}</p>
                         </div>
                     </div>
                     <Button variant="outline" onClick={handleExportCSV}>
                         <Download className="h-4 w-4 mr-2" />
-                        Export CSV
+                        {t("exportCsv")}
                     </Button>
                 </div>
 
@@ -135,7 +137,7 @@ export function ResultsDashboardClient({
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Total Views</CardTitle>
+                            <CardTitle className="text-sm font-medium">{t("totalViews")}</CardTitle>
                             <Eye className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
@@ -146,7 +148,7 @@ export function ResultsDashboardClient({
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium">
-                                Total Submissions
+                                {t("totalSubmissions")}
                             </CardTitle>
                             <FileText className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
@@ -158,7 +160,7 @@ export function ResultsDashboardClient({
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium">
-                                Completion Rate
+                                {t("completionRate")}
                             </CardTitle>
                             <TrendingUp className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
@@ -171,8 +173,8 @@ export function ResultsDashboardClient({
                 {/* Submissions Over Time */}
                 <Card>
                     <CardHeader>
-                        <CardTitle>Submissions Over Time</CardTitle>
-                        <CardDescription>Last 30 days</CardDescription>
+                        <CardTitle>{t("submissionsOverTime")}</CardTitle>
+                        <CardDescription>{t("last30Days")}</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <div className="h-[300px]">
@@ -189,7 +191,10 @@ export function ResultsDashboardClient({
                                         labelFormatter={(value) =>
                                             format(new Date(value), "MMM d, yyyy")
                                         }
-                                        formatter={(value) => [`${value} submissions`, "Count"]}
+                                        formatter={(value) => [
+                                            `${value} ${t("submissionsTooltipLabel")}`,
+                                            t("count"),
+                                        ]}
                                     />
                                     <Line
                                         type="monotone"
@@ -222,7 +227,7 @@ export function ResultsDashboardClient({
                                     <Card key={field.id}>
                                         <CardHeader>
                                             <CardTitle className="text-base">{field.label}</CardTitle>
-                                            <CardDescription>Response distribution</CardDescription>
+                                            <CardDescription>{t("responseDistribution")}</CardDescription>
                                         </CardHeader>
                                         <CardContent>
                                             <div className="h-[200px]">
@@ -259,10 +264,9 @@ export function ResultsDashboardClient({
                             <CollapsibleTrigger asChild>
                                 <div className="flex items-center justify-between cursor-pointer">
                                     <div>
-                                        <CardTitle>All Responses</CardTitle>
+                                        <CardTitle>{t("allResponses")}</CardTitle>
                                         <CardDescription>
-                                            {submissions.length} total response
-                                            {submissions.length !== 1 ? "s" : ""}
+                                            {t("totalResponseCount", { count: submissions.length })}
                                         </CardDescription>
                                     </div>
                                     <Button variant="ghost" size="icon">
@@ -279,14 +283,14 @@ export function ResultsDashboardClient({
                             <CardContent>
                                 {submissions.length === 0 ? (
                                     <div className="text-center py-8 text-muted-foreground">
-                                        No responses yet
+                                        {t("noResponsesYet")}
                                     </div>
                                 ) : (
                                     <div className="overflow-x-auto">
                                         <Table>
                                             <TableHeader>
                                                 <TableRow>
-                                                    <TableHead className="w-[150px]">Submitted</TableHead>
+                                                    <TableHead className="w-[150px]">{t("submitted")}</TableHead>
                                                     {form.schema.fields.map((field) => (
                                                         <TableHead key={field.id}>{field.label}</TableHead>
                                                     ))}
@@ -306,7 +310,7 @@ export function ResultsDashboardClient({
                                                             let displayValue: string;
 
                                                             if (typeof value === "boolean") {
-                                                                displayValue = value ? "Yes" : "No";
+                                                                displayValue = value ? t("yes") : t("no");
                                                             } else {
                                                                 displayValue = String(value || "—");
                                                             }
@@ -323,7 +327,7 @@ export function ResultsDashboardClient({
                                         </Table>
                                         {submissions.length > 50 && (
                                             <p className="text-sm text-muted-foreground text-center mt-4">
-                                                Showing first 50 responses. Export CSV for all data.
+                                                {t("showingFirst50")}
                                             </p>
                                         )}
                                     </div>

@@ -15,12 +15,14 @@ import {
 } from "@/components/ui/card";
 import { toast } from "@/lib/toast";
 import { createClient } from "@/lib/supabase/client";
+import { useTranslations } from "next-intl";
 
 export default function ResetPasswordPage() {
     // Memoize the Supabase client to prevent recreation on each render
     // This is critical for maintaining auth state across the component lifecycle
     const supabase = useMemo(() => createClient(), []);
     const router = useRouter();
+    const t = useTranslations("Auth.ResetPassword");
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
     const [isLoading, setIsLoading] = useState(false);
@@ -98,7 +100,7 @@ export default function ResetPasswordPage() {
         e.preventDefault();
 
         if (password !== confirmPassword) {
-            toast.error("Passwords do not match.");
+            toast.error(t("passwordsDoNotMatch"));
             return;
         }
         setIsLoading(true);
@@ -113,7 +115,7 @@ export default function ResetPasswordPage() {
 
             if (!session) {
                 console.error("Session missing during submit.");
-                toast.error("Your session has expired or was not found. Please request a new password reset link.");
+                toast.error(t("sessionExpired"));
                 setIsLoading(false);
                 return;
             }
@@ -125,11 +127,11 @@ export default function ResetPasswordPage() {
                 console.error("Error updating user:", error);
                 toast.error(error.message);
             } else {
-                toast.success("Your password has been reset successfully.");
+                toast.success(t("passwordResetSuccess"));
                 router.push("/dashboard");
             }
         } catch (err: unknown) {
-            let message = "An unexpected error occurred.";
+            let message = t("unexpectedError");
             if (err instanceof Error) {
                 message = err.message;
             }
@@ -144,9 +146,9 @@ export default function ResetPasswordPage() {
         return (
             <Card className="border-border">
                 <CardHeader className="space-y-1">
-                    <CardTitle className="text-2xl font-bold">Verifying Link</CardTitle>
+                    <CardTitle className="text-2xl font-bold">{t("verifyingTitle")}</CardTitle>
                     <CardDescription>
-                        Please wait while we verify your secure link...
+                        {t("verifyingDescription")}
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -162,14 +164,14 @@ export default function ResetPasswordPage() {
         return (
             <Card className="border-border">
                 <CardHeader className="space-y-1">
-                    <CardTitle className=" text-2xl font-bold text-destructive">Invalid Link</CardTitle>
+                    <CardTitle className=" text-2xl font-bold text-destructive">{t("invalidLinkTitle")}</CardTitle>
                     <CardDescription>
-                        Unable to verify your session. The link may have expired or is invalid.
+                        {t("invalidLinkDescription")}
                     </CardDescription>
                 </CardHeader>
                 <CardFooter>
                     <Button className="w-full" onClick={() => router.push('/forgot-password')}>
-                        Request New Link
+                        {t("requestNewLink")}
                     </Button>
                 </CardFooter>
             </Card>
@@ -179,15 +181,15 @@ export default function ResetPasswordPage() {
     return (
         <Card className="border-border">
             <CardHeader className="space-y-1">
-                <CardTitle className="text-2xl font-bold">Reset password</CardTitle>
+                <CardTitle className="text-2xl font-bold">{t("title")}</CardTitle>
                 <CardDescription>
-                    Enter your new password below.
+                    {t("description")}
                 </CardDescription>
             </CardHeader>
             <form onSubmit={handleSubmit}>
                 <CardContent className="space-y-4">
                     <div className="space-y-2">
-                        <Label htmlFor="password">New Password</Label>
+                        <Label htmlFor="password">{t("newPasswordLabel")}</Label>
                         <Input
                             id="password"
                             type="password"
@@ -199,7 +201,7 @@ export default function ResetPasswordPage() {
                         />
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="confirmPassword">Confirm Password</Label>
+                        <Label htmlFor="confirmPassword">{t("confirmPasswordLabel")}</Label>
                         <Input
                             id="confirmPassword"
                             type="password"
@@ -213,7 +215,7 @@ export default function ResetPasswordPage() {
                 </CardContent>
                 <CardFooter className="flex flex-col space-y-4">
                     <Button type="submit" className="w-full" disabled={isLoading}>
-                        {isLoading ? "Resetting password..." : "Reset password"}
+                        {isLoading ? t("resettingPassword") : t("resetPasswordButton")}
                     </Button>
                 </CardFooter>
             </form>

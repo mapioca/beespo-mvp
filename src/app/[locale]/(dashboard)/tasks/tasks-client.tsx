@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useTranslations } from "next-intl";
 import { CreateTaskDialog } from "@/components/tasks/create-task-dialog";
 import { TasksTable } from "@/components/tasks/tasks-table";
 import { TaskFilters, TaskStatus, TaskPriority } from "@/components/tasks/task-filters";
@@ -36,6 +37,7 @@ export function TasksClient({
     priorityCounts,
     currentFilters,
 }: TasksClientProps) {
+    const t = useTranslations("Dashboard.Tasks");
     // Client-side filters for priority and assignees (not in URL yet)
     const [localFilters, setLocalFilters] = useState<{
         search: string;
@@ -119,9 +121,9 @@ export function TasksClient({
         <div className="p-8 max-w-7xl mx-auto space-y-6">
             <div className="flex justify-between items-center">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Tasks</h1>
+                    <h1 className="text-3xl font-bold tracking-tight">{t("title")}</h1>
                     <p className="text-muted-foreground mt-2">
-                        Manage your action items and assignments.
+                        {t("subtitle")}
                     </p>
                 </div>
                 <CreateTaskDialog />
@@ -139,7 +141,7 @@ export function TasksClient({
 
             {/* Task count */}
             <div className="text-sm text-muted-foreground">
-                {totalCount} task{totalCount !== 1 ? 's' : ''} total
+                {t("totalCount", { count: totalCount })}
             </div>
 
             {/* Tasks Table */}

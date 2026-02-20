@@ -55,6 +55,7 @@ import {
   PartyPopper,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { useTranslations } from 'next-intl';
 
 const unitIconMap: Record<string, React.ReactNode> = {
   Users: <Users className="h-5 w-5" />,
@@ -78,22 +79,9 @@ const orgIconMap: Record<string, React.ReactNode> = {
   Building: <Building className="h-5 w-5" />,
 };
 
-const LOADING_MESSAGES = [
-  'Creating your workspace...',
-  'Setting up your organization...',
-  'Preparing your dashboard...',
-  'Sending invitations...',
-  'Almost there...',
-];
-
-const INVITED_LOADING_MESSAGES = [
-  'Joining workspace...',
-  'Setting up your profile...',
-  'Almost there...',
-];
-
 export default function OnboardingPage() {
   const router = useRouter();
+  const t = useTranslations('Onboarding');
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
@@ -121,6 +109,20 @@ export default function OnboardingPage() {
     teammateInvites: [],
     featureInterests: [],
   });
+
+  const LOADING_MESSAGES = [
+    t('loadingCreatingWorkspace'),
+    t('loadingSettingUpOrganization'),
+    t('loadingPreparingDashboard'),
+    t('loadingSendingInvitations'),
+    t('loadingAlmostThere'),
+  ];
+
+  const INVITED_LOADING_MESSAGES = [
+    t('loadingJoiningWorkspace'),
+    t('loadingSettingUpProfile'),
+    t('loadingAlmostThere'),
+  ];
 
   // Check if user already has a workspace (existing user) - redirect to dashboard
   useEffect(() => {
@@ -180,18 +182,18 @@ export default function OnboardingPage() {
             });
           } else {
             // Token is no longer valid
-            toast.error('Invitation Expired', { description: 'Your workspace invitation is no longer valid.' });
+            toast.error(t('toastInvitationExpiredTitle'), { description: t('toastInvitationExpired') });
             sessionStorage.removeItem('pending_workspace_invitation_token');
             router.push('/');
           }
         } catch {
-          toast.error('Failed to load invitation details.');
+          toast.error(t('toastInvitationError'));
         }
       };
 
       fetchInvitationData();
     }
-  }, [router]);
+  }, [router, t]);
 
   // Determine steps based on user type
   const currentSteps = isInvitedUser ? INVITED_USER_ONBOARDING_STEPS : ONBOARDING_STEPS;
@@ -278,14 +280,14 @@ export default function OnboardingPage() {
 
       setIsComplete(true);
 
-      toast.success('Welcome to Beespo!', { description: 'Your workspace has been created successfully.' });
+      toast.success(t('toastWelcomeTitle'), { description: t('toastWelcomeDescription') });
 
       setTimeout(() => {
         router.push('/dashboard');
         router.refresh();
       }, 1500);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Something went wrong');
+      toast.error(error instanceof Error ? error.message : t('toastGenericError'));
       setIsSubmitting(false);
     }
   };
@@ -314,14 +316,14 @@ export default function OnboardingPage() {
 
       setIsComplete(true);
 
-      toast.success('Welcome to the team!', { description: `You've successfully joined ${invitationData?.workspaceName}.` });
+      toast.success(t('toastWelcomeTeamTitle') as string, { description: t('toastWelcomeTeamDescription', { workspaceName: invitationData?.workspaceName || "" }) as string });
 
       setTimeout(() => {
         router.push('/dashboard');
         router.refresh();
       }, 1500);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Something went wrong');
+      toast.error(error instanceof Error ? error.message : t('toastGenericError'));
       setIsSubmitting(false);
     }
   };
@@ -432,9 +434,9 @@ export default function OnboardingPage() {
     inviteRows.forEach((row, index) => {
       const email = row.email.trim().toLowerCase();
       if (email && !validateEmail(email)) {
-        errors[index] = 'Invalid email';
+        errors[index] = t('inviteErrorInvalidEmail');
       } else if (email && seenEmails.has(email)) {
-        errors[index] = 'Duplicate';
+        errors[index] = t('inviteErrorDuplicate');
       }
       if (email) seenEmails.add(email);
     });
@@ -452,13 +454,13 @@ export default function OnboardingPage() {
   const formatRole = (role: string) => {
     switch (role) {
       case 'admin':
-        return 'Admin';
+        return t('roleAdmin');
       case 'leader':
-        return 'Leader';
+        return t('roleLeader');
       case 'guest':
-        return 'Guest';
+        return t('roleGuest');
       default:
-        return 'Member';
+        return t('roleMember');
     }
   };
 
@@ -484,10 +486,10 @@ export default function OnboardingPage() {
           </div>
           <div className="space-y-2">
             <h2 className="text-xl font-semibold">
-              {isComplete ? 'All set!' : currentLoadingMessages[loadingMessageIndex]}
+              {isComplete ? t('loadingAllSet') : currentLoadingMessages[loadingMessageIndex]}
             </h2>
             <p className="text-gray-500">
-              {isComplete ? 'Redirecting you to your dashboard...' : 'This will only take a moment'}
+              {isComplete ? t('loadingRedirecting') : t('loadingMoment')}
             </p>
           </div>
         </div>
@@ -524,10 +526,10 @@ export default function OnboardingPage() {
                   </div>
                   <div className="space-y-2 text-center">
                     <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">
-                      Welcome to Beespo!
+                      {t('invitedWelcomeTitle')}
                     </h1>
                     <p className="text-gray-500 text-lg">
-                      You&apos;ve been invited to join
+                      {t('invitedWelcomeInvitedTo')}
                     </p>
                     <p className="text-xl font-semibold text-gray-900">
                       {invitationData.workspaceName}
@@ -535,12 +537,12 @@ export default function OnboardingPage() {
                     <div className="pt-4">
                       <span className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary rounded-full text-sm font-medium">
                         <Users className="h-4 w-4" />
-                        You&apos;ll be joining as {formatRole(invitationData.role)}
+                        {t('invitedWelcomeJoiningAs', { role: formatRole(invitationData.role) })}
                       </span>
                     </div>
                   </div>
                   <p className="text-center text-gray-500 pt-4">
-                    Just a quick step to complete your profile and you&apos;ll be ready to collaborate with your team.
+                    {t('invitedWelcomeDescription')}
                   </p>
                 </div>
               )}
@@ -550,21 +552,21 @@ export default function OnboardingPage() {
                 <div className="space-y-6">
                   <div className="space-y-2">
                     <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">
-                      What is your calling or role?
+                      {t('invitedRoleTitleHeading')}
                     </h1>
                     <p className="text-gray-500">
-                      This helps your teammates know your position in the organization.
+                      {t('invitedRoleTitleSubheading')}
                     </p>
                   </div>
                   <div className="space-y-4">
                     <div className="space-y-2">
                       <Label htmlFor="roleTitle" className="text-sm text-gray-500 font-medium">
-                        Your Role Title
+                        {t('invitedRoleTitleLabel')}
                       </Label>
                       <Input
                         id="roleTitle"
                         type="text"
-                        placeholder="e.g., Relief Society Secretary, Young Men Advisor"
+                        placeholder={t('invitedRoleTitlePlaceholder')}
                         value={roleTitle}
                         onChange={(e) => setRoleTitle(e.target.value)}
                         className="text-base h-12 rounded-lg border-gray-200 focus:border-black focus:ring-2 focus:ring-black focus:ring-offset-0"
@@ -574,7 +576,7 @@ export default function OnboardingPage() {
                     {roleTitle.trim() && (
                       <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 space-y-1">
                         <p className="text-sm font-medium text-gray-500">
-                          You&apos;ll appear as:
+                          {t('invitedRoleTitleAppearAs')}
                         </p>
                         <p className="font-semibold text-gray-900">
                           {roleTitle.trim()}
@@ -595,10 +597,10 @@ export default function OnboardingPage() {
                 <div className="space-y-6">
                   <div className="space-y-2">
                     <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">
-                      What type of unit are you serving in?
+                      {t('unitTypeHeading')}
                     </h1>
                     <p className="text-gray-500">
-                      Select the type of church unit your organization belongs to.
+                      {t('unitTypeSubheading')}
                     </p>
                   </div>
                   <PillSelector
@@ -617,10 +619,10 @@ export default function OnboardingPage() {
                 <div className="space-y-6">
                   <div className="space-y-2">
                     <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">
-                      Which organization are you part of?
+                      {t('organizationHeading')}
                     </h1>
                     <p className="text-gray-500">
-                      Select the organization you serve in.
+                      {t('organizationSubheading')}
                     </p>
                   </div>
                   <PillSelector
@@ -639,10 +641,10 @@ export default function OnboardingPage() {
                 <div className="space-y-6">
                   <div className="space-y-2">
                     <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">
-                      What is your calling or role?
+                      {t('roleHeading')}
                     </h1>
                     <p className="text-gray-500">
-                      Select your role in the organization.
+                      {t('roleSubheading')}
                     </p>
                   </div>
                   <PillSelector
@@ -665,7 +667,7 @@ export default function OnboardingPage() {
                 <div className="space-y-6">
                   <div className="space-y-2">
                     <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">
-                      What is the name of your unit?
+                      {t('unitNameHeading')}
                     </h1>
                     <p className="text-gray-500">
                       {getUnitNameHelperText(formData.unitType)}
@@ -673,7 +675,7 @@ export default function OnboardingPage() {
                   </div>
                   <div className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="unitName" className="text-sm text-gray-500 font-medium">Unit Name</Label>
+                      <Label htmlFor="unitName" className="text-sm text-gray-500 font-medium">{t('unitNameLabel')}</Label>
                       <Input
                         id="unitName"
                         type="text"
@@ -687,7 +689,7 @@ export default function OnboardingPage() {
                     {formData.unitName.trim() && (
                       <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 space-y-1">
                         <p className="text-sm font-medium text-gray-500">
-                          Your workspace will be named:
+                          {t('unitNameWorkspaceWillBe')}
                         </p>
                         <p className="font-semibold text-gray-900">
                           {generateWorkspaceName(
@@ -706,10 +708,10 @@ export default function OnboardingPage() {
                 <div className="space-y-6">
                   <div className="space-y-2">
                     <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">
-                      Invite people to your workspace
+                      {t('inviteHeading')}
                     </h1>
                     <p className="text-gray-500">
-                      Optionally add teammates to collaborate with. You can always invite more later.
+                      {t('inviteSubheading')}
                     </p>
                   </div>
 
@@ -720,7 +722,7 @@ export default function OnboardingPage() {
                         <div className="flex-1">
                           <Input
                             type="email"
-                            placeholder="colleague@example.com"
+                            placeholder={t('inviteEmailPlaceholder')}
                             value={row.email}
                             onChange={(e) => updateInviteRow(index, 'email', e.target.value)}
                             className={`h-10 ${inviteErrors[index] ? 'border-destructive' : ''}`}
@@ -737,9 +739,9 @@ export default function OnboardingPage() {
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="admin">Admin</SelectItem>
-                            <SelectItem value="leader">Leader</SelectItem>
-                            <SelectItem value="guest">Guest</SelectItem>
+                            <SelectItem value="admin">{t('roleAdmin')}</SelectItem>
+                            <SelectItem value="leader">{t('roleLeader')}</SelectItem>
+                            <SelectItem value="guest">{t('roleGuest')}</SelectItem>
                           </SelectContent>
                         </Select>
                         {inviteRows.length > 1 && (
@@ -766,7 +768,7 @@ export default function OnboardingPage() {
                       className="text-gray-500 hover:text-gray-900"
                     >
                       <Plus className="h-4 w-4 mr-2" />
-                      Add another
+                      {t('inviteAddAnother')}
                     </Button>
                   )}
                 </div>
@@ -786,7 +788,7 @@ export default function OnboardingPage() {
           onBack={handleBack}
           onSkip={handleSkip}
           onContinue={handleNext}
-          continueLabel={isInvitedUser && step === TOTAL_STEPS ? 'Join Workspace' : undefined}
+          continueLabel={isInvitedUser && step === TOTAL_STEPS ? t('joinWorkspace') : undefined}
           className="pt-8 flex-shrink-0"
         />
       </div>

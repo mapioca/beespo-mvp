@@ -18,9 +18,11 @@ import { Separator } from "@/components/ui/separator";
 import { toast } from "@/lib/toast";
 import { createClient } from "@/lib/supabase/client";
 import { GoogleOAuthButton } from "@/components/auth/google-oauth-button";
+import { useTranslations } from "next-intl";
 
 export default function LoginPage() {
   const router = useRouter();
+  const t = useTranslations("Auth.Login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -38,7 +40,7 @@ export default function LoginPage() {
 
       if (error) {
         if (error.message.toLowerCase().includes("email not confirmed")) {
-          toast.error("Email not confirmed", { description: "Please check your inbox for the confirmation link." });
+          toast.error(t("emailNotConfirmedTitle"), { description: t("emailNotConfirmedDescription") });
           router.push(`/check-email?email=${encodeURIComponent(email)}`);
         } else {
           toast.error(error.message);
@@ -52,16 +54,16 @@ export default function LoginPage() {
           .single();
 
         if (!profile) {
-          toast.info("Complete Setup", { description: "Please complete your profile setup." });
+          toast.info(t("completeSetupTitle"), { description: t("completeSetupDescription") });
           router.push("/onboarding");
         } else {
-          toast.success("You've been logged in successfully.");
+          toast.success(t("loginSuccess"));
           router.push("/dashboard");
         }
         router.refresh();
       }
     } catch {
-      toast.error("An unexpected error occurred. Please try again.");
+      toast.error(t("unexpectedError"));
     } finally {
       setIsLoading(false);
     }
@@ -70,9 +72,9 @@ export default function LoginPage() {
   return (
     <Card className="border-border">
       <CardHeader className="space-y-1">
-        <CardTitle className="text-2xl font-bold">Sign in</CardTitle>
+        <CardTitle className="text-2xl font-bold">{t("title")}</CardTitle>
         <CardDescription>
-          Enter your email and password to access your account
+          {t("description")}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -83,7 +85,7 @@ export default function LoginPage() {
           </div>
           <div className="relative flex justify-center text-xs uppercase">
             <span className="bg-background px-2 text-muted-foreground">
-              Or continue with email
+              {t("orContinueWithEmail")}
             </span>
           </div>
         </div>
@@ -91,11 +93,11 @@ export default function LoginPage() {
       <form onSubmit={handleLogin}>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">{t("emailLabel")}</Label>
             <Input
               id="email"
               type="email"
-              placeholder="name@example.com"
+              placeholder={t("emailPlaceholder")}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -104,12 +106,12 @@ export default function LoginPage() {
           </div>
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">{t("passwordLabel")}</Label>
               <Link
                 href="/forgot-password"
                 className="text-sm font-medium text-muted-foreground underline-offset-4 hover:underline"
               >
-                Forgot password?
+                {t("forgotPassword")}
               </Link>
             </div>
             <Input
@@ -128,15 +130,15 @@ export default function LoginPage() {
             className="w-full"
             disabled={isLoading}
           >
-            {isLoading ? "Signing in..." : "Sign in"}
+            {isLoading ? t("signingIn") : t("signInButton")}
           </Button>
           <p className="text-center text-sm text-muted-foreground">
-            Don&apos;t have an account?{" "}
+            {t("noAccount")}{" "}
             <Link
               href="/signup"
               className="font-medium underline underline-offset-4 hover:text-foreground"
             >
-              Sign up
+              {t("signUpLink")}
             </Link>
           </p>
         </CardFooter>

@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { AppSidebar } from "@/components/dashboard/app-sidebar";
+import { getTranslations } from "next-intl/server";
 
 export default async function DashboardLayout({
   children,
@@ -8,6 +9,7 @@ export default async function DashboardLayout({
   children: React.ReactNode;
 }) {
   const supabase = await createClient();
+  const t = await getTranslations("Dashboard.Layout");
 
   const {
     data: { user },
@@ -32,7 +34,7 @@ export default async function DashboardLayout({
     <div className="flex h-screen-dynamic">
       {/* Sidebar */}
       <AppSidebar
-        workspaceName={profile?.workspaces?.name || "Workspace"}
+        workspaceName={profile?.workspaces?.name || t("defaultWorkspaceName")}
         userName={profile?.full_name || ""}
         userEmail={user?.email || ""}
         userRoleTitle={profile?.role_title || ""}

@@ -18,8 +18,10 @@ import { toast } from "@/lib/toast";
 import { createClient } from "@/lib/supabase/client";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 
 export default function NewSpeakerPage() {
+  const t = useTranslations("Dashboard.Speakers");
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
 
@@ -40,7 +42,7 @@ export default function NewSpeakerPage() {
     } = await supabase.auth.getUser();
 
     if (!user) {
-      toast.error("Not authenticated. Please log in again.");
+      toast.error(t("errorNotAuthenticated"));
       setIsLoading(false);
       return;
     }
@@ -54,7 +56,7 @@ export default function NewSpeakerPage() {
       .single();
 
     if (!profile || !["leader", "admin"].includes(profile.role)) {
-      toast.error("Only leaders and admins can create speakers.");
+      toast.error(t("errorInsufficientPermissions"));
       setIsLoading(false);
       return;
     }
@@ -74,12 +76,12 @@ export default function NewSpeakerPage() {
       .single();
 
     if (error) {
-      toast.error(error.message || "Failed to create speaker.");
+      toast.error(error.message || t("errorFailedToCreate"));
       setIsLoading(false);
       return;
     }
 
-    toast.success("Speaker created successfully!");
+    toast.success(t("speakerCreatedSuccess"));
 
     setIsLoading(false);
     router.push(`/speakers/${speaker.id}`);
@@ -92,7 +94,7 @@ export default function NewSpeakerPage() {
         <Button variant="ghost" asChild>
           <Link href="/speakers">
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Speakers
+            {t("backToSpeakers")}
           </Link>
         </Button>
       </div>
@@ -100,37 +102,37 @@ export default function NewSpeakerPage() {
       <form onSubmit={handleSubmit} className="space-y-6">
         <Card>
           <CardHeader>
-            <CardTitle>Create New Speaker</CardTitle>
+            <CardTitle>{t("createNewSpeaker")}</CardTitle>
             <CardDescription>
-              Add a speaker to track who spoke and their topic
+              {t("createNewSpeakerDescription")}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Speaker Name *</Label>
+              <Label htmlFor="name">{t("speakerNameLabel")}</Label>
               <Input
                 id="name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="e.g., Brother John Smith"
+                placeholder={t("speakerNamePlaceholder")}
                 required
                 disabled={isLoading}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="topic">Topic *</Label>
+              <Label htmlFor="topic">{t("topicLabel")}</Label>
               <Textarea
                 id="topic"
                 value={topic}
                 onChange={(e) => setTopic(e.target.value)}
-                placeholder="What will they speak about?"
+                placeholder={t("topicPlaceholder")}
                 rows={4}
                 required
                 disabled={isLoading}
               />
               <p className="text-xs text-muted-foreground">
-                Describe the topic or subject of the talk
+                {t("topicHint")}
               </p>
             </div>
 
@@ -145,11 +147,11 @@ export default function NewSpeakerPage() {
                 htmlFor="confirmed"
                 className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
               >
-                Speaker is confirmed
+                {t("speakerIsConfirmed")}
               </Label>
             </div>
             <p className="text-xs text-muted-foreground">
-              Check this box if the speaker has confirmed they will speak
+              {t("speakerIsConfirmedHint")}
             </p>
           </CardContent>
         </Card>
@@ -161,10 +163,10 @@ export default function NewSpeakerPage() {
             onClick={() => router.push("/speakers")}
             disabled={isLoading}
           >
-            Cancel
+            {t("cancel")}
           </Button>
           <Button type="submit" disabled={isLoading || !name || !topic}>
-            {isLoading ? "Creating..." : "Create Speaker"}
+            {isLoading ? t("creating") : t("createSpeaker")}
           </Button>
         </div>
       </form>

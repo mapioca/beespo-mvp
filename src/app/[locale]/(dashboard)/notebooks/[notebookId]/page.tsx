@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
+import { useTranslations } from "next-intl";
 
 interface Note {
     id: string;
@@ -53,6 +54,7 @@ interface NotebookViewPageProps {
 }
 
 export default function NotebookViewPage({ params }: NotebookViewPageProps) {
+    const t = useTranslations("Dashboard.Notebooks");
     const resolvedParams = use(params);
     const [notebook, setNotebook] = useState<Notebook | null>(null);
     const [notes, setNotes] = useState<Note[]>([]);
@@ -74,7 +76,7 @@ export default function NotebookViewPage({ params }: NotebookViewPageProps) {
             .single();
 
         if (notebookError || !notebookData) {
-            toast.error("Notebook not found");
+            toast.error(t("notebookNotFound"));
             router.push("/notebooks");
             return;
         }
@@ -91,7 +93,7 @@ export default function NotebookViewPage({ params }: NotebookViewPageProps) {
 
         setNotes((notesData as Note[]) || []);
         setIsLoading(false);
-    }, [resolvedParams.notebookId, supabase, router]);
+    }, [resolvedParams.notebookId, supabase, router, t]);
 
     useEffect(() => {
         fetchData();
@@ -106,7 +108,7 @@ export default function NotebookViewPage({ params }: NotebookViewPageProps) {
             .eq("id", notebook.id);
 
         if (error) {
-            toast.error("Failed to update title");
+            toast.error(t("errorFailedToUpdateTitle"));
         } else {
             setNotebook({ ...notebook, title: editTitle.trim() });
             setIsEditing(false);
@@ -122,9 +124,9 @@ export default function NotebookViewPage({ params }: NotebookViewPageProps) {
             .eq("id", notebook.id);
 
         if (error) {
-            toast.error("Failed to delete notebook");
+            toast.error(t("errorFailedToDeleteNotebook"));
         } else {
-            toast.success("Notebook deleted");
+            toast.success(t("notebookDeleted"));
             router.push("/notebooks");
         }
     };
@@ -146,7 +148,7 @@ export default function NotebookViewPage({ params }: NotebookViewPageProps) {
         const { data, error } = await (supabase
             .from("notes") as ReturnType<typeof supabase.from>)
             .insert({
-                title: "Untitled Note",
+                title: t("untitledNote"),
                 content: { time: Date.now(), blocks: [], version: "2.29.0" },
                 notebook_id: notebook.id,
                 workspace_id: profile.workspace_id,
@@ -157,7 +159,7 @@ export default function NotebookViewPage({ params }: NotebookViewPageProps) {
             .single();
 
         if (error) {
-            toast.error("Failed to create note");
+            toast.error(t("errorFailedToCreateNote"));
         } else if (data) {
             router.push(`/notebooks/${notebook.id}/notes/${data.id}`);
         }
@@ -168,7 +170,7 @@ export default function NotebookViewPage({ params }: NotebookViewPageProps) {
     if (isLoading || !notebook || !cover) {
         return (
             <div className="flex items-center justify-center h-full">
-                <div className="text-muted-foreground">Loading...</div>
+                <div className="text-muted-foreground">{t("loading")}</div>
             </div>
         );
     }
@@ -189,7 +191,7 @@ export default function NotebookViewPage({ params }: NotebookViewPageProps) {
                         className="flex items-center gap-1 hover:text-foreground transition-colors"
                     >
                         <Library className="w-4 h-4" />
-                        <span>Library</span>
+                        <span>{t("library")}</span>
                     </Link>
                     <ChevronRight className="w-4 h-4" />
                     <span className="text-foreground font-medium">{notebook.title}</span>
@@ -223,7 +225,7 @@ export default function NotebookViewPage({ params }: NotebookViewPageProps) {
                     <div className="flex items-center gap-2">
                         <Button onClick={handleCreateNote}>
                             <Plus className="w-4 h-4 mr-2" />
-                            New Note
+                            {t("newNote")}
                         </Button>
 
                         <DropdownMenu>
@@ -235,14 +237,14 @@ export default function NotebookViewPage({ params }: NotebookViewPageProps) {
                             <DropdownMenuContent align="end">
                                 <DropdownMenuItem onClick={() => setIsEditing(true)}>
                                     <Edit2 className="w-4 h-4 mr-2" />
-                                    Rename
+                                    {t("rename")}
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
                                     className="text-destructive"
                                     onClick={() => setShowDeleteDialog(true)}
                                 >
                                     <Trash2 className="w-4 h-4 mr-2" />
-                                    Delete
+                                    {t("delete")}
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>
@@ -250,7 +252,7 @@ export default function NotebookViewPage({ params }: NotebookViewPageProps) {
                 </div>
 
                 <p className="text-sm text-muted-foreground mt-2">
-                    {notes.length} note{notes.length !== 1 ? "s" : ""}
+                    {t("noteCount", { count: notes.length })}
                 </p>
             </div>
 
@@ -261,13 +263,13 @@ export default function NotebookViewPage({ params }: NotebookViewPageProps) {
                         <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
                             <Plus className="w-8 h-8 text-muted-foreground" />
                         </div>
-                        <h3 className="text-lg font-medium mb-2">No notes yet</h3>
+                        <h3 className="text-lg font-medium mb-2">{t("noNotesYet")}</h3>
                         <p className="text-sm text-muted-foreground mb-4 max-w-sm">
-                            Start writing in this notebook by creating your first note.
+                            {t("noNotesYetDescription")}
                         </p>
                         <Button onClick={handleCreateNote}>
                             <Plus className="w-4 h-4 mr-2" />
-                            Create First Note
+                            {t("createFirstNote")}
                         </Button>
                     </div>
                 ) : (
@@ -281,10 +283,10 @@ export default function NotebookViewPage({ params }: NotebookViewPageProps) {
                                 )}
                             >
                                 <h3 className="font-medium truncate">
-                                    {note.title || "Untitled Note"}
+                                    {note.title || t("untitledNote")}
                                 </h3>
                                 <p className="text-xs text-muted-foreground mt-1">
-                                    Updated{" "}
+                                    {t("updatedAt")}{" "}
                                     {new Date(note.updated_at).toLocaleDateString(undefined, {
                                         month: "short",
                                         day: "numeric",
@@ -300,19 +302,18 @@ export default function NotebookViewPage({ params }: NotebookViewPageProps) {
             <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Delete notebook?</AlertDialogTitle>
+                        <AlertDialogTitle>{t("deleteNotebookTitle")}</AlertDialogTitle>
                         <AlertDialogDescription>
-                            This will permanently delete &quot;{notebook.title}&quot; and all
-                            notes inside it. This action cannot be undone.
+                            {t("deleteNotebookDescription", { title: notebook.title })}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
                         <AlertDialogAction
                             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                             onClick={handleDeleteNotebook}
                         >
-                            Delete
+                            {t("delete")}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

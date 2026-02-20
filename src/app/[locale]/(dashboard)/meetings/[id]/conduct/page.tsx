@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, use } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Database } from "@/types/database";
@@ -27,6 +28,7 @@ interface ConductMeetingProps {
 export default function ConductMeetingPage({ params }: ConductMeetingProps) {
   const { id } = use(params);
   const router = useRouter();
+  const t = useTranslations("Dashboard.Meetings.Conduct");
 
   const [items, setItems] = useState<AgendaItem[]>([]);
   const [meeting, setMeeting] = useState<Meeting | null>(null);
@@ -176,7 +178,7 @@ export default function ConductMeetingPage({ params }: ConductMeetingProps) {
   if (isLoading || !meeting) {
     return (
       <div className="h-[calc(100vh-4rem)] flex items-center justify-center">
-        <div className="text-muted-foreground">Loading conductor...</div>
+        <div className="text-muted-foreground">{t("loadingConductor")}</div>
       </div>
     );
   }
@@ -188,7 +190,7 @@ export default function ConductMeetingPage({ params }: ConductMeetingProps) {
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="sm" onClick={handleExit}>
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Exit
+            {t("exitButton")}
           </Button>
           <div>
             <h1 className="font-semibold">{meeting.title}</h1>
@@ -205,7 +207,7 @@ export default function ConductMeetingPage({ params }: ConductMeetingProps) {
 
             <Button variant="outline" size="sm" onClick={handlePrint}>
               <Printer className="h-4 w-4 mr-2" />
-              Print
+              {t("printButton")}
             </Button>
 
             <Button
@@ -215,7 +217,7 @@ export default function ConductMeetingPage({ params }: ConductMeetingProps) {
               onClick={handleEndMeeting}
             >
               <StopCircle className="mr-2 h-4 w-4" />
-              End Meeting
+              {t("endMeetingButton")}
             </Button>
         </div>
       </header>

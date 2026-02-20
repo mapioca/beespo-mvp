@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server"
 import { MeetingsClient } from "@/components/meetings/meetings-client"
 import { PaginationControls } from "@/components/ui/pagination-controls"
 import { Metadata } from "next"
+import { getTranslations } from "next-intl/server"
 
 export const metadata: Metadata = {
   title: "Schedule | Beespo",
@@ -19,6 +20,7 @@ interface SchedulePageProps {
 
 export default async function SchedulePage({ searchParams }: SchedulePageProps) {
   const supabase = await createClient()
+  const t = await getTranslations("Dashboard.Meetings.Schedule")
 
   // Await searchParams (Next.js 15 requirement)
   const params = await searchParams
@@ -74,7 +76,7 @@ export default async function SchedulePage({ searchParams }: SchedulePageProps) 
     return (
       <div className="flex items-center justify-center h-64">
         <p className="text-muted-foreground">
-          No workspace found. Please set up your workspace first.
+          {t("noWorkspace")}
         </p>
       </div>
     )
@@ -138,7 +140,7 @@ export default async function SchedulePage({ searchParams }: SchedulePageProps) 
 
   if (error) {
     console.error("Error fetching meetings:", error)
-    return <div>Error loading meetings. Please try again.</div>
+    return <div>{t("errorLoading")}</div>
   }
 
   // Fetch all templates for filter dropdown (unfiltered count)
@@ -209,8 +211,11 @@ export default async function SchedulePage({ searchParams }: SchedulePageProps) 
         <div className="px-8 pb-8 max-w-7xl mx-auto">
           <div className="flex items-center justify-between border-t pt-4">
             <p className="text-sm text-muted-foreground">
-              Showing {from + 1}-{Math.min(to + 1, count || 0)} of {count}{" "}
-              meetings
+              {t("showingResults", {
+                from: from + 1,
+                to: (Math.min(to + 1, count || 0) || 0) as number,
+                total: count || 0,
+              })}
             </p>
             <PaginationControls
               currentPage={currentPage}

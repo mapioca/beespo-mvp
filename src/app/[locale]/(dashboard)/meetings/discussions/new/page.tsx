@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,6 +28,7 @@ import Link from "next/link";
 
 export default function NewDiscussionPage() {
   const router = useRouter();
+  const t = useTranslations("Dashboard.Meetings.Discussions");
   const [isLoading, setIsLoading] = useState(false);
 
   // Form fields
@@ -47,7 +49,7 @@ export default function NewDiscussionPage() {
     } = await supabase.auth.getUser();
 
     if (!user) {
-      toast.error("Not authenticated. Please log in again.");
+      toast.error(t("errorNotAuthenticated"));
       setIsLoading(false);
       return;
     }
@@ -61,7 +63,7 @@ export default function NewDiscussionPage() {
       .single();
 
     if (!profile || !["leader", "admin"].includes(profile.role)) {
-      toast.error("Only leaders and admins can create discussions.");
+      toast.error(t("errorPermission"));
       setIsLoading(false);
       return;
     }
@@ -81,12 +83,12 @@ export default function NewDiscussionPage() {
       });
 
     if (error) {
-      toast.error(error.message || "Failed to create discussion.");
+      toast.error(error.message || t("errorCreate"));
       setIsLoading(false);
       return;
     }
 
-    toast.success("Discussion topic created successfully!");
+    toast.success(t("successCreate"));
 
     setIsLoading(false);
     router.push("/meetings/discussions");
@@ -99,7 +101,7 @@ export default function NewDiscussionPage() {
         <Button variant="ghost" asChild>
           <Link href="/meetings/discussions">
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Discussions
+            {t("backToDiscussions")}
           </Link>
         </Button>
       </div>
@@ -107,31 +109,31 @@ export default function NewDiscussionPage() {
       <form onSubmit={handleSubmit} className="space-y-6">
         <Card>
           <CardHeader>
-            <CardTitle>Create New Discussion Topic</CardTitle>
+            <CardTitle>{t("cardTitle")}</CardTitle>
             <CardDescription>
-              Add a topic for ongoing discussion and decision tracking
+              {t("cardDescription")}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="title">Title *</Label>
+              <Label htmlFor="title">{t("titleLabel")}</Label>
               <Input
                 id="title"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="e.g., Youth Program Planning for Summer"
+                placeholder={t("titlePlaceholder")}
                 required
                 disabled={isLoading}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description">Description *</Label>
+              <Label htmlFor="description">{t("descriptionLabel")}</Label>
               <Textarea
                 id="description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Describe the discussion topic and what needs to be decided..."
+                placeholder={t("descriptionPlaceholder")}
                 rows={6}
                 required
                 disabled={isLoading}
@@ -140,7 +142,7 @@ export default function NewDiscussionPage() {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="priority">Priority</Label>
+                <Label htmlFor="priority">{t("priorityLabel")}</Label>
                 <Select
                   value={priority}
                   onValueChange={(value) => setPriority(value as "low" | "medium" | "high")}
@@ -150,15 +152,15 @@ export default function NewDiscussionPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="low">Low</SelectItem>
-                    <SelectItem value="medium">Medium</SelectItem>
-                    <SelectItem value="high">High</SelectItem>
+                    <SelectItem value="low">{t("priorityLow")}</SelectItem>
+                    <SelectItem value="medium">{t("priorityMedium")}</SelectItem>
+                    <SelectItem value="high">{t("priorityHigh")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="category">Category</Label>
+                <Label htmlFor="category">{t("categoryLabel")}</Label>
                 <Select
                   value={category}
                   onValueChange={setCategory}
@@ -168,13 +170,13 @@ export default function NewDiscussionPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="general">General</SelectItem>
-                    <SelectItem value="youth">Youth</SelectItem>
-                    <SelectItem value="welfare">Welfare</SelectItem>
-                    <SelectItem value="activities">Activities</SelectItem>
-                    <SelectItem value="missionary">Missionary</SelectItem>
-                    <SelectItem value="temple">Temple</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
+                    <SelectItem value="general">{t("categoryGeneral")}</SelectItem>
+                    <SelectItem value="youth">{t("categoryYouth")}</SelectItem>
+                    <SelectItem value="welfare">{t("categoryWelfare")}</SelectItem>
+                    <SelectItem value="activities">{t("categoryActivities")}</SelectItem>
+                    <SelectItem value="missionary">{t("categoryMissionary")}</SelectItem>
+                    <SelectItem value="temple">{t("categoryTemple")}</SelectItem>
+                    <SelectItem value="other">{t("categoryOther")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -189,10 +191,10 @@ export default function NewDiscussionPage() {
             onClick={() => router.push("/meetings/discussions")}
             disabled={isLoading}
           >
-            Cancel
+            {t("cancelButton")}
           </Button>
           <Button type="submit" disabled={isLoading || !title || !description}>
-            {isLoading ? "Creating..." : "Create Discussion"}
+            {isLoading ? t("creatingButton") : t("createButton")}
           </Button>
         </div>
       </form>

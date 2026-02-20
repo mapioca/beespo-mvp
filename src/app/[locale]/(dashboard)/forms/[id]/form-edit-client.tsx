@@ -10,6 +10,7 @@ import { FormBuilder } from "@/components/forms/builder/form-builder";
 import { ShareFormModal } from "@/components/forms/share-form-modal";
 import { updateForm } from "@/lib/actions/form-actions";
 import { toast } from "@/lib/toast";
+import { useTranslations } from "next-intl";
 import type { Form, FormSchema } from "@/types/form-types";
 import type { BuilderField } from "@/components/forms/builder/types";
 
@@ -24,6 +25,7 @@ export function FormEditClient({
     submissionCount,
     workspaceSlug,
 }: FormEditClientProps) {
+    const t = useTranslations("Dashboard.Forms");
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
     const [isSaving, setIsSaving] = useState(false);
@@ -60,7 +62,7 @@ export function FormEditClient({
                 return;
             }
 
-            toast.success("Form saved successfully");
+            toast.success(t("formSavedSuccessfully"));
             setIsSaving(false);
             if (result.data) {
                 setCurrentForm(result.data);
@@ -87,8 +89,8 @@ export function FormEditClient({
                 setCurrentForm(result.data);
                 toast.success(
                     result.data.is_published
-                        ? "Form published! It's now accepting responses."
-                        : "Form unpublished. It's no longer accepting responses."
+                        ? t("formPublishedSuccess")
+                        : t("formUnpublishedSuccess")
                 );
             }
             router.refresh();
@@ -103,18 +105,18 @@ export function FormEditClient({
                     <Button variant="ghost" size="icon" asChild>
                         <Link href="/forms">
                             <ArrowLeft className="h-4 w-4" />
-                            <span className="sr-only">Back to forms</span>
+                            <span className="sr-only">{t("backToForms")}</span>
                         </Link>
                     </Button>
                     <div>
                         <div className="flex items-center gap-2">
                             <h1 className="text-xl font-semibold">{currentForm.title}</h1>
                             <Badge variant={currentForm.is_published ? "default" : "secondary"}>
-                                {currentForm.is_published ? "Published" : "Draft"}
+                                {currentForm.is_published ? t("published") : t("draft")}
                             </Badge>
                         </div>
                         <p className="text-sm text-muted-foreground">
-                            {submissionCount} response{submissionCount !== 1 ? "s" : ""}
+                            {t("responseCount", { count: submissionCount })}
                         </p>
                     </div>
                 </div>
@@ -128,25 +130,25 @@ export function FormEditClient({
                         {currentForm.is_published ? (
                             <>
                                 <EyeOff className="h-4 w-4 mr-2" />
-                                Unpublish
+                                {t("unpublish")}
                             </>
                         ) : (
                             <>
                                 <Eye className="h-4 w-4 mr-2" />
-                                Publish
+                                {t("publish")}
                             </>
                         )}
                     </Button>
                     {currentForm.is_published && (
                         <Button variant="outline" onClick={() => setShowShareModal(true)}>
                             <Share2 className="h-4 w-4 mr-2" />
-                            Share
+                            {t("share")}
                         </Button>
                     )}
                     <Button variant="outline" asChild>
                         <Link href={`/forms/${form.id}/results`}>
                             <BarChart2 className="h-4 w-4 mr-2" />
-                            Results
+                            {t("results")}
                         </Link>
                     </Button>
                 </div>

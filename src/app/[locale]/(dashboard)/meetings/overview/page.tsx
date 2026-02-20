@@ -2,6 +2,7 @@ import { Metadata } from "next"
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { OverviewContentClient } from "@/components/meetings/hub/overview/overview-content"
+import { getTranslations } from "next-intl/server"
 
 export const metadata: Metadata = {
   title: "Command Center | Beespo",
@@ -12,6 +13,7 @@ export const dynamic = "force-dynamic"
 
 export default async function MeetingsOverviewPage() {
   const supabase = await createClient()
+  const t = await getTranslations("Dashboard.Meetings.Overview")
 
   const {
     data: { user },
@@ -106,7 +108,7 @@ export default async function MeetingsOverviewPage() {
   const pendingItems: PendingItem[] = [
     ...(pendingBusiness || []).map((item: { id: string; person_name: string; status: string }) => ({
       id: item.id,
-      title: item.person_name || "Unnamed Business Item",
+      title: item.person_name || t("unnamedBusinessItem"),
       type: "business" as const,
       status: item.status,
     })),

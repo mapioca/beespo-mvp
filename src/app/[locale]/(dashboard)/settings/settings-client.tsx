@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import {
     Card,
@@ -89,6 +90,7 @@ export function SettingsClient({
     currentUserRole,
     currentUserDetails,
 }: SettingsClientProps) {
+    const t = useTranslations("Dashboard.Settings");
     const router = useRouter();
     const [workspaceName, setWorkspaceName] = useState(workspace.name);
     const [userFullName, setUserFullName] = useState(currentUserDetails.fullName);
@@ -112,9 +114,9 @@ export function SettingsClient({
             .eq("id", workspace.id);
 
         if (error) {
-            toast.error(error.message || "Failed to update workspace name");
+            toast.error(error.message || t("errorUpdateWorkspace"));
         } else {
-            toast.success("Saved", { description: "Workspace name has been updated." });
+            toast.success(t("toastSaved"), { description: t("toastWorkspaceUpdated") });
             router.refresh();
         }
 
@@ -136,9 +138,9 @@ export function SettingsClient({
             .eq("id", currentUserId);
 
         if (error) {
-            toast.error(error.message || "Failed to update profile");
+            toast.error(error.message || t("errorUpdateProfile"));
         } else {
-            toast.success("Saved", { description: "Your profile has been updated." });
+            toast.success(t("toastSaved"), { description: t("toastProfileUpdated") });
             router.refresh();
         }
 
@@ -153,9 +155,9 @@ export function SettingsClient({
         <div className="h-full overflow-y-auto">
         <div className="p-6 max-w-5xl mx-auto space-y-6">
             <div>
-                <h1 className="text-3xl font-bold">Settings</h1>
+                <h1 className="text-3xl font-bold">{t("title")}</h1>
                 <p className="text-muted-foreground">
-                    Manage your workspace settings and team members
+                    {t("subtitle")}
                 </p>
             </div>
 
@@ -163,29 +165,29 @@ export function SettingsClient({
                 <TabsList>
                     <TabsTrigger value="account" className="gap-2">
                         <User className="h-4 w-4" />
-                        Account
+                        {t("tabAccount")}
                     </TabsTrigger>
                     <TabsTrigger value="general" className="gap-2">
                         <Building2 className="h-4 w-4" />
-                        Workspace
+                        {t("tabWorkspace")}
                     </TabsTrigger>
                     <TabsTrigger value="team" className="gap-2">
                         <Users className="h-4 w-4" />
-                        Team
+                        {t("tabTeam")}
                     </TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="account" className="space-y-6">
                     <Card>
                         <CardHeader>
-                            <CardTitle>Profile Settings</CardTitle>
+                            <CardTitle>{t("profileSettingsTitle")}</CardTitle>
                             <CardDescription>
-                                Manage your personal account information
+                                {t("profileSettingsDescription")}
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="space-y-2">
-                                <Label htmlFor="fullName">Full Name</Label>
+                                <Label htmlFor="fullName">{t("labelFullName")}</Label>
                                 <Input
                                     id="fullName"
                                     value={userFullName}
@@ -195,26 +197,26 @@ export function SettingsClient({
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="roleTitle">Role / Calling</Label>
+                                <Label htmlFor="roleTitle">{t("labelRoleCalling")}</Label>
                                 <Input
                                     id="roleTitle"
                                     value={userRoleTitle}
                                     onChange={(e) => setUserRoleTitle(e.target.value)}
                                     disabled={isSavingProfile}
-                                    placeholder="e.g., Relief Society President"
+                                    placeholder={t("placeholderRoleTitle")}
                                     className="max-w-md"
                                 />
-                                <p className="text-xs text-muted-foreground">Your calling or role in the organization.</p>
+                                <p className="text-xs text-muted-foreground">{t("hintRoleTitle")}</p>
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="email">Email Address</Label>
+                                <Label htmlFor="email">{t("labelEmailAddress")}</Label>
                                 <Input
                                     id="email"
                                     value={currentUserDetails.email}
                                     disabled
                                     className="max-w-md bg-muted"
                                 />
-                                <p className="text-xs text-muted-foreground">Email address cannot be changed currently.</p>
+                                <p className="text-xs text-muted-foreground">{t("hintEmailCannotChange")}</p>
                             </div>
                             {hasProfileChanges && (
                                 <Button onClick={handleSaveProfile} disabled={isSavingProfile}>
@@ -223,7 +225,7 @@ export function SettingsClient({
                                     ) : (
                                         <Save className="h-4 w-4" />
                                     )}
-                                    <span className="ml-2">Save Changes</span>
+                                    <span className="ml-2">{t("buttonSaveChanges")}</span>
                                 </Button>
                             )}
                         </CardContent>
@@ -235,19 +237,18 @@ export function SettingsClient({
                         <CardHeader>
                             <div className="flex items-center gap-2">
                                 <AlertTriangle className="h-5 w-5 text-destructive" />
-                                <CardTitle className="text-destructive">Danger Zone</CardTitle>
+                                <CardTitle className="text-destructive">{t("dangerZoneTitle")}</CardTitle>
                             </div>
                             <CardDescription>
-                                Irreversible and destructive actions
+                                {t("dangerZoneDescription")}
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
                             <div className="flex items-center justify-between p-4 rounded-lg border border-destructive/30 bg-destructive/5">
                                 <div>
-                                    <p className="font-medium">Delete Account</p>
+                                    <p className="font-medium">{t("deleteAccountTitle")}</p>
                                     <p className="text-sm text-muted-foreground">
-                                        Permanently delete your account and remove your personal data.
-                                        Your workspace content will remain visible as &quot;Former Member&quot;.
+                                        {t("deleteAccountDescription")}
                                     </p>
                                 </div>
                                 <DeleteAccountDialog userEmail={currentUserDetails.email} />
@@ -259,16 +260,16 @@ export function SettingsClient({
                 <TabsContent value="general" className="space-y-6">
                     <Card>
                         <CardHeader>
-                            <CardTitle>Workspace Details</CardTitle>
+                            <CardTitle>{t("workspaceDetailsTitle")}</CardTitle>
                             <CardDescription>
                                 {isAdmin
-                                    ? "Update your workspace information"
-                                    : "View your workspace information"}
+                                    ? t("workspaceDetailsDescriptionAdmin")
+                                    : t("workspaceDetailsDescriptionMember")}
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="space-y-2">
-                                <Label htmlFor="name">Workspace Name</Label>
+                                <Label htmlFor="name">{t("labelWorkspaceName")}</Label>
                                 <div className="flex gap-2">
                                     <Input
                                         id="name"
@@ -284,7 +285,7 @@ export function SettingsClient({
                                             ) : (
                                                 <Save className="h-4 w-4" />
                                             )}
-                                            <span className="ml-2">Save</span>
+                                            <span className="ml-2">{t("buttonSave")}</span>
                                         </Button>
                                     )}
                                 </div>
@@ -292,13 +293,13 @@ export function SettingsClient({
 
                             <div className="grid grid-cols-2 gap-4 max-w-md">
                                 <div className="space-y-2">
-                                    <Label>Workspace Type</Label>
+                                    <Label>{t("labelWorkspaceType")}</Label>
                                     <Badge variant="secondary" className="text-sm">
                                         {workspaceTypeLabels[workspace.type] || workspace.type}
                                     </Badge>
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>Organization</Label>
+                                    <Label>{t("labelOrganization")}</Label>
                                     <Badge variant="outline" className="text-sm">
                                         {organizationTypeLabels[workspace.organization_type] || workspace.organization_type}
                                     </Badge>
@@ -307,7 +308,7 @@ export function SettingsClient({
 
                             {!isAdmin && (
                                 <p className="text-sm text-muted-foreground mt-4">
-                                    Contact an admin to change workspace settings.
+                                    {t("contactAdminHint")}
                                 </p>
                             )}
                         </CardContent>
@@ -318,9 +319,9 @@ export function SettingsClient({
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between">
                             <div>
-                                <CardTitle>Team Members</CardTitle>
+                                <CardTitle>{t("teamMembersTitle")}</CardTitle>
                                 <CardDescription>
-                                    {members.length} member{members.length !== 1 ? "s" : ""} in this workspace
+                                    {t("teamMembersCount", { count: members.length })}
                                 </CardDescription>
                             </div>
                             {isAdmin && <InviteMemberDialog onInviteSent={handleRefresh} />}
@@ -338,9 +339,9 @@ export function SettingsClient({
                     {(isAdmin || invitations.length > 0) && (
                         <Card>
                             <CardHeader>
-                                <CardTitle>Pending Invitations</CardTitle>
+                                <CardTitle>{t("pendingInvitationsTitle")}</CardTitle>
                                 <CardDescription>
-                                    Invitations that haven&apos;t been accepted yet
+                                    {t("pendingInvitationsDescription")}
                                 </CardDescription>
                             </CardHeader>
                             <CardContent>

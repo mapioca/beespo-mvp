@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import { Clock } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 
 interface PublicTemplatePageProps {
   params: Promise<{
@@ -34,6 +35,7 @@ interface TemplateItemData {
 
 export default async function PublicTemplatePage({ params }: PublicTemplatePageProps) {
   const { "workspace-slug": workspaceSlug, "template-slug": templateSlug } = await params;
+  const t = await getTranslations("Public.Template");
 
   const supabase = await createClient();
 
@@ -78,7 +80,7 @@ export default async function PublicTemplatePage({ params }: PublicTemplatePageP
         <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
           <span>{workspace.name}</span>
           <span>/</span>
-          <span>Templates</span>
+          <span>{t("breadcrumbTemplates")}</span>
         </div>
         <h1 className="text-3xl font-bold mb-2">{template.name}</h1>
         {template.description && (
@@ -87,15 +89,15 @@ export default async function PublicTemplatePage({ params }: PublicTemplatePageP
         <div className="flex items-center gap-4 mt-4 text-sm text-muted-foreground">
           <span className="flex items-center gap-1">
             <Clock className="h-4 w-4" />
-            {totalDuration} minutes total
+            {t("minutesTotal", { count: totalDuration })}
           </span>
-          <span>{items?.length || 0} agenda items</span>
+          <span>{t("agendaItemsCount", { count: items?.length || 0 })}</span>
         </div>
       </div>
 
       {/* Template Items */}
       <div className="space-y-4">
-        <h2 className="text-xl font-semibold border-b pb-2">Agenda Template</h2>
+        <h2 className="text-xl font-semibold border-b pb-2">{t("agendaTemplateHeading")}</h2>
 
         {items && items.length > 0 ? (
           <div className="space-y-3">
@@ -121,7 +123,7 @@ export default async function PublicTemplatePage({ params }: PublicTemplatePageP
                   {item.duration_minutes && (
                     <div className="flex items-center text-sm text-muted-foreground">
                       <Clock className="h-4 w-4 mr-1" />
-                      {item.duration_minutes} min
+                      {t("durationMin", { count: item.duration_minutes })}
                     </div>
                   )}
                 </div>
@@ -130,7 +132,7 @@ export default async function PublicTemplatePage({ params }: PublicTemplatePageP
           </div>
         ) : (
           <p className="text-muted-foreground py-8 text-center">
-            No template items available.
+            {t("noTemplateItems")}
           </p>
         )}
       </div>
@@ -138,7 +140,7 @@ export default async function PublicTemplatePage({ params }: PublicTemplatePageP
       {/* Tags */}
       {template.tags && template.tags.length > 0 && (
         <div className="mt-8">
-          <h3 className="text-sm font-medium mb-2">Tags</h3>
+          <h3 className="text-sm font-medium mb-2">{t("tagsHeading")}</h3>
           <div className="flex flex-wrap gap-2">
             {template.tags.map((tag: string) => (
               <span
@@ -155,7 +157,7 @@ export default async function PublicTemplatePage({ params }: PublicTemplatePageP
       {/* Info Box */}
       <div className="mt-8 p-4 bg-muted/50 rounded-lg text-sm text-muted-foreground">
         <p>
-          This is a shared meeting template from {workspace.name}. Contact the workspace administrator for more information.
+          {t("sharedTemplateInfo", { workspaceName: workspace.name })}
         </p>
       </div>
     </div>

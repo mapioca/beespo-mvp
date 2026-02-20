@@ -8,6 +8,7 @@ import { toast } from "@/lib/toast";
 import type { Form } from "@/types/form-types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { useTranslations } from "next-intl";
 
 interface PublicFormClientProps {
     form: Form;
@@ -16,6 +17,7 @@ interface PublicFormClientProps {
 export function PublicFormClient({ form }: PublicFormClientProps) {
     const [isSubmitted, setIsSubmitted] = useState(false);
     const [isPending, startTransition] = useTransition();
+    const t = useTranslations("Public.Form");
 
     const handleSubmit = async (data: Record<string, unknown>) => {
         startTransition(async () => {
@@ -36,15 +38,15 @@ export function PublicFormClient({ form }: PublicFormClientProps) {
                 <Card className="w-full max-w-md text-center">
                     <CardContent className="pt-8 pb-8">
                         <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
-                        <CardTitle className="mb-2">Thank you!</CardTitle>
+                        <CardTitle className="mb-2">{t("thankYou")}</CardTitle>
                         <CardDescription className="mb-6">
-                            Your response has been recorded.
+                            {t("responseRecorded")}
                         </CardDescription>
                         <Button
                             variant="outline"
                             onClick={() => setIsSubmitted(false)}
                         >
-                            Submit Another Response
+                            {t("submitAnotherResponse")}
                         </Button>
                     </CardContent>
                 </Card>
@@ -68,14 +70,14 @@ export function PublicFormClient({ form }: PublicFormClientProps) {
                         <FormRenderer
                             schema={form.schema}
                             onSubmit={handleSubmit}
-                            submitButtonText={isPending ? "Submitting..." : "Submit"}
+                            submitButtonText={isPending ? t("submitting") : t("submit")}
                         />
                     </CardContent>
                 </Card>
 
                 {/* Footer */}
                 <p className="text-center text-xs text-muted-foreground mt-6">
-                    Powered by Beespo
+                    {t("poweredBy")}
                 </p>
             </div>
         </div>
