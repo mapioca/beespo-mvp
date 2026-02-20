@@ -5,7 +5,9 @@
     "greetingEvening": "Buenas noches",
     "subtitle": "Tu centro de control de un vistazo",
     "customize": "Personalizar",
-    "Layout": { "defaultWorkspaceName": "Espacio de trabajo" },
+    "Layout": {
+      "defaultWorkspaceName": "Espacio de trabajo"
+    },
     "Settings": {
       "title": "Configuración",
       "subtitle": "Administra la configuración de tu espacio de trabajo y los miembros del equipo",
@@ -41,7 +43,10 @@
       "toastWorkspaceUpdated": "El nombre del espacio de trabajo ha sido actualizado.",
       "toastProfileUpdated": "Tu perfil ha sido actualizado.",
       "errorUpdateWorkspace": "Error al actualizar el nombre del espacio de trabajo",
-      "errorUpdateProfile": "Error al actualizar el perfil"
+      "errorUpdateProfile": "Error al actualizar el perfil",
+      "labelLanguage": "Idioma",
+      "languageEnglish": "Inglés",
+      "languageSpanish": "Español"
     },
     "Tables": {
       "buttonRecover": "Recuperar",
@@ -224,7 +229,9 @@
         "errorCreate": "Error al crear anuncio.",
         "successCreate": "¡Anuncio creado con éxito!"
       },
-      "Overview": { "unnamedBusinessItem": "Asunto sin nombre" },
+      "Overview": {
+        "unnamedBusinessItem": "Asunto sin nombre"
+      },
       "Conduct": {
         "loadingConductor": "Cargando conductor...",
         "exitButton": "Salir",

@@ -43,7 +43,10 @@
       "toastWorkspaceUpdated": "Workspace name has been updated.",
       "toastProfileUpdated": "Your profile has been updated.",
       "errorUpdateWorkspace": "Failed to update workspace name",
-      "errorUpdateProfile": "Failed to update profile"
+      "errorUpdateProfile": "Failed to update profile",
+      "labelLanguage": "Language",
+      "languageEnglish": "English",
+      "languageSpanish": "Spanish"
     },
     "Tables": {
       "buttonRecover": "Recover",
