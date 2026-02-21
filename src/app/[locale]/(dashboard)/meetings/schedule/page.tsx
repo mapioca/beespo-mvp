@@ -1,12 +1,16 @@
 import { createClient } from "@/lib/supabase/server"
 import { MeetingsClient } from "@/components/meetings/meetings-client"
 import { PaginationControls } from "@/components/ui/pagination-controls"
-import { Metadata } from "next"
 import { getTranslations } from "next-intl/server"
 
-export const metadata: Metadata = {
-  title: "Schedule | Beespo",
-  description: "Manage your meetings and agendas",
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params
+  const t = await getTranslations({ locale, namespace: "Metadata.schedule" })
+
+  return {
+    title: t("title"),
+    description: t("description"),
+  }
 }
 
 // Force dynamic rendering to ensure searchParams trigger fresh data fetch

@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -49,6 +50,8 @@ export function BuilderHeader({
     isCreating,
     isValid,
 }: BuilderHeaderProps) {
+    const t = useTranslations("Dashboard.Meetings.builder.header");
+
     return (
         <div className="sticky top-0 z-10 bg-background border-b">
             <div className="px-6 py-4">
@@ -58,7 +61,7 @@ export function BuilderHeader({
                         <Input
                             value={title}
                             onChange={(e) => onTitleChange(e.target.value)}
-                            placeholder="Meeting Title"
+                            placeholder={t("meetingTitle")}
                             className="text-lg font-semibold h-11 border-0 shadow-none focus-visible:ring-0 px-0 placeholder:text-muted-foreground/50"
                         />
                     </div>
@@ -74,7 +77,7 @@ export function BuilderHeader({
                                 )}
                             >
                                 <CalendarIcon className="mr-2 h-4 w-4" />
-                                {date ? format(date, "MMM d, yyyy") : "Pick date"}
+                                {date ? format(date, "MMM d, yyyy") : t("pickDate")}
                             </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0" align="start">
@@ -106,11 +109,11 @@ export function BuilderHeader({
                         onValueChange={(value) => onTemplateChange(value || null)}
                     >
                         <SelectTrigger className="w-[200px] h-10">
-                            <SelectValue placeholder="Load Template" />
+                            <SelectValue placeholder={t("loadTemplate")} />
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="none">
-                                <span className="text-muted-foreground">No Template</span>
+                                <span className="text-muted-foreground">{t("noTemplate")}</span>
                             </SelectItem>
                             {templates.map((template) => (
                                 <SelectItem key={template.id} value={template.id}>
@@ -129,10 +132,10 @@ export function BuilderHeader({
                         {isCreating ? (
                             <>
                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                Creating...
+                                {t("creating")}
                             </>
                         ) : (
-                            "Create Meeting"
+                            t("createMeeting")
                         )}
                     </Button>
                 </div>

@@ -1,5 +1,16 @@
-import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
+import { createClient } from "@/lib/supabase/server";
+
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
+    const { locale } = await params;
+    const t = await getTranslations({ locale, namespace: "Metadata.settings" });
+
+    return {
+        title: t("title"),
+        description: t("description"),
+    };
+}
 import { SettingsClient } from "./settings-client";
 
 type Profile = {

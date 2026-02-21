@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Play, Download, Edit, StopCircle, RotateCcw, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -33,6 +34,7 @@ export function MeetingActions({
   isLeader,
 }: MeetingActionsProps) {
   const router = useRouter();
+  const t = useTranslations("Dashboard.Meetings.actions");
   const [isStatusLoading, setIsStatusLoading] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [currentMeeting, setCurrentMeeting] = useState(meeting);
@@ -47,10 +49,12 @@ export function MeetingActions({
       .eq("id", meeting.id);
 
     if (error) {
-      toast.error("Failed to update meeting status");
+      toast.error(t("toast.statusUpdateFailed"));
     } else {
       router.refresh();
-      toast.success("Status updated", { description: `Meeting marked as ${newStatus}` });
+      toast.success(t("toast.statusUpdated"), {
+        description: t("toast.markedAs", { status: newStatus }),
+      });
     }
     setIsStatusLoading(false);
   };
@@ -71,10 +75,14 @@ export function MeetingActions({
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
 
-      toast.success("Download started", { description: "Your PDF is being downloaded" });
+      toast.success(t("toast.downloadStarted"), {
+        description: t("toast.downloadStartedDesc"),
+      });
     } catch (error) {
       console.error("PDF generation failed:", error);
-      toast.error("Download failed", { description: "Could not generate PDF. Please try again." });
+      toast.error(t("toast.downloadFailed"), {
+        description: t("toast.downloadFailedDesc"),
+      });
     } finally {
       setIsDownloading(false);
     }
@@ -100,7 +108,7 @@ export function MeetingActions({
             ) : (
               <Play className="w-4 h-4 mr-2" />
             )}
-            Start Meeting
+            {t("startMeeting")}
           </Button>
         )}
 
@@ -108,7 +116,7 @@ export function MeetingActions({
           <Button asChild className="w-full bg-blue-600 hover:bg-blue-700">
             <Link href={`/meetings/${meeting.id}/conduct`}>
               <Play className="w-4 h-4 mr-2" />
-              Conduct Meeting
+              {t("conductMeeting")}
             </Link>
           </Button>
         )}
@@ -127,7 +135,7 @@ export function MeetingActions({
           ) : (
             <Download className="w-4 h-4 mr-2" />
           )}
-          Download
+          {isDownloading ? t("downloading") : t("download")}
         </Button>
 
         <ShareDialog
@@ -144,7 +152,7 @@ export function MeetingActions({
             <Button asChild variant="outline" className="flex-1" size="sm">
               <Link href={`/meetings/${meeting.id}/edit`}>
                 <Edit className="w-4 h-4 mr-2" />
-                Edit Agenda
+                {t("editAgenda")}
               </Link>
             </Button>
           )}
@@ -162,7 +170,7 @@ export function MeetingActions({
               ) : (
                 <StopCircle className="w-4 h-4 mr-2" />
               )}
-              End Meeting
+              {t("endMeeting")}
             </Button>
           )}
 
@@ -179,7 +187,7 @@ export function MeetingActions({
               ) : (
                 <RotateCcw className="w-4 h-4 mr-2" />
               )}
-              Reopen
+              {t("reopen")}
             </Button>
           )}
         </div>

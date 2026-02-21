@@ -25,65 +25,65 @@ export const breadcrumbConfigs: BreadcrumbConfig[] = [
   // Dashboard
   {
     pattern: "/dashboard",
-    trail: [{ label: "Dashboard" }],
+    trail: [{ label: "dashboard" }],
   },
 
   // Calendar section
   {
     pattern: "/calendar",
-    trail: [{ label: "Calendar" }],
+    trail: [{ label: "calendar" }],
   },
   {
     pattern: "/calendar/view",
-    trail: [{ label: "Calendar", href: "/calendar/view" }, { label: "View" }],
+    trail: [{ label: "calendar", href: "/calendar/view" }, { label: "view" }],
   },
   {
     pattern: "/calendar/events",
-    trail: [{ label: "Calendar", href: "/calendar/view" }, { label: "Events" }],
+    trail: [{ label: "calendar", href: "/calendar/view" }, { label: "events" }],
   },
 
   // Meetings Hub
   {
     pattern: "/meetings/overview",
-    trail: [{ label: "Meetings", href: "/meetings/overview" }, { label: "Overview" }],
+    trail: [{ label: "meetings", href: "/meetings/overview" }, { label: "overview" }],
   },
   {
     pattern: "/meetings/schedule",
-    trail: [{ label: "Meetings", href: "/meetings/overview" }, { label: "Schedule" }],
+    trail: [{ label: "meetings", href: "/meetings/overview" }, { label: "schedule" }],
   },
   {
     pattern: "/meetings/business",
-    trail: [{ label: "Meetings", href: "/meetings/overview" }, { label: "Business" }],
+    trail: [{ label: "meetings", href: "/meetings/overview" }, { label: "business" }],
   },
   {
     pattern: "/meetings/announcements",
-    trail: [{ label: "Meetings", href: "/meetings/overview" }, { label: "Announcements" }],
+    trail: [{ label: "meetings", href: "/meetings/overview" }, { label: "announcements" }],
   },
   {
     pattern: "/meetings/discussions",
-    trail: [{ label: "Meetings", href: "/meetings/overview" }, { label: "Discussions" }],
+    trail: [{ label: "meetings", href: "/meetings/overview" }, { label: "discussions" }],
   },
   {
     pattern: "/meetings/templates",
-    trail: [{ label: "Meetings", href: "/meetings/overview" }, { label: "Templates" }],
+    trail: [{ label: "meetings", href: "/meetings/overview" }, { label: "templates" }],
   },
   {
     pattern: "/meetings/new",
-    trail: [{ label: "Meetings", href: "/meetings/overview" }, { label: "New Meeting" }],
+    trail: [{ label: "meetings", href: "/meetings/overview" }, { label: "newMeeting" }],
   },
   {
     pattern: /^\/meetings\/[^/]+$/,
     trail: [
-      { label: "Meetings", href: "/meetings/overview" },
-      { label: "Meeting Details" },
+      { label: "meetings", href: "/meetings/overview" },
+      { label: "meetingDetails" },
     ],
     dynamic: true,
   },
   {
     pattern: /^\/meetings\/[^/]+\/conduct$/,
     trail: [
-      { label: "Meetings", href: "/meetings/overview" },
-      { label: "Conduct Meeting" },
+      { label: "meetings", href: "/meetings/overview" },
+      { label: "conductMeeting" },
     ],
     dynamic: true,
   },
@@ -91,13 +91,13 @@ export const breadcrumbConfigs: BreadcrumbConfig[] = [
   // Notebooks (future feature)
   {
     pattern: "/notebooks",
-    trail: [{ label: "Notebooks" }],
+    trail: [{ label: "notebooks" }],
   },
   {
     pattern: /^\/notebooks\/[^/]+$/,
     trail: [
-      { label: "Notebooks", href: "/notebooks" },
-      { label: "Notebook" },
+      { label: "notebooks", href: "/notebooks" },
+      { label: "notebook" },
     ],
     dynamic: true,
   },
@@ -105,44 +105,44 @@ export const breadcrumbConfigs: BreadcrumbConfig[] = [
   // Directory section (consolidated)
   {
     pattern: "/directory",
-    trail: [{ label: "Directory" }],
+    trail: [{ label: "directory" }],
   },
   {
     pattern: "/callings",
-    trail: [{ label: "Directory", href: "/directory" }, { label: "Callings" }],
+    trail: [{ label: "directory", href: "/directory" }, { label: "callings" }],
   },
   {
     pattern: /^\/callings\/[^/]+$/,
     trail: [
-      { label: "Directory", href: "/directory" },
-      { label: "Callings", href: "/callings" },
-      { label: "Calling Details" },
+      { label: "directory", href: "/directory" },
+      { label: "callings", href: "/callings" },
+      { label: "callingDetails" },
     ],
     dynamic: true,
   },
   {
     pattern: "/speakers",
-    trail: [{ label: "Directory", href: "/directory" }, { label: "Speakers" }],
+    trail: [{ label: "directory", href: "/directory" }, { label: "speakers" }],
   },
   {
     pattern: /^\/speakers\/[^/]+$/,
     trail: [
-      { label: "Directory", href: "/directory" },
-      { label: "Speakers", href: "/speakers" },
-      { label: "Speaker Details" },
+      { label: "directory", href: "/directory" },
+      { label: "speakers", href: "/speakers" },
+      { label: "speakerDetails" },
     ],
     dynamic: true,
   },
   {
     pattern: "/participants",
-    trail: [{ label: "Directory", href: "/directory" }, { label: "Participants" }],
+    trail: [{ label: "directory", href: "/directory" }, { label: "participants" }],
   },
   {
     pattern: /^\/participants\/[^/]+$/,
     trail: [
-      { label: "Directory", href: "/directory" },
-      { label: "Participants", href: "/participants" },
-      { label: "Participant Details" },
+      { label: "directory", href: "/directory" },
+      { label: "participants", href: "/participants" },
+      { label: "participantDetails" },
     ],
     dynamic: true,
   },

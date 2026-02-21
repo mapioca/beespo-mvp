@@ -33,6 +33,9 @@ import {
 import { formatDistanceToNow } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
 
+import { useTranslations, useLocale } from "next-intl";
+import { es, enUS } from "date-fns/locale";
+
 interface SubscriptionListProps {
   subscriptions: CalendarSubscription[];
   isLoading: boolean;
@@ -46,6 +49,10 @@ export function SubscriptionList({
   onUpdate,
   onDelete,
 }: SubscriptionListProps) {
+  const t = useTranslations("Calendar.Subscriptions");
+  const locale = useLocale();
+  const dateLocale = locale === "es" ? es : enUS;
+
   const [syncingIds, setSyncingIds] = useState<Set<string>>(new Set());
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [subscriptionToDelete, setSubscriptionToDelete] = useState<string | null>(null);
@@ -61,7 +68,7 @@ export function SubscriptionList({
       .single();
 
     if (error) {
-      toast.error("Failed to update subscription");
+      toast.error(t("errorUpdate"));
       return;
     }
 
@@ -80,7 +87,13 @@ export function SubscriptionList({
 
       if (response.ok) {
         const result = await response.json();
-        toast.success("Sync Complete", { description: `${result.eventsCreated} created, ${result.eventsUpdated} updated, ${result.eventsDeleted} removed` });
+        toast.success(t("syncComplete"), {
+          description: t("syncResults", {
+            created: result.eventsCreated || 0,
+            updated: result.eventsUpdated || 0,
+            deleted: result.eventsDeleted || 0
+          })
+        });
 
         // Refresh subscription data
         const supabase = createClient();
@@ -95,11 +108,11 @@ export function SubscriptionList({
         }
       } else {
         const error = await response.json();
-        toast.error("Sync Failed", { description: error.error || "Failed to sync calendar" });
+        toast.error(t("syncFailed"), { description: error.error || t("errorSync") });
       }
     } catch (error) {
-        console.error(error);
-        toast.error("Failed to sync calendar");
+      console.error(error);
+      toast.error(t("errorSync"));
     } finally {
       setSyncingIds((prev) => {
         const next = new Set(prev);
@@ -120,9 +133,9 @@ export function SubscriptionList({
       .eq("id", subscriptionToDelete);
 
     if (error) {
-      toast.error("Failed to delete subscription");
+      toast.error(t("errorDelete"));
     } else {
-      toast.success("Deleted", { description: "Calendar subscription removed" });
+      toast.success(t("successDelete"));
       onDelete(subscriptionToDelete);
     }
 
@@ -151,9 +164,9 @@ export function SubscriptionList({
     return (
       <div className="flex flex-col items-center justify-center py-8 text-center">
         <Calendar className="h-12 w-12 text-muted-foreground mb-4" />
-        <p className="text-lg font-medium">No external calendars</p>
+        <p className="text-lg font-medium">{t("noSubscriptions")}</p>
         <p className="text-sm text-muted-foreground">
-          Add a calendar subscription to display external events
+          {t("noSubscriptionsDesc")}
         </p>
       </div>
     );
@@ -186,8 +199,13 @@ export function SubscriptionList({
                 </div>
                 <p className="text-xs text-muted-foreground truncate">
                   {subscription.last_synced_at
-                    ? `Synced ${formatDistanceToNow(new Date(subscription.last_synced_at), { addSuffix: true })}`
-                    : "Never synced"}
+                    ? t("syncedRelative", {
+                      time: formatDistanceToNow(new Date(subscription.last_synced_at), {
+                        addSuffix: true,
+                        locale: dateLocale
+                      })
+                    })
+                    : t("neverSynced")}
                 </p>
                 {subscription.sync_error && (
                   <p className="text-xs text-destructive truncate mt-1">
@@ -220,7 +238,7 @@ export function SubscriptionList({
                     disabled={!subscription.is_enabled}
                   >
                     <RefreshCw className="h-4 w-4 mr-2" />
-                    Sync Now
+                    {t("syncNow")}
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => {
@@ -230,7 +248,7 @@ export function SubscriptionList({
                     className="text-destructive"
                   >
                     <Trash2 className="h-4 w-4 mr-2" />
-                    Delete
+                    {t("delete")}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -243,19 +261,18 @@ export function SubscriptionList({
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Calendar Subscription</AlertDialogTitle>
+            <AlertDialogTitle>{t("deleteTitle")}</AlertDialogTitle>
             <AlertDialogDescription>
-              This will remove the calendar subscription and all cached events.
-              Any announcements created from this calendar will remain but will
-              no longer sync with the external source.
+              {t("deleteDescription")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+            <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete}>{t("deleteConfirm")}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     </>
   );
 }
+

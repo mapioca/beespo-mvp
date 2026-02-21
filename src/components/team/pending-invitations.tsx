@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "@/lib/toast";
 import { format } from "date-fns";
 import { Mail, X, RefreshCw } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 interface Invitation {
     id: string;
@@ -37,6 +38,7 @@ export function PendingInvitations({
     isAdmin,
     onInvitationUpdated,
 }: PendingInvitationsProps) {
+    const t = useTranslations("Tables.pendingInvitations");
     const [loadingId, setLoadingId] = useState<string | null>(null);
 
     const handleResend = async (id: string) => {
@@ -91,7 +93,7 @@ export function PendingInvitations({
         return (
             <div className="text-center py-8 text-muted-foreground">
                 <Mail className="mx-auto h-8 w-8 mb-2 opacity-50" />
-                <p>No pending invitations</p>
+                <p>{t("noPendingInvitations")}</p>
             </div>
         );
     }
@@ -100,11 +102,11 @@ export function PendingInvitations({
         <Table>
             <TableHeader>
                 <TableRow>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Role</TableHead>
-                    <TableHead>Invited By</TableHead>
-                    <TableHead>Expires</TableHead>
-                    {isAdmin && <TableHead className="w-[100px]">Actions</TableHead>}
+                    <TableHead>{t("email")}</TableHead>
+                    <TableHead>{t("role")}</TableHead>
+                    <TableHead>{t("invitedBy")}</TableHead>
+                    <TableHead>{t("expires")}</TableHead>
+                    {isAdmin && <TableHead className="w-[100px]">{t("actions")}</TableHead>}
                 </TableRow>
             </TableHeader>
             <TableBody>
@@ -121,7 +123,7 @@ export function PendingInvitations({
                                 </Badge>
                             </TableCell>
                             <TableCell className="text-muted-foreground">
-                                {invitation.invited_by?.full_name || "Unknown"}
+                                {invitation.invited_by?.full_name || t("unknown")}
                             </TableCell>
                             <TableCell>
                                 <span className={isExpiringSoon ? "text-orange-600" : "text-muted-foreground"}>
@@ -136,7 +138,7 @@ export function PendingInvitations({
                                             size="icon"
                                             onClick={() => handleResend(invitation.id)}
                                             disabled={isLoading}
-                                            title="Resend invitation"
+                                            title={t("resendInvitation")}
                                         >
                                             <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
                                         </Button>
@@ -145,7 +147,7 @@ export function PendingInvitations({
                                             size="icon"
                                             onClick={() => handleRevoke(invitation.id)}
                                             disabled={isLoading}
-                                            title="Revoke invitation"
+                                            title={t("revokeInvitation")}
                                             className="text-destructive hover:text-destructive"
                                         >
                                             <X className="h-4 w-4" />

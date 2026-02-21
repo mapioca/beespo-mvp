@@ -1,11 +1,16 @@
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import { TemplatesLayout } from "@/components/templates/templates-layout"
-import { Metadata } from "next"
+import { getTranslations } from "next-intl/server"
 
-export const metadata: Metadata = {
-  title: "Templates | Beespo",
-  description: "Manage meeting templates",
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params
+  const t = await getTranslations({ locale, namespace: "Metadata.templates" })
+
+  return {
+    title: t("title"),
+    description: t("description"),
+  }
 }
 
 export const revalidate = 0

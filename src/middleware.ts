@@ -72,11 +72,13 @@ export async function middleware(request: NextRequest) {
   // MAIN APP FLOW (With i18n + Supabase)
   // =====================================================
 
-  // 1. Run next-intl middleware to handle redirects, headers (Accept-Language), and rewrites.
-  // This will return a NextResponse that already has locale cookies and rewritten URLs set.
-  let response = handleI18nRouting(request);
+  // 1. Run next-intl middleware first — it sets locale cookies, Accept-Language
+  //    headers and rewrites the URL to /<locale>/... We MUST preserve this response.
+  const response = handleI18nRouting(request);
 
-  // 2. Initialize Supabase, applying cookies to the i18n response
+  // 2. Initialize Supabase, piggybacking onto the i18n response.
+  //    IMPORTANT: setAll must copy cookies onto the existing response object,
+  //    never replace it — replacing would destroy the locale routing state.
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
@@ -85,11 +87,11 @@ export async function middleware(request: NextRequest) {
         getAll() { return request.cookies.getAll(); },
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
-          // Create a new response maintaining the i18n routing rewrite/redirect state
-          response = NextResponse.next({ request });
-          // If the i18n routing wanted to redirect, we should respect that, but still apply cookies.
-          // For simplicity in composed middleware, modifying the outgoing response headers directly is safer:
-          cookiesToSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options));
+          // Apply cookies onto the i18n response — do NOT create a new NextResponse
+          // here as that would discard the locale headers / rewrites.
+          cookiesToSet.forEach(({ name, value, options }) =>
+            response.cookies.set(name, value, options)
+          );
         },
       },
     }
@@ -97,13 +99,14 @@ export async function middleware(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser();
 
-  // Use the `pathname` string after i18n processing. 
-  // Normally request.nextUrl.pathname is the raw path (e.g. `/dashboard`),
-  // but we can just parse the path without the `/[locale]` prefix for logic testing if needed.
-  // next-intl expects the app to live in `/[locale]/...`
   const pathname = request.nextUrl.pathname;
 
-  // We should extract the path discarding the locale prefix for auth rules
+  // Extract the locale already present in the URL (e.g. "es" from /es/calendar/view).
+  // Fall back to the default locale only when none is found.
+  const localeMatch = pathname.match(new RegExp(`^/(${routing.locales.join('|')})`));
+  const detectedLocale = localeMatch ? localeMatch[1] : routing.defaultLocale;
+
+  // Strip the locale prefix for auth-rule comparisons.
   const pathWithoutLocale = pathname.replace(new RegExp(`^/(${routing.locales.join('|')})`), '') || '/';
 
   const protectedRoutes = ["/dashboard", "/templates", "/discussions", "/meetings", "/tasks", "/members", "/business", "/announcements", "/speakers", "/settings", "/calendar", "/callings", "/notebooks", "/apps"];
@@ -111,36 +114,30 @@ export async function middleware(request: NextRequest) {
 
   if (!user && isProtectedRoute) {
     const url = request.nextUrl.clone();
-    url.pathname = `/${routing.defaultLocale}/login`;
-    // Wait, next-intl redirect might be better, but we let Next.js handle it
-    url.pathname = `/login`; // next-intl handleI18nRouting will prefix this again if we pass it through it, but we are returning directly.
+    url.pathname = `/${detectedLocale}/login`;
     return NextResponse.redirect(url);
   }
 
   if (user && (pathWithoutLocale === "/login" || pathWithoutLocale === "/signup")) {
     const url = request.nextUrl.clone();
-    url.pathname = `/dashboard`;
+    url.pathname = `/${detectedLocale}/dashboard`;
     return NextResponse.redirect(url);
   }
 
   if (pathWithoutLocale === "/") {
     const url = request.nextUrl.clone();
-    url.pathname = user ? "/dashboard" : "/login";
+    url.pathname = user ? `/${detectedLocale}/dashboard` : `/${detectedLocale}/login`;
     return NextResponse.redirect(url);
   }
 
   return response;
+
 }
 
 export const config = {
   matcher: [
-    // Enable a redirect to a matching locale at the root
-    '/',
-
-    // Set a cookie to remember the previous locale for all requests that have a locale prefix
-    '/(en|es)/:path*',
-
-    // Enable redirects that add the locale prefix. Allow all paths except for static files
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)"
+    // Match only paths that need locale handling.
+    // Explicitly exclude: API routes, auth callbacks, Next.js internals, and static assets.
+    '/((?!api|auth|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)'
   ]
 };

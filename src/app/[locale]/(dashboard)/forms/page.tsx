@@ -22,9 +22,21 @@ import {
 } from "@/components/ui/table";
 import type { Form } from "@/types/form-types";
 import { format } from "date-fns";
+import { getTranslations } from "next-intl/server";
+
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
+    const { locale } = await params;
+    const t = await getTranslations({ locale, namespace: "Metadata.forms" });
+
+    return {
+        title: t("title"),
+        description: t("description"),
+    };
+}
 
 export default async function FormsPage() {
     const supabase = await createClient();
+    const t = await getTranslations("Dashboard.Forms");
 
     const {
         data: { user },
@@ -60,15 +72,15 @@ export default async function FormsPage() {
                 {/* Header */}
                 <div className="flex items-center justify-between mb-8">
                     <div>
-                        <h1 className="text-2xl font-bold">Forms</h1>
+                        <h1 className="text-2xl font-bold">{t("title")}</h1>
                         <p className="text-muted-foreground">
-                            Create and manage feedback forms
+                            {t("subtitle")}
                         </p>
                     </div>
                     <Button asChild>
                         <Link href="/forms/new">
                             <Plus className="h-4 w-4 mr-2" />
-                            New Form
+                            {t("newForm")}
                         </Link>
                     </Button>
                 </div>
@@ -78,14 +90,14 @@ export default async function FormsPage() {
                     <Card>
                         <CardContent className="flex flex-col items-center justify-center py-16">
                             <FileText className="h-12 w-12 text-muted-foreground mb-4" />
-                            <CardTitle className="mb-2">No forms yet</CardTitle>
+                            <CardTitle className="mb-2">{t("noFormsYet")}</CardTitle>
                             <CardDescription className="text-center mb-6">
-                                Create your first form to start collecting feedback
+                                {t("noFormsDescription")}
                             </CardDescription>
                             <Button asChild>
                                 <Link href="/forms/new">
                                     <Plus className="h-4 w-4 mr-2" />
-                                    Create Form
+                                    {t("createForm")}
                                 </Link>
                             </Button>
                         </CardContent>
@@ -93,20 +105,20 @@ export default async function FormsPage() {
                 ) : (
                     <Card>
                         <CardHeader>
-                            <CardTitle>All Forms</CardTitle>
+                            <CardTitle>{t("allForms")}</CardTitle>
                             <CardDescription>
-                                {formsList.length} form{formsList.length !== 1 ? "s" : ""}
+                                {t("formCount", { count: formsList.length })}
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
                             <Table>
                                 <TableHeader>
                                     <TableRow>
-                                        <TableHead>Title</TableHead>
-                                        <TableHead>Status</TableHead>
-                                        <TableHead className="text-right">Views</TableHead>
-                                        <TableHead className="text-right">Responses</TableHead>
-                                        <TableHead>Created</TableHead>
+                                        <TableHead>{t("formTitle")}</TableHead>
+                                        <TableHead>{t("formStatus")}</TableHead>
+                                        <TableHead className="text-right">{t("formViews")}</TableHead>
+                                        <TableHead className="text-right">{t("formResponses")}</TableHead>
+                                        <TableHead>{t("formCreated")}</TableHead>
                                         <TableHead className="w-[50px]"></TableHead>
                                     </TableRow>
                                 </TableHeader>
@@ -128,7 +140,7 @@ export default async function FormsPage() {
                                             </TableCell>
                                             <TableCell>
                                                 <Badge variant={form.is_published ? "default" : "secondary"}>
-                                                    {form.is_published ? "Published" : "Draft"}
+                                                    {form.is_published ? t("published") : t("draft")}
                                                 </Badge>
                                             </TableCell>
                                             <TableCell className="text-right">

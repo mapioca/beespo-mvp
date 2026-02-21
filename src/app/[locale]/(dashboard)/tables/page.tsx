@@ -21,9 +21,21 @@ import {
 } from "@/components/ui/table";
 import type { DynamicTable } from "@/types/table-types";
 import { format } from "date-fns";
+import { getTranslations } from "next-intl/server";
+
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
+    const { locale } = await params;
+    const t = await getTranslations({ locale, namespace: "Metadata.tables" });
+
+    return {
+        title: t("title"),
+        description: t("description"),
+    };
+}
 
 export default async function TablesPage() {
     const supabase = await createClient();
+    const t = await getTranslations("Dashboard.Tables");
 
     const {
         data: { user },
@@ -70,15 +82,15 @@ export default async function TablesPage() {
                 {/* Header */}
                 <div className="flex items-center justify-between mb-8">
                     <div>
-                        <h1 className="text-2xl font-bold">Tables</h1>
+                        <h1 className="text-2xl font-bold">{t("title")}</h1>
                         <p className="text-muted-foreground">
-                            Create and manage custom databases
+                            {t("subtitle")}
                         </p>
                     </div>
                     <Button asChild>
                         <Link href="/tables/new">
                             <Plus className="h-4 w-4 mr-2" />
-                            New Table
+                            {t("newTable")}
                         </Link>
                     </Button>
                 </div>
@@ -88,14 +100,14 @@ export default async function TablesPage() {
                     <Card>
                         <CardContent className="flex flex-col items-center justify-center py-16">
                             <Table2 className="h-12 w-12 text-muted-foreground mb-4" />
-                            <CardTitle className="mb-2">No tables yet</CardTitle>
+                            <CardTitle className="mb-2">{t("noTablesYet")}</CardTitle>
                             <CardDescription className="text-center mb-6">
-                                Create your first table to start organizing your data
+                                {t("noTablesDescription")}
                             </CardDescription>
                             <Button asChild>
                                 <Link href="/tables/new">
                                     <Plus className="h-4 w-4 mr-2" />
-                                    Create Table
+                                    {t("createTable")}
                                 </Link>
                             </Button>
                         </CardContent>
@@ -103,18 +115,18 @@ export default async function TablesPage() {
                 ) : (
                     <Card>
                         <CardHeader>
-                            <CardTitle>All Tables</CardTitle>
+                            <CardTitle>{t("allTables")}</CardTitle>
                             <CardDescription>
-                                {tablesWithCounts.length} table{tablesWithCounts.length !== 1 ? "s" : ""}
+                                {t("tableCount", { count: tablesWithCounts.length })}
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
                             <Table>
                                 <TableHeader>
                                     <TableRow>
-                                        <TableHead>Name</TableHead>
-                                        <TableHead className="text-right">Rows</TableHead>
-                                        <TableHead>Created</TableHead>
+                                        <TableHead>{t("tableName")}</TableHead>
+                                        <TableHead className="text-right">{t("tableRows")}</TableHead>
+                                        <TableHead>{t("tableCreated")}</TableHead>
                                         <TableHead className="w-[50px]"></TableHead>
                                     </TableRow>
                                 </TableHeader>

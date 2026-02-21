@@ -2,6 +2,17 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { AppsClient } from "./apps-client";
 import type { App, WorkspaceAppWithApp } from "@/types/apps";
+import { getTranslations } from "next-intl/server";
+
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
+    const { locale } = await params;
+    const t = await getTranslations({ locale, namespace: "Metadata.apps" });
+
+    return {
+        title: t("title"),
+        description: t("description"),
+    };
+}
 
 type Profile = {
     workspace_id: string;

@@ -5,8 +5,23 @@
     "greetingEvening": "Buenas noches",
     "subtitle": "Tu centro de control de un vistazo",
     "customize": "Personalizar",
+    "toastSaveLayoutError": "Error al guardar el diseño",
     "Layout": {
-      "defaultWorkspaceName": "Espacio de trabajo"
+      "defaultWorkspaceName": "Espacio de trabajo",
+      "Sidebar": {
+        "expand": "Expand barra lateral",
+        "collapse": "Contraer barra lateral",
+        "helpSupport": "Ayuda y soporte",
+        "apps": "Aplicaciones",
+        "browseApps": "Ver aplicaciones"
+      },
+      "UserMenu": {
+        "open": "Abrir menú",
+        "accountSettings": "Configuración de la cuenta",
+        "billing": "Facturación",
+        "notifications": "Notificaciones",
+        "logout": "Cerrar sesión"
+      }
     },
     "Settings": {
       "title": "Configuración",
@@ -49,8 +64,22 @@
       "languageSpanish": "Español"
     },
     "Tables": {
+      "title": "Tablas",
+      "subtitle": "Crea y administra bases de datos personalizadas",
+      "newTable": "Nueva tabla",
+      "createTable": "Crear tabla",
+      "noTablesYet": "Sin tablas aún",
+      "noTablesDescription": "Crea tu primera tabla para comenzar a organizar tus datos",
+      "allTables": "Todas las tablas",
+      "tableCount": "{count} tabla{count, plural, one {} other {s}}",
+      "tableName": "Nombre",
+      "tableRows": "Filas",
+      "tableCreated": "Creado",
       "buttonRecover": "Recuperar",
-      "buttonSettings": "Configuraciones"
+      "buttonSettings": "Configuraciones",
+      "errorLoading": "Error al cargar las tablas. Por favor, inténtalo de nuevo.",
+      "showingResults": "Mostrando {from}-{to} de {total} {label}",
+      "tablesLabel": "Tablas"
     },
     "Participants": {
       "title": "Participantes",
@@ -66,12 +95,18 @@
       "buttonCreate": "Crear",
       "buttonCreating": "Creando...",
       "toastCreateError": "Error al crear participante",
-      "toastCreateSuccess": "Participante creado"
+      "toastCreateSuccess": "Participante creado",
+      "errorLoading": "Error al cargar los participantes. Por favor, inténtalo de nuevo.",
+      "showingResults": "Mostrando {from}-{to} de {total} {label}",
+      "participantsLabel": "Participantes"
     },
     "Tasks": {
       "title": "Tareas",
       "subtitle": "Administra tus planes de acción y asignaciones.",
-      "totalCount": "{count} tarea{count, plural, one {} other {s}} en total"
+      "totalCount": "{count} tarea{count, plural, one {} other {s}} en total",
+      "tasksLabel": "Tareas",
+      "errorLoading": "Error al cargar las tareas. Por favor, inténtalo de nuevo.",
+      "showingResults": "Mostrando {from}-{to} de {total} {label}"
     },
     "Forms": {
       "newFormTitle": "Crear nuevo formulario",
@@ -125,7 +160,9 @@
       "errorNotAuthenticated": "No autenticado. Por favor, inicia sesión de nuevo.",
       "errorInsufficientPermissions": "Solo los líderes y administradores pueden crear discursantes.",
       "errorFailedToCreate": "Error al crear discursante.",
-      "speakerCreatedSuccess": "¡Discursante creado con éxito!"
+      "speakerCreatedSuccess": "¡Discursante creado con éxito!",
+      "errorLoading": "Error al cargar los discursantes. Por favor, inténtalo de nuevo.",
+      "paginationSummary": "Mostrando {from}-{to} de {total} discursantes"
     },
     "Apps": {
       "title": "Centro de aplicaciones",
@@ -163,8 +200,143 @@
       "notebookDeleted": "Libreta eliminada",
       "errorFailedToCreateNote": "Error al crear nota"
     },
-    "Callings": {},
+    "Callings": {
+      "title": "Llamamientos",
+      "subtitle": "Visualiza tu flujo y rastrea los procesos de llamamientos"
+    },
     "Meetings": {
+      "hub": {
+        "title": "Reuniones",
+        "subtitle": "Administra tus horarios de reuniones, agendas e historial",
+        "newMeeting": "Nueva reunión",
+        "filterPlaceholder": "Filtrar reuniones...",
+        "status": "Estado",
+        "template": "Plantilla",
+        "noTemplate": "Sin plantilla",
+        "reset": "Restablecer",
+        "loading": "Cargando...",
+        "noMeetingsFound": "No se encontraron reuniones.",
+        "table": {
+          "id": "ID",
+          "title": "Título",
+          "template": "Plantilla",
+          "status": "Estado",
+          "scheduledDate": "Fecha programada",
+          "actions": "Acciones"
+        },
+        "tabs": {
+          "overview": "Resumen",
+          "schedule": "Calendario",
+          "business": "Asuntos",
+          "announcements": "Anuncios",
+          "discussions": "Discusiones",
+          "speakers": "Oradores",
+          "participants": "Participantes",
+          "templates": "Plantillas"
+        }
+      },
+      "detail": {
+        "agenda": "Agenda",
+        "totalDuration": "Est. Total: {duration} min"
+      },
+      "status": {
+        "scheduled": "Programada",
+        "in_progress": "En curso",
+        "completed": "Completada",
+        "cancelled": "Cancelada"
+      },
+      "actions": {
+        "openMenu": "Abrir menú",
+        "view": "Ver",
+        "conduct": "Conducir",
+        "edit": "Editar",
+        "download": "Descargar",
+        "downloading": "Descargando...",
+        "share": "Compartir",
+        "delete": "Eliminar",
+        "deleting": "Eliminando...",
+        "cancel": "Cancelar",
+        "startMeeting": "Iniciar reunión",
+        "conductMeeting": "Conducir reunión",
+        "editAgenda": "Editar agenda",
+        "endMeeting": "Finalizar reunión",
+        "reopen": "Reabrir",
+        "deleteConfirmTitle": "Eliminar reunión",
+        "deleteConfirmDesc": "¿Estás seguro de que deseas eliminar \"{title}\"? Esta acción no se puede deshacer. Todos los elementos de la agenda y los datos asociados se eliminarán permanentemente.",
+        "toast": {
+          "downloadStarted": "Descarga iniciada",
+          "downloadStartedDesc": "Tu PDF se está descargando",
+          "downloadFailed": "Error en la descarga",
+          "downloadFailedDesc": "No se pudo generar el PDF. Inténtalo de nuevo.",
+          "deleteSuccess": "Reunión eliminada",
+          "deleteSuccessDesc": "La reunión ha sido eliminada permanentemente.",
+          "deleteFailed": "Error al eliminar",
+          "deleteFailedDesc": "No se pudo eliminar la reunión. Inténtalo de nuevo.",
+          "statusUpdateFailed": "Error al actualizar el estado de la reunión",
+          "statusUpdated": "Estado actualizado",
+          "markedAs": "Reunión marcada como {status}"
+        }
+      },
+      "sidebar": {
+        "description": "Descripción"
+      },
+      "collapsibleDetails": {
+        "details": "Detalles",
+        "template": "Plantilla",
+        "noTemplate": "Sin plantilla",
+        "scheduled": "Programada",
+        "at": "a las",
+        "estDuration": "Duración estimada",
+        "minutes": "{count} minutos",
+        "createdBy": "Creado por",
+        "unknown": "Desconocido",
+        "meetingId": "ID de reunión"
+      },
+      "pages": {
+        "detail": {
+          "backToMeetings": "Volver a reuniones"
+        }
+      },
+      "builder": {
+        "header": {
+          "meetingTitle": "Título de la reunión",
+          "pickDate": "Seleccionar fecha",
+          "loadTemplate": "Cargar plantilla",
+          "noTemplate": "Sin plantilla",
+          "createMeeting": "Crear reunión",
+          "creating": "Creando..."
+        },
+        "toolbox": {
+          "itemLibrary": "Biblioteca de elementos",
+          "searchItems": "Buscar elementos...",
+          "loadingItems": "Cargando elementos...",
+          "noItemsFound": "No se encontraron elementos",
+          "noItemsInCategory": "No hay elementos en esta categoría",
+          "newItemType": "Nuevo tipo de elemento",
+          "dragHint": "Arrastra elementos al lienzo de la agenda",
+          "standardItems": "Elementos estándar",
+          "customItems": "Elementos personalizados"
+        },
+        "canvas": {
+          "agenda": "Agenda",
+          "items": "{count} elementos • {duration} min",
+          "dragItemsHere": "Arrastra elementos aquí",
+          "selectTemplate": "O selecciona una plantilla para comenzar",
+          "selectHymn": "Seleccionar himno",
+          "selectPerson": "Seleccionar persona",
+          "selectSpeaker": "Seleccionar orador",
+          "add": "Añadir {type}"
+        },
+        "validation": {
+          "hymnNotSpecified": "Himno no especificado",
+          "participantNotAssigned": "Participante no asignado",
+          "speakerNotAssigned": "Orador no asignado",
+          "noItemsSelected": "No se seleccionaron elementos (se guardará un marcador de posición)",
+          "toastFailedCreate": "Error al crear la reunión",
+          "toastMeetingCreated": "Reunión creada",
+          "toastRedirecting": "Redirigiendo..."
+        }
+      },
       "Schedule": {
         "noWorkspace": "No se encontró un espacio de trabajo. Por favor, configura tu espacio de trabajo primero.",
         "errorLoading": "Error al cargar las reuniones. Por favor, inténtalo de nuevo.",
@@ -231,6 +403,44 @@
       },
       "Overview": {
         "unnamedBusinessItem": "Asunto sin nombre"
+      },
+      "overview": {
+        "commandCenter": "Centro de mando",
+        "preparationAtGlance": "Tu preparación de reuniones de un vistazo",
+        "nextMeeting": "Próxima reunión",
+        "untilMeeting": "para la reunión",
+        "agendaReadiness": "Preparación de la agenda",
+        "agendaPreview": "Vista previa de la agenda",
+        "noAgendaItems": "Aún no hay elementos en la agenda. Comienza a construir tu agenda.",
+        "editAgenda": "Editar agenda",
+        "planNextQuarter": "Planifica tu próximo trimestre",
+        "noMeetingsDesc": "No tienes reuniones programadas. Crea tu primera reunión para comenzar con la planificación de la agenda.",
+        "scheduleFirstMeeting": "Programar primera reunión",
+        "planningHorizon": "Horizonte de planificación",
+        "viewAllUpcoming": "Ver las {count} próximas reuniones",
+        "empty": "Vacía",
+        "moreItems": "+{count} elementos más",
+        "actionInbox": "Bandeja de acción",
+        "allCaughtUp": "¡Todo al día!",
+        "pending": "{count} pendiente",
+        "active": "{count} activo",
+        "quickActions": "Acciones rápidas",
+        "newMeeting": "Nueva reunión",
+        "addBusinessItem": "Añadir asunto",
+        "createAnnouncement": "Crear anuncio",
+        "manageTemplates": "Gestionar plantillas",
+        "viewFullCalendar": "Ver calendario completo",
+        "seeAllMeetings": "Ver todas las reuniones y eventos",
+        "readinessReady": "Listo",
+        "readinessAlmostReady": "Casi listo",
+        "readinessNeedsAttention": "Requiere atención",
+        "readinessEmptyAgenda": "Agenda vacía",
+        "noAgendaAdded": "No se añadieron elementos a la agenda",
+        "speakersUnassigned": "{count} {count, plural, one {orador} other {oradores}} sin asignar",
+        "today": "Hoy",
+        "tomorrow": "Mañana",
+        "past": "Pasado",
+        "itemsLabel": "{count} {count, plural, one {elemento} other {elementos}}"
       },
       "Conduct": {
         "loadingConductor": "Cargando conductor...",
@@ -510,6 +720,34 @@
       "publicViewInfo": "Esta es una vista pública de la agenda de la reunión. Las notas y discusiones detalladas solo son visibles para los miembros del espacio de trabajo."
     }
   },
+  "Navigation": {
+    "dashboard": "Panel de control",
+    "calendar": "Calendario",
+    "view": "Vista",
+    "events": "Eventos",
+    "meetings": "Reuniones",
+    "overview": "Resumen",
+    "schedule": "Horario",
+    "business": "Asuntos",
+    "announcements": "Anuncios",
+    "discussions": "Discusiones",
+    "templates": "Plantillas",
+    "newMeeting": "Nueva reunión",
+    "meetingDetails": "Detalles de la reunión",
+    "conductMeeting": "Conducir reunión",
+    "notebooks": "Libretas",
+    "notebook": "Libreta",
+    "directory": "Directorio",
+    "callings": "Llamamientos",
+    "callingDetails": "Detalles del llamamiento",
+    "speakers": "Discursantes",
+    "speakerDetails": "Detalles del discursante",
+    "participants": "Participantes",
+    "participantDetails": "Detalles del participante",
+    "forms": "Formularios",
+    "tables": "Tablas",
+    "tasks": "Tareas"
+  },
   "Home": {
     "brandName": "Beespo",
     "tagline": "Plataforma de gestión de liderazgo",
@@ -573,5 +811,609 @@
     "description": "Encontramos un error inesperado. No te preocupes, tus datos están seguros.",
     "tryAgain": "Intentar de nuevo",
     "goToDashboard": "Ir al Panel"
+  },
+  "UI": {
+    "Pagination": {
+      "page": "Página",
+      "of": "de",
+      "pageDetail": "Página {current} de {total}",
+      "previous": "Anterior",
+      "next": "Siguiente"
+    },
+    "AutoSaveTextarea": {
+      "placeholder": "Haz clic para editar...",
+      "unsavedChanges": "Cambios sin guardar"
+    },
+    "RichTextEditor": {
+      "placeholder": "Añade una nota...",
+      "bold": "Negrita (Ctrl+B)",
+      "italic": "Cursiva (Ctrl+I)",
+      "strikethrough": "Tachado",
+      "bulletList": "Lista de viñetas",
+      "orderedList": "Lista numerada",
+      "supported": "Soporta texto enriquecido",
+      "saving": "Guardando...",
+      "saved": "Guardado"
+    },
+    "TagsInput": {
+      "placeholder": "Añade una etiqueta (presiona Enter)",
+      "add": "Añadir"
+    }
+  },
+  "Callings": {
+    "title": "Llamamientos",
+    "subtitle": "Visualiza tu flujo y rastrea los procesos de llamamientos",
+    "newCalling": "Nuevo Llamamiento",
+    "searchPlaceholder": "Buscar llamamientos, candidatos...",
+    "organization": "Organización",
+    "allOrganizations": "Todas las Organizaciones",
+    "boardView": "Vista de Tablero",
+    "listView": "Vista de Lista",
+    "noCallingsFound": "No se encontraron llamamientos",
+    "emptyStateStart": "Crea tu primer llamamiento para comenzar",
+    "emptyStateAdjust": "Intenta ajustar tu búsqueda o filtros",
+    "createCalling": "Crear Llamamiento",
+    "newCallingDialog": {
+      "title": "Nuevo Llamamiento",
+      "description": "Crea un nuevo llamamiento para rastrear y completar.",
+      "labelTitle": "Título del Llamamiento",
+      "placeholderTitle": "ej., Presidenta de la Primaria",
+      "labelOrg": "Organización (opcional)",
+      "placeholderOrg": "Seleccionar organización...",
+      "none": "Ninguna",
+      "cancel": "Cancelar",
+      "create": "Crear"
+    },
+    "stages": {
+      "defined": "Definido",
+      "approved": "Aprobado",
+      "extended": "Extendido",
+      "accepted": "Aceptado",
+      "sustained": "Sostenido",
+      "set_apart": "Apartado",
+      "recorded_lcr": "En LCR"
+    },
+    "card": {
+      "filled": "Completado",
+      "open": "Abierto",
+      "candidates": "{count, plural, =1 {# candidato} other {# candidatos}}",
+      "names": "{count, plural, =1 {# nombre} other {# nombres}}",
+      "noCandidates": "Sin candidatos",
+      "step": "Paso {current}/{total}"
+    },
+    "kanban": {
+      "needsCandidates": {
+        "title": "Necesita Candidatos",
+        "subtitle": "Vacantes que necesitan nombres",
+        "empty": "Todos los llamamientos tienen candidatos"
+      },
+      "toExtend": {
+        "title": "Para Extender",
+        "subtitle": "El Obispo necesita entrevistar",
+        "empty": "No hay entrevistas pendientes"
+      },
+      "toSustain": {
+        "title": "Para Sostener",
+        "subtitle": "Agregar a la agenda del domingo",
+        "empty": "No hay sostenimientos pendientes"
+      },
+      "toSetApart": {
+        "title": "Para Apartar",
+        "subtitle": "Necesita bendición del sacerdocio",
+        "empty": "No hay apartamientos pendientes"
+      },
+      "toRecord": {
+        "title": "Para Registrar",
+        "subtitle": "Ingresar en LCR",
+        "empty": "No hay registros pendientes"
+      },
+      "emptyStage": "No hay llamamientos en esta etapa"
+    },
+    "organizations": {
+      "bishopric": "Obispado",
+      "eldersQuorum": "Quórum de Élderes",
+      "reliefSociety": "Sociedad de Socorro",
+      "youngMen": "Hombres Jóvenes",
+      "youngWomen": "Mujeres Jóvenes",
+      "primary": "Primaria",
+      "sundaySchool": "Escuela Dominical",
+      "missionaryWork": "Obra Misional",
+      "templeFamilyHistory": "Obra del Templo e Historia Familiar"
+    },
+    "details": {
+      "tabs": {
+        "timeline": "Línea de Tiempo",
+        "candidates": "Candidatos",
+        "actions": "Acciones",
+        "history": "Historial"
+      },
+      "activeCandidate": "Candidato Activo",
+      "brainstorming": "Lluvia de Ideas",
+      "addName": "Añadir Nombre",
+      "noCandidates": "Sin candidatos aún",
+      "noCandidatesSubtitle": "Añade nombres para proponer personas",
+      "startProcess": "Iniciar",
+      "startProcessFull": "Iniciar Proceso",
+      "noActivity": "Sin actividad aún",
+      "commentPlaceholder": "Añadir un comentario...",
+      "advanceStage": "Avanzar a la Siguiente Etapa",
+      "createAssignment": "Crear Asignación",
+      "dropProcess": "Detener Proceso",
+      "startProcessSubtitle": "Selecciona un candidato para iniciar un proceso",
+      "actionsSubtitle": "Inicia un proceso para ver acciones disponibles",
+      "filledBy": "Completado por",
+      "loading": "Cargando...",
+      "loadingTitle": "Cargando Detalles del Llamamiento",
+      "active": "Activo",
+      "dialogs": {
+        "advance": {
+          "title": "Avanzar Etapa",
+          "description": "¿Mover de {current} a {next}?",
+          "confirm": "Avanzar"
+        },
+        "lcr": {
+          "title": "Registrar en LCR",
+          "description": "Por favor, verifica que este llamamiento haya sido registrado en el sistema oficial LCR.",
+          "descriptionDetail": "Esta acción marcará el proceso como completado y el llamamiento como lleno.",
+          "confirm": "Confirmar - Registrado en LCR"
+        },
+        "drop": {
+          "title": "Detener Proceso",
+          "description": "Esto detendrá el proceso actual. Opcionalmente puedes proporcionar una razón.",
+          "placeholder": "Razón (opcional)"
+        },
+        "addCandidate": {
+          "title": "Añadir Candidato",
+          "description": "Añadir un nombre a la lista de lluvia de ideas para este llamamiento.",
+          "nameLabel": "Nombre",
+          "notesLabel": "Notas (opcional)",
+          "notesPlaceholder": "¿Por qué es esta persona adecuada?"
+        },
+        "createTask": {
+          "title": "Crear Asignación",
+          "description": "Crear una tarea vinculada a este proceso de llamamiento.",
+          "label": "Título",
+          "placeholder": "ej., Entrevistar candidato",
+          "descriptionLabel": "Descripción (opcional)",
+          "descriptionPlaceholder": "Detalles adicionales...",
+          "assignTo": "Asignar a",
+          "placeholderAssignee": "Seleccionar...",
+          "dueDate": "Fecha de Vencimiento"
+        }
+      }
+    },
+    "pool": {
+      "title": "Grupo de Candidatos",
+      "count": "{count} {count, plural, one {candidato} other {candidatos}} para {title}",
+      "add": "Añadir Candidato",
+      "empty": "Sin candidatos aún. ¡Añade a alguien para hacer lluvia de ideas!",
+      "candidateStatuses": {
+        "proposed": "Propuesto",
+        "discussing": "En discusión",
+        "selected": "Seleccionado",
+        "archived": "Archivado"
+      },
+      "actions": {
+        "startProcess": "Iniciar Proceso",
+        "editNotes": "Editar Notas",
+        "remove": "Eliminar"
+      },
+      "dialogs": {
+        "addCandidate": {
+          "title": "Añadir Candidato",
+          "description": "Añadir un candidato al grupo para {title}",
+          "nameLabel": "Nombre",
+          "notesLabel": "Notas (opcional)",
+          "notesPlaceholder": "Añade notas sobre este candidato...",
+          "placeholder": "Buscar un nombre...",
+          "searchPlaceholder": "Escribe un nombre...",
+          "noResults": "No se encontraron nombres.",
+          "suggestions": "Sugerencias",
+          "addNew": "Añadir \"{name}\" como nuevo nombre"
+        },
+        "editNotes": {
+          "title": "Editar Notas",
+          "description": "Notas para {name}",
+          "descriptionExtended": "Notas para {name} → {title}",
+          "placeholder": "Añade notas sobre este candidato..."
+        }
+      },
+      "candidateAdded": "Candidato añadido",
+      "candidateAddedDesc": "{name} añadido al grupo",
+      "notesUpdated": "Notas actualizadas",
+      "candidateRemoved": "Candidato eliminado",
+      "candidateRemovedDesc": "{name} eliminado del grupo",
+      "processStarted": "Proceso iniciado",
+      "processStartedDesc": "Proceso de llamamiento iniciado para {name}",
+      "considerationsTitle": "Llamamientos Considerados",
+      "considerationsCount": "{count} {count, plural, one {llamamiento} other {llamamientos}} para {name}",
+      "considerationsEmpty": "No hay llamamientos siendo considerados para esta persona.",
+      "considerationRemoved": "Eliminado",
+      "considerationRemovedDesc": "Ya no se considera a {name} para {title}"
+    }
+  },
+  "Tables": {
+    "events": {
+      "dateTime": "Fecha / Hora",
+      "eventName": "Nombre del Evento",
+      "location": "Lugar",
+      "promoted": "Promovido",
+      "actions": "Acciones",
+      "allDay": "Todo el día",
+      "announced": "Anunciado",
+      "notAnnounced": "No anunciado",
+      "noEventsFound": "No se encontraron eventos."
+    },
+    "business": {
+      "id": "ID",
+      "personName": "Nombre",
+      "positionCalling": "Posición / Llamamiento",
+      "category": "Categoría",
+      "status": "Estado",
+      "actionDate": "Fecha de acción",
+      "actions": "Acciones",
+      "statusPending": "Pendiente",
+      "statusCompleted": "Completado",
+      "view": "Ver",
+      "noItemsFound": "No se encontraron asuntos."
+    },
+    "announcements": {
+      "id": "ID",
+      "title": "Título",
+      "priority": "Prioridad",
+      "status": "Estado",
+      "deadline": "Vencimiento",
+      "actions": "Acciones",
+      "statusActive": "Activo",
+      "statusExpired": "Vencido",
+      "statusScheduled": "Programado",
+      "priorityHigh": "Alta",
+      "priorityMedium": "Media",
+      "priorityLow": "Baja",
+      "noDeadline": "Sin vencimiento",
+      "noAnnouncementsFound": "No se encontraron anuncios."
+    },
+    "teamMembers": {
+      "name": "Nombre",
+      "email": "Correo",
+      "role": "Rol",
+      "actions": "Acciones",
+      "you": "(tú)",
+      "roleAdmin": "Administrador",
+      "roleLeader": "Líder",
+      "roleGuest": "Invitado",
+      "makeAdmin": "Hacer Administrador",
+      "removeFromWorkspace": "Eliminar del Espacio de Trabajo",
+      "removeMemberTitle": "¿Eliminar Miembro?",
+      "removeMemberDescription": "Esto eliminará permanentemente al miembro del espacio de trabajo. Perderá el acceso de inmediato.",
+      "makeAdminTitle": "¿Transferir Rol de Administrador?",
+      "makeAdminDescription": "Esto le dará a {name} todos los privilegios de administrador de este espacio de trabajo.",
+      "cancel": "Cancelar",
+      "remove": "Eliminar",
+      "removing": "Eliminando...",
+      "processing": "Procesando..."
+    },
+    "pendingInvitations": {
+      "email": "Correo",
+      "role": "Rol",
+      "invitedBy": "Invitado por",
+      "expires": "Vence",
+      "actions": "Acciones",
+      "unknown": "Desconocido",
+      "resendInvitation": "Reenviar invitación",
+      "revokeInvitation": "Revocar invitación",
+      "noPendingInvitations": "No hay invitaciones pendientes"
+    },
+    "requestHistory": {
+      "request": "Solicitud",
+      "status": "Estado",
+      "date": "Fecha",
+      "loading": "Cargando tus solicitudes...",
+      "errorLoading": "Error al cargar el historial de solicitudes. Por favor, inténtalo de nuevo.",
+      "tryAgain": "Intentar de nuevo",
+      "noRequests": "Aún no has enviado ninguna solicitud."
+    }
+  },
+  "common": {
+    "cancel": "Cancelar",
+    "save": "Guardar"
+  },
+  "Metadata": {
+    "title": "Beespo - Gestión de Liderazgo para Líderes de la Iglesia",
+    "description": "Una plataforma integral de gestión de liderazgo y agendas diseñada para líderes en La Iglesia de Jesucristo de los Santos de los Últimos Días.",
+    "dashboard": {
+      "title": "Panel | Beespo",
+      "description": "Tu centro de control de un vistazo"
+    },
+    "callings": {
+      "title": "Llamamientos | Beespo",
+      "description": "Visualiza tu flujo y rastrea los procesos de llamamientos"
+    },
+    "speakers": {
+      "title": "Discursantes | Beespo",
+      "description": "Administra y da seguimiento a los discursantes en todas las reuniones"
+    },
+    "meetings": {
+      "overview": {
+        "title": "Centro de Mando | Beespo",
+        "description": "Tu espacio de trabajo central para gestionar reuniones y agendas"
+      }
+    },
+    "settings": {
+      "title": "Configuración | Beespo",
+      "description": "Administra la configuración de tu espacio de trabajo y los miembros del equipo"
+    },
+    "calendar": {
+      "title": "Vista de Calendario | Beespo",
+      "description": "Tu vista de calendario interactiva"
+    },
+    "announcements": {
+      "title": "Anuncios | Beespo",
+      "description": "Administra los anuncios de tu organización"
+    },
+    "discussions": {
+      "title": "Discusiones | Beespo",
+      "description": "Participa en discusiones y toma decisiones"
+    },
+    "forms": {
+      "title": "Formularios | Beespo",
+      "description": "Crea y administra formularios"
+    },
+    "participants": {
+      "title": "Participantes | Beespo",
+      "description": "Administra nombres de participantes reutilizables para asignaciones de reuniones"
+    },
+    "tables": {
+      "title": "Tablas | Beespo",
+      "description": "Crea y administra tablas para tu organización"
+    },
+    "business": {
+      "title": "Asuntos | Beespo",
+      "description": "Administra los asuntos de tu organización"
+    },
+    "templates": {
+      "title": "Plantillas | Beespo",
+      "description": "Administra tus plantillas de reuniones"
+    },
+    "schedule": {
+      "title": "Horario | Beespo",
+      "description": "Consulta y administra tu horario de reuniones"
+    },
+    "events": {
+      "title": "Eventos | Beespo",
+      "description": "Consulta y administra los eventos de tu organización"
+    },
+    "apps": {
+      "title": "Centro de Aplicaciones | Beespo",
+      "description": "Conecta aplicaciones para mejorar tu espacio de trabajo"
+    },
+    "tasks": {
+      "title": "Tareas | Beespo",
+      "description": "Mantente al día con tus asignaciones"
+    },
+    "notebooks": {
+      "title": "Libretas | Beespo",
+      "description": "Organiza tus notas y pensamientos"
+    }
+  },
+  "Dictionary": {
+    "unitTypes": {
+      "ward": "Barrio",
+      "branch": "Rama",
+      "stake": "Estaca",
+      "district": "Distrito"
+    },
+    "organizationTypes": {
+      "bishopric": "Obispado",
+      "elders_quorum": "Quórum de Élderes",
+      "relief_society": "Sociedad de Socorro",
+      "young_men": "Hombres Jóvenes",
+      "young_women": "Mujeres Jóvenes",
+      "primary": "Primaria",
+      "missionary_work": "Obra Misional",
+      "temple_family_history": "Obra del Templo e Historia Familiar",
+      "sunday_school": "Escuela Dominical"
+    }
+  },
+  "Support": {
+    "title": "Ayuda y Soporte",
+    "description": "Envía un reporte de error, solicitud de función o consulta tu historial.",
+    "tabNewRequest": "Nueva Solicitud",
+    "tabMyRequests": "Mis Solicitudes",
+    "requestTypeLabel": "Tipo de Solicitud",
+    "bugReportTitle": "Reporte de Error",
+    "bugReportDescription": "Algo no está funcionando como se esperaba",
+    "featureRequestTitle": "Solicitud de Función",
+    "featureRequestDescription": "Sugiere una nueva función o mejora",
+    "generalQuestionTitle": "Pregunta General",
+    "generalQuestionDescription": "Pregúntanos cualquier cosa sobre Beespo",
+    "priorityLabel": "Prioridad",
+    "priorityLow": "Baja - Problema menor",
+    "priorityMedium": "Media - Afecta la funcionalidad",
+    "priorityHigh": "Alta - Bloqueante o crítico",
+    "subjectLabel": "Asunto",
+    "subjectPlaceholder": "Resumen breve de tu solicitud",
+    "descriptionLabel": "Descripción",
+    "descriptionPlaceholder": "Cuéntanos más detalles...",
+    "autoCapturedTitle": "Información capturada automáticamente:",
+    "autoCapturedName": "Tu nombre y correo electrónico",
+    "autoCapturedUrl": "URL de la página actual",
+    "autoCapturedBrowser": "Información del navegador y dispositivo",
+    "cancel": "Cancelar",
+    "sendRequest": "Enviar Solicitud",
+    "sending": "Enviando...",
+    "close": "Cerrar",
+    "successTitle": "¡Solicitud Enviada Exitosamente!",
+    "successDescription": "¡Gracias! Hemos recibido tu solicitud.",
+    "successTicketRef": "Ticket de Referencia:",
+    "errorFailedToSubmit": "Error al enviar la solicitud",
+    "errorSomethingWentWrong": "Algo salió mal"
+  },
+  "Calendar": {
+    "title": "Calendario",
+    "today": "Hoy",
+    "newEvent": "Nuevo evento",
+    "viewMonth": "Mes",
+    "viewWeek": "Semana",
+    "viewDay": "Día",
+    "viewAgenda": "Agenda",
+    "calendars": "Calendarios",
+    "showAlso": "Mostrar también",
+    "externalCalendars": "Calendarios externos",
+    "manageCalendars": "Gestionar calendarios",
+    "allDay": "Todo el día",
+    "more": "+{count} más",
+    "noEvents": "No hay eventos este mes",
+    "clickToAdd": "Haz clic en cualquier fecha del calendario para añadir un evento",
+    "eventsCount": "{count} {count, plural, one {evento} other {eventos}}",
+    "allDayEvents": "Eventos de todo el día",
+    "Event": {
+      "title": "Título del evento",
+      "location": "Ubicación",
+      "description": "Descripción",
+      "start": "Inicio",
+      "end": "Fin",
+      "allDay": "Todo el día",
+      "create": "Crear evento",
+      "update": "Actualizar evento",
+      "delete": "Eliminar evento",
+      "save": "Guardar cambios",
+      "cancel": "Cancelar",
+      "loading": "Cargando...",
+      "successCreate": "Evento creado con éxito.",
+      "successUpdate": "Evento actualizado con éxito.",
+      "successDelete": "Evento eliminado con éxito.",
+      "errorCreate": "Error al crear el evento.",
+      "errorUpdate": "Error al actualizar el evento.",
+      "errorDelete": "Error al eliminar el evento.",
+      "externalEventBadge": "Evento externo",
+      "externalEventDescription": "Este evento proviene de una suscripción de calendario externa.",
+      "importToBeespo": "Importar a Beespo",
+      "importSuccess": "Evento externo importado con éxito."
+    },
+    "ExternalPreview": {
+      "from": "de {name}",
+      "enrichTitle": "¿Quieres enriquecer este evento?",
+      "enrichDescription": "Impórtalo a Beespo para añadir comunicados, vincularlo a reuniones y realizar un seguimiento junto con tus otros eventos.",
+      "at": "a las",
+      "to": "al"
+    },
+    "Recurrence": {
+      "label": "Repetir",
+      "none": "No se repite",
+      "daily": "Diariamente",
+      "weekly": "Semanalmente",
+      "biweekly": "Cada 2 semanas",
+      "monthly": "Mensualmente",
+      "yearly": "Anualmente",
+      "custom": "Personalizado...",
+      "repeatEvery": "Repetir cada",
+      "weeks": "semana(s)",
+      "days": "día(s)",
+      "months": "mes(es)",
+      "years": "año(s)",
+      "onDays": "en",
+      "ends": "Termina",
+      "never": "Nunca",
+      "onDate": "El",
+      "after": "Después de",
+      "occurrences": "ocurrencias",
+      "endLabel": "Terminar recurrencia",
+      "noEndHint": "Deja en blanco para continuar hasta la fecha límite (si está establecida) o indefinidamente",
+      "customDaysLabel": "Selecciona los días de la semana en que se repite este evento:",
+      "daySun": "Dom",
+      "dayMon": "Lun",
+      "dayTue": "Mar",
+      "dayWed": "Mié",
+      "dayThu": "Jue",
+      "dayFri": "Vie",
+      "daySat": "Sáb"
+    },
+    "Days": {
+      "sun": "Dom",
+      "mon": "Lun",
+      "tue": "Mar",
+      "wed": "Mié",
+      "thu": "Jue",
+      "fri": "Vie",
+      "sat": "Sáb",
+      "sunday": "Domingo",
+      "monday": "Lunes",
+      "tuesday": "Martes",
+      "wednesday": "Miércoles",
+      "thursday": "Jueves",
+      "friday": "Viernes",
+      "saturday": "Sábado",
+      "shortSun": "D",
+      "shortMon": "L",
+      "shortTue": "M",
+      "shortWed": "M",
+      "shortThu": "J",
+      "shortFri": "V",
+      "shortSat": "S"
+    },
+    "Sources": {
+      "announcement": "Anuncio",
+      "meeting": "Reunión",
+      "task": "Tarea",
+      "event": "Evento",
+      "external": "Externo"
+    },
+    "Priorities": {
+      "high": "Alta",
+      "medium": "Media",
+      "low": "Baja"
+    },
+    "Subscriptions": {
+      "title": "Calendarios externos",
+      "addTitle": "Añadir calendario externo",
+      "addSubtitle": "Suscríbete a un feed iCal para mostrar eventos en tu calendario",
+      "nameLabel": "Nombre del calendario",
+      "namePlaceholder": "ej., Vacaciones del equipo",
+      "urlLabel": "URL de iCal",
+      "urlPlaceholder": "https://ejemplo.com/calendario.ics",
+      "urlHint": "Ingresa la URL HTTPS de un feed iCal (.ics)",
+      "colorLabel": "Color",
+      "addButton": "Añadir suscripción",
+      "addingButton": "Añadiendo...",
+      "invalidUrl": "Por favor ingresa una URL de calendario HTTPS válida",
+      "successAdd": "Suscripción de calendario añadida. Sincronizando eventos...",
+      "errorAdd": "Error al añadir la suscripción de calendario",
+      "syncing": "Sincronizando...",
+      "synced": "Sincronizado",
+      "syncFailed": "Sincronización fallida",
+      "lastSynced": "Última sincronización",
+      "neverSynced": "Nunca sincronizado",
+      "syncedRelative": "Sincronizado {time}",
+      "actions": "Acciones",
+      "syncNow": "Sincronizar ahora",
+      "delete": "Eliminar",
+      "deleteTitle": "Eliminar suscripción",
+      "deleteDescription": "Esto eliminará la suscripción al calendario y todos los eventos almacenados. Cualquier anuncio creado desde este calendario permanecerá, pero ya no se sincronizará con la fuente externa.",
+      "deleteConfirm": "Eliminar",
+      "cancel": "Cancelar",
+      "noSubscriptions": "No hay calendarios externos",
+      "noSubscriptionsDesc": "Añade una suscripción de calendario para mostrar eventos externos",
+      "successDelete": "Suscripción de calendario eliminada.",
+      "errorDelete": "Error al eliminar la suscripción de calendario.",
+      "successSync": "Sincronización iniciada.",
+      "errorSync": "Error al iniciar la sincronización.",
+      "syncComplete": "Sincronización Completa",
+      "syncResults": "{created} creados, {updated} actualizados, {deleted} eliminados",
+      "errors": {
+        "required": "El nombre y la URL son obligatorios",
+        "auth": "No autenticado",
+        "adminOnly": "Solo los administradores pueden añadir suscripciones de calendario"
+      }
+    },
+    "Settings": {
+      "title": "Configuración del calendario",
+      "general": "General",
+      "subscriptions": "Suscripciones",
+      "defaultView": "Vista predeterminada",
+      "weekStartsOn": "La semana comienza en",
+      "showWeekNumbers": "Mostrar números de semana",
+      "description": "Administra tus preferencias de calendario y suscripciones externas."
+    }
   }
 }

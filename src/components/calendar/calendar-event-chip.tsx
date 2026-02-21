@@ -106,6 +106,8 @@ export function CalendarEventChip({
   );
 }
 
+import { useTranslations } from "next-intl";
+
 interface CalendarEventListProps {
   events: CalendarEvent[];
   onClick: (event: CalendarEvent) => void;
@@ -119,6 +121,7 @@ export function CalendarEventList({
   maxVisible = 3,
   compact = false,
 }: CalendarEventListProps) {
+  const t = useTranslations("Calendar");
   const visibleEvents = events.slice(0, maxVisible);
   const hiddenCount = events.length - maxVisible;
 
@@ -139,9 +142,10 @@ export function CalendarEventList({
             compact ? "text-xs py-0.5" : "text-sm py-1"
           )}
         >
-          +{hiddenCount} more
+          {t("more", { count: hiddenCount })}
         </div>
       )}
     </div>
   );
 }
+

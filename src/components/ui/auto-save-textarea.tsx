@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -25,11 +26,12 @@ export interface AutoSaveTextareaProps {
 export function AutoSaveTextarea({
     initialValue,
     onSave,
-    placeholder = "Click to edit...",
+    placeholder,
     disabled = false,
     minRows = 1,
     className,
 }: AutoSaveTextareaProps) {
+    const t = useTranslations('UI.AutoSaveTextarea');
     const [value, setValue] = useState(initialValue);
     const [isSaving, setIsSaving] = useState(false);
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -88,7 +90,7 @@ export function AutoSaveTextarea({
                 value={value}
                 onChange={handleChange}
                 onBlur={handleBlur}
-                placeholder={placeholder}
+                placeholder={placeholder || t("placeholder")}
                 disabled={disabled || isSaving}
                 rows={minRows}
                 className={cn(
@@ -119,7 +121,7 @@ export function AutoSaveTextarea({
             {/* Unsaved changes indicator (subtle dot) */}
             {hasUnsavedChanges && !isSaving && (
                 <div className="absolute right-0 top-0 p-2">
-                    <div className="h-2 w-2 rounded-full bg-amber-500" title="Unsaved changes" />
+                    <div className="h-2 w-2 rounded-full bg-amber-500" title={t("unsavedChanges")} />
                 </div>
             )}
         </div>

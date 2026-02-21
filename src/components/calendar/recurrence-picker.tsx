@@ -12,6 +12,8 @@ import {
 import { RecurrenceType, RecurrenceConfig } from "@/types/database";
 import { cn } from "@/lib/utils";
 
+import { useTranslations } from "next-intl";
+
 interface RecurrencePickerProps {
   recurrenceType: RecurrenceType;
   recurrenceEndDate: string;
@@ -22,16 +24,6 @@ interface RecurrencePickerProps {
   disabled?: boolean;
 }
 
-const DAYS_OF_WEEK = [
-  { value: 0, label: "Sun" },
-  { value: 1, label: "Mon" },
-  { value: 2, label: "Tue" },
-  { value: 3, label: "Wed" },
-  { value: 4, label: "Thu" },
-  { value: 5, label: "Fri" },
-  { value: 6, label: "Sat" },
-];
-
 export function RecurrencePicker({
   recurrenceType,
   recurrenceEndDate,
@@ -41,6 +33,18 @@ export function RecurrencePicker({
   onRecurrenceConfigChange,
   disabled = false,
 }: RecurrencePickerProps) {
+  const t = useTranslations("Calendar.Recurrence");
+
+  const daysOfWeek = [
+    { value: 0, label: t("daySun") },
+    { value: 1, label: t("dayMon") },
+    { value: 2, label: t("dayTue") },
+    { value: 3, label: t("dayWed") },
+    { value: 4, label: t("dayThu") },
+    { value: 5, label: t("dayFri") },
+    { value: 6, label: t("daySat") },
+  ];
+
   const handleDayToggle = (day: number) => {
     const currentDays = recurrenceConfig.daysOfWeek || [];
     const newDays = currentDays.includes(day)
@@ -60,23 +64,23 @@ export function RecurrencePicker({
     <div className="space-y-4">
       {/* Recurrence Type */}
       <div className="space-y-2">
-        <Label htmlFor="recurrence">Repeat</Label>
+        <Label htmlFor="recurrence">{t("label")}</Label>
         <Select
           value={recurrenceType}
           onValueChange={(v) => onRecurrenceTypeChange(v as RecurrenceType)}
           disabled={disabled}
         >
           <SelectTrigger id="recurrence">
-            <SelectValue placeholder="Does not repeat" />
+            <SelectValue placeholder={t("none")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="none">Does not repeat</SelectItem>
-            <SelectItem value="daily">Daily</SelectItem>
-            <SelectItem value="weekly">Weekly</SelectItem>
-            <SelectItem value="biweekly">Every 2 weeks</SelectItem>
-            <SelectItem value="monthly">Monthly</SelectItem>
-            <SelectItem value="yearly">Yearly</SelectItem>
-            <SelectItem value="custom">Custom...</SelectItem>
+            <SelectItem value="none">{t("none")}</SelectItem>
+            <SelectItem value="daily">{t("daily")}</SelectItem>
+            <SelectItem value="weekly">{t("weekly")}</SelectItem>
+            <SelectItem value="biweekly">{t("biweekly")}</SelectItem>
+            <SelectItem value="monthly">{t("monthly")}</SelectItem>
+            <SelectItem value="yearly">{t("yearly")}</SelectItem>
+            <SelectItem value="custom">{t("custom")}</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -85,10 +89,10 @@ export function RecurrencePicker({
       {recurrenceType === "custom" && (
         <div className="space-y-4 p-4 border rounded-md bg-muted/30">
           <p className="text-sm text-muted-foreground">
-            Select which days of the week this event repeats:
+            {t("customDaysLabel")}
           </p>
           <div className="flex flex-wrap gap-2">
-            {DAYS_OF_WEEK.map((day) => {
+            {daysOfWeek.map((day) => {
               const isSelected = recurrenceConfig.daysOfWeek?.includes(day.value);
               return (
                 <button
@@ -114,7 +118,7 @@ export function RecurrencePicker({
       {/* Interval (for daily, weekly, monthly) */}
       {recurrenceType !== "none" && recurrenceType !== "biweekly" && recurrenceType !== "custom" && (
         <div className="space-y-2">
-          <Label htmlFor="interval">Repeat every</Label>
+          <Label htmlFor="interval">{t("repeatEvery")}</Label>
           <div className="flex items-center gap-2">
             <Input
               id="interval"
@@ -127,10 +131,10 @@ export function RecurrencePicker({
               className="w-20"
             />
             <span className="text-sm text-muted-foreground">
-              {recurrenceType === "daily" && "day(s)"}
-              {recurrenceType === "weekly" && "week(s)"}
-              {recurrenceType === "monthly" && "month(s)"}
-              {recurrenceType === "yearly" && "year(s)"}
+              {recurrenceType === "daily" && t("days")}
+              {recurrenceType === "weekly" && t("weeks")}
+              {recurrenceType === "monthly" && t("months")}
+              {recurrenceType === "yearly" && t("years")}
             </span>
           </div>
         </div>
@@ -139,7 +143,7 @@ export function RecurrencePicker({
       {/* Recurrence End Date */}
       {recurrenceType !== "none" && (
         <div className="space-y-2">
-          <Label htmlFor="recurrenceEnd">End recurrence</Label>
+          <Label htmlFor="recurrenceEnd">{t("endLabel")}</Label>
           <Input
             id="recurrenceEnd"
             type="date"
@@ -148,10 +152,11 @@ export function RecurrencePicker({
             disabled={disabled}
           />
           <p className="text-xs text-muted-foreground">
-            Leave blank to continue until the deadline (if set) or indefinitely
+            {t("noEndHint")}
           </p>
         </div>
       )}
     </div>
   );
 }
+

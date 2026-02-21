@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowUp, ArrowDown, ArrowUpDown, Circle, CheckCheck, Briefcase } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { useTranslations } from "next-intl";
 
 export interface BusinessItem {
     id: string;
@@ -54,6 +55,8 @@ function getStatusVariant(status: string): "default" | "secondary" | "outline" {
 }
 
 export function BusinessTable({ items, sortConfig, onSort }: BusinessTableProps) {
+    const t = useTranslations("Tables.business");
+
     const SortHeader = ({ column, label, className }: { column: string; label: string; className?: string }) => (
         <TableHead
             className={cn("cursor-pointer bg-white hover:bg-gray-50 transition-colors", className)}
@@ -75,13 +78,13 @@ export function BusinessTable({ items, sortConfig, onSort }: BusinessTableProps)
             <Table>
                 <TableHeader>
                     <TableRow className="group">
-                        <SortHeader column="workspace_business_id" label="ID" className="w-[100px]" />
-                        <SortHeader column="person_name" label="Person Name" className="w-[200px]" />
-                        <SortHeader column="position_calling" label="Position/Calling" />
-                        <SortHeader column="category" label="Category" />
-                        <SortHeader column="status" label="Status" />
-                        <SortHeader column="action_date" label="Action Date" />
-                        <TableHead className="text-right w-[80px]">Actions</TableHead>
+                        <SortHeader column="workspace_business_id" label={t("id")} className="w-[100px]" />
+                        <SortHeader column="person_name" label={t("personName")} className="w-[200px]" />
+                        <SortHeader column="position_calling" label={t("positionCalling")} />
+                        <SortHeader column="category" label={t("category")} />
+                        <SortHeader column="status" label={t("status")} />
+                        <SortHeader column="action_date" label={t("actionDate")} />
+                        <TableHead className="text-right w-[80px]">{t("actions")}</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -90,7 +93,7 @@ export function BusinessTable({ items, sortConfig, onSort }: BusinessTableProps)
                             <TableCell colSpan={7} className="h-24 text-center">
                                 <div className="flex flex-col items-center justify-center py-4">
                                     <Briefcase className="h-8 w-8 text-muted-foreground mb-2" />
-                                    <p className="text-muted-foreground">No business items found.</p>
+                                    <p className="text-muted-foreground">{t("noItemsFound")}</p>
                                 </div>
                             </TableCell>
                         </TableRow>
@@ -113,7 +116,7 @@ export function BusinessTable({ items, sortConfig, onSort }: BusinessTableProps)
                                     <div className="flex items-center gap-2">
                                         {getStatusIcon(item.status)}
                                         <Badge variant={getStatusVariant(item.status)}>
-                                            {item.status === "pending" ? "Pending" : "Completed"}
+                                            {item.status === "pending" ? t("statusPending") : t("statusCompleted")}
                                         </Badge>
                                     </div>
                                 </TableCell>
@@ -124,7 +127,7 @@ export function BusinessTable({ items, sortConfig, onSort }: BusinessTableProps)
                                 </TableCell>
                                 <TableCell className="text-right">
                                     <Button variant="ghost" size="sm" asChild>
-                                        <Link href={`/business/${item.id}`}>View</Link>
+                                        <Link href={`/business/${item.id}`}>{t("view")}</Link>
                                     </Button>
                                 </TableCell>
                             </TableRow>

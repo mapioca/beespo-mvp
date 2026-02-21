@@ -64,25 +64,6 @@ interface SettingsClientProps {
     };
 }
 
-const workspaceTypeLabels: Record<string, string> = {
-    ward: "Ward",
-    branch: "Branch",
-    stake: "Stake",
-    district: "District",
-};
-
-const organizationTypeLabels: Record<string, string> = {
-    bishopric: "Bishopric",
-    elders_quorum: "Elders Quorum",
-    relief_society: "Relief Society",
-    young_men: "Young Men",
-    young_women: "Young Women",
-    primary: "Primary",
-    missionary_work: "Missionary Work",
-    temple_family_history: "Temple & Family History",
-    sunday_school: "Sunday School",
-};
-
 export function SettingsClient({
     workspace,
     members,
@@ -92,6 +73,26 @@ export function SettingsClient({
     currentUserDetails,
 }: SettingsClientProps) {
     const t = useTranslations("Dashboard.Settings");
+    const dictionary = useTranslations("Dictionary");
+
+    const workspaceTypeLabels: Record<string, string> = {
+        ward: dictionary("unitTypes.ward"),
+        branch: dictionary("unitTypes.branch"),
+        stake: dictionary("unitTypes.stake"),
+        district: dictionary("unitTypes.district"),
+    };
+
+    const organizationTypeLabels: Record<string, string> = {
+        bishopric: dictionary("organizationTypes.bishopric"),
+        elders_quorum: dictionary("organizationTypes.elders_quorum"),
+        relief_society: dictionary("organizationTypes.relief_society"),
+        young_men: dictionary("organizationTypes.young_men"),
+        young_women: dictionary("organizationTypes.young_women"),
+        primary: dictionary("organizationTypes.primary"),
+        missionary_work: dictionary("organizationTypes.missionary_work"),
+        temple_family_history: dictionary("organizationTypes.temple_family_history"),
+        sunday_school: dictionary("organizationTypes.sunday_school"),
+    };
     const router = useRouter();
     const pathname = usePathname();
     const currentLocale = useLocale();

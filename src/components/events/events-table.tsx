@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { useTranslations } from "next-intl";
 
 export interface Event {
     id: string;
@@ -49,12 +50,12 @@ interface EventsTableProps {
     onDelete?: (event: Event) => void;
 }
 
-function formatEventDateTime(startAt: string, isAllDay: boolean): string {
+function formatEventDateTime(startAt: string, isAllDay: boolean, allDayLabel: string): string {
     const date = new Date(startAt);
     const dateStr = format(date, "MMM d");
 
     if (isAllDay) {
-        return `${dateStr} • All Day`;
+        return `${dateStr} • ${allDayLabel}`;
     }
 
     const timeStr = format(date, "h:mm a");
@@ -69,6 +70,8 @@ function getPromotedStatus(announcements: Event['announcements']): 'announced' |
 }
 
 export function EventsTable({ events, sortConfig, onSort, onEdit, onDelete }: EventsTableProps) {
+    const t = useTranslations("Tables.events");
+
     const SortHeader = ({ column, label, className }: { column: string; label: string; className?: string }) => (
         <TableHead
             className={cn("cursor-pointer bg-white hover:bg-gray-50 transition-colors", className)}
@@ -90,11 +93,11 @@ export function EventsTable({ events, sortConfig, onSort, onEdit, onDelete }: Ev
             <Table>
                 <TableHeader>
                     <TableRow className="group">
-                        <SortHeader column="start_at" label="Date/Time" className="w-[180px]" />
-                        <SortHeader column="title" label="Event Name" className="w-[300px]" />
-                        <SortHeader column="location" label="Location" />
-                        <TableHead className="w-[120px]">Promoted</TableHead>
-                        <TableHead className="text-right w-[120px]">Actions</TableHead>
+                        <SortHeader column="start_at" label={t("dateTime")} className="w-[180px]" />
+                        <SortHeader column="title" label={t("eventName")} className="w-[300px]" />
+                        <SortHeader column="location" label={t("location")} />
+                        <TableHead className="w-[120px]">{t("promoted")}</TableHead>
+                        <TableHead className="text-right w-[120px]">{t("actions")}</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -103,7 +106,7 @@ export function EventsTable({ events, sortConfig, onSort, onEdit, onDelete }: Ev
                             <TableCell colSpan={5} className="h-24 text-center">
                                 <div className="flex flex-col items-center justify-center py-4">
                                     <CalendarDays className="h-8 w-8 text-muted-foreground mb-2" />
-                                    <p className="text-muted-foreground">No events found.</p>
+                                    <p className="text-muted-foreground">{t("noEventsFound")}</p>
                                 </div>
                             </TableCell>
                         </TableRow>
@@ -120,7 +123,7 @@ export function EventsTable({ events, sortConfig, onSort, onEdit, onDelete }: Ev
                                     <TableCell className="font-medium">
                                         <div className="flex items-center gap-2">
                                             <CalendarDays className="h-4 w-4 text-muted-foreground" />
-                                            <span>{formatEventDateTime(event.start_at, event.is_all_day)}</span>
+                                            <span>{formatEventDateTime(event.start_at, event.is_all_day, t("allDay"))}</span>
                                         </div>
                                     </TableCell>
                                     <TableCell>
@@ -147,12 +150,12 @@ export function EventsTable({ events, sortConfig, onSort, onEdit, onDelete }: Ev
                                         {promotedStatus === 'announced' ? (
                                             <Badge variant="default" className="bg-green-500 hover:bg-green-600">
                                                 <Check className="h-3 w-3 mr-1" />
-                                                Announced
+                                                {t("announced")}
                                             </Badge>
                                         ) : (
                                             <Badge variant="secondary">
                                                 <Minus className="h-3 w-3 mr-1" />
-                                                Not Announced
+                                                {t("notAnnounced")}
                                             </Badge>
                                         )}
                                     </TableCell>

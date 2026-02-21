@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { useTranslations } from "next-intl"
 import { ChevronRight } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { getBreadcrumbTrail, BreadcrumbItem } from "@/lib/navigation/breadcrumb-config"
@@ -19,6 +20,7 @@ interface BreadcrumbsProps {
 
 export function Breadcrumbs({ items, className }: BreadcrumbsProps) {
   const pathname = usePathname()
+  const t = useTranslations("Navigation")
   const trail = items ?? getBreadcrumbTrail(pathname)
 
   // Don't render if there's only one item (current page) or no items
@@ -42,11 +44,11 @@ export function Breadcrumbs({ items, className }: BreadcrumbsProps) {
                   href={item.href}
                   className="hover:text-foreground transition-colors"
                 >
-                  {item.label}
+                  {t.has(item.label) ? t(item.label) : item.label}
                 </Link>
               ) : (
                 <span className={cn(isLast && "text-foreground font-medium")}>
-                  {item.label}
+                  {t.has(item.label) ? t(item.label) : item.label}
                 </span>
               )}
             </li>

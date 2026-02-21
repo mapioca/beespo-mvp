@@ -1,12 +1,17 @@
-import { Metadata } from "next"
+
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { OverviewContentClient } from "@/components/meetings/hub/overview/overview-content"
 import { getTranslations } from "next-intl/server"
 
-export const metadata: Metadata = {
-  title: "Command Center | Beespo",
-  description: "Your central workspace for managing meetings and agendas",
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "Metadata.meetings.overview" });
+
+  return {
+    title: t("title"),
+    description: t("description"),
+  };
 }
 
 export const dynamic = "force-dynamic"

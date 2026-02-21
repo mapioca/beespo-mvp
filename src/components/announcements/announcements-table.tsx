@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { useTranslations } from "next-intl";
 
 export interface Announcement {
     id: string;
@@ -75,13 +76,15 @@ function getStatusVariant(status: string): "default" | "secondary" | "destructiv
 function getPriorityVariant(priority: string): "default" | "secondary" | "destructive" | "outline" {
     switch (priority) {
         case "high": return "destructive";
-        case "medium": return "outline"; // Using outline for medium/yellow
+        case "medium": return "outline";
         case "low": return "secondary";
         default: return "default";
     }
 }
 
 export function AnnouncementsTable({ announcements, sortConfig, onSort }: AnnouncementsTableProps) {
+    const t = useTranslations("Tables.announcements");
+
     const SortHeader = ({ column, label, className }: { column: string; label: string; className?: string }) => (
         <TableHead
             className={cn("cursor-pointer bg-white hover:bg-gray-50 transition-colors", className)}
@@ -103,12 +106,12 @@ export function AnnouncementsTable({ announcements, sortConfig, onSort }: Announ
             <Table>
                 <TableHeader>
                     <TableRow className="group">
-                        <SortHeader column="workspace_announcement_id" label="ID" className="w-[100px]" />
-                        <SortHeader column="title" label="Title" className="w-[300px]" />
-                        <SortHeader column="priority" label="Priority" />
-                        <SortHeader column="status" label="Status" />
-                        <SortHeader column="deadline" label="Deadline" />
-                        <TableHead className="text-right w-[80px]">Actions</TableHead>
+                        <SortHeader column="workspace_announcement_id" label={t("id")} className="w-[100px]" />
+                        <SortHeader column="title" label={t("title")} className="w-[300px]" />
+                        <SortHeader column="priority" label={t("priority")} />
+                        <SortHeader column="status" label={t("status")} />
+                        <SortHeader column="deadline" label={t("deadline")} />
+                        <TableHead className="text-right w-[80px]">{t("actions")}</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -117,7 +120,7 @@ export function AnnouncementsTable({ announcements, sortConfig, onSort }: Announ
                             <TableCell colSpan={6} className="h-24 text-center">
                                 <div className="flex flex-col items-center justify-center py-4">
                                     <Megaphone className="h-8 w-8 text-muted-foreground mb-2" />
-                                    <p className="text-muted-foreground">No announcements found.</p>
+                                    <p className="text-muted-foreground">{t("noAnnouncementsFound")}</p>
                                 </div>
                             </TableCell>
                         </TableRow>
@@ -158,11 +161,11 @@ export function AnnouncementsTable({ announcements, sortConfig, onSort }: Announ
                                 <TableCell>
                                     {announcement.deadline
                                         ? format(new Date(announcement.deadline), "MMM d, yyyy")
-                                        : "No deadline"}
+                                        : t("noDeadline")}
                                 </TableCell>
                                 <TableCell className="text-right">
                                     <Button variant="ghost" size="sm" asChild>
-                                        <Link href={`/announcements/${announcement.id}`}>View</Link>
+                                        <Link href={`/announcements/${announcement.id}`}>{t("view")}</Link>
                                     </Button>
                                 </TableCell>
                             </TableRow>

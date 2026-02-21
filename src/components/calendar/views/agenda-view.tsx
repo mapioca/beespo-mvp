@@ -12,6 +12,9 @@ import { CalendarEvent, EventSource } from "@/lib/calendar-helpers";
 import { cn } from "@/lib/utils";
 import { Repeat, MapPin, Calendar } from "lucide-react";
 
+import { useTranslations, useLocale } from "next-intl";
+import { es, enUS } from "date-fns/locale";
+
 interface AgendaViewProps {
   currentDate: Date;
   events: CalendarEvent[];
@@ -66,6 +69,12 @@ export function AgendaView({
   onDateClick,
   onEventClick,
 }: AgendaViewProps) {
+  const t = useTranslations("Calendar");
+  const tSource = useTranslations("Calendar.Sources");
+  const tPriority = useTranslations("Calendar.Priorities");
+  const locale = useLocale();
+  const dateLocale = locale === "es" ? es : enUS;
+
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(currentDate);
   const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
@@ -80,9 +89,9 @@ export function AgendaView({
     return (
       <div className="flex flex-col items-center justify-center h-full text-muted-foreground py-16">
         <Calendar className="h-16 w-16 mb-4 opacity-40" />
-        <p className="text-lg font-medium">No events this month</p>
+        <p className="text-lg font-medium">{t("noEvents")}</p>
         <p className="text-sm mt-1">
-          Click any date in the calendar to add an event
+          {t("clickToAdd")}
         </p>
       </div>
     );
@@ -113,18 +122,18 @@ export function AgendaView({
                 )}
               >
                 <span className="text-xs font-semibold uppercase tracking-wide opacity-80">
-                  {format(day, "EEE")}
+                  {format(day, "EEE", { locale: dateLocale })}
                 </span>
                 <span className="text-2xl font-bold">{format(day, "d")}</span>
               </div>
               <div className="flex-1">
-                <div className="font-semibold text-lg">{format(day, "EEEE")}</div>
-                <div className="text-sm text-muted-foreground">
-                  {format(day, "MMMM yyyy")}
+                <div className="font-semibold text-lg">{format(day, "EEEE", { locale: dateLocale })}</div>
+                <div className="text-sm text-muted-foreground uppercase tracking-wide">
+                  {format(day, "MMMM yyyy", { locale: dateLocale })}
                 </div>
               </div>
               <div className="text-sm text-muted-foreground bg-muted/50 px-3 py-1 rounded-full">
-                {dayEvents.length} event{dayEvents.length !== 1 ? "s" : ""}
+                {t("eventsCount", { count: dayEvents.length })}
               </div>
             </div>
 
@@ -172,21 +181,21 @@ export function AgendaView({
                           colors.bg,
                           colors.text
                         )}>
-                          {event.source}
+                          {tSource(event.source)}
                         </span>
                         {event.priority && (
                           <span
                             className={cn(
                               "text-xs px-2.5 py-1 rounded-full font-medium capitalize",
                               event.priority === "high" &&
-                                "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-200",
+                              "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-200",
                               event.priority === "medium" &&
-                                "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-200",
+                              "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-200",
                               event.priority === "low" &&
-                                "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-200"
+                              "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-200"
                             )}
                           >
-                            {event.priority}
+                            {tPriority(event.priority)}
                           </span>
                         )}
                       </div>
@@ -201,3 +210,4 @@ export function AgendaView({
     </div>
   );
 }
+

@@ -20,6 +20,7 @@ import {
     FileText,
     Loader2,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 export type MeetingStatus = "scheduled" | "in_progress" | "completed" | "cancelled";
 
@@ -52,6 +53,8 @@ export function MeetingsFilters({
     templateCounts = {},
     currentFilters,
 }: MeetingFiltersProps) {
+    const t = useTranslations("Meetings.hub");
+    const ts = useTranslations("Meetings.status");
     const router = useRouter();
     const pathname = usePathname();
     const searchParams = useSearchParams();
@@ -109,7 +112,7 @@ export function MeetingsFilters({
 
     // Get template name by ID
     const getTemplateName = (id: string) => {
-        if (id === "no-template") return "No Template";
+        if (id === "no-template") return t("noTemplate");
         return templates.find((t) => t.id === id)?.name || "Unknown";
     };
 
@@ -117,13 +120,13 @@ export function MeetingsFilters({
         <div className="flex items-center gap-2 flex-wrap">
             <div className="relative">
                 <Input
-                    placeholder="Filter meetings..."
+                    placeholder={t("filterPlaceholder")}
                     defaultValue={currentFilters.search}
                     onChange={(e) => {
                         // Use a local timeout for debouncing
                         const value = e.target.value;
                         setTimeout(() => handleSearchChange(value), 300);
-// No return here
+                        // No return here
                     }}
                     className="max-w-xs"
                 />
@@ -137,7 +140,7 @@ export function MeetingsFilters({
                 <DropdownMenuTrigger asChild>
                     <Button variant="outline" size="sm" className="h-9">
                         <PlusCircle className="mr-2 h-4 w-4" />
-                        Status
+                        {t("status")}
                         {currentFilters.status.length > 0 && (
                             <span className="ml-2 rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground">
                                 {currentFilters.status.length}
@@ -163,7 +166,7 @@ export function MeetingsFilters({
                                             <div className="h-4 w-4 rounded-sm border border-input" />
                                         )}
                                         {option.icon}
-                                        <span>{option.label}</span>
+                                        <span>{ts(option.value)}</span>
                                     </div>
                                     {statusCounts && (
                                         <span className="text-xs text-muted-foreground">
@@ -183,7 +186,7 @@ export function MeetingsFilters({
                     <DropdownMenuTrigger asChild>
                         <Button variant="outline" size="sm" className="h-9">
                             <FileText className="mr-2 h-4 w-4" />
-                            Template
+                            {t("template")}
                             {currentFilters.templateIds.length > 0 && (
                                 <span className="ml-2 rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground">
                                     {currentFilters.templateIds.length}
@@ -208,7 +211,7 @@ export function MeetingsFilters({
                                             <div className="h-4 w-4 rounded-sm border border-input" />
                                         )}
                                         <FileText className="h-4 w-4 text-muted-foreground" />
-                                        <span className="text-muted-foreground italic">No Template</span>
+                                        <span className="text-muted-foreground italic">{t("noTemplate")}</span>
                                     </div>
                                     <span className="text-xs text-muted-foreground">
                                         {templateCounts["no-template"] || 0}
@@ -246,10 +249,9 @@ export function MeetingsFilters({
 
             {/* Active Filter Badges - Status */}
             {currentFilters.status.map((status) => {
-                const option = STATUS_OPTIONS.find((o) => o.value === status);
                 return (
                     <Button key={status} variant="secondary" size="sm" className="h-9" onClick={() => toggleStatus(status as MeetingStatus)}>
-                        {option?.label}
+                        {ts(status)}
                         <X className="ml-2 h-3 w-3" />
                     </Button>
                 );
@@ -271,7 +273,7 @@ export function MeetingsFilters({
 
             {hasActiveFilters && (
                 <Button variant="ghost" size="sm" className="h-9" onClick={clearFilters}>
-                    Reset
+                    {t("reset")}
                     <X className="ml-2 h-4 w-4" />
                 </Button>
             )}
@@ -279,7 +281,7 @@ export function MeetingsFilters({
             {isPending && (
                 <span className="text-xs text-muted-foreground flex items-center gap-1">
                     <Loader2 className="h-3 w-3 animate-spin" />
-                    Loading...
+                    {t("loading")}
                 </span>
             )}
         </div>

@@ -1,11 +1,16 @@
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import { BusinessClient } from "@/components/business/business-client"
-import { Metadata } from "next"
+import { getTranslations } from "next-intl/server"
 
-export const metadata: Metadata = {
-  title: "Business | Beespo",
-  description: "Manage business items for your organization",
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params
+  const t = await getTranslations({ locale, namespace: "Metadata.business" })
+
+  return {
+    title: t("title"),
+    description: t("description"),
+  }
 }
 
 // Disable caching to ensure new business items appear immediately

@@ -1,9 +1,8 @@
-import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "../globals.css";
 import { ToastContainer } from "@/components/ui/toast-container";
 import { NextIntlClientProvider } from "next-intl";
-import { getMessages } from "next-intl/server";
+import { getMessages, getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { routing } from "@/routing";
 
@@ -13,14 +12,18 @@ const inter = Inter({
   display: "swap",
 });
 
-export const metadata: Metadata = {
-  title: "Beespo - Leadership Management for Church Leaders",
-  description:
-    "A comprehensive agenda and leadership management platform designed for leaders in The Church of Jesus Christ of Latter-day Saints.",
-  icons: {
-    icon: "/beespo-favicon.png",
-  },
-};
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "Metadata" });
+
+  return {
+    title: t("title"),
+    description: t("description"),
+    icons: {
+      icon: "/beespo-favicon.png",
+    },
+  };
+}
 
 export default async function RootLayout({
   children,

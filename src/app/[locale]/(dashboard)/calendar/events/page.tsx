@@ -1,12 +1,18 @@
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
-import { Metadata } from "next"
 import { EventsListClient, type EventListItem } from "@/components/calendar/events"
 import { startOfMonth, endOfMonth, addMonths, subMonths } from "date-fns"
 
-export const metadata: Metadata = {
-    title: "Events | Beespo",
-    description: "View and manage all your calendar events",
+import { getTranslations } from "next-intl/server"
+
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
+    const { locale } = await params;
+    const t = await getTranslations({ locale, namespace: "Metadata.events" });
+
+    return {
+        title: t("title"),
+        description: t("description"),
+    };
 }
 
 export const revalidate = 0

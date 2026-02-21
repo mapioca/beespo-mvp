@@ -37,6 +37,7 @@ import { MeetingAgendaPDF, getMeetingPDFFilename } from "@/components/meetings/m
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "@/lib/toast";
 import { Database } from "@/types/database";
+import { useTranslations } from "next-intl";
 
 type Meeting = Database["public"]["Tables"]["meetings"]["Row"] & {
     templates?: { name: string } | null;
@@ -55,6 +56,7 @@ export function MeetingRowActions({
     isLeader,
     onDelete,
 }: MeetingRowActionsProps) {
+    const t = useTranslations("Meetings.actions");
     const router = useRouter();
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [isShareOpen, setIsShareOpen] = useState(false);
@@ -93,10 +95,10 @@ export function MeetingRowActions({
             document.body.removeChild(link);
             URL.revokeObjectURL(url);
 
-            toast.success("Download started", { description: "Your PDF is being downloaded" });
+            toast.success(t("toast.downloadStarted"), { description: t("toast.downloadStartedDesc") });
         } catch (error) {
             console.error("PDF generation failed:", error);
-            toast.error("Download failed", { description: "Could not generate PDF. Please try again." });
+            toast.error(t("toast.downloadFailed"), { description: t("toast.downloadFailedDesc") });
         } finally {
             setIsDownloading(false);
             setIsDropdownOpen(false);
@@ -122,13 +124,13 @@ export function MeetingRowActions({
 
             if (error) throw error;
 
-            toast.success("Meeting deleted", { description: "The meeting has been permanently deleted." });
+            toast.success(t("toast.deleteSuccess"), { description: t("toast.deleteSuccessDesc") });
 
             onDelete?.(meeting.id);
             router.refresh();
         } catch (error) {
             console.error("Delete failed:", error);
-            toast.error("Delete failed", { description: "Could not delete meeting. Please try again." });
+            toast.error(t("toast.deleteFailed"), { description: t("toast.deleteFailedDesc") });
         } finally {
             setIsDeleting(false);
             setIsDeleteDialogOpen(false);
@@ -150,7 +152,7 @@ export function MeetingRowActions({
                 <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="icon" className="h-8 w-8">
                         <MoreHorizontal className="h-4 w-4" />
-                        <span className="sr-only">Open menu</span>
+                        <span className="sr-only">{t("openMenu")}</span>
                     </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-[160px]">
@@ -158,7 +160,7 @@ export function MeetingRowActions({
                     <DropdownMenuItem asChild>
                         <Link href={`/meetings/${meeting.id}`} className="flex items-center">
                             <Eye className="mr-2 h-4 w-4" />
-                            View
+                            {t("view")}
                         </Link>
                     </DropdownMenuItem>
 
@@ -170,7 +172,7 @@ export function MeetingRowActions({
                                 className="flex items-center"
                             >
                                 <Play className="mr-2 h-4 w-4" />
-                                Conduct
+                                {t("conduct")}
                             </Link>
                         </DropdownMenuItem>
                     )}
@@ -183,7 +185,7 @@ export function MeetingRowActions({
                                 className="flex items-center"
                             >
                                 <Edit className="mr-2 h-4 w-4" />
-                                Edit
+                                {t("edit")}
                             </Link>
                         </DropdownMenuItem>
                     )}
@@ -201,7 +203,7 @@ export function MeetingRowActions({
                         ) : (
                             <Download className="mr-2 h-4 w-4" />
                         )}
-                        Download
+                        {t("download")}
                     </DropdownMenuItem>
 
                     {/* Share */}
@@ -210,7 +212,7 @@ export function MeetingRowActions({
                         className="flex items-center"
                     >
                         <Share2 className="mr-2 h-4 w-4" />
-                        Share
+                        {t("share")}
                     </DropdownMenuItem>
 
                     {/* Delete - Only for leaders */}
@@ -225,7 +227,7 @@ export function MeetingRowActions({
                                 className="flex items-center text-destructive focus:text-destructive"
                             >
                                 <Trash2 className="mr-2 h-4 w-4" />
-                                Delete
+                                {t("delete")}
                             </DropdownMenuItem>
                         </>
                     )}
@@ -246,15 +248,13 @@ export function MeetingRowActions({
             <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Delete Meeting</AlertDialogTitle>
+                        <AlertDialogTitle>{t("deleteConfirmTitle")}</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Are you sure you want to delete &quot;{meeting.title}&quot;? This action
-                            cannot be undone. All agenda items and associated data will be
-                            permanently removed.
+                            {t("deleteConfirmDesc", { title: meeting.title })}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+                        <AlertDialogCancel disabled={isDeleting}>{t("cancel")}</AlertDialogCancel>
                         <AlertDialogAction
                             onClick={handleDelete}
                             disabled={isDeleting}
@@ -263,10 +263,10 @@ export function MeetingRowActions({
                             {isDeleting ? (
                                 <>
                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    Deleting...
+                                    {t("deleting")}
                                 </>
                             ) : (
-                                "Delete"
+                                t("delete")
                             )}
                         </AlertDialogAction>
                     </AlertDialogFooter>

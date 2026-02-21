@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -52,10 +53,10 @@ interface CandidatePoolCardProps {
 }
 
 const statusColors: Record<CallingCandidateStatus, string> = {
-    proposed: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
-    discussing: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300",
-    selected: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
-    archived: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400",
+    proposed: "bg-gray-100 text-gray-800",
+    discussing: "bg-blue-100 text-blue-800",
+    selected: "bg-green-100 text-green-800",
+    archived: "bg-amber-100 text-amber-800",
 };
 
 export function CandidatePoolCard({
@@ -65,6 +66,7 @@ export function CandidatePoolCard({
     onUpdate,
     hasActiveProcess = false,
 }: CandidatePoolCardProps) {
+    const t = useTranslations("Callings");
     const [isAddingCandidate, setIsAddingCandidate] = useState(false);
     const [editingCandidate, setEditingCandidate] = useState<Candidate | null>(null);
     const [selectedCandidate, setSelectedCandidate] = useState<{ id: string; name: string } | null>(null);
@@ -79,9 +81,8 @@ export function CandidatePoolCard({
         const result = await addCandidateToCalling(callingId, selectedCandidate.id, notes || undefined);
 
         if (result.error) {
-            toast.error(result.error);
         } else {
-            toast.success("Candidate added", { description: `${selectedCandidate.name} added to pool` });
+            toast.success(t("pool.candidateAdded"), { description: t("pool.candidateAddedDesc", { name: selectedCandidate.name }) });
             setIsAddingCandidate(false);
             setSelectedCandidate(null);
             setNotes("");
@@ -99,9 +100,8 @@ export function CandidatePoolCard({
         const result = await updateCallingCandidate(editingCandidate.id, { notes });
 
         if (result.error) {
-            toast.error(result.error);
         } else {
-            toast.success("Notes updated");
+            toast.success(t("pool.notesUpdated"));
             setEditingCandidate(null);
             setNotes("");
             onUpdate();
@@ -114,9 +114,8 @@ export function CandidatePoolCard({
         const result = await removeCallingCandidate(candidateId);
 
         if (result.error) {
-            toast.error(result.error);
         } else {
-            toast.success("Candidate removed", { description: `${name} removed from pool` });
+            toast.success(t("pool.candidateRemoved"), { description: t("pool.candidateRemovedDesc", { name }) });
             onUpdate();
         }
     };
@@ -127,9 +126,8 @@ export function CandidatePoolCard({
         const result = await startCallingProcess(callingId, candidateNameId, callingCandidateId);
 
         if (result.error) {
-            toast.error(result.error);
         } else {
-            toast.success("Process started", { description: `Started calling process for ${name}` });
+            toast.success(t("pool.processStarted"), { description: t("pool.processStartedDesc", { name }) });
             onUpdate();
         }
 
@@ -154,10 +152,10 @@ export function CandidatePoolCard({
                     <div>
                         <CardTitle className="text-base flex items-center gap-2">
                             <User className="w-4 h-4" />
-                            Candidate Pool
+                            {t("pool.title")}
                         </CardTitle>
                         <CardDescription>
-                            {candidates.length} candidate{candidates.length !== 1 ? "s" : ""} for {callingTitle}
+                            {t("pool.count", { count: candidates.length, title: callingTitle })}
                         </CardDescription>
                     </div>
                     <Button
@@ -166,7 +164,7 @@ export function CandidatePoolCard({
                         onClick={() => setIsAddingCandidate(true)}
                     >
                         <Plus className="w-4 h-4 mr-1" />
-                        Add
+                        {t("pool.add")}
                     </Button>
                 </div>
             </CardHeader>
@@ -174,7 +172,7 @@ export function CandidatePoolCard({
             <CardContent className="space-y-2">
                 {sortedCandidates.length === 0 ? (
                     <p className="text-sm text-muted-foreground text-center py-4">
-                        No candidates yet. Add someone to brainstorm!
+                        {t("pool.empty")}
                     </p>
                 ) : (
                     sortedCandidates.map((candidate) => (
@@ -193,7 +191,7 @@ export function CandidatePoolCard({
                                             statusColors[candidate.status]
                                         )}
                                     >
-                                        {candidate.status}
+                                        {t(`pool.candidateStatuses.${candidate.status}`)}
                                     </span>
                                 </div>
                                 {candidate.notes && (
@@ -221,7 +219,7 @@ export function CandidatePoolCard({
                                             }
                                         >
                                             <PlayCircle className="w-4 h-4 mr-2" />
-                                            Start Process
+                                            {t("pool.actions.startProcess")}
                                         </DropdownMenuItem>
                                     )}
                                     <DropdownMenuItem
@@ -231,7 +229,7 @@ export function CandidatePoolCard({
                                         }}
                                     >
                                         <Pencil className="w-4 h-4 mr-2" />
-                                        Edit Notes
+                                        {t("pool.actions.editNotes")}
                                     </DropdownMenuItem>
                                     <DropdownMenuItem
                                         onClick={() =>
@@ -243,7 +241,7 @@ export function CandidatePoolCard({
                                         className="text-destructive focus:text-destructive"
                                     >
                                         <Trash2 className="w-4 h-4 mr-2" />
-                                        Remove
+                                        {t("pool.actions.remove")}
                                     </DropdownMenuItem>
                                 </DropdownMenuContent>
                             </DropdownMenu>
@@ -262,15 +260,15 @@ export function CandidatePoolCard({
             }}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Add Candidate</DialogTitle>
+                        <DialogTitle>{t("pool.dialogs.addCandidate.title")}</DialogTitle>
                         <DialogDescription>
-                            Add a candidate to the pool for {callingTitle}
+                            {t("pool.dialogs.addCandidate.description", { title: callingTitle })}
                         </DialogDescription>
                     </DialogHeader>
 
                     <div className="space-y-4 py-4">
                         <div className="space-y-2">
-                            <label className="text-sm font-medium">Name</label>
+                            <label className="text-sm font-medium">{t("pool.dialogs.addCandidate.nameLabel")}</label>
                             <CandidateAutocomplete
                                 value={selectedCandidate}
                                 onChange={setSelectedCandidate}
@@ -279,11 +277,11 @@ export function CandidatePoolCard({
                             />
                         </div>
                         <div className="space-y-2">
-                            <label className="text-sm font-medium">Notes (optional)</label>
+                            <label className="text-sm font-medium">{t("pool.dialogs.addCandidate.notesLabel")}</label>
                             <Textarea
                                 value={notes}
                                 onChange={(e) => setNotes(e.target.value)}
-                                placeholder="Add notes about this candidate..."
+                                placeholder={t("pool.dialogs.addCandidate.notesPlaceholder")}
                                 disabled={isLoading}
                             />
                         </div>
@@ -295,13 +293,13 @@ export function CandidatePoolCard({
                             onClick={() => setIsAddingCandidate(false)}
                             disabled={isLoading}
                         >
-                            Cancel
+                            {t("common.cancel")}
                         </Button>
                         <Button
                             onClick={handleAddCandidate}
                             disabled={!selectedCandidate || isLoading}
                         >
-                            Add Candidate
+                            {t("pool.add")}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
@@ -311,9 +309,9 @@ export function CandidatePoolCard({
             <Dialog open={!!editingCandidate} onOpenChange={(open) => !open && setEditingCandidate(null)}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Edit Notes</DialogTitle>
+                        <DialogTitle>{t("pool.dialogs.editNotes.title")}</DialogTitle>
                         <DialogDescription>
-                            Notes for {editingCandidate?.candidate?.name}
+                            {t("pool.dialogs.editNotes.description", { name: editingCandidate?.candidate?.name || "" })}
                         </DialogDescription>
                     </DialogHeader>
 
@@ -321,7 +319,7 @@ export function CandidatePoolCard({
                         <Textarea
                             value={notes}
                             onChange={(e) => setNotes(e.target.value)}
-                            placeholder="Add notes about this candidate..."
+                            placeholder={t("pool.dialogs.editNotes.placeholder")}
                             rows={4}
                             disabled={isLoading}
                         />
@@ -333,10 +331,10 @@ export function CandidatePoolCard({
                             onClick={() => setEditingCandidate(null)}
                             disabled={isLoading}
                         >
-                            Cancel
+                            {t("common.cancel")}
                         </Button>
                         <Button onClick={handleUpdateNotes} disabled={isLoading}>
-                            Save
+                            {t("common.save")}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

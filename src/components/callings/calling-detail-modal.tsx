@@ -50,6 +50,7 @@ import {
     User
 } from "lucide-react";
 import { format } from "date-fns";
+import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import {
     getCalling,
@@ -122,24 +123,7 @@ interface CallingData {
     processes: Process[];
 }
 
-const stageLabels: Record<CallingProcessStage, string> = {
-    defined: "Defined",
-    approved: "Approved",
-    extended: "Extended",
-    accepted: "Accepted",
-    sustained: "Sustained",
-    set_apart: "Set Apart",
-    recorded_lcr: "Recorded in LCR"
-};
-
-const actionLabels: Record<CallingHistoryAction, string> = {
-    process_started: "Process started",
-    stage_changed: "Stage advanced",
-    status_changed: "Status changed",
-    comment_added: "Comment added",
-    task_created: "Task created",
-    task_completed: "Task completed"
-};
+// Hardcoded mappings removed in favor of useTranslations
 
 export function CallingDetailModal({
     callingId,
@@ -148,6 +132,7 @@ export function CallingDetailModal({
     onUpdate,
     teamMembers = []
 }: CallingDetailModalProps) {
+    const t = useTranslations("Callings");
     const [calling, setCalling] = React.useState<CallingData | null>(null);
     const [timeline, setTimeline] = React.useState<TimelineItem[]>([]);
     const [loading, setLoading] = React.useState(false);
@@ -339,7 +324,7 @@ export function CallingDetailModal({
                     {loading && !calling ? (
                         <>
                             <DialogHeader>
-                                <DialogTitle className="sr-only">Loading Calling Details</DialogTitle>
+                                <DialogTitle className="sr-only">{t("details.loading")}</DialogTitle>
                             </DialogHeader>
                             <div className="flex items-center justify-center py-12">
                                 <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -377,7 +362,7 @@ export function CallingDetailModal({
                                                 <User className="w-4 h-4 text-primary" />
                                                 <span className="font-medium">{activeProcess.candidate?.name}</span>
                                                 <Badge variant="outline">
-                                                    {stageLabels[activeProcess.current_stage]}
+                                                    {t(`stages.${activeProcess.current_stage}`)}
                                                 </Badge>
                                             </div>
                                         </div>
@@ -394,7 +379,7 @@ export function CallingDetailModal({
                                         <div className="flex items-center gap-2 text-green-800">
                                             <CheckCircle2 className="w-5 h-5" />
                                             <span>
-                                                Filled by <strong>{calling.filled_by_name.name}</strong>
+                                                {t("details.filledBy", { name: calling.filled_by_name.name })}
                                             </span>
                                         </div>
                                     </div>
@@ -407,15 +392,15 @@ export function CallingDetailModal({
                                     <TabsList className="grid w-full grid-cols-3">
                                         <TabsTrigger value="timeline" className="flex items-center gap-2">
                                             <History className="w-4 h-4" />
-                                            Timeline
+                                            {t("details.tabs.timeline")}
                                         </TabsTrigger>
                                         <TabsTrigger value="candidates" className="flex items-center gap-2">
                                             <User className="w-4 h-4" />
-                                            Candidates
+                                            {t("details.tabs.candidates")}
                                         </TabsTrigger>
                                         <TabsTrigger value="actions" className="flex items-center gap-2">
                                             <ListTodo className="w-4 h-4" />
-                                            Actions
+                                            {t("details.tabs.actions")}
                                         </TabsTrigger>
                                     </TabsList>
 
@@ -427,7 +412,7 @@ export function CallingDetailModal({
                                                 <div className="space-y-3">
                                                     {timeline.length === 0 ? (
                                                         <p className="text-sm text-muted-foreground text-center py-8">
-                                                            No activity yet
+                                                            {t("details.noActivity")}
                                                         </p>
                                                     ) : (
                                                         timeline.map((item) => (
@@ -455,13 +440,13 @@ export function CallingDetailModal({
                                                                     {item.type === 'history' && (
                                                                         <p className="text-sm">
                                                                             <span className="font-medium">
-                                                                                {item.action && actionLabels[item.action]}
+                                                                                {item.action && t(`details.actionLabels.${item.action}`)}
                                                                             </span>
                                                                             {item.from_value && item.to_value && (
                                                                                 <span className="text-muted-foreground">
-                                                                                    : {stageLabels[item.from_value as CallingProcessStage] || item.from_value}
+                                                                                    : {t(`stages.${item.from_value}`)}
                                                                                     {" → "}
-                                                                                    {stageLabels[item.to_value as CallingProcessStage] || item.to_value}
+                                                                                    {t(`stages.${item.to_value}`)}
                                                                                 </span>
                                                                             )}
                                                                         </p>
@@ -495,7 +480,7 @@ export function CallingDetailModal({
                                                 {/* Comment Input */}
                                                 <div className="flex gap-2 pt-4 border-t">
                                                     <Textarea
-                                                        placeholder="Add a comment..."
+                                                        placeholder={t("details.commentPlaceholder")}
                                                         value={comment}
                                                         onChange={(e) => setComment(e.target.value)}
                                                         className="min-h-[80px]"
@@ -512,7 +497,7 @@ export function CallingDetailModal({
                                         ) : (
                                             <div className="text-center py-8 text-muted-foreground">
                                                 <Clock className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                                                <p>Select a candidate to start a process</p>
+                                                <p>{t("details.startProcessSubtitle")}</p>
                                             </div>
                                         )}
                                     </TabsContent>
@@ -520,7 +505,7 @@ export function CallingDetailModal({
                                     {/* Candidates Tab */}
                                     <TabsContent value="candidates" className="flex-1 overflow-y-auto mt-4 space-y-4">
                                         <div className="flex justify-between items-center">
-                                            <h4 className="font-medium">Brainstorming</h4>
+                                            <h4 className="font-medium">{t("details.candidatesTitle")}</h4>
                                             <Button
                                                 size="sm"
                                                 variant="outline"
@@ -528,13 +513,13 @@ export function CallingDetailModal({
                                                 disabled={calling.is_filled}
                                             >
                                                 <Plus className="w-4 h-4 mr-1" />
-                                                Add Name
+                                                {t("details.addName")}
                                             </Button>
                                         </div>
 
                                         {calling.candidates.length === 0 ? (
                                             <p className="text-sm text-muted-foreground text-center py-8">
-                                                No candidates yet. Add names to brainstorm potential people for this calling.
+                                                {t("details.noCandidates")}
                                             </p>
                                         ) : (
                                             <div className="space-y-2">
@@ -569,7 +554,7 @@ export function CallingDetailModal({
                                                                         disabled={submitting}
                                                                     >
                                                                         <ChevronRight className="w-4 h-4 mr-1" />
-                                                                        Start Process
+                                                                        {t("details.startProcess")}
                                                                     </Button>
                                                                 )}
                                                             </div>
@@ -591,7 +576,7 @@ export function CallingDetailModal({
                                                         disabled={submitting}
                                                     >
                                                         <ChevronRight className="w-4 h-4 mr-2" />
-                                                        Advance to Next Stage
+                                                        {t("details.advanceStage")}
                                                     </Button>
                                                 )}
 
@@ -603,7 +588,7 @@ export function CallingDetailModal({
                                                     disabled={submitting}
                                                 >
                                                     <Plus className="w-4 h-4 mr-2" />
-                                                    Create Assignment
+                                                    {t("details.createAssignment")}
                                                 </Button>
 
                                                 {/* Drop Process */}
@@ -614,13 +599,13 @@ export function CallingDetailModal({
                                                     disabled={submitting}
                                                 >
                                                     <XCircle className="w-4 h-4 mr-2" />
-                                                    Drop Process
+                                                    {t("details.dropProcess")}
                                                 </Button>
                                             </div>
                                         ) : (
                                             <div className="text-center py-8 text-muted-foreground">
                                                 <ListTodo className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                                                <p>Start a process to see available actions</p>
+                                                <p>{t("details.startProcessActionsSubtitle")}</p>
                                             </div>
                                         )}
                                     </TabsContent>
@@ -630,7 +615,7 @@ export function CallingDetailModal({
                     ) : (
                         <div className="sr-only">
                             <DialogHeader>
-                                <DialogTitle>Calling Details</DialogTitle>
+                                <DialogTitle>{t("details.title")}</DialogTitle>
                             </DialogHeader>
                         </div>
                     )}
@@ -641,15 +626,14 @@ export function CallingDetailModal({
             <AlertDialog open={showAdvanceDialog} onOpenChange={setShowAdvanceDialog}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Advance Stage</AlertDialogTitle>
+                        <AlertDialogTitle>{t("details.dialogs.advance.title")}</AlertDialogTitle>
                         <AlertDialogDescription>
                             {activeProcess && nextStage && (
                                 <>
-                                    Move from <strong>{stageLabels[activeProcess.current_stage]}</strong>
-                                    {" to "}
-                                    <strong>
-                                        {stageLabels[nextStage]}
-                                    </strong>?
+                                    {t("details.dialogs.advance.description", {
+                                        current: t(`stages.${activeProcess.current_stage}`),
+                                        next: t(`stages.${nextStage}`)
+                                    })}
                                 </>
                             )}
                         </AlertDialogDescription>
@@ -658,7 +642,7 @@ export function CallingDetailModal({
                         <AlertDialogCancel>Cancel</AlertDialogCancel>
                         <AlertDialogAction onClick={handleAdvanceStage} disabled={submitting}>
                             {submitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                            Advance
+                            {t("details.dialogs.advance.confirm")}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
@@ -670,15 +654,15 @@ export function CallingDetailModal({
                     <AlertDialogHeader>
                         <AlertDialogTitle className="flex items-center gap-2">
                             <AlertTriangle className="w-5 h-5 text-amber-500" />
-                            Record in LCR
+                            {t("details.dialogs.lcr.title")}
                         </AlertDialogTitle>
                         <AlertDialogDescription asChild>
                             <div className="text-sm text-muted-foreground space-y-2">
                                 <p>
-                                    Please verify that this calling has been recorded in the official Church LCR system.
+                                    {t("details.dialogs.lcr.description")}
                                 </p>
                                 <p className="font-medium text-foreground">
-                                    This action will mark the process as complete and the calling as filled.
+                                    {t("details.dialogs.lcr.descriptionDetail")}
                                 </p>
                             </div>
                         </AlertDialogDescription>
@@ -687,7 +671,7 @@ export function CallingDetailModal({
                         <AlertDialogCancel>Cancel</AlertDialogCancel>
                         <AlertDialogAction onClick={handleLCRConfirm} disabled={submitting}>
                             {submitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                            Confirm - Recorded in LCR
+                            {t("details.dialogs.lcr.confirm")}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
@@ -697,14 +681,14 @@ export function CallingDetailModal({
             <AlertDialog open={showDropDialog} onOpenChange={setShowDropDialog}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Drop Process</AlertDialogTitle>
+                        <AlertDialogTitle>{t("details.dialogs.drop.title")}</AlertDialogTitle>
                         <AlertDialogDescription>
-                            This will stop the current process. You can optionally provide a reason.
+                            {t("details.dialogs.drop.description")}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <div className="py-4">
                         <Textarea
-                            placeholder="Reason (optional)"
+                            placeholder={t("details.dialogs.drop.placeholder")}
                             value={dropReason}
                             onChange={(e) => setDropReason(e.target.value)}
                         />
@@ -717,7 +701,7 @@ export function CallingDetailModal({
                             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                         >
                             {submitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                            Drop Process
+                            {t("details.dropProcess")}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
@@ -727,14 +711,14 @@ export function CallingDetailModal({
             <AlertDialog open={showAddCandidateDialog} onOpenChange={setShowAddCandidateDialog}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Add Candidate</AlertDialogTitle>
+                        <AlertDialogTitle>{t("details.dialogs.addCandidate.title")}</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Add a name to the brainstorming list for this calling.
+                            {t("details.dialogs.addCandidate.description")}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <div className="space-y-4 py-4">
                         <div className="space-y-2">
-                            <Label>Name</Label>
+                            <Label>{t("details.dialogs.addCandidate.nameLabel")}</Label>
                             <CandidateAutocomplete
                                 value={selectedCandidate}
                                 onChange={setSelectedCandidate}
@@ -742,9 +726,9 @@ export function CallingDetailModal({
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label>Notes (optional)</Label>
+                            <Label>{t("details.dialogs.addCandidate.notesLabel")}</Label>
                             <Textarea
-                                placeholder="Why is this person a good fit?"
+                                placeholder={t("details.dialogs.addCandidate.notesPlaceholder")}
                                 value={candidateNotes}
                                 onChange={(e) => setCandidateNotes(e.target.value)}
                             />
@@ -757,7 +741,7 @@ export function CallingDetailModal({
                             disabled={!selectedCandidate || submitting}
                         >
                             {submitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                            Add Candidate
+                            {t("details.addName")}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
@@ -767,34 +751,34 @@ export function CallingDetailModal({
             <AlertDialog open={showCreateTaskDialog} onOpenChange={setShowCreateTaskDialog}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Create Assignment</AlertDialogTitle>
+                        <AlertDialogTitle>{t("details.dialogs.createTask.title")}</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Create a task linked to this calling process.
+                            {t("details.dialogs.createTask.description")}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <div className="space-y-4 py-4">
                         <div className="space-y-2">
-                            <Label>Title</Label>
+                            <Label>{t("details.dialogs.createTask.label")}</Label>
                             <Input
-                                placeholder="e.g., Interview candidate"
+                                placeholder={t("details.dialogs.createTask.placeholder")}
                                 value={taskTitle}
                                 onChange={(e) => setTaskTitle(e.target.value)}
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label>Description (optional)</Label>
+                            <Label>{t("details.dialogs.createTask.descriptionLabel")}</Label>
                             <Textarea
-                                placeholder="Additional details..."
+                                placeholder={t("details.dialogs.createTask.descriptionPlaceholder")}
                                 value={taskDescription}
                                 onChange={(e) => setTaskDescription(e.target.value)}
                             />
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <Label>Assign to</Label>
+                                <Label>{t("details.dialogs.createTask.assignTo")}</Label>
                                 <Select value={taskAssignee} onValueChange={setTaskAssignee}>
                                     <SelectTrigger>
-                                        <SelectValue placeholder="Select..." />
+                                        <SelectValue placeholder={t("details.dialogs.createTask.placeholderAssignee")} />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {teamMembers.map((member) => (
@@ -806,7 +790,7 @@ export function CallingDetailModal({
                                 </Select>
                             </div>
                             <div className="space-y-2">
-                                <Label>Due date</Label>
+                                <Label>{t("details.dialogs.createTask.dueDate")}</Label>
                                 <Input
                                     type="date"
                                     value={taskDueDate}
@@ -822,7 +806,7 @@ export function CallingDetailModal({
                             disabled={!taskTitle.trim() || submitting}
                         >
                             {submitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                            Create Task
+                            {t("details.createAssignment")}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

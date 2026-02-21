@@ -9,6 +9,7 @@ import { MeetingsFilters } from "./meetings-filters";
 import type { MeetingStatus, Template } from "./meetings-filters";
 import { MeetingsTable } from "./meetings-table";
 import type { Meeting } from "./meetings-table";
+import { useTranslations } from "next-intl";
 
 interface MeetingsClientProps {
     meetings: Meeting[];
@@ -33,6 +34,7 @@ export function MeetingsClient({
     templateCounts,
     currentFilters,
 }: MeetingsClientProps) {
+    const t = useTranslations("Meetings.hub");
     const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>(null);
 
     // Client-side sorting only (filtering is now server-side)
@@ -68,16 +70,16 @@ export function MeetingsClient({
         <div className="p-8 max-w-7xl mx-auto space-y-6">
             <div className="flex justify-between items-center">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Meetings</h1>
+                    <h1 className="text-3xl font-bold tracking-tight">{t("title")}</h1>
                     <p className="text-muted-foreground mt-2">
-                        Manage your meeting schedules, agendas, and history
+                        {t("subtitle")}
                     </p>
                 </div>
                 {isLeader && (
                     <Button asChild>
                         <Link href="/meetings/new">
                             <Plus className="mr-2 h-4 w-4" />
-                            New Meeting
+                            {t("newMeeting")}
                         </Link>
                     </Button>
                 )}

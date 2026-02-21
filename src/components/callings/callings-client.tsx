@@ -34,6 +34,7 @@ import {
 } from "lucide-react";
 import { createCalling } from "@/lib/actions/calling-actions";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import type { CallingProcessStage, CallingProcessStatus, CallingCandidateStatus } from "@/types/database";
 
 interface CallingCandidate {
@@ -70,19 +71,21 @@ interface CallingsClientProps {
 
 type ViewMode = 'board' | 'list';
 
-const COMMON_ORGANIZATIONS = [
-    "Bishopric",
-    "Elders Quorum",
-    "Relief Society",
-    "Young Men",
-    "Young Women",
-    "Primary",
-    "Sunday School",
-    "Missionary Work",
-    "Temple & Family History",
+const COMMON_ORGANIZATION_KEYS = [
+    "bishopric",
+    "eldersQuorum",
+    "reliefSociety",
+    "youngMen",
+    "youngWomen",
+    "primary",
+    "sundaySchool",
+    "missionaryWork",
+    "templeFamilyHistory",
 ];
 
 export function CallingsClient({ callings, teamMembers, userRole }: CallingsClientProps) {
+    const t = useTranslations("Callings");
+    const to = useTranslations("Callings.organizations");
     const router = useRouter();
     const [search, setSearch] = useState("");
     const [filterOrg, setFilterOrg] = useState<string>('all');
@@ -160,15 +163,15 @@ export function CallingsClient({ callings, teamMembers, userRole }: CallingsClie
             {/* Header */}
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold tracking-tight">Callings</h1>
+                    <h1 className="text-2xl font-bold tracking-tight">{t("title")}</h1>
                     <p className="text-muted-foreground">
-                        Visualize your pipeline and track calling processes
+                        {t("subtitle")}
                     </p>
                 </div>
                 {canEdit && (
                     <Button onClick={() => setShowNewDialog(true)}>
                         <Plus className="w-4 h-4 mr-2" />
-                        New Calling
+                        {t("newCalling")}
                     </Button>
                 )}
             </div>
@@ -180,7 +183,7 @@ export function CallingsClient({ callings, teamMembers, userRole }: CallingsClie
                 <div className="relative flex-1 min-w-[200px] max-w-sm">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <Input
-                        placeholder="Search callings, candidates..."
+                        placeholder={t("searchPlaceholder")}
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         className="pl-9"
@@ -188,10 +191,10 @@ export function CallingsClient({ callings, teamMembers, userRole }: CallingsClie
                 </div>
                 <Select value={filterOrg} onValueChange={setFilterOrg}>
                     <SelectTrigger className="w-[180px]">
-                        <SelectValue placeholder="Organization" />
+                        <SelectValue placeholder={t("organization")} />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="all">All Organizations</SelectItem>
+                        <SelectItem value="all">{t("allOrganizations")}</SelectItem>
                         {organizations.map((org) => (
                             <SelectItem key={org} value={org}>
                                 {org}
@@ -205,7 +208,7 @@ export function CallingsClient({ callings, teamMembers, userRole }: CallingsClie
                         size="icon"
                         className="h-8 w-8"
                         onClick={() => setViewMode('board')}
-                        title="Board View"
+                        title={t("boardView")}
                     >
                         <LayoutGrid className="w-4 h-4" />
                     </Button>
@@ -214,7 +217,7 @@ export function CallingsClient({ callings, teamMembers, userRole }: CallingsClie
                         size="icon"
                         className="h-8 w-8"
                         onClick={() => setViewMode('list')}
-                        title="List View"
+                        title={t("listView")}
                     >
                         <List className="w-4 h-4" />
                     </Button>
@@ -225,16 +228,16 @@ export function CallingsClient({ callings, teamMembers, userRole }: CallingsClie
             {filteredCallings.length === 0 ? (
                 <div className="text-center py-12">
                     <Users className="w-12 h-12 mx-auto text-muted-foreground/50 mb-4" />
-                    <h3 className="text-lg font-medium">No callings found</h3>
+                    <h3 className="text-lg font-medium">{t("noCallingsFound")}</h3>
                     <p className="text-muted-foreground mt-1">
                         {callings.length === 0
-                            ? "Create your first calling to get started"
-                            : "Try adjusting your search or filters"}
+                            ? t("emptyStateStart")
+                            : t("emptyStateAdjust")}
                     </p>
                     {canEdit && callings.length === 0 && (
                         <Button className="mt-4" onClick={() => setShowNewDialog(true)}>
                             <Plus className="w-4 h-4 mr-2" />
-                            Create Calling
+                            {t("createCalling")}
                         </Button>
                     )}
                 </div>
@@ -259,32 +262,32 @@ export function CallingsClient({ callings, teamMembers, userRole }: CallingsClie
             <Dialog open={showNewDialog} onOpenChange={setShowNewDialog}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>New Calling</DialogTitle>
+                        <DialogTitle>{t("newCallingDialog.title")}</DialogTitle>
                         <DialogDescription>
-                            Create a new calling to track and fill.
+                            {t("newCallingDialog.description")}
                         </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4 py-4">
                         <div className="space-y-2">
-                            <Label htmlFor="title">Calling Title</Label>
+                            <Label htmlFor="title">{t("newCallingDialog.labelTitle")}</Label>
                             <Input
                                 id="title"
-                                placeholder="e.g., Primary President"
+                                placeholder={t("newCallingDialog.placeholderTitle")}
                                 value={newTitle}
                                 onChange={(e) => setNewTitle(e.target.value)}
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="organization">Organization (optional)</Label>
+                            <Label htmlFor="organization">{t("newCallingDialog.labelOrg")}</Label>
                             <Select value={newOrg} onValueChange={setNewOrg}>
                                 <SelectTrigger>
-                                    <SelectValue placeholder="Select organization..." />
+                                    <SelectValue placeholder={t("newCallingDialog.placeholderOrg")} />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="_none">None</SelectItem>
-                                    {COMMON_ORGANIZATIONS.map((org) => (
-                                        <SelectItem key={org} value={org}>
-                                            {org}
+                                    <SelectItem value="_none">{t("newCallingDialog.none")}</SelectItem>
+                                    {COMMON_ORGANIZATION_KEYS.map((key) => (
+                                        <SelectItem key={key} value={to(key)}>
+                                            {to(key)}
                                         </SelectItem>
                                     ))}
                                 </SelectContent>
@@ -293,14 +296,14 @@ export function CallingsClient({ callings, teamMembers, userRole }: CallingsClie
                     </div>
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setShowNewDialog(false)}>
-                            Cancel
+                            {t("newCallingDialog.cancel")}
                         </Button>
                         <Button
                             onClick={handleCreateCalling}
                             disabled={!newTitle.trim() || creating}
                         >
                             {creating && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                            Create
+                            {t("newCallingDialog.create")}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

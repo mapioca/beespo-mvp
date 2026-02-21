@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { useTranslations } from "next-intl"
 import { format, isToday, isTomorrow, isThisWeek, differenceInDays } from "date-fns"
 import {
   CalendarDays,
@@ -48,18 +49,18 @@ interface OverviewContentClientProps {
   }
 }
 
-function formatMeetingDate(dateStr: string) {
+function formatMeetingDate(dateStr: string, t: ReturnType<typeof useTranslations>) {
   const date = new Date(dateStr)
-  if (isToday(date)) return "Today"
-  if (isTomorrow(date)) return "Tomorrow"
+  if (isToday(date)) return t("today")
+  if (isTomorrow(date)) return t("tomorrow")
   if (isThisWeek(date)) return format(date, "EEEE")
   return format(date, "EEEE, MMM d")
 }
 
-function getReadinessScore(meeting: Meeting): { percent: number; label: string; issues: string[] } {
+function getReadinessScore(meeting: Meeting, t: ReturnType<typeof useTranslations>): { percent: number; label: string; issues: string[] } {
   const items = meeting.agenda_items || []
   if (items.length === 0) {
-    return { percent: 0, label: "Empty agenda", issues: ["No agenda items added"] }
+    return { percent: 0, label: t("readinessEmptyAgenda"), issues: [t("noAgendaAdded")] }
   }
 
   const issues: string[] = []
@@ -67,7 +68,7 @@ function getReadinessScore(meeting: Meeting): { percent: number; label: string; 
   const unassignedSpeakers = speakerItems.filter((i) => !i.participant_name)
 
   if (unassignedSpeakers.length > 0) {
-    issues.push(`${unassignedSpeakers.length} speaker${unassignedSpeakers.length > 1 ? "s" : ""} unassigned`)
+    issues.push(t("speakersUnassigned", { count: unassignedSpeakers.length }))
   }
 
   // Calculate a simple readiness score
@@ -75,18 +76,18 @@ function getReadinessScore(meeting: Meeting): { percent: number; label: string; 
   const filledSlots = items.length - unassignedSpeakers.length
   const percent = Math.min(100, Math.round((filledSlots / totalSlots) * 100))
 
-  let label = "Ready"
-  if (percent < 50) label = "Needs attention"
-  else if (percent < 80) label = "Almost ready"
+  let label = t("readinessReady")
+  if (percent < 50) label = t("readinessNeedsAttention")
+  else if (percent < 80) label = t("readinessAlmostReady")
 
   return { percent, label, issues }
 }
 
-function getDaysUntil(dateStr: string): string {
+function getDaysUntil(dateStr: string, t: ReturnType<typeof useTranslations>): string {
   const days = differenceInDays(new Date(dateStr), new Date())
-  if (days === 0) return "Today"
-  if (days === 1) return "Tomorrow"
-  if (days < 0) return "Past"
+  if (days === 0) return t("today")
+  if (days === 1) return t("tomorrow")
+  if (days < 0) return t("past")
   return `${days}d`
 }
 
@@ -96,16 +97,17 @@ export function OverviewContentClient({
   pendingItems,
   counts,
 }: OverviewContentClientProps) {
-  const readiness = nextMeeting ? getReadinessScore(nextMeeting) : null
+  const t = useTranslations("Dashboard.Meetings.overview")
+  const readiness = nextMeeting ? getReadinessScore(nextMeeting, t) : null
 
   return (
     <div className="min-h-[calc(100vh-8rem)] bg-gray-50/50">
       <div className="p-8 max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900">Command Center</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-gray-900">{t("commandCenter")}</h1>
           <p className="text-muted-foreground mt-1">
-            Your meeting preparation at a glance
+            {t("preparationAtGlance")}
           </p>
         </div>
 
@@ -120,10 +122,10 @@ export function OverviewContentClient({
                   <div className="flex items-start justify-between">
                     <div>
                       <p className="text-sm font-medium text-primary uppercase tracking-wider">
-                        Next Meeting
+                        {t("nextMeeting")}
                       </p>
                       <h2 className="text-4xl font-bold text-gray-900 mt-1">
-                        {formatMeetingDate(nextMeeting.scheduled_date)}
+                        {formatMeetingDate(nextMeeting.scheduled_date, t)}
                       </h2>
                       <p className="text-xl text-gray-600 mt-1">
                         {nextMeeting.title}
@@ -137,9 +139,9 @@ export function OverviewContentClient({
                     </div>
                     <div className="text-right">
                       <div className="text-5xl font-bold text-primary">
-                        {getDaysUntil(nextMeeting.scheduled_date)}
+                        {getDaysUntil(nextMeeting.scheduled_date, t)}
                       </div>
-                      <p className="text-sm text-muted-foreground mt-1">until meeting</p>
+                      <p className="text-sm text-muted-foreground mt-1">{t("untilMeeting")}</p>
                     </div>
                   </div>
                 </div>
@@ -149,7 +151,7 @@ export function OverviewContentClient({
                   <div className="px-6 py-4 mt-4 bg-gray-50/80 border-t">
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-sm font-medium text-gray-700">
-                        Agenda Readiness
+                        {t("agendaReadiness")}
                       </span>
                       <span
                         className={cn(
@@ -192,7 +194,7 @@ export function OverviewContentClient({
 
                 {/* Agenda Preview */}
                 <div className="px-6 py-4 border-t">
-                  <p className="text-sm font-medium text-gray-500 mb-3">Agenda Preview</p>
+                  <p className="text-sm font-medium text-gray-500 mb-3">{t("agendaPreview")}</p>
                   {nextMeeting.agenda_items && nextMeeting.agenda_items.length > 0 ? (
                     <ul className="space-y-2">
                       {nextMeeting.agenda_items.slice(0, 4).map((item) => (
@@ -212,7 +214,7 @@ export function OverviewContentClient({
                     </ul>
                   ) : (
                     <p className="text-sm text-muted-foreground italic">
-                      No agenda items yet. Start building your agenda.
+                      {t("noAgendaItems")}
                     </p>
                   )}
                 </div>
@@ -221,7 +223,7 @@ export function OverviewContentClient({
                 <div className="px-6 py-4 bg-gray-50/50 border-t">
                   <Button asChild size="lg" className="w-full sm:w-auto">
                     <Link href={`/meetings/${nextMeeting.id}`}>
-                      Edit Agenda
+                      {t("editAgenda")}
                       <ChevronRight className="h-4 w-4 ml-1" />
                     </Link>
                   </Button>
@@ -235,15 +237,15 @@ export function OverviewContentClient({
                     <Sparkles className="h-8 w-8 text-primary" />
                   </div>
                   <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                    Plan Your Next Quarter
+                    {t("planNextQuarter")}
                   </h3>
                   <p className="text-muted-foreground max-w-md mx-auto mb-6">
-                    You have no upcoming meetings scheduled. Create your first meeting to get started with agenda planning.
+                    {t("noMeetingsDesc")}
                   </p>
                   <Button asChild size="lg">
                     <Link href="/meetings/new">
                       <Plus className="h-4 w-4 mr-2" />
-                      Schedule First Meeting
+                      {t("scheduleFirstMeeting")}
                     </Link>
                   </Button>
                 </CardContent>
@@ -254,7 +256,7 @@ export function OverviewContentClient({
             {upcomingMeetings.length > 0 && (
               <div>
                 <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-3">
-                  Planning Horizon
+                  {t("planningHorizon")}
                 </h3>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   {upcomingMeetings.slice(0, 4).map((meeting) => {
@@ -285,7 +287,7 @@ export function OverviewContentClient({
                                     : "text-gray-500"
                                 )}
                               >
-                                {hasAgenda ? `${itemCount} items` : "Empty"}
+                                {hasAgenda ? t("itemsLabel", { count: itemCount }) : t("empty")}
                               </Badge>
                             </div>
                           </CardContent>
@@ -299,7 +301,7 @@ export function OverviewContentClient({
                     href="/meetings/schedule"
                     className="inline-flex items-center gap-1 text-sm text-primary hover:underline mt-3"
                   >
-                    View all {upcomingMeetings.length} upcoming meetings
+                    {t("viewAllUpcoming", { count: upcomingMeetings.length })}
                     <ChevronRight className="h-3 w-3" />
                   </Link>
                 )}
@@ -314,7 +316,7 @@ export function OverviewContentClient({
               <CardHeader className="pb-2">
                 <CardTitle className="text-base font-semibold flex items-center gap-2">
                   <AlertCircle className="h-4 w-4 text-amber-500" />
-                  Action Inbox
+                  {t("actionInbox")}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-1">
@@ -359,7 +361,7 @@ export function OverviewContentClient({
                 ) : (
                   <div className="py-6 text-center">
                     <CheckCircle2 className="h-8 w-8 text-green-500 mx-auto mb-2" />
-                    <p className="text-sm text-muted-foreground">All caught up!</p>
+                    <p className="text-sm text-muted-foreground">{t("allCaughtUp")}</p>
                   </div>
                 )}
 
@@ -369,7 +371,7 @@ export function OverviewContentClient({
                     <Link href="/meetings/business">
                       <Badge variant="outline" className="cursor-pointer hover:bg-gray-50">
                         <Briefcase className="h-3 w-3 mr-1" />
-                        {counts.businessPending} pending
+                        {t("pending", { count: counts.businessPending })}
                       </Badge>
                     </Link>
                   )}
@@ -377,7 +379,7 @@ export function OverviewContentClient({
                     <Link href="/meetings/discussions">
                       <Badge variant="outline" className="cursor-pointer hover:bg-gray-50">
                         <MessageSquare className="h-3 w-3 mr-1" />
-                        {counts.discussionsActive} active
+                        {t("active", { count: counts.discussionsActive })}
                       </Badge>
                     </Link>
                   )}
@@ -385,7 +387,7 @@ export function OverviewContentClient({
                     <Link href="/meetings/announcements">
                       <Badge variant="outline" className="cursor-pointer hover:bg-gray-50">
                         <Megaphone className="h-3 w-3 mr-1" />
-                        {counts.announcementsActive} active
+                        {t("active", { count: counts.announcementsActive })}
                       </Badge>
                     </Link>
                   )}
@@ -396,31 +398,31 @@ export function OverviewContentClient({
             {/* Quick Actions */}
             <Card className="bg-white shadow-sm border-0 ring-1 ring-gray-200">
               <CardHeader className="pb-2">
-                <CardTitle className="text-base font-semibold">Quick Actions</CardTitle>
+                <CardTitle className="text-base font-semibold">{t("quickActions")}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
                 <Button asChild variant="outline" className="w-full justify-start h-11">
                   <Link href="/meetings/new">
                     <CalendarDays className="h-4 w-4 mr-3 text-primary" />
-                    New Meeting
+                    {t("newMeeting")}
                   </Link>
                 </Button>
                 <Button asChild variant="outline" className="w-full justify-start h-11">
                   <Link href="/meetings/business/new">
                     <Briefcase className="h-4 w-4 mr-3 text-blue-600" />
-                    Add Business Item
+                    {t("addBusinessItem")}
                   </Link>
                 </Button>
                 <Button asChild variant="outline" className="w-full justify-start h-11">
                   <Link href="/meetings/announcements/new">
                     <Megaphone className="h-4 w-4 mr-3 text-amber-600" />
-                    Create Announcement
+                    {t("createAnnouncement")}
                   </Link>
                 </Button>
                 <Button asChild variant="outline" className="w-full justify-start h-11">
                   <Link href="/meetings/templates">
                     <FileText className="h-4 w-4 mr-3 text-purple-600" />
-                    Manage Templates
+                    {t("manageTemplates")}
                   </Link>
                 </Button>
               </CardContent>
@@ -434,9 +436,9 @@ export function OverviewContentClient({
                     <Calendar className="h-6 w-6 text-primary" />
                   </div>
                   <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-900">View Full Calendar</p>
+                    <p className="text-sm font-medium text-gray-900">{t("viewFullCalendar")}</p>
                     <p className="text-xs text-muted-foreground">
-                      See all meetings and events
+                      {t("seeAllMeetings")}
                     </p>
                   </div>
                   <Button asChild variant="ghost" size="icon">

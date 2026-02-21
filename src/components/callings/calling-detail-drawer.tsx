@@ -62,6 +62,7 @@ import {
     createCallingTask,
 } from "@/lib/actions/calling-actions";
 import { getAllStages } from "@/lib/calling-utils";
+import { useTranslations } from "next-intl";
 import type {
     CallingProcessStage,
     CallingProcessStatus,
@@ -122,26 +123,7 @@ interface CallingData {
     processes: Process[];
 }
 
-// ─── Constants ──────────────────────────────────────────────────
-
-const stageLabels: Record<CallingProcessStage, string> = {
-    defined: "Defined",
-    approved: "Approved",
-    extended: "Extended",
-    accepted: "Accepted",
-    sustained: "Sustained",
-    set_apart: "Set Apart",
-    recorded_lcr: "Recorded in LCR",
-};
-
-const actionLabels: Record<CallingHistoryAction, string> = {
-    process_started: "Process started",
-    stage_changed: "Stage advanced",
-    status_changed: "Status changed",
-    comment_added: "Comment added",
-    task_created: "Task created",
-    task_completed: "Task completed",
-};
+// ─── Component ──────────────────────────────────────────────────
 
 // ─── Component ──────────────────────────────────────────────────
 
@@ -152,6 +134,7 @@ export function CallingDetailDrawer({
     onUpdate,
     teamMembers = [],
 }: CallingDetailDrawerProps) {
+    const t = useTranslations("Callings");
     const [calling, setCalling] = React.useState<CallingData | null>(null);
     const [timeline, setTimeline] = React.useState<TimelineItem[]>([]);
     const [loading, setLoading] = React.useState(false);
@@ -378,8 +361,8 @@ export function CallingDetailDrawer({
                     {loading && !calling ? (
                         <>
                             <SheetHeader className="sr-only">
-                                <SheetTitle>Loading Calling Details</SheetTitle>
-                                <SheetDescription>Loading...</SheetDescription>
+                                <SheetTitle>{t("details.loadingTitle")}</SheetTitle>
+                                <SheetDescription>{t("details.loading")}</SheetDescription>
                             </SheetHeader>
                             <div className="flex items-center justify-center flex-1">
                                 <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -398,7 +381,7 @@ export function CallingDetailDrawer({
                                                 className="bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400"
                                             >
                                                 <UserCheck className="w-3 h-3 mr-1" />
-                                                Filled
+                                                {t("card.filled")}
                                             </Badge>
                                         )}
                                     </SheetTitle>
@@ -422,7 +405,7 @@ export function CallingDetailDrawer({
                                         <div className="mt-3 flex items-center gap-2 text-sm text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg px-3 py-2">
                                             <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
                                             <span>
-                                                Filled by{" "}
+                                                {t("details.filledBy")}{" "}
                                                 <strong>
                                                     {calling.filled_by_name.name}
                                                 </strong>
@@ -443,7 +426,7 @@ export function CallingDetailDrawer({
                                             variant="outline"
                                             className="text-[11px] px-1.5 py-0"
                                         >
-                                            {stageLabels[activeProcess.current_stage]}
+                                            {t(`stages.${activeProcess.current_stage}`)}
                                         </Badge>
                                     </div>
                                     <CallingProcessStepper
@@ -467,14 +450,14 @@ export function CallingDetailDrawer({
                                                 className="flex items-center gap-1.5 text-sm"
                                             >
                                                 <Users className="w-3.5 h-3.5" />
-                                                Candidates
+                                                {t("details.tabs.candidates")}
                                             </TabsTrigger>
                                             <TabsTrigger
                                                 value="history"
                                                 className="flex items-center gap-1.5 text-sm"
                                             >
                                                 <History className="w-3.5 h-3.5" />
-                                                History
+                                                {t("details.tabs.history")}
                                             </TabsTrigger>
                                         </TabsList>
                                     </div>
@@ -511,7 +494,7 @@ export function CallingDetailDrawer({
                                                             </div>
                                                         </div>
                                                         <Badge className="bg-primary/10 text-primary border-0 text-[11px]">
-                                                            Active
+                                                            {t("details.active")}
                                                         </Badge>
                                                     </div>
                                                 </div>
@@ -521,7 +504,7 @@ export function CallingDetailDrawer({
                                         <div>
                                             <div className="flex items-center justify-between mb-2">
                                                 <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                                                    Brainstorming
+                                                    {t("details.brainstorming")}
                                                 </h4>
                                                 <Button
                                                     size="sm"
@@ -533,7 +516,7 @@ export function CallingDetailDrawer({
                                                     disabled={calling.is_filled}
                                                 >
                                                     <Plus className="w-3.5 h-3.5 mr-1" />
-                                                    Add Name
+                                                    {t("details.addName")}
                                                 </Button>
                                             </div>
 
@@ -542,11 +525,10 @@ export function CallingDetailDrawer({
                                                 <div className="text-center py-8 text-muted-foreground">
                                                     <Users className="w-8 h-8 mx-auto mb-2 opacity-40" />
                                                     <p className="text-sm">
-                                                        No candidates yet
+                                                        {t("details.noCandidates")}
                                                     </p>
                                                     <p className="text-xs mt-1 text-muted-foreground/70">
-                                                        Add names to brainstorm
-                                                        potential people
+                                                        {t("details.noCandidatesSubtitle")}
                                                     </p>
                                                 </div>
                                             ) : (
@@ -607,7 +589,7 @@ export function CallingDetailDrawer({
                                                                                 }
                                                                             >
                                                                                 <ChevronRight className="w-3.5 h-3.5 mr-0.5" />
-                                                                                Start
+                                                                                {t("details.startProcess")}
                                                                             </Button>
                                                                         )}
                                                                 </div>
@@ -630,7 +612,7 @@ export function CallingDetailDrawer({
                                                     <div className="text-center py-8 text-muted-foreground">
                                                         <Clock className="w-8 h-8 mx-auto mb-2 opacity-40" />
                                                         <p className="text-sm">
-                                                            No activity yet
+                                                            {t("details.noActivity")}
                                                         </p>
                                                     </div>
                                                 ) : (
@@ -670,27 +652,17 @@ export function CallingDetailDrawer({
                                                                         "history" && (
                                                                             <p>
                                                                                 <span className="font-medium">
-                                                                                    {item.action &&
-                                                                                        actionLabels[
-                                                                                        item
-                                                                                            .action
-                                                                                        ]}
+                                                                                    {item.action && t(`details.actionLabels.${item.action}`)}
                                                                                 </span>
                                                                                 {item.from_value &&
                                                                                     item.to_value && (
                                                                                         <span className="text-muted-foreground">
                                                                                             :{" "}
-                                                                                            {stageLabels[
-                                                                                                item.from_value as CallingProcessStage
-                                                                                            ] ||
-                                                                                                item.from_value}
+                                                                                            {t(`stages.${item.from_value}`)}
                                                                                             {
                                                                                                 " → "
                                                                                             }
-                                                                                            {stageLabels[
-                                                                                                item.to_value as CallingProcessStage
-                                                                                            ] ||
-                                                                                                item.to_value}
+                                                                                            {t(`stages.${item.to_value}`)}
                                                                                         </span>
                                                                                     )}
                                                                             </p>
@@ -757,7 +729,7 @@ export function CallingDetailDrawer({
                                                 {showCommentInput && (
                                                     <div className="flex gap-2 pt-3 border-t">
                                                         <Textarea
-                                                            placeholder="Add a comment..."
+                                                            placeholder={t("details.commentPlaceholder")}
                                                             value={comment}
                                                             onChange={(e) =>
                                                                 setComment(
@@ -802,8 +774,7 @@ export function CallingDetailDrawer({
                                             <div className="text-center py-8 text-muted-foreground">
                                                 <Clock className="w-8 h-8 mx-auto mb-2 opacity-40" />
                                                 <p className="text-sm">
-                                                    Select a candidate and start a process
-                                                    to see history
+                                                    {t("details.startProcessSubtitle")}
                                                 </p>
                                             </div>
                                         )}
@@ -825,8 +796,8 @@ export function CallingDetailDrawer({
                                         >
                                             <ChevronRight className="w-4 h-4 mr-1.5" />
                                             {nextStage
-                                                ? `Advance to ${stageLabels[nextStage]}`
-                                                : "Advance"}
+                                                ? `${t("details.advanceStage")}: ${t(`stages.${nextStage}`)}`
+                                                : t("details.advanceStage")}
                                         </Button>
 
                                         {/* Secondary: Log Note */}
@@ -865,7 +836,7 @@ export function CallingDetailDrawer({
                                     <div className="flex items-center justify-center gap-2 text-sm text-emerald-700 dark:text-emerald-400">
                                         <CheckCircle2 className="w-4 h-4" />
                                         <span className="font-medium">
-                                            Process Complete
+                                            {t("details.dialogs.lcr.confirm")}
                                         </span>
                                     </div>
                                 </div>
@@ -889,20 +860,14 @@ export function CallingDetailDrawer({
             >
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Advance Stage</AlertDialogTitle>
+                        <AlertDialogTitle>{t("details.dialogs.advance.title")}</AlertDialogTitle>
                         <AlertDialogDescription>
                             {activeProcess && nextStage && (
                                 <>
-                                    Move from{" "}
-                                    <strong>
-                                        {
-                                            stageLabels[
-                                            activeProcess.current_stage
-                                            ]
-                                        }
-                                    </strong>
-                                    {" to "}
-                                    <strong>{stageLabels[nextStage]}</strong>?
+                                    {t("details.dialogs.advance.description", {
+                                        current: t(`stages.${activeProcess.current_stage}`),
+                                        next: t(`stages.${nextStage}`)
+                                    })}
                                 </>
                             )}
                         </AlertDialogDescription>
@@ -916,7 +881,7 @@ export function CallingDetailDrawer({
                             {submitting ? (
                                 <Loader2 className="w-4 h-4 animate-spin mr-2" />
                             ) : null}
-                            Advance
+                            {t("details.dialogs.advance.confirm")}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
@@ -931,17 +896,15 @@ export function CallingDetailDrawer({
                     <AlertDialogHeader>
                         <AlertDialogTitle className="flex items-center gap-2">
                             <AlertTriangle className="w-5 h-5 text-amber-500" />
-                            Record in LCR
+                            {t("details.dialogs.lcr.title")}
                         </AlertDialogTitle>
                         <AlertDialogDescription asChild>
                             <div className="text-sm text-muted-foreground space-y-2">
                                 <p>
-                                    Please verify that this calling has been recorded in
-                                    the official Church LCR system.
+                                    {t("details.dialogs.lcr.description")}
                                 </p>
                                 <p className="font-medium text-foreground">
-                                    This action will mark the process as complete and the
-                                    calling as filled.
+                                    {t("details.dialogs.lcr.descriptionDetail")}
                                 </p>
                             </div>
                         </AlertDialogDescription>
@@ -955,7 +918,7 @@ export function CallingDetailDrawer({
                             {submitting ? (
                                 <Loader2 className="w-4 h-4 animate-spin mr-2" />
                             ) : null}
-                            Confirm - Recorded in LCR
+                            {t("details.dialogs.lcr.confirm")}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
@@ -965,15 +928,14 @@ export function CallingDetailDrawer({
             <AlertDialog open={showDropDialog} onOpenChange={setShowDropDialog}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Drop Process</AlertDialogTitle>
+                        <AlertDialogTitle>{t("details.dialogs.drop.title")}</AlertDialogTitle>
                         <AlertDialogDescription>
-                            This will stop the current process. You can optionally
-                            provide a reason.
+                            {t("details.dialogs.drop.description")}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <div className="py-4">
                         <Textarea
-                            placeholder="Reason (optional)"
+                            placeholder={t("details.dialogs.drop.placeholder")}
                             value={dropReason}
                             onChange={(e) => setDropReason(e.target.value)}
                         />
@@ -988,7 +950,7 @@ export function CallingDetailDrawer({
                             {submitting ? (
                                 <Loader2 className="w-4 h-4 animate-spin mr-2" />
                             ) : null}
-                            Drop Process
+                            {t("details.dropProcess")}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
@@ -1001,14 +963,14 @@ export function CallingDetailDrawer({
             >
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Add Candidate</AlertDialogTitle>
+                        <AlertDialogTitle>{t("details.dialogs.addCandidate.title")}</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Add a name to the brainstorming list for this calling.
+                            {t("details.dialogs.addCandidate.description")}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <div className="space-y-4 py-4">
                         <div className="space-y-2">
-                            <Label>Name</Label>
+                            <Label>{t("details.dialogs.addCandidate.nameLabel")}</Label>
                             <CandidateAutocomplete
                                 value={selectedCandidate}
                                 onChange={setSelectedCandidate}
@@ -1016,7 +978,7 @@ export function CallingDetailDrawer({
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label>Notes (optional)</Label>
+                            <Label>{t("details.dialogs.addCandidate.notesLabel")}</Label>
                             <Textarea
                                 placeholder="Why is this person a good fit?"
                                 value={candidateNotes}
@@ -1035,7 +997,7 @@ export function CallingDetailDrawer({
                             {submitting ? (
                                 <Loader2 className="w-4 h-4 animate-spin mr-2" />
                             ) : null}
-                            Add Candidate
+                            {t("details.addName")}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
@@ -1048,22 +1010,22 @@ export function CallingDetailDrawer({
             >
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Create Assignment</AlertDialogTitle>
+                        <AlertDialogTitle>{t("details.dialogs.createTask.title")}</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Create a task linked to this calling process.
+                            {t("details.dialogs.createTask.description")}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <div className="space-y-4 py-4">
                         <div className="space-y-2">
-                            <Label>Title</Label>
+                            <Label>{t("details.dialogs.createTask.label")}</Label>
                             <Input
-                                placeholder="e.g., Interview candidate"
+                                placeholder={t("details.dialogs.createTask.placeholder")}
                                 value={taskTitle}
                                 onChange={(e) => setTaskTitle(e.target.value)}
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label>Description (optional)</Label>
+                            <Label>{t("details.dialogs.createTask.descriptionLabel")}</Label>
                             <Textarea
                                 placeholder="Additional details..."
                                 value={taskDescription}
@@ -1074,7 +1036,7 @@ export function CallingDetailDrawer({
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <Label>Assign to</Label>
+                                <Label>{t("details.dialogs.createTask.assignTo")}</Label>
                                 <Select
                                     value={taskAssignee}
                                     onValueChange={setTaskAssignee}
@@ -1095,7 +1057,7 @@ export function CallingDetailDrawer({
                                 </Select>
                             </div>
                             <div className="space-y-2">
-                                <Label>Due date</Label>
+                                <Label>{t("details.dialogs.createTask.dueDate")}</Label>
                                 <Input
                                     type="date"
                                     value={taskDueDate}
@@ -1115,7 +1077,7 @@ export function CallingDetailDrawer({
                             {submitting ? (
                                 <Loader2 className="w-4 h-4 animate-spin mr-2" />
                             ) : null}
-                            Create Task
+                            {t("details.createAssignment")}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

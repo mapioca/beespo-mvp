@@ -1,4 +1,5 @@
 "use client"
+import { useTranslations } from "next-intl"
 
 import {
     DropdownMenu,
@@ -30,6 +31,7 @@ interface SidebarUserProfileProps {
 }
 
 export function SidebarUserProfile({ name, email, roleTitle, avatarUrl, isCollapsed = false }: SidebarUserProfileProps) {
+    const t = useTranslations("Dashboard.Layout.UserMenu")
     const initials = name
         ?.split(" ")
         .map((n) => n[0])
@@ -54,7 +56,7 @@ export function SidebarUserProfile({ name, email, roleTitle, avatarUrl, isCollap
                 ) : (
                     <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground shrink-0">
                         <MoreHorizontal className="h-4 w-4" />
-                        <span className="sr-only">Open menu</span>
+                        <span className="sr-only">{t("open")}</span>
                     </Button>
                 )}
             </DropdownMenuTrigger>
@@ -73,16 +75,16 @@ export function SidebarUserProfile({ name, email, roleTitle, avatarUrl, isCollap
                     <DropdownMenuItem asChild>
                         <Link href="/settings" className="cursor-pointer">
                             <User className="mr-2 h-4 w-4" />
-                            <span>Account settings</span>
+                            <span>{t("accountSettings")}</span>
                         </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem disabled className="cursor-not-allowed opacity-50">
                         <CreditCard className="mr-2 h-4 w-4" />
-                        <span>Billing</span>
+                        <span>{t("billing")}</span>
                     </DropdownMenuItem>
                     <DropdownMenuItem disabled className="cursor-not-allowed opacity-50">
                         <Bell className="mr-2 h-4 w-4" />
-                        <span>Notifications</span>
+                        <span>{t("notifications")}</span>
                     </DropdownMenuItem>
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />
@@ -93,7 +95,7 @@ export function SidebarUserProfile({ name, email, roleTitle, avatarUrl, isCollap
                     <form action={signOutAction} className="w-full">
                         <button type="submit" className="flex items-center w-full px-2 py-1.5">
                             <LogOut className="mr-2 h-4 w-4" />
-                            <span>Log out</span>
+                            <span>{t("logout")}</span>
                         </button>
                     </form>
                 </DropdownMenuItem>

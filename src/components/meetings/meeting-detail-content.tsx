@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { CalendarDays, Clock } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { MeetingStatusBadge } from "@/components/meetings/meeting-status-badge";
 import { EditableAgendaItemList } from "@/components/meetings/editable";
 import { MeetingContextPanel } from "@/components/meetings/sidebar";
@@ -33,6 +34,7 @@ export function MeetingDetailContent({
     isLeader,
     currentUserName,
 }: MeetingDetailContentProps) {
+    const t = useTranslations("Meetings.detail");
     const [agendaItems, setAgendaItems] = useState(initialAgendaItems);
 
     // Recalculate total duration using grouped logic (time-boxing)
@@ -88,10 +90,10 @@ export function MeetingDetailContent({
                         {/* Agenda Section */}
                         <div className="space-y-4">
                             <div className="flex items-center justify-between">
-                                <h2 className="text-xl font-semibold">Agenda</h2>
+                                <h2 className="text-xl font-semibold">{t("agenda")}</h2>
                                 <div className="text-sm text-muted-foreground flex items-center gap-1">
                                     <Clock className="w-3 h-3" />
-                                    <span>Total Est: {totalDuration} min</span>
+                                    <span>{t("totalDuration", { duration: totalDuration })}</span>
                                 </div>
                             </div>
 

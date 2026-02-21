@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
+import { useTranslations } from "next-intl";
 import {
   Dialog,
   DialogContent,
@@ -67,6 +68,10 @@ export function CreateEventDialog({
   onCreated,
   externalEvent,
 }: CreateEventDialogProps) {
+  const t = useTranslations("Calendar");
+  const tDash = useTranslations("Dashboard");
+  const tNav = useTranslations("Navigation");
+
   const [isLoading, setIsLoading] = useState(false);
 
   // Form state
@@ -209,7 +214,7 @@ export function CreateEventDialog({
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Failed to create event");
+        throw new Error(data.error || t("Event.errorCreate"));
       }
 
       // If promotion is enabled and templates selected, link to templates
@@ -228,22 +233,18 @@ export function CreateEventDialog({
       }
 
       toast.success(externalEvent
-          ? "External event imported successfully."
-          : "Event created successfully.");
+        ? t("Event.importSuccess")
+        : t("Event.successCreate"));
 
       if (data.announcement) {
-        toast.success("Announcement Created", { description: `Event will be announced until it starts.${
-            selectedTemplates.length > 0
-              ? ` Linked to ${selectedTemplates.length} template(s).`
-              : ""
-          }` });
+        toast.success(tNav("announcements"), { description: t("Event.successCreate") });
       }
 
       onCreated(data.event);
       onOpenChange(false);
       resetForm();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to create event.");
+      toast.error(error instanceof Error ? error.message : t("Event.errorCreate"));
     } finally {
       setIsLoading(false);
     }
@@ -257,24 +258,24 @@ export function CreateEventDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <CalendarDays className="h-5 w-5" />
-            {isImporting ? "Import to Beespo" : "Create Event"}
+            {isImporting ? t("Event.importToBeespo") : t("Event.create")}
           </DialogTitle>
           <DialogDescription>
             {isImporting
-              ? "Create a Beespo event from this external calendar entry."
-              : "Create a new calendar event for your workspace."}
+              ? t("Event.externalEventDescription")
+              : t("clickToAdd")}
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Title */}
           <div className="space-y-2">
-            <Label htmlFor="title">Title *</Label>
+            <Label htmlFor="title">{t("Event.title")} *</Label>
             <Input
               id="title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Event title"
+              placeholder={t("Event.title")}
               maxLength={200}
               required
               disabled={isLoading}
@@ -283,7 +284,7 @@ export function CreateEventDialog({
 
           {/* All Day Toggle */}
           <div className="flex items-center justify-between">
-            <Label htmlFor="isAllDay" className="cursor-pointer">All-day event</Label>
+            <Label htmlFor="isAllDay" className="cursor-pointer">{t("Event.allDay")}</Label>
             <Switch
               id="isAllDay"
               checked={isAllDay}
@@ -295,7 +296,7 @@ export function CreateEventDialog({
           {/* Start Date/Time */}
           <div className={`grid gap-4 ${isAllDay ? "grid-cols-1" : "grid-cols-2"}`}>
             <div className="space-y-2">
-              <Label htmlFor="startDate">Start Date *</Label>
+              <Label htmlFor="startDate">{t("Event.start")} (Date) *</Label>
               <Input
                 id="startDate"
                 type="date"
@@ -307,7 +308,7 @@ export function CreateEventDialog({
             </div>
             {!isAllDay && (
               <div className="space-y-2">
-                <Label htmlFor="startTime">Start Time *</Label>
+                <Label htmlFor="startTime">{t("Event.start")} (Time) *</Label>
                 <Input
                   id="startTime"
                   type="time"
@@ -323,7 +324,7 @@ export function CreateEventDialog({
           {/* End Date/Time */}
           <div className={`grid gap-4 ${isAllDay ? "grid-cols-1" : "grid-cols-2"}`}>
             <div className="space-y-2">
-              <Label htmlFor="endDate">End Date *</Label>
+              <Label htmlFor="endDate">{t("Event.end")} (Date) *</Label>
               <Input
                 id="endDate"
                 type="date"
@@ -335,7 +336,7 @@ export function CreateEventDialog({
             </div>
             {!isAllDay && (
               <div className="space-y-2">
-                <Label htmlFor="endTime">End Time *</Label>
+                <Label htmlFor="endTime">{t("Event.end")} (Time) *</Label>
                 <Input
                   id="endTime"
                   type="time"
@@ -352,25 +353,25 @@ export function CreateEventDialog({
           <div className="space-y-2">
             <Label htmlFor="location" className="flex items-center gap-1.5">
               <MapPin className="h-3.5 w-3.5" />
-              Location
+              {t("Event.location")}
             </Label>
             <Input
               id="location"
               value={location}
               onChange={(e) => setLocation(e.target.value)}
-              placeholder="Event location"
+              placeholder={t("Event.location")}
               disabled={isLoading}
             />
           </div>
 
           {/* Description */}
           <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
+            <Label htmlFor="description">{t("Event.description")}</Label>
             <Textarea
               id="description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Event details..."
+              placeholder={t("Event.description")}
               rows={3}
               disabled={isLoading}
             />
@@ -384,7 +385,7 @@ export function CreateEventDialog({
               <div className="flex items-center gap-2">
                 <Megaphone className="h-4 w-4 text-amber-500" />
                 <Label htmlFor="promoteToAnnouncement" className="cursor-pointer font-medium">
-                  Announce in Meetings
+                  {tDash("Layout.Sidebar.apps")} {tNav("announcements")}
                 </Label>
               </div>
               <Switch
@@ -398,20 +399,20 @@ export function CreateEventDialog({
             {promoteToAnnouncement && (
               <div className="space-y-3 pl-6 border-l-2 border-amber-200">
                 <p className="text-sm text-muted-foreground">
-                  An announcement will be created and displayed until the event starts.
+                  {t("Event.externalEventDescription")}
                 </p>
 
                 {/* Template Selection */}
                 <div className="space-y-2">
-                  <Label className="text-sm">Applies to Templates</Label>
+                  <Label className="text-sm">{tDash("MainPage.meetingTemplates")}</Label>
                   <p className="text-xs text-muted-foreground">
-                    Select which meeting types should include this announcement.
+                    {tDash("Teams.descriptionLabel")}
                   </p>
 
                   {loadingTemplates ? (
-                    <p className="text-sm text-muted-foreground">Loading templates...</p>
+                    <p className="text-sm text-muted-foreground">{t("Event.loading")}</p>
                   ) : templates.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">No templates available.</p>
+                    <p className="text-sm text-muted-foreground">{tDash("Apps.noAppsAvailable")}</p>
                   ) : (
                     <div className="space-y-2">
                       {/* Selected templates as badges */}
@@ -467,17 +468,17 @@ export function CreateEventDialog({
               onClick={() => onOpenChange(false)}
               disabled={isLoading}
             >
-              Cancel
+              {t("Event.cancel")}
             </Button>
             <Button
               type="submit"
               disabled={isLoading || !title || !startDate || !endDate}
             >
               {isLoading
-                ? "Creating..."
+                ? t("Event.loading")
                 : isImporting
-                  ? "Import Event"
-                  : "Create Event"}
+                  ? t("Event.importToBeespo")
+                  : t("Event.create")}
             </Button>
           </DialogFooter>
         </form>

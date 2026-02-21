@@ -1,4 +1,5 @@
 "use client";
+import { useTranslations } from "next-intl";
 
 import * as React from "react";
 import { Check, ChevronsUpDown, UserPlus, Loader2 } from "lucide-react";
@@ -40,6 +41,7 @@ export function CandidateAutocomplete({
     disabled = false,
     excludeIds = []
 }: CandidateAutocompleteProps) {
+    const t = useTranslations("Callings.pool.dialogs.addCandidate");
     const [open, setOpen] = React.useState(false);
     const [search, setSearch] = React.useState("");
     const [candidates, setCandidates] = React.useState<CandidateName[]>([]);
@@ -114,14 +116,14 @@ export function CandidateAutocomplete({
                         !value && "text-muted-foreground"
                     )}
                 >
-                    {value ? value.name : placeholder}
+                    {value ? value.name : (placeholder === "Search for a name..." ? t("placeholder") : placeholder)}
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
             </PopoverTrigger>
             <PopoverContent className="w-full p-0" align="start">
                 <Command shouldFilter={false}>
                     <CommandInput
-                        placeholder="Type a name..."
+                        placeholder={t("searchPlaceholder")}
                         value={search}
                         onValueChange={setSearch}
                     />
@@ -133,10 +135,10 @@ export function CandidateAutocomplete({
                         ) : (
                             <>
                                 {candidates.length === 0 && search.length >= 2 && !exactMatch && (
-                                    <CommandEmpty>No names found.</CommandEmpty>
+                                    <CommandEmpty>{t("noResults")}</CommandEmpty>
                                 )}
                                 {candidates.length > 0 && (
-                                    <CommandGroup heading="Suggestions">
+                                    <CommandGroup heading={t("suggestions")}>
                                         {candidates.map((candidate) => (
                                             <CommandItem
                                                 key={candidate.id}
@@ -171,7 +173,7 @@ export function CandidateAutocomplete({
                                                 ) : (
                                                     <UserPlus className="mr-2 h-4 w-4" />
                                                 )}
-                                                Add &quot;{search}&quot; as new name
+                                                {t("addNew", { name: search })}
                                             </CommandItem>
                                         </CommandGroup>
                                     </>

@@ -14,6 +14,9 @@ import { CalendarEvent } from "@/lib/calendar-helpers";
 import { CalendarEventChip } from "../calendar-event-chip";
 import { cn } from "@/lib/utils";
 
+import { useTranslations, useLocale } from "next-intl";
+import { es, enUS } from "date-fns/locale";
+
 interface WeekViewProps {
   currentDate: Date;
   events: CalendarEvent[];
@@ -29,6 +32,10 @@ export function WeekView({
   onDateClick,
   onEventClick,
 }: WeekViewProps) {
+  const t = useTranslations("Calendar");
+  const locale = useLocale();
+  const dateLocale = locale === "es" ? es : enUS;
+
   const weekStart = startOfWeek(currentDate, { weekStartsOn: 0 });
   const weekEnd = endOfWeek(currentDate, { weekStartsOn: 0 });
   const days = eachDayOfInterval({ start: weekStart, end: weekEnd });
@@ -83,7 +90,7 @@ export function WeekView({
               onClick={() => onDateClick(day)}
             >
               <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                {format(day, "EEE")}
+                {format(day, "EEE", { locale: dateLocale })}
               </div>
               <div
                 className={cn(
@@ -107,7 +114,7 @@ export function WeekView({
           style={{ minHeight: `${allDayRowHeight}px` }}
         >
           <div className="p-2 text-xs text-muted-foreground border-r border-border/50 flex items-start justify-center pt-2">
-            All Day
+            {t("allDay")}
           </div>
           {days.map((day) => {
             const allDayEvents = getAllDayEvents(day);
@@ -131,7 +138,7 @@ export function WeekView({
                 ))}
                 {allDayEvents.length > 3 && (
                   <div className="text-xs text-muted-foreground text-center py-0.5">
-                    +{allDayEvents.length - 3} more
+                    {t("more", { count: allDayEvents.length - 3 })}
                   </div>
                 )}
               </div>
@@ -148,7 +155,7 @@ export function WeekView({
             <div key={hour} className="contents">
               {/* Time label */}
               <div className="p-2 text-xs text-muted-foreground text-right border-r border-b border-border/30 h-14">
-                {format(setHours(new Date(), hour), "h a")}
+                {format(setHours(new Date(), hour), "h a", { locale: dateLocale })}
               </div>
               {/* Day cells for this hour */}
               {days.map((day) => {
@@ -181,3 +188,4 @@ export function WeekView({
     </div>
   );
 }
+

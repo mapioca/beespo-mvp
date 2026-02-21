@@ -1,8 +1,9 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { format } from "date-fns"
 import { AlertCircle, Loader2, MessageSquare } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import {
     Table,
@@ -28,12 +29,13 @@ interface Ticket {
 }
 
 export function RequestHistory() {
+    const t = useTranslations("Tables.requestHistory")
     const [tickets, setTickets] = useState<Ticket[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState("")
     const [selectedTicketKey, setSelectedTicketKey] = useState<string | null>(null)
 
-    const fetchTickets = async () => {
+    const fetchTickets = useCallback(async () => {
         setLoading(true)
         setError("")
         try {
@@ -45,15 +47,15 @@ export function RequestHistory() {
             setTickets(data.tickets || [])
         } catch (err) {
             console.error(err)
-            setError("Failed to load your request history. Please try again.")
+            setError(t("errorLoading"))
         } finally {
             setLoading(false)
         }
-    }
+    }, [t])
 
     useEffect(() => {
         fetchTickets()
-    }, [])
+    }, [fetchTickets])
 
     if (selectedTicketKey) {
         return (
@@ -68,7 +70,7 @@ export function RequestHistory() {
         return (
             <div className="flex flex-col items-center justify-center p-8 text-muted-foreground min-h-[300px]">
                 <Loader2 className="h-8 w-8 animate-spin mb-2" />
-                <p>Loading your requests...</p>
+                <p>{t("loading")}</p>
             </div>
         )
     }
@@ -81,7 +83,7 @@ export function RequestHistory() {
                     <AlertDescription>{error}</AlertDescription>
                 </Alert>
                 <div className="mt-4 flex justify-center">
-                    <Button variant="outline" onClick={fetchTickets}>Try Again</Button>
+                    <Button variant="outline" onClick={fetchTickets}>{t("tryAgain")}</Button>
                 </div>
             </div>
         )
@@ -91,7 +93,7 @@ export function RequestHistory() {
         return (
             <div className="flex flex-col items-center justify-center p-8 text-muted-foreground min-h-[300px] text-center">
                 <MessageSquare className="h-10 w-10 mb-4 opacity-20" />
-                <p>You haven&apos;t submitted any requests yet.</p>
+                <p>{t("noRequests")}</p>
             </div>
         )
     }
@@ -102,9 +104,9 @@ export function RequestHistory() {
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead className="w-[60%]">Request</TableHead>
-                            <TableHead className="w-[20%] text-center">Status</TableHead>
-                            <TableHead className="w-[20%] text-right">Date</TableHead>
+                            <TableHead className="w-[60%]">{t("request")}</TableHead>
+                            <TableHead className="w-[20%] text-center">{t("status")}</TableHead>
+                            <TableHead className="w-[20%] text-right">{t("date")}</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>

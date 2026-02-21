@@ -14,6 +14,8 @@ import { CalendarEvent } from "@/lib/calendar-helpers";
 import { CalendarEventList } from "../calendar-event-chip";
 import { cn } from "@/lib/utils";
 
+import { useTranslations } from "next-intl";
+
 interface MonthViewProps {
   currentDate: Date;
   events: CalendarEvent[];
@@ -22,14 +24,18 @@ interface MonthViewProps {
   onEventClick: (event: CalendarEvent) => void;
 }
 
-const WEEKDAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-
 export function MonthView({
   currentDate,
   eventsByDate,
   onDateClick,
   onEventClick,
 }: MonthViewProps) {
+  const t = useTranslations("Calendar.Days");
+
+  const WEEKDAY_NAMES = [
+    t("sun"), t("mon"), t("tue"), t("wed"), t("thu"), t("fri"), t("sat")
+  ];
+
   // Get all days to display (including days from adjacent months)
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(currentDate);

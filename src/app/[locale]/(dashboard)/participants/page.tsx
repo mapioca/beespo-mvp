@@ -2,12 +2,17 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { ParticipantsClient } from "./participants-client";
 import { PaginationControls } from "@/components/ui/pagination-controls";
-import { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 
-export const metadata: Metadata = {
-    title: "Participants | Beespo",
-    description: "Manage reusable participant names for meeting assignments",
-};
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
+    const { locale } = await params;
+    const t = await getTranslations({ locale, namespace: "Metadata.participants" });
+
+    return {
+        title: t("title"),
+        description: t("description"),
+    };
+}
 
 // Force dynamic rendering to ensure searchParams trigger fresh data fetch
 export const dynamic = "force-dynamic";
@@ -20,6 +25,7 @@ interface ParticipantsPageProps {
 
 export default async function ParticipantsPage({ searchParams }: ParticipantsPageProps) {
     const supabase = await createClient();
+    const t = await getTranslations("Dashboard.Participants");
 
     const { data: { user } } = await supabase.auth.getUser();
 
@@ -70,7 +76,7 @@ export default async function ParticipantsPage({ searchParams }: ParticipantsPag
 
     if (error) {
         console.error("Participants query error:", error);
-        return <div className="p-8">Error loading participants. Please try again.</div>;
+        return <div className="p-8">{t("errorLoading")}</div>;
     }
 
     const totalPages = Math.ceil((count || 0) / ITEMS_PER_PAGE);
@@ -90,7 +96,12 @@ export default async function ParticipantsPage({ searchParams }: ParticipantsPag
                 <div className="px-8 pb-8 max-w-5xl mx-auto">
                     <div className="flex items-center justify-between border-t pt-4">
                         <p className="text-sm text-muted-foreground">
-                            Showing {from + 1}-{Math.min(to + 1, count || 0)} of {count} participants
+                            {t("showingResults", {
+                                from: from + 1,
+                                to: Math.min(to + 1, count || 0),
+                                total: count || 0,
+                                label: t("participantsLabel").toLowerCase(),
+                            })}
                         </p>
                         <PaginationControls
                             currentPage={currentPage}

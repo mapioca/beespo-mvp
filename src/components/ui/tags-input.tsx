@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -18,11 +19,12 @@ export interface TagsInputProps {
 export function TagsInput({
     tags,
     onTagsChange,
-    placeholder = "Add a tag (press Enter)",
+    placeholder,
     disabled = false,
     className,
     helperText,
 }: TagsInputProps) {
+    const t = useTranslations('UI.TagsInput');
     const [tagInput, setTagInput] = useState("");
 
     const handleAddTag = () => {
@@ -52,7 +54,7 @@ export function TagsInput({
                         value={tagInput}
                         onChange={(e) => setTagInput(e.target.value)}
                         onKeyDown={handleKeyDown}
-                        placeholder={placeholder}
+                        placeholder={placeholder || t("placeholder")}
                         disabled={disabled}
                     />
                     <Button
@@ -61,7 +63,7 @@ export function TagsInput({
                         onClick={handleAddTag}
                         disabled={!tagInput.trim() || disabled}
                     >
-                        Add
+                        {t("add")}
                     </Button>
                 </div>
                 {tags.length > 0 && (

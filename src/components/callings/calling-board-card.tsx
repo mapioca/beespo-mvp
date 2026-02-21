@@ -3,6 +3,7 @@
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Users, AlertCircle } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import type { CallingProcessStage, CallingProcessStatus, CallingCandidateStatus } from "@/types/database";
 import type { PipelineColumn } from "./callings-kanban-board";
@@ -50,16 +51,6 @@ const PROCESS_STAGES: CallingProcessStage[] = [
     'recorded_lcr'
 ];
 
-const stageLabels: Record<CallingProcessStage, string> = {
-    defined: "Defined",
-    approved: "Approved",
-    extended: "Extended",
-    accepted: "Accepted",
-    sustained: "Sustained",
-    set_apart: "Set Apart",
-    recorded_lcr: "Recorded"
-};
-
 function getInitials(name: string): string {
     return name
         .split(' ')
@@ -71,6 +62,8 @@ function getInitials(name: string): string {
 
 // Mini linear stepper component showing progress visually
 function MiniProgressStepper({ currentStage }: { currentStage: CallingProcessStage }) {
+    const ts = useTranslations("Callings.stages");
+    const t = useTranslations("Callings.card");
     const currentIndex = PROCESS_STAGES.indexOf(currentStage);
     const totalStages = PROCESS_STAGES.length;
 
@@ -91,14 +84,14 @@ function MiniProgressStepper({ currentStage }: { currentStage: CallingProcessSta
                                 isCurrent && "bg-primary",
                                 isFuture && "bg-muted"
                             )}
-                            title={stageLabels[stage]}
+                            title={ts(stage as CallingProcessStage)}
                         />
                     );
                 })}
             </div>
             <div className="flex items-center justify-between mt-0.5">
                 <span className="text-[9px] text-muted-foreground">
-                    Step {currentIndex + 1}/{totalStages}
+                    {t("step", { current: currentIndex + 1, total: totalStages })}
                 </span>
             </div>
         </div>
@@ -106,6 +99,7 @@ function MiniProgressStepper({ currentStage }: { currentStage: CallingProcessSta
 }
 
 export function CallingBoardCard({ calling, onClick, columnType }: CallingBoardCardProps) {
+    const t = useTranslations("Callings.card");
     const activeProcess = calling.processes.find(p => p.status === 'active');
     const candidateCount = calling.candidates.filter(c => c.status !== 'archived').length;
     const hasNoCandidates = candidateCount === 0 && !activeProcess && !calling.is_filled;
@@ -142,14 +136,14 @@ export function CallingBoardCard({ calling, onClick, columnType }: CallingBoardC
                             <div className="flex items-center gap-1">
                                 <AlertCircle className="w-3 h-3 text-amber-600" />
                                 <span className="text-[10px] text-amber-700 font-medium">
-                                    No candidates
+                                    {t("noCandidates")}
                                 </span>
                             </div>
                         ) : candidateCount > 0 ? (
                             <div className="flex items-center gap-1 text-muted-foreground">
                                 <Users className="w-3 h-3" />
                                 <span className="text-[10px]">
-                                    {candidateCount} name{candidateCount !== 1 ? 's' : ''}
+                                    {t("names", { count: candidateCount })}
                                 </span>
                             </div>
                         ) : null}

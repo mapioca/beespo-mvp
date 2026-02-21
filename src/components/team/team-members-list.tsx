@@ -37,6 +37,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/lib/toast";
 import { MoreHorizontal, Shield, User, Eye, UserMinus, Crown } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 interface TeamMember {
     id: string;
@@ -65,6 +66,7 @@ export function TeamMembersList({
     currentUserRole,
     onMemberUpdated,
 }: TeamMembersListProps) {
+    const t = useTranslations("Tables.teamMembers");
     const [removingId, setRemovingId] = useState<string | null>(null);
     const [transferringTo, setTransferringTo] = useState<TeamMember | null>(null);
     const [isLoading, setIsLoading] = useState(false);
@@ -149,10 +151,10 @@ export function TeamMembersList({
             <Table>
                 <TableHeader>
                     <TableRow>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Email</TableHead>
-                        <TableHead>Role</TableHead>
-                        {isAdmin && <TableHead className="w-[70px]">Actions</TableHead>}
+                        <TableHead>{t("name")}</TableHead>
+                        <TableHead>{t("email")}</TableHead>
+                        <TableHead>{t("role")}</TableHead>
+                        {isAdmin && <TableHead className="w-[70px]">{t("actions")}</TableHead>}
                     </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -166,7 +168,7 @@ export function TeamMembersList({
                                 <TableCell className="font-medium">
                                     {member.full_name}
                                     {isCurrentUser && (
-                                        <span className="ml-2 text-xs text-muted-foreground">(you)</span>
+                                        <span className="ml-2 text-xs text-muted-foreground">{t("you")}</span>
                                     )}
                                 </TableCell>
                                 <TableCell className="text-muted-foreground">{member.email}</TableCell>
@@ -181,9 +183,9 @@ export function TeamMembersList({
                                                 <SelectValue />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                <SelectItem value="admin">Admin</SelectItem>
-                                                <SelectItem value="leader">Leader</SelectItem>
-                                                <SelectItem value="guest">Guest</SelectItem>
+                                                <SelectItem value="admin">{t("roleAdmin")}</SelectItem>
+                                                <SelectItem value="leader">{t("roleLeader")}</SelectItem>
+                                                <SelectItem value="guest">{t("roleGuest")}</SelectItem>
                                             </SelectContent>
                                         </Select>
                                     ) : (
@@ -206,7 +208,7 @@ export function TeamMembersList({
                                                     {member.role !== "admin" && (
                                                         <DropdownMenuItem onClick={() => setTransferringTo(member)}>
                                                             <Crown className="mr-2 h-4 w-4" />
-                                                            Make Admin
+                                                            {t("makeAdmin")}
                                                         </DropdownMenuItem>
                                                     )}
                                                     <DropdownMenuSeparator />
@@ -215,7 +217,7 @@ export function TeamMembersList({
                                                         onClick={() => setRemovingId(member.id)}
                                                     >
                                                         <UserMinus className="mr-2 h-4 w-4" />
-                                                        Remove from Workspace
+                                                        {t("removeFromWorkspace")}
                                                     </DropdownMenuItem>
                                                 </DropdownMenuContent>
                                             </DropdownMenu>
@@ -232,19 +234,19 @@ export function TeamMembersList({
             <AlertDialog open={!!removingId} onOpenChange={() => setRemovingId(null)}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Remove Member</AlertDialogTitle>
+                        <AlertDialogTitle>{t("removeMemberTitle")}</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Are you sure you want to remove this member from the workspace? Their data (created tasks, notes, etc.) will be preserved.
+                            {t("removeMemberDescription")}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel disabled={isLoading}>Cancel</AlertDialogCancel>
+                        <AlertDialogCancel disabled={isLoading}>{t("cancel")}</AlertDialogCancel>
                         <AlertDialogAction
                             onClick={handleRemoveMember}
                             disabled={isLoading}
                             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                         >
-                            {isLoading ? "Removing..." : "Remove"}
+                            {isLoading ? t("removing") : t("remove")}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
@@ -254,15 +256,15 @@ export function TeamMembersList({
             <AlertDialog open={!!transferringTo} onOpenChange={() => setTransferringTo(null)}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Make Admin</AlertDialogTitle>
+                        <AlertDialogTitle>{t("makeAdminTitle")}</AlertDialogTitle>
                         <AlertDialogDescription>
-                            This will give {transferringTo?.full_name} full admin access to the workspace settings and member management.
+                            {t("makeAdminDescription", { name: transferringTo?.full_name ?? "" })}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel disabled={isLoading}>Cancel</AlertDialogCancel>
+                        <AlertDialogCancel disabled={isLoading}>{t("cancel")}</AlertDialogCancel>
                         <AlertDialogAction onClick={handleTransferOwnership} disabled={isLoading}>
-                            {isLoading ? "Processing..." : "Make Admin"}
+                            {isLoading ? t("processing") : t("makeAdmin")}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

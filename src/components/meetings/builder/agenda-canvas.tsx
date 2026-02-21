@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useDroppable } from "@dnd-kit/core";
 import {
     SortableContext,
@@ -114,6 +115,7 @@ function SortableAgendaRow({
     onSelectParticipant,
     onSelectSpeaker,
 }: SortableAgendaRowProps) {
+    const tc = useTranslations("Dashboard.Meetings.builder.canvas");
     const {
         attributes,
         listeners,
@@ -172,7 +174,7 @@ function SortableAgendaRow({
                     </span>
 
                     <span className="text-xs text-muted-foreground">
-                        {childCount} item{childCount !== 1 ? "s" : ""}
+                        {childCount} {childCount === 1 ? "item" : "items"}
                     </span>
 
                     <span className="text-xs text-muted-foreground">
@@ -241,7 +243,7 @@ function SortableAgendaRow({
                                 )}
                             >
                                 <Plus className="h-4 w-4 inline mr-1" />
-                                Add {item.containerType}
+                                {tc("add", { type: item.containerType })}
                             </button>
                         </div>
                     </div>
@@ -292,7 +294,7 @@ function SortableAgendaRow({
                         <Music className="h-3 w-3 mr-1" />
                         {item.hymn_title
                             ? `#${item.hymn_number} ${item.hymn_title}`
-                            : "Select Hymn"}
+                            : tc("selectHymn")}
                     </Button>
                 )}
 
@@ -310,7 +312,7 @@ function SortableAgendaRow({
                         onClick={onSelectParticipant}
                     >
                         <UserPlus className="h-3 w-3 mr-1" />
-                        {item.participant_name || "Select Person"}
+                        {item.participant_name || tc("selectPerson")}
                     </Button>
                 )}
 
@@ -328,7 +330,7 @@ function SortableAgendaRow({
                         onClick={onSelectSpeaker}
                     >
                         <Mic className="h-3 w-3 mr-1" />
-                        {item.speaker_name || "Select Speaker"}
+                        {item.speaker_name || tc("selectSpeaker")}
                     </Button>
                 )}
             </div>
@@ -361,6 +363,7 @@ export function AgendaCanvas({
     onSelectSpeaker,
     isOver,
 }: AgendaCanvasProps) {
+    const ta = useTranslations("Dashboard.Meetings.builder.canvas");
     const { setNodeRef } = useDroppable({
         id: "canvas-drop-zone",
     });
@@ -372,9 +375,9 @@ export function AgendaCanvas({
         <div className="flex flex-col h-full bg-muted/20">
             {/* Header */}
             <div className="px-6 py-3 border-b bg-background flex items-center justify-between">
-                <h3 className="font-semibold text-sm">Agenda</h3>
+                <h3 className="font-semibold text-sm">{ta("agenda")}</h3>
                 <span className="text-sm text-muted-foreground">
-                    {items.length} items • {totalDuration} min
+                    {items.length} {items.length === 1 ? "item" : "items"} • {totalDuration} min
                 </span>
             </div>
 
@@ -397,9 +400,9 @@ export function AgendaCanvas({
                             )}
                         >
                             <div className="text-center">
-                                <p className="font-medium">Drag items here</p>
+                                <p className="font-medium">{ta("dragItemsHere")}</p>
                                 <p className="text-sm mt-1">
-                                    Or select a template to get started
+                                    {ta("selectTemplate")}
                                 </p>
                             </div>
                         </div>

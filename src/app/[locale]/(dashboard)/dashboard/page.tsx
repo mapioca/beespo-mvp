@@ -1,4 +1,15 @@
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
+
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "Metadata.dashboard" });
+
+  return {
+    title: t("title"),
+    description: t("description"),
+  };
+}
 import { createClient } from "@/lib/supabase/server";
 import { fetchDashboardData } from "@/lib/dashboard/data-fetchers";
 import { getDefaultLayout } from "@/lib/dashboard/widget-registry";

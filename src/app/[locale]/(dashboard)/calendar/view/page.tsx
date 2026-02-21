@@ -2,12 +2,17 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { CalendarClient } from "@/components/calendar/calendar-client";
 import { startOfMonth, endOfMonth, addMonths, subMonths } from "date-fns";
-import { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 
-export const metadata: Metadata = {
-    title: "Calendar View | Beespo",
-    description: "Your interactive calendar view",
-};
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
+    const { locale } = await params;
+    const t = await getTranslations({ locale, namespace: "Metadata.calendar" });
+
+    return {
+        title: t("title"),
+        description: t("description"),
+    };
+}
 
 export const revalidate = 0;
 

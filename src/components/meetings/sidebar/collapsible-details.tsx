@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { ChevronDown, User, Calendar, Clock, FileText, Hash } from "lucide-react";
 import {
   Collapsible,
@@ -28,6 +29,7 @@ export function CollapsibleDetails({
   defaultOpen = true,
 }: CollapsibleDetailsProps) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
+  const t = useTranslations("Dashboard.Meetings.collapsibleDetails");
 
   const formattedDate = format(new Date(scheduledDate), "MMM d, yyyy");
   const formattedTime = format(new Date(scheduledDate), "h:mm a");
@@ -42,7 +44,7 @@ export function CollapsibleDetails({
           )}
         >
           <span className="text-muted-foreground uppercase tracking-wider text-xs">
-            Details
+            {t("details")}
           </span>
           <ChevronDown
             className={cn(
@@ -58,9 +60,9 @@ export function CollapsibleDetails({
         <div className="flex items-start gap-3">
           <FileText className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
           <div>
-            <span className="text-xs text-muted-foreground block">Template</span>
+            <span className="text-xs text-muted-foreground block">{t("template")}</span>
             <span className="text-sm font-medium">
-              {templateName || "No Template"}
+              {templateName || t("noTemplate")}
             </span>
           </div>
         </div>
@@ -69,9 +71,9 @@ export function CollapsibleDetails({
         <div className="flex items-start gap-3">
           <Calendar className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
           <div>
-            <span className="text-xs text-muted-foreground block">Scheduled</span>
+            <span className="text-xs text-muted-foreground block">{t("scheduled")}</span>
             <span className="text-sm font-medium">
-              {formattedDate} at {formattedTime}
+              {formattedDate} {t("at")} {formattedTime}
             </span>
           </div>
         </div>
@@ -80,9 +82,9 @@ export function CollapsibleDetails({
         <div className="flex items-start gap-3">
           <Clock className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
           <div>
-            <span className="text-xs text-muted-foreground block">Est. Duration</span>
+            <span className="text-xs text-muted-foreground block">{t("estDuration")}</span>
             <span className="text-sm font-medium">
-              {totalDuration} minutes
+              {t("minutes", { count: totalDuration })}
             </span>
           </div>
         </div>
@@ -91,9 +93,9 @@ export function CollapsibleDetails({
         <div className="flex items-start gap-3">
           <User className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
           <div>
-            <span className="text-xs text-muted-foreground block">Created By</span>
+            <span className="text-xs text-muted-foreground block">{t("createdBy")}</span>
             <span className="text-sm font-medium">
-              {createdByName || "Unknown"}
+              {createdByName || t("unknown")}
             </span>
           </div>
         </div>
@@ -102,7 +104,7 @@ export function CollapsibleDetails({
         <div className="flex items-start gap-3">
           <Hash className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
           <div>
-            <span className="text-xs text-muted-foreground block">Meeting ID</span>
+            <span className="text-xs text-muted-foreground block">{t("meetingId")}</span>
             <code className="text-xs bg-muted px-1.5 py-0.5 rounded font-mono">
               {meetingId.slice(0, 8)}
             </code>

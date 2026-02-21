@@ -1,6 +1,7 @@
 'use client';
 
 import { useSearchParams, usePathname, useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
@@ -21,6 +22,8 @@ export function PaginationControls({
     const pathname = usePathname();
     const searchParams = useSearchParams();
 
+    const t = useTranslations('UI.Pagination');
+
     // Helper to generate the URL for a specific page while KEEPING other params
     const createPageUrl = (pageNumber: number | string) => {
         const params = new URLSearchParams(searchParams.toString());
@@ -35,7 +38,7 @@ export function PaginationControls({
     return (
         <div className="flex items-center gap-2">
             <span className="text-sm text-muted-foreground mr-2">
-                Page {currentPage} of {totalPages}
+                {t('pageDetail', { current: currentPage, total: totalPages })}
             </span>
             <Button
                 variant="outline"
@@ -46,7 +49,7 @@ export function PaginationControls({
                 }}
             >
                 <ChevronLeft className="h-4 w-4 mr-1" />
-                Previous
+                {t('previous')}
             </Button>
             <Button
                 variant="outline"
@@ -56,7 +59,7 @@ export function PaginationControls({
                     router.push(createPageUrl(currentPage + 1));
                 }}
             >
-                Next
+                {t('next')}
                 <ChevronRight className="h-4 w-4 ml-1" />
             </Button>
         </div>

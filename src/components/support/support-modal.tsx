@@ -25,6 +25,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { RequestHistory } from "./request-history"
+import { useTranslations } from "next-intl"
 
 interface SupportModalProps {
   open: boolean
@@ -43,6 +44,7 @@ export function SupportModal({
   userEmail,
   userName,
 }: SupportModalProps) {
+  const t = useTranslations("Support")
   const [activeTab, setActiveTab] = useState("new")
   const [requestType, setRequestType] = useState<RequestType>("Bug Report")
   const [subject, setSubject] = useState("")
@@ -74,7 +76,6 @@ export function SupportModal({
     setErrorMessage("")
 
     try {
-      // Capture metadata
       const metadata = {
         currentUrl: window.location.href,
         userAgent: navigator.userAgent,
@@ -83,9 +84,7 @@ export function SupportModal({
 
       const response = await fetch("/api/support/create-ticket", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           requestType,
           subject,
@@ -100,7 +99,7 @@ export function SupportModal({
       const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.error || "Failed to submit request")
+        throw new Error(data.error || t("errorFailedToSubmit"))
       }
 
       setTicketKey(data.ticketKey)
@@ -108,7 +107,7 @@ export function SupportModal({
     } catch (error) {
       setState("error")
       setErrorMessage(
-        error instanceof Error ? error.message : "Something went wrong"
+        error instanceof Error ? error.message : t("errorSomethingWentWrong")
       )
     }
   }
@@ -124,15 +123,15 @@ export function SupportModal({
                 <CheckCircle2 className="h-10 w-10 text-green-600" />
               </div>
               <DialogTitle className="text-center text-xl">
-                Request Submitted Successfully!
+                {t("successTitle")}
               </DialogTitle>
               <DialogDescription className="text-center">
-                Thanks! We&apos;ve received your request.
+                {t("successDescription")}
                 {ticketKey && (
                   <>
                     <br />
                     <span className="font-semibold text-foreground">
-                      Reference Ticket: {ticketKey}
+                      {t("successTicketRef")} {ticketKey}
                     </span>
                   </>
                 )}
@@ -141,7 +140,7 @@ export function SupportModal({
           </DialogHeader>
           <DialogFooter>
             <Button onClick={handleClose} className="w-full">
-              Close
+              {t("close")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -154,16 +153,14 @@ export function SupportModal({
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto flex flex-col">
         <DialogHeader>
-          <DialogTitle>Help & Support</DialogTitle>
-          <DialogDescription>
-            Submit a bug report, feature request, or view your history.
-          </DialogDescription>
+          <DialogTitle>{t("title")}</DialogTitle>
+          <DialogDescription>{t("description")}</DialogDescription>
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full flex-1 flex flex-col">
           <TabsList className="grid w-full grid-cols-2 mb-4">
-            <TabsTrigger value="new">New Request</TabsTrigger>
-            <TabsTrigger value="history">My Requests</TabsTrigger>
+            <TabsTrigger value="new">{t("tabNewRequest")}</TabsTrigger>
+            <TabsTrigger value="history">{t("tabMyRequests")}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="new" className="flex-1 space-y-4 data-[state=inactive]:hidden">
@@ -178,7 +175,7 @@ export function SupportModal({
 
               {/* Request Type */}
               <div className="space-y-3">
-                <Label>Request Type</Label>
+                <Label>{t("requestTypeLabel")}</Label>
                 <RadioGroup
                   value={requestType}
                   onValueChange={(value) => setRequestType(value as RequestType)}
@@ -187,27 +184,27 @@ export function SupportModal({
                   <div className="flex items-center space-x-2 rounded-lg border p-4 cursor-pointer hover:bg-accent transition-colors">
                     <RadioGroupItem value="Bug Report" id="bug" />
                     <Label htmlFor="bug" className="flex-1 cursor-pointer">
-                      <div className="font-semibold">Bug Report</div>
+                      <div className="font-semibold">{t("bugReportTitle")}</div>
                       <div className="text-xs text-muted-foreground">
-                        Something isn&apos;t working as expected
+                        {t("bugReportDescription")}
                       </div>
                     </Label>
                   </div>
                   <div className="flex items-center space-x-2 rounded-lg border p-4 cursor-pointer hover:bg-accent transition-colors">
                     <RadioGroupItem value="Feature Request" id="feature" />
                     <Label htmlFor="feature" className="flex-1 cursor-pointer">
-                      <div className="font-semibold">Feature Request</div>
+                      <div className="font-semibold">{t("featureRequestTitle")}</div>
                       <div className="text-xs text-muted-foreground">
-                        Suggest a new feature or improvement
+                        {t("featureRequestDescription")}
                       </div>
                     </Label>
                   </div>
                   <div className="flex items-center space-x-2 rounded-lg border p-4 cursor-pointer hover:bg-accent transition-colors">
                     <RadioGroupItem value="General Question" id="question" />
                     <Label htmlFor="question" className="flex-1 cursor-pointer">
-                      <div className="font-semibold">General Question</div>
+                      <div className="font-semibold">{t("generalQuestionTitle")}</div>
                       <div className="text-xs text-muted-foreground">
-                        Ask us anything about Beespo
+                        {t("generalQuestionDescription")}
                       </div>
                     </Label>
                   </div>
@@ -217,7 +214,7 @@ export function SupportModal({
               {/* Priority - Only for Bug Reports */}
               {requestType === "Bug Report" && (
                 <div className="space-y-2">
-                  <Label htmlFor="priority">Priority</Label>
+                  <Label htmlFor="priority">{t("priorityLabel")}</Label>
                   <Select
                     value={priority}
                     onValueChange={(value) => setPriority(value as Priority)}
@@ -226,13 +223,9 @@ export function SupportModal({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Low">Low - Minor issue</SelectItem>
-                      <SelectItem value="Medium">
-                        Medium - Affects functionality
-                      </SelectItem>
-                      <SelectItem value="High">
-                        High - Blocking or critical
-                      </SelectItem>
+                      <SelectItem value="Low">{t("priorityLow")}</SelectItem>
+                      <SelectItem value="Medium">{t("priorityMedium")}</SelectItem>
+                      <SelectItem value="High">{t("priorityHigh")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -241,11 +234,11 @@ export function SupportModal({
               {/* Subject */}
               <div className="space-y-2">
                 <Label htmlFor="subject">
-                  Subject <span className="text-destructive">*</span>
+                  {t("subjectLabel")} <span className="text-destructive">*</span>
                 </Label>
                 <Input
                   id="subject"
-                  placeholder="Brief summary of your request"
+                  placeholder={t("subjectPlaceholder")}
                   value={subject}
                   onChange={(e) => setSubject(e.target.value)}
                   required
@@ -256,11 +249,11 @@ export function SupportModal({
               {/* Description */}
               <div className="space-y-2">
                 <Label htmlFor="description">
-                  Description <span className="text-destructive">*</span>
+                  {t("descriptionLabel")} <span className="text-destructive">*</span>
                 </Label>
                 <Textarea
                   id="description"
-                  placeholder="Tell us more details..."
+                  placeholder={t("descriptionPlaceholder")}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   required
@@ -271,12 +264,12 @@ export function SupportModal({
 
               {/* Metadata Info */}
               <div className="text-xs text-muted-foreground bg-muted p-3 rounded-md">
-                <p className="font-semibold mb-1">Auto-captured information:</p>
+                <p className="font-semibold mb-1">{t("autoCapturedTitle")}</p>
                 <ul className="space-y-0.5">
                   {[
-                    "Your name and email",
-                    "Current page URL",
-                    "Browser and device information"
+                    t("autoCapturedName"),
+                    t("autoCapturedUrl"),
+                    t("autoCapturedBrowser"),
                   ].map((item, i) => (
                     <li key={i}>• {item}</li>
                   ))}
@@ -290,13 +283,13 @@ export function SupportModal({
                   onClick={handleClose}
                   disabled={state === "loading"}
                 >
-                  Cancel
+                  {t("cancel")}
                 </Button>
                 <Button type="submit" disabled={state === "loading"}>
                   {state === "loading" && (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   )}
-                  Send Request
+                  {state === "loading" ? t("sending") : t("sendRequest")}
                 </Button>
               </DialogFooter>
             </form>

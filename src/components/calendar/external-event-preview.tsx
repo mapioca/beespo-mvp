@@ -20,6 +20,8 @@ import {
   ExternalLink,
   Import,
 } from "lucide-react";
+import { useTranslations, useLocale } from "next-intl";
+import { es, enUS } from "date-fns/locale";
 
 export interface ExternalEventData {
   id: string;
@@ -47,6 +49,12 @@ export function ExternalEventPreview({
   event,
   onImport,
 }: ExternalEventPreviewProps) {
+  const t = useTranslations("Calendar");
+  const tEvent = useTranslations("Calendar.Event");
+  const tPreview = useTranslations("Calendar.ExternalPreview");
+  const locale = useLocale();
+  const dateLocale = locale === "es" ? es : enUS;
+
   if (!event) return null;
 
   const startDate = new Date(event.start_date);
@@ -54,9 +62,9 @@ export function ExternalEventPreview({
 
   const formatDateTime = (date: Date, isAllDay: boolean) => {
     if (isAllDay) {
-      return format(date, "EEEE, MMMM d, yyyy");
+      return format(date, "EEEE, MMMM d, yyyy", { locale: dateLocale });
     }
-    return format(date, "EEEE, MMMM d, yyyy 'at' h:mm a");
+    return format(date, `EEEE, MMMM d, yyyy '${tPreview("at")}' h:mm a`, { locale: dateLocale });
   };
 
   const handleImport = () => {
@@ -79,17 +87,17 @@ export function ExternalEventPreview({
               }}
             >
               <ExternalLink className="h-3 w-3 mr-1" />
-              External Event
+              {tEvent("externalEventBadge")}
             </Badge>
             {event.subscription_name && (
               <span className="text-xs text-muted-foreground">
-                from {event.subscription_name}
+                {tPreview("from", { name: event.subscription_name })}
               </span>
             )}
           </div>
           <DialogTitle className="text-xl">{event.title}</DialogTitle>
           <DialogDescription>
-            This event is from an external calendar subscription.
+            {tEvent("externalEventDescription")}
           </DialogDescription>
         </DialogHeader>
 
@@ -103,19 +111,19 @@ export function ExternalEventPreview({
               </p>
               {endDate && !event.is_all_day && (
                 <p className="text-sm text-muted-foreground">
-                  to {format(endDate, "h:mm a")}
+                  {tPreview("to")} {format(endDate, "h:mm a", { locale: dateLocale })}
                 </p>
               )}
               {endDate && event.is_all_day &&
                 format(startDate, "yyyy-MM-dd") !== format(endDate, "yyyy-MM-dd") && (
-                <p className="text-sm text-muted-foreground">
-                  to {format(endDate, "MMMM d, yyyy")}
-                </p>
-              )}
+                  <p className="text-sm text-muted-foreground">
+                    {tPreview("to")} {format(endDate, "MMMM d, yyyy", { locale: dateLocale })}
+                  </p>
+                )}
               {event.is_all_day && (
                 <Badge variant="outline" className="mt-1 text-xs">
                   <Clock className="h-3 w-3 mr-1" />
-                  All Day
+                  {t("allDay")}
                 </Badge>
               )}
             </div>
@@ -146,9 +154,9 @@ export function ExternalEventPreview({
         <Separator />
 
         <div className="bg-muted/50 rounded-lg p-3 text-sm">
-          <p className="font-medium mb-1">Want to enrich this event?</p>
+          <p className="font-medium mb-1">{tPreview("enrichTitle")}</p>
           <p className="text-muted-foreground text-xs">
-            Import it to Beespo to add announcements, link to meetings, and track it alongside your other events.
+            {tPreview("enrichDescription")}
           </p>
         </div>
 
@@ -158,14 +166,15 @@ export function ExternalEventPreview({
             variant="outline"
             onClick={() => onOpenChange(false)}
           >
-            Close
+            {tEvent("cancel")}
           </Button>
           <Button onClick={handleImport}>
             <Import className="h-4 w-4 mr-2" />
-            Import to Beespo
+            {tEvent("importToBeespo")}
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 }
+

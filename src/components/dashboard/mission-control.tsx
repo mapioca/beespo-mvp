@@ -38,11 +38,11 @@ export function MissionControl({
       saveTimerRef.current = setTimeout(async () => {
         const result = await saveDashboardLayout(newConfig);
         if (result.error) {
-          toast.error("Failed to save layout");
+          toast.error(t("toastSaveLayoutError"));
         }
       }, 500);
     },
-    []
+    [t]
   );
 
   // Cleanup timer on unmount

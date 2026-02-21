@@ -5,8 +5,23 @@
     "greetingEvening": "Good evening",
     "subtitle": "Your mission control at a glance",
     "customize": "Customize",
+    "toastSaveLayoutError": "Failed to save layout",
     "Layout": {
-      "defaultWorkspaceName": "Workspace"
+      "defaultWorkspaceName": "Workspace",
+      "Sidebar": {
+        "expand": "Expand sidebar",
+        "collapse": "Collapse sidebar",
+        "helpSupport": "Help & Support",
+        "apps": "Apps",
+        "browseApps": "Browse Apps"
+      },
+      "UserMenu": {
+        "open": "Open menu",
+        "accountSettings": "Account settings",
+        "billing": "Billing",
+        "notifications": "Notifications",
+        "logout": "Log out"
+      }
     },
     "Settings": {
       "title": "Settings",
@@ -49,8 +64,22 @@
       "languageSpanish": "Spanish"
     },
     "Tables": {
+      "title": "Tables",
+      "subtitle": "Create and manage custom databases",
+      "newTable": "New Table",
+      "createTable": "Create Table",
+      "noTablesYet": "No tables yet",
+      "noTablesDescription": "Create your first table to start organizing your data",
+      "allTables": "All Tables",
+      "tableCount": "{count} table{count, plural, one {} other {s}}",
+      "tableName": "Name",
+      "tableRows": "Rows",
+      "tableCreated": "Created",
       "buttonRecover": "Recover",
-      "buttonSettings": "Settings"
+      "buttonSettings": "Settings",
+      "errorLoading": "Error loading tables. Please try again.",
+      "showingResults": "Showing {from}-{to} of {total} {label}",
+      "tablesLabel": "Tables"
     },
     "Participants": {
       "title": "Participants",
@@ -66,14 +95,33 @@
       "buttonCreate": "Create",
       "buttonCreating": "Creating...",
       "toastCreateError": "Failed to create participant",
-      "toastCreateSuccess": "Participant created"
+      "toastCreateSuccess": "Participant created",
+      "errorLoading": "Error loading participants. Please try again.",
+      "showingResults": "Showing {from}-{to} of {total} {label}",
+      "participantsLabel": "Participants"
     },
     "Tasks": {
       "title": "Tasks",
       "subtitle": "Manage your action items and assignments.",
-      "totalCount": "{count} task{count, plural, one {} other {s}} total"
+      "totalCount": "{count} task{count, plural, one {} other {s}} total",
+      "tasksLabel": "Tasks",
+      "errorLoading": "Error loading tasks. Please try again.",
+      "showingResults": "Showing {from}-{to} of {total} {label}"
     },
     "Forms": {
+      "title": "Forms",
+      "subtitle": "Create and manage feedback forms",
+      "newForm": "New Form",
+      "createForm": "Create Form",
+      "noFormsYet": "No forms yet",
+      "noFormsDescription": "Create your first form to start collecting feedback",
+      "allForms": "All Forms",
+      "formCount": "{count} form{count, plural, one {} other {s}}",
+      "formTitle": "Title",
+      "formStatus": "Status",
+      "formViews": "Views",
+      "formResponses": "Responses",
+      "formCreated": "Created",
       "newFormTitle": "Create New Form",
       "newFormSubtitle": "Design your form and add fields",
       "backToForms": "Back to forms",
@@ -106,7 +154,10 @@
       "results": "Results",
       "formSavedSuccessfully": "Form saved successfully",
       "formPublishedSuccess": "Form published! It's now accepting responses.",
-      "formUnpublishedSuccess": "Form unpublished. It's no longer accepting responses."
+      "formUnpublishedSuccess": "Form unpublished. It's no longer accepting responses.",
+      "errorLoading": "Error loading forms. Please try again.",
+      "showingResults": "Showing {from}-{to} of {total} {label}",
+      "formsLabel": "Forms"
     },
     "Speakers": {
       "backToSpeakers": "Back to Speakers",
@@ -125,7 +176,9 @@
       "errorNotAuthenticated": "Not authenticated. Please log in again.",
       "errorInsufficientPermissions": "Only leaders and admins can create speakers.",
       "errorFailedToCreate": "Failed to create speaker.",
-      "speakerCreatedSuccess": "Speaker created successfully!"
+      "speakerCreatedSuccess": "Speaker created successfully!",
+      "errorLoading": "Error loading speakers. Please try again.",
+      "paginationSummary": "Showing {from}-{to} of {total} speakers"
     },
     "Apps": {
       "title": "Apps Hub",
@@ -163,8 +216,139 @@
       "notebookDeleted": "Notebook deleted",
       "errorFailedToCreateNote": "Failed to create note"
     },
-    "Callings": {},
     "Meetings": {
+      "hub": {
+        "title": "Meetings",
+        "subtitle": "Manage your meeting schedules, agendas, and history",
+        "newMeeting": "New Meeting",
+        "filterPlaceholder": "Filter meetings...",
+        "status": "Status",
+        "template": "Template",
+        "noTemplate": "No Template",
+        "reset": "Reset",
+        "loading": "Loading...",
+        "noMeetingsFound": "No meetings found.",
+        "table": {
+          "id": "ID",
+          "title": "Title",
+          "template": "Template",
+          "status": "Status",
+          "scheduledDate": "Scheduled Date",
+          "actions": "Actions"
+        },
+        "tabs": {
+          "overview": "Overview",
+          "schedule": "Schedule",
+          "business": "Business",
+          "announcements": "Announcements",
+          "discussions": "Discussions",
+          "speakers": "Speakers",
+          "participants": "Participants",
+          "templates": "Templates"
+        }
+      },
+      "detail": {
+        "agenda": "Agenda",
+        "totalDuration": "Total Est: {duration} min"
+      },
+      "status": {
+        "scheduled": "Scheduled",
+        "in_progress": "In Progress",
+        "completed": "Completed",
+        "cancelled": "Cancelled"
+      },
+      "actions": {
+        "openMenu": "Open menu",
+        "view": "View",
+        "conduct": "Conduct",
+        "edit": "Edit",
+        "download": "Download",
+        "downloading": "Downloading...",
+        "share": "Share",
+        "delete": "Delete",
+        "deleting": "Deleting...",
+        "cancel": "Cancel",
+        "startMeeting": "Start Meeting",
+        "conductMeeting": "Conduct Meeting",
+        "editAgenda": "Edit Agenda",
+        "endMeeting": "End Meeting",
+        "reopen": "Reopen",
+        "deleteConfirmTitle": "Delete Meeting",
+        "deleteConfirmDesc": "Are you sure you want to delete \"{title}\"? This action cannot be undone. All agenda items and associated data will be permanently removed.",
+        "toast": {
+          "downloadStarted": "Download started",
+          "downloadStartedDesc": "Your PDF is being downloaded",
+          "downloadFailed": "Download failed",
+          "downloadFailedDesc": "Could not generate PDF. Please try again.",
+          "deleteSuccess": "Meeting deleted",
+          "deleteSuccessDesc": "The meeting has been permanently deleted.",
+          "deleteFailed": "Delete failed",
+          "deleteFailedDesc": "Could not delete meeting. Please try again.",
+          "statusUpdateFailed": "Failed to update meeting status",
+          "statusUpdated": "Status updated",
+          "markedAs": "Meeting marked as {status}"
+        }
+      },
+      "sidebar": {
+        "description": "Description"
+      },
+      "collapsibleDetails": {
+        "details": "Details",
+        "template": "Template",
+        "noTemplate": "No Template",
+        "scheduled": "Scheduled",
+        "at": "at",
+        "estDuration": "Est. Duration",
+        "minutes": "{count} minutes",
+        "createdBy": "Created By",
+        "unknown": "Unknown",
+        "meetingId": "Meeting ID"
+      },
+      "pages": {
+        "detail": {
+          "backToMeetings": "Back to Meetings"
+        }
+      },
+      "builder": {
+        "header": {
+          "meetingTitle": "Meeting Title",
+          "pickDate": "Pick date",
+          "loadTemplate": "Load Template",
+          "noTemplate": "No Template",
+          "createMeeting": "Create Meeting",
+          "creating": "Creating..."
+        },
+        "toolbox": {
+          "itemLibrary": "Item Library",
+          "searchItems": "Search items...",
+          "loadingItems": "Loading items...",
+          "noItemsFound": "No items found",
+          "noItemsInCategory": "No items in this category",
+          "newItemType": "New Item Type",
+          "dragHint": "Drag items onto the agenda canvas",
+          "standardItems": "Standard Items",
+          "customItems": "Custom Items"
+        },
+        "canvas": {
+          "agenda": "Agenda",
+          "items": "{count} items • {duration} min",
+          "dragItemsHere": "Drag items here",
+          "selectTemplate": "Or select a template to get started",
+          "selectHymn": "Select Hymn",
+          "selectPerson": "Select Person",
+          "selectSpeaker": "Select Speaker",
+          "add": "Add {type}"
+        },
+        "validation": {
+          "hymnNotSpecified": "Hymn not specified",
+          "participantNotAssigned": "Participant not assigned",
+          "speakerNotAssigned": "Speaker not assigned",
+          "noItemsSelected": "No items selected (placeholder will be saved)",
+          "toastFailedCreate": "Failed to create meeting",
+          "toastMeetingCreated": "Meeting created",
+          "toastRedirecting": "Redirecting..."
+        }
+      },
       "Schedule": {
         "noWorkspace": "No workspace found. Please set up your workspace first.",
         "errorLoading": "Error loading meetings. Please try again.",
@@ -231,6 +415,44 @@
       },
       "Overview": {
         "unnamedBusinessItem": "Unnamed Business Item"
+      },
+      "overview": {
+        "commandCenter": "Command Center",
+        "preparationAtGlance": "Your meeting preparation at a glance",
+        "nextMeeting": "Next Meeting",
+        "untilMeeting": "until meeting",
+        "agendaReadiness": "Agenda Readiness",
+        "agendaPreview": "Agenda Preview",
+        "noAgendaItems": "No agenda items yet. Start building your agenda.",
+        "editAgenda": "Edit Agenda",
+        "planNextQuarter": "Plan Your Next Quarter",
+        "noMeetingsDesc": "You have no upcoming meetings scheduled. Create your first meeting to get started with agenda planning.",
+        "scheduleFirstMeeting": "Schedule First Meeting",
+        "planningHorizon": "Planning Horizon",
+        "viewAllUpcoming": "View all {count} upcoming meetings",
+        "empty": "Empty",
+        "moreItems": "+{count} more items",
+        "actionInbox": "Action Inbox",
+        "allCaughtUp": "All caught up!",
+        "pending": "{count} pending",
+        "active": "{count} active",
+        "quickActions": "Quick Actions",
+        "newMeeting": "New Meeting",
+        "addBusinessItem": "Add Business Item",
+        "createAnnouncement": "Create Announcement",
+        "manageTemplates": "Manage Templates",
+        "viewFullCalendar": "View Full Calendar",
+        "seeAllMeetings": "See all meetings and events",
+        "readinessReady": "Ready",
+        "readinessAlmostReady": "Almost ready",
+        "readinessNeedsAttention": "Needs attention",
+        "readinessEmptyAgenda": "Empty agenda",
+        "noAgendaAdded": "No agenda items added",
+        "speakersUnassigned": "{count} {count, plural, one {speaker} other {speakers}} unassigned",
+        "today": "Today",
+        "tomorrow": "Tomorrow",
+        "past": "Past",
+        "itemsLabel": "{count} {count, plural, one {item} other {items}}"
       },
       "Conduct": {
         "loadingConductor": "Loading conductor...",
@@ -402,7 +624,7 @@
       "successTitle": "Check your email",
       "successDescription": "We have sent a password reset link to {email}.",
       "didNotReceive": "Did not receive the email? Check your spam folder or",
-      "tryAnotherEmail": "try another email address",
+      "tryAnother email address": "try another email address",
       "checkInboxToast": "Check your inbox for the password reset link.",
       "unexpectedError": "An unexpected error occurred. Please try again."
     },
@@ -510,6 +732,34 @@
       "publicViewInfo": "This is a public view of the meeting agenda. Notes and detailed discussions are only visible to workspace members."
     }
   },
+  "Navigation": {
+    "dashboard": "Dashboard",
+    "calendar": "Calendar",
+    "view": "View",
+    "events": "Events",
+    "meetings": "Meetings",
+    "overview": "Overview",
+    "schedule": "Schedule",
+    "business": "Business",
+    "announcements": "Announcements",
+    "discussions": "Discussions",
+    "templates": "Templates",
+    "newMeeting": "New Meeting",
+    "meetingDetails": "Meeting Details",
+    "conductMeeting": "Conduct Meeting",
+    "notebooks": "Notebooks",
+    "notebook": "Notebook",
+    "directory": "Directory",
+    "callings": "Callings",
+    "callingDetails": "Calling Details",
+    "speakers": "Speakers",
+    "speakerDetails": "Speaker Details",
+    "participants": "Participants",
+    "participantDetails": "Participant Details",
+    "forms": "Forms",
+    "tables": "Tables",
+    "tasks": "Tasks"
+  },
   "Home": {
     "brandName": "Beespo",
     "tagline": "Leadership Management Platform",
@@ -573,5 +823,609 @@
     "description": "We encountered an unexpected error. Don't worry, your data is safe.",
     "tryAgain": "Try again",
     "goToDashboard": "Go to Dashboard"
+  },
+  "UI": {
+    "Pagination": {
+      "page": "Page",
+      "of": "of",
+      "pageDetail": "Page {current} of {total}",
+      "previous": "Previous",
+      "next": "Next"
+    },
+    "AutoSaveTextarea": {
+      "placeholder": "Click to edit...",
+      "unsavedChanges": "Unsaved changes"
+    },
+    "RichTextEditor": {
+      "placeholder": "Add a note...",
+      "bold": "Bold (Ctrl+B)",
+      "italic": "Italic (Ctrl+I)",
+      "strikethrough": "Strikethrough",
+      "bulletList": "Bullet List",
+      "orderedList": "Numbered List",
+      "supported": "Rich text supported",
+      "saving": "Saving...",
+      "saved": "Saved"
+    },
+    "TagsInput": {
+      "placeholder": "Add a tag (press Enter)",
+      "add": "Add"
+    }
+  },
+  "Callings": {
+    "title": "Callings",
+    "subtitle": "Visualize your pipeline and track calling processes",
+    "newCalling": "New Calling",
+    "searchPlaceholder": "Search callings, candidates...",
+    "organization": "Organization",
+    "allOrganizations": "All Organizations",
+    "boardView": "Board View",
+    "listView": "List View",
+    "noCallingsFound": "No callings found",
+    "emptyStateStart": "Create your first calling to get started",
+    "emptyStateAdjust": "Try adjusting your search or filters",
+    "createCalling": "Create Calling",
+    "newCallingDialog": {
+      "title": "New Calling",
+      "description": "Create a new calling to track and fill.",
+      "labelTitle": "Calling Title",
+      "placeholderTitle": "e.g., Primary President",
+      "labelOrg": "Organization (optional)",
+      "placeholderOrg": "Select organization...",
+      "none": "None",
+      "cancel": "Cancel",
+      "create": "Create"
+    },
+    "stages": {
+      "defined": "Defined",
+      "approved": "Approved",
+      "extended": "Extended",
+      "accepted": "Accepted",
+      "sustained": "Sustained",
+      "set_apart": "Set Apart",
+      "recorded_lcr": "In LCR"
+    },
+    "card": {
+      "filled": "Filled",
+      "open": "Open",
+      "candidates": "{count, plural, =1 {# candidate} other {# candidates}}",
+      "names": "{count, plural, =1 {# name} other {# names}}",
+      "noCandidates": "No candidates",
+      "step": "Step {current}/{total}"
+    },
+    "kanban": {
+      "needsCandidates": {
+        "title": "Needs Candidates",
+        "subtitle": "Vacancies that need names",
+        "empty": "All callings have candidates"
+      },
+      "toExtend": {
+        "title": "To Extend",
+        "subtitle": "Bishop needs to interview",
+        "empty": "No interviews pending"
+      },
+      "toSustain": {
+        "title": "To Sustain",
+        "subtitle": "Add to Sunday agenda",
+        "empty": "No sustainings pending"
+      },
+      "toSetApart": {
+        "title": "To Set Apart",
+        "subtitle": "Needs priesthood blessing",
+        "empty": "No blessings pending"
+      },
+      "toRecord": {
+        "title": "To Record",
+        "subtitle": "Enter into LCR",
+        "empty": "No entries pending"
+      },
+      "emptyStage": "No callings at this stage"
+    },
+    "organizations": {
+      "bishopric": "Bishopric",
+      "eldersQuorum": "Elders Quorum",
+      "reliefSociety": "Relief Society",
+      "youngMen": "Young Men",
+      "youngWomen": "Young Women",
+      "primary": "Primary",
+      "sundaySchool": "Sunday School",
+      "missionaryWork": "Missionary Work",
+      "templeFamilyHistory": "Temple & Family History"
+    },
+    "details": {
+      "tabs": {
+        "timeline": "Timeline",
+        "candidates": "Candidates",
+        "actions": "Actions",
+        "history": "History"
+      },
+      "activeCandidate": "Active Candidate",
+      "brainstorming": "Brainstorming",
+      "addName": "Add Name",
+      "noCandidates": "No candidates yet",
+      "noCandidatesSubtitle": "Add names to brainstorm potential people",
+      "startProcess": "Start",
+      "startProcessFull": "Start Process",
+      "noActivity": "No activity yet",
+      "commentPlaceholder": "Add a comment...",
+      "advanceStage": "Advance to Next Stage",
+      "createAssignment": "Create Assignment",
+      "dropProcess": "Drop Process",
+      "startProcessSubtitle": "Select a candidate to start a process",
+      "actionsSubtitle": "Start a process to see available actions",
+      "filledBy": "Filled by",
+      "loading": "Loading...",
+      "loadingTitle": "Loading Calling Details",
+      "active": "Active",
+      "dialogs": {
+        "advance": {
+          "title": "Advance Stage",
+          "description": "Move from {current} to {next}?",
+          "confirm": "Advance"
+        },
+        "lcr": {
+          "title": "Record in LCR",
+          "description": "Please verify that this calling has been recorded in the official Church LCR system.",
+          "descriptionDetail": "This action will mark the process as complete and the calling as filled.",
+          "confirm": "Confirm - Recorded in LCR"
+        },
+        "drop": {
+          "title": "Drop Process",
+          "description": "This will stop the current process. You can optionally provide a reason.",
+          "placeholder": "Reason (optional)"
+        },
+        "addCandidate": {
+          "title": "Add Candidate",
+          "description": "Add a name to the brainstorming list for this calling.",
+          "nameLabel": "Name",
+          "notesLabel": "Notes (optional)",
+          "notesPlaceholder": "Why is this person a good fit?"
+        },
+        "createTask": {
+          "title": "Create Assignment",
+          "description": "Create a task linked to this calling process.",
+          "label": "Title",
+          "placeholder": "e.g., Interview candidate",
+          "descriptionLabel": "Description (optional)",
+          "descriptionPlaceholder": "Additional details...",
+          "assignTo": "Assign to",
+          "placeholderAssignee": "Select...",
+          "dueDate": "Due Date"
+        }
+      }
+    },
+    "pool": {
+      "title": "Candidate Pool",
+      "count": "{count} {count, plural, one {candidate} other {candidates}} for {title}",
+      "add": "Add Candidate",
+      "empty": "No candidates yet. Add someone to brainstorm!",
+      "candidateStatuses": {
+        "proposed": "Proposed",
+        "discussing": "Discussing",
+        "selected": "Selected",
+        "archived": "Archived"
+      },
+      "actions": {
+        "startProcess": "Start Process",
+        "editNotes": "Edit Notes",
+        "remove": "Remove"
+      },
+      "dialogs": {
+        "addCandidate": {
+          "title": "Add Candidate",
+          "description": "Add a candidate to the pool for {title}",
+          "nameLabel": "Name",
+          "notesLabel": "Notes (optional)",
+          "notesPlaceholder": "Add notes about this candidate...",
+          "placeholder": "Search for a name...",
+          "searchPlaceholder": "Type a name...",
+          "noResults": "No names found.",
+          "suggestions": "Suggestions",
+          "addNew": "Add \"{name}\" as new name"
+        },
+        "editNotes": {
+          "title": "Edit Notes",
+          "description": "Notes for {name}",
+          "descriptionExtended": "Notes for {name} → {title}",
+          "placeholder": "Add notes about this candidate..."
+        }
+      },
+      "candidateAdded": "Candidate added",
+      "candidateAddedDesc": "{name} added to pool",
+      "notesUpdated": "Notes updated",
+      "candidateRemoved": "Candidate removed",
+      "candidateRemovedDesc": "{name} removed from pool",
+      "processStarted": "Process started",
+      "processStartedDesc": "Started calling process for {name}",
+      "considerationsTitle": "Callings Considered",
+      "considerationsCount": "{count} {count, plural, one {calling} other {callings}} for {name}",
+      "considerationsEmpty": "No callings being considered for this person.",
+      "considerationRemoved": "Removed",
+      "considerationRemovedDesc": "No longer considering {name} for {title}"
+    }
+  },
+  "Tables": {
+    "events": {
+      "dateTime": "Date / Time",
+      "eventName": "Event Name",
+      "location": "Location",
+      "promoted": "Promoted",
+      "actions": "Actions",
+      "allDay": "All Day",
+      "announced": "Announced",
+      "notAnnounced": "Not Announced",
+      "noEventsFound": "No events found."
+    },
+    "business": {
+      "id": "ID",
+      "personName": "Person Name",
+      "positionCalling": "Position / Calling",
+      "category": "Category",
+      "status": "Status",
+      "actionDate": "Action Date",
+      "actions": "Actions",
+      "statusPending": "Pending",
+      "statusCompleted": "Completed",
+      "view": "View",
+      "noItemsFound": "No business items found."
+    },
+    "announcements": {
+      "id": "ID",
+      "title": "Title",
+      "priority": "Priority",
+      "status": "Status",
+      "deadline": "Deadline",
+      "actions": "Actions",
+      "statusActive": "Active",
+      "statusExpired": "Expired",
+      "statusScheduled": "Scheduled",
+      "priorityHigh": "High",
+      "priorityMedium": "Medium",
+      "priorityLow": "Low",
+      "noDeadline": "No deadline",
+      "noAnnouncementsFound": "No announcements found."
+    },
+    "teamMembers": {
+      "name": "Name",
+      "email": "Email",
+      "role": "Role",
+      "actions": "Actions",
+      "you": "(you)",
+      "roleAdmin": "Admin",
+      "roleLeader": "Leader",
+      "roleGuest": "Guest",
+      "makeAdmin": "Make Admin",
+      "removeFromWorkspace": "Remove from Workspace",
+      "removeMemberTitle": "Remove Member?",
+      "removeMemberDescription": "This will permanently remove the member from the workspace. They will lose access immediately.",
+      "makeAdminTitle": "Transfer Admin Role?",
+      "makeAdminDescription": "This will give {name} full admin privileges for this workspace.",
+      "cancel": "Cancel",
+      "remove": "Remove",
+      "removing": "Removing...",
+      "processing": "Processing..."
+    },
+    "pendingInvitations": {
+      "email": "Email",
+      "role": "Role",
+      "invitedBy": "Invited By",
+      "expires": "Expires",
+      "actions": "Actions",
+      "unknown": "Unknown",
+      "resendInvitation": "Resend invitation",
+      "revokeInvitation": "Revoke invitation",
+      "noPendingInvitations": "No pending invitations"
+    },
+    "requestHistory": {
+      "request": "Request",
+      "status": "Status",
+      "date": "Date",
+      "loading": "Loading your requests...",
+      "errorLoading": "Failed to load your request history. Please try again.",
+      "tryAgain": "Try Again",
+      "noRequests": "You haven\u2019t submitted any requests yet."
+    }
+  },
+  "common": {
+    "cancel": "Cancel",
+    "save": "Save"
+  },
+  "Metadata": {
+    "title": "Beespo - Leadership Management for Church Leaders",
+    "description": "A comprehensive agenda and leadership management platform designed for leaders in The Church of Jesus Christ of Latter-day Saints.",
+    "dashboard": {
+      "title": "Dashboard | Beespo",
+      "description": "Your mission control at a glance"
+    },
+    "callings": {
+      "title": "Callings | Beespo",
+      "description": "Visualize your pipeline and track calling processes"
+    },
+    "speakers": {
+      "title": "Speakers | Beespo",
+      "description": "Manage and track speakers across all meetings"
+    },
+    "meetings": {
+      "overview": {
+        "title": "Command Center | Beespo",
+        "description": "Your central workspace for managing meetings and agendas"
+      }
+    },
+    "settings": {
+      "title": "Settings | Beespo",
+      "description": "Manage your workspace settings and team members"
+    },
+    "calendar": {
+      "title": "Calendar View | Beespo",
+      "description": "Your interactive calendar view"
+    },
+    "announcements": {
+      "title": "Announcements | Beespo",
+      "description": "Manage announcements for your organization"
+    },
+    "discussions": {
+      "title": "Discussions | Beespo",
+      "description": "Engage in discussions and make decisions"
+    },
+    "forms": {
+      "title": "Forms | Beespo",
+      "description": "Create and manage forms"
+    },
+    "participants": {
+      "title": "Participants | Beespo",
+      "description": "Manage reusable participant names for meeting assignments"
+    },
+    "tables": {
+      "title": "Tables | Beespo",
+      "description": "Create and manage tables for your organization"
+    },
+    "business": {
+      "title": "Business | Beespo",
+      "description": "Manage business items for your organization"
+    },
+    "templates": {
+      "title": "Templates | Beespo",
+      "description": "Manage your meeting templates"
+    },
+    "schedule": {
+      "title": "Schedule | Beespo",
+      "description": "View and manage your meeting schedule"
+    },
+    "events": {
+      "title": "Events | Beespo",
+      "description": "View and manage your organization events"
+    },
+    "apps": {
+      "title": "Apps Hub | Beespo",
+      "description": "Connect apps to enhance your workspace"
+    },
+    "tasks": {
+      "title": "Tasks | Beespo",
+      "description": "Stay on top of your assignments"
+    },
+    "notebooks": {
+      "title": "Notebooks | Beespo",
+      "description": "Organize your notes and thoughts"
+    }
+  },
+  "Dictionary": {
+    "unitTypes": {
+      "ward": "Ward",
+      "branch": "Branch",
+      "stake": "Stake",
+      "district": "District"
+    },
+    "organizationTypes": {
+      "bishopric": "Bishopric",
+      "elders_quorum": "Elders Quorum",
+      "relief_society": "Relief Society",
+      "young_men": "Young Men",
+      "young_women": "Young Women",
+      "primary": "Primary",
+      "missionary_work": "Missionary Work",
+      "temple_family_history": "Temple & Family History",
+      "sunday_school": "Sunday School"
+    }
+  },
+  "Support": {
+    "title": "Help & Support",
+    "description": "Submit a bug report, feature request, or view your history.",
+    "tabNewRequest": "New Request",
+    "tabMyRequests": "My Requests",
+    "requestTypeLabel": "Request Type",
+    "bugReportTitle": "Bug Report",
+    "bugReportDescription": "Something isn't working as expected",
+    "featureRequestTitle": "Feature Request",
+    "featureRequestDescription": "Suggest a new feature or improvement",
+    "generalQuestionTitle": "General Question",
+    "generalQuestionDescription": "Ask us anything about Beespo",
+    "priorityLabel": "Priority",
+    "priorityLow": "Low - Minor issue",
+    "priorityMedium": "Medium - Affects functionality",
+    "priorityHigh": "High - Blocking or critical",
+    "subjectLabel": "Subject",
+    "subjectPlaceholder": "Brief summary of your request",
+    "descriptionLabel": "Description",
+    "descriptionPlaceholder": "Tell us more details...",
+    "autoCapturedTitle": "Auto-captured information:",
+    "autoCapturedName": "Your name and email",
+    "autoCapturedUrl": "Current page URL",
+    "autoCapturedBrowser": "Browser and device information",
+    "cancel": "Cancel",
+    "sendRequest": "Send Request",
+    "sending": "Sending...",
+    "close": "Close",
+    "successTitle": "Request Submitted Successfully!",
+    "successDescription": "Thanks! We've received your request.",
+    "successTicketRef": "Reference Ticket:",
+    "errorFailedToSubmit": "Failed to submit request",
+    "errorSomethingWentWrong": "Something went wrong"
+  },
+  "Calendar": {
+    "title": "Calendar",
+    "today": "Today",
+    "newEvent": "New Event",
+    "viewMonth": "Month",
+    "viewWeek": "Week",
+    "viewDay": "Day",
+    "viewAgenda": "Agenda",
+    "calendars": "Calendars",
+    "showAlso": "Show Also",
+    "externalCalendars": "External Calendars",
+    "manageCalendars": "Manage Calendars",
+    "allDay": "All Day",
+    "more": "+{count} more",
+    "noEvents": "No events this month",
+    "clickToAdd": "Click any date in the calendar to add an event",
+    "eventsCount": "{count} {count, plural, one {event} other {events}}",
+    "allDayEvents": "All-day events",
+    "Event": {
+      "title": "Event title",
+      "location": "Location",
+      "description": "Description",
+      "start": "Start",
+      "end": "End",
+      "allDay": "All Day",
+      "create": "Create Event",
+      "update": "Update Event",
+      "delete": "Delete Event",
+      "save": "Save Changes",
+      "cancel": "Cancel",
+      "loading": "Loading...",
+      "successCreate": "Event created successfully.",
+      "successUpdate": "Event updated successfully.",
+      "successDelete": "Event deleted successfully.",
+      "errorCreate": "Failed to create event.",
+      "errorUpdate": "Failed to update event.",
+      "errorDelete": "Failed to delete event.",
+      "externalEventBadge": "External Event",
+      "externalEventDescription": "This event is from an external calendar subscription.",
+      "importToBeespo": "Import to Beespo",
+      "importSuccess": "External event imported successfully."
+    },
+    "ExternalPreview": {
+      "from": "from {name}",
+      "enrichTitle": "Want to enrich this event?",
+      "enrichDescription": "Import it to Beespo to add announcements, link to meetings, and track it alongside your other events.",
+      "at": "at",
+      "to": "to"
+    },
+    "Recurrence": {
+      "label": "Repeat",
+      "none": "Does not repeat",
+      "daily": "Daily",
+      "weekly": "Weekly",
+      "biweekly": "Every 2 weeks",
+      "monthly": "Monthly",
+      "yearly": "Yearly",
+      "custom": "Custom...",
+      "repeatEvery": "Repeat every",
+      "weeks": "week(s)",
+      "days": "day(s)",
+      "months": "month(s)",
+      "years": "year(s)",
+      "onDays": "on",
+      "ends": "Ends",
+      "never": "Never",
+      "onDate": "On",
+      "after": "After",
+      "occurrences": "occurrences",
+      "endLabel": "End recurrence",
+      "noEndHint": "Leave blank to continue until the deadline (if set) or indefinitely",
+      "customDaysLabel": "Select which days of the week this event repeats:",
+      "daySun": "Sun",
+      "dayMon": "Mon",
+      "dayTue": "Tue",
+      "dayWed": "Wed",
+      "dayThu": "Thu",
+      "dayFri": "Fri",
+      "daySat": "Sat"
+    },
+    "Days": {
+      "sun": "Sun",
+      "mon": "Mon",
+      "tue": "Tue",
+      "wed": "Wed",
+      "thu": "Thu",
+      "fri": "Fri",
+      "sat": "Sat",
+      "sunday": "Sunday",
+      "monday": "Monday",
+      "tuesday": "Tuesday",
+      "wednesday": "Wednesday",
+      "thursday": "Thursday",
+      "friday": "Friday",
+      "saturday": "Saturday",
+      "shortSun": "S",
+      "shortMon": "M",
+      "shortTue": "T",
+      "shortWed": "W",
+      "shortThu": "T",
+      "shortFri": "F",
+      "shortSat": "S"
+    },
+    "Sources": {
+      "announcement": "Announcement",
+      "meeting": "Meeting",
+      "task": "Task",
+      "event": "Event",
+      "external": "External"
+    },
+    "Priorities": {
+      "high": "High",
+      "medium": "Medium",
+      "low": "Low"
+    },
+    "Subscriptions": {
+      "title": "External Calendars",
+      "addTitle": "Add External Calendar",
+      "addSubtitle": "Subscribe to an iCal feed to display events on your calendar",
+      "nameLabel": "Calendar Name",
+      "namePlaceholder": "e.g., Team Holidays",
+      "urlLabel": "iCal URL",
+      "urlPlaceholder": "https://example.com/calendar.ics",
+      "urlHint": "Enter the HTTPS URL of an iCal (.ics) feed",
+      "colorLabel": "Color",
+      "addButton": "Add Subscription",
+      "addingButton": "Adding...",
+      "invalidUrl": "Please enter a valid HTTPS calendar URL",
+      "successAdd": "Calendar subscription added. Syncing events...",
+      "errorAdd": "Failed to add calendar subscription",
+      "syncing": "Syncing...",
+      "synced": "Synced",
+      "syncFailed": "Sync failed",
+      "lastSynced": "Last synced",
+      "neverSynced": "Never synced",
+      "syncedRelative": "Synced {time}",
+      "actions": "Actions",
+      "syncNow": "Sync Now",
+      "delete": "Delete",
+      "deleteTitle": "Delete Subscription",
+      "deleteDescription": "This will remove the calendar subscription and all cached events. Any announcements created from this calendar will remain but will no longer sync with the external source.",
+      "deleteConfirm": "Delete",
+      "cancel": "Cancel",
+      "noSubscriptions": "No external calendars",
+      "noSubscriptionsDesc": "Add a calendar subscription to display external events",
+      "successDelete": "Calendar subscription deleted.",
+      "errorDelete": "Failed to delete calendar subscription.",
+      "successSync": "Sync started.",
+      "errorSync": "Failed to start sync.",
+      "syncComplete": "Sync Complete",
+      "syncResults": "{created} created, {updated} updated, {deleted} removed",
+      "errors": {
+        "required": "Name and URL are required",
+        "auth": "Not authenticated",
+        "adminOnly": "Only admins can add calendar subscriptions"
+      }
+    },
+    "Settings": {
+      "title": "Calendar Settings",
+      "general": "General",
+      "subscriptions": "Subscriptions",
+      "defaultView": "Default View",
+      "weekStartsOn": "Week Starts On",
+      "showWeekNumbers": "Show Week Numbers",
+      "description": "Manage your calendar preferences and external subscriptions."
+    }
   }
 }

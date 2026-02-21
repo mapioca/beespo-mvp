@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
@@ -29,6 +30,10 @@ export function CalendarSidebar({
   onToggleVisibility,
   userRole,
 }: CalendarSidebarProps) {
+  const t = useTranslations("Calendar");
+  const tNav = useTranslations("Navigation");
+  const tDash = useTranslations("Dashboard");
+
   const isAdmin = userRole === "admin";
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [subscriptions, setSubscriptions] = useState<CalendarSubscription[]>([]);
@@ -86,7 +91,7 @@ export function CalendarSidebar({
         <div className="flex flex-col h-full p-4">
           {/* Header with close button (mobile) */}
           <div className="flex items-center justify-between mb-4 lg:hidden">
-            <h2 className="font-semibold">Calendars</h2>
+            <h2 className="font-semibold">{t("calendars")}</h2>
             <Button variant="ghost" size="icon" onClick={onToggle}>
               <X className="h-5 w-5" />
             </Button>
@@ -95,7 +100,7 @@ export function CalendarSidebar({
           {/* Beespo Calendar section */}
           <div className="space-y-3">
             <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-              Beespo Calendar
+              {tDash("Layout.Sidebar.apps")} {t("title")}
             </h3>
             <div className="space-y-2">
               <div className="flex items-center space-x-2">
@@ -109,7 +114,7 @@ export function CalendarSidebar({
                   className="flex items-center gap-2 cursor-pointer"
                 >
                   <span className="w-3 h-3 rounded-sm bg-indigo-400" />
-                  Events
+                  {tNav("events")}
                 </Label>
               </div>
               <div className="flex items-center space-x-2">
@@ -123,7 +128,7 @@ export function CalendarSidebar({
                   className="flex items-center gap-2 cursor-pointer"
                 >
                   <span className="w-3 h-3 rounded-sm bg-amber-400" />
-                  Announcements
+                  {tNav("announcements")}
                 </Label>
               </div>
             </div>
@@ -134,7 +139,7 @@ export function CalendarSidebar({
           {/* Show Also section */}
           <div className="space-y-3">
             <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-              Show Also
+              {t("showAlso")}
             </h3>
             <div className="space-y-2">
               <div className="flex items-center space-x-2">
@@ -148,7 +153,7 @@ export function CalendarSidebar({
                   className="flex items-center gap-2 cursor-pointer"
                 >
                   <span className="w-3 h-3 rounded-sm bg-blue-400" />
-                  Meetings
+                  {tNav("meetings")}
                 </Label>
               </div>
               <div className="flex items-center space-x-2">
@@ -162,7 +167,7 @@ export function CalendarSidebar({
                   className="flex items-center gap-2 cursor-pointer"
                 >
                   <span className="w-3 h-3 rounded-sm bg-green-400" />
-                  Tasks
+                  {tNav("tasks")}
                 </Label>
               </div>
             </div>
@@ -173,7 +178,7 @@ export function CalendarSidebar({
           {/* External Calendars section */}
           <div className="space-y-3">
             <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-              External Calendars
+              {t("externalCalendars")}
             </h3>
 
             {isLoadingSubscriptions ? (
@@ -194,7 +199,7 @@ export function CalendarSidebar({
                     className="flex items-center gap-2 cursor-pointer"
                   >
                     <span className="w-3 h-3 rounded-sm bg-purple-400" />
-                    All External
+                    {t("externalCalendars")}
                   </Label>
                 </div>
                 {enabledSubscriptions.map((sub) => (
@@ -212,9 +217,10 @@ export function CalendarSidebar({
               </div>
             ) : (
               <p className="text-xs text-muted-foreground">
-                No external calendars connected
+                {t("Subscriptions.noSubscriptionsDesc")}
               </p>
             )}
+
           </div>
 
           {/* Spacer */}
@@ -228,7 +234,7 @@ export function CalendarSidebar({
               onClick={() => setSettingsOpen(true)}
             >
               <Settings className="h-4 w-4 mr-2" />
-              Manage Calendars
+              {t("manageCalendars")}
             </Button>
           )}
         </div>

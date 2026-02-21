@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AppWindow, ChevronRight, Plus, Puzzle } from "lucide-react";
+import { useTranslations } from "next-intl";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import {
@@ -29,6 +30,7 @@ export function SidebarAppsSection({
     isExpanded,
     onToggle,
 }: SidebarAppsSectionProps) {
+    const t = useTranslations("Dashboard.Layout.Sidebar");
     const pathname = usePathname();
     const [connectedApps, setConnectedApps] = useState<WorkspaceAppWithApp[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -81,7 +83,7 @@ export function SidebarAppsSection({
                     </TooltipTrigger>
                     <TooltipContent side="right" className="font-medium">
                         <div className="space-y-1">
-                            <div className="font-semibold">Apps</div>
+                            <div className="font-semibold">{t("apps")}</div>
                             {connectedApps.length > 0 ? (
                                 connectedApps.map((wa) => (
                                     <div key={wa.id} className="text-muted-foreground text-xs">
@@ -90,7 +92,7 @@ export function SidebarAppsSection({
                                 ))
                             ) : (
                                 <div className="text-muted-foreground text-xs">
-                                    Browse Apps
+                                    {t("browseApps")}
                                 </div>
                             )}
                         </div>
@@ -114,7 +116,7 @@ export function SidebarAppsSection({
                     aria-controls="nav-apps-section"
                 >
                     <AppWindow className="h-4 w-4 shrink-0" />
-                    <span className="flex-1 text-left">Apps</span>
+                    <span className="flex-1 text-left">{t("apps")}</span>
                     <ChevronRight
                         className={cn(
                             "h-4 w-4 shrink-0 transition-transform duration-200",
@@ -166,7 +168,7 @@ export function SidebarAppsSection({
                             )}
                         >
                             <Plus className="h-4 w-4" />
-                            <span>Browse Apps</span>
+                            <span>{t("browseApps")}</span>
                         </Link>
                     </div>
                 </CollapsibleContent>

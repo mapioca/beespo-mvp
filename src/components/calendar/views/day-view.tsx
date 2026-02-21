@@ -11,6 +11,9 @@ import { CalendarEvent } from "@/lib/calendar-helpers";
 import { CalendarEventChip } from "../calendar-event-chip";
 import { cn } from "@/lib/utils";
 
+import { useTranslations, useLocale } from "next-intl";
+import { es, enUS } from "date-fns/locale";
+
 interface DayViewProps {
   currentDate: Date;
   events: CalendarEvent[];
@@ -27,6 +30,10 @@ export function DayView({
   onDateClick,
   onEventClick,
 }: DayViewProps) {
+  const t = useTranslations("Calendar");
+  const locale = useLocale();
+  const dateLocale = locale === "es" ? es : enUS;
+
   const dateKey = format(currentDate, "yyyy-MM-dd");
   const dayEvents = eventsByDate.get(dateKey) || [];
   const allDayEvents = dayEvents.filter((e) => e.isAllDay);
@@ -51,10 +58,10 @@ export function DayView({
       {/* Header */}
       <div className={cn("p-4 border-b", isCurrentDay && "bg-primary/5")}>
         <div className="text-sm text-muted-foreground">
-          {format(currentDate, "EEEE")}
+          {format(currentDate, "EEEE", { locale: dateLocale })}
         </div>
         <div className={cn("text-2xl font-bold", isCurrentDay && "text-primary")}>
-          {format(currentDate, "MMMM d, yyyy")}
+          {format(currentDate, "MMMM d, yyyy", { locale: dateLocale })}
         </div>
       </div>
 
@@ -62,7 +69,7 @@ export function DayView({
       {allDayEvents.length > 0 && (
         <div className="p-3 border-b bg-muted/30">
           <div className="text-sm font-medium text-muted-foreground mb-2">
-            All-day events
+            {t("allDayEvents")}
           </div>
           <div className="space-y-1">
             {allDayEvents.map((event) => (
@@ -100,7 +107,7 @@ export function DayView({
               >
                 {/* Time label */}
                 <div className="w-20 p-2 text-sm text-muted-foreground text-right border-r flex-shrink-0">
-                  {format(setHours(new Date(), hour), "h a")}
+                  {format(setHours(new Date(), hour), "h a", { locale: dateLocale })}
                 </div>
                 {/* Event area */}
                 <div className="flex-1 p-1">
@@ -124,3 +131,4 @@ export function DayView({
     </div>
   );
 }
+

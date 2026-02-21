@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { LinkedNotesList } from "@/components/notes/linked-notes-list";
 import { MeetingActions } from "./meeting-actions";
 import { CollapsibleDetails } from "./collapsible-details";
@@ -28,6 +29,8 @@ export function MeetingSidebar({
   isLeader,
   totalDuration,
 }: MeetingSidebarProps) {
+  const t = useTranslations("Dashboard.Meetings.sidebar");
+
   return (
     <div className="space-y-6">
       {/* Action Buttons - Top of sidebar, most prominent */}
@@ -44,7 +47,7 @@ export function MeetingSidebar({
       {meeting.description && (
         <div className="bg-card border rounded-lg p-4">
           <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-            Description
+            {t("description")}
           </h3>
           <p className="text-sm text-foreground leading-relaxed">
             {meeting.description}

@@ -2,12 +2,17 @@ import { createClient } from "@/lib/supabase/server";
 import { TasksClient } from "./tasks-client";
 import { PaginationControls } from "@/components/ui/pagination-controls";
 import { Database } from "@/types/database";
-import { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 
-export const metadata: Metadata = {
-    title: "Tasks | Beespo",
-    description: "Manage your action items and assignments",
-};
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
+    const { locale } = await params;
+    const t = await getTranslations({ locale, namespace: "Metadata.tasks" });
+
+    return {
+        title: t("title"),
+        description: t("description"),
+    };
+}
 
 // Force dynamic rendering to ensure searchParams trigger fresh data fetch
 export const dynamic = "force-dynamic";
@@ -25,6 +30,7 @@ interface TasksPageProps {
 
 export default async function TasksPage({ searchParams }: TasksPageProps) {
     const supabase = await createClient();
+    const t = await getTranslations("Tasks");
     const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) {
@@ -86,7 +92,7 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
 
     if (error) {
         console.error("Error fetching tasks:", error);
-        return <div className="p-8">Error loading tasks. Please try again.</div>;
+        return <div className="p-8">{t("errorLoading")}</div>;
     }
 
     // Fetch workspace profiles if needed
@@ -165,7 +171,12 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
                 <div className="px-8 pb-8 max-w-7xl mx-auto">
                     <div className="flex items-center justify-between border-t pt-4">
                         <p className="text-sm text-muted-foreground">
-                            Showing {from + 1}-{Math.min(to + 1, count || 0)} of {count} tasks
+                            {t("showingResults", {
+                                from: from + 1,
+                                to: Math.min(to + 1, count || 0),
+                                total: count || 0,
+                                label: t("tasksLabel").toLowerCase(),
+                            })}
                         </p>
                         <PaginationControls
                             currentPage={currentPage}

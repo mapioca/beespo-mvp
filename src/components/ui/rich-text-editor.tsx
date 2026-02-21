@@ -1,6 +1,7 @@
 "use client";
 
 import { useEditor, EditorContent, Editor } from "@tiptap/react";
+import { useTranslations } from "next-intl";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import { useEffect, useRef, useCallback, useState } from "react";
@@ -51,6 +52,8 @@ function ToolbarButton({ onClick, isActive, disabled, children, title }: Toolbar
 }
 
 function EditorToolbar({ editor, disabled }: { editor: Editor | null; disabled?: boolean }) {
+    const t = useTranslations('UI.RichTextEditor');
+
     if (!editor) return null;
 
     return (
@@ -59,7 +62,7 @@ function EditorToolbar({ editor, disabled }: { editor: Editor | null; disabled?:
                 onClick={() => editor.chain().focus().toggleBold().run()}
                 isActive={editor.isActive("bold")}
                 disabled={disabled}
-                title="Bold (Ctrl+B)"
+                title={t("bold")}
             >
                 <Bold className="h-4 w-4" />
             </ToolbarButton>
@@ -67,7 +70,7 @@ function EditorToolbar({ editor, disabled }: { editor: Editor | null; disabled?:
                 onClick={() => editor.chain().focus().toggleItalic().run()}
                 isActive={editor.isActive("italic")}
                 disabled={disabled}
-                title="Italic (Ctrl+I)"
+                title={t("italic")}
             >
                 <Italic className="h-4 w-4" />
             </ToolbarButton>
@@ -75,7 +78,7 @@ function EditorToolbar({ editor, disabled }: { editor: Editor | null; disabled?:
                 onClick={() => editor.chain().focus().toggleStrike().run()}
                 isActive={editor.isActive("strike")}
                 disabled={disabled}
-                title="Strikethrough"
+                title={t("strikethrough")}
             >
                 <Strikethrough className="h-4 w-4" />
             </ToolbarButton>
@@ -84,7 +87,7 @@ function EditorToolbar({ editor, disabled }: { editor: Editor | null; disabled?:
                 onClick={() => editor.chain().focus().toggleBulletList().run()}
                 isActive={editor.isActive("bulletList")}
                 disabled={disabled}
-                title="Bullet List"
+                title={t("bulletList")}
             >
                 <List className="h-4 w-4" />
             </ToolbarButton>
@@ -92,7 +95,7 @@ function EditorToolbar({ editor, disabled }: { editor: Editor | null; disabled?:
                 onClick={() => editor.chain().focus().toggleOrderedList().run()}
                 isActive={editor.isActive("orderedList")}
                 disabled={disabled}
-                title="Numbered List"
+                title={t("orderedList")}
             >
                 <ListOrdered className="h-4 w-4" />
             </ToolbarButton>
@@ -105,7 +108,7 @@ type SaveStatus = "idle" | "saving" | "saved";
 export function RichTextEditor({
     content,
     onSave,
-    placeholder = "Add a note...",
+    placeholder,
     disabled = false,
     debounceMs = 1000,
 }: RichTextEditorProps) {
@@ -141,6 +144,8 @@ export function RichTextEditor({
         }, debounceMs);
     }, [saveContent, debounceMs]);
 
+    const t = useTranslations('UI.RichTextEditor');
+
     const editor = useEditor({
         extensions: [
             StarterKit.configure({
@@ -148,7 +153,7 @@ export function RichTextEditor({
                 codeBlock: false, // Disable code blocks
             }),
             Placeholder.configure({
-                placeholder,
+                placeholder: placeholder || t("placeholder"),
                 emptyEditorClass: "is-editor-empty",
             }),
         ],
@@ -242,18 +247,18 @@ export function RichTextEditor({
 
             {/* Footer with save status */}
             <div className="flex items-center justify-between px-3 py-1.5 border-t border-border/50 bg-muted/20 text-xs text-muted-foreground">
-                <span className="opacity-60">Rich text supported</span>
+                <span className="opacity-60">{t("supported")}</span>
                 <div className="flex items-center gap-1.5">
                     {saveStatus === "saving" && (
                         <>
                             <Loader2 className="h-3 w-3 animate-spin" />
-                            <span>Saving...</span>
+                            <span>{t("saving")}</span>
                         </>
                     )}
                     {saveStatus === "saved" && (
                         <>
                             <Check className="h-3 w-3 text-green-600" />
-                            <span className="text-green-600">Saved</span>
+                            <span className="text-green-600">{t("saved")}</span>
                         </>
                     )}
                 </div>

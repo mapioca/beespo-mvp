@@ -2,12 +2,17 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { SpeakersClient } from "@/components/speakers/speakers-client";
 import { PaginationControls } from "@/components/ui/pagination-controls";
-import { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 
-export const metadata: Metadata = {
-    title: "Speakers | Beespo",
-    description: "Manage and track speakers across all meetings",
-};
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
+    const { locale } = await params;
+    const t = await getTranslations({ locale, namespace: "Metadata.speakers" });
+
+    return {
+        title: t("title"),
+        description: t("description"),
+    };
+}
 
 // Force dynamic rendering to ensure searchParams trigger fresh data fetch
 export const dynamic = "force-dynamic";
@@ -20,6 +25,7 @@ interface SpeakersPageProps {
 
 export default async function SpeakersPage({ searchParams }: SpeakersPageProps) {
     const supabase = await createClient();
+    const t = await getTranslations("Dashboard.Speakers");
 
     const {
         data: { user },
@@ -81,7 +87,7 @@ export default async function SpeakersPage({ searchParams }: SpeakersPageProps) 
 
     if (error) {
         console.error("Speakers query error:", error);
-        return <div className="p-8">Error loading speakers. Please try again.</div>;
+        return <div className="p-8">{t("errorLoading")}</div>;
     }
 
     // Fetch counts for filter badges (unfiltered counts)
@@ -123,7 +129,12 @@ export default async function SpeakersPage({ searchParams }: SpeakersPageProps) 
                 <div className="px-8 pb-8 max-w-7xl mx-auto">
                     <div className="flex items-center justify-between border-t pt-4">
                         <p className="text-sm text-muted-foreground">
-                            Showing {from + 1}-{Math.min(to + 1, count || 0)} of {count} speakers
+                            {t("showingResults", {
+                                from: from + 1,
+                                to: Math.min(to + 1, count || 0),
+                                total: count || 0,
+                                label: t("speakersLabel").toLowerCase(),
+                            })}
                         </p>
                         <PaginationControls
                             currentPage={currentPage}

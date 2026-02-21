@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { useTranslations } from "next-intl"
 import {
   LayoutDashboard,
   CalendarDays,
@@ -17,23 +18,34 @@ import { cn } from "@/lib/utils"
 
 interface HubTab {
   slug: string
-  label: string
+  labelKey: string
   icon: LucideIcon
 }
 
-const HUB_TABS: HubTab[] = [
-  { slug: "overview", label: "Overview", icon: LayoutDashboard },
-  { slug: "schedule", label: "Schedule", icon: CalendarDays },
-  { slug: "business", label: "Business", icon: Briefcase },
-  { slug: "announcements", label: "Announcements", icon: Megaphone },
-  { slug: "discussions", label: "Discussions", icon: MessageSquare },
-  { slug: "speakers", label: "Speakers", icon: Mic },
-  { slug: "participants", label: "Participants", icon: UsersRound },
-  { slug: "templates", label: "Templates", icon: FileText },
+const HUB_TAB_DEFS: HubTab[] = [
+  { slug: "overview", labelKey: "overview", icon: LayoutDashboard },
+  { slug: "schedule", labelKey: "schedule", icon: CalendarDays },
+  { slug: "business", labelKey: "business", icon: Briefcase },
+  { slug: "announcements", labelKey: "announcements", icon: Megaphone },
+  { slug: "discussions", labelKey: "discussions", icon: MessageSquare },
+  { slug: "speakers", labelKey: "speakers", icon: Mic },
+  { slug: "participants", labelKey: "participants", icon: UsersRound },
+  { slug: "templates", labelKey: "templates", icon: FileText },
 ]
+
+type TabKey =
+  | "overview"
+  | "schedule"
+  | "business"
+  | "announcements"
+  | "discussions"
+  | "speakers"
+  | "participants"
+  | "templates"
 
 export function HubTabs() {
   const pathname = usePathname()
+  const t = useTranslations("Dashboard.Meetings.hub.tabs")
 
   // Determine active tab from pathname
   const getActiveTab = () => {
@@ -41,7 +53,7 @@ export function HubTabs() {
     // /meetings/overview -> overview
     // /meetings/schedule -> schedule
     const tabSlug = segments[2]
-    return HUB_TABS.find((tab) => tab.slug === tabSlug)?.slug || "overview"
+    return HUB_TAB_DEFS.find((tab) => tab.slug === tabSlug)?.slug || "overview"
   }
 
   const activeTab = getActiveTab()
@@ -52,7 +64,7 @@ export function HubTabs() {
         className="flex overflow-x-auto scrollbar-hide -mb-px"
         aria-label="Meetings Hub Tabs"
       >
-        {HUB_TABS.map((tab) => {
+        {HUB_TAB_DEFS.map((tab) => {
           const Icon = tab.icon
           const isActive = tab.slug === activeTab
 
@@ -68,7 +80,7 @@ export function HubTabs() {
               )}
             >
               <Icon className="h-4 w-4" />
-              <span>{tab.label}</span>
+              <span>{t(tab.labelKey as TabKey)}</span>
             </Link>
           )
         })}

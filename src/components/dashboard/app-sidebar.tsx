@@ -3,7 +3,8 @@
 import Link from "next/link"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
-import { useState } from "react"
+import { useState, useMemo } from "react"
+import { useTranslations } from "next-intl"
 import {
   Home,
   Calendar,
@@ -32,26 +33,8 @@ import { SidebarNavSection } from "./sidebar-nav-section"
 import { SidebarAppsSection } from "./sidebar-apps-section"
 import { useSidebarState } from "@/hooks/use-sidebar-state"
 
-const navSections: NavSection[] = [
-  {
-    id: "main",
-    title: "", // No section header for clean look
-    items: [
-      { href: "/dashboard", icon: Home, label: "Dashboard" },
-      { href: "/calendar", icon: Calendar, label: "Calendar" },
-      { href: "/meetings/overview", icon: CalendarDays, label: "Meetings" },
-      { href: "/tasks", icon: CheckSquare, label: "Tasks" },
-      { href: "/callings", icon: HandHeart, label: "Callings" },
-      { href: "/forms", icon: ClipboardList, label: "Forms" },
-      { href: "/tables", icon: Table2, label: "Tables" },
-      { href: "/notebooks", icon: BookOpen, label: "Notebooks" },
-    ],
-  },
-]
-
-// Default expanded groups (Agenda is open by default, Apps collapsed)
+// Default expanded groups (Apps collapsed by default)
 const defaultExpandedGroups: Record<string, boolean> = {
-  "management-agenda": true,
   "apps-section": false,
 }
 
@@ -70,8 +53,27 @@ export function AppSidebar({
   userAvatarUrl,
   userRoleTitle,
 }: AppSidebarProps) {
+  const t = useTranslations("Dashboard.Layout.Sidebar")
+  const tNav = useTranslations("Navigation")
   const [supportModalOpen, setSupportModalOpen] = useState(false)
   const pathname = usePathname()
+
+  const navSections = useMemo((): NavSection[] => [
+    {
+      id: "main",
+      title: "",
+      items: [
+        { href: "/dashboard", icon: Home, label: tNav("dashboard") },
+        { href: "/calendar", icon: Calendar, label: tNav("calendar") },
+        { href: "/meetings/overview", icon: CalendarDays, label: tNav("meetings") },
+        { href: "/tasks", icon: CheckSquare, label: tNav("tasks") },
+        { href: "/callings", icon: HandHeart, label: tNav("callings") },
+        { href: "/forms", icon: ClipboardList, label: tNav("forms") },
+        { href: "/tables", icon: Table2, label: tNav("tables") },
+        { href: "/notebooks", icon: BookOpen, label: tNav("notebooks") },
+      ],
+    },
+  ], [tNav])
 
   const {
     isCollapsed,
@@ -136,12 +138,12 @@ export function AppSidebar({
                     <PanelLeftClose className="h-4 w-4" />
                   )}
                   <span className="sr-only">
-                    {isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+                    {isCollapsed ? t("expand") : t("collapse")}
                   </span>
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="right">
-                {isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+                {isCollapsed ? t("expand") : t("collapse")}
               </TooltipContent>
             </Tooltip>
           </div>
@@ -192,11 +194,11 @@ export function AppSidebar({
                 )}
               >
                 <LifeBuoy className="h-4 w-4" />
-                {!isCollapsed && <span>Help & Support</span>}
-                <span className="sr-only">Help & Support</span>
+                {!isCollapsed && <span>{t("helpSupport")}</span>}
+                <span className="sr-only">{t("helpSupport")}</span>
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="right">Help & Support</TooltipContent>
+            <TooltipContent side="right">{t("helpSupport")}</TooltipContent>
           </Tooltip>
         </div>
 

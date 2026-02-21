@@ -10,6 +10,8 @@ import { toast } from "@/lib/toast";
 import { isValidICalUrl } from "@/lib/ical-parser";
 import { AlertCircle, Calendar, Loader2 } from "lucide-react";
 
+import { useTranslations } from "next-intl";
+
 interface AddSubscriptionFormProps {
   onCreated: (subscription: CalendarSubscription) => void;
 }
@@ -27,6 +29,7 @@ const PRESET_COLORS = [
 ];
 
 export function AddSubscriptionForm({ onCreated }: AddSubscriptionFormProps) {
+  const t = useTranslations("Calendar.Subscriptions");
   const [isLoading, setIsLoading] = useState(false);
   const [name, setName] = useState("");
   const [url, setUrl] = useState("");
@@ -40,7 +43,7 @@ export function AddSubscriptionForm({ onCreated }: AddSubscriptionFormProps) {
     }
 
     if (!isValidICalUrl(value)) {
-      setUrlError("Please enter a valid HTTPS calendar URL");
+      setUrlError(t("invalidUrl"));
     } else {
       setUrlError("");
     }
@@ -50,12 +53,12 @@ export function AddSubscriptionForm({ onCreated }: AddSubscriptionFormProps) {
     e.preventDefault();
 
     if (!name || !url) {
-      toast.error("Name and URL are required");
+      toast.error(t("errors.required"));
       return;
     }
 
     if (!isValidICalUrl(url)) {
-      toast.error("Please enter a valid HTTPS calendar URL");
+      toast.error(t("invalidUrl"));
       return;
     }
 
@@ -66,7 +69,7 @@ export function AddSubscriptionForm({ onCreated }: AddSubscriptionFormProps) {
     // Get current user
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
-      toast.error("Not authenticated");
+      toast.error(t("errors.auth"));
       setIsLoading(false);
       return;
     }
@@ -79,7 +82,7 @@ export function AddSubscriptionForm({ onCreated }: AddSubscriptionFormProps) {
       .single();
 
     if (!profile || profile.role !== "admin") {
-      toast.error("Only admins can add calendar subscriptions");
+      toast.error(t("errors.adminOnly"));
       setIsLoading(false);
       return;
     }
@@ -98,12 +101,12 @@ export function AddSubscriptionForm({ onCreated }: AddSubscriptionFormProps) {
       .single();
 
     if (error) {
-      toast.error(error.message || "Failed to create subscription");
+      toast.error(error.message || t("errorAdd"));
       setIsLoading(false);
       return;
     }
 
-    toast.success("Calendar subscription added. Syncing events...");
+    toast.success(t("successAdd"));
 
     // Trigger initial sync
     try {
@@ -115,7 +118,13 @@ export function AddSubscriptionForm({ onCreated }: AddSubscriptionFormProps) {
 
       if (syncResponse.ok) {
         const result = await syncResponse.json();
-        toast.success("Sync Complete", { description: `Imported ${result.totalEvents} events` });
+        toast.success(t("syncComplete"), {
+          description: t("syncResults", {
+            created: result.totalEvents || result.eventsCreated || 0,
+            updated: result.eventsUpdated || 0,
+            deleted: result.eventsDeleted || 0
+          })
+        });
       }
     } catch (error) {
       console.error("Initial sync failed:", error);
@@ -135,27 +144,27 @@ export function AddSubscriptionForm({ onCreated }: AddSubscriptionFormProps) {
       <div className="flex items-center gap-3 p-4 bg-muted/50 rounded-lg">
         <Calendar className="h-8 w-8 text-muted-foreground" />
         <div>
-          <p className="font-medium">Add External Calendar</p>
+          <p className="font-medium">{t("addTitle")}</p>
           <p className="text-sm text-muted-foreground">
-            Subscribe to an iCal feed to display events on your calendar
+            {t("addSubtitle")}
           </p>
         </div>
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="name">Calendar Name</Label>
+        <Label htmlFor="name">{t("nameLabel")}</Label>
         <Input
           id="name"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="e.g., Team Holidays"
+          placeholder={t("namePlaceholder")}
           disabled={isLoading}
           required
         />
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="url">iCal URL</Label>
+        <Label htmlFor="url">{t("urlLabel")}</Label>
         <Input
           id="url"
           type="url"
@@ -164,7 +173,7 @@ export function AddSubscriptionForm({ onCreated }: AddSubscriptionFormProps) {
             setUrl(e.target.value);
             validateUrl(e.target.value);
           }}
-          placeholder="https://example.com/calendar.ics"
+          placeholder={t("urlPlaceholder")}
           disabled={isLoading}
           required
         />
@@ -175,23 +184,22 @@ export function AddSubscriptionForm({ onCreated }: AddSubscriptionFormProps) {
           </div>
         )}
         <p className="text-xs text-muted-foreground">
-          Enter the HTTPS URL of an iCal (.ics) feed
+          {t("urlHint")}
         </p>
       </div>
 
       <div className="space-y-2">
-        <Label>Color</Label>
+        <Label>{t("colorLabel")}</Label>
         <div className="flex gap-2 flex-wrap">
           {PRESET_COLORS.map((c) => (
             <button
               key={c}
               type="button"
               onClick={() => setColor(c)}
-              className={`w-8 h-8 rounded-full border-2 transition-all ${
-                color === c
+              className={`w-8 h-8 rounded-full border-2 transition-all ${color === c
                   ? "border-foreground scale-110"
                   : "border-transparent hover:scale-105"
-              }`}
+                }`}
               style={{ backgroundColor: c }}
               disabled={isLoading}
             />
@@ -203,12 +211,13 @@ export function AddSubscriptionForm({ onCreated }: AddSubscriptionFormProps) {
         {isLoading ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Adding Calendar...
+            {t("addingButton")}
           </>
         ) : (
-          "Add Calendar"
+          t("addButton")
         )}
       </Button>
     </form>
   );
 }
+

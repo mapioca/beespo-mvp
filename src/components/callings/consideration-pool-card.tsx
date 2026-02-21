@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -52,10 +53,10 @@ interface ConsiderationPoolCardProps {
 }
 
 const statusColors: Record<CallingCandidateStatus, string> = {
-    proposed: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
-    discussing: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300",
-    selected: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
-    archived: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400",
+    proposed: "bg-gray-100 text-gray-800",
+    discussing: "bg-blue-100 text-blue-800",
+    selected: "bg-green-100 text-green-800",
+    archived: "bg-amber-100 text-amber-800",
 };
 
 export function ConsiderationPoolCard({
@@ -63,6 +64,7 @@ export function ConsiderationPoolCard({
     candidateName,
     onUpdate,
 }: ConsiderationPoolCardProps) {
+    const t = useTranslations("Callings");
     const [considerations, setConsiderations] = useState<CallingConsideration[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [editingItem, setEditingItem] = useState<CallingConsideration | null>(null);
@@ -105,9 +107,8 @@ export function ConsiderationPoolCard({
         const result = await updateCallingCandidate(editingItem.id, { notes });
 
         if (result.error) {
-            toast.error(result.error);
         } else {
-            toast.success("Notes updated");
+            toast.success(t("pool.notesUpdated"));
             setEditingItem(null);
             setNotes("");
             fetchConsiderations();
@@ -121,9 +122,8 @@ export function ConsiderationPoolCard({
         const result = await removeCallingCandidate(itemId);
 
         if (result.error) {
-            toast.error(result.error);
         } else {
-            toast.success("Removed", { description: `No longer considering ${candidateName} for ${callingTitle}` });
+            toast.success(t("pool.considerationRemoved"), { description: t("pool.considerationRemovedDesc", { name: candidateName, title: callingTitle }) });
             fetchConsiderations();
             onUpdate?.();
         }
@@ -147,10 +147,10 @@ export function ConsiderationPoolCard({
                     <div>
                         <CardTitle className="text-base flex items-center gap-2">
                             <BookOpen className="w-4 h-4" />
-                            Callings Considered
+                            {t("pool.considerationsTitle")}
                         </CardTitle>
                         <CardDescription>
-                            {considerations.length} calling{considerations.length !== 1 ? "s" : ""} for {candidateName}
+                            {t("pool.considerationsCount", { count: considerations.length, name: candidateName })}
                         </CardDescription>
                     </div>
                 </div>
@@ -165,7 +165,7 @@ export function ConsiderationPoolCard({
                     </div>
                 ) : sortedConsiderations.length === 0 ? (
                     <p className="text-sm text-muted-foreground text-center py-4">
-                        No callings being considered for this person.
+                        {t("pool.considerationsEmpty")}
                     </p>
                 ) : (
                     sortedConsiderations.map((item) => (
@@ -184,7 +184,7 @@ export function ConsiderationPoolCard({
                                             statusColors[item.status]
                                         )}
                                     >
-                                        {item.status}
+                                        {t(`pool.candidateStatuses.${item.status}`)}
                                     </span>
                                 </div>
                                 {item.calling?.organization && (
@@ -213,7 +213,7 @@ export function ConsiderationPoolCard({
                                         }}
                                     >
                                         <Pencil className="w-4 h-4 mr-2" />
-                                        Edit Notes
+                                        {t("pool.actions.editNotes")}
                                     </DropdownMenuItem>
                                     <DropdownMenuItem
                                         onClick={() =>
@@ -222,7 +222,7 @@ export function ConsiderationPoolCard({
                                         className="text-destructive focus:text-destructive"
                                     >
                                         <Trash2 className="w-4 h-4 mr-2" />
-                                        Remove
+                                        {t("pool.actions.remove")}
                                     </DropdownMenuItem>
                                 </DropdownMenuContent>
                             </DropdownMenu>
@@ -235,9 +235,9 @@ export function ConsiderationPoolCard({
             <Dialog open={!!editingItem} onOpenChange={(open) => !open && setEditingItem(null)}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Edit Notes</DialogTitle>
+                        <DialogTitle>{t("pool.dialogs.editNotes.title")}</DialogTitle>
                         <DialogDescription>
-                            Notes for {candidateName} → {editingItem?.calling?.title}
+                            {t("pool.dialogs.editNotes.descriptionExtended", { name: candidateName || "", title: editingItem?.calling?.title || "" })}
                         </DialogDescription>
                     </DialogHeader>
 
@@ -245,7 +245,7 @@ export function ConsiderationPoolCard({
                         <Textarea
                             value={notes}
                             onChange={(e) => setNotes(e.target.value)}
-                            placeholder="Add notes about this consideration..."
+                            placeholder={t("pool.dialogs.editNotes.placeholder")}
                             rows={4}
                             disabled={isSaving}
                         />
@@ -257,10 +257,10 @@ export function ConsiderationPoolCard({
                             onClick={() => setEditingItem(null)}
                             disabled={isSaving}
                         >
-                            Cancel
+                            {t("common.cancel")}
                         </Button>
                         <Button onClick={handleUpdateNotes} disabled={isSaving}>
-                            Save
+                            {t("common.save")}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { useTranslations } from "next-intl";
 import { MeetingRowActions } from "./meeting-row-actions";
 import { Database } from "@/types/database";
 
@@ -51,9 +52,6 @@ function getStatusIcon(status: string) {
     }
 }
 
-function formatStatus(status: string): string {
-    return status.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
-}
 
 function getStatusVariant(status: string): "default" | "secondary" | "destructive" | "outline" {
     switch (status) {
@@ -64,7 +62,6 @@ function getStatusVariant(status: string): "default" | "secondary" | "destructiv
         default: return "default";
     }
 }
-
 export function MeetingsTable({
     meetings,
     workspaceSlug,
@@ -73,6 +70,8 @@ export function MeetingsTable({
     onSort,
     onMeetingDelete,
 }: MeetingsTableProps) {
+    const t = useTranslations("Meetings.hub");
+    const ts = useTranslations("Meetings.status");
     const SortHeader = ({ column, label, className }: { column: string; label: string; className?: string }) => (
         <TableHead
             className={cn("cursor-pointer bg-white hover:bg-gray-50 transition-colors", className)}
@@ -94,12 +93,12 @@ export function MeetingsTable({
             <Table>
                 <TableHeader>
                     <TableRow className="group">
-                        <SortHeader column="workspace_meeting_id" label="ID" className="w-[100px]" />
-                        <SortHeader column="title" label="Title" className="w-[300px]" />
-                        <SortHeader column="template" label="Template" />
-                        <SortHeader column="status" label="Status" />
-                        <SortHeader column="scheduled_date" label="Scheduled Date" />
-                        <TableHead className="text-right w-[80px]">Actions</TableHead>
+                        <SortHeader column="workspace_meeting_id" label={t("table.id")} className="w-[100px]" />
+                        <SortHeader column="title" label={t("table.title")} className="w-[300px]" />
+                        <SortHeader column="template" label={t("table.template")} />
+                        <SortHeader column="status" label={t("table.status")} />
+                        <SortHeader column="scheduled_date" label={t("table.scheduledDate")} />
+                        <TableHead className="text-right w-[80px]">{t("table.actions")}</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -108,7 +107,7 @@ export function MeetingsTable({
                             <TableCell colSpan={6} className="h-24 text-center">
                                 <div className="flex flex-col items-center justify-center py-4">
                                     <CalendarDays className="h-8 w-8 text-muted-foreground mb-2" />
-                                    <p className="text-muted-foreground">No meetings found.</p>
+                                    <p className="text-muted-foreground">{t("noMeetingsFound")}</p>
                                 </div>
                             </TableCell>
                         </TableRow>
@@ -125,14 +124,14 @@ export function MeetingsTable({
                                 </TableCell>
                                 <TableCell>
                                     <span className="text-sm text-muted-foreground">
-                                        {meeting.templates?.name || "No Template"}
+                                        {meeting.templates?.name || t("noTemplate")}
                                     </span>
                                 </TableCell>
                                 <TableCell>
                                     <div className="flex items-center gap-2">
                                         {getStatusIcon(meeting.status)}
                                         <Badge variant={getStatusVariant(meeting.status)}>
-                                            {formatStatus(meeting.status)}
+                                            {ts(meeting.status)}
                                         </Badge>
                                     </div>
                                 </TableCell>

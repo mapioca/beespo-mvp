@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import {
   ChevronLeft,
@@ -34,6 +35,8 @@ export function CalendarToolbar({
   canCreateEvents,
   onCreateEvent,
 }: CalendarToolbarProps) {
+  const t = useTranslations("Calendar");
+
   // Format the date label based on current view
   const getDateLabel = () => {
     switch (view) {
@@ -61,7 +64,7 @@ export function CalendarToolbar({
         </Button>
 
         <Button variant="outline" size="sm" onClick={onToday}>
-          Today
+          {t("today")}
         </Button>
 
         <div className="flex items-center">
@@ -92,7 +95,7 @@ export function CalendarToolbar({
                   view === viewType && "bg-muted"
                 )}
               >
-                {viewType}
+                {t(`view${viewType.charAt(0).toUpperCase()}${viewType.slice(1)}` as "viewMonth" | "viewWeek" | "viewDay" | "viewAgenda")}
               </Button>
             )
           )}
@@ -104,17 +107,17 @@ export function CalendarToolbar({
           onChange={(e) => onViewChange(e.target.value as CalendarViewType)}
           className="sm:hidden h-9 px-3 border rounded-md text-sm bg-background"
         >
-          <option value="month">Month</option>
-          <option value="week">Week</option>
-          <option value="day">Day</option>
-          <option value="agenda">Agenda</option>
+          <option value="month">{t("viewMonth")}</option>
+          <option value="week">{t("viewWeek")}</option>
+          <option value="day">{t("viewDay")}</option>
+          <option value="agenda">{t("viewAgenda")}</option>
         </select>
 
         {/* Create event button */}
         {canCreateEvents && (
           <Button onClick={onCreateEvent} size="sm">
             <Plus className="h-4 w-4 mr-1" />
-            <span className="hidden sm:inline">New Event</span>
+            <span className="hidden sm:inline">{t("newEvent")}</span>
           </Button>
         )}
       </div>

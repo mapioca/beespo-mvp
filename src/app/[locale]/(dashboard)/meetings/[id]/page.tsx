@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { MeetingDetailContent } from "@/components/meetings/meeting-detail-content";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
@@ -17,6 +18,7 @@ interface MeetingDetailPageProps {
 export default async function MeetingDetailPage({ params }: MeetingDetailPageProps) {
     const { id } = await params;
     const supabase = await createClient();
+    const t = await getTranslations("Dashboard.Meetings.pages.detail");
 
     // Get current user profile
     const { data: { user } } = await supabase.auth.getUser();
@@ -68,7 +70,7 @@ export default async function MeetingDetailPage({ params }: MeetingDetailPagePro
                 <Button variant="ghost" size="sm" asChild className="-ml-2">
                     <Link href="/meetings">
                         <ArrowLeft className="w-4 h-4 mr-2" />
-                        Back to Meetings
+                        {t("backToMeetings")}
                     </Link>
                 </Button>
             </div>

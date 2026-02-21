@@ -2,11 +2,16 @@ import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import { DiscussionsClient } from "@/components/discussions/discussions-client"
 import { PaginationControls } from "@/components/ui/pagination-controls"
-import { Metadata } from "next"
+import { getTranslations } from "next-intl/server"
 
-export const metadata: Metadata = {
-  title: "Discussions | Beespo",
-  description: "Track ongoing topics and decisions",
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params
+  const t = await getTranslations({ locale, namespace: "Metadata.discussions" })
+
+  return {
+    title: t("title"),
+    description: t("description"),
+  }
 }
 
 // Force dynamic rendering to ensure searchParams trigger fresh data fetch
@@ -22,6 +27,7 @@ export default async function DiscussionsPage({
   searchParams,
 }: DiscussionsPageProps) {
   const supabase = await createClient()
+  const t = await getTranslations("Dashboard.Discussions")
 
   const {
     data: { user },
@@ -94,7 +100,7 @@ export default async function DiscussionsPage({
   if (error) {
     console.error("Discussions query error:", error)
     return (
-      <div className="p-8">Error loading discussions. Please try again.</div>
+      <div className="p-8">{t("errorLoading")}</div>
     )
   }
 
@@ -162,8 +168,12 @@ export default async function DiscussionsPage({
         <div className="px-8 pb-8 max-w-7xl mx-auto">
           <div className="flex items-center justify-between border-t pt-4">
             <p className="text-sm text-muted-foreground">
-              Showing {from + 1}-{Math.min(to + 1, count || 0)} of {count}{" "}
-              discussions
+              {t("showingResults", {
+                from: from + 1,
+                to: Math.min(to + 1, count || 0),
+                total: count || 0,
+                label: t("discussionsLabel").toLowerCase(),
+              })}
             </p>
             <PaginationControls
               currentPage={currentPage}

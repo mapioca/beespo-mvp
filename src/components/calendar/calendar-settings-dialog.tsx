@@ -14,6 +14,8 @@ import { SubscriptionList } from "./subscription-list";
 import { CalendarSubscription } from "@/types/database";
 import { createClient } from "@/lib/supabase/client";
 
+import { useTranslations } from "next-intl";
+
 interface CalendarSettingsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -23,6 +25,8 @@ export function CalendarSettingsDialog({
   open,
   onOpenChange,
 }: CalendarSettingsDialogProps) {
+  const t = useTranslations("Calendar.Settings");
+  const tSub = useTranslations("Calendar.Subscriptions");
   const [subscriptions, setSubscriptions] = useState<CalendarSubscription[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -76,16 +80,16 @@ export function CalendarSettingsDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Calendar Settings</DialogTitle>
+          <DialogTitle>{t("title")}</DialogTitle>
           <DialogDescription>
-            Manage external calendar subscriptions and sync settings.
+            {t("description")}
           </DialogDescription>
         </DialogHeader>
 
         <Tabs defaultValue="subscriptions" className="mt-4">
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="subscriptions">Subscriptions</TabsTrigger>
-            <TabsTrigger value="add">Add Calendar</TabsTrigger>
+            <TabsTrigger value="subscriptions">{t("subscriptions")}</TabsTrigger>
+            <TabsTrigger value="add">{tSub("addTitle")}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="subscriptions" className="mt-4">
@@ -105,3 +109,4 @@ export function CalendarSettingsDialog({
     </Dialog>
   );
 }
+

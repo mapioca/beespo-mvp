@@ -265,8 +265,10 @@ function getSnapshot(): ToastItem[] {
   return toasts;
 }
 
+const EMPTY_TOASTS: ToastItem[] = [];
+
 function getServerSnapshot(): ToastItem[] {
-  return [];
+  return EMPTY_TOASTS;
 }
 
 export function useToastStore(): ToastItem[] {

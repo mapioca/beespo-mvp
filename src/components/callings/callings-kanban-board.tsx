@@ -10,6 +10,7 @@ import {
     Sparkles,
     FileCheck
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import type { CallingProcessStage, CallingProcessStatus, CallingCandidateStatus } from "@/types/database";
 
 interface CallingCandidate {
@@ -114,6 +115,7 @@ interface CallingsKanbanBoardProps {
 }
 
 export function CallingsKanbanBoard({ callings, onCallingClick }: CallingsKanbanBoardProps) {
+    const t = useTranslations("Callings.kanban");
     // Group callings into the 5 pipeline columns
     const columns = React.useMemo(() => {
         const needsCandidates: Calling[] = [];
@@ -170,13 +172,13 @@ export function CallingsKanbanBoard({ callings, onCallingClick }: CallingsKanban
         <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory">
             {/* Column 1: Needs Candidates */}
             <KanbanColumn
-                title="Needs Candidates"
-                subtitle="Vacancies that need names"
+                title={t("needsCandidates.title")}
+                subtitle={t("needsCandidates.subtitle")}
                 count={columns.needsCandidates.length}
                 icon={<Users className="w-4 h-4 text-amber-600" />}
                 headerColor="bg-amber-50 text-amber-900"
                 countBgColor="bg-amber-200 text-amber-800"
-                emptyMessage="All callings have candidates"
+                emptyMessage={t("needsCandidates.empty")}
             >
                 {columns.needsCandidates.map(calling => (
                     <CallingBoardCard
@@ -190,13 +192,13 @@ export function CallingsKanbanBoard({ callings, onCallingClick }: CallingsKanban
 
             {/* Column 2: To Extend */}
             <KanbanColumn
-                title="To Extend"
-                subtitle="Bishop needs to interview"
+                title={t("toExtend.title")}
+                subtitle={t("toExtend.subtitle")}
                 count={columns.toExtend.length}
                 icon={<Phone className="w-4 h-4 text-blue-600" />}
                 headerColor="bg-blue-50 text-blue-900"
                 countBgColor="bg-blue-200 text-blue-800"
-                emptyMessage="No interviews pending"
+                emptyMessage={t("toExtend.empty")}
             >
                 {columns.toExtend.map(calling => (
                     <CallingBoardCard
@@ -210,13 +212,13 @@ export function CallingsKanbanBoard({ callings, onCallingClick }: CallingsKanban
 
             {/* Column 3: To Sustain */}
             <KanbanColumn
-                title="To Sustain"
-                subtitle="Add to Sunday agenda"
+                title={t("toSustain.title")}
+                subtitle={t("toSustain.subtitle")}
                 count={columns.toSustain.length}
                 icon={<Hand className="w-4 h-4 text-purple-600" />}
                 headerColor="bg-purple-50 text-purple-900"
                 countBgColor="bg-purple-200 text-purple-800"
-                emptyMessage="No sustainings pending"
+                emptyMessage={t("toSustain.empty")}
             >
                 {columns.toSustain.map(calling => (
                     <CallingBoardCard
@@ -230,13 +232,13 @@ export function CallingsKanbanBoard({ callings, onCallingClick }: CallingsKanban
 
             {/* Column 4: To Set Apart */}
             <KanbanColumn
-                title="To Set Apart"
-                subtitle="Needs priesthood blessing"
+                title={t("toSetApart.title")}
+                subtitle={t("toSetApart.subtitle")}
                 count={columns.toSetApart.length}
                 icon={<Sparkles className="w-4 h-4 text-orange-600" />}
                 headerColor="bg-orange-50 text-orange-900"
                 countBgColor="bg-orange-200 text-orange-800"
-                emptyMessage="No blessings pending"
+                emptyMessage={t("toSetApart.empty")}
             >
                 {columns.toSetApart.map(calling => (
                     <CallingBoardCard
@@ -250,13 +252,13 @@ export function CallingsKanbanBoard({ callings, onCallingClick }: CallingsKanban
 
             {/* Column 5: To Record */}
             <KanbanColumn
-                title="To Record"
-                subtitle="Enter into LCR"
+                title={t("toRecord.title")}
+                subtitle={t("toRecord.subtitle")}
                 count={columns.toRecord.length}
                 icon={<FileCheck className="w-4 h-4 text-green-600" />}
                 headerColor="bg-green-50 text-green-900"
                 countBgColor="bg-green-200 text-green-800"
-                emptyMessage="No entries pending"
+                emptyMessage={t("toRecord.empty")}
             >
                 {columns.toRecord.map(calling => (
                     <CallingBoardCard

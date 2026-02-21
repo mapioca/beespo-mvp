@@ -10,6 +10,7 @@ import {
     Building2,
     Clock
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import type { CallingProcessStage, CallingProcessStatus } from "@/types/database";
 
@@ -43,17 +44,9 @@ interface CallingCardProps {
     onClick?: () => void;
 }
 
-const stageLabels: Record<CallingProcessStage, string> = {
-    defined: "Defined",
-    approved: "Approved",
-    extended: "Extended",
-    accepted: "Accepted",
-    sustained: "Sustained",
-    set_apart: "Set Apart",
-    recorded_lcr: "In LCR"
-};
-
 export function CallingCard({ calling, onClick }: CallingCardProps) {
+    const t = useTranslations("Callings.card");
+    const ts = useTranslations("Callings.stages");
     const activeProcess = calling.processes.find(p => p.status === 'active');
     const candidateCount = calling.candidates.filter(c => c.status !== 'archived').length;
 
@@ -80,16 +73,16 @@ export function CallingCard({ calling, onClick }: CallingCardProps) {
                 {calling.is_filled ? (
                     <Badge variant="secondary" className="bg-green-100 text-green-800 hover:bg-green-100 shrink-0">
                         <UserCheck className="w-3 h-3 mr-1" />
-                        Filled
+                        {t("filled")}
                     </Badge>
                 ) : activeProcess ? (
                     <Badge variant="default" className="shrink-0">
                         <Clock className="w-3 h-3 mr-1" />
-                        {stageLabels[activeProcess.current_stage]}
+                        {ts(activeProcess.current_stage as CallingProcessStage)}
                     </Badge>
                 ) : (
                     <Badge variant="outline" className="shrink-0">
-                        Open
+                        {t("open")}
                     </Badge>
                 )}
             </CardHeader>
@@ -99,7 +92,7 @@ export function CallingCard({ calling, onClick }: CallingCardProps) {
                         {candidateCount > 0 && (
                             <div className="flex items-center gap-1">
                                 <Users className="w-3 h-3" />
-                                {candidateCount} candidate{candidateCount !== 1 ? 's' : ''}
+                                {t("candidates", { count: candidateCount })}
                             </div>
                         )}
                         {activeProcess?.candidate && (
