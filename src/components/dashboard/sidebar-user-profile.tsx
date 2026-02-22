@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
-import { MoreHorizontal, User, CreditCard, Bell, LogOut } from "lucide-react"
+import { MoreHorizontal, User, CreditCard, Bell, Sparkles, LogOut } from "lucide-react"
 import { signOutAction } from "@/lib/actions/auth-actions"
 import Link from "next/link"
 import {
@@ -83,6 +83,12 @@ export function SidebarUserProfile({ name, email, roleTitle, avatarUrl, isCollap
                     <DropdownMenuItem disabled className="cursor-not-allowed opacity-50">
                         <Bell className="mr-2 h-4 w-4" />
                         <span>Notifications</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                        <Link href="/changelog" className="cursor-pointer">
+                            <Sparkles className="mr-2 h-4 w-4" />
+                            <span>What&apos;s New</span>
+                        </Link>
                     </DropdownMenuItem>
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />

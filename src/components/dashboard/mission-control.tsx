@@ -5,16 +5,25 @@ import { Settings2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/lib/toast";
 import { saveDashboardLayout } from "@/lib/actions/dashboard-actions";
+import dynamic from "next/dynamic";
 import type { DashboardConfig, DashboardWidgetData } from "@/types/dashboard";
 import type { FeatureTier } from "@/types/database";
+import type { ReleaseNote } from "@/types/release-notes";
 import { DashboardGrid } from "./grid/dashboard-grid";
 import { CustomizeDrawer } from "./grid/customize-drawer";
+
+const ReleaseNoteModal = dynamic(
+  () => import("@/components/release-notes/release-note-modal").then((m) => m.ReleaseNoteModal),
+  { ssr: false }
+);
 
 interface MissionControlProps {
   config: DashboardConfig;
   data: DashboardWidgetData;
   featureTier: FeatureTier | null;
   profileName: string;
+  latestReleaseNote?: ReleaseNote | null;
+  lastReadReleaseNoteAt?: string | null;
 }
 
 export function MissionControl({
@@ -22,6 +31,8 @@ export function MissionControl({
   data,
   featureTier,
   profileName,
+  latestReleaseNote,
+  lastReadReleaseNoteAt,
 }: MissionControlProps) {
   const [config, setConfig] = useState<DashboardConfig>(initialConfig);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -94,6 +105,14 @@ export function MissionControl({
           onConfigChange={handleConfigChange}
           featureTier={featureTier}
         />
+
+        {/* Release Note Modal */}
+        {latestReleaseNote && (
+          <ReleaseNoteModal
+            releaseNote={latestReleaseNote}
+            lastReadAt={lastReadReleaseNoteAt ?? null}
+          />
+        )}
       </div>
     </div>
   );

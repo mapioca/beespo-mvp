@@ -8,6 +8,7 @@ import {
   Users,
   FileText,
   Ticket,
+  Megaphone,
   LogOut,
   Shield,
 } from "lucide-react";
@@ -19,6 +20,7 @@ const navItems = [
   { href: "/users", icon: Users, label: "Users" },
   { href: "/templates", icon: FileText, label: "Templates" },
   { href: "/invitations", icon: Ticket, label: "Invitations" },
+  { href: "/release-notes", icon: Megaphone, label: "Release Notes" },
 ];
 
 interface AdminSidebarProps {
