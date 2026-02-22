@@ -235,9 +235,21 @@ export async function POST(request: NextRequest) {
     if (metaResponse.ok) {
       const meta = await metaResponse.json();
       if (meta.projects && meta.projects.length > 0) {
-        const projectMeta = meta.projects[0];
+        interface JiraIssueTypeMetadata {
+          id: string;
+          name: string;
+          fields?: {
+            priority?: Record<string, unknown>;
+          };
+        }
+
+        interface JiraProjectMetadata {
+          issuetypes: JiraIssueTypeMetadata[];
+        }
+
+        const projectMeta = meta.projects[0] as JiraProjectMetadata;
         // Try to find the specific target type
-        let issueType = projectMeta.issuetypes.find((it: any) =>
+        let issueType = projectMeta.issuetypes.find((it: JiraIssueTypeMetadata) =>
           it.name.toLowerCase() === targetIssueTypeName.toLowerCase()
         );
 
@@ -246,7 +258,7 @@ export async function POST(request: NextRequest) {
           console.warn(`[Create Ticket] Issue type "${targetIssueTypeName}" not found. Trying fallbacks...`);
           const fallbackTypes = ['Task', 'Bug', '[System] Service request', 'Service Request'];
           for (const fallback of fallbackTypes) {
-            issueType = projectMeta.issuetypes.find((it: any) =>
+            issueType = projectMeta.issuetypes.find((it: JiraIssueTypeMetadata) =>
               it.name.toLowerCase() === fallback.toLowerCase()
             );
             if (issueType) break;
