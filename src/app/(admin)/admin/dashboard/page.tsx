@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { Users, FileText, Ticket, Shield } from "lucide-react";
+import { Users, FileText, Ticket, Shield, UserPlus } from "lucide-react";
 
 export default async function AdminDashboardPage() {
   const supabase = await createClient();
@@ -25,7 +25,7 @@ export default async function AdminDashboardPage() {
   const adminClient = createAdminClient();
 
   // Fetch stats
-  const [profilesResult, templatesResult, invitationsResult] =
+  const [profilesResult, templatesResult, invitationsResult, waitlistResult] =
     await Promise.all([
       adminClient.from("profiles").select("id", { count: "exact", head: true }),
       adminClient
@@ -36,6 +36,10 @@ export default async function AdminDashboardPage() {
         .from("platform_invitations")
         .select("id", { count: "exact", head: true })
         .eq("status", "active"),
+      adminClient
+        .from("waitlist_signups")
+        .select("id", { count: "exact", head: true })
+        .is("invited_at", null),
     ]);
 
   const stats = [
@@ -44,6 +48,12 @@ export default async function AdminDashboardPage() {
       value: profilesResult.count ?? 0,
       icon: Users,
       description: "Registered platform users",
+    },
+    {
+      label: "Waitlist (Pending)",
+      value: waitlistResult.count ?? 0,
+      icon: UserPlus,
+      description: "Awaiting beta invitation",
     },
     {
       label: "Global Templates",
@@ -69,7 +79,7 @@ export default async function AdminDashboardPage() {
         <p className="text-zinc-400">Platform overview and statistics</p>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => (
           <div
             key={stat.label}

@@ -11,12 +11,14 @@ import {
   Megaphone,
   LogOut,
   Shield,
+  UserPlus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
 
 const navItems = [
   { href: "/dashboard", icon: Home, label: "Dashboard" },
+  { href: "/waitlist", icon: UserPlus, label: "Waitlist" },
   { href: "/users", icon: Users, label: "Users" },
   { href: "/templates", icon: FileText, label: "Templates" },
   { href: "/invitations", icon: Ticket, label: "Invitations" },
