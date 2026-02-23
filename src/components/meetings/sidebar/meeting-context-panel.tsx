@@ -45,8 +45,7 @@ export function MeetingContextPanel({
     agendaItems,
     workspaceSlug,
     isLeader,
-    totalDuration,
-    currentUserName,
+                                        currentUserName,
 }: MeetingContextPanelProps) {
     const [currentMeeting, setCurrentMeeting] = useState(meeting);
     const [isAddingDescription, setIsAddingDescription] = useState(false);
@@ -171,11 +170,9 @@ export function MeetingContextPanel({
                     {/* Section C: Collapsible Details Card */}
                     <div className="bg-card border rounded-lg p-4">
                         <CollapsibleDetails
-                            templateName={currentMeeting.templates?.name}
-                            createdByName={currentMeeting.profiles?.full_name}
-                            meetingId={currentMeeting.id}
-                            scheduledDate={currentMeeting.scheduled_date}
-                            totalDuration={totalDuration}
+                            meeting={currentMeeting}
+                            isEditable={isEditable}
+                            onMeetingUpdate={setCurrentMeeting}
                             defaultOpen={true}
                         />
                     </div>

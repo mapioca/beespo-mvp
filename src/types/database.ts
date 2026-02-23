@@ -486,6 +486,11 @@ export type Database = {
           created_by: string | null;
           created_at: string;
           updated_at: string;
+          presiding_name: string | null;
+          conducting_name: string | null;
+          chorister_name: string | null;
+          organist_name: string | null;
+          attendance_count: number | null;
         };
         Insert: {
           id?: string;
@@ -502,6 +507,11 @@ export type Database = {
           created_by?: string | null;
           created_at?: string;
           updated_at?: string;
+          presiding_name?: string | null;
+          conducting_name?: string | null;
+          chorister_name?: string | null;
+          organist_name?: string | null;
+          attendance_count?: number | null;
         };
         Update: {
           id?: string;
@@ -518,6 +528,11 @@ export type Database = {
           created_by?: string | null;
           created_at?: string;
           updated_at?: string;
+          presiding_name?: string | null;
+          conducting_name?: string | null;
+          chorister_name?: string | null;
+          organist_name?: string | null;
+          attendance_count?: number | null;
         };
       };
       agenda_items: {

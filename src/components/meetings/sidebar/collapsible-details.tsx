@@ -1,36 +1,103 @@
 "use client";
 
-import { useState } from "react";
-import { ChevronDown, User, Calendar, Clock, FileText, Hash } from "lucide-react";
+import { useState, useCallback } from "react";
+import { ChevronDown } from "lucide-react";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
-import { format } from "date-fns";
+import { InlineInput } from "@/components/meetings/editable/inline-input";
+import { createClient } from "@/lib/supabase/client";
+import { toast } from "@/lib/toast";
+import { Database } from "@/types/database";
+
+type Meeting = Database["public"]["Tables"]["meetings"]["Row"];
 
 interface CollapsibleDetailsProps {
-  templateName?: string | null;
-  createdByName?: string | null;
-  meetingId: string;
-  scheduledDate: string;
-  totalDuration: number;
+  meeting: Meeting;
+  isEditable: boolean;
+  onMeetingUpdate: React.Dispatch<React.SetStateAction<Meeting>>;
   defaultOpen?: boolean;
 }
 
 export function CollapsibleDetails({
-  templateName,
-  createdByName,
-  meetingId,
-  scheduledDate,
-  totalDuration,
+  meeting,
+  isEditable,
+  onMeetingUpdate,
   defaultOpen = true,
 }: CollapsibleDetailsProps) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
-  const formattedDate = format(new Date(scheduledDate), "MMM d, yyyy");
-  const formattedTime = format(new Date(scheduledDate), "h:mm a");
+  const createFieldSaver = useCallback(
+    (field: string, transform?: (v: string) => unknown) => {
+      return async (value: string): Promise<boolean> => {
+        const dbValue = transform ? transform(value) : value || null;
+        const supabase = createClient();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { error } = await (supabase.from("meetings") as any)
+          .update({ [field]: dbValue })
+          .eq("id", meeting.id);
+        if (error) {
+          toast.error("Save failed", {
+            description: `Could not update ${field.replace(/_/g, " ")}.`,
+          });
+          return false;
+        }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        onMeetingUpdate((prev: any) => ({ ...prev, [field]: dbValue }));
+        return true;
+      };
+    },
+    [meeting.id, onMeetingUpdate]
+  );
+
+  const numberTransform = (v: string) => {
+    const num = parseInt(v, 10);
+    return isNaN(num) ? null : num;
+  };
+
+  const editableFields = [
+    {
+      key: "presiding_name",
+      label: "Presiding",
+      type: "text" as const,
+      emptyText: "Not assigned",
+      value: meeting.presiding_name || "",
+    },
+    {
+      key: "conducting_name",
+      label: "Conducting",
+      type: "text" as const,
+      emptyText: "Not assigned",
+      value: meeting.conducting_name || "",
+    },
+    {
+      key: "chorister_name",
+      label: "Chorister",
+      type: "text" as const,
+      emptyText: "Not assigned",
+      value: meeting.chorister_name || "",
+    },
+    {
+      key: "organist_name",
+      label: "Organist/Pianist",
+      type: "text" as const,
+      emptyText: "Not assigned",
+      value: meeting.organist_name || "",
+    },
+    {
+      key: "attendance_count",
+      label: "Attendance",
+      type: "number" as const,
+      emptyText: "Not recorded",
+      value:
+        meeting.attendance_count != null
+          ? String(meeting.attendance_count)
+          : "",
+    },
+  ];
 
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
@@ -54,60 +121,26 @@ export function CollapsibleDetails({
       </CollapsibleTrigger>
 
       <CollapsibleContent className="space-y-3 pt-2">
-        {/* Template */}
-        <div className="flex items-start gap-3">
-          <FileText className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-          <div>
-            <span className="text-xs text-muted-foreground block">Template</span>
-            <span className="text-sm font-medium">
-              {templateName || "No Template"}
+        {/* Editable role/attendance fields */}
+        {editableFields.map((field) => (
+          <div key={field.key}>
+            <span className="text-xs text-muted-foreground block">
+              {field.label}
             </span>
+            <InlineInput
+              value={field.value}
+              onSave={createFieldSaver(
+                field.key,
+                field.type === "number" ? numberTransform : undefined
+              )}
+              type={field.type}
+              disabled={!isEditable}
+              emptyText={field.emptyText}
+              placeholder={field.emptyText}
+              min={field.type === "number" ? 0 : undefined}
+            />
           </div>
-        </div>
-
-        {/* Scheduled Date */}
-        <div className="flex items-start gap-3">
-          <Calendar className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-          <div>
-            <span className="text-xs text-muted-foreground block">Scheduled</span>
-            <span className="text-sm font-medium">
-              {formattedDate} at {formattedTime}
-            </span>
-          </div>
-        </div>
-
-        {/* Duration */}
-        <div className="flex items-start gap-3">
-          <Clock className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-          <div>
-            <span className="text-xs text-muted-foreground block">Est. Duration</span>
-            <span className="text-sm font-medium">
-              {totalDuration} minutes
-            </span>
-          </div>
-        </div>
-
-        {/* Created By */}
-        <div className="flex items-start gap-3">
-          <User className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-          <div>
-            <span className="text-xs text-muted-foreground block">Created By</span>
-            <span className="text-sm font-medium">
-              {createdByName || "Unknown"}
-            </span>
-          </div>
-        </div>
-
-        {/* Meeting ID */}
-        <div className="flex items-start gap-3">
-          <Hash className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-          <div>
-            <span className="text-xs text-muted-foreground block">Meeting ID</span>
-            <code className="text-xs bg-muted px-1.5 py-0.5 rounded font-mono">
-              {meetingId.slice(0, 8)}
-            </code>
-          </div>
-        </div>
+        ))}
       </CollapsibleContent>
     </Collapsible>
   );

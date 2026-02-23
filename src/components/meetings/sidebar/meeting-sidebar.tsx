@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { LinkedNotesList } from "@/components/notes/linked-notes-list";
 import { MeetingActions } from "./meeting-actions";
 import { CollapsibleDetails } from "./collapsible-details";
@@ -18,7 +19,6 @@ interface MeetingSidebarProps {
   agendaItems: AgendaItem[];
   workspaceSlug: string | null;
   isLeader: boolean;
-  totalDuration: number;
 }
 
 export function MeetingSidebar({
@@ -26,8 +26,14 @@ export function MeetingSidebar({
   agendaItems,
   workspaceSlug,
   isLeader,
-  totalDuration,
 }: MeetingSidebarProps) {
+  const [currentMeeting, setCurrentMeeting] = useState(meeting);
+
+  const isEditable =
+    isLeader &&
+    currentMeeting.status !== "completed" &&
+    currentMeeting.status !== "cancelled";
+
   return (
     <div className="space-y-6">
       {/* Action Buttons - Top of sidebar, most prominent */}
@@ -55,11 +61,9 @@ export function MeetingSidebar({
       {/* Collapsible Details */}
       <div className="bg-card border rounded-lg p-4">
         <CollapsibleDetails
-          templateName={meeting.templates?.name}
-          createdByName={meeting.profiles?.full_name}
-          meetingId={meeting.id}
-          scheduledDate={meeting.scheduled_date}
-          totalDuration={totalDuration}
+          meeting={currentMeeting}
+          isEditable={isEditable}
+          onMeetingUpdate={setCurrentMeeting}
           defaultOpen={true}
         />
       </div>
