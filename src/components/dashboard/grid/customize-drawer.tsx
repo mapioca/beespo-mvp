@@ -39,6 +39,9 @@ export function CustomizeDrawer({
     onConfigChange(getDefaultLayout(featureTier));
   };
 
+  const kpiWidgets = WIDGET_REGISTRY.filter((d) => d.category === "kpi");
+  const contentWidgets = WIDGET_REGISTRY.filter((d) => d.category === "content");
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="w-80">
@@ -49,10 +52,10 @@ export function CustomizeDrawer({
         <div className="mt-6 space-y-6">
           <div>
             <p className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-3">
-              Widgets
+              KPI Cards
             </p>
             <div className="space-y-3">
-              {WIDGET_REGISTRY.map((def) => {
+              {kpiWidgets.map((def) => {
                 const widgetConfig = config.widgets.find(
                   (w) => w.type === def.type
                 );
@@ -63,11 +66,38 @@ export function CustomizeDrawer({
                     key={def.type}
                     className="flex items-center justify-between py-2"
                   >
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">
-                        {def.label}
-                      </p>
-                    </div>
+                    <p className="text-sm font-medium text-gray-900">
+                      {def.label}
+                    </p>
+                    <Switch
+                      checked={isVisible}
+                      onCheckedChange={() => toggleWidget(def.type)}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="border-t pt-4">
+            <p className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-3">
+              Content Widgets
+            </p>
+            <div className="space-y-3">
+              {contentWidgets.map((def) => {
+                const widgetConfig = config.widgets.find(
+                  (w) => w.type === def.type
+                );
+                const isVisible = widgetConfig?.visible ?? false;
+
+                return (
+                  <div
+                    key={def.type}
+                    className="flex items-center justify-between py-2"
+                  >
+                    <p className="text-sm font-medium text-gray-900">
+                      {def.label}
+                    </p>
                     <Switch
                       checked={isVisible}
                       onCheckedChange={() => toggleWidget(def.type)}

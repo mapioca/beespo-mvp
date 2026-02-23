@@ -28,3 +28,5 @@ node_modules/
 # Ignore Supabase CLI temp files
 supabase/.temp/
 
+# Ignore agent files created by developer tools
+.agent/

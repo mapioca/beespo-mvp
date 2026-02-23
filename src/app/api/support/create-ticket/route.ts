@@ -10,10 +10,11 @@ const JIRA_PRIORITIES: Record<string, string> = {
 
 // Jira Issue Type IDs
 // Jira Issue Type IDs
-// [System] Incident: 10001
+// Task: 10004
 // [System] Service request: 10002
+// [System] Incident: 10001 (Seems to cause validation errors via create API)
 const JIRA_ISSUE_TYPE_IDS: Record<string, string> = {
-  'Bug Report': '10001',       // Maps to [System] Incident
+  'Bug Report': '10004',       // Maps to Task
   'Feature Request': '10002',  // Maps to [System] Service request
   'General Question': '10002', // Maps to [System] Service request
 };
@@ -77,7 +78,12 @@ export async function POST(request: NextRequest) {
   const jiraDomain = process.env.JIRA_DOMAIN;
   const jiraUserEmail = process.env.JIRA_USER_EMAIL;
   const jiraApiToken = process.env.JIRA_API_TOKEN;
-  const jiraProjectKey = process.env.JIRA_PROJECT_KEY;
+  // Use SP as fallback if env var is missing or equals BB (which seems to be an old incorrect value in prod)
+  let jiraProjectKey = process.env.JIRA_PROJECT_KEY;
+  if (!jiraProjectKey || jiraProjectKey === 'BB') {
+    console.warn('[Create Ticket] JIRA_PROJECT_KEY is missing or set to old value "BB". Forcing "SP".');
+    jiraProjectKey = 'SP';
+  }
 
   // Check if Jira is configured
   if (!jiraDomain || !jiraUserEmail || !jiraApiToken || !jiraProjectKey) {
@@ -207,8 +213,80 @@ export async function POST(request: NextRequest) {
       ],
     };
 
-    // Construct Jira issue payload
-    const jiraIssueTypeId = getJiraIssueTypeId(requestType);
+    // Determine target issue type name based on request type
+    // Fallback to "Service Request" or "Task" if specific types are missing
+    let targetIssueTypeName = 'Task';
+    if (requestType === 'Feature Request' || requestType === 'General Question') {
+      targetIssueTypeName = '[System] Service request';
+    } else if (requestType === 'Bug Report') {
+      targetIssueTypeName = 'Task'; // Prefer Task for bugs as it's more standard
+    }
+
+    // Dynamic Issue Type Lookup
+    // Fetch create metadata to get the VALID issue type ID for this project
+    console.log(`[Create Ticket] Fetching issue types for project ${jiraProjectKey} to find "${targetIssueTypeName}"...`);
+
+    const metaUrl = `${jiraDomain}/rest/api/3/issue/createmeta?projectKeys=${jiraProjectKey}&expand=projects.issuetypes.fields`;
+    const metaResponse = await fetch(metaUrl, { headers });
+
+    let jiraIssueTypeId: string | undefined;
+    let prioritiesSupported = false;
+
+    if (metaResponse.ok) {
+      const meta = await metaResponse.json();
+      if (meta.projects && meta.projects.length > 0) {
+        interface JiraIssueTypeMetadata {
+          id: string;
+          name: string;
+          fields?: {
+            priority?: Record<string, unknown>;
+          };
+        }
+
+        interface JiraProjectMetadata {
+          issuetypes: JiraIssueTypeMetadata[];
+        }
+
+        const projectMeta = meta.projects[0] as JiraProjectMetadata;
+        // Try to find the specific target type
+        let issueType = projectMeta.issuetypes.find((it: JiraIssueTypeMetadata) =>
+          it.name.toLowerCase() === targetIssueTypeName.toLowerCase()
+        );
+
+        // Fallbacks if preferred type not found
+        if (!issueType) {
+          console.warn(`[Create Ticket] Issue type "${targetIssueTypeName}" not found. Trying fallbacks...`);
+          const fallbackTypes = ['Task', 'Bug', '[System] Service request', 'Service Request'];
+          for (const fallback of fallbackTypes) {
+            issueType = projectMeta.issuetypes.find((it: JiraIssueTypeMetadata) =>
+              it.name.toLowerCase() === fallback.toLowerCase()
+            );
+            if (issueType) break;
+          }
+        }
+
+        if (issueType) {
+          jiraIssueTypeId = issueType.id;
+          console.log(`[Create Ticket] Found Issue Type: ${issueType.name} (ID: ${jiraIssueTypeId})`);
+
+          // Check if priority field is supported for this issue type
+          if (issueType.fields && issueType.fields.priority) {
+            prioritiesSupported = true;
+          }
+        }
+      }
+    } else {
+      console.error('[Create Ticket] Failed to fetch project metadata:', await metaResponse.text());
+    }
+
+    // Fallback to hardcoded if dynamic lookup failed (though unlikely to work if dynamic failed)
+    if (!jiraIssueTypeId) {
+      console.warn('[Create Ticket] Dynamic issue type lookup failed. Using fallback hardcoded ID.');
+      jiraIssueTypeId = getJiraIssueTypeId(requestType);
+      // Assume priority supported for fallback standard types
+      prioritiesSupported = true;
+    }
+
     const jiraPriority = priority ? JIRA_PRIORITIES[priority] : undefined;
 
     if (!jiraIssueTypeId) {
@@ -250,11 +328,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Add priority only if provided (and only for bugs typically)
-    if (jiraPriority && requestType === 'Bug Report') {
+    // ONLY add priority if the issue type is actually a Bug or Task that supports it
+    if (jiraPriority && (requestType === 'Bug Report' || requestType === 'Task') && prioritiesSupported) {
       jiraPayload.fields.priority = { name: jiraPriority };
     }
 
-    console.log('[Create Ticket] Sending payload to Jira...');
+    console.log('[Create Ticket] Sending payload to Jira:', JSON.stringify(jiraPayload, null, 2));
 
     // Make request to Jira API
     const jiraResponse = await fetch(`${jiraDomain}/rest/api/3/issue`, {

@@ -22,9 +22,16 @@ import type {
   WidgetType,
 } from "@/types/dashboard";
 import { DroppableColumn } from "./droppable-column";
-import { SundayMorningWidget } from "../widgets/sunday-morning-widget";
-import { ActionInboxWidget } from "../widgets/action-inbox-widget";
-import { OrgPulseWidget } from "../widgets/org-pulse-widget";
+import { KpiCallingFillRateWidget } from "../widgets/kpi-calling-fill-rate-widget";
+import { KpiMeetingReadinessWidget } from "../widgets/kpi-meeting-readiness-widget";
+import { KpiActiveDiscussionsWidget } from "../widgets/kpi-active-discussions-widget";
+import { TeamWorkloadWidget } from "../widgets/team-workload-widget";
+import { MyTasksWidget } from "../widgets/my-tasks-widget";
+import { CallingPipelineWidget } from "../widgets/calling-pipeline-widget";
+import { UpcomingMeetingsWidget } from "../widgets/upcoming-meetings-widget";
+import { NotebooksWidget } from "../widgets/notebooks-widget";
+import { TablesWidget } from "../widgets/tables-widget";
+import { FormsWidget } from "../widgets/forms-widget";
 
 interface DashboardGridProps {
   config: DashboardConfig;
@@ -32,20 +39,24 @@ interface DashboardGridProps {
   onConfigChange: (config: DashboardConfig) => void;
 }
 
-function WidgetOverlay({
-  widgetType,
-  data,
-}: {
-  widgetType: WidgetType;
-  data: DashboardWidgetData;
-}) {
+function renderContentWidget(widgetType: WidgetType, data: DashboardWidgetData) {
   switch (widgetType) {
-    case "sunday_morning":
-      return <SundayMorningWidget data={data.sundayMorning} />;
-    case "action_inbox":
-      return <ActionInboxWidget data={data.actionInbox} />;
-    case "organizational_pulse":
-      return <OrgPulseWidget data={data.organizationalPulse} />;
+    case "team_workload":
+      return <TeamWorkloadWidget data={data.teamWorkload} />;
+    case "my_tasks":
+      return <MyTasksWidget data={data.myTasks} />;
+    case "calling_pipeline":
+      return <CallingPipelineWidget data={data.callingPipeline} />;
+    case "upcoming_meetings":
+      return <UpcomingMeetingsWidget data={data.upcomingMeetings} />;
+    case "notebooks":
+      return <NotebooksWidget data={data.notebooks} />;
+    case "tables":
+      return <TablesWidget data={data.tables} />;
+    case "forms":
+      return <FormsWidget data={data.forms} />;
+    default:
+      return null;
   }
 }
 
@@ -67,17 +78,19 @@ export function DashboardGrid({
   );
 
   const visibleWidgets = config.widgets.filter((w) => w.visible);
+  const kpiWidgets = visibleWidgets.filter((w) => w.isKpi);
+  const contentWidgets = visibleWidgets.filter((w) => !w.isKpi);
 
-  // Get widgets for a specific column, sorted by order
   const getColumnWidgets = useCallback(
     (column: number): WidgetPosition[] =>
-      visibleWidgets
+      contentWidgets
         .filter((w) => (isMobile ? true : w.column === column))
         .sort((a, b) => {
-          if (isMobile) return a.column * 100 + a.order - (b.column * 100 + b.order);
+          if (isMobile)
+            return a.column * 100 + a.order - (b.column * 100 + b.order);
           return a.order - b.order;
         }),
-    [visibleWidgets, isMobile]
+    [contentWidgets, isMobile]
   );
 
   const handleDragStart = useCallback((event: DragStartEvent) => {
@@ -90,9 +103,8 @@ export function DashboardGrid({
       if (!over) return;
 
       const activeWidget = config.widgets.find((w) => w.id === active.id);
-      if (!activeWidget) return;
+      if (!activeWidget || activeWidget.isKpi) return;
 
-      // Determine target column from over id
       const overId = over.id as string;
       let targetColumn: number | null = null;
 
@@ -120,9 +132,9 @@ export function DashboardGrid({
       if (!over || active.id === over.id) return;
 
       const activeWidget = config.widgets.find((w) => w.id === active.id);
-      const overWidget = config.widgets.find((w) => w.id === over.id);
+      if (!activeWidget || activeWidget.isKpi) return;
 
-      if (!activeWidget) return;
+      const overWidget = config.widgets.find((w) => w.id === over.id);
 
       let targetColumn = activeWidget.column;
       if (overWidget) {
@@ -131,9 +143,14 @@ export function DashboardGrid({
         targetColumn = parseInt((over.id as string).replace("column-", ""));
       }
 
-      // Reorder within the target column
       const columnWidgets = config.widgets
-        .filter((w) => w.visible && w.column === targetColumn && w.id !== active.id)
+        .filter(
+          (w) =>
+            w.visible &&
+            !w.isKpi &&
+            w.column === targetColumn &&
+            w.id !== active.id
+        )
         .sort((a, b) => a.order - b.order);
 
       const overIndex = overWidget
@@ -161,78 +178,108 @@ export function DashboardGrid({
     ? config.widgets.find((w) => w.id === activeId)
     : null;
 
-  // Mobile: single column
-  if (isMobile) {
-    const allWidgets = getColumnWidgets(0);
-    return (
-      <div className="space-y-4">
-        {allWidgets.map((widget) => {
+  // KPI row (always rendered, outside DndContext)
+  const kpiRow = kpiWidgets.length > 0 && (
+    <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+      {kpiWidgets
+        .sort((a, b) => a.order - b.order)
+        .map((widget) => {
           switch (widget.type) {
-            case "sunday_morning":
+            case "kpi_calling_fill_rate":
               return (
-                <SundayMorningWidget key={widget.id} data={data.sundayMorning} />
+                <KpiCallingFillRateWidget
+                  key={widget.id}
+                  data={data.kpiCallingFillRate}
+                />
               );
-            case "action_inbox":
+            case "kpi_meeting_readiness":
               return (
-                <ActionInboxWidget key={widget.id} data={data.actionInbox} />
+                <KpiMeetingReadinessWidget
+                  key={widget.id}
+                  data={data.kpiMeetingReadiness}
+                />
               );
-            case "organizational_pulse":
+            case "kpi_active_discussions":
               return (
-                <OrgPulseWidget key={widget.id} data={data.organizationalPulse} />
+                <KpiActiveDiscussionsWidget
+                  key={widget.id}
+                  data={data.kpiActiveDiscussions}
+                />
               );
+            default:
+              return null;
           }
         })}
+    </div>
+  );
+
+  // Mobile: KPI 2-col + stacked content, no DnD
+  if (isMobile) {
+    const allContent = getColumnWidgets(0);
+    return (
+      <div>
+        {kpiRow}
+        <div className="space-y-4">
+          {allContent.map((widget) => (
+            <div key={widget.id}>
+              {renderContentWidget(widget.type, data)}
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
 
-  // Desktop: multi-column DnD grid
+  // Desktop: KPI row + 2-column DnD content grid
   return (
-    <DndContext
-      sensors={sensors}
-      collisionDetection={closestCenter}
-      onDragStart={handleDragStart}
-      onDragOver={handleDragOver}
-      onDragEnd={handleDragEnd}
-      accessibility={{
-        announcements: {
-          onDragStart({ active }) {
-            return `Picked up widget ${active.id}`;
+    <div>
+      {kpiRow}
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragStart={handleDragStart}
+        onDragOver={handleDragOver}
+        onDragEnd={handleDragEnd}
+        accessibility={{
+          announcements: {
+            onDragStart({ active }) {
+              return `Picked up widget ${active.id}`;
+            },
+            onDragOver({ active, over }) {
+              if (over) return `Widget ${active.id} is over ${over.id}`;
+              return `Widget ${active.id} is no longer over a droppable area`;
+            },
+            onDragEnd({ active, over }) {
+              if (over) return `Widget ${active.id} was dropped on ${over.id}`;
+              return `Widget ${active.id} was dropped`;
+            },
+            onDragCancel({ active }) {
+              return `Dragging widget ${active.id} was cancelled`;
+            },
           },
-          onDragOver({ active, over }) {
-            if (over) return `Widget ${active.id} is over ${over.id}`;
-            return `Widget ${active.id} is no longer over a droppable area`;
-          },
-          onDragEnd({ active, over }) {
-            if (over) return `Widget ${active.id} was dropped on ${over.id}`;
-            return `Widget ${active.id} was dropped`;
-          },
-          onDragCancel({ active }) {
-            return `Dragging widget ${active.id} was cancelled`;
-          },
-        },
-      }}
-    >
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-6">
-        <DroppableColumn
-          columnId="column-0"
-          widgets={getColumnWidgets(0)}
-          data={data}
-        />
-        <DroppableColumn
-          columnId="column-1"
-          widgets={getColumnWidgets(1)}
-          data={data}
-        />
-      </div>
+        }}
+      >
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <DroppableColumn
+            columnId="column-0"
+            widgets={getColumnWidgets(0)}
+            data={data}
+          />
+          <DroppableColumn
+            columnId="column-1"
+            widgets={getColumnWidgets(1)}
+            data={data}
+          />
+        </div>
 
-      <DragOverlay dropAnimation={null}>
-        {activeWidget && (
-          <div className="opacity-90 max-w-md">
-            <WidgetOverlay widgetType={activeWidget.type} data={data} />
-          </div>
-        )}
-      </DragOverlay>
-    </DndContext>
+        <DragOverlay dropAnimation={null}>
+          {activeWidget && !activeWidget.isKpi && (
+            <div className="opacity-90 max-w-md">
+              {renderContentWidget(activeWidget.type, data)}
+            </div>
+          )}
+        </DragOverlay>
+      </DndContext>
+    </div>
   );
 }

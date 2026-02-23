@@ -282,6 +282,7 @@ export type Database = {
           role_title: string | null;
           feature_interests: string[] | null;
           feature_tier: FeatureTier | null;
+          last_read_release_note_at: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -295,6 +296,7 @@ export type Database = {
           role_title?: string | null;
           feature_interests?: string[] | null;
           feature_tier?: FeatureTier | null;
+          last_read_release_note_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -308,6 +310,7 @@ export type Database = {
           role_title?: string | null;
           feature_interests?: string[] | null;
           feature_tier?: FeatureTier | null;
+          last_read_release_note_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -483,6 +486,11 @@ export type Database = {
           created_by: string | null;
           created_at: string;
           updated_at: string;
+          presiding_name: string | null;
+          conducting_name: string | null;
+          chorister_name: string | null;
+          organist_name: string | null;
+          attendance_count: number | null;
         };
         Insert: {
           id?: string;
@@ -499,6 +507,11 @@ export type Database = {
           created_by?: string | null;
           created_at?: string;
           updated_at?: string;
+          presiding_name?: string | null;
+          conducting_name?: string | null;
+          chorister_name?: string | null;
+          organist_name?: string | null;
+          attendance_count?: number | null;
         };
         Update: {
           id?: string;
@@ -515,6 +528,11 @@ export type Database = {
           created_by?: string | null;
           created_at?: string;
           updated_at?: string;
+          presiding_name?: string | null;
+          conducting_name?: string | null;
+          chorister_name?: string | null;
+          organist_name?: string | null;
+          attendance_count?: number | null;
         };
       };
       agenda_items: {
@@ -1442,6 +1460,41 @@ export type Database = {
           id?: string;
           calling_process_id?: string;
           content?: string;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      release_notes: {
+        Row: {
+          id: string;
+          title: string;
+          version: string | null;
+          content: unknown; // JSONB: ReleaseNoteItem[]
+          status: 'draft' | 'published';
+          published_at: string | null;
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          title: string;
+          version?: string | null;
+          content: unknown;
+          status?: 'draft' | 'published';
+          published_at?: string | null;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          title?: string;
+          version?: string | null;
+          content?: unknown;
+          status?: 'draft' | 'published';
+          published_at?: string | null;
           created_by?: string | null;
           created_at?: string;
           updated_at?: string;

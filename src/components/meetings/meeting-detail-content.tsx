@@ -70,6 +70,17 @@ export function MeetingDetailContent({
                             </h1>
                             <MeetingStatusBadge status={meeting.status} />
                         </div>
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
+                            {meeting.templates?.name && (
+                                <span>{meeting.templates.name}</span>
+                            )}
+                            {meeting.templates?.name && meeting.profiles?.full_name && (
+                                <span aria-hidden="true">·</span>
+                            )}
+                            {meeting.profiles?.full_name && (
+                                <span>{meeting.profiles.full_name}</span>
+                            )}
+                        </div>
                         <p className="text-muted-foreground flex items-center gap-2">
                             <CalendarDays className="w-4 h-4" />
                             {formatMeetingDateTime(meeting.scheduled_date)}
