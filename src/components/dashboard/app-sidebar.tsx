@@ -16,6 +16,13 @@ import {
   HandHeart,
   ClipboardList,
   Table2,
+  LayoutDashboard,
+  Briefcase,
+  Megaphone,
+  MessageSquare,
+  Mic,
+  UsersRound,
+  FileText,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { TooltipProvider } from "@/components/ui/tooltip"
@@ -39,7 +46,19 @@ const navSections: NavSection[] = [
     items: [
       { href: "/dashboard", icon: Home, label: "Dashboard" },
       { href: "/calendar", icon: Calendar, label: "Calendar" },
-      { href: "/meetings/overview", icon: CalendarDays, label: "Meetings" },
+      {
+        icon: CalendarDays,
+        label: "Meetings",
+        children: [
+          { href: "/meetings/overview", icon: LayoutDashboard, label: "Overview" },
+          { href: "/meetings/business", icon: Briefcase, label: "Business" },
+          { href: "/meetings/announcements", icon: Megaphone, label: "Announcements" },
+          { href: "/meetings/discussions", icon: MessageSquare, label: "Discussions" },
+          { href: "/meetings/speakers", icon: Mic, label: "Speakers" },
+          { href: "/meetings/participants", icon: UsersRound, label: "Participants" },
+          { href: "/meetings/templates", icon: FileText, label: "Templates" },
+        ]
+      },
       { href: "/tasks", icon: CheckSquare, label: "Tasks" },
       { href: "/callings", icon: HandHeart, label: "Callings" },
       { href: "/forms", icon: ClipboardList, label: "Forms" },

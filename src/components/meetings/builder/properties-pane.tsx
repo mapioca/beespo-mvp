@@ -51,7 +51,7 @@ export function PropertiesPane({
         <div className="h-full flex flex-col bg-muted/30 border-l overflow-y-auto">
             {/* Actions & Header */}
             <div className="sticky top-0 bg-background/95 backdrop-blur z-10 shrink-0 border-b">
-                <div className="p-3 flex gap-2">
+                <div className="h-14 px-3 flex items-center gap-2 border-b">
                     <Button
                         variant="outline"
                         className="flex-1 h-8 gap-1.5 text-xs font-medium rounded-lg border-zinc-200"
@@ -72,7 +72,7 @@ export function PropertiesPane({
                         {isCreating ? "Saving..." : "Create Meeting"}
                     </Button>
                 </div>
-                <div className="px-3 pb-2">
+                <div className="px-3 py-2.5 bg-muted/10">
                     <h2 className="font-semibold text-xs">Properties</h2>
                 </div>
             </div>

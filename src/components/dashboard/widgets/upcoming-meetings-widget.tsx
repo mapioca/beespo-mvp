@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { Calendar, ArrowRight, Plus } from "lucide-react";
+import { Calendar, ArrowRight, Plus, Sparkles } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import type { UpcomingMeetingsData, DragHandleProps } from "@/types/dashboard";
 import { WidgetCard } from "./widget-card";
 
@@ -24,17 +25,22 @@ export function UpcomingMeetingsWidget({
       isDragging={isDragging}
     >
       {data.meetings.length === 0 ? (
-        <div className="py-4 text-center">
-          <p className="text-sm text-muted-foreground mb-3">
-            No upcoming meetings
+        <div className="py-6 text-center">
+          <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-3">
+            <Sparkles className="h-5 w-5 text-primary" />
+          </div>
+          <h3 className="text-sm font-semibold text-gray-900 mb-1">
+            Plan Your Next Quarter
+          </h3>
+          <p className="text-xs text-muted-foreground mb-4">
+            You have no upcoming meetings scheduled. Create your first meeting to get started.
           </p>
-          <Link
-            href="/meetings/new"
-            className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:text-primary/80"
-          >
-            <Plus className="h-3.5 w-3.5" />
-            Schedule a meeting
-          </Link>
+          <Button asChild size="sm" className="w-full">
+            <Link href="/meetings/new">
+              <Plus className="h-3 w-3 mr-2" />
+              Schedule First Meeting
+            </Link>
+          </Button>
         </div>
       ) : (
         <div className="space-y-1">
