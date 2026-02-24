@@ -158,7 +158,7 @@ export function PropertiesPane({
                 {/* Metadata Settings */}
                 <div className="space-y-4 pt-4 border-t">
                     <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
-                        Leadership & Music
+                        Overview
                     </h3>
 
                     <div className="space-y-4">

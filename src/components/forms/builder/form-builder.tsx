@@ -17,6 +17,7 @@ import {
     verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { Plus, Type, AlignLeft, ChevronDown, Circle, CheckSquare } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -124,7 +125,7 @@ export function FormBuilder({
     return (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
             {/* Left Panel - Builder */}
-            <div className="space-y-6 overflow-auto">
+            <div className="flex flex-col space-y-6 overflow-hidden">
                 {/* Form Details */}
                 <Card>
                     <CardHeader>
@@ -177,7 +178,7 @@ export function FormBuilder({
                             </DropdownMenuContent>
                         </DropdownMenu>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className={cn("flex-1 overflow-auto bg-[radial-gradient(#60a5fa_1px,transparent_1px)] [background-size:16px_16px] rounded-b-lg")}>
                         {fields.length === 0 ? (
                             <div className="text-center py-8 text-muted-foreground border-2 border-dashed rounded-lg">
                                 <p className="text-sm">No fields yet</p>

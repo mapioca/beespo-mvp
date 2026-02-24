@@ -358,7 +358,7 @@ export function AgendaCanvas({
     const itemIds = items.map((item) => item.id);
 
     return (
-        <div className="flex flex-col h-full bg-muted/20">
+        <div className="flex flex-col h-full bg-muted/20 bg-[radial-gradient(#60a5fa_1px,transparent_1px)] [background-size:16px_16px]">
             {/* Header */}
             <div className="px-6 py-3 border-b bg-background flex items-center justify-between">
                 <h3 className="font-semibold text-sm">Agenda</h3>
@@ -372,8 +372,8 @@ export function AgendaCanvas({
                 <div
                     ref={setNodeRef}
                     className={cn(
-                        "p-4 lg:p-6 min-h-full bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px]",
-                        isOver && "bg-primary/5 [background-size:16px_16px]"
+                        "p-4 lg:p-6 min-h-full",
+                        isOver && "bg-primary/5"
                     )}
                 >
                     {items.length === 0 ? (

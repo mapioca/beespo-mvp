@@ -296,7 +296,7 @@ export function TemplateCanvas({
     const itemIds = items.map((item) => item.id);
 
     return (
-        <div className="flex flex-col h-full bg-muted/20">
+        <div className="flex flex-col h-full bg-muted/20 bg-[radial-gradient(#60a5fa_1px,transparent_1px)] [background-size:16px_16px]">
             {/* Header */}
             <div className="px-6 py-3 border-b border-border bg-background flex items-center justify-between">
                 <h3 className="font-semibold text-sm text-foreground">Template Agenda</h3>
