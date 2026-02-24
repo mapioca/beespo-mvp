@@ -4,13 +4,7 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import {
-    Accordion,
-    AccordionContent,
-    AccordionItem,
-    AccordionTrigger,
-} from "@/components/ui/accordion";
-import { Search, Layers, Puzzle, Plus } from "lucide-react";
+import { Search, Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { DraggableToolboxItem } from "./draggable-toolbox-item";
 import { ToolboxItem, ProceduralItemType, ItemConfig } from "./types";
@@ -24,7 +18,6 @@ interface ToolboxPaneProps {
 interface CategoryGroup {
     id: string;
     label: string;
-    icon: React.ReactNode;
     items: ToolboxItem[];
     showAddButton?: boolean;
 }
@@ -219,7 +212,7 @@ export function ToolboxPane({ onItemsLoaded, onAddItem }: ToolboxPaneProps) {
         }
     }, [isLoading, toolboxItems, onItemsLoaded]);
 
-    // Group items into 2 categories
+    // Group items into categories
     const categoryGroups = useMemo((): CategoryGroup[] => {
         const groups: CategoryGroup[] = [];
 
@@ -229,7 +222,6 @@ export function ToolboxPane({ onItemsLoaded, onAddItem }: ToolboxPaneProps) {
             groups.push({
                 id: "standard",
                 label: "Standard Items",
-                icon: <Layers className="h-4 w-4 text-blue-500" />,
                 items: standardItems,
             });
         }
@@ -239,7 +231,6 @@ export function ToolboxPane({ onItemsLoaded, onAddItem }: ToolboxPaneProps) {
         groups.push({
             id: "custom",
             label: "Custom Items",
-            icon: <Puzzle className="h-4 w-4 text-purple-500" />,
             items: customItems,
             showAddButton: true,
         });
@@ -296,56 +287,40 @@ export function ToolboxPane({ onItemsLoaded, onAddItem }: ToolboxPaneProps) {
                             No items found
                         </div>
                     ) : (
-                        <Accordion
-                            type="multiple"
-                            defaultValue={filteredGroups.map((g) => g.id)}
-                            className="space-y-1"
-                        >
+                        <div className="space-y-6">
                             {filteredGroups.map((group) => (
-                                <AccordionItem
-                                    key={group.id}
-                                    value={group.id}
-                                    className="border border-border rounded-md bg-card"
-                                >
-                                    <AccordionTrigger className="px-3 py-2 text-sm hover:no-underline text-foreground">
-                                        <div className="flex items-center gap-2 flex-1">
-                                            {group.icon}
-                                            <span>{group.label}</span>
-                                            <span className="text-xs text-muted-foreground">
-                                                ({group.items.length})
-                                            </span>
-                                        </div>
-                                    </AccordionTrigger>
-                                    <AccordionContent className="px-2 pb-2">
-                                        <div className="space-y-1.5">
-                                            {group.items.map((item) => (
-                                                <DraggableToolboxItem
-                                                    key={item.id}
-                                                    item={item}
-                                                    onAddItem={onAddItem}
-                                                />
-                                            ))}
-                                            {group.showAddButton && (
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    className="w-full mt-2 text-muted-foreground hover:text-foreground border-border hover:bg-accent hover:text-accent-foreground"
-                                                    onClick={() => setIsCreateDialogOpen(true)}
-                                                >
-                                                    <Plus className="h-3.5 w-3.5 mr-1.5" />
-                                                    New Item Type
-                                                </Button>
-                                            )}
-                                            {group.items.length === 0 && !group.showAddButton && (
-                                                <div className="text-xs text-muted-foreground text-center py-2">
-                                                    No items in this category
-                                                </div>
-                                            )}
-                                        </div>
-                                    </AccordionContent>
-                                </AccordionItem>
+                                <div key={group.id} className="space-y-3 px-1">
+                                    <h4 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider px-1">
+                                        {group.label}
+                                    </h4>
+                                    <div className="space-y-1.5">
+                                        {group.items.map((item) => (
+                                            <DraggableToolboxItem
+                                                key={item.id}
+                                                item={item}
+                                                onAddItem={onAddItem}
+                                            />
+                                        ))}
+                                        {group.showAddButton && (
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                className="w-full mt-2 text-muted-foreground hover:text-foreground border-border hover:bg-accent hover:text-accent-foreground"
+                                                onClick={() => setIsCreateDialogOpen(true)}
+                                            >
+                                                <Plus className="h-3.5 w-3.5 mr-1.5" />
+                                                New Item Type
+                                            </Button>
+                                        )}
+                                        {group.items.length === 0 && !group.showAddButton && (
+                                            <div className="text-xs text-muted-foreground text-center py-2">
+                                                No items in this category
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
                             ))}
-                        </Accordion>
+                        </div>
                     )}
                 </div>
             </ScrollArea>
