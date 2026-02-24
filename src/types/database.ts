@@ -491,6 +491,7 @@ export type Database = {
           chorister_name: string | null;
           organist_name: string | null;
           attendance_count: number | null;
+          markdown_agenda: string | null;
         };
         Insert: {
           id?: string;
@@ -512,6 +513,7 @@ export type Database = {
           chorister_name?: string | null;
           organist_name?: string | null;
           attendance_count?: number | null;
+          markdown_agenda?: string | null;
         };
         Update: {
           id?: string;
@@ -533,6 +535,7 @@ export type Database = {
           chorister_name?: string | null;
           organist_name?: string | null;
           attendance_count?: number | null;
+          markdown_agenda?: string | null;
         };
       };
       agenda_items: {

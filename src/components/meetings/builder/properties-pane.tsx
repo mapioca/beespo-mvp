@@ -25,6 +25,7 @@ import { Template } from "./types";
 interface PropertiesPaneProps {
     templates: Template[];
     onCreateMeeting: () => void;
+    onPreview: () => void;
     isCreating: boolean;
     isValid: boolean;
 }
@@ -32,6 +33,7 @@ interface PropertiesPaneProps {
 export function PropertiesPane({
     templates,
     onCreateMeeting,
+    onPreview,
     isCreating,
     isValid,
 }: PropertiesPaneProps) {
@@ -55,6 +57,9 @@ export function PropertiesPane({
                     <Button
                         variant="outline"
                         className="flex-1 h-8 gap-1.5 text-xs font-medium rounded-lg border-zinc-200"
+                        onClick={onPreview}
+                        disabled={!isValid}
+                        type="button"
                     >
                         <Play className="h-4 w-4" />
                         Preview

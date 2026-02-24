@@ -30,6 +30,9 @@ import {
     SpeakerSelection,
 } from "../unified-selector-modal";
 import { ValidationModal, ValidationItem, ValidationState } from "../validation-modal";
+import { PreviewModal } from "../preview-modal";
+import { generateMeetingMarkdown } from "@/lib/generate-meeting-markdown";
+import { saveMeetingMarkdown } from "@/lib/actions/meeting-actions";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -102,6 +105,11 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
     const [validationState, setValidationState] = useState<ValidationState>("validating");
     const [validationItems, setValidationItems] = useState<ValidationItem[]>([]);
     const [isCreating, setIsCreating] = useState(false);
+
+    // Preview state
+    const [previewModalOpen, setPreviewModalOpen] = useState(false);
+    const [previewMarkdown, setPreviewMarkdown] = useState("");
+    const [isGeneratingPreview, setIsGeneratingPreview] = useState(false);
 
     // DnD sensors
     const sensors = useSensors(
@@ -661,6 +669,34 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
         return items;
     }, [canvasItems]);
 
+    const handlePreview = useCallback(async () => {
+        const valid = await form.trigger();
+        if (!valid) {
+            toast.error("Please fix form errors before previewing");
+            return;
+        }
+
+        setPreviewModalOpen(true);
+        setIsGeneratingPreview(true);
+
+        // Small delay so the modal opens with spinner visible
+        setTimeout(() => {
+            const markdown = generateMeetingMarkdown({
+                title: form.getValues("title"),
+                date: form.getValues("date"),
+                time: form.getValues("time"),
+                presiding: form.getValues("presiding"),
+                conducting: form.getValues("conducting"),
+                chorister: form.getValues("chorister"),
+                pianistOrganist: form.getValues("pianistOrganist"),
+                canvasItems,
+            });
+
+            setPreviewMarkdown(markdown);
+            setIsGeneratingPreview(false);
+        }, 100);
+    }, [form, canvasItems]);
+
     const handleValidate = useCallback(() => {
         setValidationModalOpen(true);
         setValidationState("validating");
@@ -780,6 +816,17 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
                     return;
                 }
 
+                // Fire-and-forget: persist markdown agenda
+                const fallbackMarkdown = generateMeetingMarkdown({
+                    title, date: date!, time,
+                    presiding: form.getValues("presiding"),
+                    conducting: form.getValues("conducting"),
+                    chorister: form.getValues("chorister"),
+                    pianistOrganist: form.getValues("pianistOrganist"),
+                    canvasItems,
+                });
+                saveMeetingMarkdown(fallbackData, fallbackMarkdown).catch(() => {});
+
                 toast.success("Meeting created", { description: "Redirecting..." });
                 router.push(`/meetings/${fallbackData}`);
                 router.refresh();
@@ -798,6 +845,17 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
                 return;
             }
 
+            // Fire-and-forget: persist markdown agenda
+            const markdown = generateMeetingMarkdown({
+                title, date: date!, time,
+                presiding: form.getValues("presiding"),
+                conducting: form.getValues("conducting"),
+                chorister: form.getValues("chorister"),
+                pianistOrganist: form.getValues("pianistOrganist"),
+                canvasItems,
+            });
+            saveMeetingMarkdown(data, markdown).catch(() => {});
+
             toast.success("Meeting created", { description: "Redirecting..." });
             router.push(`/meetings/${data}`);
             router.refresh();
@@ -813,7 +871,7 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
         } finally {
             setIsCreating(false);
         }
-    }, [canvasItems, date, time, title, selectedTemplateId, router]);
+    }, [canvasItems, date, time, title, selectedTemplateId, router, form]);
 
     const isValid = title.trim() !== "" && date !== undefined;
     const selectedSpeakerIds = canvasItems
@@ -860,6 +918,7 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
                                     <PropertiesPane
                                         templates={templates}
                                         onCreateMeeting={handleValidate}
+                                        onPreview={handlePreview}
                                         isCreating={isCreating}
                                         isValid={isValid}
                                     />
@@ -895,6 +954,7 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
                                 <PropertiesPane
                                     templates={templates}
                                     onCreateMeeting={handleValidate}
+                                    onPreview={handlePreview}
                                     isCreating={isCreating}
                                     isValid={isValid}
                                 />
@@ -932,6 +992,14 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
                         onSelectBusiness={(biz) => handleAddToContainer(biz, "business")}
                         onSelectAnnouncement={(ann) => handleAddToContainer(ann, "announcement")}
                         selectedSpeakerIdsInMeeting={selectedSpeakerIds}
+                    />
+
+                    {/* Preview Modal */}
+                    <PreviewModal
+                        open={previewModalOpen}
+                        onClose={() => setPreviewModalOpen(false)}
+                        markdown={previewMarkdown}
+                        isLoading={isGeneratingPreview}
                     />
 
                     {/* Validation Modal */}
