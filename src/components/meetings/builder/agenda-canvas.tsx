@@ -10,7 +10,6 @@ import { CSS } from "@dnd-kit/utilities";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
-    GripVertical,
     Music,
     BookOpen,
     MessageSquare,
@@ -137,8 +136,10 @@ function SortableAgendaRow({
             <div
                 ref={setNodeRef}
                 style={style}
+                {...attributes}
+                {...listeners}
                 className={cn(
-                    "rounded-md border-2 transition-all",
+                    "rounded-md border-2 transition-all cursor-grab active:cursor-grabbing touch-none",
                     colors.bg,
                     colors.border,
                     isDragging && "opacity-50 shadow-lg ring-2 ring-primary/40"
@@ -146,13 +147,6 @@ function SortableAgendaRow({
             >
                 {/* Container Header */}
                 <div className="flex items-center gap-2 p-3">
-                    <div
-                        {...attributes}
-                        {...listeners}
-                        className="cursor-grab active:cursor-grabbing touch-none"
-                    >
-                        <GripVertical className="h-4 w-4 text-muted-foreground/50" />
-                    </div>
 
                     <button
                         onClick={onToggleExpand}
@@ -255,19 +249,14 @@ function SortableAgendaRow({
         <div
             ref={setNodeRef}
             style={style}
+            {...attributes}
+            {...listeners}
             className={cn(
-                "flex items-center gap-2 p-2.5 border rounded-md bg-card transition-all group",
+                "flex items-center gap-2 p-2.5 border rounded-md bg-card transition-all group cursor-grab active:cursor-grabbing touch-none",
                 "hover:border-muted-foreground/30",
                 isDragging && "opacity-50 shadow-lg ring-2 ring-primary/40"
             )}
         >
-            <div
-                {...attributes}
-                {...listeners}
-                className="cursor-grab active:cursor-grabbing touch-none"
-            >
-                <GripVertical className="h-4 w-4 text-muted-foreground/50" />
-            </div>
 
             {getCanvasItemIcon(item)}
 

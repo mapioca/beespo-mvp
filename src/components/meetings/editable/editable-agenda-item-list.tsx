@@ -10,7 +10,6 @@ import {
     Clock,
     Music,
     User,
-    GripVertical,
     Trash2,
     MoreVertical,
     Plus,
@@ -340,24 +339,15 @@ function SortableAgendaRow({
         <div
             ref={setNodeRef}
             style={style}
+            {...attributes}
+            {...listeners}
             className={cn(
-                "flex gap-2 p-4 rounded-lg border bg-card transition-all",
+                "flex gap-3 p-3 rounded-lg border bg-card transition-all cursor-grab active:cursor-grabbing touch-none",
                 item.is_completed && "bg-muted/50 opacity-80",
                 isUpdating && "ring-2 ring-primary/20",
                 isDragging && "opacity-50 shadow-lg ring-2 ring-primary/40"
             )}
         >
-            {/* Drag Handle */}
-            {isEditable && (
-                <div
-                    {...attributes}
-                    {...listeners}
-                    className="flex-none pt-1 cursor-grab active:cursor-grabbing touch-none"
-                >
-                    <GripVertical className="w-5 h-5 text-muted-foreground/50 hover:text-muted-foreground" />
-                </div>
-            )}
-
             {/* Order Number */}
             <div className="flex-none pt-1">
                 <div className="flex items-center justify-center w-6 h-6 rounded-full bg-muted text-xs font-medium text-muted-foreground">
@@ -1111,13 +1101,13 @@ export function EditableAgendaItemList({
                                                 const isBusinessItem = !!childItem.business_item_id && !!childItem.business_category;
                                                 const conductingScript = isBusinessItem
                                                     ? generateBusinessScript({
-                                                          person_name: childItem.person_name || childItem.title.split(" - ")[0] || "",
-                                                          position_calling: childItem.position_calling || null,
-                                                          category: childItem.business_category || "other",
-                                                          notes: childItem.description || null,
-                                                          // Cast to correct type since it comes from JSONB
-                                                          details: childItem.business_details as Parameters<typeof generateBusinessScript>[0]["details"],
-                                                      })
+                                                        person_name: childItem.person_name || childItem.title.split(" - ")[0] || "",
+                                                        position_calling: childItem.position_calling || null,
+                                                        category: childItem.business_category || "other",
+                                                        notes: childItem.description || null,
+                                                        // Cast to correct type since it comes from JSONB
+                                                        details: childItem.business_details as Parameters<typeof generateBusinessScript>[0]["details"],
+                                                    })
                                                     : null;
 
                                                 return (

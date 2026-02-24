@@ -9,7 +9,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import {
     Plus,
     Trash2,
-    GripVertical,
     Music,
     BookOpen,
     MessageSquare,
@@ -789,10 +788,8 @@ export function MeetingComposer({
                                         // Regular item (Procedural, Speaker)
                                         <div
                                             key={item.id}
-                                            className="flex items-center gap-2 p-3 border rounded-lg bg-card hover:bg-accent/30 transition-colors group"
+                                            className="flex items-center gap-3 p-3 border rounded-lg bg-card hover:bg-accent/30 transition-colors group"
                                         >
-                                            <GripVertical className="h-4 w-4 text-muted-foreground cursor-grab" />
-
                                             <div className="shrink-0">
                                                 {getCategoryIcon(item.category, item.is_hymn)}
                                             </div>

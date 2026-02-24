@@ -3,7 +3,6 @@
 import { useDraggable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import {
-    GripVertical,
     Music,
     BookOpen,
     MessageSquare,
@@ -29,27 +28,27 @@ const getCategoryIcon = (item: ToolboxItem) => {
     if (item.is_custom) {
         // But if they have specific config, show appropriate icon
         if (item.config?.requires_resource) {
-            return <Music className="h-4 w-4 text-purple-500" />;
+            return <Music className="h-4 w-4" />;
         }
         if (item.config?.requires_assignee) {
-            return <User className="h-4 w-4 text-purple-500" />;
+            return <User className="h-4 w-4" />;
         }
-        return <Puzzle className="h-4 w-4 text-purple-500" />;
+        return <Puzzle className="h-4 w-4" />;
     }
 
     // Core items
     if (item.is_hymn || item.config?.requires_resource) {
-        return <Music className="h-4 w-4 text-blue-500" />;
+        return <Music className="h-4 w-4" />;
     }
 
     const icons: Record<CategoryType, React.ReactNode> = {
-        procedural: <BookOpen className="h-4 w-4 text-slate-500" />,
-        discussion: <MessageSquare className="h-4 w-4 text-green-500" />,
-        business: <Briefcase className="h-4 w-4 text-purple-500" />,
-        announcement: <Megaphone className="h-4 w-4 text-orange-500" />,
-        speaker: <User className="h-4 w-4 text-pink-500" />,
+        procedural: <BookOpen className="h-4 w-4" />,
+        discussion: <MessageSquare className="h-4 w-4" />,
+        business: <Briefcase className="h-4 w-4" />,
+        announcement: <Megaphone className="h-4 w-4" />,
+        speaker: <User className="h-4 w-4" />,
     };
-    return icons[item.category] || <Layers className="h-4 w-4 text-blue-500" />;
+    return icons[item.category] || <Layers className="h-4 w-4" />;
 };
 
 export function DraggableToolboxItem({ item, disabled, onAddItem }: DraggableToolboxItemProps) {
@@ -81,14 +80,13 @@ export function DraggableToolboxItem({ item, disabled, onAddItem }: DraggableToo
             {...attributes}
             {...listeners}
             className={cn(
-                "group flex items-start gap-3 p-3 bg-card border border-border rounded-md",
+                "group flex items-start gap-3 p-2 bg-card border border-border rounded-md",
                 "hover:border-primary/50 hover:bg-accent/50 transition-all cursor-grab active:cursor-grabbing relative",
                 isDragging && "opacity-50 shadow-lg ring-2 ring-primary/40 z-50",
                 disabled && "opacity-50 cursor-not-allowed"
             )}
         >
-            <div className="flex items-center gap-2 mt-0.5 shrink-0 text-muted-foreground">
-                <GripVertical className="h-4 w-4 opacity-50" />
+            <div className="flex items-center justify-center shrink-0 w-8 h-8 rounded-md bg-muted text-foreground border border-border/50">
                 {getCategoryIcon(item)}
             </div>
 
@@ -125,17 +123,16 @@ export function DraggableToolboxItem({ item, disabled, onAddItem }: DraggableToo
 // Overlay component for drag preview
 export function ToolboxItemDragOverlay({ item }: { item: ToolboxItem }) {
     return (
-        <div className="flex items-start gap-3 p-3 bg-card border-2 border-primary rounded-md shadow-lg text-foreground w-[300px]">
-            <div className="flex items-center gap-2 mt-0.5 shrink-0 text-muted-foreground">
-                <GripVertical className="h-4 w-4 opacity-50" />
+        <div className="flex items-start gap-3 p-2 bg-card border rounded-md shadow-lg text-foreground w-[300px]">
+            <div className="flex items-center justify-center shrink-0 w-8 h-8 rounded-md bg-muted text-foreground border border-border/50">
                 {getCategoryIcon(item)}
             </div>
             <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium truncate">{item.title}</span>
+                <div className="flex items-center gap-2 mt-1">
+                    <span className="text-sm font-medium truncate leading-none">{item.title}</span>
                 </div>
                 {item.description && (
-                    <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
+                    <p className="text-xs text-muted-foreground line-clamp-1 mt-1">
                         {item.description}
                     </p>
                 )}

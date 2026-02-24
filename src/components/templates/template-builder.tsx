@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { GripVertical, Trash2, Music, BookOpen, MessageSquare, Briefcase, Megaphone, User } from "lucide-react";
+import { Trash2, Music, BookOpen, MessageSquare, Briefcase, Megaphone, User } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { TemplateItem } from "./types";
 import { AddTemplateItemDialog, NewItemData } from "./add-template-item-dialog";
@@ -68,18 +68,13 @@ function SortableTemplateItem({
         <div
             ref={setNodeRef}
             style={style}
+            {...attributes}
+            {...listeners}
             className={cn(
-                "flex gap-4 p-4 border rounded-lg bg-card group hover:border-sidebar-accent transition-all relative",
+                "flex gap-4 p-4 border rounded-lg bg-card group hover:border-sidebar-accent transition-all relative cursor-grab active:cursor-grabbing touch-none",
                 isDragging && "opacity-50 shadow-lg ring-2 ring-primary/40 z-50"
             )}
         >
-            <div
-                {...attributes}
-                {...listeners}
-                className="flex items-center pt-2 cursor-grab active:cursor-grabbing touch-none"
-            >
-                <GripVertical className="h-5 w-5 text-muted-foreground" />
-            </div>
             <div className="flex-1 space-y-3">
                 <div className="flex gap-3 items-start">
                     <div className="flex-1 space-y-2">
