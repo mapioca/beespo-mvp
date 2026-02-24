@@ -2,7 +2,7 @@
 
 import { useFormContext } from "react-hook-form";
 import { format } from "date-fns";
-import { CalendarIcon, Clock, Loader2 } from "lucide-react";
+import { CalendarIcon, Clock, Loader2, Play, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -49,27 +49,31 @@ export function PropertiesPane({
 
     return (
         <div className="h-full flex flex-col bg-muted/30 border-l overflow-y-auto">
-            {/* Header / Actions */}
-            <div className="p-4 border-b flex items-center justify-between sticky top-0 bg-background/95 backdrop-blur z-10 shrink-0">
-                <h2 className="font-semibold">Properties</h2>
-                <div className="flex gap-2">
-                    <Button variant="outline" size="sm" className="hidden 2xl:flex">
+            {/* Actions & Header */}
+            <div className="sticky top-0 bg-background/95 backdrop-blur z-10 shrink-0 border-b">
+                <div className="p-4 flex gap-2">
+                    <Button
+                        variant="outline"
+                        className="flex-1 h-10 gap-2 text-sm font-medium rounded-xl border-zinc-200"
+                    >
+                        <Play className="h-4 w-4" />
                         Preview
                     </Button>
                     <Button
-                        size="sm"
+                        className="flex-1 h-10 gap-2 bg-zinc-900 text-white hover:bg-zinc-800 text-sm font-medium rounded-xl"
                         onClick={onCreateMeeting}
                         disabled={isCreating || !isValid}
                     >
                         {isCreating ? (
-                            <>
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                Save
-                            </>
+                            <Loader2 className="h-4 w-4 animate-spin text-white" />
                         ) : (
-                            "Create Meeting"
+                            <Plus className="h-4 w-4" />
                         )}
+                        {isCreating ? "Saving..." : "Create Meeting"}
                     </Button>
+                </div>
+                <div className="px-4 pb-3">
+                    <h2 className="font-semibold text-sm">Properties</h2>
                 </div>
             </div>
 

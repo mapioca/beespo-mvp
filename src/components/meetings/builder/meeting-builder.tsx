@@ -815,7 +815,7 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
         }
     }, [canvasItems, date, time, title, selectedTemplateId, router]);
 
-    const isValid = title.trim() !== "" && date !== undefined && canvasItems.length > 0;
+    const isValid = title.trim() !== "" && date !== undefined;
     const selectedSpeakerIds = canvasItems
         .filter((i) => i.speaker_id)
         .map((i) => i.speaker_id as string);

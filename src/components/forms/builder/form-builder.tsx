@@ -125,7 +125,7 @@ export function FormBuilder({
     return (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
             {/* Left Panel - Builder */}
-            <div className="flex flex-col space-y-6 overflow-hidden">
+            <div className="flex flex-col space-y-6 overflow-hidden h-full">
                 {/* Form Details */}
                 <Card>
                     <CardHeader>
@@ -155,7 +155,7 @@ export function FormBuilder({
                 </Card>
 
                 {/* Fields List */}
-                <Card>
+                <Card className="flex-1 flex flex-col overflow-hidden">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
                         <CardTitle className="text-lg">Fields</CardTitle>
                         <DropdownMenu>
