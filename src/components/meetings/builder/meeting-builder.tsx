@@ -584,14 +584,14 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
         canvasItems.forEach((item) => {
             if (item.is_hymn && !item.hymn_id) {
                 items.push({
-                    id: item.id,
+                    id: `${item.id}-hymn`,
                     title: item.title,
                     status: "warning",
                     message: "Hymn not specified",
                 });
             } else if (item.is_hymn && item.hymn_id) {
                 items.push({
-                    id: item.id,
+                    id: `${item.id}-hymn`,
                     title: item.hymn_title || item.title,
                     status: "success",
                 });
@@ -599,14 +599,14 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
 
             if (item.requires_participant && !item.participant_id) {
                 items.push({
-                    id: item.id,
+                    id: `${item.id}-participant`,
                     title: item.title,
                     status: "warning",
                     message: "Participant not assigned",
                 });
             } else if (item.requires_participant && item.participant_id) {
                 items.push({
-                    id: item.id,
+                    id: `${item.id}-participant`,
                     title: `${item.title} - ${item.participant_name}`,
                     status: "success",
                 });
@@ -614,14 +614,14 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
 
             if (item.category === "speaker" && !item.speaker_id) {
                 items.push({
-                    id: item.id,
+                    id: `${item.id}-speaker`,
                     title: item.title,
                     status: "warning",
                     message: "Speaker not assigned",
                 });
             } else if (item.category === "speaker" && item.speaker_id) {
                 items.push({
-                    id: item.id,
+                    id: `${item.id}-speaker`,
                     title: `${item.title} - ${item.speaker_name}`,
                     status: "success",
                 });
@@ -631,14 +631,14 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
                 const childCount = item.childItems?.length || 0;
                 if (childCount === 0) {
                     items.push({
-                        id: item.id,
+                        id: `${item.id}-container`,
                         title: item.title,
                         status: "warning",
                         message: "No items selected (placeholder will be saved)",
                     });
                 } else {
                     items.push({
-                        id: item.id,
+                        id: `${item.id}-container`,
                         title: `${item.title} (${childCount} item${childCount !== 1 ? "s" : ""})`,
                         status: "success",
                     });
@@ -651,7 +651,7 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
                 !item.requires_participant
             ) {
                 items.push({
-                    id: item.id,
+                    id: `${item.id}-procedural`,
                     title: item.title,
                     status: "success",
                 });

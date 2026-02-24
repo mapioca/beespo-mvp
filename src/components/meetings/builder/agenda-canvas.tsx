@@ -150,6 +150,7 @@ function SortableAgendaRow({
                 <div className="flex items-center gap-2 p-1.5">
 
                     <button
+                        type="button"
                         onClick={onToggleExpand}
                         className="p-1 hover:bg-muted rounded-md transition-colors"
                     >
@@ -175,6 +176,7 @@ function SortableAgendaRow({
                     </span>
 
                     <Button
+                        type="button"
                         variant="ghost"
                         size="icon"
                         className="h-7 w-7 shrink-0 ml-1 hover:bg-muted"
@@ -184,6 +186,7 @@ function SortableAgendaRow({
                     </Button>
 
                     <Button
+                        type="button"
                         variant="ghost"
                         size="icon"
                         className="h-7 w-7 shrink-0 text-destructive hover:text-destructive hover:bg-destructive/10"
@@ -209,6 +212,7 @@ function SortableAgendaRow({
                                         </span>
                                     )}
                                     <Button
+                                        type="button"
                                         variant="ghost"
                                         size="icon"
                                         className="h-6 w-6 shrink-0 text-muted-foreground hover:text-destructive"
@@ -227,6 +231,7 @@ function SortableAgendaRow({
                     <div className="px-3 pb-3 pt-0">
                         <div className="pl-6">
                             <button
+                                type="button"
                                 onClick={onAddToContainer}
                                 className={cn(
                                     "w-full py-2 px-3 border-2 border-dashed rounded-md text-sm",
@@ -251,88 +256,93 @@ function SortableAgendaRow({
             {...attributes}
             {...listeners}
             className={cn(
-                "flex items-center gap-2 p-1.5 border rounded-md bg-card transition-all group cursor-grab active:cursor-grabbing touch-none",
+                "flex flex-col border rounded-md bg-card transition-all group cursor-grab active:cursor-grabbing touch-none",
                 "hover:border-muted-foreground/30",
                 isDragging && "opacity-50 shadow-lg ring-2 ring-primary/40"
             )}
         >
+            {/* Header row: Icon, Title, Duration, Actions */}
+            <div className="flex items-center gap-2 p-1.5">
+                {getCanvasItemIcon(item)}
+                <span className="font-medium text-sm flex-1 truncate text-foreground">{item.title}</span>
 
-            {getCanvasItemIcon(item)}
+                <span className="text-xs text-muted-foreground shrink-0">
+                    {item.duration_minutes}m
+                </span>
 
-            <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                    <span className="font-medium text-sm truncate">{item.title}</span>
-                </div>
-
-                {/* Hymn selector - always show for hymn items */}
-                {item.is_hymn && (
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        className={cn(
-                            "h-6 text-xs mt-1 p-0",
-                            item.hymn_title
-                                ? "text-blue-600"
-                                : "text-blue-500 hover:text-blue-700"
-                        )}
-                        onClick={onSelectHymn}
-                    >
-                        <Music className="h-3 w-3 mr-1" />
-                        {item.hymn_title
-                            ? `#${item.hymn_number} ${item.hymn_title}`
-                            : "Select Hymn"}
-                    </Button>
-                )}
-
-                {/* Participant selector - always show for participant items */}
-                {(item.requires_participant || item.config?.requires_assignee) && !item.is_hymn && item.category !== "speaker" && (
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        className={cn(
-                            "h-6 text-xs mt-1 p-0",
-                            item.participant_name
-                                ? "text-slate-600"
-                                : "text-slate-500 hover:text-slate-700"
-                        )}
-                        onClick={onSelectParticipant}
-                    >
-                        <UserPlus className="h-3 w-3 mr-1" />
-                        {item.participant_name || "Select Person"}
-                    </Button>
-                )}
-
-                {/* Speaker selector - always show for speaker items */}
-                {item.category === "speaker" && (
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        className={cn(
-                            "h-6 text-xs mt-1 p-0",
-                            item.speaker_name
-                                ? "text-indigo-600"
-                                : "text-indigo-500 hover:text-indigo-700"
-                        )}
-                        onClick={onSelectSpeaker}
-                    >
-                        <Mic className="h-3 w-3 mr-1" />
-                        {item.speaker_name || "Select Speaker"}
-                    </Button>
-                )}
+                <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive hover:bg-destructive/10"
+                    onClick={onRemove}
+                >
+                    <Trash2 className="h-4 w-4" />
+                </Button>
             </div>
 
-            <span className="text-xs text-muted-foreground shrink-0">
-                {item.duration_minutes}m
-            </span>
+            {/* Body: Selector Button */}
+            {(item.is_hymn || item.requires_participant || item.config?.requires_assignee || item.category === "speaker") && (
+                <div className="px-3 pb-3 pt-0">
+                    <div className="pl-6">
+                        {/* Hymn selector - always show for hymn items */}
+                        {item.is_hymn && (
+                            <button
+                                type="button"
+                                className={cn(
+                                    "w-full py-1.5 px-3 border-2 border-dashed rounded-md text-xs flex items-center justify-center gap-2 transition-all",
+                                    "hover:border-solid hover:bg-muted/50 border-muted-foreground/20 text-muted-foreground",
+                                    item.hymn_title && "border-solid bg-blue-50/50 border-blue-200 text-blue-700 font-medium"
+                                )}
+                                onClick={onSelectHymn}
+                            >
+                                <Music className={cn("h-3.5 w-3.5", item.hymn_title ? "text-blue-600" : "text-muted-foreground")} />
+                                <span className="truncate">
+                                    {item.hymn_title
+                                        ? `#${item.hymn_number} ${item.hymn_title}`
+                                        : "Select Hymn"}
+                                </span>
+                            </button>
+                        )}
 
-            <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive"
-                onClick={onRemove}
-            >
-                <Trash2 className="h-4 w-4" />
-            </Button>
+                        {/* Participant selector - always show for participant items */}
+                        {(item.requires_participant || item.config?.requires_assignee) && !item.is_hymn && item.category !== "speaker" && (
+                            <button
+                                type="button"
+                                className={cn(
+                                    "w-full py-1.5 px-3 border-2 border-dashed rounded-md text-xs flex items-center justify-center gap-2 transition-all",
+                                    "hover:border-solid hover:bg-muted/50 border-muted-foreground/20 text-muted-foreground",
+                                    item.participant_name && "border-solid bg-slate-50/50 border-slate-200 text-slate-700 font-medium"
+                                )}
+                                onClick={onSelectParticipant}
+                            >
+                                <UserPlus className={cn("h-3.5 w-3.5", item.participant_name ? "text-slate-600" : "text-muted-foreground")} />
+                                <span className="truncate">
+                                    {item.participant_name || "Select Participant"}
+                                </span>
+                            </button>
+                        )}
+
+                        {/* Speaker selector - always show for speaker items */}
+                        {item.category === "speaker" && (
+                            <button
+                                type="button"
+                                className={cn(
+                                    "w-full py-1.5 px-3 border-2 border-dashed rounded-md text-xs flex items-center justify-center gap-2 transition-all",
+                                    "hover:border-solid hover:bg-muted/50 border-muted-foreground/20 text-muted-foreground",
+                                    item.speaker_name && "border-solid bg-indigo-50/50 border-indigo-200 text-indigo-700 font-medium"
+                                )}
+                                onClick={onSelectSpeaker}
+                            >
+                                <Mic className={cn("h-3.5 w-3.5", item.speaker_name ? "text-indigo-600" : "text-muted-foreground")} />
+                                <span className="truncate">
+                                    {item.speaker_name || "Select Speaker"}
+                                </span>
+                            </button>
+                        )}
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
