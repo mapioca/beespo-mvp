@@ -124,13 +124,21 @@ export function PropertiesPane({
                     <div className="space-y-1.5">
                         <Label htmlFor="time" className="text-xs">Time</Label>
                         <div className="relative">
-                            <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <div
+                                className="absolute left-0 top-0 bottom-0 flex items-center justify-center w-9 cursor-pointer z-10"
+                                onClick={() => {
+                                    const timeInput = document.getElementById("time") as HTMLInputElement;
+                                    timeInput?.showPicker?.();
+                                }}
+                            >
+                                <Clock className="h-4 w-4 text-muted-foreground" />
+                            </div>
                             <Input
                                 id="time"
                                 type="time"
                                 value={time}
                                 onChange={(e) => setValue("time", e.target.value, { shouldValidate: true })}
-                                className="pl-9 bg-background h-8 text-sm"
+                                className="pl-9 bg-background h-8 text-sm [&::-webkit-calendar-picker-indicator]:hidden relative z-0"
                             />
                         </div>
                     </div>
@@ -146,7 +154,7 @@ export function PropertiesPane({
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="none">
-                                    <span className="text-muted-foreground">Blank Agenda</span>
+                                    <span className="text-muted-foreground">No Template</span>
                                 </SelectItem>
                                 {templates.map((t) => (
                                     <SelectItem key={t.id} value={t.id}>
