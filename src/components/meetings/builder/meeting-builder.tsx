@@ -62,7 +62,7 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
     const form = useForm<MeetingFormValues>({
         resolver: zodResolver(meetingFormSchema),
         defaultValues: {
-            title: "",
+            title: "Untitled Meeting Agenda",
             date: new Date(),
             time: "07:00",
             templateId: initialTemplateId || null,
@@ -870,7 +870,7 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
                         {/* 3-Column Workspace */}
                         <div className="flex-1 flex overflow-hidden">
                             {/* Left Pane - Library */}
-                            <div className="hidden lg:block w-72 h-full overflow-hidden border-r shrink-0">
+                            <div className="hidden lg:block w-64 h-full overflow-hidden border-r shrink-0">
                                 <ToolboxPane onAddItem={handleAddCanvasItem} />
                             </div>
 
@@ -891,7 +891,7 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
                             </div>
 
                             {/* Right Pane - Properties */}
-                            <div className="hidden lg:block w-80 h-full overflow-hidden border-l shrink-0">
+                            <div className="hidden lg:block w-[280px] h-full overflow-hidden border-l shrink-0">
                                 <PropertiesPane
                                     templates={templates}
                                     onCreateMeeting={handleValidate}

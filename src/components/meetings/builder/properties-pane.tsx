@@ -51,16 +51,16 @@ export function PropertiesPane({
         <div className="h-full flex flex-col bg-muted/30 border-l overflow-y-auto">
             {/* Actions & Header */}
             <div className="sticky top-0 bg-background/95 backdrop-blur z-10 shrink-0 border-b">
-                <div className="p-4 flex gap-2">
+                <div className="p-3 flex gap-2">
                     <Button
                         variant="outline"
-                        className="flex-1 h-10 gap-2 text-sm font-medium rounded-xl border-zinc-200"
+                        className="flex-1 h-8 gap-1.5 text-xs font-medium rounded-lg border-zinc-200"
                     >
                         <Play className="h-4 w-4" />
                         Preview
                     </Button>
                     <Button
-                        className="flex-1 h-10 gap-2 bg-zinc-900 text-white hover:bg-zinc-800 text-sm font-medium rounded-xl"
+                        className="flex-1 h-8 gap-1.5 bg-zinc-900 text-white hover:bg-zinc-800 text-xs font-medium rounded-lg"
                         onClick={onCreateMeeting}
                         disabled={isCreating || !isValid}
                     >
@@ -72,38 +72,39 @@ export function PropertiesPane({
                         {isCreating ? "Saving..." : "Create Meeting"}
                     </Button>
                 </div>
-                <div className="px-4 pb-3">
-                    <h2 className="font-semibold text-sm">Properties</h2>
+                <div className="px-3 pb-2">
+                    <h2 className="font-semibold text-xs">Properties</h2>
                 </div>
             </div>
 
             {/* Scrollable Content */}
-            <div className="p-4 space-y-6 flex-1">
+            <div className="p-3 space-y-4 flex-1">
                 {/* General Settings */}
-                <div className="space-y-4">
-                    <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+                <div className="space-y-3">
+                    <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
                         General
                     </h3>
 
-                    <div className="space-y-2">
-                        <Label htmlFor="title">Meeting Name</Label>
+                    <div className="space-y-1.5">
+                        <Label htmlFor="title" className="text-xs">Meeting Name</Label>
                         <Input
                             id="title"
                             value={title}
                             onChange={(e) => setValue("title", e.target.value, { shouldValidate: true })}
+                            onFocus={(e) => e.target.select()}
                             placeholder="e.g. Ward Conference"
-                            className="bg-background"
+                            className="bg-background h-8 text-sm"
                         />
                     </div>
 
-                    <div className="space-y-2">
-                        <Label>Date</Label>
+                    <div className="space-y-1.5">
+                        <Label className="text-xs">Date</Label>
                         <Popover>
                             <PopoverTrigger asChild>
                                 <Button
                                     variant="outline"
                                     className={cn(
-                                        "w-full justify-start text-left font-normal bg-background",
+                                        "w-full justify-start text-left font-normal bg-background h-8 text-sm",
                                         !date && "text-muted-foreground"
                                     )}
                                 >
@@ -120,8 +121,8 @@ export function PropertiesPane({
                             </PopoverContent>
                         </Popover>
                     </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="time">Time</Label>
+                    <div className="space-y-1.5">
+                        <Label htmlFor="time" className="text-xs">Time</Label>
                         <div className="relative">
                             <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                             <Input
@@ -129,18 +130,18 @@ export function PropertiesPane({
                                 type="time"
                                 value={time}
                                 onChange={(e) => setValue("time", e.target.value, { shouldValidate: true })}
-                                className="pl-9 bg-background"
+                                className="pl-9 bg-background h-8 text-sm"
                             />
                         </div>
                     </div>
 
-                    <div className="space-y-2">
-                        <Label htmlFor="template">Template</Label>
+                    <div className="space-y-1.5">
+                        <Label htmlFor="template" className="text-xs">Template</Label>
                         <Select
                             value={selectedTemplateId}
                             onValueChange={(val) => setValue("templateId", val === "none" ? null : val, { shouldValidate: true })}
                         >
-                            <SelectTrigger id="template" className="bg-background">
+                            <SelectTrigger id="template" className="bg-background h-8 text-sm">
                                 <SelectValue placeholder="Select template" />
                             </SelectTrigger>
                             <SelectContent>
@@ -158,53 +159,53 @@ export function PropertiesPane({
                 </div>
 
                 {/* Metadata Settings */}
-                <div className="space-y-4 pt-4 border-t">
-                    <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+                <div className="space-y-3 pt-3 border-t">
+                    <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
                         Overview
                     </h3>
 
-                    <div className="space-y-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="presiding">Presiding</Label>
+                    <div className="space-y-3">
+                        <div className="space-y-1.5">
+                            <Label htmlFor="presiding" className="text-xs">Presiding</Label>
                             <Input
                                 id="presiding"
                                 value={presiding}
                                 onChange={(e) => setValue("presiding", e.target.value)}
                                 placeholder="e.g. Bishop Smith"
-                                className="bg-background"
+                                className="bg-background h-8 text-sm"
                             />
                         </div>
 
-                        <div className="space-y-2">
-                            <Label htmlFor="conducting">Conducting</Label>
+                        <div className="space-y-1.5">
+                            <Label htmlFor="conducting" className="text-xs">Conducting</Label>
                             <Input
                                 id="conducting"
                                 value={conducting}
                                 onChange={(e) => setValue("conducting", e.target.value)}
                                 placeholder="e.g. Brother Jones"
-                                className="bg-background"
+                                className="bg-background h-8 text-sm"
                             />
                         </div>
 
-                        <div className="space-y-2">
-                            <Label htmlFor="chorister">Chorister</Label>
+                        <div className="space-y-1.5">
+                            <Label htmlFor="chorister" className="text-xs">Chorister</Label>
                             <Input
                                 id="chorister"
                                 value={chorister}
                                 onChange={(e) => setValue("chorister", e.target.value)}
                                 placeholder="Name"
-                                className="bg-background"
+                                className="bg-background h-8 text-sm"
                             />
                         </div>
 
-                        <div className="space-y-2">
-                            <Label htmlFor="pianistOrganist">Pianist / Organist</Label>
+                        <div className="space-y-1.5">
+                            <Label htmlFor="pianistOrganist" className="text-xs">Pianist / Organist</Label>
                             <Input
                                 id="pianistOrganist"
                                 value={pianistOrganist}
                                 onChange={(e) => setValue("pianistOrganist", e.target.value)}
                                 placeholder="Name"
-                                className="bg-background"
+                                className="bg-background h-8 text-sm"
                             />
                         </div>
                     </div>

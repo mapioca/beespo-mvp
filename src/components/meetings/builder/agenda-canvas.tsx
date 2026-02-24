@@ -29,6 +29,7 @@ import { cn } from "@/lib/utils";
 import { CanvasItem } from "./types";
 import { CategoryType } from "../add-meeting-item-dialog";
 import { ContainerType } from "../container-agenda-item";
+import { useFormContext } from "react-hook-form";
 
 interface AgendaCanvasProps {
     items: CanvasItem[];
@@ -56,35 +57,35 @@ const getCanvasItemIcon = (item: CanvasItem) => {
     // Custom items get purple-themed icons
     if (isCustomItem(item)) {
         if (item.config?.requires_resource) {
-            return <Music className="h-4 w-4 text-purple-500" />;
+            return <Music className="h-4 w-4 text-violet-600" />;
         }
         if (item.config?.requires_assignee) {
-            return <User className="h-4 w-4 text-purple-500" />;
+            return <User className="h-4 w-4 text-violet-600" />;
         }
-        return <Puzzle className="h-4 w-4 text-purple-500" />;
+        return <Puzzle className="h-4 w-4 text-violet-600" />;
     }
 
     // Core/standard items - check for hymn
     if (item.is_hymn || item.config?.requires_resource) {
-        return <Music className="h-4 w-4 text-blue-500" />;
+        return <Music className="h-4 w-4 text-blue-600" />;
     }
 
     // Category-based icons
     const icons: Record<CategoryType, React.ReactNode> = {
         procedural: <BookOpen className="h-4 w-4 text-slate-500" />,
-        discussion: <MessageSquare className="h-4 w-4 text-green-500" />,
-        business: <Briefcase className="h-4 w-4 text-purple-500" />,
-        announcement: <Megaphone className="h-4 w-4 text-orange-500" />,
-        speaker: <User className="h-4 w-4 text-pink-500" />,
+        discussion: <MessageSquare className="h-4 w-4 text-cyan-600" />,
+        business: <Briefcase className="h-4 w-4 text-violet-600" />,
+        announcement: <Megaphone className="h-4 w-4 text-amber-600" />,
+        speaker: <User className="h-4 w-4 text-indigo-600" />,
     };
-    return icons[item.category] || <Layers className="h-4 w-4 text-blue-500" />;
+    return icons[item.category] || <Layers className="h-4 w-4 text-blue-600" />;
 };
 
 const getContainerColors = (type: ContainerType) => {
-    const colors: Record<ContainerType, { bg: string; border: string; text: string }> = {
-        discussion: { bg: "bg-green-50", border: "border-green-200", text: "text-green-700" },
-        business: { bg: "bg-purple-50", border: "border-purple-200", text: "text-purple-700" },
-        announcement: { bg: "bg-orange-50", border: "border-orange-200", text: "text-orange-700" },
+    const colors: Record<ContainerType, { accent: string; icon: string }> = {
+        discussion: { accent: "border-l-cyan-500", icon: "text-cyan-600" },
+        business: { accent: "border-l-violet-500", icon: "text-violet-600" },
+        announcement: { accent: "border-l-amber-500", icon: "text-amber-600" },
     };
     return colors[type];
 };
@@ -139,29 +140,29 @@ function SortableAgendaRow({
                 {...attributes}
                 {...listeners}
                 className={cn(
-                    "rounded-md border-2 transition-all cursor-grab active:cursor-grabbing touch-none",
-                    colors.bg,
-                    colors.border,
+                    "rounded-md border bg-card transition-all cursor-grab active:cursor-grabbing touch-none border-l-4",
+                    colors.accent,
+                    "hover:border-muted-foreground/30",
                     isDragging && "opacity-50 shadow-lg ring-2 ring-primary/40"
                 )}
             >
                 {/* Container Header */}
-                <div className="flex items-center gap-2 p-3">
+                <div className="flex items-center gap-2 p-1.5">
 
                     <button
                         onClick={onToggleExpand}
-                        className="shrink-0"
+                        className="p-1 hover:bg-muted rounded-md transition-colors"
                     >
                         {isExpanded ? (
-                            <ChevronDown className={cn("h-4 w-4", colors.text)} />
+                            <ChevronDown className="h-4 w-4 text-muted-foreground" />
                         ) : (
-                            <ChevronRight className={cn("h-4 w-4", colors.text)} />
+                            <ChevronRight className="h-4 w-4 text-muted-foreground" />
                         )}
                     </button>
 
                     {getCanvasItemIcon(item)}
 
-                    <span className={cn("font-medium text-sm flex-1", colors.text)}>
+                    <span className="font-medium text-sm flex-1 text-foreground">
                         {item.title}
                     </span>
 
@@ -169,14 +170,14 @@ function SortableAgendaRow({
                         {childCount} item{childCount !== 1 ? "s" : ""}
                     </span>
 
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-xs text-muted-foreground ml-2">
                         {item.duration_minutes}m
                     </span>
 
                     <Button
                         variant="ghost"
                         size="icon"
-                        className="h-7 w-7 shrink-0"
+                        className="h-7 w-7 shrink-0 ml-1 hover:bg-muted"
                         onClick={onAddToContainer}
                     >
                         <Plus className="h-4 w-4" />
@@ -185,7 +186,7 @@ function SortableAgendaRow({
                     <Button
                         variant="ghost"
                         size="icon"
-                        className="h-7 w-7 shrink-0 text-destructive hover:text-destructive"
+                        className="h-7 w-7 shrink-0 text-destructive hover:text-destructive hover:bg-destructive/10"
                         onClick={onRemove}
                     >
                         <Trash2 className="h-4 w-4" />
@@ -195,15 +196,15 @@ function SortableAgendaRow({
                 {/* Container Children */}
                 {isExpanded && item.childItems && item.childItems.length > 0 && (
                     <div className="px-3 pb-3 pt-0">
-                        <div className="space-y-1.5 pl-8">
+                        <div className="space-y-1 pl-6">
                             {item.childItems.map((child) => (
                                 <div
                                     key={child.id}
-                                    className="flex items-center gap-2 p-2 bg-white rounded border"
+                                    className="flex items-center gap-2 p-1.5 bg-background rounded border border-border/60"
                                 >
                                     <span className="text-sm flex-1 truncate">{child.title}</span>
                                     {child.status && (
-                                        <span className="text-xs px-1.5 py-0.5 rounded bg-muted capitalize">
+                                        <span className="text-xs px-1.5 py-0.5 rounded bg-muted/50 capitalize">
                                             {child.status.replace("_", " ")}
                                         </span>
                                     )}
@@ -224,14 +225,12 @@ function SortableAgendaRow({
                 {/* Empty state for containers */}
                 {isExpanded && (!item.childItems || item.childItems.length === 0) && (
                     <div className="px-3 pb-3 pt-0">
-                        <div className="pl-8">
+                        <div className="pl-6">
                             <button
                                 onClick={onAddToContainer}
                                 className={cn(
-                                    "w-full p-3 border-2 border-dashed rounded-md text-sm",
-                                    "hover:border-solid hover:bg-white/50 transition-all",
-                                    colors.border,
-                                    colors.text
+                                    "w-full py-2 px-3 border-2 border-dashed rounded-md text-sm",
+                                    "hover:border-solid hover:bg-muted/50 transition-all border-muted-foreground/20 text-muted-foreground"
                                 )}
                             >
                                 <Plus className="h-4 w-4 inline mr-1" />
@@ -252,7 +251,7 @@ function SortableAgendaRow({
             {...attributes}
             {...listeners}
             className={cn(
-                "flex items-center gap-2 p-2.5 border rounded-md bg-card transition-all group cursor-grab active:cursor-grabbing touch-none",
+                "flex items-center gap-2 p-1.5 border rounded-md bg-card transition-all group cursor-grab active:cursor-grabbing touch-none",
                 "hover:border-muted-foreground/30",
                 isDragging && "opacity-50 shadow-lg ring-2 ring-primary/40"
             )}
@@ -350,6 +349,9 @@ export function AgendaCanvas({
     onSelectSpeaker,
     isOver,
 }: AgendaCanvasProps) {
+    const { watch } = useFormContext();
+    const title = watch("title");
+
     const { setNodeRef } = useDroppable({
         id: "canvas-drop-zone",
     });
@@ -360,11 +362,16 @@ export function AgendaCanvas({
     return (
         <div className="flex flex-col h-full bg-muted/20 bg-[radial-gradient(#60a5fa_1px,transparent_1px)] [background-size:16px_16px]">
             {/* Header */}
-            <div className="px-6 py-3 border-b bg-background flex items-center justify-between">
-                <h3 className="font-semibold text-sm">Agenda</h3>
-                <span className="text-sm text-muted-foreground">
-                    {items.length} items • {totalDuration} min
-                </span>
+            <div className="px-4 py-2 border-b bg-background grid grid-cols-3 items-center">
+                <div /> {/* Left spacer */}
+                <h3 className="font-semibold text-sm text-center truncate">
+                    {title || "Untitled Meeting Agenda"}
+                </h3>
+                <div className="text-right">
+                    <span className="text-xs text-muted-foreground whitespace-nowrap">
+                        {items.length} items • {totalDuration} min
+                    </span>
+                </div>
             </div>
 
             {/* Canvas */}
@@ -372,14 +379,14 @@ export function AgendaCanvas({
                 <div
                     ref={setNodeRef}
                     className={cn(
-                        "p-4 lg:p-6 min-h-full",
+                        "p-3 min-h-full flex flex-col items-center",
                         isOver && "bg-primary/5"
                     )}
                 >
                     {items.length === 0 ? (
                         <div
                             className={cn(
-                                "flex flex-col items-center justify-center py-16 mt-8 bg-background/50 backdrop-blur-sm",
+                                "flex flex-col items-center justify-center py-16 mt-8 bg-background/50 backdrop-blur-sm w-full max-w-xl",
                                 "border-2 border-dashed rounded-lg",
                                 "text-muted-foreground transition-all",
                                 isOver ? "border-primary bg-primary/5" : "border-muted-foreground/20"
@@ -393,12 +400,12 @@ export function AgendaCanvas({
                             </div>
                         </div>
                     ) : (
-                        <div className="bg-background/80 backdrop-blur-sm rounded-lg shadow-sm border p-4">
+                        <div className="bg-background/80 backdrop-blur-sm rounded-lg shadow-sm border p-3 w-full max-w-xl">
                             <SortableContext
                                 items={itemIds}
                                 strategy={verticalListSortingStrategy}
                             >
-                                <div className="space-y-1.5">
+                                <div className="space-y-1">
                                     {items.map((item) => (
                                         <SortableAgendaRow
                                             key={item.id}
