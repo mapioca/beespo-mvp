@@ -870,7 +870,7 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
                         {/* 3-Column Workspace */}
                         <div className="flex-1 flex overflow-hidden">
                             {/* Left Pane - Library */}
-                            <div className="hidden lg:block w-64 h-full overflow-hidden border-r shrink-0">
+                            <div className="hidden lg:block w-80 h-full overflow-hidden border-r shrink-0">
                                 <ToolboxPane onAddItem={handleAddCanvasItem} />
                             </div>
 

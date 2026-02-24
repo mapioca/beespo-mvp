@@ -125,14 +125,14 @@ export function SidebarUserProfile({ name, email, roleTitle, avatarUrl, isCollap
     }
 
     return (
-        <div className="border-t p-4">
+        <div className="border-t p-3">
             <div className="flex items-center justify-between w-full group">
                 <div className="flex items-center gap-3 overflow-hidden">
                     {avatarElement}
                     <div className="grid gap-0.5 text-left text-sm leading-tight">
-                        <span className="font-semibold truncate w-32">{name}</span>
+                        <span className="font-semibold truncate w-28">{name}</span>
                         {roleTitle && (
-                            <span className="text-xs text-muted-foreground truncate w-32">{roleTitle}</span>
+                            <span className="text-xs text-muted-foreground truncate w-28">{roleTitle}</span>
                         )}
                     </div>
                 </div>

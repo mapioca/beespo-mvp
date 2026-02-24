@@ -10,25 +10,13 @@ import { CSS } from "@dnd-kit/utilities";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
-    Music,
-    BookOpen,
-    MessageSquare,
-    Briefcase,
-    Megaphone,
-    User,
     Trash2,
-    Plus,
     Minus,
     ChevronDown,
     ChevronRight,
-    UserPlus,
-    Mic,
-    Puzzle,
-    Layers,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CanvasItem } from "./types";
-import { CategoryType } from "../add-meeting-item-dialog";
 import { ContainerType } from "../container-agenda-item";
 import { useFormContext } from "react-hook-form";
 
@@ -45,42 +33,7 @@ interface AgendaCanvasProps {
     isOver?: boolean;
 }
 
-// Check if item is a custom item (with fallback to procedural_item_type_id check)
-const isCustomItem = (item: CanvasItem): boolean => {
-    if (item.is_custom === true) return true;
-    // Fallback: custom items have IDs starting with "custom-"
-    return !!item.procedural_item_type_id?.startsWith("custom-");
 
-};
-
-// Get icon for canvas item - supports custom items with config
-const getCanvasItemIcon = (item: CanvasItem) => {
-    // Custom items get purple-themed icons
-    if (isCustomItem(item)) {
-        if (item.config?.requires_resource) {
-            return <Music className="h-4 w-4 text-violet-600" />;
-        }
-        if (item.config?.requires_assignee) {
-            return <User className="h-4 w-4 text-violet-600" />;
-        }
-        return <Puzzle className="h-4 w-4 text-violet-600" />;
-    }
-
-    // Core/standard items - check for hymn
-    if (item.is_hymn || item.config?.requires_resource) {
-        return <Music className="h-4 w-4 text-blue-600" />;
-    }
-
-    // Category-based icons
-    const icons: Record<CategoryType, React.ReactNode> = {
-        procedural: <BookOpen className="h-4 w-4 text-slate-500" />,
-        discussion: <MessageSquare className="h-4 w-4 text-cyan-600" />,
-        business: <Briefcase className="h-4 w-4 text-violet-600" />,
-        announcement: <Megaphone className="h-4 w-4 text-amber-600" />,
-        speaker: <User className="h-4 w-4 text-indigo-600" />,
-    };
-    return icons[item.category] || <Layers className="h-4 w-4 text-blue-600" />;
-};
 // Sortable Agenda Row
 interface SortableAgendaRowProps {
     item: CanvasItem;
@@ -150,9 +103,9 @@ function SortableAgendaRow({
                         )}
                     </button>
 
-                    {getCanvasItemIcon(item)}
 
-                    <span className="font-medium text-sm flex-1 text-foreground">
+
+                    <span className="font-medium text-sm flex-1 text-foreground pl-1">
                         {item.title}
                     </span>
 
@@ -217,7 +170,6 @@ function SortableAgendaRow({
                                     "hover:border-solid hover:bg-muted/50 border-muted-foreground/20 text-muted-foreground"
                                 )}
                             >
-                                <Plus className="h-4 w-4 inline mr-1" />
                                 Add {item.containerType}
                             </button>
                         </div>
@@ -242,8 +194,10 @@ function SortableAgendaRow({
         >
             {/* Header row: Icon, Title, Duration, Actions */}
             <div className="flex items-center gap-2 p-1.5">
-                {getCanvasItemIcon(item)}
-                <span className="font-medium text-sm flex-1 truncate text-foreground">{item.title}</span>
+                <div className="w-7 shrink-0" /> {/* Spacer to align with container chevrons */}
+                <span className="font-medium text-sm flex-1 truncate text-foreground pl-1">
+                    {item.title}
+                </span>
 
                 <span className="text-xs text-muted-foreground shrink-0">
                     {item.duration_minutes}m
@@ -275,7 +229,6 @@ function SortableAgendaRow({
                                 )}
                                 onClick={onSelectHymn}
                             >
-                                <Music className={cn("h-3.5 w-3.5", item.hymn_title ? "text-blue-600" : "text-muted-foreground")} />
                                 <span className="truncate">
                                     {item.hymn_title
                                         ? `#${item.hymn_number} ${item.hymn_title}`
@@ -295,7 +248,6 @@ function SortableAgendaRow({
                                 )}
                                 onClick={onSelectParticipant}
                             >
-                                <UserPlus className={cn("h-3.5 w-3.5", item.participant_name ? "text-slate-600" : "text-muted-foreground")} />
                                 <span className="truncate">
                                     {item.participant_name || "Select Participant"}
                                 </span>
@@ -313,7 +265,6 @@ function SortableAgendaRow({
                                 )}
                                 onClick={onSelectSpeaker}
                             >
-                                <Mic className={cn("h-3.5 w-3.5", item.speaker_name ? "text-indigo-600" : "text-muted-foreground")} />
                                 <span className="truncate">
                                     {item.speaker_name || "Select Speaker"}
                                 </span>
@@ -349,7 +300,7 @@ export function AgendaCanvas({
     const itemIds = items.map((item) => item.id);
 
     return (
-        <div className="flex flex-col h-full bg-muted/20 bg-[radial-gradient(#60a5fa_1px,transparent_1px)] [background-size:16px_16px]">
+        <div className="flex flex-col h-full bg-slate-50/50 bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] [background-size:16px_16px]">
             {/* Header */}
             <div className="px-4 py-2 border-b bg-background grid grid-cols-3 items-center">
                 <div /> {/* Left spacer */}

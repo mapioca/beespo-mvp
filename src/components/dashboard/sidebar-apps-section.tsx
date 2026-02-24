@@ -105,7 +105,7 @@ export function SidebarAppsSection({
             <Collapsible open={isExpanded} onOpenChange={onToggle}>
                 <CollapsibleTrigger
                     className={cn(
-                        "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors w-full",
+                        "flex items-center gap-3 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors w-full",
                         isAppsPageActive
                             ? "bg-accent/50 text-accent-foreground"
                             : "hover:bg-accent hover:text-accent-foreground"
@@ -134,7 +134,7 @@ export function SidebarAppsSection({
                                     key={wa.id}
                                     href={`/apps?open=${wa.app.slug}`}
                                     className={cn(
-                                        "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors pl-10",
+                                        "flex items-center gap-3 rounded-lg px-3 py-1.5 text-sm transition-colors pl-10",
                                         "hover:bg-accent hover:text-accent-foreground"
                                     )}
                                 >
@@ -160,7 +160,7 @@ export function SidebarAppsSection({
                         <Link
                             href="/apps"
                             className={cn(
-                                "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors pl-10",
+                                "flex items-center gap-3 rounded-lg px-3 py-1.5 text-sm transition-colors pl-10",
                                 "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
                                 isAppsPageActive && "bg-accent text-accent-foreground"
                             )}
