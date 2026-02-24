@@ -302,7 +302,7 @@ export function AgendaCanvas({
     return (
         <div className="flex flex-col h-full bg-slate-50/50 bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] [background-size:16px_16px]">
             {/* Header */}
-            <div className="px-4 py-2 border-b bg-background grid grid-cols-3 items-center">
+            <div className="h-14 px-4 border-b bg-background grid grid-cols-3 items-center shrink-0">
                 <div /> {/* Left spacer */}
                 <h3 className="font-semibold text-sm text-center truncate">
                     {title || "Untitled Meeting Agenda"}
