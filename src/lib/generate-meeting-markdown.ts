@@ -5,6 +5,7 @@ export interface MeetingMarkdownData {
   title: string;
   date: Date;
   time: string; // "HH:mm"
+  unitName?: string;
   presiding?: string;
   conducting?: string;
   chorister?: string;
@@ -30,35 +31,53 @@ export function generateMeetingMarkdown(data: MeetingMarkdownData): string {
 
   // Title
   lines.push(`# ${data.title}`);
-  lines.push("");
 
   // Date & Time
   const dateStr = format(data.date, "EEEE, MMMM d, yyyy");
   const timeStr = formatTime12h(data.time);
-  lines.push(`**Date:** ${dateStr}`);
-  lines.push(`**Time:** ${timeStr}`);
+  lines.push(`${dateStr} at ${timeStr}`);
+  lines.push("");
+  lines.push("---");
   lines.push("");
 
   // Roles
-  const roles: [string, string | undefined][] = [
-    ["Presiding", data.presiding],
-    ["Conducting", data.conducting],
-    ["Chorister", data.chorister],
-    ["Pianist/Organist", data.pianistOrganist],
+  const roles = [
+    { label: "Presiding", value: data.presiding },
+    { label: "Conducting", value: data.conducting },
+    { label: "Chorister", value: data.chorister },
+    { label: "Pianist/Organist", value: data.pianistOrganist },
   ];
 
-  const hasAnyRole = roles.some(([, value]) => value?.trim());
+  const hasAnyRole = roles.some((r) => r.value?.trim());
   if (hasAnyRole) {
-    for (const [label, value] of roles) {
-      if (value?.trim()) {
-        lines.push(`**${label}:** ${value.trim()}`);
-      }
+    lines.push(":::roles-grid");
+    lines.push("");
+    lines.push(":::roles-column");
+    if (data.presiding?.trim()) {
+      lines.push(`**Presiding:** ${data.presiding.trim()}`);
+      lines.push("");
     }
+    if (data.conducting?.trim()) {
+      lines.push(`**Conducting:** ${data.conducting.trim()}`);
+      lines.push("");
+    }
+    lines.push(":::");
+    lines.push("");
+    lines.push(":::roles-column");
+    if (data.chorister?.trim()) {
+      lines.push(`**Chorister:** ${data.chorister.trim()}`);
+      lines.push("");
+    }
+    if (data.pianistOrganist?.trim()) {
+      lines.push(`**Pianist/Organist:** ${data.pianistOrganist.trim()}`);
+      lines.push("");
+    }
+    lines.push(":::");
+    lines.push("");
+    lines.push(":::end-grid");
     lines.push("");
   }
 
-  lines.push("---");
-  lines.push("");
 
   // Agenda Items
   const sorted = [...data.canvasItems].sort(
@@ -69,7 +88,7 @@ export function generateMeetingMarkdown(data: MeetingMarkdownData): string {
     // Container items
     if (item.isContainer && item.containerType) {
       const header = CONTAINER_HEADERS[item.containerType] || item.title;
-      lines.push(`## ${header}`);
+      lines.push(`### ${header}`);
       lines.push("");
 
       const children = item.childItems || [];
@@ -89,6 +108,7 @@ export function generateMeetingMarkdown(data: MeetingMarkdownData): string {
         }
         lines.push("");
       }
+      lines.push(""); // Extra space after section
       continue;
     }
 

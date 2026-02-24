@@ -94,9 +94,11 @@ export function ActionToolbar({
                 const markdown = generateMeetingMarkdown({
                     title: currentMeeting.title || "Untitled Meeting",
                     date: new Date(currentMeeting.scheduled_date),
-                    time: new Date(currentMeeting.scheduled_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                    // DB doesn't store these separate roles directly on meeting object in this branch,
-                    // so we omit them or extract them if we add them to the DB schema later.
+                    time: new Date(currentMeeting.scheduled_date).toTimeString().slice(0, 5),
+                    presiding: currentMeeting.presiding_name || undefined,
+                    conducting: currentMeeting.conducting_name || undefined,
+                    chorister: currentMeeting.chorister_name || undefined,
+                    pianistOrganist: currentMeeting.organist_name || undefined,
                     canvasItems: canvasItems,
                 });
 

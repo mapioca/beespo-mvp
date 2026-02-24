@@ -110,6 +110,7 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
     const [previewModalOpen, setPreviewModalOpen] = useState(false);
     const [previewMarkdown, setPreviewMarkdown] = useState("");
     const [isGeneratingPreview, setIsGeneratingPreview] = useState(false);
+    const [workspaceName, setWorkspaceName] = useState("");
 
     // DnD sensors
     const sensors = useSensors(
@@ -123,9 +124,9 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
         })
     );
 
-    // Load templates
+    // Load templates & workspace name
     useEffect(() => {
-        const fetchTemplates = async () => {
+        const fetchInitialData = async () => {
             const supabase = createClient();
             const { data } = await supabase
                 .from("templates")
@@ -133,8 +134,23 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
                 .order("name");
 
             if (data) setTemplates(data as Template[]);
+
+            // Fetch workspace name for preview
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                const { data: profile } = await (supabase
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    .from("profiles") as any)
+                    .select("workspaces(name)")
+                    .eq("id", user.id)
+                    .single();
+
+                if (profile?.workspaces?.name) {
+                    setWorkspaceName(profile.workspaces.name);
+                }
+            }
         };
-        fetchTemplates();
+        fetchInitialData();
     }, []);
 
     // Update title when template selected
@@ -685,6 +701,7 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
                 title: form.getValues("title"),
                 date: form.getValues("date"),
                 time: form.getValues("time"),
+                unitName: workspaceName,
                 presiding: form.getValues("presiding"),
                 conducting: form.getValues("conducting"),
                 chorister: form.getValues("chorister"),
@@ -695,7 +712,7 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
             setPreviewMarkdown(markdown);
             setIsGeneratingPreview(false);
         }, 100);
-    }, [form, canvasItems]);
+    }, [form, canvasItems, workspaceName]);
 
     const handleValidate = useCallback(() => {
         setValidationModalOpen(true);
@@ -819,13 +836,14 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
                 // Fire-and-forget: persist markdown agenda
                 const fallbackMarkdown = generateMeetingMarkdown({
                     title, date: date!, time,
+                    unitName: workspaceName,
                     presiding: form.getValues("presiding"),
                     conducting: form.getValues("conducting"),
                     chorister: form.getValues("chorister"),
                     pianistOrganist: form.getValues("pianistOrganist"),
                     canvasItems,
                 });
-                saveMeetingMarkdown(fallbackData, fallbackMarkdown).catch(() => {});
+                saveMeetingMarkdown(fallbackData, fallbackMarkdown).catch(() => { });
 
                 toast.success("Meeting created", { description: "Redirecting..." });
                 router.push(`/meetings/${fallbackData}`);
@@ -848,13 +866,14 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
             // Fire-and-forget: persist markdown agenda
             const markdown = generateMeetingMarkdown({
                 title, date: date!, time,
+                unitName: workspaceName,
                 presiding: form.getValues("presiding"),
                 conducting: form.getValues("conducting"),
                 chorister: form.getValues("chorister"),
                 pianistOrganist: form.getValues("pianistOrganist"),
                 canvasItems,
             });
-            saveMeetingMarkdown(data, markdown).catch(() => {});
+            saveMeetingMarkdown(data, markdown).catch(() => { });
 
             toast.success("Meeting created", { description: "Redirecting..." });
             router.push(`/meetings/${data}`);
@@ -871,7 +890,7 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
         } finally {
             setIsCreating(false);
         }
-    }, [canvasItems, date, time, title, selectedTemplateId, router, form]);
+    }, [canvasItems, date, time, title, selectedTemplateId, router, form, workspaceName]);
 
     const isValid = title.trim() !== "" && date !== undefined;
     const selectedSpeakerIds = canvasItems
@@ -999,6 +1018,7 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
                         open={previewModalOpen}
                         onClose={() => setPreviewModalOpen(false)}
                         markdown={previewMarkdown}
+                        unitName={workspaceName}
                         isLoading={isGeneratingPreview}
                     />
 

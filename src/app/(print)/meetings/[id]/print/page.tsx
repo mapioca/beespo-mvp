@@ -77,7 +77,12 @@ export default async function PrintMeetingPage({ params }: PrintMeetingPageProps
     const markdown = generateMeetingMarkdown({
         title: meeting.title || "Untitled Meeting",
         date: new Date(meeting.scheduled_date),
-        time: new Date(meeting.scheduled_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        time: new Date(meeting.scheduled_date).toTimeString().slice(0, 5),
+        unitName: meeting.unit_name || "",
+        presiding: meeting.presiding_name,
+        conducting: meeting.conducting_name,
+        chorister: meeting.chorister_name,
+        pianistOrganist: meeting.organist_name,
         canvasItems: canvasItems,
     });
 

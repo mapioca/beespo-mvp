@@ -15,6 +15,7 @@ interface PreviewModalProps {
   open: boolean;
   onClose: () => void;
   markdown: string;
+  unitName?: string;
   isLoading: boolean;
   meetingId?: string; // Determines if the meeting is saved and printable
 }
@@ -23,6 +24,7 @@ export function PreviewModal({
   open,
   onClose,
   markdown,
+  unitName,
   isLoading,
   meetingId,
 }: PreviewModalProps) {
@@ -44,11 +46,12 @@ export function PreviewModal({
           <ScrollArea className="flex-1 bg-muted">
             <div className="flex justify-center p-6 md:p-12">
               <div className="bg-background shadow-2xl w-full max-w-[850px] min-h-[1056px] p-12 sm:p-16 relative">
-                <MarkdownRenderer markdown={markdown} />
+                <MarkdownRenderer markdown={markdown} unitName={unitName} />
               </div>
             </div>
           </ScrollArea>
         )}
+
 
         <div className="bg-background border-t px-6 py-4 shrink-0 flex justify-end gap-2">
           <Button variant="outline" onClick={onClose}>
