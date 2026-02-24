@@ -18,6 +18,7 @@ import {
     User,
     Trash2,
     Plus,
+    Minus,
     ChevronDown,
     ChevronRight,
     UserPlus,
@@ -80,16 +81,6 @@ const getCanvasItemIcon = (item: CanvasItem) => {
     };
     return icons[item.category] || <Layers className="h-4 w-4 text-blue-600" />;
 };
-
-const getContainerColors = (type: ContainerType) => {
-    const colors: Record<ContainerType, { accent: string; icon: string }> = {
-        discussion: { accent: "border-l-cyan-500", icon: "text-cyan-600" },
-        business: { accent: "border-l-violet-500", icon: "text-violet-600" },
-        announcement: { accent: "border-l-amber-500", icon: "text-amber-600" },
-    };
-    return colors[type];
-};
-
 // Sortable Agenda Row
 interface SortableAgendaRowProps {
     item: CanvasItem;
@@ -130,7 +121,6 @@ function SortableAgendaRow({
 
     // Container item
     if (item.isContainer && item.containerType) {
-        const colors = getContainerColors(item.containerType);
         const childCount = item.childItems?.length || 0;
 
         return (
@@ -140,8 +130,7 @@ function SortableAgendaRow({
                 {...attributes}
                 {...listeners}
                 className={cn(
-                    "rounded-md border bg-card transition-all cursor-grab active:cursor-grabbing touch-none border-l-4",
-                    colors.accent,
+                    "rounded-md border bg-card transition-all group cursor-grab active:cursor-grabbing touch-none",
                     "hover:border-muted-foreground/30",
                     isDragging && "opacity-50 shadow-lg ring-2 ring-primary/40"
                 )}
@@ -175,67 +164,57 @@ function SortableAgendaRow({
                         {item.duration_minutes}m
                     </span>
 
-                    <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 shrink-0 ml-1 hover:bg-muted"
-                        onClick={onAddToContainer}
-                    >
-                        <Plus className="h-4 w-4" />
-                    </Button>
 
                     <Button
                         type="button"
                         variant="ghost"
                         size="icon"
-                        className="h-7 w-7 shrink-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                        className="h-7 w-7 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive hover:bg-destructive/10"
                         onClick={onRemove}
                     >
                         <Trash2 className="h-4 w-4" />
                     </Button>
                 </div>
 
-                {/* Container Children */}
-                {isExpanded && item.childItems && item.childItems.length > 0 && (
+                {/* Container Body */}
+                {isExpanded && (
                     <div className="px-3 pb-3 pt-0">
-                        <div className="space-y-1 pl-6">
-                            {item.childItems.map((child) => (
-                                <div
-                                    key={child.id}
-                                    className="flex items-center gap-2 p-1.5 bg-background rounded border border-border/60"
-                                >
-                                    <span className="text-sm flex-1 truncate">{child.title}</span>
-                                    {child.status && (
-                                        <span className="text-xs px-1.5 py-0.5 rounded bg-muted/50 capitalize">
-                                            {child.status.replace("_", " ")}
-                                        </span>
-                                    )}
-                                    <Button
-                                        type="button"
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-6 w-6 shrink-0 text-muted-foreground hover:text-destructive"
-                                        onClick={() => onRemoveChildItem?.(child.id)}
-                                    >
-                                        <Trash2 className="h-3 w-3" />
-                                    </Button>
+                        <div className="pl-6 space-y-3">
+                            {/* Children List */}
+                            {item.childItems && item.childItems.length > 0 && (
+                                <div className="space-y-1">
+                                    {item.childItems.map((child) => (
+                                        <div
+                                            key={child.id}
+                                            className="flex items-center gap-2 p-1.5 bg-background rounded border border-border/60"
+                                        >
+                                            <span className="text-sm flex-1 truncate">{child.title}</span>
+                                            {child.status && (
+                                                <span className="text-xs px-1.5 py-0.5 rounded bg-muted/50 capitalize">
+                                                    {child.status.replace("_", " ")}
+                                                </span>
+                                            )}
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-6 w-6 shrink-0 text-muted-foreground hover:text-destructive"
+                                                onClick={() => onRemoveChildItem?.(child.id)}
+                                            >
+                                                <Minus className="h-3 w-3" />
+                                            </Button>
+                                        </div>
+                                    ))}
                                 </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
+                            )}
 
-                {/* Empty state for containers */}
-                {isExpanded && (!item.childItems || item.childItems.length === 0) && (
-                    <div className="px-3 pb-3 pt-0">
-                        <div className="pl-6">
+                            {/* Add Button - Always visible when expanded */}
                             <button
                                 type="button"
                                 onClick={onAddToContainer}
                                 className={cn(
-                                    "w-full py-2 px-3 border-2 border-dashed rounded-md text-sm",
-                                    "hover:border-solid hover:bg-muted/50 transition-all border-muted-foreground/20 text-muted-foreground"
+                                    "w-full py-2 px-3 border-2 border-dashed rounded-md text-sm transition-all",
+                                    "hover:border-solid hover:bg-muted/50 border-muted-foreground/20 text-muted-foreground"
                                 )}
                             >
                                 <Plus className="h-4 w-4 inline mr-1" />
@@ -290,7 +269,7 @@ function SortableAgendaRow({
                             <button
                                 type="button"
                                 className={cn(
-                                    "w-full py-1.5 px-3 border-2 border-dashed rounded-md text-xs flex items-center justify-center gap-2 transition-all",
+                                    "w-full py-2 px-3 border-2 border-dashed rounded-md text-sm flex items-center justify-center gap-2 transition-all",
                                     "hover:border-solid hover:bg-muted/50 border-muted-foreground/20 text-muted-foreground",
                                     item.hymn_title && "border-solid bg-blue-50/50 border-blue-200 text-blue-700 font-medium"
                                 )}
@@ -310,7 +289,7 @@ function SortableAgendaRow({
                             <button
                                 type="button"
                                 className={cn(
-                                    "w-full py-1.5 px-3 border-2 border-dashed rounded-md text-xs flex items-center justify-center gap-2 transition-all",
+                                    "w-full py-2 px-3 border-2 border-dashed rounded-md text-sm flex items-center justify-center gap-2 transition-all",
                                     "hover:border-solid hover:bg-muted/50 border-muted-foreground/20 text-muted-foreground",
                                     item.participant_name && "border-solid bg-slate-50/50 border-slate-200 text-slate-700 font-medium"
                                 )}
@@ -328,7 +307,7 @@ function SortableAgendaRow({
                             <button
                                 type="button"
                                 className={cn(
-                                    "w-full py-1.5 px-3 border-2 border-dashed rounded-md text-xs flex items-center justify-center gap-2 transition-all",
+                                    "w-full py-2 px-3 border-2 border-dashed rounded-md text-sm flex items-center justify-center gap-2 transition-all",
                                     "hover:border-solid hover:bg-muted/50 border-muted-foreground/20 text-muted-foreground",
                                     item.speaker_name && "border-solid bg-indigo-50/50 border-indigo-200 text-indigo-700 font-medium"
                                 )}
