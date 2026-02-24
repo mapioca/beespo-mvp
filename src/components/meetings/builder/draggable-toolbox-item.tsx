@@ -12,6 +12,7 @@ import {
     User,
     Layers,
     Puzzle,
+    Plus,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ToolboxItem } from "./types";
@@ -20,6 +21,7 @@ import { CategoryType } from "../add-meeting-item-dialog";
 interface DraggableToolboxItemProps {
     item: ToolboxItem;
     disabled?: boolean;
+    onAddItem?: (item: ToolboxItem) => void;
 }
 
 const getCategoryIcon = (item: ToolboxItem) => {
@@ -50,7 +52,7 @@ const getCategoryIcon = (item: ToolboxItem) => {
     return icons[item.category] || <Layers className="h-4 w-4 text-blue-500" />;
 };
 
-export function DraggableToolboxItem({ item, disabled }: DraggableToolboxItemProps) {
+export function DraggableToolboxItem({ item, disabled, onAddItem }: DraggableToolboxItemProps) {
     const {
         attributes,
         listeners,
@@ -79,16 +81,43 @@ export function DraggableToolboxItem({ item, disabled }: DraggableToolboxItemPro
             {...attributes}
             {...listeners}
             className={cn(
-                "flex items-center gap-2 p-2 bg-card border border-border rounded-md",
-                "hover:border-primary hover:bg-accent hover:text-accent-foreground hover:shadow-sm transition-all cursor-grab active:cursor-grabbing",
+                "group flex items-start gap-3 p-3 bg-card border border-border rounded-md",
+                "hover:border-primary/50 hover:bg-accent/50 transition-all cursor-grab active:cursor-grabbing relative",
                 isDragging && "opacity-50 shadow-lg ring-2 ring-primary/40 z-50",
                 disabled && "opacity-50 cursor-not-allowed"
             )}
         >
-            <GripVertical className="h-3.5 w-3.5 text-muted-foreground/50 shrink-0" />
-            {getCategoryIcon(item)}
-            <span className="text-sm font-medium truncate flex-1 text-foreground">{item.title}</span>
-            <span className="text-xs text-muted-foreground shrink-0">{item.duration_minutes}m</span>
+            <div className="flex items-center gap-2 mt-0.5 shrink-0 text-muted-foreground">
+                <GripVertical className="h-4 w-4 opacity-50" />
+                {getCategoryIcon(item)}
+            </div>
+
+            <div className="flex-1 min-w-0 pr-8">
+                <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium truncate text-foreground">{item.title}</span>
+                </div>
+                {item.description && (
+                    <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
+                        {item.description}
+                    </p>
+                )}
+            </div>
+
+            {onAddItem && (
+                <button
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        // Prevent the click from starting a drag
+                        e.preventDefault();
+                        onAddItem(item);
+                    }}
+                    onPointerDown={(e) => e.stopPropagation()}
+                    className="absolute right-2 top-2 p-1.5 text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-primary hover:bg-primary/10 rounded-md transition-all"
+                    title="Quick Insert"
+                >
+                    <Plus className="h-4 w-4" />
+                </button>
+            )}
         </div>
     );
 }
@@ -96,11 +125,21 @@ export function DraggableToolboxItem({ item, disabled }: DraggableToolboxItemPro
 // Overlay component for drag preview
 export function ToolboxItemDragOverlay({ item }: { item: ToolboxItem }) {
     return (
-        <div className="flex items-center gap-2 p-2 bg-card border-2 border-primary rounded-md shadow-lg text-foreground">
-            <GripVertical className="h-3.5 w-3.5 text-muted-foreground/50 shrink-0" />
-            {getCategoryIcon(item)}
-            <span className="text-sm font-medium truncate flex-1">{item.title}</span>
-            <span className="text-xs text-muted-foreground shrink-0">{item.duration_minutes}m</span>
+        <div className="flex items-start gap-3 p-3 bg-card border-2 border-primary rounded-md shadow-lg text-foreground w-[300px]">
+            <div className="flex items-center gap-2 mt-0.5 shrink-0 text-muted-foreground">
+                <GripVertical className="h-4 w-4 opacity-50" />
+                {getCategoryIcon(item)}
+            </div>
+            <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium truncate">{item.title}</span>
+                </div>
+                {item.description && (
+                    <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
+                        {item.description}
+                    </p>
+                )}
+            </div>
         </div>
     );
 }

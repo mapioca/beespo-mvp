@@ -18,7 +18,7 @@ import { arrayMove, sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { format } from "date-fns";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "@/lib/toast";
-import { BuilderHeader } from "./builder-header";
+import { PropertiesPane } from "./properties-pane";
 import { ToolboxPane } from "./toolbox-pane";
 import { AgendaCanvas } from "./agenda-canvas";
 import { ToolboxItemDragOverlay } from "./draggable-toolbox-item";
@@ -30,6 +30,26 @@ import {
     SpeakerSelection,
 } from "../unified-selector-modal";
 import { ValidationModal, ValidationItem, ValidationState } from "../validation-modal";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { Form } from "@/components/ui/form";
+import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import { Menu, Settings2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+
+const meetingFormSchema = z.object({
+    title: z.string().min(1, "Title is required"),
+    date: z.date({ message: "Date is required" }),
+    time: z.string().min(1, "Time is required"),
+    templateId: z.string().nullable(),
+    conducting: z.string().optional(),
+    presiding: z.string().optional(),
+    chorister: z.string().optional(),
+    pianistOrganist: z.string().optional(),
+});
+
+type MeetingFormValues = z.infer<typeof meetingFormSchema>;
 
 interface MeetingBuilderProps {
     initialTemplateId?: string | null;
@@ -39,13 +59,28 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
     const router = useRouter();
 
     // Form state
-    const [title, setTitle] = useState("");
-    const [date, setDate] = useState<Date | undefined>(new Date());
-    const [time, setTime] = useState("07:00");
+    const form = useForm<MeetingFormValues>({
+        resolver: zodResolver(meetingFormSchema),
+        defaultValues: {
+            title: "",
+            date: new Date(),
+            time: "07:00",
+            templateId: initialTemplateId || null,
+            conducting: "",
+            presiding: "",
+            chorister: "",
+            pianistOrganist: "",
+        },
+    });
+
+    const title = form.watch("title");
+    const date = form.watch("date");
+    const time = form.watch("time");
+    const selectedTemplateId = form.watch("templateId");
+
+    const setTitle = useCallback((t: string) => form.setValue("title", t, { shouldValidate: true }), [form]);
+
     const [templates, setTemplates] = useState<Template[]>([]);
-    const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(
-        initialTemplateId || null
-    );
 
     // Canvas state
     const [canvasItems, setCanvasItems] = useState<CanvasItem[]>([]);
@@ -102,7 +137,7 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
                 setTitle(`${t.name} - ${format(new Date(), "MMM d")}`);
             }
         }
-    }, [selectedTemplateId, templates, title]);
+    }, [selectedTemplateId, templates, title, setTitle]);
 
     // Load template items when template changes
     const loadTemplateItems = useCallback(async (templateId: string) => {
@@ -255,15 +290,15 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
         }
     }, []);
 
-    // Handle template change
-    const handleTemplateChange = useCallback((templateId: string | null) => {
-        setSelectedTemplateId(templateId);
-        if (templateId && templateId !== "none") {
-            loadTemplateItems(templateId);
-        } else {
+    // Handle template change watcher
+    useEffect(() => {
+        if (selectedTemplateId === initialTemplateId) return; // Handled by initial load
+        if (selectedTemplateId && selectedTemplateId !== "none") {
+            loadTemplateItems(selectedTemplateId);
+        } else if (selectedTemplateId === "none" || selectedTemplateId === null) {
             setCanvasItems([]);
         }
-    }, [loadTemplateItems]);
+    }, [selectedTemplateId, loadTemplateItems, initialTemplateId]);
 
     // Load initial template if provided
     useEffect(() => {
@@ -370,6 +405,36 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
     }, [canvasItems]);
 
     // Canvas item handlers
+    const handleAddCanvasItem = useCallback((toolboxItem: ToolboxItem) => {
+        setCanvasItems((prev) => {
+            const newItem: CanvasItem = {
+                id: `canvas-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                category: toolboxItem.category,
+                title: toolboxItem.title,
+                description: toolboxItem.description,
+                duration_minutes: toolboxItem.duration_minutes,
+                order_index: prev.length,
+                procedural_item_type_id: toolboxItem.procedural_item_type_id,
+                is_hymn: toolboxItem.is_hymn,
+                requires_participant: toolboxItem.requires_participant,
+                isContainer: toolboxItem.type === "container",
+                containerType: toolboxItem.containerType,
+                childItems: toolboxItem.type === "container" ? [] : undefined,
+                config: toolboxItem.config,
+                is_core: toolboxItem.is_core,
+                is_custom: toolboxItem.is_custom,
+                icon: toolboxItem.icon,
+            };
+
+            if (newItem.isContainer) {
+                setExpandedContainers((prevExpanded) => new Set([...prevExpanded, newItem.id]));
+            }
+
+            const newItems = [...prev, newItem];
+            return newItems.map((item, idx) => ({ ...item, order_index: idx }));
+        });
+    }, []);
+
     const handleRemoveItem = useCallback((id: string) => {
         setCanvasItems((prev) => {
             const filtered = prev.filter((i) => i.id !== id);
@@ -756,98 +821,132 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
         .map((i) => i.speaker_id as string);
 
     return (
-        <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragStart={handleDragStart}
-            onDragOver={handleDragOver}
-            onDragEnd={handleDragEnd}
-        >
-            <div className="h-screen flex flex-col">
-                {/* Header */}
-                <BuilderHeader
-                    title={title}
-                    onTitleChange={setTitle}
-                    date={date}
-                    onDateChange={setDate}
-                    time={time}
-                    onTimeChange={setTime}
-                    templates={templates}
-                    selectedTemplateId={selectedTemplateId}
-                    onTemplateChange={handleTemplateChange}
-                    onCreateMeeting={handleValidate}
-                    isCreating={isCreating}
-                    isValid={isValid}
-                />
+        <Form {...form}>
+            <form onSubmit={(e) => { e.preventDefault(); handleValidate(); }} className="h-screen flex flex-col">
+                <DndContext
+                    sensors={sensors}
+                    collisionDetection={closestCenter}
+                    onDragStart={handleDragStart}
+                    onDragOver={handleDragOver}
+                    onDragEnd={handleDragEnd}
+                >
+                    <div className="flex-1 flex flex-col overflow-hidden">
+                        {/* Mobile Header (Hidden on lg+) */}
+                        <div className="lg:hidden flex items-center justify-between p-4 border-b bg-background shrink-0">
+                            <Sheet>
+                                <SheetTrigger asChild>
+                                    <Button variant="outline" size="icon">
+                                        <Menu className="h-4 w-4" />
+                                    </Button>
+                                </SheetTrigger>
+                                <SheetContent side="left" className="w-[300px] sm:w-[400px] p-0 overflow-y-auto">
+                                    <SheetTitle className="sr-only">Library</SheetTitle>
+                                    <SheetDescription className="sr-only">Agenda items library</SheetDescription>
+                                    <ToolboxPane onAddItem={handleAddCanvasItem} />
+                                </SheetContent>
+                            </Sheet>
 
-                {/* 2-Column Workspace */}
-                <div className="flex-1 grid grid-cols-12 gap-0 overflow-hidden">
-                    {/* Left Pane - Toolbox */}
-                    <div className="col-span-3 h-full overflow-hidden">
-                        <ToolboxPane />
+                            <div className="font-semibold truncate px-4">{title || "Untitled Meeting"}</div>
+
+                            <Sheet>
+                                <SheetTrigger asChild>
+                                    <Button variant="outline" size="icon">
+                                        <Settings2 className="h-4 w-4" />
+                                    </Button>
+                                </SheetTrigger>
+                                <SheetContent side="right" className="w-[300px] sm:w-[400px] p-0 overflow-y-auto">
+                                    <SheetTitle className="sr-only">Properties</SheetTitle>
+                                    <SheetDescription className="sr-only">Meeting properties</SheetDescription>
+                                    <PropertiesPane
+                                        templates={templates}
+                                        onCreateMeeting={handleValidate}
+                                        isCreating={isCreating}
+                                        isValid={isValid}
+                                    />
+                                </SheetContent>
+                            </Sheet>
+                        </div>
+
+                        {/* 3-Column Workspace */}
+                        <div className="flex-1 flex overflow-hidden">
+                            {/* Left Pane - Library */}
+                            <div className="hidden lg:block w-72 h-full overflow-hidden border-r shrink-0">
+                                <ToolboxPane onAddItem={handleAddCanvasItem} />
+                            </div>
+
+                            {/* Center Pane - Canvas */}
+                            <div className="flex-1 h-full overflow-hidden min-w-0">
+                                <AgendaCanvas
+                                    items={canvasItems}
+                                    onRemoveItem={handleRemoveItem}
+                                    expandedContainers={expandedContainers}
+                                    onToggleContainer={toggleContainer}
+                                    onAddToContainer={openContainerAddModal}
+                                    onRemoveChildItem={handleRemoveChildItem}
+                                    onSelectHymn={openHymnSelector}
+                                    onSelectParticipant={openParticipantSelector}
+                                    onSelectSpeaker={openSpeakerSelector}
+                                    isOver={isOverCanvas}
+                                />
+                            </div>
+
+                            {/* Right Pane - Properties */}
+                            <div className="hidden lg:block w-80 h-full overflow-hidden border-l shrink-0">
+                                <PropertiesPane
+                                    templates={templates}
+                                    onCreateMeeting={handleValidate}
+                                    isCreating={isCreating}
+                                    isValid={isValid}
+                                />
+                            </div>
+                        </div>
                     </div>
 
-                    {/* Right Pane - Canvas */}
-                    <div className="col-span-9 h-full overflow-hidden">
-                        <AgendaCanvas
-                            items={canvasItems}
-                            onRemoveItem={handleRemoveItem}
-                            expandedContainers={expandedContainers}
-                            onToggleContainer={toggleContainer}
-                            onAddToContainer={openContainerAddModal}
-                            onRemoveChildItem={handleRemoveChildItem}
-                            onSelectHymn={openHymnSelector}
-                            onSelectParticipant={openParticipantSelector}
-                            onSelectSpeaker={openSpeakerSelector}
-                            isOver={isOverCanvas}
-                        />
-                    </div>
-                </div>
-            </div>
+                    {/* Drag Overlay */}
+                    <DragOverlay>
+                        {activeItem && activeType === "toolbox" && (
+                            <ToolboxItemDragOverlay item={activeItem as ToolboxItem} />
+                        )}
+                    </DragOverlay>
 
-            {/* Drag Overlay */}
-            <DragOverlay>
-                {activeItem && activeType === "toolbox" && (
-                    <ToolboxItemDragOverlay item={activeItem as ToolboxItem} />
-                )}
-            </DragOverlay>
+                    {/* Unified Selector Modal */}
+                    <UnifiedSelectorModal
+                        open={unifiedModalOpen}
+                        onClose={() => {
+                            setUnifiedModalOpen(false);
+                            setSelectedItemId(null);
+                            setTargetContainerId(null);
+                        }}
+                        mode={unifiedModalMode}
+                        currentSelectionId={
+                            selectedItemId
+                                ? canvasItems.find((i) => i.id === selectedItemId)?.hymn_id ||
+                                canvasItems.find((i) => i.id === selectedItemId)?.participant_id ||
+                                canvasItems.find((i) => i.id === selectedItemId)?.speaker_id
+                                : undefined
+                        }
+                        onSelectHymn={handleSelectHymn}
+                        onSelectParticipant={handleSelectParticipant}
+                        onSelectSpeaker={handleSelectSpeaker}
+                        onSelectDiscussion={(disc) => handleAddToContainer(disc, "discussion")}
+                        onSelectBusiness={(biz) => handleAddToContainer(biz, "business")}
+                        onSelectAnnouncement={(ann) => handleAddToContainer(ann, "announcement")}
+                        selectedSpeakerIdsInMeeting={selectedSpeakerIds}
+                    />
 
-            {/* Unified Selector Modal */}
-            <UnifiedSelectorModal
-                open={unifiedModalOpen}
-                onClose={() => {
-                    setUnifiedModalOpen(false);
-                    setSelectedItemId(null);
-                    setTargetContainerId(null);
-                }}
-                mode={unifiedModalMode}
-                currentSelectionId={
-                    selectedItemId
-                        ? canvasItems.find((i) => i.id === selectedItemId)?.hymn_id ||
-                        canvasItems.find((i) => i.id === selectedItemId)?.participant_id ||
-                        canvasItems.find((i) => i.id === selectedItemId)?.speaker_id
-                        : undefined
-                }
-                onSelectHymn={handleSelectHymn}
-                onSelectParticipant={handleSelectParticipant}
-                onSelectSpeaker={handleSelectSpeaker}
-                onSelectDiscussion={(disc) => handleAddToContainer(disc, "discussion")}
-                onSelectBusiness={(biz) => handleAddToContainer(biz, "business")}
-                onSelectAnnouncement={(ann) => handleAddToContainer(ann, "announcement")}
-                selectedSpeakerIdsInMeeting={selectedSpeakerIds}
-            />
-
-            {/* Validation Modal */}
-            <ValidationModal
-                open={validationModalOpen}
-                onClose={() => setValidationModalOpen(false)}
-                state={validationState}
-                items={validationItems}
-                onReviewAgenda={() => setValidationModalOpen(false)}
-                onProceed={handleCreateMeeting}
-                onRetry={handleValidate}
-                isCreating={isCreating}
-            />
-        </DndContext>
+                    {/* Validation Modal */}
+                    <ValidationModal
+                        open={validationModalOpen}
+                        onClose={() => setValidationModalOpen(false)}
+                        state={validationState}
+                        items={validationItems}
+                        onReviewAgenda={() => setValidationModalOpen(false)}
+                        onProceed={handleCreateMeeting}
+                        onRetry={handleValidate}
+                        isCreating={isCreating}
+                    />
+                </DndContext>
+            </form>
+        </Form>
     );
 }

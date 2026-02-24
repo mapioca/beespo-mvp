@@ -18,6 +18,7 @@ import { CreateItemTypeDialog } from "./create-item-type-dialog";
 
 interface ToolboxPaneProps {
     onItemsLoaded?: (items: ToolboxItem[]) => void;
+    onAddItem?: (item: ToolboxItem) => void;
 }
 
 interface CategoryGroup {
@@ -77,7 +78,7 @@ function getContainerType(pt: ProceduralItemType): "discussion" | "business" | "
     return CONTAINER_NAME_MAP[pt.name];
 }
 
-export function ToolboxPane({ onItemsLoaded }: ToolboxPaneProps) {
+export function ToolboxPane({ onItemsLoaded, onAddItem }: ToolboxPaneProps) {
     const [search, setSearch] = useState("");
     const [standardTypes, setStandardTypes] = useState<ProceduralItemType[]>([]);
     const [customTypes, setCustomTypes] = useState<ProceduralItemType[]>([]);
@@ -129,7 +130,7 @@ export function ToolboxPane({ onItemsLoaded }: ToolboxPaneProps) {
         };
 
         loadItemTypes();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     // Reload custom types when workspace changes or dialog closes
@@ -321,6 +322,7 @@ export function ToolboxPane({ onItemsLoaded }: ToolboxPaneProps) {
                                                 <DraggableToolboxItem
                                                     key={item.id}
                                                     item={item}
+                                                    onAddItem={onAddItem}
                                                 />
                                             ))}
                                             {group.showAddButton && (

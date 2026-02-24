@@ -138,7 +138,7 @@ function SortableAgendaRow({
                 ref={setNodeRef}
                 style={style}
                 className={cn(
-                    "rounded-lg border-2 transition-all",
+                    "rounded-md border-2 transition-all",
                     colors.bg,
                     colors.border,
                     isDragging && "opacity-50 shadow-lg ring-2 ring-primary/40"
@@ -256,7 +256,7 @@ function SortableAgendaRow({
             ref={setNodeRef}
             style={style}
             className={cn(
-                "flex items-center gap-2 p-3 border rounded-lg bg-card transition-all group",
+                "flex items-center gap-2 p-2.5 border rounded-md bg-card transition-all group",
                 "hover:border-muted-foreground/30",
                 isDragging && "opacity-50 shadow-lg ring-2 ring-primary/40"
             )}
@@ -383,14 +383,14 @@ export function AgendaCanvas({
                 <div
                     ref={setNodeRef}
                     className={cn(
-                        "p-6 min-h-full",
-                        isOver && "bg-primary/5"
+                        "p-4 lg:p-6 min-h-full bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px]",
+                        isOver && "bg-primary/5 [background-size:16px_16px]"
                     )}
                 >
                     {items.length === 0 ? (
                         <div
                             className={cn(
-                                "flex flex-col items-center justify-center py-16",
+                                "flex flex-col items-center justify-center py-16 mt-8 bg-background/50 backdrop-blur-sm",
                                 "border-2 border-dashed rounded-lg",
                                 "text-muted-foreground transition-all",
                                 isOver ? "border-primary bg-primary/5" : "border-muted-foreground/20"
@@ -404,12 +404,12 @@ export function AgendaCanvas({
                             </div>
                         </div>
                     ) : (
-                        <div className="bg-white rounded-lg shadow-sm border p-4">
+                        <div className="bg-background/80 backdrop-blur-sm rounded-lg shadow-sm border p-4">
                             <SortableContext
                                 items={itemIds}
                                 strategy={verticalListSortingStrategy}
                             >
-                                <div className="space-y-2">
+                                <div className="space-y-1.5">
                                     {items.map((item) => (
                                         <SortableAgendaRow
                                             key={item.id}
