@@ -34,7 +34,7 @@ export function PreviewModal({
         <div className="bg-background border-b px-6 py-4 shrink-0">
           <DialogTitle>Agenda Preview</DialogTitle>
           <DialogDescription>
-            High-fidelity view of the printed document
+            Review the layout and details of your agenda
           </DialogDescription>
         </div>
 

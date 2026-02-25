@@ -98,6 +98,7 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
     const [unifiedModalOpen, setUnifiedModalOpen] = useState(false);
     const [unifiedModalMode, setUnifiedModalMode] = useState<UnifiedSelectorMode>("hymn");
     const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+    const [editingItemId, setEditingItemId] = useState<string | null>(null);
     const [targetContainerId, setTargetContainerId] = useState<string | null>(null);
 
     // Validation state
@@ -397,6 +398,7 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
                 is_core: toolboxItem.is_core,
                 is_custom: toolboxItem.is_custom,
                 icon: toolboxItem.icon,
+                structural_type: toolboxItem.structural_type,
             };
 
             // Insert and reindex
@@ -448,6 +450,7 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
                 is_core: toolboxItem.is_core,
                 is_custom: toolboxItem.is_custom,
                 icon: toolboxItem.icon,
+                structural_type: toolboxItem.structural_type,
             };
 
             if (newItem.isContainer) {
@@ -599,6 +602,15 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
                     : item
             )
         );
+    }, []);
+
+    const handleUpdateTitle = useCallback((id: string, newTitle: string) => {
+        setCanvasItems((prev) =>
+            prev.map((item) =>
+                item.id === id ? { ...item, title: newTitle } : item
+            )
+        );
+        setEditingItemId(null);
     }, []);
 
     // Validation
@@ -783,6 +795,7 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
                 discussion_id: item.discussion_id || null,
                 business_item_id: item.business_item_id || null,
                 announcement_id: item.announcement_id || null,
+                structural_type: item.structural_type || null,
                 // Include child items for containers
                 child_items: item.isContainer && item.childItems ? item.childItems.map((child) => ({
                     title: child.title,
@@ -964,6 +977,9 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
                                     onSelectHymn={openHymnSelector}
                                     onSelectParticipant={openParticipantSelector}
                                     onSelectSpeaker={openSpeakerSelector}
+                                    editingItemId={editingItemId}
+                                    onEditTitle={setEditingItemId}
+                                    onUpdateTitle={handleUpdateTitle}
                                     isOver={isOverCanvas}
                                 />
                             </div>

@@ -19,6 +19,7 @@ import {
     UserPlus,
     Mic,
     CheckCircle,
+    Minus,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "@/lib/toast";
@@ -485,6 +486,7 @@ export function MeetingComposer({
             business: <Briefcase className="h-4 w-4 text-purple-500" />,
             announcement: <Megaphone className="h-4 w-4 text-orange-500" />,
             speaker: <User className="h-4 w-4 text-pink-500" />,
+            structural: <Minus className="h-4 w-4 text-slate-500" />
         };
         return icons[category];
     };

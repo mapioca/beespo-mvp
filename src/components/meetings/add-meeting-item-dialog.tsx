@@ -65,7 +65,7 @@ interface Speaker {
     is_confirmed: boolean;
 }
 
-export type CategoryType = "procedural" | "discussion" | "business" | "announcement" | "speaker";
+export type CategoryType = "procedural" | "discussion" | "business" | "announcement" | "speaker" | "structural";
 
 export interface SelectedItem {
     category: CategoryType;

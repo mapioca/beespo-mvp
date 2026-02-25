@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useRef, useEffect } from "react";
 import { useDroppable } from "@dnd-kit/core";
 import {
     SortableContext,
@@ -9,6 +10,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Input } from "@/components/ui/input";
 import {
     Trash2,
     Minus,
@@ -30,6 +32,9 @@ interface AgendaCanvasProps {
     onSelectHymn: (itemId: string) => void;
     onSelectParticipant: (itemId: string) => void;
     onSelectSpeaker: (itemId: string) => void;
+    editingItemId?: string | null;
+    onEditTitle?: (itemId: string | null) => void;
+    onUpdateTitle?: (id: string, newTitle: string) => void;
     isOver?: boolean;
 }
 
@@ -45,6 +50,9 @@ interface SortableAgendaRowProps {
     onSelectHymn?: () => void;
     onSelectParticipant?: () => void;
     onSelectSpeaker?: () => void;
+    isEditing?: boolean;
+    onEditTitle?: () => void;
+    onUpdateTitle?: (newTitle: string) => void;
 }
 
 function SortableAgendaRow({
@@ -57,6 +65,9 @@ function SortableAgendaRow({
     onSelectHymn,
     onSelectParticipant,
     onSelectSpeaker,
+    isEditing,
+    onEditTitle,
+    onUpdateTitle,
 }: SortableAgendaRowProps) {
     const {
         attributes,
@@ -66,6 +77,33 @@ function SortableAgendaRow({
         transition,
         isDragging,
     } = useSortable({ id: item.id });
+
+    const [editValue, setEditValue] = useState(item.title);
+    const inputRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        if (isEditing) {
+            setEditValue(item.title);
+            setTimeout(() => inputRef.current?.focus(), 0);
+        }
+    }, [isEditing, item.title]);
+
+    const handleSaveTitle = () => {
+        if (onUpdateTitle && editValue.trim() !== "" && editValue !== item.title) {
+            onUpdateTitle(editValue.trim());
+        } else if (onEditTitle) {
+            onEditTitle();
+        }
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === "Enter") {
+            handleSaveTitle();
+        } else if (e.key === "Escape") {
+            setEditValue(item.title); // Reset
+            if (onEditTitle) onEditTitle(); // Cancel editing
+        }
+    };
 
     const style = {
         transform: CSS.Transform.toString(transform),
@@ -195,9 +233,30 @@ function SortableAgendaRow({
             {/* Header row: Icon, Title, Duration, Actions */}
             <div className="flex items-center gap-2 p-1.5">
                 <div className="w-7 shrink-0" /> {/* Spacer to align with container chevrons */}
-                <span className="font-medium text-sm flex-1 truncate text-foreground pl-1">
-                    {item.title}
-                </span>
+                {isEditing ? (
+                    <Input
+                        ref={inputRef}
+                        value={editValue}
+                        onChange={(e) => setEditValue(e.target.value)}
+                        onBlur={handleSaveTitle}
+                        onKeyDown={handleKeyDown}
+                        className="flex-1 h-7 text-sm font-medium my-[-4px]"
+                    />
+                ) : (
+                    <span
+                        className={cn(
+                            "font-medium text-sm flex-1 truncate text-foreground pl-1",
+                            item.structural_type === "section_header" && "cursor-text"
+                        )}
+                        onDoubleClick={() => {
+                            if (item.structural_type === "section_header" && onEditTitle) {
+                                onEditTitle();
+                            }
+                        }}
+                    >
+                        {item.title}
+                    </span>
+                )}
 
                 <span className="text-xs text-muted-foreground shrink-0">
                     {item.duration_minutes}m
@@ -287,6 +346,9 @@ export function AgendaCanvas({
     onSelectHymn,
     onSelectParticipant,
     onSelectSpeaker,
+    editingItemId,
+    onEditTitle,
+    onUpdateTitle,
     isOver,
 }: AgendaCanvasProps) {
     const { watch } = useFormContext();
@@ -374,6 +436,9 @@ export function AgendaCanvas({
                                                     ? () => onSelectSpeaker(item.id)
                                                     : undefined
                                             }
+                                            isEditing={editingItemId === item.id}
+                                            onEditTitle={() => onEditTitle && onEditTitle(item.id)}
+                                            onUpdateTitle={(newTitle) => onUpdateTitle && onUpdateTitle(item.id, newTitle)}
                                         />
                                     ))}
                                 </div>

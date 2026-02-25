@@ -88,7 +88,7 @@ export function generateMeetingMarkdown(data: MeetingMarkdownData): string {
     // Container items
     if (item.isContainer && item.containerType) {
       const header = CONTAINER_HEADERS[item.containerType] || item.title;
-      lines.push(`### ${header}`);
+      lines.push(`## ${header}`);
       lines.push("");
 
       const children = item.childItems || [];
@@ -109,6 +109,18 @@ export function generateMeetingMarkdown(data: MeetingMarkdownData): string {
         lines.push("");
       }
       lines.push(""); // Extra space after section
+      continue;
+    }
+
+    // Structural items
+    if (item.category === "structural") {
+      if (item.structural_type === "section_header") {
+        lines.push(`## ${item.title}`);
+        lines.push("");
+      } else if (item.structural_type === "divider") {
+        lines.push("---");
+        lines.push("");
+      }
       continue;
     }
 

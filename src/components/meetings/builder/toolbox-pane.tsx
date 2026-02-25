@@ -202,6 +202,31 @@ export function ToolboxPane({ onItemsLoaded, onAddItem }: ToolboxPaneProps) {
             });
         });
 
+        // Add structural items statically
+        items.push({
+            id: "struct_header",
+            type: "structural",
+            category: "structural",
+            title: "Section Header",
+            description: "Adds a heading to organize your agenda",
+            duration_minutes: 0,
+            structural_type: "section_header",
+            is_core: true,
+            is_custom: false,
+        });
+
+        items.push({
+            id: "struct_divider",
+            type: "structural",
+            category: "structural",
+            title: "Divider",
+            description: "Adds a horizontal line to separate sections",
+            duration_minutes: 0,
+            structural_type: "divider",
+            is_core: true,
+            is_custom: false,
+        });
+
         return items;
     }, [standardTypes, customTypes]);
 
@@ -217,7 +242,7 @@ export function ToolboxPane({ onItemsLoaded, onAddItem }: ToolboxPaneProps) {
         const groups: CategoryGroup[] = [];
 
         // Standard Items (core items)
-        const standardItems = toolboxItems.filter((i) => i.is_core);
+        const standardItems = toolboxItems.filter((i) => i.is_core && i.type !== "structural");
         if (standardItems.length > 0) {
             groups.push({
                 id: "standard",
@@ -234,6 +259,16 @@ export function ToolboxPane({ onItemsLoaded, onAddItem }: ToolboxPaneProps) {
             items: customItems,
             showAddButton: true,
         });
+
+        // Formatting/Structural Items
+        const structuralItems = toolboxItems.filter((i) => i.type === "structural");
+        if (structuralItems.length > 0) {
+            groups.push({
+                id: "formatting",
+                label: "Formatting",
+                items: structuralItems,
+            });
+        }
 
         return groups;
     }, [toolboxItems]);
@@ -265,7 +300,7 @@ export function ToolboxPane({ onItemsLoaded, onAddItem }: ToolboxPaneProps) {
             <div className="h-14 px-4 border-b border-border bg-background flex items-center gap-2.5 shrink-0">
                 <Container className="h-5 w-5 text-primary" strokeWidth={2.5} />
                 <h2 className="text-base font-semibold tracking-tight text-foreground">
-                    Meeting Composer
+                    Agenda Composer
                 </h2>
             </div>
 

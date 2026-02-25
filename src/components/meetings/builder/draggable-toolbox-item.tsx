@@ -12,6 +12,8 @@ import {
     Layers,
     Puzzle,
     Plus,
+    Heading1,
+    Minus,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ToolboxItem } from "./types";
@@ -41,12 +43,23 @@ const getCategoryIcon = (item: ToolboxItem) => {
         return <Music className="h-4 w-4" />;
     }
 
+    if (item.type === "structural") {
+        if (item.structural_type === "section_header") {
+            return <Heading1 className="h-4 w-4" />;
+        }
+        if (item.structural_type === "divider") {
+            return <Minus className="h-4 w-4" />;
+        }
+        return <Layers className="h-4 w-4" />;
+    }
+
     const icons: Record<CategoryType, React.ReactNode> = {
         procedural: <BookOpen className="h-4 w-4" />,
         discussion: <MessageSquare className="h-4 w-4" />,
         business: <Briefcase className="h-4 w-4" />,
         announcement: <Megaphone className="h-4 w-4" />,
         speaker: <User className="h-4 w-4" />,
+        structural: <Layers className="h-4 w-4" />,
     };
     return icons[item.category] || <Layers className="h-4 w-4" />;
 };

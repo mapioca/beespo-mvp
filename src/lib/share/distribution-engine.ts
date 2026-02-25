@@ -68,12 +68,23 @@ export function generateMarkdownExport(
 
   content += `\n## Agenda\n\n`;
 
-  sortedItems.forEach((item, index) => {
+  let itemIndex = 1;
+  sortedItems.forEach((item) => {
+    if (item.item_type === "structural") {
+      if (item.structural_type === "section_header") {
+        content += `## ${item.title}\n\n`;
+      } else if (item.structural_type === "divider") {
+        content += `---\n\n`;
+      }
+      return;
+    }
+
     const duration = item.duration_minutes ? ` (${item.duration_minutes} min)` : "";
     const presenter = item.participant_name ? ` - ${item.participant_name}` : "";
     const status = item.is_completed ? " [Completed]" : "";
 
-    content += `${index + 1}. **${item.title}**${duration}${presenter}${status}\n`;
+    content += `${itemIndex}. **${item.title}**${duration}${presenter}${status}\n`;
+    itemIndex++;
 
     if (item.description) {
       content += `   ${item.description}\n`;
@@ -141,15 +152,29 @@ export function generateHtmlExport(
     <h2 style="margin: 0 0 16px 0; font-size: 18px; color: #333; border-bottom: 2px solid #667eea; padding-bottom: 8px;">Agenda</h2>
     <ol style="margin: 0; padding-left: 20px;">`;
 
+  let itemIndex = 1;
   sortedItems.forEach((item) => {
+    if (item.item_type === "structural") {
+      if (item.structural_type === "section_header") {
+        content += `
+      <h3 style="margin: 24px 0 16px 0; font-size: 16px; color: #333; text-transform: uppercase; letter-spacing: 0.05em;">${escapeHtml(item.title)}</h3>`;
+      } else if (item.structural_type === "divider") {
+        content += `
+      <hr style="border: none; border-top: 1px solid #e9ecef; margin: 24px 0;">`;
+      }
+      return;
+    }
+
     const duration = item.duration_minutes ? ` <span style="color: #888; font-size: 14px;">(${item.duration_minutes} min)</span>` : "";
     const presenter = item.participant_name ? ` <span style="color: #667eea; font-size: 14px;">- ${escapeHtml(item.participant_name)}</span>` : "";
     const statusStyle = item.is_completed ? "text-decoration: line-through; color: #888;" : "";
     const completedBadge = item.is_completed ? ` <span style="background: #28a745; color: white; font-size: 10px; padding: 2px 6px; border-radius: 10px; margin-left: 8px;">Completed</span>` : "";
 
     content += `
-      <li style="margin-bottom: 16px; ${statusStyle}">
+      <li style="margin-bottom: 16px; ${statusStyle}" value="${itemIndex}">
         <strong style="color: #333;">${escapeHtml(item.title)}</strong>${duration}${presenter}${completedBadge}`;
+
+    itemIndex++;
 
     if (item.description) {
       content += `
@@ -214,10 +239,21 @@ export function generateIcsExport(
 
   // Build agenda summary for description
   let agendaSummary = "AGENDA:\\n\\n";
-  sortedItems.forEach((item, index) => {
+  let itemIndex = 1;
+  sortedItems.forEach((item) => {
+    if (item.item_type === "structural") {
+      if (item.structural_type === "section_header") {
+        agendaSummary += `\\n[ ${item.title.toUpperCase()} ]\\n`;
+      } else if (item.structural_type === "divider") {
+        agendaSummary += `\\n---\\n`;
+      }
+      return;
+    }
+
     const duration = item.duration_minutes ? ` (${item.duration_minutes} min)` : "";
     const presenter = item.participant_name ? ` - ${item.participant_name}` : "";
-    agendaSummary += `${index + 1}. ${item.title}${duration}${presenter}\\n`;
+    agendaSummary += `${itemIndex}. ${item.title}${duration}${presenter}\\n`;
+    itemIndex++;
   });
 
   if (publicUrl) {
