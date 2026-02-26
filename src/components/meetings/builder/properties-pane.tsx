@@ -105,7 +105,7 @@ export function PropertiesPane({
                 {/* Item Settings (permanently shown, state depends on selection) */}
                 <div className="space-y-3">
                     <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-                        Item Settings
+                        Item
                     </h3>
 
                     {!selectedItem ? (
@@ -303,9 +303,9 @@ export function PropertiesPane({
                 </div>
 
                 {/* General Settings */}
-                <div className="space-y-3">
+                <div className="space-y-3 pt-3 border-t">
                     <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-                        General
+                        Agenda
                     </h3>
 
                     <div className="space-y-1.5">
