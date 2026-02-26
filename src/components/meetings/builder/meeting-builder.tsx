@@ -94,11 +94,10 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
     const [activeType, setActiveType] = useState<"toolbox" | "canvas" | null>(null);
     const [isOverCanvas, setIsOverCanvas] = useState(false);
 
-    // Modal state
+    // Selection & modal state
+    const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
     const [unifiedModalOpen, setUnifiedModalOpen] = useState(false);
     const [unifiedModalMode, setUnifiedModalMode] = useState<UnifiedSelectorMode>("hymn");
-    const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
-    const [editingItemId, setEditingItemId] = useState<string | null>(null);
     const [targetContainerId, setTargetContainerId] = useState<string | null>(null);
 
     // Validation state
@@ -163,6 +162,17 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
             }
         }
     }, [selectedTemplateId, templates, title, setTitle]);
+
+    // Escape key deselects the current item
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === "Escape" && selectedItemId && !unifiedModalOpen) {
+                setSelectedItemId(null);
+            }
+        };
+        window.addEventListener("keydown", handleKeyDown);
+        return () => window.removeEventListener("keydown", handleKeyDown);
+    }, [selectedItemId, unifiedModalOpen]);
 
     // Load template items when template changes
     const loadTemplateItems = useCallback(async (templateId: string) => {
@@ -467,7 +477,10 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
             const filtered = prev.filter((i) => i.id !== id);
             return filtered.map((item, idx) => ({ ...item, order_index: idx }));
         });
-    }, []);
+        if (selectedItemId === id) {
+            setSelectedItemId(null);
+        }
+    }, [selectedItemId]);
 
     const toggleContainer = useCallback((id: string) => {
         setExpandedContainers((prev) => {
@@ -481,30 +494,46 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
         });
     }, []);
 
-    // Modal handlers
-    const openHymnSelector = useCallback((itemId: string) => {
-        setSelectedItemId(itemId);
+    // Panel-oriented modal openers (use already-set selectedItemId)
+    const openHymnSelectorForSelected = useCallback(() => {
+        if (!selectedItemId) return;
         setUnifiedModalMode("hymn");
         setUnifiedModalOpen(true);
-    }, []);
+    }, [selectedItemId]);
 
-    const openParticipantSelector = useCallback((itemId: string) => {
-        setSelectedItemId(itemId);
+    const openParticipantSelectorForSelected = useCallback(() => {
+        if (!selectedItemId) return;
         setUnifiedModalMode("participant");
         setUnifiedModalOpen(true);
-    }, []);
+    }, [selectedItemId]);
 
-    const openSpeakerSelector = useCallback((itemId: string) => {
-        setSelectedItemId(itemId);
+    const openSpeakerSelectorForSelected = useCallback(() => {
+        if (!selectedItemId) return;
         setUnifiedModalMode("speaker");
         setUnifiedModalOpen(true);
-    }, []);
+    }, [selectedItemId]);
 
-    const openContainerAddModal = useCallback((containerId: string, containerType: ContainerType) => {
-        setTargetContainerId(containerId);
-        setUnifiedModalMode(containerType as UnifiedSelectorMode);
+    // Panel-oriented: add to the currently selected container
+    const openContainerAddForSelected = useCallback(() => {
+        if (!selectedItemId) return;
+        const item = canvasItems.find(i => i.id === selectedItemId);
+        if (!item?.isContainer || !item.containerType) return;
+        setTargetContainerId(selectedItemId);
+        setUnifiedModalMode(item.containerType as UnifiedSelectorMode);
         setUnifiedModalOpen(true);
-    }, []);
+    }, [selectedItemId, canvasItems]);
+
+    // Panel-oriented: remove child from the currently selected container
+    const handleRemoveChildFromSelected = useCallback((childId: string) => {
+        if (!selectedItemId) return;
+        setCanvasItems((prev) =>
+            prev.map((item) =>
+                item.id === selectedItemId
+                    ? { ...item, childItems: (item.childItems || []).filter((c) => c.id !== childId) }
+                    : item
+            )
+        );
+    }, [selectedItemId]);
 
     const handleSelectHymn = useCallback((hymn: { id: string; number: number; title: string }) => {
         if (selectedItemId) {
@@ -517,7 +546,6 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
             );
         }
         setUnifiedModalOpen(false);
-        setSelectedItemId(null);
     }, [selectedItemId]);
 
     const handleSelectParticipant = useCallback((participant: { id: string; name: string }) => {
@@ -531,7 +559,6 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
             );
         }
         setUnifiedModalOpen(false);
-        setSelectedItemId(null);
     }, [selectedItemId]);
 
     const handleSelectSpeaker = useCallback((speaker: SpeakerSelection) => {
@@ -545,7 +572,6 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
             );
         }
         setUnifiedModalOpen(false);
-        setSelectedItemId(null);
     }, [selectedItemId]);
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -594,23 +620,24 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
         setTargetContainerId(null);
     }, [targetContainerId]);
 
-    const handleRemoveChildItem = useCallback((containerId: string, childId: string) => {
-        setCanvasItems((prev) =>
-            prev.map((item) =>
-                item.id === containerId
-                    ? { ...item, childItems: (item.childItems || []).filter((c) => c.id !== childId) }
-                    : item
-            )
-        );
-    }, []);
-
     const handleUpdateTitle = useCallback((id: string, newTitle: string) => {
         setCanvasItems((prev) =>
             prev.map((item) =>
                 item.id === id ? { ...item, title: newTitle } : item
             )
         );
-        setEditingItemId(null);
+    }, []);
+
+    const handleUpdateDuration = useCallback((id: string, newDuration: number) => {
+        setCanvasItems((prev) =>
+            prev.map((item) =>
+                item.id === id ? { ...item, duration_minutes: newDuration } : item
+            )
+        );
+    }, []);
+
+    const handleDeselectItem = useCallback(() => {
+        setSelectedItemId(null);
     }, []);
 
     // Validation
@@ -953,8 +980,15 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
                                         onPreview={handlePreview}
                                         isCreating={isCreating}
                                         isValid={isValid}
-                                        selectedItem={canvasItems.find(i => i.id === editingItemId)}
+                                        selectedItem={canvasItems.find(i => i.id === selectedItemId)}
                                         onUpdateItem={handleUpdateTitle}
+                                        onUpdateDuration={handleUpdateDuration}
+                                        onSelectHymn={openHymnSelectorForSelected}
+                                        onSelectParticipant={openParticipantSelectorForSelected}
+                                        onSelectSpeaker={openSpeakerSelectorForSelected}
+                                        onDeselectItem={handleDeselectItem}
+                                        onAddToContainer={openContainerAddForSelected}
+                                        onRemoveChildItem={handleRemoveChildFromSelected}
                                     />
                                 </SheetContent>
                             </Sheet>
@@ -974,14 +1008,8 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
                                     onRemoveItem={handleRemoveItem}
                                     expandedContainers={expandedContainers}
                                     onToggleContainer={toggleContainer}
-                                    onAddToContainer={openContainerAddModal}
-                                    onRemoveChildItem={handleRemoveChildItem}
-                                    onSelectHymn={openHymnSelector}
-                                    onSelectParticipant={openParticipantSelector}
-                                    onSelectSpeaker={openSpeakerSelector}
-                                    editingItemId={editingItemId}
-                                    onSelectItem={setEditingItemId}
-                                    onUpdateTitle={handleUpdateTitle}
+                                    selectedItemId={selectedItemId}
+                                    onSelectItem={setSelectedItemId}
                                     isOver={isOverCanvas}
                                 />
                             </div>
@@ -994,8 +1022,15 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
                                     onPreview={handlePreview}
                                     isCreating={isCreating}
                                     isValid={isValid}
-                                    selectedItem={canvasItems.find(i => i.id === editingItemId)}
+                                    selectedItem={canvasItems.find(i => i.id === selectedItemId)}
                                     onUpdateItem={handleUpdateTitle}
+                                    onUpdateDuration={handleUpdateDuration}
+                                    onSelectHymn={openHymnSelectorForSelected}
+                                    onSelectParticipant={openParticipantSelectorForSelected}
+                                    onSelectSpeaker={openSpeakerSelectorForSelected}
+                                    onDeselectItem={handleDeselectItem}
+                                    onAddToContainer={openContainerAddForSelected}
+                                    onRemoveChildItem={handleRemoveChildFromSelected}
                                 />
                             </div>
                         </div>
@@ -1013,7 +1048,6 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
                         open={unifiedModalOpen}
                         onClose={() => {
                             setUnifiedModalOpen(false);
-                            setSelectedItemId(null);
                             setTargetContainerId(null);
                         }}
                         mode={unifiedModalMode}

@@ -2,7 +2,7 @@
 
 import { useFormContext } from "react-hook-form";
 import { format } from "date-fns";
-import { CalendarIcon, Clock, Loader2, Play, Plus } from "lucide-react";
+import { CalendarIcon, Clock, Loader2, Minus, Play, Plus, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -30,6 +30,13 @@ interface PropertiesPaneProps {
     isValid: boolean;
     selectedItem?: CanvasItem;
     onUpdateItem?: (id: string, newTitle: string) => void;
+    onUpdateDuration?: (id: string, newDuration: number) => void;
+    onSelectHymn?: () => void;
+    onSelectParticipant?: () => void;
+    onSelectSpeaker?: () => void;
+    onDeselectItem?: () => void;
+    onAddToContainer?: () => void;
+    onRemoveChildItem?: (childId: string) => void;
 }
 
 export function PropertiesPane({
@@ -40,6 +47,13 @@ export function PropertiesPane({
     isValid,
     selectedItem,
     onUpdateItem,
+    onUpdateDuration,
+    onSelectHymn,
+    onSelectParticipant,
+    onSelectSpeaker,
+    onDeselectItem,
+    onAddToContainer,
+    onRemoveChildItem,
 }: PropertiesPaneProps) {
     const { watch, setValue } = useFormContext();
 
@@ -88,34 +102,189 @@ export function PropertiesPane({
 
             {/* Scrollable Content */}
             <div className="p-3 space-y-6 flex-1">
-                {/* Item Editor (if selected) */}
+                {/* Item Settings (shown when a card is selected) */}
                 {selectedItem && (
                     <div className="space-y-4 p-3 rounded-lg bg-primary/5 border border-primary/10 animate-in fade-in slide-in-from-right-2 duration-200">
+                        {/* Header with type badge and close */}
                         <div className="flex items-center justify-between">
                             <h3 className="text-[10px] font-bold text-primary uppercase tracking-wider">
                                 Item Settings
                             </h3>
-                            <div className="px-1.5 py-0.5 rounded bg-primary/10 border border-primary/20">
-                                <span className="text-[10px] text-primary uppercase font-bold tracking-tight">
-                                    {selectedItem.structural_type?.replace('_', ' ') || selectedItem.category}
-                                </span>
+                            <div className="flex items-center gap-1.5">
+                                <div className="px-1.5 py-0.5 rounded bg-primary/10 border border-primary/20">
+                                    <span className="text-[10px] text-primary uppercase font-bold tracking-tight">
+                                        {selectedItem.structural_type?.replace('_', ' ') || selectedItem.category}
+                                    </span>
+                                </div>
+                                <button
+                                    type="button"
+                                    className="p-0.5 rounded hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+                                    onClick={onDeselectItem}
+                                >
+                                    <X className="h-3.5 w-3.5" />
+                                </button>
                             </div>
                         </div>
 
-                        <div className="space-y-2">
-                            <Label htmlFor="item-title" className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-                                {selectedItem.structural_type === "section_header" ? "Section Title" : "Title"}
-                            </Label>
-                            <Input
-                                id="item-title"
-                                value={selectedItem.title}
-                                onChange={(e) => onUpdateItem?.(selectedItem.id, e.target.value)}
-                                onFocus={(e) => e.target.select()}
-                                className="bg-background h-9 text-sm focus-visible:ring-primary/30"
-                                placeholder="Enter title..."
-                            />
-                        </div>
+                        {/* Title (all items except dividers) */}
+                        {selectedItem.structural_type !== "divider" && (
+                            <div className="space-y-2">
+                                <Label htmlFor="item-title" className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                                    {selectedItem.structural_type === "section_header" ? "Section Title" : "Title"}
+                                </Label>
+                                <Input
+                                    id="item-title"
+                                    value={selectedItem.title}
+                                    onChange={(e) => onUpdateItem?.(selectedItem.id, e.target.value)}
+                                    onFocus={(e) => e.target.select()}
+                                    className="bg-background h-9 text-sm focus-visible:ring-primary/30"
+                                    placeholder="Enter title..."
+                                />
+                            </div>
+                        )}
 
+                        {/* Duration (non-structural items only) */}
+                        {!selectedItem.structural_type && (
+                            <div className="space-y-2">
+                                <Label htmlFor="item-duration" className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                                    Duration (minutes)
+                                </Label>
+                                <Input
+                                    id="item-duration"
+                                    type="number"
+                                    min={0}
+                                    max={120}
+                                    value={selectedItem.duration_minutes}
+                                    onChange={(e) => onUpdateDuration?.(selectedItem.id, parseInt(e.target.value) || 0)}
+                                    className="bg-background h-9 text-sm focus-visible:ring-primary/30 w-24"
+                                />
+                            </div>
+                        )}
+
+                        {/* Hymn selector */}
+                        {selectedItem.is_hymn && (
+                            <div className="space-y-2">
+                                <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                                    Hymn
+                                </Label>
+                                <button
+                                    type="button"
+                                    className={cn(
+                                        "w-full py-2 px-3 border-2 border-dashed rounded-md text-sm flex items-center justify-center gap-2 transition-all",
+                                        "hover:border-solid hover:bg-muted/50 border-muted-foreground/20 text-muted-foreground",
+                                        selectedItem.hymn_title && "border-solid bg-blue-50/50 border-blue-200 text-blue-700 font-medium"
+                                    )}
+                                    onClick={onSelectHymn}
+                                >
+                                    <span className="truncate">
+                                        {selectedItem.hymn_title
+                                            ? `#${selectedItem.hymn_number} ${selectedItem.hymn_title}`
+                                            : "Select Hymn..."}
+                                    </span>
+                                </button>
+                            </div>
+                        )}
+
+                        {/* Participant selector */}
+                        {(selectedItem.requires_participant || selectedItem.config?.requires_assignee) &&
+                         !selectedItem.is_hymn &&
+                         selectedItem.category !== "speaker" && (
+                            <div className="space-y-2">
+                                <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                                    Participant
+                                </Label>
+                                <button
+                                    type="button"
+                                    className={cn(
+                                        "w-full py-2 px-3 border-2 border-dashed rounded-md text-sm flex items-center justify-center gap-2 transition-all",
+                                        "hover:border-solid hover:bg-muted/50 border-muted-foreground/20 text-muted-foreground",
+                                        selectedItem.participant_name && "border-solid bg-slate-50/50 border-slate-200 text-slate-700 font-medium"
+                                    )}
+                                    onClick={onSelectParticipant}
+                                >
+                                    <span className="truncate">
+                                        {selectedItem.participant_name || "Select Participant..."}
+                                    </span>
+                                </button>
+                            </div>
+                        )}
+
+                        {/* Speaker selector */}
+                        {selectedItem.category === "speaker" && (
+                            <div className="space-y-2">
+                                <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                                    Speaker
+                                </Label>
+                                <button
+                                    type="button"
+                                    className={cn(
+                                        "w-full py-2 px-3 border-2 border-dashed rounded-md text-sm flex items-center justify-center gap-2 transition-all",
+                                        "hover:border-solid hover:bg-muted/50 border-muted-foreground/20 text-muted-foreground",
+                                        selectedItem.speaker_name && "border-solid bg-indigo-50/50 border-indigo-200 text-indigo-700 font-medium"
+                                    )}
+                                    onClick={onSelectSpeaker}
+                                >
+                                    <span className="truncate">
+                                        {selectedItem.speaker_name || "Select Speaker..."}
+                                    </span>
+                                </button>
+                            </div>
+                        )}
+
+                        {/* Container items (Discussion, Business, Announcement) */}
+                        {selectedItem.isContainer && selectedItem.containerType && (
+                            <div className="space-y-3">
+                                {/* Children list */}
+                                <div className="space-y-2">
+                                    <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                                        Items ({selectedItem.childItems?.length || 0})
+                                    </Label>
+                                    {selectedItem.childItems && selectedItem.childItems.length > 0 ? (
+                                        <div className="space-y-1">
+                                            {selectedItem.childItems.map((child) => (
+                                                <div
+                                                    key={child.id}
+                                                    className="flex items-center gap-2 py-1.5 px-2 rounded-md bg-background border border-border/60 group/child"
+                                                >
+                                                    <span className="text-xs flex-1 truncate text-foreground">
+                                                        {child.title}
+                                                    </span>
+                                                    {child.status && (
+                                                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted/50 text-muted-foreground capitalize shrink-0">
+                                                            {child.status.replace("_", " ")}
+                                                        </span>
+                                                    )}
+                                                    <button
+                                                        type="button"
+                                                        className="p-0.5 rounded opacity-0 group-hover/child:opacity-100 transition-opacity text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                                                        onClick={() => onRemoveChildItem?.(child.id)}
+                                                    >
+                                                        <Minus className="h-3 w-3" />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <p className="text-[10px] text-muted-foreground italic py-1">
+                                            No items added yet.
+                                        </p>
+                                    )}
+                                </div>
+
+                                {/* Add item button */}
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    className="w-full h-8 gap-1.5 text-xs font-medium border-dashed hover:border-solid hover:bg-primary/5 hover:text-primary hover:border-primary/30 transition-all"
+                                    onClick={onAddToContainer}
+                                >
+                                    <Plus className="h-3.5 w-3.5" />
+                                    Add {selectedItem.containerType}
+                                </Button>
+                            </div>
+                        )}
+
+                        {/* Section header hint */}
                         {selectedItem.structural_type === "section_header" && (
                             <p className="text-[10px] text-muted-foreground italic">
                                 Use headers to logically group your agenda items.
