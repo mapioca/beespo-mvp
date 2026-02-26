@@ -59,8 +59,8 @@ function getToolboxItemType(pt: ProceduralItemType): "procedural" | "container" 
     if (pt.name in CONTAINER_NAME_MAP) {
         return "container";
     }
-    // Speaker type: items with rich text OR named "Speaker"
-    if (pt.has_rich_text || pt.name === "Speaker") {
+    // Speaker type: items named "Speaker" that are core items
+    if (pt.name === "Speaker" && !pt.is_custom) {
         return "speaker";
     }
     return "procedural";
@@ -77,6 +77,7 @@ export function ToolboxPane({ onItemsLoaded, onAddItem }: ToolboxPaneProps) {
     const [customTypes, setCustomTypes] = useState<ProceduralItemType[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+    const [itemToEdit, setItemToEdit] = useState<ToolboxItem | null>(null);
     const [workspaceId, setWorkspaceId] = useState<string | null>(null);
 
     // Load item types
@@ -341,6 +342,10 @@ export function ToolboxPane({ onItemsLoaded, onAddItem }: ToolboxPaneProps) {
                                                 key={item.id}
                                                 item={item}
                                                 onAddItem={onAddItem}
+                                                onEditItem={item.is_custom ? () => {
+                                                    setItemToEdit(item);
+                                                    setIsCreateDialogOpen(true);
+                                                } : undefined}
                                             />
                                         ))}
                                         {group.showAddButton && (
@@ -349,7 +354,10 @@ export function ToolboxPane({ onItemsLoaded, onAddItem }: ToolboxPaneProps) {
                                                 size="sm"
                                                 type="button"
                                                 className="w-full mt-2 text-muted-foreground hover:text-foreground border-border hover:bg-accent hover:text-accent-foreground"
-                                                onClick={() => setIsCreateDialogOpen(true)}
+                                                onClick={() => {
+                                                    setItemToEdit(null);
+                                                    setIsCreateDialogOpen(true);
+                                                }}
                                             >
                                                 <PlusIcon weight="fill" className="h-3.5 w-3.5 mr-1.5" />
                                                 New Item Type
@@ -375,12 +383,16 @@ export function ToolboxPane({ onItemsLoaded, onAddItem }: ToolboxPaneProps) {
                 </p>
             </div>
 
-            {/* Create Item Type Dialog */}
+            {/* Create/Edit Item Type Dialog */}
             <CreateItemTypeDialog
                 open={isCreateDialogOpen}
-                onOpenChange={setIsCreateDialogOpen}
+                onOpenChange={(open) => {
+                    setIsCreateDialogOpen(open);
+                    if (!open) setItemToEdit(null);
+                }}
                 workspaceId={workspaceId}
                 onCreated={handleItemCreated}
+                initialData={itemToEdit}
             />
         </div>
     );

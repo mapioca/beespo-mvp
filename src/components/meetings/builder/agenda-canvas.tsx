@@ -265,6 +265,17 @@ function SortableAgendaRow({
                     </div>
                 </div>
             )}
+
+            {/* Description/Notes */}
+            {item.description && (
+                <div className="px-3 pb-2 pt-0">
+                    <div className="pl-7">
+                        <span className="text-xs text-muted-foreground/80 line-clamp-2 italic">
+                            {item.description}
+                        </span>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
@@ -289,9 +300,12 @@ export function AgendaCanvas({
     const itemIds = items.map((item) => item.id);
 
     return (
-        <div className="flex flex-col h-full bg-slate-50/50 bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] [background-size:16px_16px]">
+        <div
+            className="flex flex-col h-full bg-slate-50/50 bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] [background-size:16px_16px]"
+            onClick={() => onSelectItem?.(null)}
+        >
             {/* Header */}
-            <div className="h-14 px-4 border-b bg-background grid grid-cols-3 items-center shrink-0">
+            <div className="h-14 px-4 border-b bg-background grid grid-cols-3 items-center shrink-0" onClick={(e) => e.stopPropagation()}>
                 <div /> {/* Left spacer */}
                 <h3 className="font-semibold text-sm text-center truncate">
                     {title || "Untitled Meeting Agenda"}
@@ -311,7 +325,6 @@ export function AgendaCanvas({
                         "p-3 min-h-full flex flex-col items-center",
                         isOver && "bg-primary/5"
                     )}
-                    onClick={() => onSelectItem?.(null)}
                 >
                     {items.length === 0 ? (
                         <div

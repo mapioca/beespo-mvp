@@ -628,6 +628,14 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
         );
     }, []);
 
+    const handleUpdateDescription = useCallback((id: string, newDescription: string) => {
+        setCanvasItems((prev) =>
+            prev.map((item) =>
+                item.id === id ? { ...item, description: newDescription } : item
+            )
+        );
+    }, []);
+
     const handleUpdateDuration = useCallback((id: string, newDuration: number) => {
         setCanvasItems((prev) =>
             prev.map((item) =>
@@ -636,9 +644,6 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
         );
     }, []);
 
-    const handleDeselectItem = useCallback(() => {
-        setSelectedItemId(null);
-    }, []);
 
     // Validation
     const validateAgenda = useCallback((): ValidationItem[] => {
@@ -982,11 +987,11 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
                                         isValid={isValid}
                                         selectedItem={canvasItems.find(i => i.id === selectedItemId)}
                                         onUpdateItem={handleUpdateTitle}
+                                        onUpdateDescription={handleUpdateDescription}
                                         onUpdateDuration={handleUpdateDuration}
                                         onSelectHymn={openHymnSelectorForSelected}
                                         onSelectParticipant={openParticipantSelectorForSelected}
                                         onSelectSpeaker={openSpeakerSelectorForSelected}
-                                        onDeselectItem={handleDeselectItem}
                                         onAddToContainer={openContainerAddForSelected}
                                         onRemoveChildItem={handleRemoveChildFromSelected}
                                     />
@@ -1024,11 +1029,11 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
                                     isValid={isValid}
                                     selectedItem={canvasItems.find(i => i.id === selectedItemId)}
                                     onUpdateItem={handleUpdateTitle}
+                                    onUpdateDescription={handleUpdateDescription}
                                     onUpdateDuration={handleUpdateDuration}
                                     onSelectHymn={openHymnSelectorForSelected}
                                     onSelectParticipant={openParticipantSelectorForSelected}
                                     onSelectSpeaker={openSpeakerSelectorForSelected}
-                                    onDeselectItem={handleDeselectItem}
                                     onAddToContainer={openContainerAddForSelected}
                                     onRemoveChildItem={handleRemoveChildFromSelected}
                                 />

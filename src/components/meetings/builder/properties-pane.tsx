@@ -2,7 +2,7 @@
 
 import { useFormContext } from "react-hook-form";
 import { format } from "date-fns";
-import { CalendarBlankIcon, ClockIcon, SpinnerIcon, MinusIcon, PlayIcon, PlusIcon, XIcon } from "@phosphor-icons/react";
+import { CalendarBlankIcon, ClockIcon, SpinnerIcon, MinusIcon, PlayIcon, PlusIcon } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -30,11 +30,11 @@ interface PropertiesPaneProps {
     isValid: boolean;
     selectedItem?: CanvasItem;
     onUpdateItem?: (id: string, newTitle: string) => void;
+    onUpdateDescription?: (id: string, newDescription: string) => void;
     onUpdateDuration?: (id: string, newDuration: number) => void;
     onSelectHymn?: () => void;
     onSelectParticipant?: () => void;
     onSelectSpeaker?: () => void;
-    onDeselectItem?: () => void;
     onAddToContainer?: () => void;
     onRemoveChildItem?: (childId: string) => void;
 }
@@ -47,11 +47,11 @@ export function PropertiesPane({
     isValid,
     selectedItem,
     onUpdateItem,
+    onUpdateDescription,
     onUpdateDuration,
     onSelectHymn,
     onSelectParticipant,
     onSelectSpeaker,
-    onDeselectItem,
     onAddToContainer,
     onRemoveChildItem,
 }: PropertiesPaneProps) {
@@ -114,18 +114,14 @@ export function PropertiesPane({
                         </div>
                     ) : (
                         <div className="space-y-3 animate-in fade-in duration-200">
-                            {/* Header with close */}
-                            <div className="flex items-center justify-between">
-                                <span className="text-sm font-semibold capitalize text-foreground">
-                                    {selectedItem.structural_type?.replace('_', ' ') || selectedItem.category}
-                                </span>
-                                <button
-                                    type="button"
-                                    className="p-0.5 rounded hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
-                                    onClick={onDeselectItem}
-                                >
-                                    <XIcon weight="fill" className="h-3.5 w-3.5" />
-                                </button>
+                            {/* Item Type (Read-only) */}
+                            <div className="space-y-1.5 pb-1">
+                                <Label className="text-xs">Type</Label>
+                                <Input
+                                    value={selectedItem.structural_type?.replace('_', ' ') || selectedItem.category || 'Unknown'}
+                                    disabled
+                                    className="bg-muted h-8 text-sm capitalize opacity-70 cursor-not-allowed"
+                                />
                             </div>
 
                             {/* Title (all items except dividers) */}
@@ -159,6 +155,22 @@ export function PropertiesPane({
                                         value={selectedItem.duration_minutes}
                                         onChange={(e) => onUpdateDuration?.(selectedItem.id, parseInt(e.target.value) || 0)}
                                         className="bg-background h-8 text-sm focus-visible:ring-primary/30 w-24"
+                                    />
+                                </div>
+                            )}
+
+                            {/* Description/Notes (for items configured with rich text) */}
+                            {selectedItem.config?.has_rich_text && (
+                                <div className="space-y-1.5">
+                                    <Label htmlFor="item-description" className="text-xs">
+                                        Description / Notes
+                                    </Label>
+                                    <textarea
+                                        id="item-description"
+                                        value={selectedItem.description || ""}
+                                        onChange={(e) => onUpdateDescription?.(selectedItem.id, e.target.value)}
+                                        className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-50"
+                                        placeholder="Add notes..."
                                     />
                                 </div>
                             )}
@@ -271,7 +283,7 @@ export function PropertiesPane({
                                     <Button
                                         type="button"
                                         variant="outline"
-                                        className="w-full h-8 gap-1.5 text-xs font-normal border-dashed hover:border-solid hover:bg-primary/5 hover:text-primary hover:border-primary/30 transition-all font-normal"
+                                        className="w-full h-8 gap-1.5 text-xs font-normal border-dashed hover:border-solid hover:bg-primary/5 hover:text-primary hover:border-primary/30 transition-all"
                                         onClick={onAddToContainer}
                                     >
                                         <PlusIcon weight="fill" className="h-3.5 w-3.5" />

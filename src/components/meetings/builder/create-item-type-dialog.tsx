@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { ToolboxItem } from "./types";
 import dynamic from "next/dynamic";
 
 const IconPicker = dynamic(() => import("./icon-picker"), { ssr: false });
@@ -25,6 +26,7 @@ interface CreateItemTypeDialogProps {
     onOpenChange: (open: boolean) => void;
     workspaceId: string | null;
     onCreated: () => void;
+    initialData?: ToolboxItem | null;
 }
 
 export function CreateItemTypeDialog({
@@ -32,6 +34,7 @@ export function CreateItemTypeDialog({
     onOpenChange,
     workspaceId,
     onCreated,
+    initialData,
 }: CreateItemTypeDialogProps) {
     const [name, setName] = useState("");
     const [iconName, setIconName] = useState("StarIcon");
@@ -40,6 +43,19 @@ export function CreateItemTypeDialog({
     const [hasRichText, setHasRichText] = useState(false);
     const [defaultDuration, setDefaultDuration] = useState(5);
     const [isCreating, setIsCreating] = useState(false);
+
+    useEffect(() => {
+        if (open && initialData) {
+            setName(initialData.title);
+            setIconName(initialData.icon || "StarIcon");
+            setRequiresAssignee(initialData.config?.requires_assignee || false);
+            setRequiresResource(initialData.config?.requires_resource || false);
+            setHasRichText(initialData.config?.has_rich_text || false);
+            setDefaultDuration(initialData.duration_minutes || 5);
+        } else if (open && !initialData) {
+            resetForm();
+        }
+    }, [open, initialData]);
 
     const resetForm = () => {
         setName("");
@@ -64,34 +80,53 @@ export function CreateItemTypeDialog({
         setIsCreating(true);
         const supabase = createClient();
 
-        // Generate a unique ID based on workspace and name
-        const itemId = `custom-${workspaceId.slice(0, 8)}-${name.toLowerCase().replace(/\s+/g, "-")}-${Date.now()}`;
+        let error;
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { error } = await (supabase.from("procedural_item_types") as any)
-            .insert({
-                id: itemId,
-                name: name.trim(),
-                is_custom: true,
-                is_core: false,
-                icon: iconName,
-                workspace_id: workspaceId,
-                requires_assignee: requiresAssignee,
-                requires_resource: requiresResource,
-                has_rich_text: hasRichText,
-                is_hymn: requiresResource, // If requires resource, treat as hymn-like
-                default_duration_minutes: defaultDuration,
-                order_hint: 100, // Custom items sorted after core items
-            });
+        if (initialData) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const { error: updateError } = await (supabase.from("procedural_item_types") as any)
+                .update({
+                    name: name.trim(),
+                    icon: iconName,
+                    requires_assignee: requiresAssignee,
+                    requires_resource: requiresResource,
+                    has_rich_text: hasRichText,
+                    is_hymn: requiresResource,
+                    default_duration_minutes: defaultDuration,
+                })
+                .eq("id", initialData.procedural_item_type_id);
+            error = updateError;
+        } else {
+            // Generate a unique ID based on workspace and name
+            const itemId = `custom-${workspaceId.slice(0, 8)}-${name.toLowerCase().replace(/\s+/g, "-")}-${Date.now()}`;
+
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const { error: insertError } = await (supabase.from("procedural_item_types") as any)
+                .insert({
+                    id: itemId,
+                    name: name.trim(),
+                    is_custom: true,
+                    is_core: false,
+                    icon: iconName,
+                    workspace_id: workspaceId,
+                    requires_assignee: requiresAssignee,
+                    requires_resource: requiresResource,
+                    has_rich_text: hasRichText,
+                    is_hymn: requiresResource, // If requires resource, treat as hymn-like
+                    default_duration_minutes: defaultDuration,
+                    order_hint: 100, // Custom items sorted after core items
+                });
+            error = insertError;
+        }
 
         setIsCreating(false);
 
         if (error) {
-            toast.error("Failed to create item type", { description: error.message || "Please try again." });
+            toast.error(`Failed to ${initialData ? "update" : "create"} item type`, { description: error.message || "Please try again." });
             return;
         }
 
-        toast.success("Item type created", { description: `"${name}" has been added to your custom elements.` });
+        toast.success(`Item type ${initialData ? "updated" : "created"}`, { description: `"${name}" has been ${initialData ? "updated in" : "added to"} your custom elements.` });
 
         resetForm();
         onCreated();
@@ -108,140 +143,149 @@ export function CreateItemTypeDialog({
         <Dialog open={open} onOpenChange={handleOpenChange}>
             <DialogContent className="sm:max-w-md">
                 <DialogHeader>
-                    <DialogTitle>Create Custom Item Type</DialogTitle>
+                    <DialogTitle>{initialData ? "Edit Custom Item Type" : "Create Custom Item Type"}</DialogTitle>
                     <DialogDescription>
-                        Create a new item type for your meeting agendas.
+                        {initialData ? "Edit the item type for your meeting agendas." : "Create a new item type for your meeting agendas."}
                         Configure its behavior using the options below.
                     </DialogDescription>
                 </DialogHeader>
 
-                <div className="space-y-6 py-4">
-                    <div className="flex gap-4">
-                        {/* Icon Picker */}
-                        <div className="space-y-2 shrink-0">
-                            <Label>Icon</Label>
-                            <div>
-                                <IconPicker value={iconName} onChange={setIconName} disabled={isCreating} />
+                <form onSubmit={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (!isCreating && name.trim()) {
+                        handleCreate();
+                    }
+                }}>
+
+                    <div className="space-y-6 py-4">
+                        <div className="flex gap-4">
+                            {/* Icon Picker */}
+                            <div className="space-y-2 shrink-0">
+                                <Label>Icon</Label>
+                                <div>
+                                    <IconPicker value={iconName} onChange={setIconName} disabled={isCreating} />
+                                </div>
+                            </div>
+
+                            {/* Name Input */}
+                            <div className="space-y-2 flex-1">
+                                <Label htmlFor="item-name">Name</Label>
+                                <Input
+                                    id="item-name"
+                                    placeholder="e.g., Testimony, Special Musical Number"
+                                    value={name}
+                                    onChange={(e) => setName(e.target.value)}
+                                    disabled={isCreating}
+                                />
                             </div>
                         </div>
 
-                        {/* Name Input */}
-                        <div className="space-y-2 flex-1">
-                            <Label htmlFor="item-name">Name</Label>
+                        {/* Default Duration */}
+                        <div className="space-y-2">
+                            <Label htmlFor="default-duration">Default Duration (minutes)</Label>
                             <Input
-                                id="item-name"
-                                placeholder="e.g., Testimony, Special Musical Number"
-                                value={name}
-                                onChange={(e) => setName(e.target.value)}
+                                id="default-duration"
+                                type="number"
+                                min={1}
+                                max={120}
+                                value={defaultDuration}
+                                onChange={(e) => setDefaultDuration(parseInt(e.target.value) || 5)}
                                 disabled={isCreating}
+                                className="w-24"
                             />
+                        </div>
+
+                        {/* Behavior Toggles */}
+                        <div className="space-y-4">
+                            <Label className="text-sm font-medium">Behavior Options</Label>
+
+                            {/* Assignable Person */}
+                            <div className="flex items-center justify-between rounded-lg border p-3">
+                                <div className="flex items-center gap-3">
+                                    <UserIcon weight="fill" className="h-4 w-4 text-muted-foreground" />
+                                    <div className="space-y-0.5">
+                                        <Label htmlFor="requires-assignee" className="font-normal cursor-pointer">
+                                            Assignable Person
+                                        </Label>
+                                        <p className="text-xs text-muted-foreground">
+                                            Shows a person picker to assign someone
+                                        </p>
+                                    </div>
+                                </div>
+                                <Switch
+                                    id="requires-assignee"
+                                    checked={requiresAssignee}
+                                    onCheckedChange={setRequiresAssignee}
+                                    disabled={isCreating}
+                                />
+                            </div>
+
+                            {/* Musical Resource */}
+                            <div className="flex items-center justify-between rounded-lg border p-3">
+                                <div className="flex items-center gap-3">
+                                    <MusicNoteIcon weight="fill" className="h-4 w-4 text-muted-foreground" />
+                                    <div className="space-y-0.5">
+                                        <Label htmlFor="requires-resource" className="font-normal cursor-pointer">
+                                            Musical Resource
+                                        </Label>
+                                        <p className="text-xs text-muted-foreground">
+                                            Shows a hymn/music picker
+                                        </p>
+                                    </div>
+                                </div>
+                                <Switch
+                                    id="requires-resource"
+                                    checked={requiresResource}
+                                    onCheckedChange={setRequiresResource}
+                                    disabled={isCreating}
+                                />
+                            </div>
+
+                            {/* Description/Notes */}
+                            <div className="flex items-center justify-between rounded-lg border p-3">
+                                <div className="flex items-center gap-3">
+                                    <FileTextIcon weight="fill" className="h-4 w-4 text-muted-foreground" />
+                                    <div className="space-y-0.5">
+                                        <Label htmlFor="has-rich-text" className="font-normal cursor-pointer">
+                                            Description/Notes
+                                        </Label>
+                                        <p className="text-xs text-muted-foreground">
+                                            Shows a text editor for additional notes
+                                        </p>
+                                    </div>
+                                </div>
+                                <Switch
+                                    id="has-rich-text"
+                                    checked={hasRichText}
+                                    onCheckedChange={setHasRichText}
+                                    disabled={isCreating}
+                                />
+                            </div>
                         </div>
                     </div>
 
-                    {/* Default Duration */}
-                    <div className="space-y-2">
-                        <Label htmlFor="default-duration">Default Duration (minutes)</Label>
-                        <Input
-                            id="default-duration"
-                            type="number"
-                            min={1}
-                            max={120}
-                            value={defaultDuration}
-                            onChange={(e) => setDefaultDuration(parseInt(e.target.value) || 5)}
+                    <DialogFooter>
+                        <Button
+                            variant="outline"
+                            type="button"
+                            onClick={() => handleOpenChange(false)}
                             disabled={isCreating}
-                            className="w-24"
-                        />
-                    </div>
-
-                    {/* Behavior Toggles */}
-                    <div className="space-y-4">
-                        <Label className="text-sm font-medium">Behavior Options</Label>
-
-                        {/* Assignable Person */}
-                        <div className="flex items-center justify-between rounded-lg border p-3">
-                            <div className="flex items-center gap-3">
-                                <UserIcon weight="fill" className="h-4 w-4 text-muted-foreground" />
-                                <div className="space-y-0.5">
-                                    <Label htmlFor="requires-assignee" className="font-normal cursor-pointer">
-                                        Assignable Person
-                                    </Label>
-                                    <p className="text-xs text-muted-foreground">
-                                        Shows a person picker to assign someone
-                                    </p>
-                                </div>
-                            </div>
-                            <Switch
-                                id="requires-assignee"
-                                checked={requiresAssignee}
-                                onCheckedChange={setRequiresAssignee}
-                                disabled={isCreating}
-                            />
-                        </div>
-
-                        {/* Musical Resource */}
-                        <div className="flex items-center justify-between rounded-lg border p-3">
-                            <div className="flex items-center gap-3">
-                                <MusicNoteIcon weight="fill" className="h-4 w-4 text-muted-foreground" />
-                                <div className="space-y-0.5">
-                                    <Label htmlFor="requires-resource" className="font-normal cursor-pointer">
-                                        Musical Resource
-                                    </Label>
-                                    <p className="text-xs text-muted-foreground">
-                                        Shows a hymn/music picker
-                                    </p>
-                                </div>
-                            </div>
-                            <Switch
-                                id="requires-resource"
-                                checked={requiresResource}
-                                onCheckedChange={setRequiresResource}
-                                disabled={isCreating}
-                            />
-                        </div>
-
-                        {/* Description/Notes */}
-                        <div className="flex items-center justify-between rounded-lg border p-3">
-                            <div className="flex items-center gap-3">
-                                <FileTextIcon weight="fill" className="h-4 w-4 text-muted-foreground" />
-                                <div className="space-y-0.5">
-                                    <Label htmlFor="has-rich-text" className="font-normal cursor-pointer">
-                                        Description/Notes
-                                    </Label>
-                                    <p className="text-xs text-muted-foreground">
-                                        Shows a text editor for additional notes
-                                    </p>
-                                </div>
-                            </div>
-                            <Switch
-                                id="has-rich-text"
-                                checked={hasRichText}
-                                onCheckedChange={setHasRichText}
-                                disabled={isCreating}
-                            />
-                        </div>
-                    </div>
-                </div>
-
-                <DialogFooter>
-                    <Button
-                        variant="outline"
-                        type="button"
-                        onClick={() => handleOpenChange(false)}
-                        disabled={isCreating}
-                    >
-                        Cancel
-                    </Button>
-                    <Button type="button" onClick={handleCreate} disabled={isCreating || !name.trim()}>
-                        {isCreating ? (
-                            <>
-                                <SpinnerIcon weight="fill" className="mr-2 h-4 w-4 animate-spin" />
-                                Creating...
-                            </>
-                        ) : (
-                            "Create Item Type"
-                        )}
-                    </Button>
-                </DialogFooter>
+                        >
+                            Cancel
+                        </Button>
+                        <Button type="submit" disabled={isCreating || !name.trim()}>
+                            {isCreating ? (
+                                <>
+                                    <SpinnerIcon weight="fill" className="mr-2 h-4 w-4 animate-spin" />
+                                    {initialData ? "Saving..." : "Creating..."}
+                                </>
+                            ) : (
+                                initialData ? "Save Changes" : "Create Item Type"
+                            )}
+                        </Button>
+                    </DialogFooter>
+                </form>
             </DialogContent>
         </Dialog>
     );
