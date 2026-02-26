@@ -17,9 +17,20 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
-import { SpinnerIcon, UserIcon, MusicNoteIcon, FileTextIcon } from "@phosphor-icons/react";
+import { SpinnerIcon, UserIcon, MusicNoteIcon, FileTextIcon, TrashIcon } from "@phosphor-icons/react";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "@/lib/toast";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface CreateItemTypeDialogProps {
     open: boolean;
@@ -43,6 +54,7 @@ export function CreateItemTypeDialog({
     const [hasRichText, setHasRichText] = useState(false);
     const [defaultDuration, setDefaultDuration] = useState(5);
     const [isCreating, setIsCreating] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     useEffect(() => {
         if (open && initialData) {
@@ -64,6 +76,29 @@ export function CreateItemTypeDialog({
         setRequiresResource(false);
         setHasRichText(false);
         setDefaultDuration(5);
+    };
+
+    const handleDeleteCustomItem = async () => {
+        if (!initialData?.procedural_item_type_id) return;
+
+        setIsDeleting(true);
+        const supabase = createClient();
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { error } = await (supabase.from("procedural_item_types") as any)
+            .delete()
+            .eq("id", initialData.procedural_item_type_id);
+
+        setIsDeleting(false);
+
+        if (error) {
+            toast.error("Failed to delete item type", { description: error.message || "Please try again." });
+            return;
+        }
+
+        toast.success("Item type deleted", { description: `"${name}" has been removed.` });
+        onCreated(); // Refresh the list
+        onOpenChange(false); // Close the dialog
     };
 
     const handleCreate = async () => {
@@ -265,25 +300,62 @@ export function CreateItemTypeDialog({
                         </div>
                     </div>
 
-                    <DialogFooter>
-                        <Button
-                            variant="outline"
-                            type="button"
-                            onClick={() => handleOpenChange(false)}
-                            disabled={isCreating}
-                        >
-                            Cancel
-                        </Button>
-                        <Button type="submit" disabled={isCreating || !name.trim()}>
-                            {isCreating ? (
-                                <>
-                                    <SpinnerIcon weight="fill" className="mr-2 h-4 w-4 animate-spin" />
-                                    {initialData ? "Saving..." : "Creating..."}
-                                </>
-                            ) : (
-                                initialData ? "Save Changes" : "Create Item Type"
+                    <DialogFooter className="flex-row items-center justify-between sm:justify-between w-full">
+                        <div className="flex-1">
+                            {initialData && (
+                                <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <Button
+                                            variant="ghost"
+                                            type="button"
+                                            className="text-black hover:text-destructive hover:bg-destructive/10 transition-colors h-9 px-3"
+                                            disabled={isCreating || isDeleting}
+                                        >
+                                            <TrashIcon weight="fill" className="h-4 w-4 mr-2" />
+                                            Delete
+                                        </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                                This will permanently delete the custom item type &quot;{name}&quot;.
+                                                This action cannot be undone. Existing agenda items of this type will remain but will lose their type reference.
+                                            </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                            <AlertDialogAction
+                                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                                onClick={handleDeleteCustomItem}
+                                            >
+                                                {isDeleting ? "Deleting..." : "Delete Item"}
+                                            </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
                             )}
-                        </Button>
+                        </div>
+                        <div className="flex gap-2">
+                            <Button
+                                variant="outline"
+                                type="button"
+                                onClick={() => handleOpenChange(false)}
+                                disabled={isCreating || isDeleting}
+                            >
+                                Cancel
+                            </Button>
+                            <Button type="submit" disabled={isCreating || isDeleting || !name.trim()}>
+                                {isCreating ? (
+                                    <>
+                                        <SpinnerIcon weight="fill" className="mr-2 h-4 w-4 animate-spin" />
+                                        {initialData ? "Saving..." : "Creating..."}
+                                    </>
+                                ) : (
+                                    initialData ? "Save Changes" : "Create Item Type"
+                                )}
+                            </Button>
+                        </div>
                     </DialogFooter>
                 </form>
             </DialogContent>

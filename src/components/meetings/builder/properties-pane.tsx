@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useFormContext } from "react-hook-form";
 import { format } from "date-fns";
 import { CalendarBlankIcon, ClockIcon, SpinnerIcon, MinusIcon, PlayIcon, PlusIcon } from "@phosphor-icons/react";
@@ -66,6 +67,12 @@ export function PropertiesPane({
     const presiding = watch("presiding") || "";
     const chorister = watch("chorister") || "";
     const pianistOrganist = watch("pianistOrganist") || "";
+
+    // Local state for toggling field visibility of empty overview fields
+    const [showPresiding, setShowPresiding] = useState(false);
+    const [showConducting, setShowConducting] = useState(false);
+    const [showChorister, setShowChorister] = useState(false);
+    const [showPianist, setShowPianist] = useState(false);
 
     return (
         <div className="h-full flex flex-col bg-muted/30 border-l overflow-y-auto">
@@ -387,61 +394,166 @@ export function PropertiesPane({
                             </SelectContent>
                         </Select>
                     </div>
-                </div>
 
-                {/* Metadata Settings */}
-                <div className="space-y-3 pt-3 border-t">
-                    <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-                        Overview
-                    </h3>
 
-                    <div className="space-y-3">
-                        <div className="space-y-1.5">
-                            <Label htmlFor="presiding" className="text-xs">Presiding</Label>
-                            <Input
-                                id="presiding"
-                                value={presiding}
-                                onChange={(e) => setValue("presiding", e.target.value)}
-                                placeholder="e.g. Bishop Smith"
-                                className="bg-background h-8 text-sm"
-                            />
+                    <div className="grid grid-cols-1 divide-y divide-border/60">
+                        {/* Presiding */}
+                        <div className="py-2.5">
+                            {presiding || showPresiding ? (
+                                <div className="space-y-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
+                                    <div className="flex items-center justify-between">
+                                        <Label htmlFor="presiding" className="text-xs">Presiding</Label>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setValue("presiding", "");
+                                                setShowPresiding(false);
+                                            }}
+                                            className="text-muted-foreground hover:text-destructive transition-colors"
+                                        >
+                                            <MinusIcon weight="fill" className="h-3 w-3" />
+                                        </button>
+                                    </div>
+                                    <Input
+                                        id="presiding"
+                                        value={presiding}
+                                        onChange={(e) => setValue("presiding", e.target.value)}
+                                        onFocus={(e) => e.target.select()}
+                                        placeholder="e.g. Bishop Smith"
+                                        className="bg-background h-8 text-sm"
+                                        autoFocus={!presiding}
+                                    />
+                                </div>
+                            ) : (
+                                <div
+                                    className="flex items-center justify-between group cursor-pointer hover:bg-muted/30 -mx-1 px-1 rounded transition-colors h-7"
+                                    onClick={() => setShowPresiding(true)}
+                                >
+                                    <span className="text-sm">Presiding</span>
+                                    <PlusIcon className="h-4 w-4 text-muted-foreground/60 group-hover:text-foreground group-hover:scale-110 transition-all" />
+                                </div>
+                            )}
                         </div>
 
-                        <div className="space-y-1.5">
-                            <Label htmlFor="conducting" className="text-xs">Conducting</Label>
-                            <Input
-                                id="conducting"
-                                value={conducting}
-                                onChange={(e) => setValue("conducting", e.target.value)}
-                                placeholder="e.g. Brother Jones"
-                                className="bg-background h-8 text-sm"
-                            />
+                        {/* Conducting */}
+                        <div className="py-2.5">
+                            {conducting || showConducting ? (
+                                <div className="space-y-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
+                                    <div className="flex items-center justify-between">
+                                        <Label htmlFor="conducting" className="text-xs">Conducting</Label>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setValue("conducting", "");
+                                                setShowConducting(false);
+                                            }}
+                                            className="text-muted-foreground hover:text-destructive transition-colors"
+                                        >
+                                            <MinusIcon weight="fill" className="h-3 w-3" />
+                                        </button>
+                                    </div>
+                                    <Input
+                                        id="conducting"
+                                        value={conducting}
+                                        onChange={(e) => setValue("conducting", e.target.value)}
+                                        onFocus={(e) => e.target.select()}
+                                        placeholder="e.g. Brother Jones"
+                                        className="bg-background h-8 text-sm"
+                                        autoFocus={!conducting}
+                                    />
+                                </div>
+                            ) : (
+                                <div
+                                    className="flex items-center justify-between group cursor-pointer hover:bg-muted/30 -mx-1 px-1 rounded transition-colors h-7"
+                                    onClick={() => setShowConducting(true)}
+                                >
+                                    <span className="text-sm">Conducting</span>
+                                    <PlusIcon className="h-4 w-4 text-muted-foreground/60 group-hover:text-foreground group-hover:scale-110 transition-all" />
+                                </div>
+                            )}
                         </div>
 
-                        <div className="space-y-1.5">
-                            <Label htmlFor="chorister" className="text-xs">Chorister</Label>
-                            <Input
-                                id="chorister"
-                                value={chorister}
-                                onChange={(e) => setValue("chorister", e.target.value)}
-                                placeholder="Name"
-                                className="bg-background h-8 text-sm"
-                            />
+                        {/* Chorister */}
+                        <div className="py-2.5">
+                            {chorister || showChorister ? (
+                                <div className="space-y-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
+                                    <div className="flex items-center justify-between">
+                                        <Label htmlFor="chorister" className="text-xs">Chorister</Label>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setValue("chorister", "");
+                                                setShowChorister(false);
+                                            }}
+                                            className="text-muted-foreground hover:text-destructive transition-colors"
+                                        >
+                                            <MinusIcon weight="fill" className="h-3 w-3" />
+                                        </button>
+                                    </div>
+                                    <Input
+                                        id="chorister"
+                                        value={chorister}
+                                        onChange={(e) => setValue("chorister", e.target.value)}
+                                        onFocus={(e) => e.target.select()}
+                                        placeholder="Name"
+                                        className="bg-background h-8 text-sm"
+                                        autoFocus={!chorister}
+                                    />
+                                </div>
+                            ) : (
+                                <div
+                                    className="flex items-center justify-between group cursor-pointer hover:bg-muted/30 -mx-1 px-1 rounded transition-colors h-7"
+                                    onClick={() => setShowChorister(true)}
+                                >
+                                    <span className="text-sm">Chorister</span>
+                                    <PlusIcon className="h-4 w-4 text-muted-foreground/60 group-hover:text-foreground group-hover:scale-110 transition-all" />
+                                </div>
+                            )}
                         </div>
 
-                        <div className="space-y-1.5">
-                            <Label htmlFor="pianistOrganist" className="text-xs">Pianist / Organist</Label>
-                            <Input
-                                id="pianistOrganist"
-                                value={pianistOrganist}
-                                onChange={(e) => setValue("pianistOrganist", e.target.value)}
-                                placeholder="Name"
-                                className="bg-background h-8 text-sm"
-                            />
+                        {/* Pianist / Organist */}
+                        <div className="py-2.5">
+                            {pianistOrganist || showPianist ? (
+                                <div className="space-y-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
+                                    <div className="flex items-center justify-between">
+                                        <Label htmlFor="pianistOrganist" className="text-xs">Pianist / Organist</Label>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setValue("pianistOrganist", "");
+                                                setShowPianist(false);
+                                            }}
+                                            className="text-muted-foreground hover:text-destructive transition-colors"
+                                        >
+                                            <MinusIcon weight="fill" className="h-3 w-3" />
+                                        </button>
+                                    </div>
+                                    <Input
+                                        id="pianistOrganist"
+                                        value={pianistOrganist}
+                                        onChange={(e) => setValue("pianistOrganist", e.target.value)}
+                                        onFocus={(e) => e.target.select()}
+                                        placeholder="Name"
+                                        className="bg-background h-8 text-sm"
+                                        autoFocus={!pianistOrganist}
+                                    />
+                                </div>
+                            ) : (
+                                <div
+                                    className="flex items-center justify-between group cursor-pointer hover:bg-muted/30 -mx-1 px-1 rounded transition-colors h-7"
+                                    onClick={() => setShowPianist(true)}
+                                >
+                                    <span className="text-sm">Pianist / Organist</span>
+                                    <PlusIcon className="h-4 w-4 text-muted-foreground/60 group-hover:text-foreground group-hover:scale-110 transition-all" />
+                                </div>
+                            )}
                         </div>
                     </div>
+
                 </div>
             </div>
         </div>
     );
 }
+
+export default PropertiesPane;
