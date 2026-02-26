@@ -16,6 +16,7 @@ import {
     Minus,
     ChevronDown,
     ChevronRight,
+    GripVertical,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CanvasItem } from "./types";
@@ -33,7 +34,7 @@ interface AgendaCanvasProps {
     onSelectParticipant: (itemId: string) => void;
     onSelectSpeaker: (itemId: string) => void;
     editingItemId?: string | null;
-    onEditTitle?: (itemId: string | null) => void;
+    onSelectItem?: (itemId: string | null) => void;
     onUpdateTitle?: (id: string, newTitle: string) => void;
     isOver?: boolean;
 }
@@ -50,8 +51,8 @@ interface SortableAgendaRowProps {
     onSelectHymn?: () => void;
     onSelectParticipant?: () => void;
     onSelectSpeaker?: () => void;
-    isEditing?: boolean;
-    onEditTitle?: () => void;
+    isSelected?: boolean;
+    onSelect?: () => void;
     onUpdateTitle?: (newTitle: string) => void;
 }
 
@@ -65,8 +66,8 @@ function SortableAgendaRow({
     onSelectHymn,
     onSelectParticipant,
     onSelectSpeaker,
-    isEditing,
-    onEditTitle,
+    isSelected,
+    onSelect,
     onUpdateTitle,
 }: SortableAgendaRowProps) {
     const {
@@ -81,18 +82,16 @@ function SortableAgendaRow({
     const [editValue, setEditValue] = useState(item.title);
     const inputRef = useRef<HTMLInputElement>(null);
 
+    // Sync with external updates only when not being edited locally
     useEffect(() => {
-        if (isEditing) {
+        if (!inputRef.current || document.activeElement !== inputRef.current) {
             setEditValue(item.title);
-            setTimeout(() => inputRef.current?.focus(), 0);
         }
-    }, [isEditing, item.title]);
+    }, [item.title]);
 
     const handleSaveTitle = () => {
         if (onUpdateTitle && editValue.trim() !== "" && editValue !== item.title) {
             onUpdateTitle(editValue.trim());
-        } else if (onEditTitle) {
-            onEditTitle();
         }
     };
 
@@ -100,8 +99,7 @@ function SortableAgendaRow({
         if (e.key === "Enter") {
             handleSaveTitle();
         } else if (e.key === "Escape") {
-            setEditValue(item.title); // Reset
-            if (onEditTitle) onEditTitle(); // Cancel editing
+            setEditValue(item.title);
         }
     };
 
@@ -217,42 +215,121 @@ function SortableAgendaRow({
         );
     }
 
+    // Structural: Section Header
+    if (item.structural_type === "section_header") {
+        return (
+            <div
+                ref={setNodeRef}
+                style={style}
+                onClick={onSelect}
+                className={cn(
+                    "flex flex-col border rounded-md bg-card transition-all group mb-2 mt-4",
+                    "hover:border-muted-foreground/30",
+                    isSelected ? "ring-2 ring-primary border-primary/50 shadow-sm" : "border-zinc-200",
+                    isDragging && "opacity-50 shadow-lg ring-2 ring-primary/40"
+                )}
+            >
+                <div className="flex items-center gap-2 p-1.5 border-b bg-muted/20">
+                    <div
+                        {...attributes}
+                        {...listeners}
+                        className="w-7 flex items-center justify-center cursor-grab active:cursor-grabbing hover:bg-muted rounded transition-colors"
+                    >
+                        <GripVertical className="h-4 w-4 text-muted-foreground/50" />
+                    </div>
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider flex-1">
+                        Section Header
+                    </span>
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onRemove();
+                        }}
+                    >
+                        <Trash2 className="h-4 w-4" />
+                    </Button>
+                </div>
+                <div className="p-3">
+                    <Input
+                        value={editValue}
+                        onChange={(e) => setEditValue(e.target.value)}
+                        onBlur={handleSaveTitle}
+                        onKeyDown={handleKeyDown}
+                        placeholder="SECTION TITLE"
+                        className="h-9 text-sm font-bold uppercase tracking-widest text-foreground border-transparent bg-transparent hover:border-zinc-200 focus:border-primary focus:bg-background transition-all"
+                    />
+                </div>
+            </div>
+        );
+    }
+
+    // Structural: Divider
+    if (item.structural_type === "divider") {
+        return (
+            <div
+                ref={setNodeRef}
+                style={style}
+                className={cn(
+                    "py-4 flex items-center group",
+                    isDragging && "opacity-50"
+                )}
+            >
+                <div
+                    {...attributes}
+                    {...listeners}
+                    className="p-1 cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                    <GripVertical className="h-4 w-4 text-muted-foreground" />
+                </div>
+                <div className="flex-1 h-px bg-zinc-200" />
+                <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 opacity-0 group-hover:opacity-100 text-destructive ml-2"
+                    onClick={onRemove}
+                >
+                    <Trash2 className="h-4 w-4" />
+                </Button>
+            </div>
+        );
+    }
+
     // Regular item
     return (
         <div
             ref={setNodeRef}
             style={style}
-            {...attributes}
-            {...listeners}
             className={cn(
                 "flex flex-col border rounded-md bg-card transition-all group cursor-grab active:cursor-grabbing touch-none",
                 "hover:border-muted-foreground/30",
                 isDragging && "opacity-50 shadow-lg ring-2 ring-primary/40"
             )}
+            {...attributes}
+            {...listeners}
         >
             {/* Header row: Icon, Title, Duration, Actions */}
             <div className="flex items-center gap-2 p-1.5">
                 <div className="w-7 shrink-0" /> {/* Spacer to align with container chevrons */}
-                {isEditing ? (
-                    <Input
-                        ref={inputRef}
-                        value={editValue}
-                        onChange={(e) => setEditValue(e.target.value)}
-                        onBlur={handleSaveTitle}
-                        onKeyDown={handleKeyDown}
-                        className="flex-1 h-7 text-sm font-medium my-[-4px]"
-                    />
+                {isSelected ? (
+                    <div className="flex-1 flex items-center gap-2">
+                        <Input
+                            ref={inputRef}
+                            value={editValue}
+                            onChange={(e) => setEditValue(e.target.value)}
+                            onBlur={handleSaveTitle}
+                            onKeyDown={handleKeyDown}
+                            className="flex-1 h-7 text-sm font-medium my-[-4px]"
+                        />
+                    </div>
                 ) : (
                     <span
-                        className={cn(
-                            "font-medium text-sm flex-1 truncate text-foreground pl-1",
-                            item.structural_type === "section_header" && "cursor-text"
-                        )}
-                        onDoubleClick={() => {
-                            if (item.structural_type === "section_header" && onEditTitle) {
-                                onEditTitle();
-                            }
-                        }}
+                        className="font-medium text-sm flex-1 truncate text-foreground pl-1"
+                        onDoubleClick={onSelect}
                     >
                         {item.title}
                     </span>
@@ -347,7 +424,7 @@ export function AgendaCanvas({
     onSelectParticipant,
     onSelectSpeaker,
     editingItemId,
-    onEditTitle,
+    onSelectItem,
     onUpdateTitle,
     isOver,
 }: AgendaCanvasProps) {
@@ -436,9 +513,9 @@ export function AgendaCanvas({
                                                     ? () => onSelectSpeaker(item.id)
                                                     : undefined
                                             }
-                                            isEditing={editingItemId === item.id}
-                                            onEditTitle={() => onEditTitle && onEditTitle(item.id)}
-                                            onUpdateTitle={(newTitle) => onUpdateTitle && onUpdateTitle(item.id, newTitle)}
+                                            isSelected={editingItemId === item.id}
+                                            onSelect={() => onSelectItem?.(item.id)}
+                                            onUpdateTitle={(newTitle) => onUpdateTitle?.(item.id, newTitle)}
                                         />
                                     ))}
                                 </div>

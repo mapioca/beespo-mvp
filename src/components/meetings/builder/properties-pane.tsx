@@ -20,7 +20,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { Template } from "./types";
+import { Template, CanvasItem } from "./types";
 
 interface PropertiesPaneProps {
     templates: Template[];
@@ -28,6 +28,8 @@ interface PropertiesPaneProps {
     onPreview: () => void;
     isCreating: boolean;
     isValid: boolean;
+    selectedItem?: CanvasItem;
+    onUpdateItem?: (id: string, newTitle: string) => void;
 }
 
 export function PropertiesPane({
@@ -36,6 +38,8 @@ export function PropertiesPane({
     onPreview,
     isCreating,
     isValid,
+    selectedItem,
+    onUpdateItem,
 }: PropertiesPaneProps) {
     const { watch, setValue } = useFormContext();
 
@@ -83,7 +87,43 @@ export function PropertiesPane({
             </div>
 
             {/* Scrollable Content */}
-            <div className="p-3 space-y-4 flex-1">
+            <div className="p-3 space-y-6 flex-1">
+                {/* Item Editor (if selected) */}
+                {selectedItem && (
+                    <div className="space-y-4 p-3 rounded-lg bg-primary/5 border border-primary/10 animate-in fade-in slide-in-from-right-2 duration-200">
+                        <div className="flex items-center justify-between">
+                            <h3 className="text-[10px] font-bold text-primary uppercase tracking-wider">
+                                Item Settings
+                            </h3>
+                            <div className="px-1.5 py-0.5 rounded bg-primary/10 border border-primary/20">
+                                <span className="text-[10px] text-primary uppercase font-bold tracking-tight">
+                                    {selectedItem.structural_type?.replace('_', ' ') || selectedItem.category}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="item-title" className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                                {selectedItem.structural_type === "section_header" ? "Section Title" : "Title"}
+                            </Label>
+                            <Input
+                                id="item-title"
+                                value={selectedItem.title}
+                                onChange={(e) => onUpdateItem?.(selectedItem.id, e.target.value)}
+                                onFocus={(e) => e.target.select()}
+                                className="bg-background h-9 text-sm focus-visible:ring-primary/30"
+                                placeholder="Enter title..."
+                            />
+                        </div>
+
+                        {selectedItem.structural_type === "section_header" && (
+                            <p className="text-[10px] text-muted-foreground italic">
+                                Use headers to logically group your agenda items.
+                            </p>
+                        )}
+                    </div>
+                )}
+
                 {/* General Settings */}
                 <div className="space-y-3">
                     <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">

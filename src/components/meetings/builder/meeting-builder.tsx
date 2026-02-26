@@ -953,6 +953,8 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
                                         onPreview={handlePreview}
                                         isCreating={isCreating}
                                         isValid={isValid}
+                                        selectedItem={canvasItems.find(i => i.id === editingItemId)}
+                                        onUpdateItem={handleUpdateTitle}
                                     />
                                 </SheetContent>
                             </Sheet>
@@ -978,7 +980,7 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
                                     onSelectParticipant={openParticipantSelector}
                                     onSelectSpeaker={openSpeakerSelector}
                                     editingItemId={editingItemId}
-                                    onEditTitle={setEditingItemId}
+                                    onSelectItem={setEditingItemId}
                                     onUpdateTitle={handleUpdateTitle}
                                     isOver={isOverCanvas}
                                 />
@@ -992,6 +994,8 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
                                     onPreview={handlePreview}
                                     isCreating={isCreating}
                                     isValid={isValid}
+                                    selectedItem={canvasItems.find(i => i.id === editingItemId)}
+                                    onUpdateItem={handleUpdateTitle}
                                 />
                             </div>
                         </div>
