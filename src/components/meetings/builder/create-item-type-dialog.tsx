@@ -1,6 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import dynamic from "next/dynamic";
+
+const IconPicker = dynamic(() => import("./icon-picker"), { ssr: false });
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -31,6 +34,7 @@ export function CreateItemTypeDialog({
     onCreated,
 }: CreateItemTypeDialogProps) {
     const [name, setName] = useState("");
+    const [iconName, setIconName] = useState("StarIcon");
     const [requiresAssignee, setRequiresAssignee] = useState(false);
     const [requiresResource, setRequiresResource] = useState(false);
     const [hasRichText, setHasRichText] = useState(false);
@@ -39,6 +43,7 @@ export function CreateItemTypeDialog({
 
     const resetForm = () => {
         setName("");
+        setIconName("StarIcon");
         setRequiresAssignee(false);
         setRequiresResource(false);
         setHasRichText(false);
@@ -69,6 +74,7 @@ export function CreateItemTypeDialog({
                 name: name.trim(),
                 is_custom: true,
                 is_core: false,
+                icon: iconName,
                 workspace_id: workspaceId,
                 requires_assignee: requiresAssignee,
                 requires_resource: requiresResource,
@@ -110,16 +116,26 @@ export function CreateItemTypeDialog({
                 </DialogHeader>
 
                 <div className="space-y-6 py-4">
-                    {/* Name Input */}
-                    <div className="space-y-2">
-                        <Label htmlFor="item-name">Name</Label>
-                        <Input
-                            id="item-name"
-                            placeholder="e.g., Testimony, Special Musical Number"
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
-                            disabled={isCreating}
-                        />
+                    <div className="flex gap-4">
+                        {/* Icon Picker */}
+                        <div className="space-y-2 shrink-0">
+                            <Label>Icon</Label>
+                            <div>
+                                <IconPicker value={iconName} onChange={setIconName} disabled={isCreating} />
+                            </div>
+                        </div>
+
+                        {/* Name Input */}
+                        <div className="space-y-2 flex-1">
+                            <Label htmlFor="item-name">Name</Label>
+                            <Input
+                                id="item-name"
+                                placeholder="e.g., Testimony, Special Musical Number"
+                                value={name}
+                                onChange={(e) => setName(e.target.value)}
+                                disabled={isCreating}
+                            />
+                        </div>
                     </div>
 
                     {/* Default Duration */}
