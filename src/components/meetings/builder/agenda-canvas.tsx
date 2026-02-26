@@ -148,28 +148,27 @@ function SortableAgendaRow({
                 style={style}
                 onClick={(e) => { e.stopPropagation(); onSelect?.(); }}
                 className={cn(
-                    "flex flex-col border rounded-md bg-card transition-all group mb-2 mt-4",
+                    "flex flex-col border rounded-md bg-card transition-all group cursor-grab active:cursor-grabbing touch-none",
                     "hover:border-muted-foreground/30",
-                    isSelected ? "ring-2 ring-primary border-primary/50 shadow-sm" : "border-zinc-200",
+                    isSelected && "ring-2 ring-primary border-primary/50 shadow-sm",
                     isDragging && "opacity-50 shadow-lg ring-2 ring-primary/40"
                 )}
+                {...attributes}
+                {...listeners}
             >
-                <div className="flex items-center gap-2 p-1.5 border-b bg-muted/20">
-                    <div
-                        {...attributes}
-                        {...listeners}
-                        className="w-7 flex items-center justify-center cursor-grab active:cursor-grabbing hover:bg-muted rounded transition-colors"
-                    >
-                        <GripVertical className="h-4 w-4 text-muted-foreground/50" />
-                    </div>
-                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider flex-1">
-                        Section Header
+                <div className="flex items-center gap-2 p-1.5">
+                    <div className="w-7 shrink-0" />
+                    <span className="font-medium text-sm flex-1 truncate text-foreground pl-1">
+                        {item.title || "Untitled section"}
+                    </span>
+                    <span className="text-xs text-muted-foreground shrink-0">
+                        Section
                     </span>
                     <Button
                         type="button"
                         variant="ghost"
                         size="icon"
-                        className="h-6 w-6 text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                        className="h-7 w-7 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive hover:bg-destructive/10"
                         onClick={(e) => {
                             e.stopPropagation();
                             onRemove();
@@ -177,11 +176,6 @@ function SortableAgendaRow({
                     >
                         <Trash2 className="h-4 w-4" />
                     </Button>
-                </div>
-                <div className="p-3">
-                    <span className="text-sm font-bold uppercase tracking-widest text-foreground">
-                        {item.title || "UNTITLED SECTION"}
-                    </span>
                 </div>
             </div>
         );
