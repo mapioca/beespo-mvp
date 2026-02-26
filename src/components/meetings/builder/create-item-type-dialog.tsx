@@ -13,7 +13,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
-import { Loader2, User, Music, FileText } from "lucide-react";
+import { SpinnerIcon, UserIcon, MusicNoteIcon, FileTextIcon } from "@phosphor-icons/react";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "@/lib/toast";
 
@@ -144,7 +144,7 @@ export function CreateItemTypeDialog({
                         {/* Assignable Person */}
                         <div className="flex items-center justify-between rounded-lg border p-3">
                             <div className="flex items-center gap-3">
-                                <User className="h-4 w-4 text-muted-foreground" />
+                                <UserIcon weight="fill" className="h-4 w-4 text-muted-foreground" />
                                 <div className="space-y-0.5">
                                     <Label htmlFor="requires-assignee" className="font-normal cursor-pointer">
                                         Assignable Person
@@ -165,7 +165,7 @@ export function CreateItemTypeDialog({
                         {/* Musical Resource */}
                         <div className="flex items-center justify-between rounded-lg border p-3">
                             <div className="flex items-center gap-3">
-                                <Music className="h-4 w-4 text-muted-foreground" />
+                                <MusicNoteIcon weight="fill" className="h-4 w-4 text-muted-foreground" />
                                 <div className="space-y-0.5">
                                     <Label htmlFor="requires-resource" className="font-normal cursor-pointer">
                                         Musical Resource
@@ -186,7 +186,7 @@ export function CreateItemTypeDialog({
                         {/* Description/Notes */}
                         <div className="flex items-center justify-between rounded-lg border p-3">
                             <div className="flex items-center gap-3">
-                                <FileText className="h-4 w-4 text-muted-foreground" />
+                                <FileTextIcon weight="fill" className="h-4 w-4 text-muted-foreground" />
                                 <div className="space-y-0.5">
                                     <Label htmlFor="has-rich-text" className="font-normal cursor-pointer">
                                         Description/Notes
@@ -209,15 +209,16 @@ export function CreateItemTypeDialog({
                 <DialogFooter>
                     <Button
                         variant="outline"
+                        type="button"
                         onClick={() => handleOpenChange(false)}
                         disabled={isCreating}
                     >
                         Cancel
                     </Button>
-                    <Button onClick={handleCreate} disabled={isCreating || !name.trim()}>
+                    <Button type="button" onClick={handleCreate} disabled={isCreating || !name.trim()}>
                         {isCreating ? (
                             <>
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                <SpinnerIcon weight="fill" className="mr-2 h-4 w-4 animate-spin" />
                                 Creating...
                             </>
                         ) : (

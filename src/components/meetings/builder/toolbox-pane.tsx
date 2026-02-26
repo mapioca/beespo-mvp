@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import { Search, Plus, Container } from "lucide-react";
+import { MagnifyingGlassIcon, PlusIcon, SquaresFourIcon } from "@phosphor-icons/react";
 import { createClient } from "@/lib/supabase/client";
 import { DraggableToolboxItem } from "./draggable-toolbox-item";
 import { ToolboxItem, ProceduralItemType, ItemConfig } from "./types";
@@ -298,7 +298,7 @@ export function ToolboxPane({ onItemsLoaded, onAddItem }: ToolboxPaneProps) {
         <div className="flex flex-col h-full bg-muted/50 border-r border-border">
             {/* Header */}
             <div className="h-14 px-4 border-b border-border bg-background flex items-center gap-2.5 shrink-0">
-                <Container className="h-5 w-5 text-primary" strokeWidth={2.5} />
+                <SquaresFourIcon className="h-5 w-5 text-primary" weight="fill" />
                 <h2 className="text-base font-semibold tracking-tight text-foreground">
                     Agenda Composer
                 </h2>
@@ -307,7 +307,7 @@ export function ToolboxPane({ onItemsLoaded, onAddItem }: ToolboxPaneProps) {
             <div className="p-4 border-b border-border bg-background">
                 <h3 className="font-semibold text-sm mb-3 text-foreground">Items Library</h3>
                 <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <MagnifyingGlassIcon weight="fill" className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
                         placeholder="Search items..."
                         value={search}
@@ -347,10 +347,11 @@ export function ToolboxPane({ onItemsLoaded, onAddItem }: ToolboxPaneProps) {
                                             <Button
                                                 variant="outline"
                                                 size="sm"
+                                                type="button"
                                                 className="w-full mt-2 text-muted-foreground hover:text-foreground border-border hover:bg-accent hover:text-accent-foreground"
                                                 onClick={() => setIsCreateDialogOpen(true)}
                                             >
-                                                <Plus className="h-3.5 w-3.5 mr-1.5" />
+                                                <PlusIcon weight="fill" className="h-3.5 w-3.5 mr-1.5" />
                                                 New Item Type
                                             </Button>
                                         )}

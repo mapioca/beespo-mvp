@@ -38,7 +38,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Form } from "@/components/ui/form";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription } from "@/components/ui/sheet";
-import { Menu, Settings2 } from "lucide-react";
+import { ListIcon, SlidersHorizontalIcon } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 
 const meetingFormSchema = z.object({
@@ -952,8 +952,8 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
                         <div className="lg:hidden flex items-center justify-between p-4 border-b bg-background shrink-0">
                             <Sheet>
                                 <SheetTrigger asChild>
-                                    <Button variant="outline" size="icon">
-                                        <Menu className="h-4 w-4" />
+                                    <Button variant="outline" size="icon" type="button">
+                                        <ListIcon weight="fill" className="h-4 w-4" />
                                     </Button>
                                 </SheetTrigger>
                                 <SheetContent side="left" className="w-[300px] sm:w-[400px] p-0 overflow-y-auto">
@@ -967,8 +967,8 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
 
                             <Sheet>
                                 <SheetTrigger asChild>
-                                    <Button variant="outline" size="icon">
-                                        <Settings2 className="h-4 w-4" />
+                                    <Button variant="outline" size="icon" type="button">
+                                        <SlidersHorizontalIcon weight="fill" className="h-4 w-4" />
                                     </Button>
                                 </SheetTrigger>
                                 <SheetContent side="right" className="w-[300px] sm:w-[400px] p-0 overflow-y-auto">

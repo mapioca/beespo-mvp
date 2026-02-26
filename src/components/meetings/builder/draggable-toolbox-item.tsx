@@ -3,18 +3,19 @@
 import { useDraggable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import {
-    Music,
-    BookOpen,
-    MessageSquare,
-    Briefcase,
-    Megaphone,
-    User,
-    Layers,
-    Puzzle,
-    Plus,
-    Heading1,
-    Minus,
-} from "lucide-react";
+    MusicNoteIcon,
+    BookOpenIcon,
+    BriefcaseIcon,
+    MegaphoneIcon,
+    UserIcon,
+    StackIcon,
+    PuzzlePieceIcon,
+    PlusIcon,
+    TextHOneIcon,
+    MinusIcon,
+    HandsPrayingIcon,
+    ChatsIcon
+} from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { ToolboxItem } from "./types";
 import { CategoryType } from "../add-meeting-item-dialog";
@@ -26,42 +27,46 @@ interface DraggableToolboxItemProps {
 }
 
 const getCategoryIcon = (item: ToolboxItem) => {
+    if (item.title?.toLowerCase().includes("prayer")) {
+        return <HandsPrayingIcon weight="fill" className="h-4 w-4" />;
+    }
+
     // Custom items get puzzle icon
     if (item.is_custom) {
         // But if they have specific config, show appropriate icon
         if (item.config?.requires_resource) {
-            return <Music className="h-4 w-4" />;
+            return <MusicNoteIcon weight="fill" className="h-4 w-4" />;
         }
         if (item.config?.requires_assignee) {
-            return <User className="h-4 w-4" />;
+            return <UserIcon weight="fill" className="h-4 w-4" />;
         }
-        return <Puzzle className="h-4 w-4" />;
+        return <PuzzlePieceIcon weight="fill" className="h-4 w-4" />;
     }
 
     // Core items
     if (item.is_hymn || item.config?.requires_resource) {
-        return <Music className="h-4 w-4" />;
+        return <MusicNoteIcon weight="fill" className="h-4 w-4" />;
     }
 
     if (item.type === "structural") {
         if (item.structural_type === "section_header") {
-            return <Heading1 className="h-4 w-4" />;
+            return <TextHOneIcon weight="fill" className="h-4 w-4" />;
         }
         if (item.structural_type === "divider") {
-            return <Minus className="h-4 w-4" />;
+            return <MinusIcon weight="fill" className="h-4 w-4" />;
         }
-        return <Layers className="h-4 w-4" />;
+        return <StackIcon weight="fill" className="h-4 w-4" />;
     }
 
     const icons: Record<CategoryType, React.ReactNode> = {
-        procedural: <BookOpen className="h-4 w-4" />,
-        discussion: <MessageSquare className="h-4 w-4" />,
-        business: <Briefcase className="h-4 w-4" />,
-        announcement: <Megaphone className="h-4 w-4" />,
-        speaker: <User className="h-4 w-4" />,
-        structural: <Layers className="h-4 w-4" />,
+        procedural: <BookOpenIcon weight="fill" className="h-4 w-4" />,
+        discussion: <ChatsIcon weight="fill" className="h-4 w-4" />,
+        business: <BriefcaseIcon weight="fill" className="h-4 w-4" />,
+        announcement: <MegaphoneIcon weight="fill" className="h-4 w-4" />,
+        speaker: <UserIcon weight="fill" className="h-4 w-4" />,
+        structural: <StackIcon weight="fill" className="h-4 w-4" />,
     };
-    return icons[item.category] || <Layers className="h-4 w-4" />;
+    return icons[item.category] || <StackIcon weight="fill" className="h-4 w-4" />;
 };
 
 export function DraggableToolboxItem({ item, disabled, onAddItem }: DraggableToolboxItemProps) {
@@ -126,7 +131,7 @@ export function DraggableToolboxItem({ item, disabled, onAddItem }: DraggableToo
                     className="absolute right-2 top-2 p-1.5 text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-primary hover:bg-primary/10 rounded-md transition-all"
                     title="Quick Insert"
                 >
-                    <Plus className="h-4 w-4" />
+                    <PlusIcon weight="fill" className="h-4 w-4" />
                 </button>
             )}
         </div>
