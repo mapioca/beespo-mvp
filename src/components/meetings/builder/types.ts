@@ -1,6 +1,7 @@
 "use client";
 
 import { CategoryType } from "../add-meeting-item-dialog";
+export type { CategoryType };
 import { ContainerChildItem, ContainerType } from "../container-agenda-item";
 
 // Item behavior configuration
@@ -101,6 +102,7 @@ export interface ProceduralItemType {
     is_custom: boolean | null;
     workspace_id: string | null;
     icon: string | null;
+    category: string | null;
 }
 
 // Category groups for toolbox

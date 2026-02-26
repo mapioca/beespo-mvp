@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { MagnifyingGlassIcon, PlusIcon, SquaresFourIcon } from "@phosphor-icons/react";
 import { createClient } from "@/lib/supabase/client";
 import { DraggableToolboxItem } from "./draggable-toolbox-item";
-import { ToolboxItem, ProceduralItemType, ItemConfig } from "./types";
+import { ToolboxItem, ProceduralItemType, ItemConfig, CategoryType } from "./types";
 import { CreateItemTypeDialog } from "./create-item-type-dialog";
 
 interface ToolboxPaneProps {
@@ -188,7 +188,7 @@ export function ToolboxPane({ onItemsLoaded, onAddItem }: ToolboxPaneProps) {
             items.push({
                 id: pt.id,
                 type: itemType,
-                category: containerType || (itemType === "speaker" ? "speaker" : "procedural"),
+                category: pt.category as CategoryType || containerType || (itemType === "speaker" ? "speaker" : "procedural"),
                 title: pt.name,
                 description: pt.description,
                 duration_minutes: pt.default_duration_minutes || 5,

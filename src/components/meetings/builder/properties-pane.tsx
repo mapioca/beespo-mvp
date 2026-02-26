@@ -185,7 +185,7 @@ export function PropertiesPane({
                             {/* Hymn selector */}
                             {selectedItem.is_hymn && (
                                 <div className="space-y-1.5">
-                                    <Label className="text-xs">Hymn</Label>
+                                    <Label className="text-xs">Musical Resource</Label>
                                     <button
                                         type="button"
                                         className={cn(
@@ -206,10 +206,9 @@ export function PropertiesPane({
 
                             {/* Participant selector */}
                             {(selectedItem.requires_participant || selectedItem.config?.requires_assignee) &&
-                                !selectedItem.is_hymn &&
                                 selectedItem.category !== "speaker" && (
                                     <div className="space-y-1.5">
-                                        <Label className="text-xs">Participant</Label>
+                                        <Label className="text-xs">Assignable Person</Label>
                                         <button
                                             type="button"
                                             className={cn(
@@ -310,7 +309,7 @@ export function PropertiesPane({
                 </div>
 
                 {/* General Settings */}
-                <div className="space-y-3 pt-3 border-t">
+                <div className="space-y-3 pt-4 border-t -mx-3 px-3">
                     <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
                         Agenda
                     </h3>

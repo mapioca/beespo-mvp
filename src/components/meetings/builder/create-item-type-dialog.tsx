@@ -50,6 +50,7 @@ export function CreateItemTypeDialog({
     const [name, setName] = useState("");
     const [iconName, setIconName] = useState("StarIcon");
     const [requiresAssignee, setRequiresAssignee] = useState(false);
+    const [requiresSpeaker, setRequiresSpeaker] = useState(false);
     const [requiresResource, setRequiresResource] = useState(false);
     const [hasRichText, setHasRichText] = useState(false);
     const [defaultDuration, setDefaultDuration] = useState(5);
@@ -61,6 +62,7 @@ export function CreateItemTypeDialog({
             setName(initialData.title);
             setIconName(initialData.icon || "StarIcon");
             setRequiresAssignee(initialData.config?.requires_assignee || false);
+            setRequiresSpeaker(initialData.category === "speaker");
             setRequiresResource(initialData.config?.requires_resource || false);
             setHasRichText(initialData.config?.has_rich_text || false);
             setDefaultDuration(initialData.duration_minutes || 5);
@@ -123,6 +125,7 @@ export function CreateItemTypeDialog({
                 .update({
                     name: name.trim(),
                     icon: iconName,
+                    category: requiresSpeaker ? "speaker" : "procedural",
                     requires_assignee: requiresAssignee,
                     requires_resource: requiresResource,
                     has_rich_text: hasRichText,
@@ -144,6 +147,7 @@ export function CreateItemTypeDialog({
                     is_core: false,
                     icon: iconName,
                     workspace_id: workspaceId,
+                    category: requiresSpeaker ? "speaker" : "procedural",
                     requires_assignee: requiresAssignee,
                     requires_resource: requiresResource,
                     has_rich_text: hasRichText,
@@ -252,6 +256,27 @@ export function CreateItemTypeDialog({
                                     id="requires-assignee"
                                     checked={requiresAssignee}
                                     onCheckedChange={setRequiresAssignee}
+                                    disabled={isCreating}
+                                />
+                            </div>
+
+                            {/* Assignable Speaker */}
+                            <div className="flex items-center justify-between rounded-lg border p-3">
+                                <div className="flex items-center gap-3">
+                                    <UserIcon weight="fill" className="h-4 w-4 text-muted-foreground" />
+                                    <div className="space-y-0.5">
+                                        <Label htmlFor="requires-speaker" className="font-normal cursor-pointer">
+                                            Assignable Speaker
+                                        </Label>
+                                        <p className="text-xs text-muted-foreground">
+                                            Shows a speaker picker for the assignment
+                                        </p>
+                                    </div>
+                                </div>
+                                <Switch
+                                    id="requires-speaker"
+                                    checked={requiresSpeaker}
+                                    onCheckedChange={setRequiresSpeaker}
                                     disabled={isCreating}
                                 />
                             </div>
