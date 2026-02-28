@@ -7,20 +7,20 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
-    Plus,
-    Trash2,
-    Music,
-    BookOpen,
-    MessageSquare,
-    Briefcase,
-    Megaphone,
-    User,
-    Pencil,
-    UserPlus,
-    Mic,
-    CheckCircle,
-    Minus,
-} from "lucide-react";
+    PlusIcon as Plus,
+    TrashIcon as Trash2,
+    MusicNotesIcon as Music,
+    BookOpenIcon as BookOpen,
+    ChatCenteredTextIcon as MessageSquare,
+    BriefcaseIcon as Briefcase,
+    MegaphoneIcon as Megaphone,
+    UserIcon as User,
+    PencilIcon as Pencil,
+    UserPlusIcon as UserPlus,
+    MicrophoneIcon as Mic,
+    CheckCircleIcon as CheckCircle,
+    MinusIcon as Minus,
+} from "@phosphor-icons/react";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "@/lib/toast";
 import { AddMeetingItemDialog, SelectedItem, CategoryType } from "./add-meeting-item-dialog";

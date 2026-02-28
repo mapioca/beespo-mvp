@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
 import { HymnSelectorPopover } from "./hymn-selector-popover";
+import { ParticipantSelectorPopover } from "./participant-selector-popover";
 import {
     Popover,
     PopoverContent,
@@ -35,7 +36,7 @@ interface PropertiesPaneProps {
     onUpdateDescription?: (id: string, newDescription: string) => void;
     onUpdateDuration?: (id: string, newDuration: number) => void;
     onSelectHymn?: (hymn: { id: string; number: number; title: string }) => void;
-    onSelectParticipant?: () => void;
+    onSelectParticipant?: (participant: { id: string; name: string }) => void;
     onSelectSpeaker?: () => void;
     onAddToContainer?: () => void;
     onRemoveChildItem?: (childId: string) => void;
@@ -223,19 +224,23 @@ export function PropertiesPane({
                                 selectedItem.category !== "speaker" && (
                                     <div className="space-y-1.5">
                                         <Label className="text-xs">Assignable Person</Label>
-                                        <button
-                                            type="button"
-                                            className={cn(
-                                                "w-full h-8 px-3 border-2 border-dashed rounded-md text-sm flex items-center justify-center gap-2 transition-all",
-                                                "hover:border-solid hover:bg-muted/50 border-muted-foreground/20 text-muted-foreground",
-                                                selectedItem.participant_name && "border-solid bg-slate-50/50 border-slate-200 text-slate-700 font-medium"
-                                            )}
-                                            onClick={onSelectParticipant}
+                                        <ParticipantSelectorPopover
+                                            currentParticipantId={selectedItem.participant_id || undefined}
+                                            onSelect={(p) => onSelectParticipant?.(p)}
                                         >
-                                            <span className="truncate">
-                                                {selectedItem.participant_name || "Select Participant..."}
-                                            </span>
-                                        </button>
+                                            <button
+                                                type="button"
+                                                className={cn(
+                                                    "w-full h-8 px-3 border-2 border-dashed rounded-md text-sm flex items-center justify-center gap-2 transition-all",
+                                                    "hover:border-solid hover:bg-muted/50 border-muted-foreground/20 text-muted-foreground",
+                                                    selectedItem.participant_name && "border-solid bg-slate-50/50 border-slate-200 text-slate-700 font-medium"
+                                                )}
+                                            >
+                                                <span className="truncate">
+                                                    {selectedItem.participant_name || "Select Participant..."}
+                                                </span>
+                                            </button>
+                                        </ParticipantSelectorPopover>
                                     </div>
                                 )}
 

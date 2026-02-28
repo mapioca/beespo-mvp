@@ -497,11 +497,7 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
     // Panel-oriented modal openers (use already-set selectedItemId)
 
 
-    const openParticipantSelectorForSelected = useCallback(() => {
-        if (!selectedItemId) return;
-        setUnifiedModalMode("participant");
-        setUnifiedModalOpen(true);
-    }, [selectedItemId]);
+
 
     const openSpeakerSelectorForSelected = useCallback(() => {
         if (!selectedItemId) return;
@@ -992,7 +988,7 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
                                         onUpdateDescription={handleUpdateDescription}
                                         onUpdateDuration={handleUpdateDuration}
                                         onSelectHymn={handleSelectHymn}
-                                        onSelectParticipant={openParticipantSelectorForSelected}
+                                        onSelectParticipant={handleSelectParticipant}
                                         onSelectSpeaker={openSpeakerSelectorForSelected}
                                         onAddToContainer={openContainerAddForSelected}
                                         onRemoveChildItem={handleRemoveChildFromSelected}
@@ -1034,7 +1030,7 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
                                     onUpdateDescription={handleUpdateDescription}
                                     onUpdateDuration={handleUpdateDuration}
                                     onSelectHymn={handleSelectHymn}
-                                    onSelectParticipant={openParticipantSelectorForSelected}
+                                    onSelectParticipant={handleSelectParticipant}
                                     onSelectSpeaker={openSpeakerSelectorForSelected}
                                     onAddToContainer={openContainerAddForSelected}
                                     onRemoveChildItem={handleRemoveChildFromSelected}
