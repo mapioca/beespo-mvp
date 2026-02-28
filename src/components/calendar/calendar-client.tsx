@@ -45,6 +45,7 @@ export function CalendarClient({
     tasks: true,
     events: true,
     external: true,
+    externalSubscriptions: {},
   });
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -110,6 +111,7 @@ export function CalendarClient({
       const eventsWithColor = (events || []).map((e: {
         calendar_subscriptions?: { color: string; name: string };
         external_uid?: string;
+        subscription_id?: string;
       }) => ({
         ...e,
         color: e.calendar_subscriptions?.color,
@@ -117,6 +119,19 @@ export function CalendarClient({
       }));
 
       setExternalEvents(eventsWithColor);
+
+      // Register any new subscription IDs as visible (default on)
+      setVisibility((prev) => {
+        const newSubs = { ...prev.externalSubscriptions };
+        let changed = false;
+        for (const ev of eventsWithColor as { subscription_id?: string }[]) {
+          if (ev.subscription_id && !(ev.subscription_id in newSubs)) {
+            newSubs[ev.subscription_id] = true;
+            changed = true;
+          }
+        }
+        return changed ? { ...prev, externalSubscriptions: newSubs } : prev;
+      });
     };
 
     fetchExternalEvents();
@@ -239,7 +254,14 @@ export function CalendarClient({
     }
 
     if (visibility.external) {
-      events.push(...externalToCalendarEvents(externalEvents));
+      // Filter by individual subscription visibility
+      const visibleExternal = externalEvents.filter((e) => {
+        if (!e.subscription_id) return true;
+        const subVisible = visibility.externalSubscriptions[e.subscription_id];
+        // If not yet registered, treat as visible
+        return subVisible === undefined ? true : subVisible;
+      });
+      events.push(...externalToCalendarEvents(visibleExternal));
     }
 
     return events;
@@ -339,10 +361,35 @@ export function CalendarClient({
   // Toggle calendar visibility
   const toggleVisibility = useCallback(
     (key: keyof CalendarVisibility) => {
-      setVisibility((prev) => ({ ...prev, [key]: !prev[key] }));
+      setVisibility((prev) => {
+        const newVal = !prev[key];
+        // When toggling the master "external" flag, sync all per-subscription states
+        if (key === "external") {
+          const newSubs: Record<string, boolean> = {};
+          for (const id of Object.keys(prev.externalSubscriptions)) {
+            newSubs[id] = newVal as boolean;
+          }
+          return { ...prev, external: newVal as boolean, externalSubscriptions: newSubs };
+        }
+        return { ...prev, [key]: newVal };
+      });
     },
     []
   );
+
+  // Toggle individual external subscription visibility
+  const toggleExternalSubscription = useCallback((subscriptionId: string) => {
+    setVisibility((prev) => {
+      const updated = {
+        ...prev.externalSubscriptions,
+        [subscriptionId]: !prev.externalSubscriptions[subscriptionId],
+      };
+      // Derive master toggle: all on => true, all off => false, mixed => true (indeterminate handled in sidebar)
+      const values = Object.values(updated);
+      const anyOn = values.some(Boolean);
+      return { ...prev, externalSubscriptions: updated, external: anyOn };
+    });
+  }, []);
 
   // Handle new event created from dialog
   const handleEventCreated = useCallback(
@@ -392,6 +439,7 @@ export function CalendarClient({
         onToggle={() => setSidebarOpen(!sidebarOpen)}
         visibility={visibility}
         onToggleVisibility={toggleVisibility}
+        onToggleExternalSubscription={toggleExternalSubscription}
         userRole={userRole}
       />
 

@@ -14,6 +14,8 @@ export interface CalendarVisibility {
     tasks: boolean;
     events: boolean;
     external: boolean;
+    /** Per-subscription visibility keyed by subscription id */
+    externalSubscriptions: Record<string, boolean>;
 }
 
 export interface ExternalEventWithColor extends ExternalCalendarEvent {

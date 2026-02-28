@@ -18,6 +18,7 @@ interface CalendarSidebarProps {
   onToggle: () => void;
   visibility: CalendarVisibility;
   onToggleVisibility: (key: keyof CalendarVisibility) => void;
+  onToggleExternalSubscription: (subscriptionId: string) => void;
   userRole: UserRole;
 }
 
@@ -27,6 +28,7 @@ export function CalendarSidebar({
   onToggle,
   visibility,
   onToggleVisibility,
+  onToggleExternalSubscription,
   userRole,
 }: CalendarSidebarProps) {
   const isAdmin = userRole === "admin";
@@ -65,6 +67,18 @@ export function CalendarSidebar({
   }, [settingsOpen]); // Refresh when settings dialog closes
 
   const enabledSubscriptions = subscriptions.filter((s) => s.is_enabled);
+
+  // Derive master toggle state
+  const subStates = enabledSubscriptions.map(
+    (s) => visibility.externalSubscriptions[s.id] ?? true
+  );
+  const allOn = subStates.length > 0 && subStates.every(Boolean);
+  const someOn = subStates.some(Boolean);
+  const isIndeterminate = someOn && !allOn;
+  // Radix Checkbox supports "indeterminate" as a special checked value
+  const masterChecked: boolean | "indeterminate" = isIndeterminate
+    ? "indeterminate"
+    : allOn;
 
   return (
     <>
@@ -183,10 +197,11 @@ export function CalendarSidebar({
               </div>
             ) : enabledSubscriptions.length > 0 ? (
               <div className="space-y-2">
+                {/* Master "All External" toggle */}
                 <div className="flex items-center space-x-2">
                   <Checkbox
                     id="external"
-                    checked={visibility.external}
+                    checked={masterChecked}
                     onCheckedChange={() => onToggleVisibility("external")}
                   />
                   <Label
@@ -197,18 +212,33 @@ export function CalendarSidebar({
                     All External
                   </Label>
                 </div>
-                {enabledSubscriptions.map((sub) => (
-                  <div
-                    key={sub.id}
-                    className="flex items-center gap-2 pl-6 text-sm text-muted-foreground"
-                  >
-                    <span
-                      className="w-2 h-2 rounded-full flex-shrink-0"
-                      style={{ backgroundColor: sub.color }}
-                    />
-                    <span className="truncate">{sub.name}</span>
-                  </div>
-                ))}
+
+                {/* Per-subscription toggles */}
+                {enabledSubscriptions.map((sub) => {
+                  const isVisible = visibility.externalSubscriptions[sub.id] ?? true;
+                  return (
+                    <div
+                      key={sub.id}
+                      className="flex items-center space-x-2 pl-5"
+                    >
+                      <Checkbox
+                        id={`external-sub-${sub.id}`}
+                        checked={isVisible}
+                        onCheckedChange={() => onToggleExternalSubscription(sub.id)}
+                      />
+                      <Label
+                        htmlFor={`external-sub-${sub.id}`}
+                        className="flex items-center gap-2 cursor-pointer text-sm"
+                      >
+                        <span
+                          className="w-2 h-2 rounded-full flex-shrink-0"
+                          style={{ backgroundColor: sub.color }}
+                        />
+                        <span className="truncate">{sub.name}</span>
+                      </Label>
+                    </div>
+                  );
+                })}
               </div>
             ) : (
               <p className="text-xs text-muted-foreground">
