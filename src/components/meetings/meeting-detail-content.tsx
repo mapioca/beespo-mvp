@@ -1,15 +1,20 @@
 "use client";
 
-import {useState} from "react";
-import {CalendarDays, Clock, Pencil, Printer} from "lucide-react";
+import { useState } from "react";
+import { CalendarDays, Clock } from "lucide-react";
+import {
+    PencilSimpleIcon,
+    DownloadSimpleIcon,
+    PrinterIcon,
+} from "@phosphor-icons/react";
 import Link from "next/link";
-import {Button} from "@/components/ui/button";
-import {MeetingStatusBadge} from "@/components/meetings/meeting-status-badge";
-import {MarkdownRenderer} from "@/components/meetings/markdown-renderer";
-import {formatMeetingDateTime} from "@/lib/meeting-helpers";
-import {calculateTotalDurationWithGrouping} from "@/lib/agenda-grouping";
-import {ShareDialog} from "@/components/conduct/share-dialog";
-import {Database} from "@/types/database";
+import { Button } from "@/components/ui/button";
+import { MeetingStatusBadge } from "@/components/meetings/meeting-status-badge";
+import { MarkdownRenderer } from "@/components/meetings/markdown-renderer";
+import { formatMeetingDateTime } from "@/lib/meeting-helpers";
+import { calculateTotalDurationWithGrouping } from "@/lib/agenda-grouping";
+import { ShareDialog } from "@/components/conduct/share-dialog";
+import { Database } from "@/types/database";
 
 type Meeting = Database["public"]["Tables"]["meetings"]["Row"] & {
     templates?: { name: string } | null;
@@ -33,14 +38,34 @@ export function MeetingDetailContent({
     agendaItems: initialAgendaItems,
     workspaceSlug,
     isLeader,
-     }: MeetingDetailContentProps) {
+}: MeetingDetailContentProps) {
     const [currentMeeting, setCurrentMeeting] = useState(meeting);
+    const [isDownloading, setIsDownloading] = useState(false);
     // Recalculate total duration using grouped logic (time-boxing)
     // Groups use their fixed duration, not sum of children
     const totalDuration = calculateTotalDurationWithGrouping(initialAgendaItems);
 
     const handleMeetingUpdate = (updatedMeeting: Meeting) => {
         setCurrentMeeting(updatedMeeting);
+    };
+
+    const handleDownload = async () => {
+        setIsDownloading(true);
+        try {
+            const res = await fetch(`/api/meetings/${currentMeeting.id}/pdf`);
+            if (!res.ok) throw new Error("PDF generation failed");
+            const blob = await res.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `${(currentMeeting.title || "agenda").replace(/[^a-z0-9\s-]/gi, "").replace(/\s+/g, "-").toLowerCase()}.pdf`;
+            a.click();
+            URL.revokeObjectURL(url);
+        } catch (err) {
+            console.error("Download error:", err);
+        } finally {
+            setIsDownloading(false);
+        }
     };
 
     return (
@@ -84,10 +109,9 @@ export function MeetingDetailContent({
                             {/* Actions Toolbar */}
                             <div className="flex items-center gap-2 shrink-0">
                                 {isLeader && (
-                                    <Button asChild variant="outline" size="sm" className="hidden sm:flex">
-                                        <Link href={`/meetings/${currentMeeting.id}/builder`}>
-                                            <Pencil className="w-4 h-4 mr-2" />
-                                            Edit Agenda
+                                    <Button asChild variant="outline" size="icon" title="Edit Agenda" className="hidden sm:flex">
+                                        <Link href={`/meetings/${currentMeeting.id}/edit`}>
+                                            <PencilSimpleIcon weight="fill" className="w-4 h-4" />
                                         </Link>
                                     </Button>
                                 )}
@@ -98,18 +122,27 @@ export function MeetingDetailContent({
                                     onUpdate={handleMeetingUpdate}
                                 />
 
-                                <Button asChild variant="outline" size="sm">
+                                <Button
+                                    variant="outline"
+                                    size="icon"
+                                    title={isDownloading ? "Generating PDF…" : "Download PDF"}
+                                    onClick={handleDownload}
+                                    disabled={isDownloading}
+                                >
+                                    <DownloadSimpleIcon weight="fill" className="w-4 h-4" />
+                                </Button>
+
+                                <Button asChild variant="outline" size="icon" title="Print Agenda">
                                     <a href={`/meetings/${currentMeeting.id}/print`} target="_blank" rel="noopener noreferrer">
-                                        <Printer className="w-4 h-4 mr-2" />
-                                        Print
+                                        <PrinterIcon weight="fill" className="w-4 h-4" />
                                     </a>
                                 </Button>
 
                                 {/* Mobile fallback for edit */}
                                 {isLeader && (
-                                    <Button asChild variant="outline" size="icon" className="sm:hidden">
-                                        <Link href={`/meetings/${currentMeeting.id}/builder`} title="Edit Agenda">
-                                            <Pencil className="w-4 h-4" />
+                                    <Button asChild variant="outline" size="icon" title="Edit Agenda" className="sm:hidden">
+                                        <Link href={`/meetings/${currentMeeting.id}/edit`}>
+                                            <PencilSimpleIcon weight="fill" className="w-4 h-4" />
                                         </Link>
                                     </Button>
                                 )}
@@ -130,7 +163,7 @@ export function MeetingDetailContent({
                                 <p>No agenda available for this meeting.</p>
                                 {isLeader && (
                                     <Button asChild variant="outline" className="mt-4">
-                                        <Link href={`/meetings/${currentMeeting.id}/builder`}>
+                                        <Link href={`/meetings/${currentMeeting.id}/edit`}>
                                             Create Agenda
                                         </Link>
                                     </Button>

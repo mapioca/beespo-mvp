@@ -113,6 +113,9 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
     const [isGeneratingPreview, setIsGeneratingPreview] = useState(false);
     const [workspaceName, setWorkspaceName] = useState("");
 
+    // Save as Template state
+    const [isSavingTemplate, setIsSavingTemplate] = useState(false);
+
     // DnD sensors
     const sensors = useSensors(
         useSensor(PointerSensor, {
@@ -699,6 +702,55 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
         setTargetContainerId(null);
     }, [targetContainerId]);
 
+    // Direct multi-insert from popovers — uses selectedItemId (not targetContainerId which is only set by the old modal)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const handleAddManyToContainer = useCallback((selectedItems: any[], type: ContainerType) => {
+        if (!selectedItemId) return;
+
+        setCanvasItems((prev) => {
+            const containerId = selectedItemId;
+            const newChildren = selectedItems.map((sel) => {
+                let itemTitle: string;
+                let itemDescription: string | null;
+                let businessType: string | undefined;
+
+                if (type === "business") {
+                    itemTitle = `${sel.person_name}${sel.position_calling ? ` - ${sel.position_calling}` : ""}`;
+                    itemDescription = sel.notes;
+                    businessType = sel.category;
+                } else {
+                    itemTitle = sel.title;
+                    itemDescription = sel.description;
+                }
+
+                const child: ContainerChildItem = {
+                    id: `child-${type}-${sel.id}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+                    title: itemTitle,
+                    description: itemDescription,
+                };
+
+                if (type === "discussion") {
+                    child.discussion_id = sel.id;
+                    child.status = sel.status;
+                } else if (type === "business") {
+                    child.business_item_id = sel.id;
+                    child.business_type = businessType;
+                } else if (type === "announcement") {
+                    child.announcement_id = sel.id;
+                    child.priority = sel.priority;
+                }
+
+                return child;
+            });
+
+            return prev.map((item) =>
+                item.id === containerId
+                    ? { ...item, childItems: [...(item.childItems || []), ...newChildren] }
+                    : item
+            );
+        });
+    }, [selectedItemId]);
+
     const handleUpdateTitle = useCallback((id: string, newTitle: string) => {
         setCanvasItems((prev) =>
             prev.map((item) =>
@@ -1079,6 +1131,76 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
         }
     }, [canvasItems, date, time, title, selectedTemplateId, router, form, workspaceName, initialMeetingId]);
 
+    const handleSaveAsTemplate = useCallback(async (templateName: string) => {
+        if (!templateName.trim() || canvasItems.length === 0) return;
+        setIsSavingTemplate(true);
+
+        try {
+            const supabase = createClient();
+
+            // Get current user + workspace_id
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) {
+                toast.error("You must be signed in to save a template.");
+                return;
+            }
+
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const { data: profile } = await (supabase.from("profiles") as any)
+                .select("workspace_id")
+                .eq("id", user.id)
+                .single();
+
+            const workspaceId = profile?.workspace_id ?? null;
+
+            // Insert template
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const { data: newTemplate, error: templateError } = await (supabase.from("templates") as any)
+                .insert({
+                    name: templateName.trim(),
+                    workspace_id: workspaceId,
+                    created_by: user.id,
+                    is_shared: false,
+                })
+                .select("id")
+                .single();
+
+            if (templateError || !newTemplate) {
+                toast.error("Failed to save template.", { description: templateError?.message });
+                return;
+            }
+
+            // Build template items — capture name, type, duration, order only (no values)
+            const templateItems = canvasItems.map((item, idx) => ({
+                template_id: newTemplate.id,
+                title: item.title,
+                item_type: item.isContainer ? (item.containerType ?? item.category) : item.category,
+                duration_minutes: item.duration_minutes,
+                order_index: idx,
+                procedural_item_type_id: item.procedural_item_type_id ?? null,
+                structural_type: item.structural_type ?? null,
+            }));
+
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const { error: itemsError } = await (supabase.from("template_items") as any)
+                .insert(templateItems);
+
+            if (itemsError) {
+                toast.error("Template created but items failed to save.", { description: itemsError.message });
+                return;
+            }
+
+            toast.success("Template saved", {
+                description: `"${templateName.trim()}" is now available in your templates.`,
+            });
+        } catch (err: unknown) {
+            const errorMessage = err instanceof Error ? err.message : "Unexpected error";
+            toast.error("Failed to save template.", { description: errorMessage });
+        } finally {
+            setIsSavingTemplate(false);
+        }
+    }, [canvasItems]);
+
     const isValid = title.trim() !== "" && date !== undefined;
     const selectedSpeakerIds = canvasItems
         .filter((i) => i.speaker_id)
@@ -1133,9 +1255,15 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                                         onUpdateDuration={handleUpdateDuration}
                                         onSelectHymn={handleSelectHymn}
                                         onSelectParticipant={handleSelectParticipant}
+                                        onSelectDiscussion={(discs) => handleAddManyToContainer(discs, "discussion")}
+                                        onSelectBusiness={(biz) => handleAddManyToContainer(biz, "business")}
+                                        onSelectAnnouncement={(ann) => handleAddManyToContainer(ann, "announcement")}
                                         onSelectSpeaker={openSpeakerSelectorForSelected}
                                         onAddToContainer={openContainerAddForSelected}
                                         onRemoveChildItem={handleRemoveChildFromSelected}
+                                        onSaveAsTemplate={handleSaveAsTemplate}
+                                        isSavingTemplate={isSavingTemplate}
+                                        canSaveAsTemplate={canvasItems.length > 0}
                                     />
                                 </SheetContent>
                             </Sheet>
@@ -1175,9 +1303,15 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                                     onUpdateDuration={handleUpdateDuration}
                                     onSelectHymn={handleSelectHymn}
                                     onSelectParticipant={handleSelectParticipant}
+                                    onSelectDiscussion={(discs) => handleAddManyToContainer(discs, "discussion")}
+                                    onSelectBusiness={(biz) => handleAddManyToContainer(biz, "business")}
+                                    onSelectAnnouncement={(ann) => handleAddManyToContainer(ann, "announcement")}
                                     onSelectSpeaker={openSpeakerSelectorForSelected}
                                     onAddToContainer={openContainerAddForSelected}
                                     onRemoveChildItem={handleRemoveChildFromSelected}
+                                    onSaveAsTemplate={handleSaveAsTemplate}
+                                    isSavingTemplate={isSavingTemplate}
+                                    canSaveAsTemplate={canvasItems.length > 0}
                                 />
                             </div>
                         </div>

@@ -88,19 +88,21 @@ export default async function PrintMeetingPage({ params }: PrintMeetingPageProps
 
     return (
         <div className="relative print:bg-white print:m-0 print:p-0">
+            {/* Force browser print margins to match the PDF/preview layout */}
+            <style>{`
+                @page {
+                    margin: 1in;
+                }
+            `}</style>
+
             {/* Action text for screen, hidden when printing */}
             <div className="print:hidden bg-blue-50 border-b border-blue-100 p-4 text-center text-sm text-blue-800">
                 <p>Opening print dialog... Please close this tab after printing to return to the application.</p>
             </div>
 
-            <main className="max-w-[850px] mx-auto p-12 sm:p-16 print:p-0">
+            <main className="max-w-[850px] mx-auto p-12 sm:p-16 print:p-0 print:max-w-none">
                 <MarkdownRenderer markdown={markdown} />
             </main>
-
-            {/* Beespo Watermark */}
-            <div className="fixed bottom-12 right-12 text-black/15 font-bold text-4xl tracking-widest pointer-events-none select-none print:opacity-10">
-                BEESPO
-            </div>
 
             <PrintTrigger />
         </div>

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useFormContext } from "react-hook-form";
 import { format } from "date-fns";
-import { CalendarBlankIcon, ClockIcon, SpinnerIcon, MinusIcon, PlayIcon, PlusIcon } from "@phosphor-icons/react";
+import { CalendarBlankIcon, ClockIcon, SpinnerIcon, MinusIcon, PlayIcon, PlusIcon, FloppyDiskIcon } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -24,6 +24,17 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Template, CanvasItem } from "./types";
+import { DiscussionSelectorPopover, type DiscussionSelection } from "./discussion-selector-popover";
+import { BusinessSelectorPopover, type BusinessSelection } from "./business-selector-popover";
+import { AnnouncementSelectorPopover, type AnnouncementSelection } from "./announcement-selector-popover";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogFooter,
+    DialogClose,
+} from "@/components/ui/dialog";
 
 interface PropertiesPaneProps {
     templates: Template[];
@@ -40,6 +51,12 @@ interface PropertiesPaneProps {
     onSelectSpeaker?: () => void;
     onAddToContainer?: () => void;
     onRemoveChildItem?: (childId: string) => void;
+    onSelectDiscussion?: (discussions: DiscussionSelection[]) => void;
+    onSelectBusiness?: (items: BusinessSelection[]) => void;
+    onSelectAnnouncement?: (announcements: AnnouncementSelection[]) => void;
+    onSaveAsTemplate?: (name: string) => void;
+    isSavingTemplate?: boolean;
+    canSaveAsTemplate?: boolean;
 }
 
 export function PropertiesPane({
@@ -57,6 +74,12 @@ export function PropertiesPane({
     onSelectSpeaker,
     onAddToContainer,
     onRemoveChildItem,
+    onSelectDiscussion,
+    onSelectBusiness,
+    onSelectAnnouncement,
+    onSaveAsTemplate,
+    isSavingTemplate,
+    canSaveAsTemplate,
 }: PropertiesPaneProps) {
     const { watch, setValue } = useFormContext();
 
@@ -76,6 +99,10 @@ export function PropertiesPane({
     const [showChorister, setShowChorister] = useState(false);
     const [showPianist, setShowPianist] = useState(false);
 
+    // Save as Template dialog state
+    const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
+    const [templateName, setTemplateName] = useState("");
+
     return (
         <div className="h-full flex flex-col bg-muted/30 border-l overflow-y-auto">
             {/* Actions & Header */}
@@ -83,31 +110,92 @@ export function PropertiesPane({
                 <div className="h-14 px-3 flex items-center gap-2 border-b">
                     <Button
                         variant="outline"
-                        className="flex-1 h-8 gap-1.5 text-xs font-medium rounded-lg border-zinc-200"
+                        size="icon"
+                        className="h-8 w-8 rounded-lg border-zinc-200 shrink-0"
                         onClick={onPreview}
                         disabled={!isValid}
                         type="button"
+                        title="Preview"
                     >
                         <PlayIcon weight="fill" className="h-4 w-4" />
-                        Preview
+                    </Button>
+                    <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-8 w-8 rounded-lg border-zinc-200 shrink-0"
+                        onClick={() => {
+                            setTemplateName("");
+                            setTemplateDialogOpen(true);
+                        }}
+                        disabled={!canSaveAsTemplate || isSavingTemplate}
+                        type="button"
+                        title="Save as Template"
+                    >
+                        {isSavingTemplate ? (
+                            <SpinnerIcon weight="fill" className="h-4 w-4 animate-spin" />
+                        ) : (
+                            <FloppyDiskIcon weight="fill" className="h-4 w-4" />
+                        )}
                     </Button>
                     <Button
                         className="flex-1 h-8 gap-1.5 bg-zinc-900 text-white hover:bg-zinc-800 text-xs font-medium rounded-lg"
                         onClick={onCreateMeeting}
                         disabled={isCreating || !isValid}
+                        type="button"
                     >
-                        {isCreating ? (
-                            <SpinnerIcon weight="fill" className="h-4 w-4 animate-spin text-white" />
-                        ) : (
-                            <PlusIcon weight="fill" className="h-4 w-4" />
-                        )}
-                        {isCreating ? "Saving..." : "Create Meeting"}
+                        {isCreating ? "Saving..." : "Create Agenda"}
                     </Button>
                 </div>
                 <div className="px-3 py-2.5 bg-muted/10">
                     <h2 className="font-semibold text-xs">Properties</h2>
                 </div>
             </div>
+
+            {/* Save as Template Dialog */}
+            <Dialog open={templateDialogOpen} onOpenChange={setTemplateDialogOpen}>
+                <DialogContent className="sm:max-w-sm">
+                    <DialogHeader>
+                        <DialogTitle>Save as Template</DialogTitle>
+                    </DialogHeader>
+                    <p className="text-sm text-muted-foreground">
+                        This will save the current agenda structure ({/* item count injected via canSaveAsTemplate prop */}
+                        {canSaveAsTemplate ? "your agenda items" : "no items"}) as a reusable template. Values like hymns and participants will not be saved.
+                    </p>
+                    <div className="space-y-1.5">
+                        <Label htmlFor="template-name" className="text-xs">Template Name</Label>
+                        <Input
+                            id="template-name"
+                            value={templateName}
+                            onChange={(e) => setTemplateName(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === "Enter" && templateName.trim()) {
+                                    setTemplateDialogOpen(false);
+                                    onSaveAsTemplate?.(templateName);
+                                }
+                            }}
+                            placeholder="e.g. Sacrament Meeting"
+                            className="bg-background h-8 text-sm"
+                            autoFocus
+                        />
+                    </div>
+                    <DialogFooter>
+                        <DialogClose asChild>
+                            <Button variant="outline" size="sm" type="button">Cancel</Button>
+                        </DialogClose>
+                        <Button
+                            size="sm"
+                            type="button"
+                            disabled={!templateName.trim()}
+                            onClick={() => {
+                                setTemplateDialogOpen(false);
+                                onSaveAsTemplate?.(templateName);
+                            }}
+                        >
+                            Save Template
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
             {/* Scrollable Content */}
             <div className="p-3 space-y-6 flex-1">
@@ -305,15 +393,56 @@ export function PropertiesPane({
                                     </div>
 
                                     {/* Add item button */}
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        className="w-full h-8 gap-1.5 text-xs font-normal border-dashed hover:border-solid hover:bg-primary/5 hover:text-primary hover:border-primary/30 transition-all"
-                                        onClick={onAddToContainer}
-                                    >
-                                        <PlusIcon weight="fill" className="h-3.5 w-3.5" />
-                                        Add {selectedItem.containerType}
-                                    </Button>
+                                    {selectedItem.containerType === "discussion" ? (
+                                        <DiscussionSelectorPopover
+                                            onSelect={(discs) => onSelectDiscussion?.(discs)}
+                                        >
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                className="w-full h-8 gap-1.5 text-xs font-normal border-dashed hover:border-solid hover:bg-primary/5 hover:text-primary hover:border-primary/30 transition-all"
+                                            >
+                                                <PlusIcon weight="fill" className="h-3.5 w-3.5" />
+                                                Add discussion
+                                            </Button>
+                                        </DiscussionSelectorPopover>
+                                    ) : selectedItem.containerType === "business" ? (
+                                        <BusinessSelectorPopover
+                                            onSelect={(biz) => onSelectBusiness?.(biz)}
+                                        >
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                className="w-full h-8 gap-1.5 text-xs font-normal border-dashed hover:border-solid hover:bg-primary/5 hover:text-primary hover:border-primary/30 transition-all"
+                                            >
+                                                <PlusIcon weight="fill" className="h-3.5 w-3.5" />
+                                                Add business item
+                                            </Button>
+                                        </BusinessSelectorPopover>
+                                    ) : selectedItem.containerType === "announcement" ? (
+                                        <AnnouncementSelectorPopover
+                                            onSelect={(ann) => onSelectAnnouncement?.(ann)}
+                                        >
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                className="w-full h-8 gap-1.5 text-xs font-normal border-dashed hover:border-solid hover:bg-primary/5 hover:text-primary hover:border-primary/30 transition-all"
+                                            >
+                                                <PlusIcon weight="fill" className="h-3.5 w-3.5" />
+                                                Add announcement
+                                            </Button>
+                                        </AnnouncementSelectorPopover>
+                                    ) : (
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            className="w-full h-8 gap-1.5 text-xs font-normal border-dashed hover:border-solid hover:bg-primary/5 hover:text-primary hover:border-primary/30 transition-all"
+                                            onClick={onAddToContainer}
+                                        >
+                                            <PlusIcon weight="fill" className="h-3.5 w-3.5" />
+                                            Add {selectedItem.containerType}
+                                        </Button>
+                                    )}
                                 </div>
                             )}
 
