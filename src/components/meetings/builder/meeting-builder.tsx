@@ -97,7 +97,7 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
     // Selection & modal state
     const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
     const [unifiedModalOpen, setUnifiedModalOpen] = useState(false);
-    const [unifiedModalMode, setUnifiedModalMode] = useState<UnifiedSelectorMode>("hymn");
+    const [unifiedModalMode, setUnifiedModalMode] = useState<UnifiedSelectorMode>("participant");
     const [targetContainerId, setTargetContainerId] = useState<string | null>(null);
 
     // Validation state
@@ -495,11 +495,7 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
     }, []);
 
     // Panel-oriented modal openers (use already-set selectedItemId)
-    const openHymnSelectorForSelected = useCallback(() => {
-        if (!selectedItemId) return;
-        setUnifiedModalMode("hymn");
-        setUnifiedModalOpen(true);
-    }, [selectedItemId]);
+
 
     const openParticipantSelectorForSelected = useCallback(() => {
         if (!selectedItemId) return;
@@ -535,18 +531,7 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
         );
     }, [selectedItemId]);
 
-    const handleSelectHymn = useCallback((hymn: { id: string; number: number; title: string }) => {
-        if (selectedItemId) {
-            setCanvasItems((prev) =>
-                prev.map((item) =>
-                    item.id === selectedItemId
-                        ? { ...item, hymn_id: hymn.id, hymn_number: hymn.number, hymn_title: hymn.title }
-                        : item
-                )
-            );
-        }
-        setUnifiedModalOpen(false);
-    }, [selectedItemId]);
+
 
     const handleSelectParticipant = useCallback((participant: { id: string; name: string }) => {
         if (selectedItemId) {
@@ -644,6 +629,23 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
         );
     }, []);
 
+
+    const handleSelectHymn = useCallback((hymn: { id: string; number: number; title: string }) => {
+        if (selectedItemId) {
+            setCanvasItems((prev) =>
+                prev.map((item) =>
+                    item.id === selectedItemId
+                        ? {
+                            ...item,
+                            hymn_id: hymn.id,
+                            hymn_number: hymn.number,
+                            hymn_title: hymn.title,
+                        }
+                        : item
+                )
+            );
+        }
+    }, [selectedItemId]);
 
     // Validation
     const validateAgenda = useCallback((): ValidationItem[] => {
@@ -989,7 +991,7 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
                                         onUpdateItem={handleUpdateTitle}
                                         onUpdateDescription={handleUpdateDescription}
                                         onUpdateDuration={handleUpdateDuration}
-                                        onSelectHymn={openHymnSelectorForSelected}
+                                        onSelectHymn={handleSelectHymn}
                                         onSelectParticipant={openParticipantSelectorForSelected}
                                         onSelectSpeaker={openSpeakerSelectorForSelected}
                                         onAddToContainer={openContainerAddForSelected}
@@ -1031,7 +1033,7 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
                                     onUpdateItem={handleUpdateTitle}
                                     onUpdateDescription={handleUpdateDescription}
                                     onUpdateDuration={handleUpdateDuration}
-                                    onSelectHymn={openHymnSelectorForSelected}
+                                    onSelectHymn={handleSelectHymn}
                                     onSelectParticipant={openParticipantSelectorForSelected}
                                     onSelectSpeaker={openSpeakerSelectorForSelected}
                                     onAddToContainer={openContainerAddForSelected}
@@ -1058,12 +1060,10 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
                         mode={unifiedModalMode}
                         currentSelectionId={
                             selectedItemId
-                                ? canvasItems.find((i) => i.id === selectedItemId)?.hymn_id ||
-                                canvasItems.find((i) => i.id === selectedItemId)?.participant_id ||
+                                ? canvasItems.find((i) => i.id === selectedItemId)?.participant_id ||
                                 canvasItems.find((i) => i.id === selectedItemId)?.speaker_id
                                 : undefined
                         }
-                        onSelectHymn={handleSelectHymn}
                         onSelectParticipant={handleSelectParticipant}
                         onSelectSpeaker={handleSelectSpeaker}
                         onSelectDiscussion={(disc) => handleAddToContainer(disc, "discussion")}

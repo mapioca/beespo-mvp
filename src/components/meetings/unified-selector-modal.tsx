@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useMemo, useCallback } from "react";
-import Image from "next/image";
 import {
     Dialog,
     DialogContent,
@@ -20,7 +19,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-    Music,
     MessageSquare,
     Briefcase,
     Megaphone,
@@ -31,28 +29,7 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
-// Hymn categories for grouping
-const HYMN_CATEGORIES = [
-    { name: "Restoration", range: [1, 61] },
-    { name: "Praise and Thanksgiving", range: [62, 96] },
-    { name: "Prayer and Supplication", range: [97, 168] },
-    { name: "Sacrament", range: [169, 196] },
-    { name: "Easter", range: [197, 200] },
-    { name: "Christmas", range: [201, 214] },
-    { name: "Special Topics", range: [215, 298] },
-    { name: "Children's Songs", range: [299, 308] },
-    { name: "For Women", range: [309, 318] },
-    { name: "For Men", range: [319, 337] },
-    { name: "Patriotic", range: [338, 341] },
-] as const;
 
-// Types
-interface Hymn {
-    id: string;
-    hymn_number: number;
-    title: string;
-    book_id: string;
-}
 
 interface Discussion {
     id: string;
@@ -93,7 +70,6 @@ interface Speaker {
 }
 
 export type UnifiedSelectorMode =
-    | "hymn"
     | "discussion"
     | "business"
     | "announcement"
@@ -101,12 +77,6 @@ export type UnifiedSelectorMode =
     | "speaker";
 
 // Selection result types
-export interface HymnSelection {
-    id: string;
-    number: number;
-    title: string;
-}
-
 export interface DiscussionSelection {
     id: string;
     title: string;
@@ -145,7 +115,6 @@ interface UnifiedSelectorModalProps {
     open: boolean;
     onClose: () => void;
     mode: UnifiedSelectorMode;
-    onSelectHymn?: (hymn: HymnSelection) => void;
     onSelectDiscussion?: (discussion: DiscussionSelection) => void;
     onSelectBusiness?: (business: BusinessSelection) => void;
     onSelectAnnouncement?: (announcement: AnnouncementSelection) => void;
@@ -163,7 +132,6 @@ export function UnifiedSelectorModal({
     open,
     onClose,
     mode,
-    onSelectHymn,
     onSelectDiscussion,
     onSelectBusiness,
     onSelectAnnouncement,
@@ -177,7 +145,6 @@ export function UnifiedSelectorModal({
     const [isLoading, setIsLoading] = useState(false);
 
     // Data state for each mode
-    const [hymns, setHymns] = useState<Hymn[]>([]);
     const [discussions, setDiscussions] = useState<Discussion[]>([]);
     const [businessItems, setBusinessItems] = useState<BusinessItem[]>([]);
     const [announcements, setAnnouncements] = useState<Announcement[]>([]);
@@ -218,17 +185,6 @@ export function UnifiedSelectorModal({
             }
 
             switch (mode) {
-                case "hymn": {
-                    if (hymns.length === 0) {
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        const { data, error } = await (supabase.from("hymns") as any)
-                            .select("id, hymn_number, title, book_id")
-                            .order("hymn_number");
-                        if (error) console.error("Error loading hymns:", error);
-                        if (data) setHymns(data);
-                    }
-                    break;
-                }
                 case "discussion": {
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     let query = (supabase.from("discussions") as any)
@@ -336,34 +292,6 @@ export function UnifiedSelectorModal({
         setIsLoading(false);
     };
 
-    // Group hymns by category
-    const groupedHymns = useMemo(() => {
-        const searchLower = search.toLowerCase().trim();
-        const searchNum = parseInt(search);
-
-        const filtered = hymns.filter((h) => {
-            if (excludeIds.includes(h.id)) return false;
-            if (!searchLower) return true;
-            if (!isNaN(searchNum) && h.hymn_number === searchNum) return true;
-            if (h.hymn_number.toString().startsWith(search)) return true;
-            return h.title.toLowerCase().includes(searchLower);
-        });
-
-        // Group by category
-        const groups: { category: string; hymns: Hymn[] }[] = [];
-
-        for (const cat of HYMN_CATEGORIES) {
-            const categoryHymns = filtered.filter(
-                (h) => h.hymn_number >= cat.range[0] && h.hymn_number <= cat.range[1]
-            );
-            if (categoryHymns.length > 0) {
-                groups.push({ category: cat.name, hymns: categoryHymns });
-            }
-        }
-
-        return groups;
-    }, [hymns, search, excludeIds]);
-
     // Filter other item types
     const filteredDiscussions = useMemo(() => {
         const searchLower = search.toLowerCase().trim();
@@ -423,21 +351,6 @@ export function UnifiedSelectorModal({
         });
     }, [speakers, search, excludeIds, selectedSpeakerIdsInMeeting]);
 
-    // Get hymn book logo
-    const getHymnBookLogo = (bookId: string) => {
-        const logos: Record<string, { src: string; alt: string }> = {
-            hymns_church: {
-                src: "/images/lds-hymns.svg",
-                alt: "LDS Hymns",
-            },
-            hymns_home_church: {
-                src: "/images/home-church.svg",
-                alt: "Home Church Collection",
-            },
-        };
-        return logos[bookId] || { src: "/images/lds-hymns.svg", alt: "Hymnal" };
-    };
-
     // Create new participant
     const handleCreateParticipant = useCallback(async () => {
         if (!newParticipantName.trim()) return;
@@ -475,8 +388,7 @@ export function UnifiedSelectorModal({
     }, [newParticipantName, onSelectParticipant, onClose]);
 
     // Modal title based on mode
-    const modalConfig: Record<UnifiedSelectorMode, { title: string; icon: typeof Music; color: string }> = {
-        hymn: { title: "Select Hymn", icon: Music, color: "text-blue-500" },
+    const modalConfig: Record<UnifiedSelectorMode, { title: string; icon: typeof MessageSquare; color: string }> = {
         discussion: { title: "Select Discussion", icon: MessageSquare, color: "text-green-500" },
         business: { title: "Select Business Item", icon: Briefcase, color: "text-purple-500" },
         announcement: { title: "Select Announcement", icon: Megaphone, color: "text-orange-500" },
@@ -525,11 +437,7 @@ export function UnifiedSelectorModal({
                 ) : (
                     <Command className="border-none" shouldFilter={false}>
                         <CommandInput
-                            placeholder={
-                                mode === "hymn"
-                                    ? "Search by number or title..."
-                                    : `Search ${mode}s...`
-                            }
+                            placeholder={`Search ${mode}s...`}
                             value={search}
                             onValueChange={setSearch}
                         />
@@ -540,57 +448,6 @@ export function UnifiedSelectorModal({
                                 </div>
                             ) : (
                                 <>
-                                    {/* Hymns - grouped by category */}
-                                    {mode === "hymn" && (
-                                        <>
-                                            {groupedHymns.length === 0 ? (
-                                                <CommandEmpty>No hymns found.</CommandEmpty>
-                                            ) : (
-                                                groupedHymns.map((group) => (
-                                                    <CommandGroup key={group.category} heading={group.category}>
-                                                        {group.hymns.map((hymn) => {
-                                                            const logo = getHymnBookLogo(hymn.book_id);
-                                                            return (
-                                                                <CommandItem
-                                                                    key={hymn.id}
-                                                                    value={hymn.id}
-                                                                    onSelect={() => {
-                                                                        onSelectHymn?.({
-                                                                            id: hymn.id,
-                                                                            number: hymn.hymn_number,
-                                                                            title: hymn.title,
-                                                                        });
-                                                                        onClose();
-                                                                    }}
-                                                                    className={cn(
-                                                                        "flex items-center gap-3 py-2",
-                                                                        currentSelectionId === hymn.id && "bg-accent"
-                                                                    )}
-                                                                >
-                                                                    <div className="relative w-8 h-8 flex-shrink-0">
-                                                                        <Image
-                                                                            src={logo.src}
-                                                                            alt={logo.alt}
-                                                                            width={32}
-                                                                            height={32}
-                                                                            className="object-contain"
-                                                                        />
-                                                                    </div>
-                                                                    <span className="font-mono text-sm text-muted-foreground w-10">
-                                                                        #{hymn.hymn_number}
-                                                                    </span>
-                                                                    <span className="font-medium truncate">
-                                                                        {hymn.title}
-                                                                    </span>
-                                                                </CommandItem>
-                                                            );
-                                                        })}
-                                                    </CommandGroup>
-                                                ))
-                                            )}
-                                        </>
-                                    )}
-
                                     {/* Discussions */}
                                     {mode === "discussion" && (
                                         <>

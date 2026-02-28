@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
+import { HymnSelectorPopover } from "./hymn-selector-popover";
 import {
     Popover,
     PopoverContent,
@@ -33,7 +34,7 @@ interface PropertiesPaneProps {
     onUpdateItem?: (id: string, newTitle: string) => void;
     onUpdateDescription?: (id: string, newDescription: string) => void;
     onUpdateDuration?: (id: string, newDuration: number) => void;
-    onSelectHymn?: () => void;
+    onSelectHymn?: (hymn: { id: string; number: number; title: string }) => void;
     onSelectParticipant?: () => void;
     onSelectSpeaker?: () => void;
     onAddToContainer?: () => void;
@@ -121,16 +122,6 @@ export function PropertiesPane({
                         </div>
                     ) : (
                         <div className="space-y-3 animate-in fade-in duration-200">
-                            {/* Item Type (Read-only) */}
-                            <div className="space-y-1.5 pb-1">
-                                <Label className="text-xs">Type</Label>
-                                <Input
-                                    value={selectedItem.structural_type?.replace('_', ' ') || selectedItem.category || 'Unknown'}
-                                    disabled
-                                    className="bg-muted h-8 text-sm capitalize opacity-70 cursor-not-allowed"
-                                />
-                            </div>
-
                             {/* Title (all items except dividers) */}
                             {selectedItem.structural_type !== "divider" && (
                                 <div className="space-y-1.5">
@@ -148,23 +139,38 @@ export function PropertiesPane({
                                 </div>
                             )}
 
-                            {/* Duration (non-structural items only) */}
-                            {!selectedItem.structural_type && (
+                            <div className={cn(
+                                "grid gap-3 items-end",
+                                !selectedItem.structural_type ? "grid-cols-2" : "grid-cols-1"
+                            )}>
+                                {/* Item Type (Read-only) */}
                                 <div className="space-y-1.5">
-                                    <Label htmlFor="item-duration" className="text-xs">
-                                        Duration (minutes)
-                                    </Label>
+                                    <Label className="text-xs">Type</Label>
                                     <Input
-                                        id="item-duration"
-                                        type="number"
-                                        min={0}
-                                        max={120}
-                                        value={selectedItem.duration_minutes}
-                                        onChange={(e) => onUpdateDuration?.(selectedItem.id, parseInt(e.target.value) || 0)}
-                                        className="bg-background h-8 text-sm focus-visible:ring-primary/30 w-24"
+                                        value={selectedItem.structural_type?.replace('_', ' ') || selectedItem.category || 'Unknown'}
+                                        disabled
+                                        className="bg-muted h-8 text-sm capitalize opacity-70 cursor-not-allowed"
                                     />
                                 </div>
-                            )}
+
+                                {/* Duration (non-structural items only) */}
+                                {!selectedItem.structural_type && (
+                                    <div className="space-y-1.5">
+                                        <Label htmlFor="item-duration" className="text-xs">
+                                            Duration (minutes)
+                                        </Label>
+                                        <Input
+                                            id="item-duration"
+                                            type="number"
+                                            min={0}
+                                            max={120}
+                                            value={selectedItem.duration_minutes}
+                                            onChange={(e) => onUpdateDuration?.(selectedItem.id, parseInt(e.target.value) || 0)}
+                                            className="bg-background h-8 text-sm focus-visible:ring-primary/30"
+                                        />
+                                    </div>
+                                )}
+                            </div>
 
                             {/* Description/Notes (for items configured with rich text) */}
                             {selectedItem.config?.has_rich_text && (
@@ -186,21 +192,29 @@ export function PropertiesPane({
                             {selectedItem.is_hymn && (
                                 <div className="space-y-1.5">
                                     <Label className="text-xs">Musical Resource</Label>
-                                    <button
-                                        type="button"
-                                        className={cn(
-                                            "w-full h-8 px-3 border-2 border-dashed rounded-md text-sm flex items-center justify-center gap-2 transition-all",
-                                            "hover:border-solid hover:bg-muted/50 border-muted-foreground/20 text-muted-foreground",
-                                            selectedItem.hymn_title && "border-solid bg-blue-50/50 border-blue-200 text-blue-700 font-medium"
-                                        )}
-                                        onClick={onSelectHymn}
+                                    <HymnSelectorPopover
+                                        currentHymnId={selectedItem.hymn_id}
+                                        onSelect={(hymn) => {
+                                            if (onSelectHymn) {
+                                                onSelectHymn(hymn);
+                                            }
+                                        }}
                                     >
-                                        <span className="truncate">
-                                            {selectedItem.hymn_title
-                                                ? `#${selectedItem.hymn_number} ${selectedItem.hymn_title}`
-                                                : "Select Hymn..."}
-                                        </span>
-                                    </button>
+                                        <button
+                                            type="button"
+                                            className={cn(
+                                                "w-full h-8 px-3 border-2 border-dashed rounded-md text-sm flex items-center justify-center gap-2 transition-all",
+                                                "hover:border-solid hover:bg-muted/50 border-muted-foreground/20 text-muted-foreground",
+                                                selectedItem.hymn_title && "border-solid bg-blue-50/50 border-blue-200 text-blue-700 font-medium"
+                                            )}
+                                        >
+                                            <span className="truncate">
+                                                {selectedItem.hymn_title
+                                                    ? `#${selectedItem.hymn_number} ${selectedItem.hymn_title}`
+                                                    : "Select Hymn..."}
+                                            </span>
+                                        </button>
+                                    </HymnSelectorPopover>
                                 </div>
                             )}
 
@@ -327,6 +341,28 @@ export function PropertiesPane({
                     </div>
 
                     <div className="space-y-1.5">
+                        <Label htmlFor="template" className="text-xs">Template</Label>
+                        <Select
+                            value={selectedTemplateId}
+                            onValueChange={(val) => setValue("templateId", val === "none" ? null : val, { shouldValidate: true })}
+                        >
+                            <SelectTrigger id="template" className="bg-background h-8 text-sm">
+                                <SelectValue placeholder="Select template" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="none">
+                                    <span className="text-muted-foreground">No Template</span>
+                                </SelectItem>
+                                {templates.map((t) => (
+                                    <SelectItem key={t.id} value={t.id}>
+                                        {t.name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div className="space-y-1.5">
                         <Label className="text-xs">Date</Label>
                         <Popover>
                             <PopoverTrigger asChild>
@@ -372,27 +408,6 @@ export function PropertiesPane({
                         </div>
                     </div>
 
-                    <div className="space-y-1.5">
-                        <Label htmlFor="template" className="text-xs">Template</Label>
-                        <Select
-                            value={selectedTemplateId}
-                            onValueChange={(val) => setValue("templateId", val === "none" ? null : val, { shouldValidate: true })}
-                        >
-                            <SelectTrigger id="template" className="bg-background h-8 text-sm">
-                                <SelectValue placeholder="Select template" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="none">
-                                    <span className="text-muted-foreground">No Template</span>
-                                </SelectItem>
-                                {templates.map((t) => (
-                                    <SelectItem key={t.id} value={t.id}>
-                                        {t.name}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
 
 
                     <div className="grid grid-cols-1 divide-y divide-border/60">

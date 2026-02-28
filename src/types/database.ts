@@ -110,7 +110,8 @@ export type Database = {
           book_id: string;
           hymn_number: number;
           title: string;
-          lyrics: string | null;
+          topic: string | null;
+          language: string;
           created_at: string;
         };
         Insert: {
@@ -118,7 +119,8 @@ export type Database = {
           book_id: string;
           hymn_number: number;
           title: string;
-          lyrics?: string | null;
+          topic?: string | null;
+          language?: string;
           created_at?: string;
         };
         Update: {
@@ -126,7 +128,8 @@ export type Database = {
           book_id?: string;
           hymn_number?: number;
           title?: string;
-          lyrics?: string | null;
+          topic?: string | null;
+          language?: string;
           created_at?: string;
         };
       };

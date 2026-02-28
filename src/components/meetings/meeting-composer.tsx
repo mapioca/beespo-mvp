@@ -89,7 +89,7 @@ export function MeetingComposer({
     const [expandedContainers, setExpandedContainers] = useState<Set<string>>(new Set());
     // Unified selector modal state
     const [unifiedModalOpen, setUnifiedModalOpen] = useState(false);
-    const [unifiedModalMode, setUnifiedModalMode] = useState<UnifiedSelectorMode>("hymn");
+    const [unifiedModalMode, setUnifiedModalMode] = useState<UnifiedSelectorMode>("participant");
     const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
     const [targetContainerId, setTargetContainerId] = useState<string | null>(null);
 
@@ -312,24 +312,6 @@ export function MeetingComposer({
         setAgendaItems(agendaItems.filter((item) => item.id !== id));
     };
 
-    // Handle hymn selection from unified modal
-    const handleSelectHymn = (hymn: { id: string; number: number; title: string }) => {
-        if (selectedItemId) {
-            setAgendaItems(agendaItems.map((item) =>
-                item.id === selectedItemId
-                    ? {
-                        ...item,
-                        hymn_id: hymn.id,
-                        hymn_number: hymn.number,
-                        hymn_title: hymn.title,
-                    }
-                    : item
-            ));
-        }
-        setUnifiedModalOpen(false);
-        setSelectedItemId(null);
-    };
-
     // Handle participant selection from unified modal
     const handleSelectParticipant = (participant: { id: string; name: string }) => {
         if (selectedItemId) {
@@ -423,13 +405,6 @@ export function MeetingComposer({
                 }
                 : item
         ));
-    };
-
-    // Open unified modal for hymn selection
-    const openHymnSelector = (itemId: string) => {
-        setSelectedItemId(itemId);
-        setUnifiedModalMode("hymn");
-        setUnifiedModalOpen(true);
     };
 
     // Open unified modal for participant selection
@@ -820,21 +795,6 @@ export function MeetingComposer({
                                                     </div>
                                                 )}
 
-                                                {/* Hymn selector for hymn items */}
-                                                {item.is_hymn && (
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        className="h-6 text-xs mt-1 text-blue-600"
-                                                        onClick={() => openHymnSelector(item.id)}
-                                                    >
-                                                        {item.hymn_title
-                                                            ? `#${item.hymn_number} ${item.hymn_title}`
-                                                            : "Select Hymn →"
-                                                        }
-                                                    </Button>
-                                                )}
-
                                                 {/* Participant selector for procedural items that require a person */}
                                                 {item.category === "procedural" && item.requires_participant && (
                                                     <Button
@@ -916,12 +876,10 @@ export function MeetingComposer({
                 mode={unifiedModalMode}
                 currentSelectionId={
                     selectedItemId
-                        ? agendaItems.find((i) => i.id === selectedItemId)?.hymn_id ||
-                        agendaItems.find((i) => i.id === selectedItemId)?.participant_id ||
+                        ? agendaItems.find((i) => i.id === selectedItemId)?.participant_id ||
                         agendaItems.find((i) => i.id === selectedItemId)?.speaker_id
                         : undefined
                 }
-                onSelectHymn={handleSelectHymn}
                 onSelectParticipant={handleSelectParticipant}
                 onSelectSpeaker={handleSelectSpeaker}
                 onSelectDiscussion={(disc) => handleAddToContainer(disc, "discussion")}
