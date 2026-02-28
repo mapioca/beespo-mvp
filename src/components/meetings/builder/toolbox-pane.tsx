@@ -301,7 +301,7 @@ export function ToolboxPane({ onItemsLoaded, onAddItem }: ToolboxPaneProps) {
             <div className="h-14 px-4 border-b border-border bg-background flex items-center gap-2.5 shrink-0">
                 <SquaresFourIcon className="h-5 w-5 text-primary" weight="fill" />
                 <h2 className="text-base font-semibold tracking-tight text-foreground">
-                    Agenda Composer
+                    Agenda Builder
                 </h2>
             </div>
 
