@@ -226,10 +226,13 @@ export function CreateItemTypeDialog({
                             <Input
                                 id="default-duration"
                                 type="number"
-                                min={1}
+                                min={0}
                                 max={120}
                                 value={defaultDuration}
-                                onChange={(e) => setDefaultDuration(parseInt(e.target.value) || 5)}
+                                onChange={(e) => {
+                                    const parsed = parseInt(e.target.value, 10);
+                                    setDefaultDuration(isNaN(parsed) ? 0 : parsed);
+                                }}
                                 disabled={isCreating}
                                 className="w-24"
                             />

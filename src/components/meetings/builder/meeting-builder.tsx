@@ -254,15 +254,22 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
         loadExistingMeeting();
     }, [initialMeetingId, form]);
 
-    // Update title when template selected
+    // Update title when template or date changes — use meeting date, not today
+    const DEFAULT_TITLE = "Untitled Meeting Agenda";
     useEffect(() => {
         if (selectedTemplateId && selectedTemplateId !== "none") {
-            const t = templates.find((t) => t.id === selectedTemplateId);
-            if (t && !title) {
-                setTitle(`${t.name} - ${format(new Date(), "MMM d")}`);
+            const t = templates.find((tmpl) => tmpl.id === selectedTemplateId);
+            if (t) {
+                // Only auto-update if the user hasn't set a custom title
+                const isDefault = !title || title === DEFAULT_TITLE;
+                if (isDefault) {
+                    const meetingDate = date instanceof Date && !isNaN(date.getTime()) ? date : new Date();
+                    setTitle(`${t.name} ${format(meetingDate, "MMM d, yyyy")}`);
+                }
             }
         }
-    }, [selectedTemplateId, templates, title, setTitle]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selectedTemplateId, templates, date]);
 
     // Escape key deselects the current item
     useEffect(() => {
