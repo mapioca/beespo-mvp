@@ -1,6 +1,7 @@
 "use client";
 
 import { CategoryType } from "../add-meeting-item-dialog";
+export type { CategoryType };
 import { ContainerChildItem, ContainerType } from "../container-agenda-item";
 
 // Item behavior configuration
@@ -13,7 +14,7 @@ export interface ItemConfig {
 // Toolbox item that can be dragged onto the canvas
 export interface ToolboxItem {
     id: string;
-    type: "procedural" | "container" | "speaker";
+    type: "procedural" | "container" | "speaker" | "structural";
     category: CategoryType;
     title: string;
     description?: string | null;
@@ -27,6 +28,7 @@ export interface ToolboxItem {
     is_core?: boolean;
     is_custom?: boolean;
     icon?: string | null;
+    structural_type?: "section_header" | "divider";
 }
 
 // Canvas item that is on the agenda
@@ -43,6 +45,7 @@ export interface CanvasItem {
     business_item_id?: string;
     announcement_id?: string;
     speaker_id?: string;
+    structural_type?: "section_header" | "divider";
     // Hymn selection
     is_hymn?: boolean;
     hymn_id?: string;
@@ -99,6 +102,7 @@ export interface ProceduralItemType {
     is_custom: boolean | null;
     workspace_id: string | null;
     icon: string | null;
+    category: string | null;
 }
 
 // Category groups for toolbox

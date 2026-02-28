@@ -4,10 +4,8 @@ import { useState } from "react";
 import { Play, Download, Edit, StopCircle, RotateCcw, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { pdf } from "@react-pdf/renderer";
 import { Button } from "@/components/ui/button";
 import { ShareDialog } from "@/components/conduct/share-dialog";
-import { MeetingAgendaPDF, getMeetingPDFFilename } from "@/components/meetings/meeting-agenda-pdf";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "@/lib/toast";
 import { Database } from "@/types/database";
@@ -28,13 +26,11 @@ interface MeetingActionsProps {
 
 export function MeetingActions({
   meeting,
-  agendaItems,
-  workspaceSlug,
+ workspaceSlug,
   isLeader,
 }: MeetingActionsProps) {
   const router = useRouter();
   const [isStatusLoading, setIsStatusLoading] = useState(false);
-  const [isDownloading, setIsDownloading] = useState(false);
   const [currentMeeting, setCurrentMeeting] = useState(meeting);
 
   const handleStatusChange = async (newStatus: Meeting["status"]) => {
@@ -55,30 +51,7 @@ export function MeetingActions({
     setIsStatusLoading(false);
   };
 
-  const handleDownload = async () => {
-    setIsDownloading(true);
-    try {
-      const blob = await pdf(
-        <MeetingAgendaPDF meeting={currentMeeting} agendaItems={agendaItems} />
-      ).toBlob();
 
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = getMeetingPDFFilename(currentMeeting);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-
-      toast.success("Download started", { description: "Your PDF is being downloaded" });
-    } catch (error) {
-      console.error("PDF generation failed:", error);
-      toast.error("Download failed", { description: "Could not generate PDF. Please try again." });
-    } finally {
-      setIsDownloading(false);
-    }
-  };
 
   const handleMeetingUpdate = (updatedMeeting: Meeting) => {
     setCurrentMeeting(updatedMeeting);
@@ -117,17 +90,14 @@ export function MeetingActions({
       {/* Secondary Actions */}
       <div className="flex gap-2">
         <Button
+          asChild
           variant="outline"
           className="flex-1"
-          onClick={handleDownload}
-          disabled={isDownloading}
         >
-          {isDownloading ? (
-            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-          ) : (
+          <a href={`/meetings/${meeting.id}/print`} target="_blank" rel="noopener noreferrer">
             <Download className="w-4 h-4 mr-2" />
-          )}
-          Download
+            Print
+          </a>
         </Button>
 
         <ShareDialog

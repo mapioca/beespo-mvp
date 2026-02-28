@@ -94,6 +94,15 @@ export const WIDGET_REGISTRY: WidgetDefinition[] = [
     tiers: ["bishopric", "organization", "support"],
     mobilePriority: 10,
   },
+  {
+    type: "quick_actions",
+    label: "Quick Actions",
+    icon: "Zap",
+    category: "content",
+    defaultColumn: 1,
+    tiers: ["bishopric", "organization", "support"],
+    mobilePriority: 11,
+  },
 ];
 
 export function getDefaultLayout(featureTier: FeatureTier | null): DashboardConfig {

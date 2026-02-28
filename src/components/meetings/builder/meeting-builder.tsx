@@ -18,7 +18,7 @@ import { arrayMove, sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { format } from "date-fns";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "@/lib/toast";
-import { BuilderHeader } from "./builder-header";
+import { PropertiesPane } from "./properties-pane";
 import { ToolboxPane } from "./toolbox-pane";
 import { AgendaCanvas } from "./agenda-canvas";
 import { ToolboxItemDragOverlay } from "./draggable-toolbox-item";
@@ -30,22 +30,61 @@ import {
     SpeakerSelection,
 } from "../unified-selector-modal";
 import { ValidationModal, ValidationItem, ValidationState } from "../validation-modal";
+import { PreviewModal } from "../preview-modal";
+import { generateMeetingMarkdown } from "@/lib/generate-meeting-markdown";
+import { saveMeetingMarkdown } from "@/lib/actions/meeting-actions";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { Form } from "@/components/ui/form";
+import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import { ListIcon, SlidersHorizontalIcon } from "@phosphor-icons/react";
+import { Button } from "@/components/ui/button";
+
+const meetingFormSchema = z.object({
+    title: z.string().min(1, "Title is required"),
+    date: z.date({ message: "Date is required" }),
+    time: z.string().min(1, "Time is required"),
+    templateId: z.string().nullable(),
+    conducting: z.string().optional(),
+    presiding: z.string().optional(),
+    chorister: z.string().optional(),
+    pianistOrganist: z.string().optional(),
+});
+
+type MeetingFormValues = z.infer<typeof meetingFormSchema>;
 
 interface MeetingBuilderProps {
     initialTemplateId?: string | null;
+    initialMeetingId?: string;
 }
 
-export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
+export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingBuilderProps) {
     const router = useRouter();
 
     // Form state
-    const [title, setTitle] = useState("");
-    const [date, setDate] = useState<Date | undefined>(new Date());
-    const [time, setTime] = useState("07:00");
+    const form = useForm<MeetingFormValues>({
+        resolver: zodResolver(meetingFormSchema),
+        defaultValues: {
+            title: "Untitled Meeting Agenda",
+            date: new Date(),
+            time: "07:00",
+            templateId: initialTemplateId || null,
+            conducting: "",
+            presiding: "",
+            chorister: "",
+            pianistOrganist: "",
+        },
+    });
+
+    const title = form.watch("title");
+    const date = form.watch("date");
+    const time = form.watch("time");
+    const selectedTemplateId = form.watch("templateId");
+
+    const setTitle = useCallback((t: string) => form.setValue("title", t, { shouldValidate: true }), [form]);
+
     const [templates, setTemplates] = useState<Template[]>([]);
-    const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(
-        initialTemplateId || null
-    );
 
     // Canvas state
     const [canvasItems, setCanvasItems] = useState<CanvasItem[]>([]);
@@ -56,10 +95,10 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
     const [activeType, setActiveType] = useState<"toolbox" | "canvas" | null>(null);
     const [isOverCanvas, setIsOverCanvas] = useState(false);
 
-    // Modal state
-    const [unifiedModalOpen, setUnifiedModalOpen] = useState(false);
-    const [unifiedModalMode, setUnifiedModalMode] = useState<UnifiedSelectorMode>("hymn");
+    // Selection & modal state
     const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+    const [unifiedModalOpen, setUnifiedModalOpen] = useState(false);
+    const [unifiedModalMode, setUnifiedModalMode] = useState<UnifiedSelectorMode>("participant");
     const [targetContainerId, setTargetContainerId] = useState<string | null>(null);
 
     // Validation state
@@ -67,6 +106,12 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
     const [validationState, setValidationState] = useState<ValidationState>("validating");
     const [validationItems, setValidationItems] = useState<ValidationItem[]>([]);
     const [isCreating, setIsCreating] = useState(false);
+
+    // Preview state
+    const [previewModalOpen, setPreviewModalOpen] = useState(false);
+    const [previewMarkdown, setPreviewMarkdown] = useState("");
+    const [isGeneratingPreview, setIsGeneratingPreview] = useState(false);
+    const [workspaceName, setWorkspaceName] = useState("");
 
     // DnD sensors
     const sensors = useSensors(
@@ -80,9 +125,9 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
         })
     );
 
-    // Load templates
+    // Load templates & workspace name
     useEffect(() => {
-        const fetchTemplates = async () => {
+        const fetchInitialData = async () => {
             const supabase = createClient();
             const { data } = await supabase
                 .from("templates")
@@ -90,9 +135,121 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
                 .order("name");
 
             if (data) setTemplates(data as Template[]);
+
+            // Fetch workspace name for preview
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                const { data: profile } = await (supabase
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    .from("profiles") as any)
+                    .select("workspaces(name)")
+                    .eq("id", user.id)
+                    .single();
+
+                if (profile?.workspaces?.name) {
+                    setWorkspaceName(profile.workspaces.name);
+                }
+            }
         };
-        fetchTemplates();
+        fetchInitialData();
     }, []);
+
+    // Load existing meeting if editing
+    useEffect(() => {
+        if (!initialMeetingId) return;
+
+        const loadExistingMeeting = async () => {
+            const supabase = createClient();
+
+            // Load meeting details
+            const { data: meetingData, error: meetingError } = await supabase
+                .from("meetings")
+                .select("*")
+                .eq("id", initialMeetingId)
+                .single();
+
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const meeting = meetingData as any;
+
+            if (meetingError || !meeting) {
+                toast.error("Failed to load meeting details");
+                return;
+            }
+
+            form.setValue("title", meeting.title);
+            if (meeting.scheduled_date) {
+                const scheduledDate = new Date(meeting.scheduled_date);
+                form.setValue("date", scheduledDate);
+                form.setValue("time", format(scheduledDate, "HH:mm"));
+            }
+
+            // Load agenda items
+            const { data: agendaItems, error: itemsError } = await supabase
+                .from("agenda_items")
+                .select("*")
+                .eq("meeting_id", initialMeetingId)
+                .order("order_index");
+
+            if (itemsError || !agendaItems) {
+                toast.error("Failed to load agenda items");
+                return;
+            }
+
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const items: CanvasItem[] = (agendaItems as any[]).map((item: any) => {
+                const isContainer = ["discussion", "business", "announcement"].includes(item.item_type);
+
+                // Parse child_items from JSONB if it's a container
+                let childItems: ContainerChildItem[] = [];
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                if (isContainer && item.child_items && Array.isArray(item.child_items)) {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    childItems = item.child_items.map((child: any) => ({
+                        id: `child-${Math.random().toString(36).substr(2, 9)}`,
+                        title: child.title || "",
+                        description: child.description || "",
+                        discussion_id: child.discussion_id,
+                        business_item_id: child.business_item_id,
+                        announcement_id: child.announcement_id,
+                        person_name: child.person_name,
+                        position_calling: child.position_calling,
+                        business_category: child.business_category,
+                        business_details: child.business_details,
+                    }));
+                }
+
+                return {
+                    id: item.id, // preserve existing ID
+                    category: item.item_type,
+                    title: item.title,
+                    description: item.description,
+                    duration_minutes: item.duration_minutes,
+                    order_index: item.order_index,
+                    procedural_item_type_id: item.procedural_item_type_id,
+                    is_hymn: !!item.hymn_id || (item.title && item.title.toLowerCase().includes("hymn")),
+                    requires_participant: !!item.participant_id || !!item.speaker_id || ["speaker", "prayer", "benediction", "invocation"].some(k => (item.title || "").toLowerCase().includes(k)),
+                    hymn_id: item.hymn_id,
+                    speaker_id: item.speaker_id,
+                    participant_id: item.participant_id,
+                    participant_name: item.participant_name,
+                    discussion_id: item.discussion_id,
+                    business_item_id: item.business_item_id,
+                    announcement_id: item.announcement_id,
+                    structural_type: item.structural_type,
+                    isContainer: isContainer,
+                    containerType: isContainer ? item.item_type as ContainerType : undefined,
+                    childItems: isContainer ? childItems : undefined,
+                };
+            });
+
+            // Expand all containers by default
+            const containerIds = items.filter((i) => i.isContainer).map((i) => i.id);
+            setExpandedContainers(new Set(containerIds));
+            setCanvasItems(items);
+        };
+
+        loadExistingMeeting();
+    }, [initialMeetingId, form]);
 
     // Update title when template selected
     useEffect(() => {
@@ -102,7 +259,18 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
                 setTitle(`${t.name} - ${format(new Date(), "MMM d")}`);
             }
         }
-    }, [selectedTemplateId, templates, title]);
+    }, [selectedTemplateId, templates, title, setTitle]);
+
+    // Escape key deselects the current item
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === "Escape" && selectedItemId && !unifiedModalOpen) {
+                setSelectedItemId(null);
+            }
+        };
+        window.addEventListener("keydown", handleKeyDown);
+        return () => window.removeEventListener("keydown", handleKeyDown);
+    }, [selectedItemId, unifiedModalOpen]);
 
     // Load template items when template changes
     const loadTemplateItems = useCallback(async (templateId: string) => {
@@ -255,15 +423,15 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
         }
     }, []);
 
-    // Handle template change
-    const handleTemplateChange = useCallback((templateId: string | null) => {
-        setSelectedTemplateId(templateId);
-        if (templateId && templateId !== "none") {
-            loadTemplateItems(templateId);
-        } else {
+    // Handle template change watcher
+    useEffect(() => {
+        if (selectedTemplateId === initialTemplateId) return; // Handled by initial load
+        if (selectedTemplateId && selectedTemplateId !== "none") {
+            loadTemplateItems(selectedTemplateId);
+        } else if (selectedTemplateId === "none" || selectedTemplateId === null) {
             setCanvasItems([]);
         }
-    }, [loadTemplateItems]);
+    }, [selectedTemplateId, loadTemplateItems, initialTemplateId]);
 
     // Load initial template if provided
     useEffect(() => {
@@ -338,6 +506,7 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
                 is_core: toolboxItem.is_core,
                 is_custom: toolboxItem.is_custom,
                 icon: toolboxItem.icon,
+                structural_type: toolboxItem.structural_type,
             };
 
             // Insert and reindex
@@ -370,12 +539,46 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
     }, [canvasItems]);
 
     // Canvas item handlers
+    const handleAddCanvasItem = useCallback((toolboxItem: ToolboxItem) => {
+        setCanvasItems((prev) => {
+            const newItem: CanvasItem = {
+                id: `canvas-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                category: toolboxItem.category,
+                title: toolboxItem.title,
+                description: toolboxItem.description,
+                duration_minutes: toolboxItem.duration_minutes,
+                order_index: prev.length,
+                procedural_item_type_id: toolboxItem.procedural_item_type_id,
+                is_hymn: toolboxItem.is_hymn,
+                requires_participant: toolboxItem.requires_participant,
+                isContainer: toolboxItem.type === "container",
+                containerType: toolboxItem.containerType,
+                childItems: toolboxItem.type === "container" ? [] : undefined,
+                config: toolboxItem.config,
+                is_core: toolboxItem.is_core,
+                is_custom: toolboxItem.is_custom,
+                icon: toolboxItem.icon,
+                structural_type: toolboxItem.structural_type,
+            };
+
+            if (newItem.isContainer) {
+                setExpandedContainers((prevExpanded) => new Set([...prevExpanded, newItem.id]));
+            }
+
+            const newItems = [...prev, newItem];
+            return newItems.map((item, idx) => ({ ...item, order_index: idx }));
+        });
+    }, []);
+
     const handleRemoveItem = useCallback((id: string) => {
         setCanvasItems((prev) => {
             const filtered = prev.filter((i) => i.id !== id);
             return filtered.map((item, idx) => ({ ...item, order_index: idx }));
         });
-    }, []);
+        if (selectedItemId === id) {
+            setSelectedItemId(null);
+        }
+    }, [selectedItemId]);
 
     const toggleContainer = useCallback((id: string) => {
         setExpandedContainers((prev) => {
@@ -389,44 +592,40 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
         });
     }, []);
 
-    // Modal handlers
-    const openHymnSelector = useCallback((itemId: string) => {
-        setSelectedItemId(itemId);
-        setUnifiedModalMode("hymn");
-        setUnifiedModalOpen(true);
-    }, []);
+    // Panel-oriented modal openers (use already-set selectedItemId)
 
-    const openParticipantSelector = useCallback((itemId: string) => {
-        setSelectedItemId(itemId);
-        setUnifiedModalMode("participant");
-        setUnifiedModalOpen(true);
-    }, []);
 
-    const openSpeakerSelector = useCallback((itemId: string) => {
-        setSelectedItemId(itemId);
+
+
+    const openSpeakerSelectorForSelected = useCallback(() => {
+        if (!selectedItemId) return;
         setUnifiedModalMode("speaker");
         setUnifiedModalOpen(true);
-    }, []);
-
-    const openContainerAddModal = useCallback((containerId: string, containerType: ContainerType) => {
-        setTargetContainerId(containerId);
-        setUnifiedModalMode(containerType as UnifiedSelectorMode);
-        setUnifiedModalOpen(true);
-    }, []);
-
-    const handleSelectHymn = useCallback((hymn: { id: string; number: number; title: string }) => {
-        if (selectedItemId) {
-            setCanvasItems((prev) =>
-                prev.map((item) =>
-                    item.id === selectedItemId
-                        ? { ...item, hymn_id: hymn.id, hymn_number: hymn.number, hymn_title: hymn.title }
-                        : item
-                )
-            );
-        }
-        setUnifiedModalOpen(false);
-        setSelectedItemId(null);
     }, [selectedItemId]);
+
+    // Panel-oriented: add to the currently selected container
+    const openContainerAddForSelected = useCallback(() => {
+        if (!selectedItemId) return;
+        const item = canvasItems.find(i => i.id === selectedItemId);
+        if (!item?.isContainer || !item.containerType) return;
+        setTargetContainerId(selectedItemId);
+        setUnifiedModalMode(item.containerType as UnifiedSelectorMode);
+        setUnifiedModalOpen(true);
+    }, [selectedItemId, canvasItems]);
+
+    // Panel-oriented: remove child from the currently selected container
+    const handleRemoveChildFromSelected = useCallback((childId: string) => {
+        if (!selectedItemId) return;
+        setCanvasItems((prev) =>
+            prev.map((item) =>
+                item.id === selectedItemId
+                    ? { ...item, childItems: (item.childItems || []).filter((c) => c.id !== childId) }
+                    : item
+            )
+        );
+    }, [selectedItemId]);
+
+
 
     const handleSelectParticipant = useCallback((participant: { id: string; name: string }) => {
         if (selectedItemId) {
@@ -439,7 +638,6 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
             );
         }
         setUnifiedModalOpen(false);
-        setSelectedItemId(null);
     }, [selectedItemId]);
 
     const handleSelectSpeaker = useCallback((speaker: SpeakerSelection) => {
@@ -453,7 +651,6 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
             );
         }
         setUnifiedModalOpen(false);
-        setSelectedItemId(null);
     }, [selectedItemId]);
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -502,15 +699,47 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
         setTargetContainerId(null);
     }, [targetContainerId]);
 
-    const handleRemoveChildItem = useCallback((containerId: string, childId: string) => {
+    const handleUpdateTitle = useCallback((id: string, newTitle: string) => {
         setCanvasItems((prev) =>
             prev.map((item) =>
-                item.id === containerId
-                    ? { ...item, childItems: (item.childItems || []).filter((c) => c.id !== childId) }
-                    : item
+                item.id === id ? { ...item, title: newTitle } : item
             )
         );
     }, []);
+
+    const handleUpdateDescription = useCallback((id: string, newDescription: string) => {
+        setCanvasItems((prev) =>
+            prev.map((item) =>
+                item.id === id ? { ...item, description: newDescription } : item
+            )
+        );
+    }, []);
+
+    const handleUpdateDuration = useCallback((id: string, newDuration: number) => {
+        setCanvasItems((prev) =>
+            prev.map((item) =>
+                item.id === id ? { ...item, duration_minutes: newDuration } : item
+            )
+        );
+    }, []);
+
+
+    const handleSelectHymn = useCallback((hymn: { id: string; number: number; title: string }) => {
+        if (selectedItemId) {
+            setCanvasItems((prev) =>
+                prev.map((item) =>
+                    item.id === selectedItemId
+                        ? {
+                            ...item,
+                            hymn_id: hymn.id,
+                            hymn_number: hymn.number,
+                            hymn_title: hymn.title,
+                        }
+                        : item
+                )
+            );
+        }
+    }, [selectedItemId]);
 
     // Validation
     const validateAgenda = useCallback((): ValidationItem[] => {
@@ -519,14 +748,14 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
         canvasItems.forEach((item) => {
             if (item.is_hymn && !item.hymn_id) {
                 items.push({
-                    id: item.id,
+                    id: `${item.id}-hymn`,
                     title: item.title,
                     status: "warning",
                     message: "Hymn not specified",
                 });
             } else if (item.is_hymn && item.hymn_id) {
                 items.push({
-                    id: item.id,
+                    id: `${item.id}-hymn`,
                     title: item.hymn_title || item.title,
                     status: "success",
                 });
@@ -534,14 +763,14 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
 
             if (item.requires_participant && !item.participant_id) {
                 items.push({
-                    id: item.id,
+                    id: `${item.id}-participant`,
                     title: item.title,
                     status: "warning",
                     message: "Participant not assigned",
                 });
             } else if (item.requires_participant && item.participant_id) {
                 items.push({
-                    id: item.id,
+                    id: `${item.id}-participant`,
                     title: `${item.title} - ${item.participant_name}`,
                     status: "success",
                 });
@@ -549,14 +778,14 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
 
             if (item.category === "speaker" && !item.speaker_id) {
                 items.push({
-                    id: item.id,
+                    id: `${item.id}-speaker`,
                     title: item.title,
                     status: "warning",
                     message: "Speaker not assigned",
                 });
             } else if (item.category === "speaker" && item.speaker_id) {
                 items.push({
-                    id: item.id,
+                    id: `${item.id}-speaker`,
                     title: `${item.title} - ${item.speaker_name}`,
                     status: "success",
                 });
@@ -566,14 +795,14 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
                 const childCount = item.childItems?.length || 0;
                 if (childCount === 0) {
                     items.push({
-                        id: item.id,
+                        id: `${item.id}-container`,
                         title: item.title,
                         status: "warning",
                         message: "No items selected (placeholder will be saved)",
                     });
                 } else {
                     items.push({
-                        id: item.id,
+                        id: `${item.id}-container`,
                         title: `${item.title} (${childCount} item${childCount !== 1 ? "s" : ""})`,
                         status: "success",
                     });
@@ -586,7 +815,7 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
                 !item.requires_participant
             ) {
                 items.push({
-                    id: item.id,
+                    id: `${item.id}-procedural`,
                     title: item.title,
                     status: "success",
                 });
@@ -595,6 +824,35 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
 
         return items;
     }, [canvasItems]);
+
+    const handlePreview = useCallback(async () => {
+        const valid = await form.trigger();
+        if (!valid) {
+            toast.error("Please fix form errors before previewing");
+            return;
+        }
+
+        setPreviewModalOpen(true);
+        setIsGeneratingPreview(true);
+
+        // Small delay so the modal opens with spinner visible
+        setTimeout(() => {
+            const markdown = generateMeetingMarkdown({
+                title: form.getValues("title"),
+                date: form.getValues("date"),
+                time: form.getValues("time"),
+                unitName: workspaceName,
+                presiding: form.getValues("presiding"),
+                conducting: form.getValues("conducting"),
+                chorister: form.getValues("chorister"),
+                pianistOrganist: form.getValues("pianistOrganist"),
+                canvasItems,
+            });
+
+            setPreviewMarkdown(markdown);
+            setIsGeneratingPreview(false);
+        }, 100);
+    }, [form, canvasItems, workspaceName]);
 
     const handleValidate = useCallback(() => {
         setValidationModalOpen(true);
@@ -665,6 +923,7 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
                 discussion_id: item.discussion_id || null,
                 business_item_id: item.business_item_id || null,
                 announcement_id: item.announcement_id || null,
+                structural_type: item.structural_type || null,
                 // Include child items for containers
                 child_items: item.isContainer && item.childItems ? item.childItems.map((child) => ({
                     title: child.title,
@@ -681,6 +940,52 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
             }));
 
 
+            // Update existing meeting
+            if (initialMeetingId) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const { error } = await (supabase as any).rpc(
+                    "update_meeting_with_agenda",
+                    {
+                        p_meeting_id: initialMeetingId,
+                        p_title: title,
+                        p_scheduled_date: scheduledDate.toISOString(),
+                        p_agenda_items: agendaJson,
+                    }
+                );
+
+                if (error) {
+                    toast.error("Failed to update meeting", { description: error.message });
+                    setValidationItems([{
+                        id: "error-update",
+                        title: "Failed to update meeting",
+                        status: "error",
+                        message: error.message,
+                    }]);
+                    setValidationState("error");
+                    return;
+                }
+
+                // Fire-and-forget: persist markdown agenda
+                const markdown = generateMeetingMarkdown({
+                    title, date: date!, time,
+                    unitName: workspaceName,
+                    presiding: form.getValues("presiding"),
+                    conducting: form.getValues("conducting"),
+                    chorister: form.getValues("chorister"),
+                    pianistOrganist: form.getValues("pianistOrganist"),
+                    canvasItems,
+                });
+
+                // Fire-and-forget
+                saveMeetingMarkdown(initialMeetingId, markdown).catch(() => { });
+
+                toast.success("Meeting updated", { description: "Redirecting..." });
+                router.push(`/meetings/${initialMeetingId}`);
+                router.refresh();
+                return;
+            }
+
+            // Create new meeting
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const { data, error } = await (supabase as any).rpc(
                 "create_meeting_with_agenda",
@@ -715,6 +1020,18 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
                     return;
                 }
 
+                // Fire-and-forget: persist markdown agenda
+                const fallbackMarkdown = generateMeetingMarkdown({
+                    title, date: date!, time,
+                    unitName: workspaceName,
+                    presiding: form.getValues("presiding"),
+                    conducting: form.getValues("conducting"),
+                    chorister: form.getValues("chorister"),
+                    pianistOrganist: form.getValues("pianistOrganist"),
+                    canvasItems,
+                });
+                saveMeetingMarkdown(fallbackData, fallbackMarkdown).catch(() => { });
+
                 toast.success("Meeting created", { description: "Redirecting..." });
                 router.push(`/meetings/${fallbackData}`);
                 router.refresh();
@@ -733,6 +1050,18 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
                 return;
             }
 
+            // Fire-and-forget: persist markdown agenda
+            const markdown = generateMeetingMarkdown({
+                title, date: date!, time,
+                unitName: workspaceName,
+                presiding: form.getValues("presiding"),
+                conducting: form.getValues("conducting"),
+                chorister: form.getValues("chorister"),
+                pianistOrganist: form.getValues("pianistOrganist"),
+                canvasItems,
+            });
+            saveMeetingMarkdown(data, markdown).catch(() => { });
+
             toast.success("Meeting created", { description: "Redirecting..." });
             router.push(`/meetings/${data}`);
             router.refresh();
@@ -748,106 +1077,163 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
         } finally {
             setIsCreating(false);
         }
-    }, [canvasItems, date, time, title, selectedTemplateId, router]);
+    }, [canvasItems, date, time, title, selectedTemplateId, router, form, workspaceName, initialMeetingId]);
 
-    const isValid = title.trim() !== "" && date !== undefined && canvasItems.length > 0;
+    const isValid = title.trim() !== "" && date !== undefined;
     const selectedSpeakerIds = canvasItems
         .filter((i) => i.speaker_id)
         .map((i) => i.speaker_id as string);
 
     return (
-        <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragStart={handleDragStart}
-            onDragOver={handleDragOver}
-            onDragEnd={handleDragEnd}
-        >
-            <div className="h-screen flex flex-col">
-                {/* Header */}
-                <BuilderHeader
-                    title={title}
-                    onTitleChange={setTitle}
-                    date={date}
-                    onDateChange={setDate}
-                    time={time}
-                    onTimeChange={setTime}
-                    templates={templates}
-                    selectedTemplateId={selectedTemplateId}
-                    onTemplateChange={handleTemplateChange}
-                    onCreateMeeting={handleValidate}
-                    isCreating={isCreating}
-                    isValid={isValid}
-                />
+        <Form {...form}>
+            <form onSubmit={(e) => { e.preventDefault(); handleValidate(); }} className="h-screen flex flex-col">
+                <DndContext
+                    sensors={sensors}
+                    collisionDetection={closestCenter}
+                    onDragStart={handleDragStart}
+                    onDragOver={handleDragOver}
+                    onDragEnd={handleDragEnd}
+                >
+                    <div className="flex-1 flex flex-col overflow-hidden">
+                        {/* Mobile Header (Hidden on lg+) */}
+                        <div className="lg:hidden flex items-center justify-between p-4 border-b bg-background shrink-0">
+                            <Sheet>
+                                <SheetTrigger asChild>
+                                    <Button variant="outline" size="icon" type="button">
+                                        <ListIcon weight="fill" className="h-4 w-4" />
+                                    </Button>
+                                </SheetTrigger>
+                                <SheetContent side="left" className="w-[300px] sm:w-[400px] p-0 overflow-y-auto">
+                                    <SheetTitle className="sr-only">Library</SheetTitle>
+                                    <SheetDescription className="sr-only">Agenda items library</SheetDescription>
+                                    <ToolboxPane onAddItem={handleAddCanvasItem} />
+                                </SheetContent>
+                            </Sheet>
 
-                {/* 2-Column Workspace */}
-                <div className="flex-1 grid grid-cols-12 gap-0 overflow-hidden">
-                    {/* Left Pane - Toolbox */}
-                    <div className="col-span-3 h-full overflow-hidden">
-                        <ToolboxPane />
+                            <div className="font-semibold truncate px-4">{title || "Untitled Meeting"}</div>
+
+                            <Sheet>
+                                <SheetTrigger asChild>
+                                    <Button variant="outline" size="icon" type="button">
+                                        <SlidersHorizontalIcon weight="fill" className="h-4 w-4" />
+                                    </Button>
+                                </SheetTrigger>
+                                <SheetContent side="right" className="w-[300px] sm:w-[400px] p-0 overflow-y-auto">
+                                    <SheetTitle className="sr-only">Properties</SheetTitle>
+                                    <SheetDescription className="sr-only">Meeting properties</SheetDescription>
+                                    <PropertiesPane
+                                        templates={templates}
+                                        onCreateMeeting={handleValidate}
+                                        onPreview={handlePreview}
+                                        isCreating={isCreating}
+                                        isValid={isValid}
+                                        selectedItem={canvasItems.find(i => i.id === selectedItemId)}
+                                        onUpdateItem={handleUpdateTitle}
+                                        onUpdateDescription={handleUpdateDescription}
+                                        onUpdateDuration={handleUpdateDuration}
+                                        onSelectHymn={handleSelectHymn}
+                                        onSelectParticipant={handleSelectParticipant}
+                                        onSelectSpeaker={openSpeakerSelectorForSelected}
+                                        onAddToContainer={openContainerAddForSelected}
+                                        onRemoveChildItem={handleRemoveChildFromSelected}
+                                    />
+                                </SheetContent>
+                            </Sheet>
+                        </div>
+
+                        {/* 3-Column Workspace */}
+                        <div className="flex-1 flex overflow-hidden">
+                            {/* Left Pane - Library */}
+                            <div className="hidden lg:block w-80 h-full overflow-hidden border-r shrink-0">
+                                <ToolboxPane onAddItem={handleAddCanvasItem} />
+                            </div>
+
+                            {/* Center Pane - Canvas */}
+                            <div className="flex-1 h-full overflow-hidden min-w-0">
+                                <AgendaCanvas
+                                    items={canvasItems}
+                                    onRemoveItem={handleRemoveItem}
+                                    expandedContainers={expandedContainers}
+                                    onToggleContainer={toggleContainer}
+                                    selectedItemId={selectedItemId}
+                                    onSelectItem={setSelectedItemId}
+                                    isOver={isOverCanvas}
+                                />
+                            </div>
+
+                            {/* Right Pane - Properties */}
+                            <div className="hidden lg:block w-[280px] h-full overflow-hidden border-l shrink-0">
+                                <PropertiesPane
+                                    templates={templates}
+                                    onCreateMeeting={handleValidate}
+                                    onPreview={handlePreview}
+                                    isCreating={isCreating}
+                                    isValid={isValid}
+                                    selectedItem={canvasItems.find(i => i.id === selectedItemId)}
+                                    onUpdateItem={handleUpdateTitle}
+                                    onUpdateDescription={handleUpdateDescription}
+                                    onUpdateDuration={handleUpdateDuration}
+                                    onSelectHymn={handleSelectHymn}
+                                    onSelectParticipant={handleSelectParticipant}
+                                    onSelectSpeaker={openSpeakerSelectorForSelected}
+                                    onAddToContainer={openContainerAddForSelected}
+                                    onRemoveChildItem={handleRemoveChildFromSelected}
+                                />
+                            </div>
+                        </div>
                     </div>
 
-                    {/* Right Pane - Canvas */}
-                    <div className="col-span-9 h-full overflow-hidden">
-                        <AgendaCanvas
-                            items={canvasItems}
-                            onRemoveItem={handleRemoveItem}
-                            expandedContainers={expandedContainers}
-                            onToggleContainer={toggleContainer}
-                            onAddToContainer={openContainerAddModal}
-                            onRemoveChildItem={handleRemoveChildItem}
-                            onSelectHymn={openHymnSelector}
-                            onSelectParticipant={openParticipantSelector}
-                            onSelectSpeaker={openSpeakerSelector}
-                            isOver={isOverCanvas}
-                        />
-                    </div>
-                </div>
-            </div>
+                    {/* Drag Overlay */}
+                    <DragOverlay>
+                        {activeItem && activeType === "toolbox" && (
+                            <ToolboxItemDragOverlay item={activeItem as ToolboxItem} />
+                        )}
+                    </DragOverlay>
 
-            {/* Drag Overlay */}
-            <DragOverlay>
-                {activeItem && activeType === "toolbox" && (
-                    <ToolboxItemDragOverlay item={activeItem as ToolboxItem} />
-                )}
-            </DragOverlay>
+                    {/* Unified Selector Modal */}
+                    <UnifiedSelectorModal
+                        open={unifiedModalOpen}
+                        onClose={() => {
+                            setUnifiedModalOpen(false);
+                            setTargetContainerId(null);
+                        }}
+                        mode={unifiedModalMode}
+                        currentSelectionId={
+                            selectedItemId
+                                ? canvasItems.find((i) => i.id === selectedItemId)?.participant_id ||
+                                canvasItems.find((i) => i.id === selectedItemId)?.speaker_id
+                                : undefined
+                        }
+                        onSelectParticipant={handleSelectParticipant}
+                        onSelectSpeaker={handleSelectSpeaker}
+                        onSelectDiscussion={(disc) => handleAddToContainer(disc, "discussion")}
+                        onSelectBusiness={(biz) => handleAddToContainer(biz, "business")}
+                        onSelectAnnouncement={(ann) => handleAddToContainer(ann, "announcement")}
+                        selectedSpeakerIdsInMeeting={selectedSpeakerIds}
+                    />
 
-            {/* Unified Selector Modal */}
-            <UnifiedSelectorModal
-                open={unifiedModalOpen}
-                onClose={() => {
-                    setUnifiedModalOpen(false);
-                    setSelectedItemId(null);
-                    setTargetContainerId(null);
-                }}
-                mode={unifiedModalMode}
-                currentSelectionId={
-                    selectedItemId
-                        ? canvasItems.find((i) => i.id === selectedItemId)?.hymn_id ||
-                        canvasItems.find((i) => i.id === selectedItemId)?.participant_id ||
-                        canvasItems.find((i) => i.id === selectedItemId)?.speaker_id
-                        : undefined
-                }
-                onSelectHymn={handleSelectHymn}
-                onSelectParticipant={handleSelectParticipant}
-                onSelectSpeaker={handleSelectSpeaker}
-                onSelectDiscussion={(disc) => handleAddToContainer(disc, "discussion")}
-                onSelectBusiness={(biz) => handleAddToContainer(biz, "business")}
-                onSelectAnnouncement={(ann) => handleAddToContainer(ann, "announcement")}
-                selectedSpeakerIdsInMeeting={selectedSpeakerIds}
-            />
+                    {/* Preview Modal */}
+                    <PreviewModal
+                        open={previewModalOpen}
+                        onClose={() => setPreviewModalOpen(false)}
+                        markdown={previewMarkdown}
+                        unitName={workspaceName}
+                        isLoading={isGeneratingPreview}
+                    />
 
-            {/* Validation Modal */}
-            <ValidationModal
-                open={validationModalOpen}
-                onClose={() => setValidationModalOpen(false)}
-                state={validationState}
-                items={validationItems}
-                onReviewAgenda={() => setValidationModalOpen(false)}
-                onProceed={handleCreateMeeting}
-                onRetry={handleValidate}
-                isCreating={isCreating}
-            />
-        </DndContext>
+                    {/* Validation Modal */}
+                    <ValidationModal
+                        open={validationModalOpen}
+                        onClose={() => setValidationModalOpen(false)}
+                        state={validationState}
+                        items={validationItems}
+                        onReviewAgenda={() => setValidationModalOpen(false)}
+                        onProceed={handleCreateMeeting}
+                        onRetry={handleValidate}
+                        isCreating={isCreating}
+                    />
+                </DndContext>
+            </form>
+        </Form>
     );
 }

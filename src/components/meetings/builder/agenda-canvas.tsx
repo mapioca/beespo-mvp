@@ -10,97 +10,33 @@ import { CSS } from "@dnd-kit/utilities";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
-    GripVertical,
-    Music,
-    BookOpen,
-    MessageSquare,
-    Briefcase,
-    Megaphone,
-    User,
-    Trash2,
-    Plus,
-    ChevronDown,
-    ChevronRight,
-    UserPlus,
-    Mic,
-    Puzzle,
-    Layers,
-} from "lucide-react";
+    TrashIcon,
+    CaretDownIcon,
+    CaretRightIcon,
+    DotsSixVerticalIcon,
+} from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { CanvasItem } from "./types";
-import { CategoryType } from "../add-meeting-item-dialog";
-import { ContainerType } from "../container-agenda-item";
+import { useFormContext } from "react-hook-form";
 
 interface AgendaCanvasProps {
     items: CanvasItem[];
     onRemoveItem: (id: string) => void;
     expandedContainers: Set<string>;
     onToggleContainer: (id: string) => void;
-    onAddToContainer: (containerId: string, containerType: ContainerType) => void;
-    onRemoveChildItem: (containerId: string, childId: string) => void;
-    onSelectHymn: (itemId: string) => void;
-    onSelectParticipant: (itemId: string) => void;
-    onSelectSpeaker: (itemId: string) => void;
+    selectedItemId?: string | null;
+    onSelectItem?: (itemId: string | null) => void;
     isOver?: boolean;
 }
 
-// Check if item is a custom item (with fallback to procedural_item_type_id check)
-const isCustomItem = (item: CanvasItem): boolean => {
-    if (item.is_custom === true) return true;
-    // Fallback: custom items have IDs starting with "custom-"
-    return !!item.procedural_item_type_id?.startsWith("custom-");
-
-};
-
-// Get icon for canvas item - supports custom items with config
-const getCanvasItemIcon = (item: CanvasItem) => {
-    // Custom items get purple-themed icons
-    if (isCustomItem(item)) {
-        if (item.config?.requires_resource) {
-            return <Music className="h-4 w-4 text-purple-500" />;
-        }
-        if (item.config?.requires_assignee) {
-            return <User className="h-4 w-4 text-purple-500" />;
-        }
-        return <Puzzle className="h-4 w-4 text-purple-500" />;
-    }
-
-    // Core/standard items - check for hymn
-    if (item.is_hymn || item.config?.requires_resource) {
-        return <Music className="h-4 w-4 text-blue-500" />;
-    }
-
-    // Category-based icons
-    const icons: Record<CategoryType, React.ReactNode> = {
-        procedural: <BookOpen className="h-4 w-4 text-slate-500" />,
-        discussion: <MessageSquare className="h-4 w-4 text-green-500" />,
-        business: <Briefcase className="h-4 w-4 text-purple-500" />,
-        announcement: <Megaphone className="h-4 w-4 text-orange-500" />,
-        speaker: <User className="h-4 w-4 text-pink-500" />,
-    };
-    return icons[item.category] || <Layers className="h-4 w-4 text-blue-500" />;
-};
-
-const getContainerColors = (type: ContainerType) => {
-    const colors: Record<ContainerType, { bg: string; border: string; text: string }> = {
-        discussion: { bg: "bg-green-50", border: "border-green-200", text: "text-green-700" },
-        business: { bg: "bg-purple-50", border: "border-purple-200", text: "text-purple-700" },
-        announcement: { bg: "bg-orange-50", border: "border-orange-200", text: "text-orange-700" },
-    };
-    return colors[type];
-};
-
-// Sortable Agenda Row
+// Sortable Agenda Row — read-only card
 interface SortableAgendaRowProps {
     item: CanvasItem;
     onRemove: () => void;
     isExpanded?: boolean;
     onToggleExpand?: () => void;
-    onAddToContainer?: () => void;
-    onRemoveChildItem?: (childId: string) => void;
-    onSelectHymn?: () => void;
-    onSelectParticipant?: () => void;
-    onSelectSpeaker?: () => void;
+    isSelected?: boolean;
+    onSelect?: () => void;
 }
 
 function SortableAgendaRow({
@@ -108,11 +44,8 @@ function SortableAgendaRow({
     onRemove,
     isExpanded,
     onToggleExpand,
-    onAddToContainer,
-    onRemoveChildItem,
-    onSelectHymn,
-    onSelectParticipant,
-    onSelectSpeaker,
+    isSelected,
+    onSelect,
 }: SortableAgendaRowProps) {
     const {
         attributes,
@@ -128,46 +61,39 @@ function SortableAgendaRow({
         transition,
     };
 
-    // Container item
+    // Container item — selectable, read-only
     if (item.isContainer && item.containerType) {
-        const colors = getContainerColors(item.containerType);
         const childCount = item.childItems?.length || 0;
 
         return (
             <div
                 ref={setNodeRef}
                 style={style}
+                onClick={(e) => { e.stopPropagation(); onSelect?.(); }}
+                {...attributes}
+                {...listeners}
                 className={cn(
-                    "rounded-lg border-2 transition-all",
-                    colors.bg,
-                    colors.border,
+                    "rounded-md border bg-card transition-all group cursor-grab active:cursor-grabbing touch-none",
+                    "hover:border-muted-foreground/30",
+                    isSelected && "ring-2 ring-primary border-primary/50 shadow-sm",
                     isDragging && "opacity-50 shadow-lg ring-2 ring-primary/40"
                 )}
             >
                 {/* Container Header */}
-                <div className="flex items-center gap-2 p-3">
-                    <div
-                        {...attributes}
-                        {...listeners}
-                        className="cursor-grab active:cursor-grabbing touch-none"
-                    >
-                        <GripVertical className="h-4 w-4 text-muted-foreground/50" />
-                    </div>
-
+                <div className="flex items-center gap-2 p-1.5">
                     <button
-                        onClick={onToggleExpand}
-                        className="shrink-0"
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); onToggleExpand?.(); }}
+                        className="p-1 hover:bg-muted rounded-md transition-colors"
                     >
                         {isExpanded ? (
-                            <ChevronDown className={cn("h-4 w-4", colors.text)} />
+                            <CaretDownIcon weight="fill" className="h-4 w-4 text-muted-foreground" />
                         ) : (
-                            <ChevronRight className={cn("h-4 w-4", colors.text)} />
+                            <CaretRightIcon weight="fill" className="h-4 w-4 text-muted-foreground" />
                         )}
                     </button>
 
-                    {getCanvasItemIcon(item)}
-
-                    <span className={cn("font-medium text-sm flex-1", colors.text)}>
+                    <span className="font-medium text-sm flex-1 text-foreground pl-1">
                         {item.title}
                     </span>
 
@@ -175,74 +101,38 @@ function SortableAgendaRow({
                         {childCount} item{childCount !== 1 ? "s" : ""}
                     </span>
 
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-xs text-muted-foreground ml-2">
                         {item.duration_minutes}m
                     </span>
 
                     <Button
+                        type="button"
                         variant="ghost"
                         size="icon"
-                        className="h-7 w-7 shrink-0"
-                        onClick={onAddToContainer}
+                        className="h-7 w-7 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive hover:bg-destructive/10"
+                        onClick={(e) => { e.stopPropagation(); onRemove(); }}
                     >
-                        <Plus className="h-4 w-4" />
-                    </Button>
-
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 shrink-0 text-destructive hover:text-destructive"
-                        onClick={onRemove}
-                    >
-                        <Trash2 className="h-4 w-4" />
+                        <TrashIcon weight="fill" className="h-4 w-4" />
                     </Button>
                 </div>
 
-                {/* Container Children */}
+                {/* Container Body — read-only child list */}
                 {isExpanded && item.childItems && item.childItems.length > 0 && (
-                    <div className="px-3 pb-3 pt-0">
-                        <div className="space-y-1.5 pl-8">
+                    <div className="px-3 pb-2 pt-0">
+                        <div className="pl-6 space-y-1">
                             {item.childItems.map((child) => (
                                 <div
                                     key={child.id}
-                                    className="flex items-center gap-2 p-2 bg-white rounded border"
+                                    className="flex items-center gap-2 p-1.5 bg-background rounded border border-border/60"
                                 >
                                     <span className="text-sm flex-1 truncate">{child.title}</span>
                                     {child.status && (
-                                        <span className="text-xs px-1.5 py-0.5 rounded bg-muted capitalize">
+                                        <span className="text-xs px-1.5 py-0.5 rounded bg-muted/50 capitalize">
                                             {child.status.replace("_", " ")}
                                         </span>
                                     )}
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-6 w-6 shrink-0 text-muted-foreground hover:text-destructive"
-                                        onClick={() => onRemoveChildItem?.(child.id)}
-                                    >
-                                        <Trash2 className="h-3 w-3" />
-                                    </Button>
                                 </div>
                             ))}
-                        </div>
-                    </div>
-                )}
-
-                {/* Empty state for containers */}
-                {isExpanded && (!item.childItems || item.childItems.length === 0) && (
-                    <div className="px-3 pb-3 pt-0">
-                        <div className="pl-8">
-                            <button
-                                onClick={onAddToContainer}
-                                className={cn(
-                                    "w-full p-3 border-2 border-dashed rounded-md text-sm",
-                                    "hover:border-solid hover:bg-white/50 transition-all",
-                                    colors.border,
-                                    colors.text
-                                )}
-                            >
-                                <Plus className="h-4 w-4 inline mr-1" />
-                                Add {item.containerType}
-                            </button>
                         </div>
                     </div>
                 )}
@@ -250,101 +140,142 @@ function SortableAgendaRow({
         );
     }
 
-    // Regular item
+    // Structural: Section Header — read-only
+    if (item.structural_type === "section_header") {
+        return (
+            <div
+                ref={setNodeRef}
+                style={style}
+                onClick={(e) => { e.stopPropagation(); onSelect?.(); }}
+                className={cn(
+                    "flex flex-col border rounded-md bg-card transition-all group cursor-grab active:cursor-grabbing touch-none",
+                    "hover:border-muted-foreground/30",
+                    isSelected && "ring-2 ring-primary border-primary/50 shadow-sm",
+                    isDragging && "opacity-50 shadow-lg ring-2 ring-primary/40"
+                )}
+                {...attributes}
+                {...listeners}
+            >
+                <div className="flex items-center gap-2 p-1.5">
+                    <div className="w-7 shrink-0" />
+                    <span className="font-medium text-sm flex-1 truncate text-foreground pl-1">
+                        {item.title || "Untitled section"}
+                    </span>
+                    <span className="text-xs text-muted-foreground shrink-0">
+                        Section
+                    </span>
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive hover:bg-destructive/10"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onRemove();
+                        }}
+                    >
+                        <TrashIcon weight="fill" className="h-4 w-4" />
+                    </Button>
+                </div>
+            </div>
+        );
+    }
+
+    // Structural: Divider — no selection
+    if (item.structural_type === "divider") {
+        return (
+            <div
+                ref={setNodeRef}
+                style={style}
+                className={cn(
+                    "py-4 flex items-center group",
+                    isDragging && "opacity-50"
+                )}
+            >
+                <div
+                    {...attributes}
+                    {...listeners}
+                    className="p-1 cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                    <DotsSixVerticalIcon weight="fill" className="h-4 w-4 text-muted-foreground" />
+                </div>
+                <div className="flex-1 h-px bg-zinc-200" />
+                <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 opacity-0 group-hover:opacity-100 text-destructive ml-2"
+                    onClick={onRemove}
+                >
+                    <TrashIcon weight="fill" className="h-4 w-4" />
+                </Button>
+            </div>
+        );
+    }
+
+    // Derive secondary text for assigned data
+    const secondaryText = item.hymn_title
+        ? `#${item.hymn_number} ${item.hymn_title}`
+        : item.participant_name || item.speaker_name || null;
+
+    // Regular item — read-only card
     return (
         <div
             ref={setNodeRef}
             style={style}
+            onClick={(e) => { e.stopPropagation(); onSelect?.(); }}
             className={cn(
-                "flex items-center gap-2 p-3 border rounded-lg bg-card transition-all group",
+                "flex flex-col border rounded-md bg-card transition-all group cursor-grab active:cursor-grabbing touch-none",
                 "hover:border-muted-foreground/30",
+                isSelected && "ring-2 ring-primary border-primary/50 shadow-sm",
                 isDragging && "opacity-50 shadow-lg ring-2 ring-primary/40"
             )}
+            {...attributes}
+            {...listeners}
         >
-            <div
-                {...attributes}
-                {...listeners}
-                className="cursor-grab active:cursor-grabbing touch-none"
-            >
-                <GripVertical className="h-4 w-4 text-muted-foreground/50" />
+            {/* Header row */}
+            <div className="flex items-center gap-2 p-1.5">
+                <div className="w-7 shrink-0" />
+                <span className="font-medium text-sm flex-1 truncate text-foreground pl-1">
+                    {item.title}
+                </span>
+
+                <span className="text-xs text-muted-foreground shrink-0">
+                    {item.duration_minutes}m
+                </span>
+
+                <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive hover:bg-destructive/10"
+                    onClick={(e) => { e.stopPropagation(); onRemove(); }}
+                >
+                    <TrashIcon weight="fill" className="h-4 w-4" />
+                </Button>
             </div>
 
-            {getCanvasItemIcon(item)}
-
-            <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                    <span className="font-medium text-sm truncate">{item.title}</span>
+            {/* Secondary text — assigned data displayed read-only */}
+            {secondaryText && (
+                <div className="px-3 pb-2 pt-0">
+                    <div className="pl-7">
+                        <span className="text-xs text-muted-foreground truncate block">
+                            {secondaryText}
+                        </span>
+                    </div>
                 </div>
+            )}
 
-                {/* Hymn selector - always show for hymn items */}
-                {item.is_hymn && (
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        className={cn(
-                            "h-6 text-xs mt-1 p-0",
-                            item.hymn_title
-                                ? "text-blue-600"
-                                : "text-blue-500 hover:text-blue-700"
-                        )}
-                        onClick={onSelectHymn}
-                    >
-                        <Music className="h-3 w-3 mr-1" />
-                        {item.hymn_title
-                            ? `#${item.hymn_number} ${item.hymn_title}`
-                            : "Select Hymn"}
-                    </Button>
-                )}
-
-                {/* Participant selector - always show for participant items */}
-                {(item.requires_participant || item.config?.requires_assignee) && !item.is_hymn && item.category !== "speaker" && (
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        className={cn(
-                            "h-6 text-xs mt-1 p-0",
-                            item.participant_name
-                                ? "text-slate-600"
-                                : "text-slate-500 hover:text-slate-700"
-                        )}
-                        onClick={onSelectParticipant}
-                    >
-                        <UserPlus className="h-3 w-3 mr-1" />
-                        {item.participant_name || "Select Person"}
-                    </Button>
-                )}
-
-                {/* Speaker selector - always show for speaker items */}
-                {item.category === "speaker" && (
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        className={cn(
-                            "h-6 text-xs mt-1 p-0",
-                            item.speaker_name
-                                ? "text-indigo-600"
-                                : "text-indigo-500 hover:text-indigo-700"
-                        )}
-                        onClick={onSelectSpeaker}
-                    >
-                        <Mic className="h-3 w-3 mr-1" />
-                        {item.speaker_name || "Select Speaker"}
-                    </Button>
-                )}
-            </div>
-
-            <span className="text-xs text-muted-foreground shrink-0">
-                {item.duration_minutes}m
-            </span>
-
-            <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive"
-                onClick={onRemove}
-            >
-                <Trash2 className="h-4 w-4" />
-            </Button>
+            {/* Description/Notes */}
+            {item.description && (
+                <div className="px-3 pb-2 pt-0">
+                    <div className="pl-7">
+                        <span className="text-xs text-muted-foreground/80 line-clamp-2 italic">
+                            {item.description}
+                        </span>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
@@ -354,13 +285,13 @@ export function AgendaCanvas({
     onRemoveItem,
     expandedContainers,
     onToggleContainer,
-    onAddToContainer,
-    onRemoveChildItem,
-    onSelectHymn,
-    onSelectParticipant,
-    onSelectSpeaker,
+    selectedItemId,
+    onSelectItem,
     isOver,
 }: AgendaCanvasProps) {
+    const { watch } = useFormContext();
+    const title = watch("title");
+
     const { setNodeRef } = useDroppable({
         id: "canvas-drop-zone",
     });
@@ -369,13 +300,21 @@ export function AgendaCanvas({
     const itemIds = items.map((item) => item.id);
 
     return (
-        <div className="flex flex-col h-full bg-muted/20">
+        <div
+            className="flex flex-col h-full bg-slate-50/50 bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] [background-size:16px_16px]"
+            onClick={() => onSelectItem?.(null)}
+        >
             {/* Header */}
-            <div className="px-6 py-3 border-b bg-background flex items-center justify-between">
-                <h3 className="font-semibold text-sm">Agenda</h3>
-                <span className="text-sm text-muted-foreground">
-                    {items.length} items • {totalDuration} min
-                </span>
+            <div className="h-14 px-4 border-b bg-background grid grid-cols-3 items-center shrink-0" onClick={(e) => e.stopPropagation()}>
+                <div /> {/* Left spacer */}
+                <h3 className="font-semibold text-sm text-center truncate">
+                    {title || "Untitled Meeting Agenda"}
+                </h3>
+                <div className="text-right">
+                    <span className="text-xs text-muted-foreground whitespace-nowrap">
+                        {items.length} items • {totalDuration} min
+                    </span>
+                </div>
             </div>
 
             {/* Canvas */}
@@ -383,14 +322,14 @@ export function AgendaCanvas({
                 <div
                     ref={setNodeRef}
                     className={cn(
-                        "p-6 min-h-full",
+                        "p-3 min-h-full flex flex-col items-center",
                         isOver && "bg-primary/5"
                     )}
                 >
                     {items.length === 0 ? (
                         <div
                             className={cn(
-                                "flex flex-col items-center justify-center py-16",
+                                "flex flex-col items-center justify-center py-16 mt-8 bg-background/50 backdrop-blur-sm w-full max-w-xl",
                                 "border-2 border-dashed rounded-lg",
                                 "text-muted-foreground transition-all",
                                 isOver ? "border-primary bg-primary/5" : "border-muted-foreground/20"
@@ -404,12 +343,12 @@ export function AgendaCanvas({
                             </div>
                         </div>
                     ) : (
-                        <div className="bg-white rounded-lg shadow-sm border p-4">
+                        <div className="bg-background/80 backdrop-blur-sm rounded-lg shadow-sm border p-3 w-full max-w-xl">
                             <SortableContext
                                 items={itemIds}
                                 strategy={verticalListSortingStrategy}
                             >
-                                <div className="space-y-2">
+                                <div className="space-y-1">
                                     {items.map((item) => (
                                         <SortableAgendaRow
                                             key={item.id}
@@ -417,27 +356,8 @@ export function AgendaCanvas({
                                             onRemove={() => onRemoveItem(item.id)}
                                             isExpanded={expandedContainers.has(item.id)}
                                             onToggleExpand={() => onToggleContainer(item.id)}
-                                            onAddToContainer={
-                                                item.isContainer && item.containerType
-                                                    ? () => onAddToContainer(item.id, item.containerType!)
-                                                    : undefined
-                                            }
-                                            onRemoveChildItem={(childId) =>
-                                                onRemoveChildItem(item.id, childId)
-                                            }
-                                            onSelectHymn={
-                                                item.is_hymn ? () => onSelectHymn(item.id) : undefined
-                                            }
-                                            onSelectParticipant={
-                                                (item.requires_participant || item.config?.requires_assignee) && !item.is_hymn && item.category !== "speaker"
-                                                    ? () => onSelectParticipant(item.id)
-                                                    : undefined
-                                            }
-                                            onSelectSpeaker={
-                                                item.category === "speaker"
-                                                    ? () => onSelectSpeaker(item.id)
-                                                    : undefined
-                                            }
+                                            isSelected={selectedItemId === item.id}
+                                            onSelect={() => onSelectItem?.(item.id)}
                                         />
                                     ))}
                                 </div>

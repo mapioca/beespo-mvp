@@ -23,7 +23,7 @@ export function SidebarNavSection({
   isFirst = false,
 }: SidebarNavSectionProps) {
   return (
-    <div className={cn(!isFirst && "mt-6")}>
+    <div className={cn(!isFirst && "mt-4")}>
       {/* Section Header - Hidden when collapsed */}
       {!isCollapsed && (
         <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 px-3">

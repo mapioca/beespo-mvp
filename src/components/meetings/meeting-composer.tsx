@@ -7,20 +7,20 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
-    Plus,
-    Trash2,
-    GripVertical,
-    Music,
-    BookOpen,
-    MessageSquare,
-    Briefcase,
-    Megaphone,
-    User,
-    Pencil,
-    UserPlus,
-    Mic,
-    CheckCircle,
-} from "lucide-react";
+    PlusIcon as Plus,
+    TrashIcon as Trash2,
+    MusicNotesIcon as Music,
+    BookOpenIcon as BookOpen,
+    ChatCenteredTextIcon as MessageSquare,
+    BriefcaseIcon as Briefcase,
+    MegaphoneIcon as Megaphone,
+    UserIcon as User,
+    PencilIcon as Pencil,
+    UserPlusIcon as UserPlus,
+    MicrophoneIcon as Mic,
+    CheckCircleIcon as CheckCircle,
+    MinusIcon as Minus,
+} from "@phosphor-icons/react";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "@/lib/toast";
 import { AddMeetingItemDialog, SelectedItem, CategoryType } from "./add-meeting-item-dialog";
@@ -89,7 +89,7 @@ export function MeetingComposer({
     const [expandedContainers, setExpandedContainers] = useState<Set<string>>(new Set());
     // Unified selector modal state
     const [unifiedModalOpen, setUnifiedModalOpen] = useState(false);
-    const [unifiedModalMode, setUnifiedModalMode] = useState<UnifiedSelectorMode>("hymn");
+    const [unifiedModalMode, setUnifiedModalMode] = useState<UnifiedSelectorMode>("participant");
     const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
     const [targetContainerId, setTargetContainerId] = useState<string | null>(null);
 
@@ -312,24 +312,6 @@ export function MeetingComposer({
         setAgendaItems(agendaItems.filter((item) => item.id !== id));
     };
 
-    // Handle hymn selection from unified modal
-    const handleSelectHymn = (hymn: { id: string; number: number; title: string }) => {
-        if (selectedItemId) {
-            setAgendaItems(agendaItems.map((item) =>
-                item.id === selectedItemId
-                    ? {
-                        ...item,
-                        hymn_id: hymn.id,
-                        hymn_number: hymn.number,
-                        hymn_title: hymn.title,
-                    }
-                    : item
-            ));
-        }
-        setUnifiedModalOpen(false);
-        setSelectedItemId(null);
-    };
-
     // Handle participant selection from unified modal
     const handleSelectParticipant = (participant: { id: string; name: string }) => {
         if (selectedItemId) {
@@ -425,13 +407,6 @@ export function MeetingComposer({
         ));
     };
 
-    // Open unified modal for hymn selection
-    const openHymnSelector = (itemId: string) => {
-        setSelectedItemId(itemId);
-        setUnifiedModalMode("hymn");
-        setUnifiedModalOpen(true);
-    };
-
     // Open unified modal for participant selection
     const openParticipantSelector = (itemId: string) => {
         setSelectedItemId(itemId);
@@ -486,6 +461,7 @@ export function MeetingComposer({
             business: <Briefcase className="h-4 w-4 text-purple-500" />,
             announcement: <Megaphone className="h-4 w-4 text-orange-500" />,
             speaker: <User className="h-4 w-4 text-pink-500" />,
+            structural: <Minus className="h-4 w-4 text-slate-500" />
         };
         return icons[category];
     };
@@ -789,10 +765,8 @@ export function MeetingComposer({
                                         // Regular item (Procedural, Speaker)
                                         <div
                                             key={item.id}
-                                            className="flex items-center gap-2 p-3 border rounded-lg bg-card hover:bg-accent/30 transition-colors group"
+                                            className="flex items-center gap-3 p-3 border rounded-lg bg-card hover:bg-accent/30 transition-colors group"
                                         >
-                                            <GripVertical className="h-4 w-4 text-muted-foreground cursor-grab" />
-
                                             <div className="shrink-0">
                                                 {getCategoryIcon(item.category, item.is_hymn)}
                                             </div>
@@ -819,21 +793,6 @@ export function MeetingComposer({
                                                             <Pencil className="h-3 w-3 text-muted-foreground" />
                                                         </button>
                                                     </div>
-                                                )}
-
-                                                {/* Hymn selector for hymn items */}
-                                                {item.is_hymn && (
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        className="h-6 text-xs mt-1 text-blue-600"
-                                                        onClick={() => openHymnSelector(item.id)}
-                                                    >
-                                                        {item.hymn_title
-                                                            ? `#${item.hymn_number} ${item.hymn_title}`
-                                                            : "Select Hymn →"
-                                                        }
-                                                    </Button>
                                                 )}
 
                                                 {/* Participant selector for procedural items that require a person */}
@@ -917,12 +876,10 @@ export function MeetingComposer({
                 mode={unifiedModalMode}
                 currentSelectionId={
                     selectedItemId
-                        ? agendaItems.find((i) => i.id === selectedItemId)?.hymn_id ||
-                        agendaItems.find((i) => i.id === selectedItemId)?.participant_id ||
+                        ? agendaItems.find((i) => i.id === selectedItemId)?.participant_id ||
                         agendaItems.find((i) => i.id === selectedItemId)?.speaker_id
                         : undefined
                 }
-                onSelectHymn={handleSelectHymn}
                 onSelectParticipant={handleSelectParticipant}
                 onSelectSpeaker={handleSelectSpeaker}
                 onSelectDiscussion={(disc) => handleAddToContainer(disc, "discussion")}

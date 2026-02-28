@@ -3,7 +3,6 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { pdf } from "@react-pdf/renderer";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -33,7 +32,6 @@ import {
     Loader2,
 } from "lucide-react";
 import { ShareDialog } from "@/components/conduct/share-dialog";
-import { MeetingAgendaPDF, getMeetingPDFFilename } from "@/components/meetings/meeting-agenda-pdf";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "@/lib/toast";
 import { Database } from "@/types/database";
@@ -59,49 +57,10 @@ export function MeetingRowActions({
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [isShareOpen, setIsShareOpen] = useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-    const [isDownloading, setIsDownloading] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
     const [currentMeeting, setCurrentMeeting] = useState(meeting);
 
-    const handleDownload = async () => {
-        setIsDownloading(true);
-        try {
-            // Fetch agenda items for the PDF
-            const supabase = createClient();
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const { data: agendaItems } = await (supabase.from("agenda_items") as any)
-                .select(`
-                    *,
-                    hymn:hymns(title, hymn_number)
-                `)
-                .eq("meeting_id", meeting.id)
-                .order("order_index", { ascending: true });
 
-            const blob = await pdf(
-                <MeetingAgendaPDF
-                    meeting={currentMeeting}
-                    agendaItems={agendaItems || []}
-                />
-            ).toBlob();
-
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement("a");
-            link.href = url;
-            link.download = getMeetingPDFFilename(currentMeeting);
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
-
-            toast.success("Download started", { description: "Your PDF is being downloaded" });
-        } catch (error) {
-            console.error("PDF generation failed:", error);
-            toast.error("Download failed", { description: "Could not generate PDF. Please try again." });
-        } finally {
-            setIsDownloading(false);
-            setIsDropdownOpen(false);
-        }
-    };
 
     const handleDelete = async () => {
         setIsDeleting(true);
@@ -190,18 +149,12 @@ export function MeetingRowActions({
 
                     <DropdownMenuSeparator />
 
-                    {/* Download */}
-                    <DropdownMenuItem
-                        onClick={handleDownload}
-                        disabled={isDownloading}
-                        className="flex items-center"
-                    >
-                        {isDownloading ? (
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        ) : (
+                    {/* Print */}
+                    <DropdownMenuItem asChild>
+                        <a href={`/meetings/${meeting.id}/print`} target="_blank" rel="noopener noreferrer" className="flex items-center cursor-pointer">
                             <Download className="mr-2 h-4 w-4" />
-                        )}
-                        Download
+                            Print
+                        </a>
                     </DropdownMenuItem>
 
                     {/* Share */}

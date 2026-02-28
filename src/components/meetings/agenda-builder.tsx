@@ -8,7 +8,6 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import {
-    GripVertical,
     Trash2,
     Music,
     BookOpen,
@@ -190,7 +189,7 @@ export function AgendaBuilder({
                         onDrop={(e) => handleDrop(e, index)}
                         onDragEnd={handleDragEnd}
                         className={cn(
-                            "flex gap-4 p-4 border rounded-lg bg-card group hover:border-sidebar-accent transition-all relative",
+                            "flex gap-4 p-3 border rounded-lg bg-card group hover:border-sidebar-accent transition-all relative cursor-move",
                             draggedIndex === index && "opacity-50 scale-95",
                             dragOverIndex === index &&
                             draggedIndex !== null &&
@@ -198,11 +197,6 @@ export function AgendaBuilder({
                             "border-primary border-2"
                         )}
                     >
-                        {/* Drag Handle */}
-                        <div className="flex items-center pt-2 cursor-move">
-                            <GripVertical className="h-5 w-5 text-muted-foreground" />
-                        </div>
-
                         {/* Main Content */}
                         <div className="flex-1 space-y-3">
                             <div className="flex gap-3 items-start">
@@ -352,6 +346,6 @@ export function AgendaBuilder({
                 onAdd={handleAddItem}
                 nextOrderIndex={items.length}
             />
-        </Card>
+        </Card >
     );
 }

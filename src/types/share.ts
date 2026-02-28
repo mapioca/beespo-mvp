@@ -130,6 +130,7 @@ export interface PublicAgendaItem {
   duration_minutes: number | null;
   is_completed: boolean;
   item_type: string;
+  structural_type?: string | null;
   participant_name: string | null;
 }
 

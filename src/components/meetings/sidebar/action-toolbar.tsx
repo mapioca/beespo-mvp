@@ -1,13 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Play, Download, StopCircle, RotateCcw, Loader2 } from "lucide-react";
+import { Play, Eye, StopCircle, RotateCcw, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { pdf } from "@react-pdf/renderer";
 import { Button } from "@/components/ui/button";
 import { ShareDialog } from "@/components/conduct/share-dialog";
-import { MeetingAgendaPDF, getMeetingPDFFilename } from "@/components/meetings/meeting-agenda-pdf";
+import { generateMeetingMarkdown } from "@/lib/generate-meeting-markdown";
+import { PreviewModal } from "@/components/meetings/preview-modal";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "@/lib/toast";
 import { Database } from "@/types/database";
@@ -17,6 +17,8 @@ type Meeting = Database["public"]["Tables"]["meetings"]["Row"] & {
 };
 type AgendaItem = Database["public"]["Tables"]["agenda_items"]["Row"] & {
     hymn?: { title: string; hymn_number: number } | null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    child_items?: any[] | null;
 };
 
 interface ActionToolbarProps {
@@ -36,8 +38,12 @@ export function ActionToolbar({
 }: ActionToolbarProps) {
     const router = useRouter();
     const [isStatusLoading, setIsStatusLoading] = useState(false);
-    const [isDownloading, setIsDownloading] = useState(false);
     const [currentMeeting, setCurrentMeeting] = useState(meeting);
+
+    // Preview state
+    const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+    const [isGeneratingPreview, setIsGeneratingPreview] = useState(false);
+    const [previewMarkdown, setPreviewMarkdown] = useState("");
 
     const handleStatusChange = async (newStatus: Meeting["status"]) => {
         setIsStatusLoading(true);
@@ -57,29 +63,53 @@ export function ActionToolbar({
         setIsStatusLoading(false);
     };
 
-    const handleDownload = async () => {
-        setIsDownloading(true);
-        try {
-            const blob = await pdf(
-                <MeetingAgendaPDF meeting={currentMeeting} agendaItems={agendaItems} />
-            ).toBlob();
+    const handlePreview = () => {
+        setIsPreviewOpen(true);
+        setIsGeneratingPreview(true);
 
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement("a");
-            link.href = url;
-            link.download = getMeetingPDFFilename(currentMeeting);
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
+        setTimeout(() => {
+            try {
+                // Map DB agenda items to CanvasItem format for markdown generation
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const canvasItems: any[] = agendaItems.map((item) => ({
+                    id: item.id,
+                    title: item.title,
+                    description: item.description,
+                    order_index: item.order_index,
+                    category: item.item_type,
+                    // Map container specifically
+                    isContainer: ['discussion', 'business', 'announcement'].includes(item.item_type),
+                    containerType: ['discussion', 'business', 'announcement'].includes(item.item_type) ? item.item_type : undefined,
+                    childItems: item.child_items || [],
+                    // Map hymn
+                    is_hymn: !!item.hymn_id,
+                    hymn_number: item.hymn?.hymn_number,
+                    hymn_title: item.hymn?.title,
+                    // Map participants
+                    requires_participant: !!item.participant_name,
+                    participant_name: item.participant_name,
+                    speaker_name: item.participant_name, // Fallback for speaker category
+                }));
 
-            toast.success("Download started", { description: "Your PDF is being downloaded" });
-        } catch (error) {
-            console.error("PDF generation failed:", error);
-            toast.error("Download failed", { description: "Could not generate PDF. Please try again." });
-        } finally {
-            setIsDownloading(false);
-        }
+                const markdown = generateMeetingMarkdown({
+                    title: currentMeeting.title || "Untitled Meeting",
+                    date: new Date(currentMeeting.scheduled_date),
+                    time: new Date(currentMeeting.scheduled_date).toTimeString().slice(0, 5),
+                    presiding: currentMeeting.presiding_name || undefined,
+                    conducting: currentMeeting.conducting_name || undefined,
+                    chorister: currentMeeting.chorister_name || undefined,
+                    pianistOrganist: currentMeeting.organist_name || undefined,
+                    canvasItems: canvasItems,
+                });
+
+                setPreviewMarkdown(markdown);
+            } catch (err) {
+                console.error("Failed to generate preview:", err);
+                toast.error("Preview failed", { description: "Could not generate agenda preview." });
+            } finally {
+                setIsGeneratingPreview(false);
+            }
+        }, 50);
     };
 
     const handleMeetingUpdate = (updatedMeeting: Meeting) => {
@@ -131,22 +161,25 @@ export function ActionToolbar({
                     onUpdate={handleMeetingUpdate}
                 />
 
-                {/* Download - Secondary/Outline */}
+                {/* Preview - Secondary/Outline */}
                 <Button
                     variant="outline"
                     size="icon"
-                    onClick={handleDownload}
-                    disabled={isDownloading}
-                    title="Download PDF"
+                    onClick={handlePreview}
+                    title="Preview Agenda"
                     className="shrink-0"
                 >
-                    {isDownloading ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                        <Download className="w-4 h-4" />
-                    )}
+                    <Eye className="w-4 h-4" />
                 </Button>
             </div>
+
+            <PreviewModal
+                open={isPreviewOpen}
+                onClose={() => setIsPreviewOpen(false)}
+                markdown={previewMarkdown}
+                isLoading={isGeneratingPreview}
+                meetingId={meeting.id}
+            />
 
             {/* Status-specific actions */}
             {isLeader && (

@@ -16,6 +16,13 @@ import {
   HandHeart,
   ClipboardList,
   Table2,
+  LayoutDashboard,
+  Briefcase,
+  Megaphone,
+  MessageSquare,
+  Mic,
+  UsersRound,
+  FileText,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { TooltipProvider } from "@/components/ui/tooltip"
@@ -39,7 +46,19 @@ const navSections: NavSection[] = [
     items: [
       { href: "/dashboard", icon: Home, label: "Dashboard" },
       { href: "/calendar", icon: Calendar, label: "Calendar" },
-      { href: "/meetings/overview", icon: CalendarDays, label: "Meetings" },
+      {
+        icon: CalendarDays,
+        label: "Meetings",
+        children: [
+          { href: "/meetings/overview", icon: LayoutDashboard, label: "Overview" },
+          { href: "/meetings/business", icon: Briefcase, label: "Business" },
+          { href: "/meetings/announcements", icon: Megaphone, label: "Announcements" },
+          { href: "/meetings/discussions", icon: MessageSquare, label: "Discussions" },
+          { href: "/meetings/speakers", icon: Mic, label: "Speakers" },
+          { href: "/meetings/participants", icon: UsersRound, label: "Participants" },
+          { href: "/meetings/templates", icon: FileText, label: "Templates" },
+        ]
+      },
       { href: "/tasks", icon: CheckSquare, label: "Tasks" },
       { href: "/callings", icon: HandHeart, label: "Callings" },
       { href: "/forms", icon: ClipboardList, label: "Forms" },
@@ -85,7 +104,7 @@ export function AppSidebar({
       <aside
         className={cn(
           "border-r bg-card shrink-0 flex flex-col h-full transition-[width] duration-300 ease-in-out",
-          isCollapsed ? "w-16" : "w-64"
+          isCollapsed ? "w-16" : "w-60"
         )}
       >
         {/* Header with Logo and Toggle */}
@@ -95,14 +114,14 @@ export function AppSidebar({
               "flex transition-all duration-300 ease-in-out",
               isCollapsed
                 ? "flex-col items-center justify-center gap-4 py-4"
-                : "flex-row items-center justify-between px-4 py-2"
+                : "flex-row items-center justify-between px-4 py-1.5"
             )}
           >
             <Link href="/dashboard" className="block">
               <div
                 className={cn(
                   "relative transition-all duration-300 ease-in-out overflow-hidden",
-                  isCollapsed ? "h-8 w-8" : "h-12 w-48"
+                  isCollapsed ? "h-8 w-8" : "h-9 w-40"
                 )}
               >
                 <Image
@@ -148,7 +167,7 @@ export function AppSidebar({
 
           {/* Workspace Name - Below Logo */}
           {!isCollapsed && (
-            <div className="px-4 pb-4">
+            <div className="px-4 pb-2">
               <p className="text-xs font-medium text-muted-foreground truncate">
                 {workspaceName}
               </p>
@@ -157,7 +176,7 @@ export function AppSidebar({
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto py-4">
+        <nav className="flex-1 overflow-y-auto py-2">
           {navSections.map((section, index) => (
             <SidebarNavSection
               key={section.id}

@@ -11,7 +11,6 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import {
-    GripVertical,
     Music,
     BookOpen,
     MessageSquare,
@@ -159,22 +158,16 @@ function SortableTemplateRow({
             <div
                 ref={setNodeRef}
                 style={style}
+                {...attributes}
+                {...listeners}
                 className={cn(
-                    "rounded-lg border-2 transition-all",
+                    "rounded-lg border-2 transition-all cursor-grab active:cursor-grabbing touch-none",
                     colors.bg,
                     colors.border,
                     isDragging && "opacity-50 shadow-lg ring-2 ring-primary/40 z-50"
                 )}
             >
                 <div className="flex items-center gap-3 p-3">
-                    {/* Drag Handle */}
-                    <div
-                        {...attributes}
-                        {...listeners}
-                        className="cursor-grab active:cursor-grabbing touch-none shrink-0"
-                    >
-                        <GripVertical className="h-4 w-4 text-muted-foreground/50" />
-                    </div>
 
                     {/* Category Icon */}
                     <div className="shrink-0">
@@ -228,20 +221,14 @@ function SortableTemplateRow({
         <div
             ref={setNodeRef}
             style={style}
+            {...attributes}
+            {...listeners}
             className={cn(
-                "flex items-center gap-3 p-3 border rounded-lg bg-card transition-all group",
+                "flex items-center gap-3 p-3 border rounded-lg bg-card transition-all group cursor-grab active:cursor-grabbing touch-none",
                 "hover:border-primary/50",
                 isDragging && "opacity-50 shadow-lg ring-2 ring-primary/40 z-50"
             )}
         >
-            {/* Drag Handle */}
-            <div
-                {...attributes}
-                {...listeners}
-                className="cursor-grab active:cursor-grabbing touch-none shrink-0"
-            >
-                <GripVertical className="h-4 w-4 text-muted-foreground/50" />
-            </div>
 
             {/* Category Icon */}
             <div className="shrink-0">
@@ -309,7 +296,7 @@ export function TemplateCanvas({
     const itemIds = items.map((item) => item.id);
 
     return (
-        <div className="flex flex-col h-full bg-muted/20">
+        <div className="flex flex-col h-full bg-muted/20 bg-[radial-gradient(#60a5fa_1px,transparent_1px)] [background-size:16px_16px]">
             {/* Header */}
             <div className="px-6 py-3 border-b border-border bg-background flex items-center justify-between">
                 <h3 className="font-semibold text-sm text-foreground">Template Agenda</h3>

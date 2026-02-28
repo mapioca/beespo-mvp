@@ -13,7 +13,6 @@ import {
     ChevronDown,
     ChevronRight,
     Plus,
-    GripVertical,
     Megaphone,
     Briefcase,
     MessageSquare,
@@ -100,8 +99,10 @@ export function AgendaGroupRow({
         <div
             ref={setNodeRef}
             style={style}
+            {...attributes}
+            {...listeners}
             className={cn(
-                "rounded-lg border transition-all",
+                "rounded-lg border transition-all cursor-grab active:cursor-grabbing touch-none",
                 groupStyle.bg,
                 groupStyle.border,
                 isDragging && "opacity-50 shadow-lg ring-2 ring-primary/40"
@@ -109,17 +110,7 @@ export function AgendaGroupRow({
         >
             <Collapsible open={isOpen} onOpenChange={setIsOpen}>
                 {/* Group Header */}
-                <div className="flex items-center gap-2 p-3">
-                    {/* Drag Handle */}
-                    {isEditable && (
-                        <div
-                            {...attributes}
-                            {...listeners}
-                            className="flex-none cursor-grab active:cursor-grabbing touch-none"
-                        >
-                            <GripVertical className="w-5 h-5 text-muted-foreground/50 hover:text-muted-foreground" />
-                        </div>
-                    )}
+                <div className="flex items-center gap-3 p-3">
 
                     {/* Collapse Toggle */}
                     <CollapsibleTrigger asChild>

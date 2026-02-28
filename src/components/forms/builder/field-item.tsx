@@ -3,7 +3,6 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import {
-    GripVertical,
     Trash2,
     Settings2,
     Type,
@@ -58,22 +57,14 @@ export function FieldItem({
         <div
             ref={setNodeRef}
             style={style}
+            {...attributes}
+            {...listeners}
             className={`
-        flex items-center gap-3 p-3 rounded-lg border bg-card transition-colors
-        ${isSelected ? "border-primary ring-1 ring-primary" : "hover:border-muted-foreground/50"}
+        flex items-center gap-3 p-3 rounded-lg bg-card transition-colors cursor-grab active:cursor-grabbing
+        ${isSelected ? "ring-1 ring-primary bg-accent" : "hover:bg-accent/60"}
         ${isDragging ? "shadow-lg" : ""}
       `}
         >
-            {/* Drag Handle */}
-            <button
-                {...attributes}
-                {...listeners}
-                className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground p-1"
-                aria-label="Drag to reorder"
-            >
-                <GripVertical className="h-4 w-4" />
-            </button>
-
             {/* Field Info */}
             <div
                 className="flex-1 flex items-center gap-3 cursor-pointer"
@@ -82,7 +73,8 @@ export function FieldItem({
                 tabIndex={0}
                 onKeyDown={(e) => e.key === "Enter" && onSelect()}
             >
-                <div className="text-muted-foreground">
+                {/* Boxed Icon */}
+                <div className="flex-shrink-0 h-8 w-8 rounded-md bg-muted flex items-center justify-center text-foreground">
                     {FIELD_ICONS[field.type]}
                 </div>
                 <div className="flex-1 min-w-0">

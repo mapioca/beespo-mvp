@@ -32,6 +32,7 @@ import { UpcomingMeetingsWidget } from "../widgets/upcoming-meetings-widget";
 import { NotebooksWidget } from "../widgets/notebooks-widget";
 import { TablesWidget } from "../widgets/tables-widget";
 import { FormsWidget } from "../widgets/forms-widget";
+import { QuickActionsWidget } from "../widgets/quick-actions-widget";
 
 interface DashboardGridProps {
   config: DashboardConfig;
@@ -55,6 +56,8 @@ function renderContentWidget(widgetType: WidgetType, data: DashboardWidgetData) 
       return <TablesWidget data={data.tables} />;
     case "forms":
       return <FormsWidget data={data.forms} />;
+    case "quick_actions":
+      return <QuickActionsWidget />;
     default:
       return null;
   }

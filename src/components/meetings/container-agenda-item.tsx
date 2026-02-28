@@ -3,7 +3,6 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
-    GripVertical,
     ChevronDown,
     ChevronRight,
     Plus,
@@ -92,14 +91,12 @@ export function ContainerAgendaItem({
             {/* Container header */}
             <div
                 className={cn(
-                    "flex items-center gap-2 p-3 cursor-pointer transition-colors",
+                    "flex items-center gap-3 p-3 cursor-pointer transition-colors",
                     config.bgColor,
                     "hover:opacity-90"
                 )}
                 onClick={onToggleExpand}
             >
-                <GripVertical className="h-4 w-4 text-muted-foreground cursor-grab" />
-
                 <div className="shrink-0">
                     <Icon className={cn("h-4 w-4", config.color)} />
                 </div>

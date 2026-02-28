@@ -1,13 +1,15 @@
 "use client";
 
-import { useState } from "react";
-import { CalendarDays, Clock } from "lucide-react";
-import { MeetingStatusBadge } from "@/components/meetings/meeting-status-badge";
-import { EditableAgendaItemList } from "@/components/meetings/editable";
-import { MeetingContextPanel } from "@/components/meetings/sidebar";
-import { formatMeetingDateTime } from "@/lib/meeting-helpers";
-import { calculateTotalDurationWithGrouping } from "@/lib/agenda-grouping";
-import { Database } from "@/types/database";
+import {useState} from "react";
+import {CalendarDays, Clock, Pencil, Printer} from "lucide-react";
+import Link from "next/link";
+import {Button} from "@/components/ui/button";
+import {MeetingStatusBadge} from "@/components/meetings/meeting-status-badge";
+import {MarkdownRenderer} from "@/components/meetings/markdown-renderer";
+import {formatMeetingDateTime} from "@/lib/meeting-helpers";
+import {calculateTotalDurationWithGrouping} from "@/lib/agenda-grouping";
+import {ShareDialog} from "@/components/conduct/share-dialog";
+import {Database} from "@/types/database";
 
 type Meeting = Database["public"]["Tables"]["meetings"]["Row"] & {
     templates?: { name: string } | null;
@@ -31,108 +33,112 @@ export function MeetingDetailContent({
     agendaItems: initialAgendaItems,
     workspaceSlug,
     isLeader,
-    currentUserName,
-}: MeetingDetailContentProps) {
-    const [agendaItems, setAgendaItems] = useState(initialAgendaItems);
-
+     }: MeetingDetailContentProps) {
+    const [currentMeeting, setCurrentMeeting] = useState(meeting);
     // Recalculate total duration using grouped logic (time-boxing)
     // Groups use their fixed duration, not sum of children
-    const totalDuration = calculateTotalDurationWithGrouping(agendaItems);
+    const totalDuration = calculateTotalDurationWithGrouping(initialAgendaItems);
 
-    // Only allow editing if user is a leader and meeting is not completed/cancelled
-    const isEditable =
-        isLeader &&
-        meeting.status !== "completed" &&
-        meeting.status !== "cancelled";
+    const handleMeetingUpdate = (updatedMeeting: Meeting) => {
+        setCurrentMeeting(updatedMeeting);
+    };
 
     return (
-        <div className="flex flex-1 min-h-0 overflow-hidden">
-            {/* ============================================
-                Pane 1: Main Content (Agenda)
-                - flex-1: Grows to fill available space
-                - min-w-0: Prevents flex item from overflowing
-                - flex flex-col: Stack header + scrollable body
-                - overflow-hidden: Contain internal scrolling
-            ============================================ */}
-            <div className="flex-1 min-w-0 flex flex-col overflow-hidden bg-background">
-                {/* ----------------------------------------
-                    Header Container (Pinned)
-                    - shrink-0: Never shrinks, always visible
-                    - bg-background: Solid background
-                    - border-b: Visual separation
-                    - z-10: Stays above scrolling content
-                ---------------------------------------- */}
-                <div className="shrink-0 bg-background border-b border-border z-10">
-                    <div className="max-w-3xl mx-auto px-6 lg:px-8 py-6">
-                        <div className="flex items-center gap-3 mb-2 flex-wrap">
-                            <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">
-                                {meeting.title}
-                            </h1>
-                            <MeetingStatusBadge status={meeting.status} />
-                        </div>
-                        <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
-                            {meeting.templates?.name && (
-                                <span>{meeting.templates.name}</span>
-                            )}
-                            {meeting.templates?.name && meeting.profiles?.full_name && (
-                                <span aria-hidden="true">·</span>
-                            )}
-                            {meeting.profiles?.full_name && (
-                                <span>{meeting.profiles.full_name}</span>
-                            )}
-                        </div>
-                        <p className="text-muted-foreground flex items-center gap-2">
-                            <CalendarDays className="w-4 h-4" />
-                            {formatMeetingDateTime(meeting.scheduled_date)}
-                        </p>
-                    </div>
-                </div>
-
-                {/* ----------------------------------------
-                    Scrollable Body (Reactive)
-                    - flex-1: Expands/contracts with viewport
-                    - min-h-0: Critical for nested flex scrolling
-                    - overflow-y-auto: Independent internal scrolling
-                ---------------------------------------- */}
-                <div className="flex-1 min-h-0 overflow-y-auto">
-                    <div className="max-w-3xl mx-auto px-6 lg:px-8 py-6">
-                        {/* Agenda Section */}
-                        <div className="space-y-4">
-                            <div className="flex items-center justify-between">
-                                <h2 className="text-xl font-semibold">Agenda</h2>
-                                <div className="text-sm text-muted-foreground flex items-center gap-1">
-                                    <Clock className="w-3 h-3" />
-                                    <span>Total Est: {totalDuration} min</span>
+        <div className="flex flex-1 min-h-0 overflow-hidden bg-muted/30">
+            {/* Main Content (Agenda) */}
+            <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
+                {/* Header Container (Pinned) */}
+                <div className="shrink-0 bg-background border-b border-border z-10 shadow-sm">
+                    <div className="max-w-5xl mx-auto px-6 lg:px-8 py-6">
+                        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                            <div>
+                                <div className="flex items-center gap-3 mb-2 flex-wrap">
+                                    <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">
+                                        {currentMeeting.title}
+                                    </h1>
+                                    <MeetingStatusBadge status={currentMeeting.status} />
+                                </div>
+                                <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
+                                    {currentMeeting.templates?.name && (
+                                        <span>{currentMeeting.templates.name}</span>
+                                    )}
+                                    {currentMeeting.templates?.name && currentMeeting.profiles?.full_name && (
+                                        <span aria-hidden="true">·</span>
+                                    )}
+                                    {currentMeeting.profiles?.full_name && (
+                                        <span>{currentMeeting.profiles.full_name}</span>
+                                    )}
+                                </div>
+                                <div className="flex items-center gap-6 mt-2 text-sm text-muted-foreground font-medium">
+                                    <span className="flex items-center gap-2">
+                                        <CalendarDays className="w-4 h-4" />
+                                        {formatMeetingDateTime(currentMeeting.scheduled_date)}
+                                    </span>
+                                    <span className="flex items-center gap-2">
+                                        <Clock className="w-4 h-4" />
+                                        Total Est: {totalDuration} min
+                                    </span>
                                 </div>
                             </div>
 
-                            <EditableAgendaItemList
-                                items={agendaItems}
-                                meetingId={meeting.id}
-                                isEditable={isEditable}
-                                onItemsChange={setAgendaItems}
-                            />
+                            {/* Actions Toolbar */}
+                            <div className="flex items-center gap-2 shrink-0">
+                                {isLeader && (
+                                    <Button asChild variant="outline" size="sm" className="hidden sm:flex">
+                                        <Link href={`/meetings/${currentMeeting.id}/builder`}>
+                                            <Pencil className="w-4 h-4 mr-2" />
+                                            Edit Agenda
+                                        </Link>
+                                    </Button>
+                                )}
+
+                                <ShareDialog
+                                    meeting={currentMeeting}
+                                    workspaceSlug={workspaceSlug}
+                                    onUpdate={handleMeetingUpdate}
+                                />
+
+                                <Button asChild variant="outline" size="sm">
+                                    <a href={`/meetings/${currentMeeting.id}/print`} target="_blank" rel="noopener noreferrer">
+                                        <Printer className="w-4 h-4 mr-2" />
+                                        Print
+                                    </a>
+                                </Button>
+
+                                {/* Mobile fallback for edit */}
+                                {isLeader && (
+                                    <Button asChild variant="outline" size="icon" className="sm:hidden">
+                                        <Link href={`/meetings/${currentMeeting.id}/builder`} title="Edit Agenda">
+                                            <Pencil className="w-4 h-4" />
+                                        </Link>
+                                    </Button>
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            {/* ============================================
-                Pane 2: Inspector Panel (Right Sidebar)
-                - Fixed width (350-400px responsive)
-                - shrink-0: Maintains width, never shrinks
-                - flex flex-col: Enable internal flex layout
-                - overflow-hidden: Contain internal scrolling
-            ============================================ */}
-            <div className="w-[350px] lg:w-[400px] shrink-0 flex flex-col overflow-hidden">
-                <MeetingContextPanel
-                    meeting={meeting}
-                    agendaItems={agendaItems}
-                    workspaceSlug={workspaceSlug}
-                    isLeader={isLeader}
-                    totalDuration={totalDuration}
-                    currentUserName={currentUserName}
-                />
+                {/* Scrollable Body (Reactive) */}
+                <div className="flex-1 min-h-0 overflow-y-auto w-full p-4 sm:p-6 lg:p-8">
+                    <div className="max-w-[850px] mx-auto w-full">
+                        {currentMeeting.markdown_agenda ? (
+                            <div className="bg-background border rounded-none sm:rounded-lg shadow-sm w-full min-h-[1056px] p-8 sm:p-12 lg:p-16 relative">
+                                <MarkdownRenderer markdown={currentMeeting.markdown_agenda} />
+                            </div>
+                        ) : (
+                            <div className="p-8 text-center text-muted-foreground border rounded-lg bg-background shadow-sm">
+                                <p>No agenda available for this meeting.</p>
+                                {isLeader && (
+                                    <Button asChild variant="outline" className="mt-4">
+                                        <Link href={`/meetings/${currentMeeting.id}/builder`}>
+                                            Create Agenda
+                                        </Link>
+                                    </Button>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                </div>
             </div>
         </div>
     );

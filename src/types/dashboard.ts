@@ -11,7 +11,8 @@ export type WidgetType =
   | "upcoming_meetings"
   | "notebooks"
   | "tables"
-  | "forms";
+  | "forms"
+  | "quick_actions";
 
 // Position of a widget in the grid
 export interface WidgetPosition {
@@ -154,4 +155,5 @@ export interface DashboardWidgetData {
   notebooks: NotebooksData;
   tables: TablesData;
   forms: FormsData;
+  quickActions?: Record<string, never>;
 }

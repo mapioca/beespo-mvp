@@ -1,5 +1,5 @@
 import { resend } from './resend';
-import type { SharePermission } from '@/types/share';
+import type { SharePermission } from "@/types/share";
 
 interface MeetingShareInviteEmailParams {
   toEmail: string;

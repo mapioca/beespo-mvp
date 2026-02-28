@@ -19,7 +19,6 @@ import {
   Save,
   Plus,
   Trash2,
-  GripVertical,
   Music,
   BookOpen,
   MessageSquare,
@@ -119,18 +118,13 @@ function SortableItem({
     <div
       ref={setNodeRef}
       style={style}
+      {...attributes}
+      {...listeners}
       className={cn(
-        "flex items-start gap-3 rounded-lg border border-zinc-800 bg-zinc-900 p-3 group transition-all",
+        "flex items-start gap-3 rounded-lg border border-zinc-800 bg-zinc-900 p-3 group transition-all cursor-grab active:cursor-grabbing touch-none",
         isDragging && "opacity-50 shadow-lg ring-1 ring-zinc-600 z-50"
       )}
     >
-      <div
-        {...attributes}
-        {...listeners}
-        className="flex items-center pt-1.5 cursor-grab active:cursor-grabbing touch-none text-zinc-600 hover:text-zinc-400"
-      >
-        <GripVertical className="h-4 w-4" />
-      </div>
 
       <div className="flex-1 min-w-0 space-y-2">
         <div className="flex items-center gap-2">

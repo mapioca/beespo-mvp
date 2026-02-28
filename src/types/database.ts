@@ -110,7 +110,8 @@ export type Database = {
           book_id: string;
           hymn_number: number;
           title: string;
-          lyrics: string | null;
+          topic: string | null;
+          language: string;
           created_at: string;
         };
         Insert: {
@@ -118,7 +119,8 @@ export type Database = {
           book_id: string;
           hymn_number: number;
           title: string;
-          lyrics?: string | null;
+          topic?: string | null;
+          language?: string;
           created_at?: string;
         };
         Update: {
@@ -126,7 +128,8 @@ export type Database = {
           book_id?: string;
           hymn_number?: number;
           title?: string;
-          lyrics?: string | null;
+          topic?: string | null;
+          language?: string;
           created_at?: string;
         };
       };
@@ -483,6 +486,7 @@ export type Database = {
           notes: any | null; // Editor.js JSON
           public_share_token: string | null;
           is_publicly_shared: boolean;
+          share_uuid: string | null;
           created_by: string | null;
           created_at: string;
           updated_at: string;
@@ -491,6 +495,7 @@ export type Database = {
           chorister_name: string | null;
           organist_name: string | null;
           attendance_count: number | null;
+          markdown_agenda: string | null;
         };
         Insert: {
           id?: string;
@@ -504,6 +509,7 @@ export type Database = {
           notes?: any | null;
           public_share_token?: string | null;
           is_publicly_shared?: boolean;
+          share_uuid?: string | null;
           created_by?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -512,6 +518,7 @@ export type Database = {
           chorister_name?: string | null;
           organist_name?: string | null;
           attendance_count?: number | null;
+          markdown_agenda?: string | null;
         };
         Update: {
           id?: string;
@@ -525,6 +532,7 @@ export type Database = {
           notes?: any | null;
           public_share_token?: string | null;
           is_publicly_shared?: boolean;
+          share_uuid?: string | null;
           created_by?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -533,6 +541,7 @@ export type Database = {
           chorister_name?: string | null;
           organist_name?: string | null;
           attendance_count?: number | null;
+          markdown_agenda?: string | null;
         };
       };
       agenda_items: {
@@ -1061,6 +1070,7 @@ export type Database = {
           content: any; // Editor.js JSON
           is_personal: boolean;
           created_by: string;
+          notebook_id: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -1072,6 +1082,7 @@ export type Database = {
           content?: any;
           is_personal?: boolean;
           created_by: string;
+          notebook_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -1083,6 +1094,7 @@ export type Database = {
           content?: any;
           is_personal?: boolean;
           created_by?: string;
+          notebook_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -1523,18 +1535,152 @@ export type Database = {
           updated_at?: string;
         };
       };
-    };
-  };
-  Views: Record<string, never>;
-  Functions: {
-    create_meeting_from_template: {
-      Args: {
-        p_template_id: string;
-        p_title: string;
-        p_scheduled_date: string;
+      notebooks: {
+        Row: {
+          id: string;
+          workspace_id: string;
+          title: string;
+          cover_style: string;
+          created_by: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          workspace_id: string;
+          title?: string;
+          cover_style?: string;
+          created_by: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          workspace_id?: string;
+          title?: string;
+          cover_style?: string;
+          created_by?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
       };
-      Returns: string;
+      meeting_share_invitations: {
+        Row: {
+          id: string;
+          meeting_id: string;
+          email: string;
+          permission: "viewer" | "editor";
+          token: string;
+          invited_by: string | null;
+          status: "pending" | "accepted" | "revoked" | "expired";
+          expires_at: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          meeting_id: string;
+          email: string;
+          permission: "viewer" | "editor";
+          token?: string;
+          invited_by?: string | null;
+          status?: "pending" | "accepted" | "revoked" | "expired";
+          expires_at?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          meeting_id?: string;
+          email?: string;
+          permission?: "viewer" | "editor";
+          token?: string;
+          invited_by?: string | null;
+          status?: "pending" | "accepted" | "revoked" | "expired";
+          expires_at?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      meeting_share_views: {
+        Row: {
+          id: string;
+          meeting_id: string;
+          visitor_fingerprint: string;
+          first_viewed_at: string;
+          last_viewed_at: string;
+          view_count: number;
+          referrer: string | null;
+          user_agent: string | null;
+          country_code: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          meeting_id: string;
+          visitor_fingerprint: string;
+          first_viewed_at?: string;
+          last_viewed_at?: string;
+          view_count?: number;
+          referrer?: string | null;
+          user_agent?: string | null;
+          country_code?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          meeting_id?: string;
+          visitor_fingerprint?: string;
+          first_viewed_at?: string;
+          last_viewed_at?: string;
+          view_count?: number;
+          referrer?: string | null;
+          user_agent?: string | null;
+          country_code?: string | null;
+          created_at?: string;
+        };
+      };
+      meeting_share_settings: {
+        Row: {
+          meeting_id: string;
+          allow_notes_export: boolean;
+          show_duration_estimates: boolean;
+          show_presenter_names: boolean;
+          custom_message: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          meeting_id: string;
+          allow_notes_export?: boolean;
+          show_duration_estimates?: boolean;
+          show_presenter_names?: boolean;
+          custom_message?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          meeting_id?: string;
+          allow_notes_export?: boolean;
+          show_duration_estimates?: boolean;
+          show_presenter_names?: boolean;
+          custom_message?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
     };
+    Views: Record<string, never>;
+    Functions: {
+      create_meeting_from_template: {
+        Args: {
+          p_template_id: string;
+          p_title: string;
+          p_scheduled_date: string;
+        };
+        Returns: string;
+      };
+    };
+    Enums: Record<string, never>;
   };
-  Enums: Record<string, never>;
 };
