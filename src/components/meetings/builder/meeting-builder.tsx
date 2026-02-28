@@ -56,9 +56,10 @@ type MeetingFormValues = z.infer<typeof meetingFormSchema>;
 
 interface MeetingBuilderProps {
     initialTemplateId?: string | null;
+    initialMeetingId?: string;
 }
 
-export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
+export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingBuilderProps) {
     const router = useRouter();
 
     // Form state
@@ -152,6 +153,103 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
         };
         fetchInitialData();
     }, []);
+
+    // Load existing meeting if editing
+    useEffect(() => {
+        if (!initialMeetingId) return;
+
+        const loadExistingMeeting = async () => {
+            const supabase = createClient();
+
+            // Load meeting details
+            const { data: meetingData, error: meetingError } = await supabase
+                .from("meetings")
+                .select("*")
+                .eq("id", initialMeetingId)
+                .single();
+
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const meeting = meetingData as any;
+
+            if (meetingError || !meeting) {
+                toast.error("Failed to load meeting details");
+                return;
+            }
+
+            form.setValue("title", meeting.title);
+            if (meeting.scheduled_date) {
+                const scheduledDate = new Date(meeting.scheduled_date);
+                form.setValue("date", scheduledDate);
+                form.setValue("time", format(scheduledDate, "HH:mm"));
+            }
+
+            // Load agenda items
+            const { data: agendaItems, error: itemsError } = await supabase
+                .from("agenda_items")
+                .select("*")
+                .eq("meeting_id", initialMeetingId)
+                .order("order_index");
+
+            if (itemsError || !agendaItems) {
+                toast.error("Failed to load agenda items");
+                return;
+            }
+
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const items: CanvasItem[] = (agendaItems as any[]).map((item: any) => {
+                const isContainer = ["discussion", "business", "announcement"].includes(item.item_type);
+
+                // Parse child_items from JSONB if it's a container
+                let childItems: ContainerChildItem[] = [];
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                if (isContainer && item.child_items && Array.isArray(item.child_items)) {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    childItems = item.child_items.map((child: any) => ({
+                        id: `child-${Math.random().toString(36).substr(2, 9)}`,
+                        title: child.title || "",
+                        description: child.description || "",
+                        discussion_id: child.discussion_id,
+                        business_item_id: child.business_item_id,
+                        announcement_id: child.announcement_id,
+                        person_name: child.person_name,
+                        position_calling: child.position_calling,
+                        business_category: child.business_category,
+                        business_details: child.business_details,
+                    }));
+                }
+
+                return {
+                    id: item.id, // preserve existing ID
+                    category: item.item_type,
+                    title: item.title,
+                    description: item.description,
+                    duration_minutes: item.duration_minutes,
+                    order_index: item.order_index,
+                    procedural_item_type_id: item.procedural_item_type_id,
+                    is_hymn: !!item.hymn_id || (item.title && item.title.toLowerCase().includes("hymn")),
+                    requires_participant: !!item.participant_id || !!item.speaker_id || ["speaker", "prayer", "benediction", "invocation"].some(k => (item.title || "").toLowerCase().includes(k)),
+                    hymn_id: item.hymn_id,
+                    speaker_id: item.speaker_id,
+                    participant_id: item.participant_id,
+                    participant_name: item.participant_name,
+                    discussion_id: item.discussion_id,
+                    business_item_id: item.business_item_id,
+                    announcement_id: item.announcement_id,
+                    structural_type: item.structural_type,
+                    isContainer: isContainer,
+                    containerType: isContainer ? item.item_type as ContainerType : undefined,
+                    childItems: isContainer ? childItems : undefined,
+                };
+            });
+
+            // Expand all containers by default
+            const containerIds = items.filter((i) => i.isContainer).map((i) => i.id);
+            setExpandedContainers(new Set(containerIds));
+            setCanvasItems(items);
+        };
+
+        loadExistingMeeting();
+    }, [initialMeetingId, form]);
 
     // Update title when template selected
     useEffect(() => {
@@ -842,6 +940,52 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
             }));
 
 
+            // Update existing meeting
+            if (initialMeetingId) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const { error } = await (supabase as any).rpc(
+                    "update_meeting_with_agenda",
+                    {
+                        p_meeting_id: initialMeetingId,
+                        p_title: title,
+                        p_scheduled_date: scheduledDate.toISOString(),
+                        p_agenda_items: agendaJson,
+                    }
+                );
+
+                if (error) {
+                    toast.error("Failed to update meeting", { description: error.message });
+                    setValidationItems([{
+                        id: "error-update",
+                        title: "Failed to update meeting",
+                        status: "error",
+                        message: error.message,
+                    }]);
+                    setValidationState("error");
+                    return;
+                }
+
+                // Fire-and-forget: persist markdown agenda
+                const markdown = generateMeetingMarkdown({
+                    title, date: date!, time,
+                    unitName: workspaceName,
+                    presiding: form.getValues("presiding"),
+                    conducting: form.getValues("conducting"),
+                    chorister: form.getValues("chorister"),
+                    pianistOrganist: form.getValues("pianistOrganist"),
+                    canvasItems,
+                });
+
+                // Fire-and-forget
+                saveMeetingMarkdown(initialMeetingId, markdown).catch(() => { });
+
+                toast.success("Meeting updated", { description: "Redirecting..." });
+                router.push(`/meetings/${initialMeetingId}`);
+                router.refresh();
+                return;
+            }
+
+            // Create new meeting
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const { data, error } = await (supabase as any).rpc(
                 "create_meeting_with_agenda",
@@ -933,7 +1077,7 @@ export function MeetingBuilder({ initialTemplateId }: MeetingBuilderProps) {
         } finally {
             setIsCreating(false);
         }
-    }, [canvasItems, date, time, title, selectedTemplateId, router, form, workspaceName]);
+    }, [canvasItems, date, time, title, selectedTemplateId, router, form, workspaceName, initialMeetingId]);
 
     const isValid = title.trim() !== "" && date !== undefined;
     const selectedSpeakerIds = canvasItems
