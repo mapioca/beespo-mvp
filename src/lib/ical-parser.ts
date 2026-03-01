@@ -1,6 +1,11 @@
 /**
  * iCal Parser for Beespo Calendar
  * Parses .ics format (VEVENT components)
+ *
+ * Timezone handling:
+ * - UTC times (ending with Z) are parsed as UTC
+ * - Times with TZID parameter are converted to UTC using the specified timezone
+ * - Floating times (no Z, no TZID) are treated as UTC for server-locale independence
  */
 
 export interface ParsedICalEvent {
@@ -12,6 +17,56 @@ export interface ParsedICalEvent {
   location?: string;
   isAllDay: boolean;
   rawVEvent: string;
+  /** IANA timezone from the DTSTART TZID parameter, if present */
+  timezone?: string;
+}
+
+/**
+ * Get the UTC offset in minutes for a given IANA timezone at a specific point in time.
+ * Uses the built-in Intl.DateTimeFormat API (Node.js 14+ / all modern browsers).
+ *
+ * @param tzid - IANA timezone identifier (e.g., "America/Denver")
+ * @param referenceDate - A Date whose UTC values represent the wall-clock time in the target timezone
+ * @returns The UTC offset in minutes (e.g., -420 for MST, -360 for MDT)
+ */
+function getTimezoneOffsetMinutes(tzid: string, referenceDate: Date): number {
+  try {
+    // Format the reference date's UTC values as parts in the target timezone
+    const formatter = new Intl.DateTimeFormat("en-US", {
+      timeZone: tzid,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false,
+    });
+
+    const parts = formatter.formatToParts(referenceDate);
+    const get = (type: string) =>
+      parseInt(parts.find((p) => p.type === type)?.value ?? "0", 10);
+
+    const tzYear = get("year");
+    const tzMonth = get("month") - 1;
+    const tzDay = get("day");
+    let tzHour = get("hour");
+    const tzMinute = get("minute");
+    const tzSecond = get("second");
+
+    // Intl may return hour=24 for midnight → normalize to 0
+    if (tzHour === 24) tzHour = 0;
+
+    // Build the local-time equivalent in UTC and compute the difference
+    const tzAsUtc = Date.UTC(tzYear, tzMonth, tzDay, tzHour, tzMinute, tzSecond);
+    const diffMs = tzAsUtc - referenceDate.getTime();
+
+    return Math.round(diffMs / 60000);
+  } catch {
+    // If the timezone is unrecognized, fall back to treating the time as UTC (offset = 0)
+    console.warn(`Unrecognized TZID "${tzid}", treating time as UTC.`);
+    return 0;
+  }
 }
 
 /**
@@ -84,7 +139,7 @@ function parseVEvent(content: string, rawVEvent: string): ParsedICalEvent | null
   }
 
   // Parse dates
-  const { date: startDate, isAllDay } = parseICalDate(
+  const { date: startDate, isAllDay, timezone } = parseICalDate(
     dtstart,
     properties["DTSTART_PARAMS"]
   );
@@ -110,6 +165,7 @@ function parseVEvent(content: string, rawVEvent: string): ParsedICalEvent | null
       : undefined,
     isAllDay,
     rawVEvent,
+    timezone,
   };
 }
 
@@ -117,27 +173,27 @@ function parseVEvent(content: string, rawVEvent: string): ParsedICalEvent | null
  * Parse iCal date/datetime string
  * Formats:
  * - DATE: 20240101 (all-day)
- * - DATETIME: 20240101T120000 (local time)
- * - DATETIME: 20240101T120000Z (UTC)
- * - DATETIME with TZID: 20240101T120000 (with TZID parameter)
+ * - DATETIME: 20240101T120000Z (UTC — ends with Z)
+ * - DATETIME with TZID: 20240101T120000 (with TZID parameter, e.g. TZID=America/Denver)
+ * - DATETIME floating: 20240101T120000 (no Z, no TZID — treated as UTC for consistency)
  */
 function parseICalDate(
   dateStr: string,
   params?: string
-): { date: Date; isAllDay: boolean } {
+): { date: Date; isAllDay: boolean; timezone?: string } {
   // Check if all-day (DATE format without time)
   const isAllDay =
     params?.includes("VALUE=DATE") || (!dateStr.includes("T") && dateStr.length === 8);
 
   if (isAllDay) {
-    // Parse YYYYMMDD format
+    // Parse YYYYMMDD format — all-day events have no timezone component
     const year = parseInt(dateStr.substring(0, 4), 10);
     const month = parseInt(dateStr.substring(4, 6), 10) - 1;
     const day = parseInt(dateStr.substring(6, 8), 10);
-    return { date: new Date(year, month, day), isAllDay: true };
+    return { date: new Date(Date.UTC(year, month, day)), isAllDay: true };
   }
 
-  // Parse datetime
+  // Parse datetime components
   const year = parseInt(dateStr.substring(0, 4), 10);
   const month = parseInt(dateStr.substring(4, 6), 10) - 1;
   const day = parseInt(dateStr.substring(6, 8), 10);
@@ -153,13 +209,35 @@ function parseICalDate(
     second = parseInt(timePart.substring(4, 6), 10) || 0;
   }
 
-  // Check if UTC (ends with Z)
+  // Case 1: Explicit UTC (ends with Z)
   if (dateStr.endsWith("Z")) {
-    return { date: new Date(Date.UTC(year, month, day, hour, minute, second)), isAllDay: false };
+    return {
+      date: new Date(Date.UTC(year, month, day, hour, minute, second)),
+      isAllDay: false,
+    };
   }
 
-  // Local time (or TZID which we handle as local for simplicity)
-  return { date: new Date(year, month, day, hour, minute, second), isAllDay: false };
+  // Case 2: TZID parameter present — convert wall-clock time in that timezone to UTC
+  const tzidMatch = params?.match(/TZID=([^;:]+)/);
+  const tzid = tzidMatch?.[1];
+
+  if (tzid) {
+    // Create a "reference" UTC date with the wall-clock values
+    const wallClockAsUtc = new Date(Date.UTC(year, month, day, hour, minute, second));
+    // Compute the timezone's UTC offset at this approximate point in time
+    const offsetMinutes = getTimezoneOffsetMinutes(tzid, wallClockAsUtc);
+    // Subtract the offset to get the true UTC instant
+    // (offset is positive when tz is ahead of UTC, negative when behind)
+    const utcDate = new Date(wallClockAsUtc.getTime() - offsetMinutes * 60000);
+
+    return { date: utcDate, isAllDay: false, timezone: tzid };
+  }
+
+  // Case 3: Floating time (no Z, no TZID) — treat as UTC for server-locale independence
+  return {
+    date: new Date(Date.UTC(year, month, day, hour, minute, second)),
+    isAllDay: false,
+  };
 }
 
 /**
@@ -177,12 +255,12 @@ function addDuration(date: Date, duration: string): Date {
 
   const [, years, months, days, hours, minutes, seconds] = match;
 
-  if (years) result.setFullYear(result.getFullYear() + parseInt(years, 10));
-  if (months) result.setMonth(result.getMonth() + parseInt(months, 10));
-  if (days) result.setDate(result.getDate() + parseInt(days, 10));
-  if (hours) result.setHours(result.getHours() + parseInt(hours, 10));
-  if (minutes) result.setMinutes(result.getMinutes() + parseInt(minutes, 10));
-  if (seconds) result.setSeconds(result.getSeconds() + parseInt(seconds, 10));
+  if (years) result.setUTCFullYear(result.getUTCFullYear() + parseInt(years, 10));
+  if (months) result.setUTCMonth(result.getUTCMonth() + parseInt(months, 10));
+  if (days) result.setUTCDate(result.getUTCDate() + parseInt(days, 10));
+  if (hours) result.setUTCHours(result.getUTCHours() + parseInt(hours, 10));
+  if (minutes) result.setUTCMinutes(result.getUTCMinutes() + parseInt(minutes, 10));
+  if (seconds) result.setUTCSeconds(result.getUTCSeconds() + parseInt(seconds, 10));
 
   return result;
 }
