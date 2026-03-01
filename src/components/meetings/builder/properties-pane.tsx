@@ -55,6 +55,7 @@ interface PropertiesPaneProps {
     onSelectBusiness?: (items: BusinessSelection[]) => void;
     onSelectAnnouncement?: (announcements: AnnouncementSelection[]) => void;
     onSaveAsTemplate?: (name: string) => void;
+    onOverwriteTemplate?: () => void;
     isSavingTemplate?: boolean;
     canSaveAsTemplate?: boolean;
 }
@@ -78,6 +79,7 @@ export function PropertiesPane({
     onSelectBusiness,
     onSelectAnnouncement,
     onSaveAsTemplate,
+    onOverwriteTemplate,
     isSavingTemplate,
     canSaveAsTemplate,
 }: PropertiesPaneProps) {
@@ -100,8 +102,43 @@ export function PropertiesPane({
     const [showPianist, setShowPianist] = useState(false);
 
     // Save as Template dialog state
-    const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
+    // 'closed' | 'choose' (overwrite vs create new) | 'create' (name input)
+    type DialogStep = "closed" | "choose" | "create";
+    const [templateDialogStep, setTemplateDialogStep] = useState<DialogStep>("closed");
     const [templateName, setTemplateName] = useState("");
+
+    const selectedTemplate = templates.find((t) => t.id === selectedTemplateId && selectedTemplateId !== "none");
+
+    // A shared/system template has no workspace_id and is_shared = true;
+    // workspace users cannot overwrite those — only create their own copy.
+    const isSharedTemplate = !!selectedTemplate?.is_shared && !selectedTemplate?.workspace_id;
+
+    const openSaveDialog = () => {
+        if (selectedTemplate) {
+            if (isSharedTemplate) {
+                // Skip to create-new directly for shared templates
+                setTemplateName(title || "");
+                setTemplateDialogStep("create");
+            } else {
+                // A template is active — ask overwrite or create new
+                setTemplateDialogStep("choose");
+            }
+        } else {
+            // No template — go straight to naming
+            setTemplateName(title || "");
+            setTemplateDialogStep("create");
+        }
+    };
+
+    const closeDialog = () => setTemplateDialogStep("closed");
+
+    const duplicateNameExists = templates.some(
+        (t) => t.name.trim().toLowerCase() === templateName.trim().toLowerCase()
+    );
+
+    const isSameAsSelected =
+        selectedTemplate &&
+        selectedTemplate.name.trim().toLowerCase() === templateName.trim().toLowerCase();
 
     return (
         <div className="h-full flex flex-col bg-muted/30 border-l overflow-y-auto">
@@ -123,10 +160,7 @@ export function PropertiesPane({
                         variant="outline"
                         size="icon"
                         className="h-8 w-8 rounded-lg border-zinc-200 shrink-0"
-                        onClick={() => {
-                            setTemplateName("");
-                            setTemplateDialogOpen(true);
-                        }}
+                        onClick={openSaveDialog}
                         disabled={!canSaveAsTemplate || isSavingTemplate}
                         type="button"
                         title="Save as Template"
@@ -151,15 +185,54 @@ export function PropertiesPane({
                 </div>
             </div>
 
-            {/* Save as Template Dialog */}
-            <Dialog open={templateDialogOpen} onOpenChange={setTemplateDialogOpen}>
+            {/* Save as Template — Step 1: Overwrite or Create New (only for non-shared workspace templates) */}
+            <Dialog open={templateDialogStep === "choose"} onOpenChange={(open) => !open && closeDialog()}>
                 <DialogContent className="sm:max-w-sm">
                     <DialogHeader>
                         <DialogTitle>Save as Template</DialogTitle>
                     </DialogHeader>
                     <p className="text-sm text-muted-foreground">
-                        This will save the current agenda structure ({/* item count injected via canSaveAsTemplate prop */}
-                        {canSaveAsTemplate ? "your agenda items" : "no items"}) as a reusable template. Values like hymns and participants will not be saved.
+                        You currently have <span className="font-medium text-foreground">{selectedTemplate?.name}</span> selected as a template. What would you like to do?
+                    </p>
+                    <DialogFooter className="flex-col gap-2 sm:flex-col">
+                        <Button
+                            type="button"
+                            className="w-full"
+                            onClick={() => {
+                                closeDialog();
+                                onOverwriteTemplate?.();
+                            }}
+                        >
+                            Overwrite &ldquo;{selectedTemplate?.name}&rdquo;
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            className="w-full"
+                            onClick={() => {
+                                setTemplateName(title || "");
+                                setTemplateDialogStep("create");
+                            }}
+                        >
+                            Create New Template
+                        </Button>
+                        <DialogClose asChild>
+                            <Button variant="ghost" size="sm" type="button" className="w-full">
+                                Cancel
+                            </Button>
+                        </DialogClose>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Save as Template — Step 2: Name the new template */}
+            <Dialog open={templateDialogStep === "create"} onOpenChange={(open) => !open && closeDialog()}>
+                <DialogContent className="sm:max-w-sm">
+                    <DialogHeader>
+                        <DialogTitle>Create New Template</DialogTitle>
+                    </DialogHeader>
+                    <p className="text-sm text-muted-foreground">
+                        This will save the current agenda structure as a reusable template. Values like hymns and participants will not be saved.
                     </p>
                     <div className="space-y-1.5">
                         <Label htmlFor="template-name" className="text-xs">Template Name</Label>
@@ -168,8 +241,8 @@ export function PropertiesPane({
                             value={templateName}
                             onChange={(e) => setTemplateName(e.target.value)}
                             onKeyDown={(e) => {
-                                if (e.key === "Enter" && templateName.trim()) {
-                                    setTemplateDialogOpen(false);
+                                if (e.key === "Enter" && templateName.trim() && !duplicateNameExists) {
+                                    closeDialog();
                                     onSaveAsTemplate?.(templateName);
                                 }
                             }}
@@ -177,6 +250,16 @@ export function PropertiesPane({
                             className="bg-background h-8 text-sm"
                             autoFocus
                         />
+                        {isSameAsSelected && (
+                            <p className="text-xs text-amber-600">
+                                This is the same name as the currently selected template. Please choose a different name.
+                            </p>
+                        )}
+                        {!isSameAsSelected && duplicateNameExists && (
+                            <p className="text-xs text-destructive">
+                                A template named &ldquo;{templateName.trim()}&rdquo; already exists. Template names must be unique.
+                            </p>
+                        )}
                     </div>
                     <DialogFooter>
                         <DialogClose asChild>
@@ -185,9 +268,9 @@ export function PropertiesPane({
                         <Button
                             size="sm"
                             type="button"
-                            disabled={!templateName.trim()}
+                            disabled={!templateName.trim() || duplicateNameExists}
                             onClick={() => {
-                                setTemplateDialogOpen(false);
+                                closeDialog();
                                 onSaveAsTemplate?.(templateName);
                             }}
                         >
@@ -463,7 +546,7 @@ export function PropertiesPane({
                     </h3>
 
                     <div className="space-y-1.5">
-                        <Label htmlFor="title" className="text-xs">Meeting Name</Label>
+                        <Label htmlFor="title" className="text-xs">Name</Label>
                         <Input
                             id="title"
                             value={title}

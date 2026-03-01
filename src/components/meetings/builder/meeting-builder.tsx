@@ -1138,6 +1138,71 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
         }
     }, [canvasItems, date, time, title, selectedTemplateId, router, form, workspaceName, initialMeetingId]);
 
+    const handleOverwriteTemplate = useCallback(async () => {
+        if (!selectedTemplateId || selectedTemplateId === "none" || canvasItems.length === 0) return;
+
+        const supabase = createClient();
+
+        // Guard: shared/system templates cannot be overwritten by workspace users
+        const selectedTemplate = templates.find((t) => t.id === selectedTemplateId);
+        if (selectedTemplate?.is_shared && !selectedTemplate.workspace_id) {
+            // It's a system shared template — only the creating sys-admin can modify it
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user || selectedTemplate.created_by !== user.id) {
+                toast.error("Cannot overwrite a shared template.", {
+                    description: "Shared templates are managed by system administrators. Create a new template instead.",
+                });
+                return;
+            }
+        }
+
+        setIsSavingTemplate(true);
+
+        try {
+
+            // Delete existing items for this template
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const { error: deleteError } = await (supabase.from("template_items") as any)
+                .delete()
+                .eq("template_id", selectedTemplateId);
+
+            if (deleteError) {
+                toast.error("Failed to overwrite template.", { description: deleteError.message });
+                return;
+            }
+
+            // Re-insert with current canvas items
+            const templateItems = canvasItems.map((item, idx) => ({
+                template_id: selectedTemplateId,
+                title: item.title,
+                item_type: item.isContainer ? (item.containerType ?? item.category) : item.category,
+                duration_minutes: item.duration_minutes,
+                order_index: idx,
+                procedural_item_type_id: item.procedural_item_type_id ?? null,
+                structural_type: item.structural_type ?? null,
+            }));
+
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const { error: itemsError } = await (supabase.from("template_items") as any)
+                .insert(templateItems);
+
+            if (itemsError) {
+                toast.error("Template overwritten but items failed to save.", { description: itemsError.message });
+                return;
+            }
+
+            const templateName = templates.find((t) => t.id === selectedTemplateId)?.name ?? "Template";
+            toast.success("Template updated", {
+                description: `"${templateName}" has been overwritten with the current agenda.`,
+            });
+        } catch (err: unknown) {
+            const errorMessage = err instanceof Error ? err.message : "Unexpected error";
+            toast.error("Failed to overwrite template.", { description: errorMessage });
+        } finally {
+            setIsSavingTemplate(false);
+        }
+    }, [canvasItems, selectedTemplateId, templates]);
+
     const handleSaveAsTemplate = useCallback(async (templateName: string) => {
         if (!templateName.trim() || canvasItems.length === 0) return;
         setIsSavingTemplate(true);
@@ -1269,6 +1334,7 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                                         onAddToContainer={openContainerAddForSelected}
                                         onRemoveChildItem={handleRemoveChildFromSelected}
                                         onSaveAsTemplate={handleSaveAsTemplate}
+                                        onOverwriteTemplate={handleOverwriteTemplate}
                                         isSavingTemplate={isSavingTemplate}
                                         canSaveAsTemplate={canvasItems.length > 0}
                                     />
@@ -1317,6 +1383,7 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                                     onAddToContainer={openContainerAddForSelected}
                                     onRemoveChildItem={handleRemoveChildFromSelected}
                                     onSaveAsTemplate={handleSaveAsTemplate}
+                                    onOverwriteTemplate={handleOverwriteTemplate}
                                     isSavingTemplate={isSavingTemplate}
                                     canSaveAsTemplate={canvasItems.length > 0}
                                 />
