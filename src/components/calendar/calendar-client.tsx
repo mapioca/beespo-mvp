@@ -69,73 +69,73 @@ export function CalendarClient({
   const [importingEvent, setImportingEvent] = useState<ExternalEventData | null>(null);
 
   // Fetch external events and links
-  useEffect(() => {
-    const fetchExternalEvents = async () => {
-      const supabase = createClient();
+  const fetchExternalEvents = useCallback(async () => {
+    const supabase = createClient();
 
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
 
-      const { data: profile } = await (supabase
-        .from("profiles") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
-        .select("workspace_id")
-        .eq("id", user.id)
-        .single();
+    const { data: profile } = await (supabase
+      .from("profiles") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+      .select("workspace_id")
+      .eq("id", user.id)
+      .single();
 
-      if (!profile?.workspace_id) return;
+    if (!profile?.workspace_id) return;
 
-      // Fetch external events with subscription info
-      const { data: events } = await (supabase
-        .from("external_calendar_events") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
-        .select(`
-          *,
-          calendar_subscriptions!inner (
-            workspace_id,
-            color,
-            name,
-            is_enabled
-          )
-        `)
-        .eq("calendar_subscriptions.workspace_id", profile.workspace_id)
-        .eq("calendar_subscriptions.is_enabled", true);
+    // Fetch external events with subscription info
+    const { data: events } = await (supabase
+      .from("external_calendar_events") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+      .select(`
+        *,
+        calendar_subscriptions!inner (
+          workspace_id,
+          color,
+          name,
+          is_enabled
+        )
+      `)
+      .eq("calendar_subscriptions.workspace_id", profile.workspace_id)
+      .eq("calendar_subscriptions.is_enabled", true);
 
-      // Fetch linked events (for legacy de-duplication)
-      const { data: links } = await (supabase
-        .from("external_event_links") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
-        .select("external_event_id");
+    // Fetch linked events (for legacy de-duplication)
+    const { data: links } = await (supabase
+      .from("external_event_links") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+      .select("external_event_id");
 
-      const linkedIds = new Set<string>(links?.map((l: { external_event_id: string }) => l.external_event_id) || []);
-      setLinkedEventIds(linkedIds);
+    const linkedIds = new Set<string>(links?.map((l: { external_event_id: string }) => l.external_event_id) || []);
+    setLinkedEventIds(linkedIds);
 
-      // Add color and name from subscription to events
-      const eventsWithColor = (events || []).map((e: {
-        calendar_subscriptions?: { color: string; name: string };
-        external_uid?: string;
-        subscription_id?: string;
-      }) => ({
-        ...e,
-        color: e.calendar_subscriptions?.color,
-        subscription_name: e.calendar_subscriptions?.name,
-      }));
+    // Add color and name from subscription to events
+    const eventsWithColor = (events || []).map((e: {
+      calendar_subscriptions?: { color: string; name: string };
+      external_uid?: string;
+      subscription_id?: string;
+    }) => ({
+      ...e,
+      color: e.calendar_subscriptions?.color,
+      subscription_name: e.calendar_subscriptions?.name,
+    }));
 
-      setExternalEvents(eventsWithColor);
+    setExternalEvents(eventsWithColor);
 
-      // Register any new subscription IDs as visible (default on)
-      setVisibility((prev) => {
-        const newSubs = { ...prev.externalSubscriptions };
-        let changed = false;
-        for (const ev of eventsWithColor as { subscription_id?: string }[]) {
-          if (ev.subscription_id && !(ev.subscription_id in newSubs)) {
-            newSubs[ev.subscription_id] = true;
-            changed = true;
-          }
+    // Register any new subscription IDs as visible (default on)
+    setVisibility((prev) => {
+      const newSubs = { ...prev.externalSubscriptions };
+      let changed = false;
+      for (const ev of eventsWithColor as { subscription_id?: string }[]) {
+        if (ev.subscription_id && !(ev.subscription_id in newSubs)) {
+          newSubs[ev.subscription_id] = true;
+          changed = true;
         }
-        return changed ? { ...prev, externalSubscriptions: newSubs } : prev;
-      });
-    };
-
-    fetchExternalEvents();
+      }
+      return changed ? { ...prev, externalSubscriptions: newSubs } : prev;
+    });
   }, []);
+
+  useEffect(() => {
+    fetchExternalEvents();
+  }, [fetchExternalEvents]);
 
   // Fetch internal events
   useEffect(() => {
@@ -441,6 +441,7 @@ export function CalendarClient({
         onToggleVisibility={toggleVisibility}
         onToggleExternalSubscription={toggleExternalSubscription}
         userRole={userRole}
+        onSyncComplete={fetchExternalEvents}
       />
 
       {/* Main content */}

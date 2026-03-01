@@ -17,11 +17,13 @@ import { createClient } from "@/lib/supabase/client";
 interface CalendarSettingsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onSyncComplete?: () => void;
 }
 
 export function CalendarSettingsDialog({
   open,
   onOpenChange,
+  onSyncComplete,
 }: CalendarSettingsDialogProps) {
   const [subscriptions, setSubscriptions] = useState<CalendarSubscription[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -94,6 +96,7 @@ export function CalendarSettingsDialog({
               isLoading={isLoading}
               onUpdate={handleSubscriptionUpdated}
               onDelete={handleSubscriptionDeleted}
+              onSyncComplete={onSyncComplete}
             />
           </TabsContent>
 

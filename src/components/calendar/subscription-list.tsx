@@ -38,6 +38,7 @@ interface SubscriptionListProps {
   isLoading: boolean;
   onUpdate: (subscription: CalendarSubscription) => void;
   onDelete: (subscriptionId: string) => void;
+  onSyncComplete?: () => void;
 }
 
 export function SubscriptionList({
@@ -45,6 +46,7 @@ export function SubscriptionList({
   isLoading,
   onUpdate,
   onDelete,
+  onSyncComplete,
 }: SubscriptionListProps) {
   const [syncingIds, setSyncingIds] = useState<Set<string>>(new Set());
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -93,13 +95,17 @@ export function SubscriptionList({
         if (data) {
           onUpdate(data);
         }
+
+        if (onSyncComplete) {
+          onSyncComplete();
+        }
       } else {
         const error = await response.json();
         toast.error("Sync Failed", { description: error.error || "Failed to sync calendar" });
       }
     } catch (error) {
-        console.error(error);
-        toast.error("Failed to sync calendar");
+      console.error(error);
+      toast.error("Failed to sync calendar");
     } finally {
       setSyncingIds((prev) => {
         const next = new Set(prev);

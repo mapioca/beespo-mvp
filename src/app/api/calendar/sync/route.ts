@@ -150,7 +150,9 @@ export async function POST(request: NextRequest) {
           .eq("subscription_id", subscriptionId)
           .eq("external_uid", event.uid);
 
-        if (!updateError) {
+        if (updateError) {
+          console.error(`Failed to update event ${event.uid}:`, updateError);
+        } else {
           updated++;
 
           // Update linked announcement if exists
@@ -178,8 +180,12 @@ export async function POST(request: NextRequest) {
           .from("external_calendar_events") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
           .insert(eventData);
 
-        if (!insertError) {
+        if (insertError) {
+          console.error(`Failed to insert event ${event.uid}:`, insertError);
+        } else {
           created++;
+          // Important: add to existingUids so subsequent parsed events with the same UID correctly trigger an UPDATE
+          existingUids.add(event.uid);
         }
       }
     }

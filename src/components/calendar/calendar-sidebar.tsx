@@ -20,6 +20,7 @@ interface CalendarSidebarProps {
   onToggleVisibility: (key: keyof CalendarVisibility) => void;
   onToggleExternalSubscription: (subscriptionId: string) => void;
   userRole: UserRole;
+  onSyncComplete?: () => void;
 }
 
 
@@ -30,6 +31,7 @@ export function CalendarSidebar({
   onToggleVisibility,
   onToggleExternalSubscription,
   userRole,
+  onSyncComplete,
 }: CalendarSidebarProps) {
   const isAdmin = userRole === "admin";
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -269,6 +271,7 @@ export function CalendarSidebar({
         <CalendarSettingsDialog
           open={settingsOpen}
           onOpenChange={setSettingsOpen}
+          onSyncComplete={onSyncComplete}
         />
       )}
     </>
