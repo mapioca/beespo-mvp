@@ -82,7 +82,7 @@ export function AnnouncementQuickActions({
       setIsLoading(false);
     } else {
       toast.success("Announcement deleted!");
-      router.push("/announcements");
+      router.push("/meetings/announcements");
       router.refresh();
     }
   };
