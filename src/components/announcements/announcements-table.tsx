@@ -128,7 +128,7 @@ export function AnnouncementsTable({ announcements, sortConfig, onSort }: Announ
                                     {announcement.workspace_announcement_id || 'ANNC-0000'}
                                 </TableCell>
                                 <TableCell className="font-medium">
-                                    <Link href={`/announcements/${announcement.id}`} className="hover:underline">
+                                    <Link href={`/meetings/announcements/${announcement.id}`} className="hover:underline">
                                         <div className="flex flex-col">
                                             <span>{announcement.title}</span>
                                             {announcement.content && (
@@ -162,7 +162,7 @@ export function AnnouncementsTable({ announcements, sortConfig, onSort }: Announ
                                 </TableCell>
                                 <TableCell className="text-right">
                                     <Button variant="ghost" size="sm" asChild>
-                                        <Link href={`/announcements/${announcement.id}`}>View</Link>
+                                        <Link href={`/meetings/announcements/${announcement.id}`}>View</Link>
                                     </Button>
                                 </TableCell>
                             </TableRow>
