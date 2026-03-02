@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
@@ -22,7 +24,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "@/lib/toast";
 import { createClient } from "@/lib/supabase/client";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, MessageSquare, X } from "lucide-react";
 import Link from "next/link";
 
 export default function NewDiscussionPage() {
@@ -33,7 +35,42 @@ export default function NewDiscussionPage() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState<"low" | "medium" | "high">("medium");
-  const [category, setCategory] = useState<string>("general");
+  const [category, setCategory] = useState<string>("member_concerns");
+
+  // Template linking
+  const [selectedTemplateIds, setSelectedTemplateIds] = useState<string[]>([]);
+  const [templates, setTemplates] = useState<{ id: string; name: string }[]>([]);
+  const [loadingTemplates, setLoadingTemplates] = useState(false);
+
+  // Fetch templates on mount
+  useEffect(() => {
+    const fetchTemplates = async () => {
+      setLoadingTemplates(true);
+      const supabase = createClient();
+
+      const { data, error } = await supabase
+        .from("templates")
+        .select("id, name")
+        .order("name");
+
+      if (error) {
+        console.error("Error fetching templates:", error);
+      } else {
+        setTemplates(data || []);
+      }
+      setLoadingTemplates(false);
+    };
+
+    fetchTemplates();
+  }, []);
+
+  const toggleTemplate = (templateId: string) => {
+    setSelectedTemplateIds((prev) =>
+      prev.includes(templateId)
+        ? prev.filter((id) => id !== templateId)
+        : [...prev, templateId]
+    );
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,7 +104,7 @@ export default function NewDiscussionPage() {
     }
 
     // Create discussion
-    const { error } = await (supabase
+    const { data: newDiscussion, error } = await (supabase
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .from("discussions") as any)
       .insert({
@@ -75,18 +112,37 @@ export default function NewDiscussionPage() {
         description,
         priority,
         category,
-        status: "open",
+        status: "new",
         workspace_id: profile.workspace_id,
         created_by: user.id,
-      });
+      })
+      .select("id")
+      .single();
 
-    if (error) {
-      toast.error(error.message || "Failed to create discussion.");
+    if (error || !newDiscussion) {
+      toast.error(error?.message || "Failed to create discussion.");
       setIsLoading(false);
       return;
     }
 
-    toast.success("Discussion topic created successfully!");
+    // Link discussion to selected templates
+    if (selectedTemplateIds.length > 0) {
+      for (const templateId of selectedTemplateIds) {
+        await (supabase
+          .from("discussion_templates") as ReturnType<typeof supabase.from>)
+          .insert({
+            discussion_id: newDiscussion.id,
+            template_id: templateId,
+          });
+      }
+    }
+
+    toast.success(
+      "Discussion topic created successfully!" +
+        (selectedTemplateIds.length > 0
+          ? ` Linked to ${selectedTemplateIds.length} template(s).`
+          : "")
+    );
 
     setIsLoading(false);
     router.push("/meetings/discussions");
@@ -168,16 +224,79 @@ export default function NewDiscussionPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="general">General</SelectItem>
-                    <SelectItem value="youth">Youth</SelectItem>
-                    <SelectItem value="welfare">Welfare</SelectItem>
+                    <SelectItem value="member_concerns">Member Concerns</SelectItem>
                     <SelectItem value="activities">Activities</SelectItem>
-                    <SelectItem value="missionary">Missionary</SelectItem>
-                    <SelectItem value="temple">Temple</SelectItem>
+                    <SelectItem value="service_opportunities">Service Opportunities</SelectItem>
+                    <SelectItem value="callings">Callings</SelectItem>
+                    <SelectItem value="temple_work">Temple Work</SelectItem>
+                    <SelectItem value="budget">Budget</SelectItem>
+                    <SelectItem value="facilities">Facilities</SelectItem>
+                    <SelectItem value="youth">Youth</SelectItem>
+                    <SelectItem value="mission_work">Mission Work</SelectItem>
                     <SelectItem value="other">Other</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+
+            {/* Template Association */}
+            <div className="space-y-3 pt-4 border-t">
+              <div className="flex items-center gap-2">
+                <MessageSquare className="h-4 w-4 text-blue-500" />
+                <Label className="font-medium">Applies to Templates</Label>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Select which meeting types should include this discussion topic.
+                Only templates with a discussions section will display it.
+              </p>
+
+              {loadingTemplates ? (
+                <p className="text-sm text-muted-foreground">Loading templates...</p>
+              ) : templates.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  No templates available.
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {selectedTemplateIds.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mb-2">
+                      {selectedTemplateIds.map((id) => {
+                        const template = templates.find((t) => t.id === id);
+                        return template ? (
+                          <Badge
+                            key={id}
+                            variant="secondary"
+                            className="cursor-pointer"
+                            onClick={() => toggleTemplate(id)}
+                          >
+                            {template.name}
+                            <X className="h-3 w-3 ml-1" />
+                          </Badge>
+                        ) : null;
+                      })}
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto p-2 border rounded-md">
+                    {templates.map((template) => (
+                      <div key={template.id} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`template-${template.id}`}
+                          checked={selectedTemplateIds.includes(template.id)}
+                          onCheckedChange={() => toggleTemplate(template.id)}
+                          disabled={isLoading}
+                        />
+                        <Label
+                          htmlFor={`template-${template.id}`}
+                          className="text-sm cursor-pointer"
+                        >
+                          {template.name}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
