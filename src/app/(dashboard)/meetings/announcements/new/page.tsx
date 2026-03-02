@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
@@ -22,7 +24,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "@/lib/toast";
 import { createClient } from "@/lib/supabase/client";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Megaphone, X } from "lucide-react";
 import Link from "next/link";
 
 export default function NewAnnouncementPage() {
@@ -35,6 +37,41 @@ export default function NewAnnouncementPage() {
   const [priority, setPriority] = useState<"low" | "medium" | "high">("medium");
   const [displayStart, setDisplayStart] = useState("");
   const [displayUntil, setDisplayUntil] = useState("");
+
+  // Template linking
+  const [selectedTemplateIds, setSelectedTemplateIds] = useState<string[]>([]);
+  const [templates, setTemplates] = useState<{ id: string; name: string }[]>([]);
+  const [loadingTemplates, setLoadingTemplates] = useState(false);
+
+  // Fetch templates on mount
+  useEffect(() => {
+    const fetchTemplates = async () => {
+      setLoadingTemplates(true);
+      const supabase = createClient();
+
+      const { data, error } = await supabase
+        .from("templates")
+        .select("id, name")
+        .order("name");
+
+      if (error) {
+        console.error("Error fetching templates:", error);
+      } else {
+        setTemplates(data || []);
+      }
+      setLoadingTemplates(false);
+    };
+
+    fetchTemplates();
+  }, []);
+
+  const toggleTemplate = (templateId: string) => {
+    setSelectedTemplateIds((prev) =>
+      prev.includes(templateId)
+        ? prev.filter((id) => id !== templateId)
+        : [...prev, templateId]
+    );
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,28 +104,47 @@ export default function NewAnnouncementPage() {
       return;
     }
 
-    // Create announcement
-    const { error } = await (supabase
+    // Create announcement (immediately active)
+    const { data: newAnnouncement, error } = await (supabase
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .from("announcements") as any)
       .insert({
         title,
         content,
         priority,
-        status: "draft",
+        status: "active",
         display_start: displayStart || null,
         display_until: displayUntil || null,
         workspace_id: profile.workspace_id,
         created_by: user.id,
-      });
+      })
+      .select("id")
+      .single();
 
-    if (error) {
-      toast.error(error.message || "Failed to create announcement.");
+    if (error || !newAnnouncement) {
+      toast.error(error?.message || "Failed to create announcement.");
       setIsLoading(false);
       return;
     }
 
-    toast.success("Announcement created successfully!");
+    // Link announcement to selected templates
+    if (selectedTemplateIds.length > 0) {
+      for (const templateId of selectedTemplateIds) {
+        await (supabase
+          .from("announcement_templates") as ReturnType<typeof supabase.from>)
+          .insert({
+            announcement_id: newAnnouncement.id,
+            template_id: templateId,
+          });
+      }
+    }
+
+    toast.success(
+      "Announcement created successfully!" +
+        (selectedTemplateIds.length > 0
+          ? ` Linked to ${selectedTemplateIds.length} template(s).`
+          : "")
+    );
 
     setIsLoading(false);
     router.push("/meetings/announcements");
@@ -186,6 +242,66 @@ export default function NewAnnouncementPage() {
                   When to stop showing this announcement
                 </p>
               </div>
+            </div>
+
+            {/* Template Association */}
+            <div className="space-y-3 pt-4 border-t">
+              <div className="flex items-center gap-2">
+                <Megaphone className="h-4 w-4 text-amber-500" />
+                <Label className="font-medium">Applies to Templates</Label>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Select which meeting types should include this announcement.
+                Only templates with an announcements section will display it.
+              </p>
+
+              {loadingTemplates ? (
+                <p className="text-sm text-muted-foreground">Loading templates...</p>
+              ) : templates.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  No templates available.
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {selectedTemplateIds.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mb-2">
+                      {selectedTemplateIds.map((id) => {
+                        const template = templates.find((t) => t.id === id);
+                        return template ? (
+                          <Badge
+                            key={id}
+                            variant="secondary"
+                            className="cursor-pointer"
+                            onClick={() => toggleTemplate(id)}
+                          >
+                            {template.name}
+                            <X className="h-3 w-3 ml-1" />
+                          </Badge>
+                        ) : null;
+                      })}
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto p-2 border rounded-md">
+                    {templates.map((template) => (
+                      <div key={template.id} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`template-${template.id}`}
+                          checked={selectedTemplateIds.includes(template.id)}
+                          onCheckedChange={() => toggleTemplate(template.id)}
+                          disabled={isLoading}
+                        />
+                        <Label
+                          htmlFor={`template-${template.id}`}
+                          className="text-sm cursor-pointer"
+                        >
+                          {template.name}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
