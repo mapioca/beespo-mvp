@@ -1,10 +1,13 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Plus } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
+import { toast } from "@/lib/toast";
 import { AnnouncementsFilters, AnnouncementStatus, AnnouncementPriority } from "./announcements-filters";
 import { AnnouncementsTable, Announcement } from "./announcements-table";
 
@@ -36,6 +39,23 @@ export function AnnouncementsClient({
         priority: [],
     });
     const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>(null);
+    const router = useRouter();
+
+    const handleDelete = async (id: string) => {
+        const supabase = createClient();
+        const { error } = await (supabase
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            .from("announcements") as any)
+            .delete()
+            .eq("id", id);
+
+        if (error) {
+            toast.error(error.message || "Failed to delete announcement.");
+        } else {
+            toast.success("Announcement deleted.");
+            router.refresh();
+        }
+    };
 
     // Apply client-side filters (priority) and sort
     // Server already filtered by search and status
@@ -111,6 +131,7 @@ export function AnnouncementsClient({
                 <AnnouncementsTable
                     announcements={filteredAnnouncements}
                     sortConfig={sortConfig}
+                    onDelete={handleDelete}
                     onSort={(key) => {
                         setSortConfig(current => {
                             if (current?.key === key) {

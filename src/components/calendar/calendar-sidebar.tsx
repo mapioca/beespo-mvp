@@ -142,17 +142,6 @@ export function CalendarSidebar({
                   Announcements
                 </Label>
               </div>
-            </div>
-          </div>
-
-          <Separator className="my-4" />
-
-          {/* Show Also section */}
-          <div className="space-y-3">
-            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-              Show Also
-            </h3>
-            <div className="space-y-2">
               <div className="flex items-center space-x-2">
                 <Checkbox
                   id="meetings"
