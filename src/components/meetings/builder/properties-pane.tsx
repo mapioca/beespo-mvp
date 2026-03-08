@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useFormContext } from "react-hook-form";
 import { format } from "date-fns";
-import { CalendarBlankIcon, ClockIcon, SpinnerIcon, MinusIcon, PlayIcon, PlusIcon, FloppyDiskIcon } from "@phosphor-icons/react";
+import { CalendarDays, Clock, Loader2, Minus, Play, Plus, Save } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
 import { HymnSelectorPopover } from "./hymn-selector-popover";
 import { ParticipantSelectorPopover } from "./participant-selector-popover";
+import { SpeakerSelectorPopover, type SpeakerSelection } from "./speaker-selector-popover";
 import {
     Popover,
     PopoverContent,
@@ -48,7 +49,8 @@ interface PropertiesPaneProps {
     onUpdateDuration?: (id: string, newDuration: number) => void;
     onSelectHymn?: (hymn: { id: string; number: number; title: string }) => void;
     onSelectParticipant?: (participant: { id: string; name: string }) => void;
-    onSelectSpeaker?: () => void;
+    onSelectSpeaker?: (speaker: SpeakerSelection) => void;
+    selectedSpeakerIdsInMeeting?: string[];
     onAddToContainer?: () => void;
     onRemoveChildItem?: (childId: string) => void;
     onSelectDiscussion?: (discussions: DiscussionSelection[]) => void;
@@ -73,6 +75,7 @@ export function PropertiesPane({
     onSelectHymn,
     onSelectParticipant,
     onSelectSpeaker,
+    selectedSpeakerIdsInMeeting = [],
     onAddToContainer,
     onRemoveChildItem,
     onSelectDiscussion,
@@ -154,7 +157,7 @@ export function PropertiesPane({
                         type="button"
                         title="Preview"
                     >
-                        <PlayIcon weight="fill" className="h-4 w-4" />
+                        <Play className="h-4 w-4" />
                     </Button>
                     <Button
                         variant="outline"
@@ -166,9 +169,9 @@ export function PropertiesPane({
                         title="Save as Template"
                     >
                         {isSavingTemplate ? (
-                            <SpinnerIcon weight="fill" className="h-4 w-4 animate-spin" />
+                            <Loader2 className="h-4 w-4 animate-spin" />
                         ) : (
-                            <FloppyDiskIcon weight="fill" className="h-4 w-4" />
+                            <Save className="h-4 w-4" />
                         )}
                     </Button>
                     <Button
@@ -419,19 +422,24 @@ export function PropertiesPane({
                             {selectedItem.category === "speaker" && (
                                 <div className="space-y-1.5">
                                     <Label className="text-xs">Speaker</Label>
-                                    <button
-                                        type="button"
-                                        className={cn(
-                                            "w-full h-8 px-3 border-2 border-dashed rounded-md text-sm flex items-center justify-center gap-2 transition-all",
-                                            "hover:border-solid hover:bg-muted/50 border-muted-foreground/20 text-muted-foreground",
-                                            selectedItem.speaker_name && "border-solid bg-indigo-50/50 border-indigo-200 text-indigo-700 font-medium"
-                                        )}
-                                        onClick={onSelectSpeaker}
+                                    <SpeakerSelectorPopover
+                                        currentSpeakerId={selectedItem.speaker_id || undefined}
+                                        selectedSpeakerIdsInMeeting={selectedSpeakerIdsInMeeting}
+                                        onSelect={(speaker) => onSelectSpeaker?.(speaker)}
                                     >
-                                        <span className="truncate">
-                                            {selectedItem.speaker_name || "Select Speaker..."}
-                                        </span>
-                                    </button>
+                                        <button
+                                            type="button"
+                                            className={cn(
+                                                "w-full h-8 px-3 border-2 border-dashed rounded-md text-sm flex items-center justify-center gap-2 transition-all",
+                                                "hover:border-solid hover:bg-muted/50 border-muted-foreground/20 text-muted-foreground",
+                                                selectedItem.speaker_name && "border-solid bg-indigo-50/50 border-indigo-200 text-indigo-700 font-medium"
+                                            )}
+                                        >
+                                            <span className="truncate">
+                                                {selectedItem.speaker_name || "Select Speaker..."}
+                                            </span>
+                                        </button>
+                                    </SpeakerSelectorPopover>
                                 </div>
                             )}
 
@@ -463,7 +471,7 @@ export function PropertiesPane({
                                                             className="p-0.5 rounded opacity-0 group-hover/child:opacity-100 transition-opacity text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                                                             onClick={() => onRemoveChildItem?.(child.id)}
                                                         >
-                                                            <MinusIcon weight="fill" className="h-3 w-3" />
+                                                            <Minus className="h-3 w-3" />
                                                         </button>
                                                     </div>
                                                 ))}
@@ -485,7 +493,7 @@ export function PropertiesPane({
                                                 variant="outline"
                                                 className="w-full h-8 gap-1.5 text-xs font-normal border-dashed hover:border-solid hover:bg-primary/5 hover:text-primary hover:border-primary/30 transition-all"
                                             >
-                                                <PlusIcon weight="fill" className="h-3.5 w-3.5" />
+                                                <Plus className="h-3.5 w-3.5" />
                                                 Add discussion
                                             </Button>
                                         </DiscussionSelectorPopover>
@@ -498,7 +506,7 @@ export function PropertiesPane({
                                                 variant="outline"
                                                 className="w-full h-8 gap-1.5 text-xs font-normal border-dashed hover:border-solid hover:bg-primary/5 hover:text-primary hover:border-primary/30 transition-all"
                                             >
-                                                <PlusIcon weight="fill" className="h-3.5 w-3.5" />
+                                                <Plus className="h-3.5 w-3.5" />
                                                 Add business item
                                             </Button>
                                         </BusinessSelectorPopover>
@@ -511,7 +519,7 @@ export function PropertiesPane({
                                                 variant="outline"
                                                 className="w-full h-8 gap-1.5 text-xs font-normal border-dashed hover:border-solid hover:bg-primary/5 hover:text-primary hover:border-primary/30 transition-all"
                                             >
-                                                <PlusIcon weight="fill" className="h-3.5 w-3.5" />
+                                                <Plus className="h-3.5 w-3.5" />
                                                 Add announcement
                                             </Button>
                                         </AnnouncementSelectorPopover>
@@ -522,7 +530,7 @@ export function PropertiesPane({
                                             className="w-full h-8 gap-1.5 text-xs font-normal border-dashed hover:border-solid hover:bg-primary/5 hover:text-primary hover:border-primary/30 transition-all"
                                             onClick={onAddToContainer}
                                         >
-                                            <PlusIcon weight="fill" className="h-3.5 w-3.5" />
+                                            <Plus className="h-3.5 w-3.5" />
                                             Add {selectedItem.containerType}
                                         </Button>
                                     )}
@@ -590,7 +598,7 @@ export function PropertiesPane({
                                         !date && "text-muted-foreground"
                                     )}
                                 >
-                                    <CalendarBlankIcon weight="fill" className="mr-2 h-4 w-4" />
+                                    <CalendarDays className="mr-2 h-4 w-4" />
                                     {date ? format(date, "MMM d, yyyy") : "Date"}
                                 </Button>
                             </PopoverTrigger>
@@ -613,7 +621,7 @@ export function PropertiesPane({
                                     timeInput?.showPicker?.();
                                 }}
                             >
-                                <ClockIcon weight="fill" className="h-4 w-4 text-muted-foreground" />
+                                <Clock className="h-4 w-4 text-muted-foreground" />
                             </div>
                             <Input
                                 id="time"
@@ -642,7 +650,7 @@ export function PropertiesPane({
                                             }}
                                             className="text-muted-foreground hover:text-destructive transition-colors"
                                         >
-                                            <MinusIcon weight="fill" className="h-3 w-3" />
+                                            <Minus className="h-3 w-3" />
                                         </button>
                                     </div>
                                     <Input
@@ -661,7 +669,7 @@ export function PropertiesPane({
                                     onClick={() => setShowPresiding(true)}
                                 >
                                     <span className="text-sm">Presiding</span>
-                                    <PlusIcon className="h-4 w-4 text-muted-foreground/60 group-hover:text-foreground group-hover:scale-110 transition-all" />
+                                    <Plus className="h-4 w-4 text-muted-foreground/60 group-hover:text-foreground group-hover:scale-110 transition-all" />
                                 </div>
                             )}
                         </div>
@@ -680,7 +688,7 @@ export function PropertiesPane({
                                             }}
                                             className="text-muted-foreground hover:text-destructive transition-colors"
                                         >
-                                            <MinusIcon weight="fill" className="h-3 w-3" />
+                                            <Minus className="h-3 w-3" />
                                         </button>
                                     </div>
                                     <Input
@@ -699,7 +707,7 @@ export function PropertiesPane({
                                     onClick={() => setShowConducting(true)}
                                 >
                                     <span className="text-sm">Conducting</span>
-                                    <PlusIcon className="h-4 w-4 text-muted-foreground/60 group-hover:text-foreground group-hover:scale-110 transition-all" />
+                                    <Plus className="h-4 w-4 text-muted-foreground/60 group-hover:text-foreground group-hover:scale-110 transition-all" />
                                 </div>
                             )}
                         </div>
@@ -718,7 +726,7 @@ export function PropertiesPane({
                                             }}
                                             className="text-muted-foreground hover:text-destructive transition-colors"
                                         >
-                                            <MinusIcon weight="fill" className="h-3 w-3" />
+                                            <Minus className="h-3 w-3" />
                                         </button>
                                     </div>
                                     <Input
@@ -737,7 +745,7 @@ export function PropertiesPane({
                                     onClick={() => setShowChorister(true)}
                                 >
                                     <span className="text-sm">Chorister</span>
-                                    <PlusIcon className="h-4 w-4 text-muted-foreground/60 group-hover:text-foreground group-hover:scale-110 transition-all" />
+                                    <Plus className="h-4 w-4 text-muted-foreground/60 group-hover:text-foreground group-hover:scale-110 transition-all" />
                                 </div>
                             )}
                         </div>
@@ -756,7 +764,7 @@ export function PropertiesPane({
                                             }}
                                             className="text-muted-foreground hover:text-destructive transition-colors"
                                         >
-                                            <MinusIcon weight="fill" className="h-3 w-3" />
+                                            <Minus className="h-3 w-3" />
                                         </button>
                                     </div>
                                     <Input
@@ -775,7 +783,7 @@ export function PropertiesPane({
                                     onClick={() => setShowPianist(true)}
                                 >
                                     <span className="text-sm">Pianist / Organist</span>
-                                    <PlusIcon className="h-4 w-4 text-muted-foreground/60 group-hover:text-foreground group-hover:scale-110 transition-all" />
+                                    <Plus className="h-4 w-4 text-muted-foreground/60 group-hover:text-foreground group-hover:scale-110 transition-all" />
                                 </div>
                             )}
                         </div>

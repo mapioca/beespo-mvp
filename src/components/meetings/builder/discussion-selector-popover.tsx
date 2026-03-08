@@ -17,10 +17,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-    MagnifyingGlassIcon,
-    CheckIcon,
-} from "@phosphor-icons/react";
+import { Search, Check } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
@@ -185,8 +182,7 @@ export function DiscussionSelectorPopover({
                             Search
                         </label>
                         <div className="relative">
-                            <MagnifyingGlassIcon
-                                weight="bold"
+                            <Search
                                 className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground"
                             />
                             <Input
@@ -230,7 +226,7 @@ export function DiscussionSelectorPopover({
                                                 ? "bg-primary border-primary text-primary-foreground"
                                                 : "border-border bg-background"
                                         )}>
-                                            {isSelected && <CheckIcon weight="bold" className="h-2.5 w-2.5" />}
+                                            {isSelected && <Check className="h-2.5 w-2.5" />}
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center gap-2 flex-wrap">

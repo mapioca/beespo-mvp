@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo, useEffect, useRef } from "react";
-import * as PhosphorIcons from "@phosphor-icons/react";
+import * as LucideIcons from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -9,13 +9,19 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { MagnifyingGlassIcon, StarIcon } from "@phosphor-icons/react";
+import { Search, Star } from "lucide-react";
 
-// Cache all icon names ending with "Icon"
-const allIconNames = Object.keys(PhosphorIcons).filter((name) =>
-    name.endsWith("Icon")
-);
+// Cache all lucide icon names.
+// Lucide icons are created with React.forwardRef, so typeof returns "object", not "function".
+// We filter to uppercase-named, non-null exports and exclude helpers like createLucideIcon.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const allIconNames = Object.keys(LucideIcons).filter((name) => {
+    if (!/^[A-Z]/.test(name)) return false;
+    if (name === "createLucideIcon") return false;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const exp = (LucideIcons as any)[name];
+    return exp != null && (typeof exp === "function" || typeof exp === "object");
+}).sort();
 
 export interface IconPickerProps {
     value: string;
@@ -65,8 +71,8 @@ export function IconPicker({ value, onChange, disabled }: IconPickerProps) {
     }, [open, filteredIcons.length]);
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const P = PhosphorIcons as any;
-    const SelectedIcon = (value && P[value]) ? P[value] : StarIcon;
+    const L = LucideIcons as any;
+    const SelectedIcon = (value && L[value]) ? L[value] : Star;
 
     return (
         <Popover open={open} onOpenChange={setOpen}>
@@ -77,12 +83,12 @@ export function IconPicker({ value, onChange, disabled }: IconPickerProps) {
                     disabled={disabled}
                     className="w-[60px] h-10 px-0 flex items-center justify-center border-input bg-background hover:bg-accent hover:text-accent-foreground shrink-0"
                 >
-                    <SelectedIcon weight="fill" className="h-5 w-5 text-black dark:text-white" />
+                    <SelectedIcon className="h-5 w-5 text-black dark:text-white" />
                 </Button>
             </PopoverTrigger>
             <PopoverContent className="w-[340px] p-0" align="start">
                 <div className="flex items-center border-b px-3">
-                    <MagnifyingGlassIcon className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+                    <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
                     <Input
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
@@ -91,11 +97,11 @@ export function IconPicker({ value, onChange, disabled }: IconPickerProps) {
                         autoFocus
                     />
                 </div>
-                <ScrollArea className="h-72 w-full p-2">
+                <div className="h-72 w-full overflow-y-auto p-2">
                     <div className="grid grid-cols-6 gap-2">
                         {filteredIcons.slice(0, visibleCount).map((iconName) => {
                             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                            const IconComp = (PhosphorIcons as any)[iconName];
+                            const IconComp = (LucideIcons as any)[iconName];
                             return (
                                 <Button
                                     key={iconName}
@@ -108,9 +114,9 @@ export function IconPicker({ value, onChange, disabled }: IconPickerProps) {
                                         onChange(iconName);
                                         setOpen(false);
                                     }}
-                                    title={iconName.replace(/Icon$/, "")}
+                                    title={iconName}
                                 >
-                                    <IconComp weight="fill" className="h-5 w-5 text-black dark:text-white" />
+                                    <IconComp className="h-5 w-5 text-black dark:text-white" />
                                 </Button>
                             );
                         })}
@@ -123,7 +129,7 @@ export function IconPicker({ value, onChange, disabled }: IconPickerProps) {
                             No icons found.
                         </div>
                     )}
-                </ScrollArea>
+                </div>
             </PopoverContent>
         </Popover>
     );

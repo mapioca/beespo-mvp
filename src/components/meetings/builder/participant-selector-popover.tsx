@@ -9,7 +9,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { MagnifyingGlassIcon, UserPlusIcon, CheckIcon } from "@phosphor-icons/react";
+import { Search, UserPlus, Check } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
@@ -152,7 +152,7 @@ export function ParticipantSelectorPopover({
                             className="h-6 w-6"
                             onClick={() => setIsCreating(!isCreating)}
                         >
-                            <UserPlusIcon weight="bold" className={cn("h-4 w-4", isCreating ? "text-primary" : "text-muted-foreground")} />
+                            <UserPlus className={cn("h-4 w-4", isCreating ? "text-primary" : "text-muted-foreground")} />
                         </Button>
                     </div>
 
@@ -180,7 +180,7 @@ export function ParticipantSelectorPopover({
                         </div>
                     ) : (
                         <div className="relative">
-                            <MagnifyingGlassIcon weight="bold" className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                             <Input
                                 placeholder="Search participants..."
                                 value={search}
@@ -215,7 +215,7 @@ export function ParticipantSelectorPopover({
                                     >
                                         <span className="truncate flex-1">{p.name}</span>
                                         {currentParticipantId === p.id && (
-                                            <CheckIcon weight="bold" className="h-3.5 w-3.5 text-primary" />
+                                            <Check className="h-3.5 w-3.5 text-primary" />
                                         )}
                                     </button>
                                 ))}

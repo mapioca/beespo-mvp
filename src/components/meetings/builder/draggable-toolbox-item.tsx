@@ -3,21 +3,21 @@
 import { useDraggable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import {
-    MusicNoteIcon,
-    BookOpenIcon,
-    BriefcaseIcon,
-    MegaphoneIcon,
-    UserIcon,
-    StackIcon,
-    PuzzlePieceIcon,
-    PlusIcon,
-    TextHOneIcon,
-    MinusIcon,
-    HandsPrayingIcon,
-    ChatsIcon,
-    PencilSimpleIcon
-} from "@phosphor-icons/react";
-import * as PhosphorIcons from "@phosphor-icons/react";
+    Music,
+    BookOpen,
+    Briefcase,
+    Megaphone,
+    User,
+    Layers,
+    Puzzle,
+    Plus,
+    Heading1,
+    Minus,
+    Hand,
+    MessageSquare,
+    Pencil
+} from "lucide-react";
+import * as LucideIcons from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ToolboxItem } from "./types";
 import { CategoryType } from "../add-meeting-item-dialog";
@@ -33,52 +33,51 @@ const getCategoryIcon = (item: ToolboxItem) => {
     // If a custom icon is defined, try rendering it dynamically
     if (item.icon) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const DynamicIcon = (PhosphorIcons as any)[item.icon];
+        const DynamicIcon = (LucideIcons as any)[item.icon];
         if (DynamicIcon) {
-            return <DynamicIcon weight="fill" className="h-4 w-4 text-black dark:text-white" />;
+            return <DynamicIcon className="h-4 w-4 text-black dark:text-white" />;
         }
     }
 
     if (item.title?.toLowerCase().includes("prayer")) {
-        return <HandsPrayingIcon weight="fill" className="h-4 w-4" />;
+        return <Hand className="h-4 w-4" />;
     }
 
     // Custom items get puzzle icon
     if (item.is_custom) {
-        // But if they have specific config, show appropriate icon
         if (item.config?.requires_resource) {
-            return <MusicNoteIcon weight="fill" className="h-4 w-4" />;
+            return <Music className="h-4 w-4" />;
         }
         if (item.config?.requires_assignee) {
-            return <UserIcon weight="fill" className="h-4 w-4" />;
+            return <User className="h-4 w-4" />;
         }
-        return <PuzzlePieceIcon weight="fill" className="h-4 w-4" />;
+        return <Puzzle className="h-4 w-4" />;
     }
 
     // Core items
     if (item.is_hymn || item.config?.requires_resource) {
-        return <MusicNoteIcon weight="fill" className="h-4 w-4" />;
+        return <Music className="h-4 w-4" />;
     }
 
     if (item.type === "structural") {
         if (item.structural_type === "section_header") {
-            return <TextHOneIcon weight="fill" className="h-4 w-4" />;
+            return <Heading1 className="h-4 w-4" />;
         }
         if (item.structural_type === "divider") {
-            return <MinusIcon weight="fill" className="h-4 w-4" />;
+            return <Minus className="h-4 w-4" />;
         }
-        return <StackIcon weight="fill" className="h-4 w-4" />;
+        return <Layers className="h-4 w-4" />;
     }
 
     const icons: Record<CategoryType, React.ReactNode> = {
-        procedural: <BookOpenIcon weight="fill" className="h-4 w-4" />,
-        discussion: <ChatsIcon weight="fill" className="h-4 w-4" />,
-        business: <BriefcaseIcon weight="fill" className="h-4 w-4" />,
-        announcement: <MegaphoneIcon weight="fill" className="h-4 w-4" />,
-        speaker: <UserIcon weight="fill" className="h-4 w-4" />,
-        structural: <StackIcon weight="fill" className="h-4 w-4" />,
+        procedural: <BookOpen className="h-4 w-4" />,
+        discussion: <MessageSquare className="h-4 w-4" />,
+        business: <Briefcase className="h-4 w-4" />,
+        announcement: <Megaphone className="h-4 w-4" />,
+        speaker: <User className="h-4 w-4" />,
+        structural: <Layers className="h-4 w-4" />,
     };
-    return icons[item.category] || <StackIcon weight="fill" className="h-4 w-4" />;
+    return icons[item.category] || <Layers className="h-4 w-4" />;
 };
 
 export function DraggableToolboxItem({ item, disabled, onAddItem, onEditItem }: DraggableToolboxItemProps) {
@@ -147,7 +146,7 @@ export function DraggableToolboxItem({ item, disabled, onAddItem, onEditItem }: 
                         title="Edit Item Type"
                         type="button"
                     >
-                        <PencilSimpleIcon weight="fill" className="h-4 w-4" />
+                        <Pencil className="h-4 w-4" />
                     </button>
                 )}
                 {onAddItem && (
@@ -162,7 +161,7 @@ export function DraggableToolboxItem({ item, disabled, onAddItem, onEditItem }: 
                         className="p-1.5 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-md transition-all"
                         title="Quick Insert"
                     >
-                        <PlusIcon weight="fill" className="h-4 w-4" />
+                        <Plus className="h-4 w-4" />
                     </button>
                 )}
             </div>

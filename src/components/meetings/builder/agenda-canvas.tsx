@@ -9,12 +9,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-    TrashIcon,
-    CaretDownIcon,
-    CaretRightIcon,
-    DotsSixVerticalIcon,
-} from "@phosphor-icons/react";
+import { Trash2, ChevronDown, ChevronRight, GripVertical } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CanvasItem } from "./types";
 import { useFormContext } from "react-hook-form";
@@ -87,9 +82,9 @@ function SortableAgendaRow({
                         className="p-1 hover:bg-muted rounded-md transition-colors"
                     >
                         {isExpanded ? (
-                            <CaretDownIcon weight="fill" className="h-4 w-4 text-muted-foreground" />
+                            <ChevronDown className="h-4 w-4 text-muted-foreground" />
                         ) : (
-                            <CaretRightIcon weight="fill" className="h-4 w-4 text-muted-foreground" />
+                            <ChevronRight className="h-4 w-4 text-muted-foreground" />
                         )}
                     </button>
 
@@ -112,7 +107,7 @@ function SortableAgendaRow({
                         className="h-7 w-7 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive hover:bg-destructive/10"
                         onClick={(e) => { e.stopPropagation(); onRemove(); }}
                     >
-                        <TrashIcon weight="fill" className="h-4 w-4" />
+                        <Trash2 className="h-4 w-4" />
                     </Button>
                 </div>
 
@@ -174,7 +169,7 @@ function SortableAgendaRow({
                             onRemove();
                         }}
                     >
-                        <TrashIcon weight="fill" className="h-4 w-4" />
+                        <Trash2 className="h-4 w-4" />
                     </Button>
                 </div>
             </div>
@@ -197,7 +192,7 @@ function SortableAgendaRow({
                     {...listeners}
                     className="p-1 cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity"
                 >
-                    <DotsSixVerticalIcon weight="fill" className="h-4 w-4 text-muted-foreground" />
+                    <GripVertical className="h-4 w-4 text-muted-foreground" />
                 </div>
                 <div className="flex-1 h-px bg-zinc-200" />
                 <Button
@@ -207,7 +202,7 @@ function SortableAgendaRow({
                     className="h-7 w-7 opacity-0 group-hover:opacity-100 text-destructive ml-2"
                     onClick={onRemove}
                 >
-                    <TrashIcon weight="fill" className="h-4 w-4" />
+                    <Trash2 className="h-4 w-4" />
                 </Button>
             </div>
         );
@@ -251,7 +246,7 @@ function SortableAgendaRow({
                     className="h-7 w-7 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive hover:bg-destructive/10"
                     onClick={(e) => { e.stopPropagation(); onRemove(); }}
                 >
-                    <TrashIcon weight="fill" className="h-4 w-4" />
+                    <Trash2 className="h-4 w-4" />
                 </Button>
             </div>
 
@@ -266,8 +261,8 @@ function SortableAgendaRow({
                 </div>
             )}
 
-            {/* Description/Notes */}
-            {item.description && (
+            {/* Description — only shown as a placeholder hint when no value is assigned yet */}
+            {item.description && !secondaryText && (
                 <div className="px-3 pb-2 pt-0">
                     <div className="pl-7">
                         <span className="text-xs text-muted-foreground/80 line-clamp-2 italic">

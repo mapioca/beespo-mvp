@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import { MagnifyingGlassIcon, PlusIcon, SquaresFourIcon } from "@phosphor-icons/react";
+import { Search, Plus, LayoutGrid } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { DraggableToolboxItem } from "./draggable-toolbox-item";
 import { ToolboxItem, ProceduralItemType, ItemConfig, CategoryType } from "./types";
@@ -299,7 +299,7 @@ export function ToolboxPane({ onItemsLoaded, onAddItem }: ToolboxPaneProps) {
         <div className="flex flex-col h-full bg-muted/50 border-r border-border">
             {/* Header */}
             <div className="h-14 px-4 border-b border-border bg-background flex items-center gap-2.5 shrink-0">
-                <SquaresFourIcon className="h-5 w-5 text-primary" weight="fill" />
+                <LayoutGrid className="h-5 w-5 text-primary" />
                 <h2 className="text-base font-semibold tracking-tight text-foreground">
                     Agenda Builder
                 </h2>
@@ -308,7 +308,7 @@ export function ToolboxPane({ onItemsLoaded, onAddItem }: ToolboxPaneProps) {
             <div className="p-4 border-b border-border bg-background">
                 <h3 className="font-semibold text-sm mb-3 text-foreground">Items Library</h3>
                 <div className="relative">
-                    <MagnifyingGlassIcon weight="fill" className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
                         placeholder="Search items..."
                         value={search}
@@ -359,7 +359,7 @@ export function ToolboxPane({ onItemsLoaded, onAddItem }: ToolboxPaneProps) {
                                                     setIsCreateDialogOpen(true);
                                                 }}
                                             >
-                                                <PlusIcon weight="fill" className="h-3.5 w-3.5 mr-1.5" />
+                                                <Plus className="h-3.5 w-3.5 mr-1.5" />
                                                 New Item Type
                                             </Button>
                                         )}

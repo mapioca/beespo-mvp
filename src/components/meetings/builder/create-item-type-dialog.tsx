@@ -17,7 +17,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
-import { SpinnerIcon, UserIcon, MusicNoteIcon, FileTextIcon, TrashIcon } from "@phosphor-icons/react";
+import { Loader2, User, Music, FileText, Trash2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "@/lib/toast";
 import {
@@ -48,6 +48,7 @@ export function CreateItemTypeDialog({
     initialData,
 }: CreateItemTypeDialogProps) {
     const [name, setName] = useState("");
+    const [description, setDescription] = useState("");
     const [iconName, setIconName] = useState("StarIcon");
     const [requiresAssignee, setRequiresAssignee] = useState(false);
     const [requiresSpeaker, setRequiresSpeaker] = useState(false);
@@ -60,6 +61,7 @@ export function CreateItemTypeDialog({
     useEffect(() => {
         if (open && initialData) {
             setName(initialData.title);
+            setDescription(initialData.description || "");
             setIconName(initialData.icon || "StarIcon");
             setRequiresAssignee(initialData.config?.requires_assignee || false);
             setRequiresSpeaker(initialData.category === "speaker");
@@ -73,6 +75,7 @@ export function CreateItemTypeDialog({
 
     const resetForm = () => {
         setName("");
+        setDescription("");
         setIconName("StarIcon");
         setRequiresAssignee(false);
         setRequiresResource(false);
@@ -124,6 +127,7 @@ export function CreateItemTypeDialog({
             const { error: updateError } = await (supabase.from("procedural_item_types") as any)
                 .update({
                     name: name.trim(),
+                    description: description.trim() || null,
                     icon: iconName,
                     category: requiresSpeaker ? "speaker" : "procedural",
                     requires_assignee: requiresAssignee,
@@ -143,6 +147,7 @@ export function CreateItemTypeDialog({
                 .insert({
                     id: itemId,
                     name: name.trim(),
+                    description: description.trim() || null,
                     is_custom: true,
                     is_core: false,
                     icon: iconName,
@@ -220,6 +225,21 @@ export function CreateItemTypeDialog({
                             </div>
                         </div>
 
+                        {/* Description */}
+                        <div className="space-y-2">
+                            <Label htmlFor="item-description">
+                                Description
+                                <span className="ml-1.5 text-xs font-normal text-muted-foreground">(optional)</span>
+                            </Label>
+                            <Input
+                                id="item-description"
+                                placeholder="e.g., A short musical performance by a member"
+                                value={description}
+                                onChange={(e) => setDescription(e.target.value)}
+                                disabled={isCreating}
+                            />
+                        </div>
+
                         {/* Default Duration */}
                         <div className="space-y-2">
                             <Label htmlFor="default-duration">Default Duration (minutes)</Label>
@@ -245,7 +265,7 @@ export function CreateItemTypeDialog({
                             {/* Assignable Person */}
                             <div className="flex items-center justify-between rounded-lg border p-3">
                                 <div className="flex items-center gap-3">
-                                    <UserIcon weight="fill" className="h-4 w-4 text-muted-foreground" />
+                                    <User className="h-4 w-4 text-muted-foreground" />
                                     <div className="space-y-0.5">
                                         <Label htmlFor="requires-assignee" className="font-normal cursor-pointer">
                                             Assignable Person
@@ -266,7 +286,7 @@ export function CreateItemTypeDialog({
                             {/* Assignable Speaker */}
                             <div className="flex items-center justify-between rounded-lg border p-3">
                                 <div className="flex items-center gap-3">
-                                    <UserIcon weight="fill" className="h-4 w-4 text-muted-foreground" />
+                                    <User className="h-4 w-4 text-muted-foreground" />
                                     <div className="space-y-0.5">
                                         <Label htmlFor="requires-speaker" className="font-normal cursor-pointer">
                                             Assignable Speaker
@@ -287,7 +307,7 @@ export function CreateItemTypeDialog({
                             {/* Musical Resource */}
                             <div className="flex items-center justify-between rounded-lg border p-3">
                                 <div className="flex items-center gap-3">
-                                    <MusicNoteIcon weight="fill" className="h-4 w-4 text-muted-foreground" />
+                                    <Music className="h-4 w-4 text-muted-foreground" />
                                     <div className="space-y-0.5">
                                         <Label htmlFor="requires-resource" className="font-normal cursor-pointer">
                                             Musical Resource
@@ -308,7 +328,7 @@ export function CreateItemTypeDialog({
                             {/* Description/Notes */}
                             <div className="flex items-center justify-between rounded-lg border p-3">
                                 <div className="flex items-center gap-3">
-                                    <FileTextIcon weight="fill" className="h-4 w-4 text-muted-foreground" />
+                                    <FileText className="h-4 w-4 text-muted-foreground" />
                                     <div className="space-y-0.5">
                                         <Label htmlFor="has-rich-text" className="font-normal cursor-pointer">
                                             Description/Notes
@@ -339,7 +359,7 @@ export function CreateItemTypeDialog({
                                             className="text-black hover:text-destructive hover:bg-destructive/10 transition-colors h-9 px-3"
                                             disabled={isCreating || isDeleting}
                                         >
-                                            <TrashIcon weight="fill" className="h-4 w-4 mr-2" />
+                                            <Trash2 className="h-4 w-4 mr-2" />
                                             Delete
                                         </Button>
                                     </AlertDialogTrigger>
@@ -376,7 +396,7 @@ export function CreateItemTypeDialog({
                             <Button type="submit" disabled={isCreating || isDeleting || !name.trim()}>
                                 {isCreating ? (
                                     <>
-                                        <SpinnerIcon weight="fill" className="mr-2 h-4 w-4 animate-spin" />
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                         {initialData ? "Saving..." : "Creating..."}
                                     </>
                                 ) : (

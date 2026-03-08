@@ -38,7 +38,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Form } from "@/components/ui/form";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription } from "@/components/ui/sheet";
-import { ListIcon, SlidersHorizontalIcon } from "@phosphor-icons/react";
+import { List, SlidersHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const meetingFormSchema = z.object({
@@ -604,14 +604,6 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
 
     // Panel-oriented modal openers (use already-set selectedItemId)
 
-
-
-
-    const openSpeakerSelectorForSelected = useCallback(() => {
-        if (!selectedItemId) return;
-        setUnifiedModalMode("speaker");
-        setUnifiedModalOpen(true);
-    }, [selectedItemId]);
 
     // Panel-oriented: add to the currently selected container
     const openContainerAddForSelected = useCallback(() => {
@@ -1294,7 +1286,7 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                             <Sheet>
                                 <SheetTrigger asChild>
                                     <Button variant="outline" size="icon" type="button">
-                                        <ListIcon weight="fill" className="h-4 w-4" />
+                                        <List className="h-4 w-4" />
                                     </Button>
                                 </SheetTrigger>
                                 <SheetContent side="left" className="w-[300px] sm:w-[400px] p-0 overflow-y-auto">
@@ -1309,7 +1301,7 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                             <Sheet>
                                 <SheetTrigger asChild>
                                     <Button variant="outline" size="icon" type="button">
-                                        <SlidersHorizontalIcon weight="fill" className="h-4 w-4" />
+                                        <SlidersHorizontal className="h-4 w-4" />
                                     </Button>
                                 </SheetTrigger>
                                 <SheetContent side="right" className="w-[300px] sm:w-[400px] p-0 overflow-y-auto">
@@ -1330,7 +1322,8 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                                         onSelectDiscussion={(discs) => handleAddManyToContainer(discs, "discussion")}
                                         onSelectBusiness={(biz) => handleAddManyToContainer(biz, "business")}
                                         onSelectAnnouncement={(ann) => handleAddManyToContainer(ann, "announcement")}
-                                        onSelectSpeaker={openSpeakerSelectorForSelected}
+                                        onSelectSpeaker={handleSelectSpeaker}
+                                        selectedSpeakerIdsInMeeting={selectedSpeakerIds}
                                         onAddToContainer={openContainerAddForSelected}
                                         onRemoveChildItem={handleRemoveChildFromSelected}
                                         onSaveAsTemplate={handleSaveAsTemplate}
@@ -1379,7 +1372,8 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                                     onSelectDiscussion={(discs) => handleAddManyToContainer(discs, "discussion")}
                                     onSelectBusiness={(biz) => handleAddManyToContainer(biz, "business")}
                                     onSelectAnnouncement={(ann) => handleAddManyToContainer(ann, "announcement")}
-                                    onSelectSpeaker={openSpeakerSelectorForSelected}
+                                    onSelectSpeaker={handleSelectSpeaker}
+                                    selectedSpeakerIdsInMeeting={selectedSpeakerIds}
                                     onAddToContainer={openContainerAddForSelected}
                                     onRemoveChildItem={handleRemoveChildFromSelected}
                                     onSaveAsTemplate={handleSaveAsTemplate}
