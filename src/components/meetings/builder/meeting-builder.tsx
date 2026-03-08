@@ -132,27 +132,37 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
     useEffect(() => {
         const fetchInitialData = async () => {
             const supabase = createClient();
-            const { data } = await supabase
-                .from("templates")
-                .select("*")
-                .order("name");
 
-            if (data) setTemplates(data as Template[]);
-
-            // Fetch workspace name for preview
+            // Fetch user + profile first to get workspace_id for filtering
             const { data: { user } } = await supabase.auth.getUser();
+            let workspaceId: string | null = null;
             if (user) {
                 const { data: profile } = await (supabase
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     .from("profiles") as any)
-                    .select("workspaces(name)")
+                    .select("workspace_id, workspaces(name)")
                     .eq("id", user.id)
                     .single();
 
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                workspaceId = (profile as any)?.workspace_id ?? null;
                 if (profile?.workspaces?.name) {
                     setWorkspaceName(profile.workspaces.name);
                 }
             }
+
+            // Only load Beespo official + user's own workspace templates
+            const filter = workspaceId
+                ? `workspace_id.is.null,workspace_id.eq.${workspaceId}`
+                : "workspace_id.is.null";
+
+            const { data } = await supabase
+                .from("templates")
+                .select("*")
+                .or(filter)
+                .order("name");
+
+            if (data) setTemplates(data as Template[]);
         };
         fetchInitialData();
     }, []);
@@ -1184,10 +1194,10 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
 
         const supabase = createClient();
 
-        // Guard: shared/system templates cannot be overwritten by workspace users
+        // Guard: Beespo Official templates (workspace_id = null) cannot be overwritten by workspace users
         const selectedTemplate = templates.find((t) => t.id === selectedTemplateId);
-        if (selectedTemplate?.is_shared && !selectedTemplate.workspace_id) {
-            // It's a system shared template — only the creating sys-admin can modify it
+        if (selectedTemplate && !selectedTemplate.workspace_id) {
+            // It's a Beespo Official template — only the creating sys-admin can modify it
             const { data: { user } } = await supabase.auth.getUser();
             if (!user || selectedTemplate.created_by !== user.id) {
                 toast.error("Cannot overwrite a shared template.", {
@@ -1290,7 +1300,6 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                     name: templateName.trim(),
                     workspace_id: workspaceId,
                     created_by: user.id,
-                    is_shared: false,
                 })
                 .select("id")
                 .single();

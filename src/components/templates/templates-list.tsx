@@ -32,7 +32,7 @@ export function TemplatesList({ templates, selectedId, onSelect }: TemplatesList
         const matchesSearch = template.name.toLowerCase().includes(search.toLowerCase()) ||
             (template.description?.toLowerCase() || "").includes(search.toLowerCase());
 
-        const isBeespo = template.is_shared;
+        const isBeespo = template.workspace_id === null;
         const templateTags = (template.tags as string[] | null) || [];
 
         const matchesType = typeFilter === "all"
@@ -121,8 +121,8 @@ export function TemplatesList({ templates, selectedId, onSelect }: TemplatesList
                                             {template.name}
                                         </span>
                                     </div>
-                                    <Badge variant={template.is_shared ? "secondary" : "outline"} className="text-[10px] uppercase shrink-0">
-                                        {template.is_shared ? "Beespo" : "Custom"}
+                                    <Badge variant={template.workspace_id === null ? "secondary" : "outline"} className="text-[10px] uppercase shrink-0">
+                                        {template.workspace_id === null ? "Beespo" : "Custom"}
                                     </Badge>
                                 </div>
                                 <div className="pl-11">

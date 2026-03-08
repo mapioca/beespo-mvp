@@ -23,6 +23,7 @@ import {
   Mic,
   UsersRound,
   FileText,
+  Library,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { TooltipProvider } from "@/components/ui/tooltip"
@@ -57,6 +58,7 @@ const navSections: NavSection[] = [
           { href: "/meetings/speakers", icon: Mic, label: "Speakers" },
           { href: "/meetings/participants", icon: UsersRound, label: "Participants" },
           { href: "/meetings/templates", icon: FileText, label: "Templates" },
+          { href: "/templates/library", icon: Library, label: "Library" },
         ]
       },
       { href: "/tasks", icon: CheckSquare, label: "Tasks" },

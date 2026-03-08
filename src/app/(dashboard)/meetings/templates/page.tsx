@@ -38,7 +38,7 @@ export default async function TemplatesPage() {
     supabase.from("templates") as ReturnType<typeof supabase.from>
   )
     .select("*, items:template_items(*)")
-    .order("is_shared", { ascending: false })
+    .order("workspace_id", { ascending: true, nullsFirst: true })
     .order("created_at", { ascending: false })
 
   return (

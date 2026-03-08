@@ -31,6 +31,7 @@ export function TemplateBuilderPage() {
     const [description, setDescription] = useState("");
     const [organization, setOrganization] = useState("");
     const [tags, setTags] = useState<string[]>([]);
+    const [isPublic, setIsPublic] = useState(false);
 
     // Canvas state
     const [canvasItems, setCanvasItems] = useState<TemplateCanvasItem[]>([]);
@@ -205,7 +206,6 @@ export function TemplateBuilderPage() {
                     tags: tags.length > 0 ? tags : null,
                     workspace_id: p.workspace_id,
                     created_by: user.id,
-                    is_shared: false,
                 })
                 .select()
                 .single();
@@ -287,6 +287,9 @@ export function TemplateBuilderPage() {
                     isValid={isValid}
                     itemCount={canvasItems.length}
                     totalDuration={totalDuration}
+                    isPublic={isPublic}
+                    onIsPublicChange={setIsPublic}
+                    canPublish={true}
                 />
 
                 {/* 2-Column Workspace */}

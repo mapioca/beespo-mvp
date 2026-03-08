@@ -84,7 +84,6 @@ export interface Template {
     id: string;
     name: string;
     description: string | null;
-    is_shared?: boolean;
     workspace_id?: string | null;
     created_by?: string | null;
 }

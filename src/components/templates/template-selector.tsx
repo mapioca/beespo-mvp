@@ -30,9 +30,25 @@ export function TemplateSelector({ value, onChange, disabled }: TemplateSelector
             setIsLoading(true);
             const supabase = createClient();
 
+            const { data: { user } } = await supabase.auth.getUser();
+            let workspaceId: string | null = null;
+            if (user) {
+                const { data: profile } = await (supabase.from("profiles") as ReturnType<typeof supabase.from>)
+                    .select("workspace_id")
+                    .eq("id", user.id)
+                    .single();
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                workspaceId = (profile as any)?.workspace_id ?? null;
+            }
+
+            const filter = workspaceId
+                ? `workspace_id.is.null,workspace_id.eq.${workspaceId}`
+                : "workspace_id.is.null";
+
             const { data, error } = await supabase
                 .from("templates")
                 .select("id, name")
+                .or(filter)
                 .order("name");
 
             if (error) {

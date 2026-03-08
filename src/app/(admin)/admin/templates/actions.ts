@@ -33,14 +33,13 @@ export async function createGlobalTemplateAction(data: {
   const { user } = await requireSysAdmin();
   const adminClient = createAdminClient();
 
-  // Create template with workspace_id = null and is_shared = true
+  // Create Beespo Official template: workspace_id = null identifies it as official
   const { data: template, error } = await adminClient
     .from("templates")
     .insert({
       workspace_id: null,
       name: data.name,
       description: data.description || null,
-      is_shared: true,
       tags: data.tags || [],
       created_by: user.id,
     })

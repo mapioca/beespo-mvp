@@ -18,6 +18,7 @@ import {
     CollapsibleContent,
     CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { Switch } from "@/components/ui/switch";
 import { ArrowLeft, ChevronDown, FileText, Loader2, X } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
@@ -37,6 +38,9 @@ interface TemplateMetadataHeaderProps {
     isValid: boolean;
     itemCount: number;
     totalDuration: number;
+    isPublic?: boolean;
+    onIsPublicChange?: (value: boolean) => void;
+    canPublish?: boolean;
 }
 
 const ORGANIZATION_OPTIONS = [
@@ -64,6 +68,9 @@ export function TemplateMetadataHeader({
     isValid,
     itemCount,
     totalDuration,
+    isPublic = false,
+    onIsPublicChange,
+    canPublish = false,
 }: TemplateMetadataHeaderProps) {
     const router = useRouter();
     const [tagInput, setTagInput] = useState("");
@@ -255,6 +262,23 @@ export function TemplateMetadataHeader({
                                 ))}
                             </div>
                         </div>
+
+                        {/* Publish to Community */}
+                        {canPublish && (
+                            <div className="flex items-center justify-between rounded-lg border border-border bg-background px-4 py-3">
+                                <div>
+                                    <p className="text-sm font-medium">Publish to Community</p>
+                                    <p className="text-xs text-muted-foreground mt-0.5">
+                                        Make this template visible in the Template Library for others to use.
+                                    </p>
+                                </div>
+                                <Switch
+                                    checked={isPublic}
+                                    onCheckedChange={onIsPublicChange}
+                                    disabled={isSaving}
+                                />
+                            </div>
+                        )}
                     </div>
                 </CollapsibleContent>
             </Collapsible>

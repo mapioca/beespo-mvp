@@ -401,7 +401,7 @@ export type Database = {
           name: string;
           description: string | null;
           calling_type: string | null;
-          is_shared: boolean;
+          is_public: boolean;
           tags: string[];
           slug: string | null;
           created_by: string | null;
@@ -414,7 +414,7 @@ export type Database = {
           name: string;
           description?: string | null;
           calling_type?: string | null;
-          is_shared?: boolean;
+          is_public?: boolean;
           tags?: string[];
           slug?: string | null;
           created_by?: string | null;
@@ -427,7 +427,7 @@ export type Database = {
           name?: string;
           description?: string | null;
           calling_type?: string | null;
-          is_shared?: boolean;
+          is_public?: boolean;
           tags?: string[];
           slug?: string | null;
           created_by?: string | null;

@@ -28,9 +28,8 @@ export default async function AdminTemplatesPage() {
 
   const { data: templates } = await adminClient
     .from("templates")
-    .select("id, name, description, tags, is_shared, created_at, template_items(count)")
+    .select("id, name, description, tags, created_at, template_items(count)")
     .is("workspace_id", null)
-    .eq("is_shared", true)
     .order("created_at", { ascending: false });
 
   return (

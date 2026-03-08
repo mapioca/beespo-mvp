@@ -37,7 +37,7 @@ interface TemplateDetailViewProps {
 
 export function TemplateDetailView({ template, onClose, onDelete, userRole }: TemplateDetailViewProps) {
     const [isDeleting, setIsDeleting] = useState(false);
-    const isBeespo = template.is_shared;
+    const isBeespo = template.workspace_id === null;
     const canEdit = !isBeespo && (userRole === 'leader' || userRole === 'admin');
 
     const handleDelete = async () => {

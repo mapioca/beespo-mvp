@@ -19,7 +19,6 @@ interface Template {
   name: string;
   description: string | null;
   tags: string[];
-  is_shared: boolean;
   created_at: string;
   template_items: { count: number }[];
 }

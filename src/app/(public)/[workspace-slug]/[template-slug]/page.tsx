@@ -20,7 +20,6 @@ interface TemplateData {
   name: string;
   description: string | null;
   tags: string[];
-  is_shared: boolean;
 }
 
 interface TemplateItemData {
@@ -51,10 +50,10 @@ export default async function PublicTemplatePage({ params }: PublicTemplatePageP
   // Fetch template by slug within workspace
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: template, error: templateError } = await (supabase.from("templates") as any)
-    .select("id, name, description, tags, is_shared")
+    .select("id, name, description, tags")
     .eq("workspace_id", workspace.id)
     .eq("slug", templateSlug)
-    .eq("is_shared", true)
+    .eq("is_public", true)
     .single() as { data: TemplateData | null; error: unknown };
 
   if (templateError || !template) {

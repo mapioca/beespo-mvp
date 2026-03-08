@@ -112,9 +112,9 @@ export function PropertiesPane({
 
     const selectedTemplate = templates.find((t) => t.id === selectedTemplateId && selectedTemplateId !== "none");
 
-    // A shared/system template has no workspace_id and is_shared = true;
+    // Beespo Official templates have workspace_id = null;
     // workspace users cannot overwrite those — only create their own copy.
-    const isSharedTemplate = !!selectedTemplate?.is_shared && !selectedTemplate?.workspace_id;
+    const isSharedTemplate = selectedTemplate?.workspace_id === null || selectedTemplate?.workspace_id === undefined;
 
     const openSaveDialog = () => {
         if (selectedTemplate) {
