@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { useRouter } from "next/navigation";
-import { Search, BookOpen } from "lucide-react";
+import { useState, useMemo, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Search, BookOpen, Plus } from "lucide-react";
+import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -38,9 +39,15 @@ interface TemplateLibraryClientProps {
 
 export function TemplateLibraryClient({ templates, workspaceId }: TemplateLibraryClientProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
-  const [source, setSource] = useState("all");
+  const [source, setSource] = useState(() => searchParams.get("tab") === "mine" ? "mine" : "all");
+
+  // Sync source tab when URL param changes (e.g. after clone redirect)
+  useEffect(() => {
+    if (searchParams.get("tab") === "mine") setSource("mine");
+  }, [searchParams]);
   const [previewTemplate, setPreviewTemplate] = useState<LibraryTemplate | null>(null);
   const [cloningId, setCloningId] = useState<string | null>(null);
 
@@ -83,7 +90,7 @@ export function TemplateLibraryClient({ templates, workspaceId }: TemplateLibrar
         toast.success("Template imported", {
           description: "The template has been added to your workspace.",
         });
-        router.push(`/meetings/templates?id=${result.id}`);
+        router.push("/templates/library?tab=mine");
       } else {
         toast.error(result.error ?? "Failed to import template. Please try again.");
       }
@@ -107,6 +114,14 @@ export function TemplateLibraryClient({ templates, workspaceId }: TemplateLibrar
                 : "Browse and import meeting templates for your organization."}
             </p>
           </div>
+          {isMyTemplatesView && (
+            <Link href="/templates/new">
+              <button className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-2 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors shrink-0">
+                <Plus className="h-3.5 w-3.5" />
+                New Template
+              </button>
+            </Link>
+          )}
           <div className="relative w-64 shrink-0 hidden sm:block">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input

@@ -49,7 +49,7 @@ export function TemplatePreviewDialog({ template, open, onOpenChange, workspaceI
           description: "The template has been added to your workspace.",
         });
         onOpenChange(false);
-        router.push(`/meetings/templates?id=${result.id}`);
+        router.push("/templates/library?tab=mine");
       } else {
         toast.error(result.error ?? "Failed to import template. Please try again.");
       }

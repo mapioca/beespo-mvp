@@ -43,9 +43,9 @@ export function QuickActionsWidget({
                     </Link>
                 </Button>
                 <Button asChild variant="outline" className="w-full justify-start h-11 bg-white">
-                    <Link href="/meetings/templates">
+                    <Link href="/templates/library">
                         <FileText className="h-4 w-4 mr-3 text-purple-600" />
-                        Manage Templates
+                        Template Library
                     </Link>
                 </Button>
             </div>

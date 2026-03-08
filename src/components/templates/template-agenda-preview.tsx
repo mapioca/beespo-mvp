@@ -1,12 +1,14 @@
 "use client";
 
-import { Template } from "./templates-layout";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Clock } from "lucide-react";
+import { Database } from "@/types/database";
+
+type TemplateItem = Database["public"]["Tables"]["template_items"]["Row"];
 
 interface TemplateAgendaPreviewProps {
-    items: NonNullable<Template['items']>;
+    items: TemplateItem[];
 }
 
 export function TemplateAgendaPreview({ items }: TemplateAgendaPreviewProps) {

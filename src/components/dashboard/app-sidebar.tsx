@@ -22,7 +22,6 @@ import {
   MessageSquare,
   Mic,
   UsersRound,
-  FileText,
   Library,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -57,7 +56,6 @@ const navSections: NavSection[] = [
           { href: "/meetings/discussions", icon: MessageSquare, label: "Discussions" },
           { href: "/meetings/speakers", icon: Mic, label: "Speakers" },
           { href: "/meetings/participants", icon: UsersRound, label: "Participants" },
-          { href: "/meetings/templates", icon: FileText, label: "Templates" },
           { href: "/templates/library", icon: Library, label: "Library" },
         ]
       },

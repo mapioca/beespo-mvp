@@ -60,8 +60,12 @@ export const breadcrumbConfigs: BreadcrumbConfig[] = [
     trail: [{ label: "Meetings", href: "/meetings/overview" }, { label: "Discussions" }],
   },
   {
-    pattern: "/meetings/templates",
-    trail: [{ label: "Meetings", href: "/meetings/overview" }, { label: "Templates" }],
+    pattern: "/templates/library",
+    trail: [{ label: "Template Library" }],
+  },
+  {
+    pattern: "/templates/new",
+    trail: [{ label: "Template Library", href: "/templates/library" }, { label: "New Template" }],
   },
   {
     pattern: "/meetings/new",
