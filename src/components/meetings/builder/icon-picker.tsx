@@ -34,6 +34,16 @@ export function IconPicker({ value, onChange, disabled }: IconPickerProps) {
     const [search, setSearch] = useState("");
     const [visibleCount, setVisibleCount] = useState(100);
     const observerRef = useRef<HTMLDivElement>(null);
+    const scrollRef = useRef<HTMLDivElement>(null);
+
+    // Radix Dialog locks body scroll and intercepts wheel events.
+    // This handler forwards wheel delta directly to the container, bypassing the lock.
+    const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
+        if (scrollRef.current) {
+            scrollRef.current.scrollTop += e.deltaY;
+        }
+        e.stopPropagation();
+    };
 
     const filteredIcons = useMemo(() => {
         if (!search.trim()) return allIconNames;
@@ -97,7 +107,11 @@ export function IconPicker({ value, onChange, disabled }: IconPickerProps) {
                         autoFocus
                     />
                 </div>
-                <div className="h-72 w-full overflow-y-auto p-2">
+                <div
+                    ref={scrollRef}
+                    onWheel={handleWheel}
+                    className="h-72 w-full overflow-y-auto p-2"
+                >
                     <div className="grid grid-cols-6 gap-2">
                         {filteredIcons.slice(0, visibleCount).map((iconName) => {
                             // eslint-disable-next-line @typescript-eslint/no-explicit-any
