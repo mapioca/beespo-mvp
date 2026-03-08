@@ -69,9 +69,10 @@ async function backfill() {
                 is_hymn: item.item_type === "hymn",
                 hymn_title: hymnObj?.title,
                 hymn_number: hymnObj?.hymn_number,
-                requires_participant: ["prayer", "speaker"].includes(item.item_type),
-                participant_name: item.participant_name || undefined,
-                speaker_name: item.participant_name || undefined,
+                // Speaker items have their own render path; only non-speaker items need requires_participant
+                requires_participant: item.item_type === "prayer",
+                participant_name: item.item_type !== "speaker" ? (item.participant_name || undefined) : undefined,
+                speaker_name: item.item_type === "speaker" ? (item.participant_name || undefined) : undefined,
                 isContainer: ["discussion", "business", "announcement"].includes(item.item_type),
                 containerType: item.item_type as any,
                 childItems: item.child_items || [],

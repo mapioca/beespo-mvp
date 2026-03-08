@@ -71,25 +71,29 @@ export function ActionToolbar({
             try {
                 // Map DB agenda items to CanvasItem format for markdown generation
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const canvasItems: any[] = agendaItems.map((item) => ({
-                    id: item.id,
-                    title: item.title,
-                    description: item.description,
-                    order_index: item.order_index,
-                    category: item.item_type,
-                    // Map container specifically
-                    isContainer: ['discussion', 'business', 'announcement'].includes(item.item_type),
-                    containerType: ['discussion', 'business', 'announcement'].includes(item.item_type) ? item.item_type : undefined,
-                    childItems: item.child_items || [],
-                    // Map hymn
-                    is_hymn: !!item.hymn_id,
-                    hymn_number: item.hymn?.hymn_number,
-                    hymn_title: item.hymn?.title,
-                    // Map participants
-                    requires_participant: !!item.participant_name,
-                    participant_name: item.participant_name,
-                    speaker_name: item.participant_name, // Fallback for speaker category
-                }));
+                const canvasItems: any[] = agendaItems.map((item) => {
+                    const isSpeakerItem = item.item_type === "speaker";
+                    return {
+                        id: item.id,
+                        title: item.title,
+                        description: item.description,
+                        order_index: item.order_index,
+                        category: item.item_type,
+                        // Map container specifically
+                        isContainer: ['discussion', 'business', 'announcement'].includes(item.item_type),
+                        containerType: ['discussion', 'business', 'announcement'].includes(item.item_type) ? item.item_type : undefined,
+                        childItems: item.child_items || [],
+                        // Map hymn
+                        is_hymn: !!item.hymn_id,
+                        hymn_number: item.hymn?.hymn_number,
+                        hymn_title: item.hymn?.title,
+                        // Speaker items: participant_name column stores the speaker's display name
+                        speaker_name: isSpeakerItem ? (item.participant_name || undefined) : undefined,
+                        // Participant items: non-speaker items that have a participant assigned
+                        requires_participant: !isSpeakerItem && !!item.participant_name,
+                        participant_name: !isSpeakerItem ? item.participant_name : undefined,
+                    };
+                });
 
                 const markdown = generateMeetingMarkdown({
                     title: currentMeeting.title || "Untitled Meeting",

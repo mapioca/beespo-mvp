@@ -452,24 +452,29 @@ export async function GET(
         .order("order_index", { ascending: true });
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const canvasItems: any[] = (agendaItems ?? []).map((item: any) => ({
-        id: item.id,
-        title: item.title,
-        description: item.description,
-        order_index: item.order_index,
-        category: item.item_type,
-        isContainer: ["discussion", "business", "announcement"].includes(item.item_type),
-        containerType: ["discussion", "business", "announcement"].includes(item.item_type)
-            ? item.item_type
-            : undefined,
-        childItems: item.child_items || [],
-        is_hymn: !!item.hymn_id,
-        hymn_number: item.hymn?.hymn_number,
-        hymn_title: item.hymn?.title,
-        requires_participant: !!item.participant_name,
-        participant_name: item.participant_name,
-        speaker_name: item.participant_name,
-    }));
+    const canvasItems: any[] = (agendaItems ?? []).map((item: any) => {
+        const isSpeakerItem = item.item_type === "speaker";
+        return {
+            id: item.id,
+            title: item.title,
+            description: item.description,
+            order_index: item.order_index,
+            category: item.item_type,
+            isContainer: ["discussion", "business", "announcement"].includes(item.item_type),
+            containerType: ["discussion", "business", "announcement"].includes(item.item_type)
+                ? item.item_type
+                : undefined,
+            childItems: item.child_items || [],
+            is_hymn: !!item.hymn_id,
+            hymn_number: item.hymn?.hymn_number,
+            hymn_title: item.hymn?.title,
+            // Speaker items: participant_name column stores the speaker's display name
+            speaker_name: isSpeakerItem ? (item.participant_name || undefined) : undefined,
+            // Participant items: non-speaker items that have a participant assigned
+            requires_participant: !isSpeakerItem && !!item.participant_name,
+            participant_name: !isSpeakerItem ? item.participant_name : undefined,
+        };
+    });
 
     const markdown = meeting.markdown_agenda || generateMeetingMarkdown({
         title: meeting.title || "Untitled Meeting",

@@ -22,7 +22,7 @@ import { PropertiesPane } from "./properties-pane";
 import { ToolboxPane } from "./toolbox-pane";
 import { AgendaCanvas } from "./agenda-canvas";
 import { ToolboxItemDragOverlay } from "./draggable-toolbox-item";
-import { CanvasItem, ToolboxItem, Template } from "./types";
+import { CanvasItem, ToolboxItem, Template, CategoryType } from "./types";
 import { ContainerType, ContainerChildItem } from "../container-agenda-item";
 import {
     UnifiedSelectorModal,
@@ -201,6 +201,7 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const items: CanvasItem[] = (agendaItems as any[]).map((item: any) => {
                 const isContainer = ["discussion", "business", "announcement"].includes(item.item_type);
+                const isSpeakerItem = item.item_type === "speaker";
 
                 // Parse child_items from JSONB if it's a container
                 let childItems: ContainerChildItem[] = [];
@@ -230,11 +231,20 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                     order_index: item.order_index,
                     procedural_item_type_id: item.procedural_item_type_id,
                     is_hymn: !!item.hymn_id || (item.title && item.title.toLowerCase().includes("hymn")),
-                    requires_participant: !!item.participant_id || !!item.speaker_id || ["speaker", "prayer", "benediction", "invocation"].some(k => (item.title || "").toLowerCase().includes(k)),
+                    // Speaker items must NOT get requires_participant=true — they have their own dedicated
+                    // render path (category === "speaker"). Including speaker_id would cause them to be
+                    // rendered as participant items showing "TBD" even when a speaker is assigned.
+                    requires_participant: !isSpeakerItem && (
+                        !!item.participant_id ||
+                        ["prayer", "benediction", "invocation"].some(k => (item.title || "").toLowerCase().includes(k))
+                    ),
                     hymn_id: item.hymn_id,
                     speaker_id: item.speaker_id,
                     participant_id: item.participant_id,
                     participant_name: item.participant_name,
+                    // The DB stores the speaker's display name in participant_name; map it to speaker_name
+                    // so generateMeetingMarkdown can render it correctly in the speaker path.
+                    speaker_name: isSpeakerItem ? (item.participant_name || undefined) : undefined,
                     discussion_id: item.discussion_id,
                     business_item_id: item.business_item_id,
                     announcement_id: item.announcement_id,
@@ -291,11 +301,18 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
 
         const supabase = createClient();
 
+        // Container name → container type mapping (mirrors toolbox-pane)
+        const CONTAINER_NAME_MAP: Record<string, "discussion" | "business" | "announcement"> = {
+            "Discussions": "discussion",
+            "Ward Business": "business",
+            "Announcements": "announcement",
+        };
+
         try {
-            // Load template items
+            // Load template items with joined procedural type info
             const { data: templateItems, error } = await (supabase
                 .from("template_items") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
-                .select("*, procedural_item_types(id, name, is_hymn)")
+                .select("*, procedural_item_types(id, name, is_hymn, requires_assignee, category)")
                 .eq("template_id", templateId)
                 .order("order_index");
 
@@ -325,20 +342,52 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
             let orderIndex = 0;
 
             for (const item of templateItems) {
-                const itemName = (item.procedural_item_types?.name || item.title || "").toLowerCase();
-                const isHymn = item.procedural_item_types?.is_hymn || itemName.includes("hymn");
+                const procType = item.procedural_item_types;
+                const itemName = procType?.name || item.title || "";
+                const itemNameLower = itemName.toLowerCase();
+
+                const isHymn = procType?.is_hymn || itemNameLower.includes("hymn");
                 const requiresParticipant =
-                    itemName.includes("prayer") ||
-                    itemName.includes("preside") ||
-                    itemName.includes("conduct") ||
-                    itemName.includes("invocation") ||
-                    itemName.includes("benediction") ||
-                    itemName.includes("spiritual thought") ||
-                    itemName.includes("testimony");
+                    procType?.requires_assignee ||
+                    itemNameLower.includes("prayer") ||
+                    itemNameLower.includes("preside") ||
+                    itemNameLower.includes("conduct") ||
+                    itemNameLower.includes("invocation") ||
+                    itemNameLower.includes("benediction") ||
+                    itemNameLower.includes("spiritual thought") ||
+                    itemNameLower.includes("testimony");
+
+                // Resolve the correct container type:
+                // 1) Trust item_type if it's already a container type
+                // 2) Fall back to container name map using the procedural type name (fixes legacy data)
+                const containerTypesSet = new Set(["discussion", "business", "announcement"]);
+                const containerFromItemType = containerTypesSet.has(item.item_type)
+                    ? item.item_type as "discussion" | "business" | "announcement"
+                    : undefined;
+                const containerFromName = CONTAINER_NAME_MAP[itemName];
+                const resolvedContainerType = containerFromItemType ?? containerFromName;
+
+                // Resolve the correct category:
+                // 1) Container types use the container type itself as category
+                // 2) Speaker items use "speaker" from item_type or procedural name
+                // 3) Structural items use "structural" from item_type or structural_type
+                // 4) Everything else falls back to item_type ("procedural")
+                const isItemSpeaker =
+                    item.item_type === "speaker" ||
+                    (procType?.category === "speaker") ||
+                    itemName === "Speaker" ||
+                    itemName === "Youth Speaker" ||
+                    itemName === "High Council Speaker" ||
+                    itemName === "Returning Missionary";
+
+                const resolvedCategory: CategoryType = resolvedContainerType
+                    ?? (isItemSpeaker ? "speaker"
+                        : (item.item_type === "structural" || item.structural_type ? "structural"
+                            : "procedural"));
 
                 const baseItem: CanvasItem = {
                     id: `canvas-${Date.now()}-${orderIndex}`,
-                    category: item.item_type,
+                    category: resolvedCategory,
                     title: item.title,
                     description: item.description,
                     duration_minutes: item.duration_minutes || 5,
@@ -346,9 +395,10 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                     procedural_item_type_id: item.procedural_item_type_id,
                     is_hymn: isHymn,
                     requires_participant: requiresParticipant,
+                    structural_type: item.structural_type ?? undefined,
                 };
 
-                if (item.item_type === "discussion") {
+                if (resolvedContainerType === "discussion") {
                     const childItems: ContainerChildItem[] = [];
                     if (linkedDiscussions?.length) {
                         for (const link of linkedDiscussions) {
@@ -370,7 +420,7 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                         containerType: "discussion",
                         childItems,
                     });
-                } else if (item.item_type === "business") {
+                } else if (resolvedContainerType === "business") {
                     const childItems: ContainerChildItem[] = [];
                     if (linkedBusiness?.length) {
                         for (const link of linkedBusiness) {
@@ -382,7 +432,6 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                                     description: biz.notes,
                                     business_item_id: biz.id,
                                     business_type: biz.category,
-                                    // Additional fields for conducting script generation
                                     person_name: biz.person_name,
                                     position_calling: biz.position_calling,
                                     business_category: biz.category,
@@ -397,7 +446,7 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                         containerType: "business",
                         childItems,
                     });
-                } else if (item.item_type === "announcement") {
+                } else if (resolvedContainerType === "announcement") {
                     const childItems: ContainerChildItem[] = [];
                     if (linkedAnnouncements?.length) {
                         for (const link of linkedAnnouncements) {
@@ -1163,11 +1212,28 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                 return;
             }
 
-            // Re-insert with current canvas items
+            // Build template items — capture name, type, duration, order only (no values)
+            // resolveItemType: derive the correct agenda_item_type from multiple signals.
+            // Priority: container detection > speaker detection > structural > category/procedural.
+            const CONTAINER_NAME_MAP_SAVE: Record<string, string> = {
+                "Discussions": "discussion",
+                "Ward Business": "business",
+                "Announcements": "announcement",
+            };
+            const SPEAKER_TITLES = new Set(["Speaker", "Youth Speaker", "High Council Speaker", "Returning Missionary"]);
+
+            const resolveItemType = (item: CanvasItem): string => {
+                if (item.isContainer && item.containerType) return item.containerType;
+                if (CONTAINER_NAME_MAP_SAVE[item.title]) return CONTAINER_NAME_MAP_SAVE[item.title];
+                if (item.category === "speaker" || SPEAKER_TITLES.has(item.title)) return "speaker";
+                if (item.category === "structural" || item.structural_type) return "structural";
+                return item.category ?? "procedural";
+            };
+
             const templateItems = canvasItems.map((item, idx) => ({
                 template_id: selectedTemplateId,
                 title: item.title,
-                item_type: item.isContainer ? (item.containerType ?? item.category) : item.category,
+                item_type: resolveItemType(item),
                 duration_minutes: item.duration_minutes,
                 order_index: idx,
                 procedural_item_type_id: item.procedural_item_type_id ?? null,
@@ -1235,10 +1301,26 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
             }
 
             // Build template items — capture name, type, duration, order only (no values)
+            // resolveItemType: derive the correct agenda_item_type from multiple signals.
+            const CONTAINER_NAME_MAP_SAVE2: Record<string, string> = {
+                "Discussions": "discussion",
+                "Ward Business": "business",
+                "Announcements": "announcement",
+            };
+            const SPEAKER_TITLES2 = new Set(["Speaker", "Youth Speaker", "High Council Speaker", "Returning Missionary"]);
+
+            const resolveItemType2 = (item: CanvasItem): string => {
+                if (item.isContainer && item.containerType) return item.containerType;
+                if (CONTAINER_NAME_MAP_SAVE2[item.title]) return CONTAINER_NAME_MAP_SAVE2[item.title];
+                if (item.category === "speaker" || SPEAKER_TITLES2.has(item.title)) return "speaker";
+                if (item.category === "structural" || item.structural_type) return "structural";
+                return item.category ?? "procedural";
+            };
+
             const templateItems = canvasItems.map((item, idx) => ({
                 template_id: newTemplate.id,
                 title: item.title,
-                item_type: item.isContainer ? (item.containerType ?? item.category) : item.category,
+                item_type: resolveItemType2(item),
                 duration_minutes: item.duration_minutes,
                 order_index: idx,
                 procedural_item_type_id: item.procedural_item_type_id ?? null,

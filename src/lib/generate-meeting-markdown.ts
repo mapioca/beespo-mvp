@@ -87,7 +87,8 @@ export function generateMeetingMarkdown(data: MeetingMarkdownData): string {
   for (const item of sorted) {
     // Container items
     if (item.isContainer && item.containerType) {
-      const header = CONTAINER_HEADERS[item.containerType] || item.title;
+      // Use the user-set title first; fall back to the generic container header
+      const header = item.title?.trim() || CONTAINER_HEADERS[item.containerType] || item.containerType;
       lines.push(`## ${header}`);
       lines.push("");
 
@@ -137,26 +138,27 @@ export function generateMeetingMarkdown(data: MeetingMarkdownData): string {
       continue;
     }
 
+    // Speaker items — must be checked before participant items because
+    // speaker items may also have requires_participant=true when loaded
+    // from an existing meeting (speaker_id is present).
+    if (item.category === "speaker") {
+      // Use the item's title as the label (supports renamed speaker items)
+      const speakerLabel = item.title?.trim() || "Speaker";
+      if (item.speaker_name) {
+        lines.push(`*${speakerLabel}:* ${item.speaker_name}`);
+      } else {
+        lines.push(`*${speakerLabel}:* TBD`);
+      }
+      lines.push("");
+      continue;
+    }
+
     // Participant items (prayers, etc.)
     if (item.requires_participant) {
       if (item.participant_name) {
         lines.push(`*${item.title}:* ${item.participant_name}`);
       } else {
         lines.push(`*${item.title}:* TBD`);
-      }
-      lines.push("");
-      continue;
-    }
-
-    // Speaker items
-    if (item.category === "speaker") {
-      if (item.speaker_name) {
-        lines.push(`*Speaker:* ${item.speaker_name}`);
-      } else {
-        lines.push(`*Speaker:* TBD`);
-      }
-      if (item.title && item.title !== "Speaker") {
-        lines.push(`  Topic: ${item.title}`);
       }
       lines.push("");
       continue;
