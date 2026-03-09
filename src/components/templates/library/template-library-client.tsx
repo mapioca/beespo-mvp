@@ -69,7 +69,7 @@ export function TemplateLibraryClient({ templates, workspaceId }: TemplateLibrar
 
       const matchesSource =
         source === "all"
-          ? isBeespo || isCommunity  // public library: Beespo + Community only
+          ? true
           : source === "beespo"
           ? isBeespo
           : source === "community"
