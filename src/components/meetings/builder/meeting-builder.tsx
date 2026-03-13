@@ -404,7 +404,7 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                     order_index: orderIndex++,
                     procedural_item_type_id: item.procedural_item_type_id,
                     is_hymn: isHymn,
-                    requires_participant: requiresParticipant,
+                    requires_participant: !isItemSpeaker && requiresParticipant,
                     structural_type: item.structural_type ?? undefined,
                 };
 
@@ -706,7 +706,12 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
             setCanvasItems((prev) =>
                 prev.map((item) =>
                     item.id === selectedItemId
-                        ? { ...item, speaker_id: speaker.id, speaker_name: speaker.name }
+                        ? {
+                            ...item,
+                            speaker_id: speaker.id,
+                            speaker_name: speaker.name,
+                            speaker_is_confirmed: speaker.is_confirmed
+                        }
                         : item
                 )
             );
@@ -871,7 +876,7 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                 });
             }
 
-            if (item.requires_participant && !item.participant_id) {
+            if (item.requires_participant && item.category !== "speaker" && !item.participant_id) {
                 items.push({
                     id: `${item.id}-participant`,
                     title: item.title,

@@ -53,6 +53,7 @@ export interface CanvasItem {
     hymn_title?: string;
     // Speaker details
     speaker_name?: string;
+    speaker_is_confirmed?: boolean;
     // Container support
     isContainer?: boolean;
     containerType?: ContainerType;
