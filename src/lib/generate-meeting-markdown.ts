@@ -98,14 +98,23 @@ export function generateMeetingMarkdown(data: MeetingMarkdownData): string {
         lines.push("");
       } else {
         for (const child of children) {
-          let bullet = `- **${child.title}**`;
-          if (child.description) {
-            bullet += ` — ${child.description}`;
-          }
+          let titleLine = `- **${child.title}**`;
           if (child.priority && child.priority !== "normal") {
-            bullet += ` *(${child.priority} priority)*`;
+            titleLine += ` *(${child.priority} priority)*`;
           }
-          lines.push(bullet);
+          // Add a line break indicator to the title line
+          lines.push(titleLine + "  ");
+
+          if (child.description) {
+            // Add a blank line to make it a loose list item, forcing the description to a new paragraph/line
+            lines.push("  "); 
+            
+            const descriptionLines = child.description.split("\n");
+            descriptionLines.forEach((dLine) => {
+              // Indent even blank lines to keep them within the list item context
+              lines.push(`  ${dLine.trim()}`);
+            });
+          }
         }
         lines.push("");
       }

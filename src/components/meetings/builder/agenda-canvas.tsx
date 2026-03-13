@@ -118,13 +118,20 @@ function SortableAgendaRow({
                             {item.childItems.map((child) => (
                                 <div
                                     key={child.id}
-                                    className="flex items-center gap-2 p-1.5 bg-background rounded border border-border/60"
+                                    className="flex flex-col gap-1 p-2 bg-background rounded border border-border/60"
                                 >
-                                    <span className="text-sm flex-1 truncate">{child.title}</span>
-                                    {child.status && (
-                                        <span className="text-xs px-1.5 py-0.5 rounded bg-muted/50 capitalize">
-                                            {child.status.replace("_", " ")}
-                                        </span>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-sm font-medium flex-1 truncate">{child.title}</span>
+                                        {child.status && (
+                                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted/50 capitalize font-medium">
+                                                {child.status.replace("_", " ")}
+                                            </span>
+                                        )}
+                                    </div>
+                                    {child.description && (
+                                        <p className="text-xs text-muted-foreground italic line-clamp-2">
+                                            {child.description}
+                                        </p>
                                     )}
                                 </div>
                             ))}

@@ -349,13 +349,23 @@ export function CalendarClient({
 
     // Internal events from events table navigate to events page
     if (event.source === "event") {
-      window.location.href = `/events`;
+      window.location.href = `/calendar/events`;
       return;
     }
 
     // Navigate to the source entity
-    const basePath = `/${event.source === "announcement" ? "announcements" : event.source === "meeting" ? "meetings" : "tasks"}`;
-    window.location.href = `${basePath}/${event.sourceId}`;
+    let path = "";
+    if (event.source === "announcement") {
+      path = `/meetings/announcements/${event.sourceId}`;
+    } else if (event.source === "meeting") {
+      path = `/meetings/${event.sourceId}`;
+    } else if (event.source === "task") {
+      path = `/tasks`;
+    }
+    
+    if (path) {
+      window.location.href = path;
+    }
   }, [externalEvents]);
 
   // Toggle calendar visibility

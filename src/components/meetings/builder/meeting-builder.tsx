@@ -196,10 +196,10 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                 form.setValue("time", format(scheduledDate, "HH:mm"));
             }
 
-            // Load agenda items
+            // Load agenda items with joined speaker and hymn data
             const { data: agendaItems, error: itemsError } = await supabase
                 .from("agenda_items")
-                .select("*")
+                .select("*, speakers(name, is_confirmed), hymns(title, hymn_number)")
                 .eq("meeting_id", initialMeetingId)
                 .order("order_index");
 
@@ -249,12 +249,13 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                         ["prayer", "benediction", "invocation"].some(k => (item.title || "").toLowerCase().includes(k))
                     ),
                     hymn_id: item.hymn_id,
+                    hymn_number: item.hymns?.hymn_number,
+                    hymn_title: item.hymns?.title,
                     speaker_id: item.speaker_id,
+                    speaker_name: item.speakers?.name || item.participant_name,
+                    speaker_is_confirmed: item.speakers?.is_confirmed,
                     participant_id: item.participant_id,
                     participant_name: item.participant_name,
-                    // The DB stores the speaker's display name in participant_name; map it to speaker_name
-                    // so generateMeetingMarkdown can render it correctly in the speaker path.
-                    speaker_name: isSpeakerItem ? (item.participant_name || undefined) : undefined,
                     discussion_id: item.discussion_id,
                     business_item_id: item.business_item_id,
                     announcement_id: item.announcement_id,
@@ -729,7 +730,7 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
 
         if (type === "business") {
             itemTitle = `${selectedItem.person_name}${selectedItem.position_calling ? ` - ${selectedItem.position_calling}` : ""}`;
-            itemDescription = selectedItem.notes;
+            itemDescription = selectedItem.generated_script || selectedItem.notes;
             businessType = selectedItem.category;
         } else {
             itemTitle = selectedItem.title;
@@ -779,7 +780,7 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
 
                 if (type === "business") {
                     itemTitle = `${sel.person_name}${sel.position_calling ? ` - ${sel.position_calling}` : ""}`;
-                    itemDescription = sel.notes;
+                    itemDescription = sel.generated_script || sel.notes;
                     businessType = sel.category;
                 } else {
                     itemTitle = sel.title;
@@ -1034,7 +1035,7 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                 hymn_id: item.hymn_id || null,
                 speaker_id: item.speaker_id || null,
                 participant_id: item.participant_id || null,
-                participant_name: item.participant_name || null,
+                participant_name: item.participant_name || item.speaker_name || null,
                 discussion_id: item.discussion_id || null,
                 business_item_id: item.business_item_id || null,
                 announcement_id: item.announcement_id || null,
