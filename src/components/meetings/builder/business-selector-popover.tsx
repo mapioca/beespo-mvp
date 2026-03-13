@@ -335,8 +335,8 @@ export function BusinessSelectorPopover({
             // Link to templates
             if (selectedTemplateIds.length > 0) {
                 for (const templateId of selectedTemplateIds) {
-                    await supabase
-                        .from("business_templates")
+                    await (supabase
+                        .from("business_templates") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
                         .insert({
                             business_item_id: data.id,
                             template_id: templateId,

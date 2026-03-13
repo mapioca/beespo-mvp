@@ -5,11 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { Settings, X } from "lucide-react";
+import { Settings, X, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { UserRole, CalendarSubscription } from "@/types/database";
 import { CalendarSettingsDialog } from "./calendar-settings-dialog";
 import { createClient } from "@/lib/supabase/client";
+import { toast } from "@/lib/toast";
 
 import type { CalendarVisibility } from "./calendar-types";
 
@@ -37,6 +38,7 @@ export function CalendarSidebar({
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [subscriptions, setSubscriptions] = useState<CalendarSubscription[]>([]);
   const [isLoadingSubscriptions, setIsLoadingSubscriptions] = useState(true);
+  const [isSyncingAll, setIsSyncingAll] = useState(false);
 
   // Fetch subscriptions
   useEffect(() => {
@@ -69,6 +71,31 @@ export function CalendarSidebar({
   }, [settingsOpen]); // Refresh when settings dialog closes
 
   const enabledSubscriptions = subscriptions.filter((s) => s.is_enabled);
+
+  const handleSyncAll = async () => {
+    if (enabledSubscriptions.length === 0) return;
+    setIsSyncingAll(true);
+    let successCount = 0;
+    
+    try {
+      await Promise.allSettled(
+        enabledSubscriptions.map(async (sub) => {
+          const response = await fetch("/api/calendar/sync", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ subscriptionId: sub.id }),
+          });
+          if (response.ok) successCount++;
+        })
+      );
+      toast.success("Sync Complete", { description: `Synced ${successCount} of ${enabledSubscriptions.length} calendars.` });
+      if (onSyncComplete) onSyncComplete();
+    } catch {
+      toast.error("Sync Failed", { description: "Failed to sync all calendars." });
+    } finally {
+      setIsSyncingAll(false);
+    }
+  };
 
   // Derive master toggle state
   const subStates = enabledSubscriptions.map(
@@ -177,9 +204,23 @@ export function CalendarSidebar({
 
           {/* External Calendars section */}
           <div className="space-y-3">
-            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-              External Calendars
-            </h3>
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+                External Calendars
+              </h3>
+              {isAdmin && enabledSubscriptions.length > 0 && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 text-muted-foreground hover:text-foreground"
+                  onClick={handleSyncAll}
+                  disabled={isSyncingAll}
+                  title="Sync All External Calendars"
+                >
+                  <RefreshCw className={cn("h-3 w-3", isSyncingAll && "animate-spin")} />
+                </Button>
+              )}
+            </div>
 
             {isLoadingSubscriptions ? (
               <div className="space-y-2">
@@ -210,7 +251,7 @@ export function CalendarSidebar({
                   return (
                     <div
                       key={sub.id}
-                      className="flex items-center space-x-2 pl-5"
+                      className="flex items-center space-x-2 pl-5 min-w-0"
                     >
                       <Checkbox
                         id={`external-sub-${sub.id}`}
@@ -219,13 +260,13 @@ export function CalendarSidebar({
                       />
                       <Label
                         htmlFor={`external-sub-${sub.id}`}
-                        className="flex items-center gap-2 cursor-pointer text-sm"
+                        className="flex items-center gap-2 cursor-pointer text-sm min-w-0"
                       >
                         <span
                           className="w-2 h-2 rounded-full flex-shrink-0"
                           style={{ backgroundColor: sub.color }}
                         />
-                        <span className="truncate">{sub.name}</span>
+                        <span className="truncate min-w-0">{sub.name}</span>
                       </Label>
                     </div>
                   );
