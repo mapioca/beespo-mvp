@@ -44,7 +44,7 @@ export default function NewBusinessItemPage() {
     }
 
     // Create business item
-    const { error } = await (supabase
+    const { data: businessItem, error: createError } = await (supabase
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .from("business_items") as any)
       .insert({
@@ -55,15 +55,33 @@ export default function NewBusinessItemPage() {
         action_date: formData.actionDate || null,
         notes: formData.notes || null,
         details: formData.details,
-        template_id: formData.templateId,
         workspace_id: profile.workspace_id,
         created_by: user.id,
-      });
+      })
+      .select("id")
+      .single();
 
-    if (error) {
-      toast.error(error.message || "Failed to create business item.");
+    if (createError || !businessItem) {
+      toast.error(createError?.message || "Failed to create business item.");
       setIsLoading(false);
       return;
+    }
+
+    // Link to template if selected
+    if (formData.templateId) {
+      const { error: linkError } = await (supabase
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .from("business_templates") as any)
+        .insert({
+          business_item_id: businessItem.id,
+          template_id: formData.templateId,
+        });
+
+      if (linkError) {
+        console.error("Error linking business item to template:", linkError);
+        // We notify but don't stop since the item was created successfully
+        toast.warning("Created, but could not link to template.");
+      }
     }
 
     toast.success("Business item created successfully!");
