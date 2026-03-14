@@ -21,7 +21,10 @@ export async function syncCalendarSubscription(
   }
 
   try {
+    console.log(`[CalendarSync] Starting sync for subscription ${subscriptionId} (${subscription.name})`);
+    
     // Fetch iCal feed
+    console.log(`[CalendarSync] Fetching feed from URL: ${subscription.url}...`);
     const response = await fetch(subscription.url, {
       headers: {
         "User-Agent": "Beespo Calendar/1.0",
@@ -30,21 +33,26 @@ export async function syncCalendarSubscription(
     });
 
     if (!response.ok) {
+      console.error(`[CalendarSync] Feed fetch failed with status ${response.status} ${response.statusText}`);
       throw new Error(
         `Failed to fetch calendar: ${response.status} ${response.statusText}`
       );
     }
 
     const icalContent = await response.text();
+    console.log(`[CalendarSync] Downloaded ${icalContent.length} bytes of feed data.`);
 
     // Parse iCal
     const events = parseICalFeed(icalContent);
+    console.log(`[CalendarSync] Parsed ${events.length} target events from the feed.`);
 
     // Get existing events for this subscription
     const { data: existingEvents } = await (supabase
       .from("external_calendar_events") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
       .select("id, external_uid")
       .eq("subscription_id", subscriptionId);
+
+    console.log(`[CalendarSync] Found ${existingEvents?.length || 0} existing events in the database for this feed.`);
 
     const existingUids = new Set(
       existingEvents?.map((e: { external_uid: string }) => e.external_uid) || []
@@ -59,6 +67,7 @@ export async function syncCalendarSubscription(
 
     // Delete removed events
     if (eventsToDelete.length > 0) {
+      console.log(`[CalendarSync] Removing ${eventsToDelete.length} stale events no longer in feed...`);
       const deleteIds = eventsToDelete.map((e: { id: string }) => e.id);
 
       // First, delete any linked announcements
@@ -71,6 +80,7 @@ export async function syncCalendarSubscription(
         const announcementIds = links.map(
           (l: { announcement_id: string }) => l.announcement_id
         );
+        console.log(`[CalendarSync] Deleting ${announcementIds.length} linked announcements.`);
         await (supabase
           .from("announcements") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
           .delete()
@@ -110,19 +120,22 @@ export async function syncCalendarSubscription(
           .eq("external_uid", event.uid);
 
         if (updateError) {
-          console.error(`Failed to update event ${event.uid}:`, updateError);
+          console.error(`[CalendarSync] ❌ Failed to update event ${event.uid}:`, updateError);
         } else {
           updated++;
 
           // Update linked announcement if exists
-          const { data: link } = await (supabase
+          const { data: link, error: linkError } = await (supabase
             .from("external_event_links") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
             .select("announcement_id, external_calendar_events!inner(id)")
             .eq("external_calendar_events.subscription_id", subscriptionId)
             .eq("external_calendar_events.external_uid", event.uid)
-            .single();
+            .maybeSingle();
 
-          if (link) {
+          if (linkError) {
+             console.warn(`[CalendarSync] ⚠️ Warning fetching link for modified event ${event.uid}:`, linkError);
+          } else if (link) {
+            console.log(`[CalendarSync] Updating linked announcement ${link.announcement_id} for event ${event.uid}`);
             await (supabase
               .from("announcements") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
               .update({
@@ -135,12 +148,13 @@ export async function syncCalendarSubscription(
         }
       } else {
         // Insert new event
+        console.log(`[CalendarSync] Inserting new event ${event.uid}`);
         const { error: insertError } = await (supabase
           .from("external_calendar_events") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
           .insert(eventData);
 
         if (insertError) {
-          console.error(`Failed to insert event ${event.uid}:`, insertError);
+          console.error(`[CalendarSync] ❌ Failed to insert new event ${event.uid}:`, insertError);
         } else {
           created++;
           // Important: add to existingUids so subsequent parsed events with the same UID correctly trigger an UPDATE
@@ -158,6 +172,8 @@ export async function syncCalendarSubscription(
       })
       .eq("id", subscriptionId);
 
+    console.log(`[CalendarSync] ✅ Sync complete. Created ${created}, Updated ${updated}, Deleted ${eventsToDelete.length}. Processed ${events.length} total.`);
+
     return {
       success: true,
       eventsCreated: created,
@@ -169,6 +185,8 @@ export async function syncCalendarSubscription(
     // Update subscription with error
     const errorMessage =
       error instanceof Error ? error.message : "Unknown sync error";
+    
+    console.error(`[CalendarSync] 🚨 Caught Exception during sync:`, error);
 
     await (supabase
       .from("calendar_subscriptions") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
