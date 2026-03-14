@@ -32,6 +32,7 @@ import {
   getPriesthoodFromOffice,
   formatOffice,
   formatPriesthood,
+  type Language,
   type Gender,
   type PriesthoodOffice,
   type BusinessItemDetails,
@@ -145,6 +146,9 @@ export function BusinessItemForm({
   );
 
   // Details state (structured metadata)
+  const [language, setLanguage] = useState<Language>(
+    initialData?.details?.language || "ENG"
+  );
   const [gender, setGender] = useState<Gender | undefined>(
     initialData?.details?.gender
   );
@@ -169,13 +173,14 @@ export function BusinessItemForm({
       category: category || "other",
       notes: notes || null,
       details: {
+        language,
         gender: category === "ordination" ? "male" : gender,
         office,
         priesthood,
         customScript: category === "other" ? customScript : undefined,
       },
     }),
-    [personName, positionCalling, category, notes, gender, office, priesthood, customScript]
+    [personName, positionCalling, category, notes, language, gender, office, priesthood, customScript]
   );
 
   // Generate script preview
@@ -210,6 +215,7 @@ export function BusinessItemForm({
       actionDate,
       notes,
       details: {
+        language,
         gender: category === "ordination" ? "male" : gender,
         office,
         priesthood,
@@ -284,6 +290,28 @@ export function BusinessItemForm({
                     </div>
                   </SelectItem>
                 ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Script Language Selection */}
+          <div className="space-y-2">
+            <Label htmlFor="scriptLanguage" className="flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              Script Language *
+            </Label>
+            <Select
+              value={language}
+              onValueChange={(v) => setLanguage(v as Language)}
+              disabled={isLoading}
+              required
+            >
+              <SelectTrigger id="scriptLanguage">
+                <SelectValue placeholder="Select language" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ENG">English</SelectItem>
+                <SelectItem value="SPA">Español</SelectItem>
               </SelectContent>
             </Select>
           </div>

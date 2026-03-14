@@ -28,6 +28,7 @@ import {
     generateBusinessScript,
     PRIESTHOOD_OFFICES,
     getPriesthoodFromOffice,
+    type Language,
     type Gender,
     type PriesthoodOffice,
     type BusinessItemDetails
@@ -125,6 +126,7 @@ export function BusinessSelectorPopover({
     const [newNotes, setNewNotes] = useState("");
 
     // Details state
+    const [newLanguage, setNewLanguage] = useState<Language>("ENG");
     const [newGender, setNewGender] = useState<Gender | undefined>("male");
     const [newOffice, setNewOffice] = useState<PriesthoodOffice | undefined>();
     const [newCustomScript, setNewCustomScript] = useState("");
@@ -147,13 +149,14 @@ export function BusinessSelectorPopover({
             category: newCategory,
             notes: newNotes || null,
             details: {
+                language: newLanguage,
                 gender: newCategory === "ordination" ? "male" : newGender,
                 office: newOffice,
                 priesthood: newOffice ? getPriesthoodFromOffice(newOffice) : undefined,
                 customScript: newCategory === "other" ? newCustomScript : undefined,
             },
         });
-    }, [newName, newCalling, newCategory, newNotes, newGender, newOffice, newCustomScript]);
+    }, [newName, newCalling, newCategory, newNotes, newGender, newOffice, newCustomScript, newLanguage]);
 
     useEffect(() => {
         if (open && items.length === 0) {
@@ -173,6 +176,7 @@ export function BusinessSelectorPopover({
             // Reset creation state
             setNewName("");
             setNewCategory("sustaining");
+            setNewLanguage("ENG");
             setNewCalling("");
             setNewNotes("");
             setNewGender("male");
@@ -310,6 +314,7 @@ export function BusinessSelectorPopover({
         }
 
         const details = {
+            language: newLanguage,
             gender: newCategory === "ordination" ? "male" : newGender,
             office: newOffice,
             priesthood: newOffice ? getPriesthoodFromOffice(newOffice) : undefined,
@@ -351,6 +356,7 @@ export function BusinessSelectorPopover({
             setNewCalling("");
             setNewNotes("");
             setNewCategory("sustaining");
+            setNewLanguage("ENG");
             setNewGender("male");
             setNewOffice(undefined);
             setNewCustomScript("");
@@ -416,6 +422,21 @@ export function BusinessSelectorPopover({
                                                 {opt.label}
                                             </SelectItem>
                                         ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            <div className="space-y-1">
+                                <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                                    Script Language
+                                </Label>
+                                <Select value={newLanguage} onValueChange={(v) => setNewLanguage(v as Language)}>
+                                    <SelectTrigger className="h-8 w-full text-xs">
+                                        <SelectValue placeholder="Select language" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="ENG" className="text-xs">English</SelectItem>
+                                        <SelectItem value="SPA" className="text-xs">Español</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
