@@ -39,6 +39,7 @@ export async function completeTaskWithToken(token: string) {
 
     revalidatePath("/tasks");
     revalidatePath("/meetings");
+    revalidatePath("/dashboard");
 
     return { success: true, task };
 }
@@ -98,6 +99,7 @@ export async function completeTask(taskId: string, comment?: string) {
         });
 
         revalidatePath("/tasks");
+        revalidatePath("/dashboard");
         return { success: true };
     } catch (e) {
         console.error("Unexpected error in completeTask:", e);
@@ -140,6 +142,7 @@ export async function updateTask(taskId: string, data: {
         // Log activity if assigned_to changed? Ideally yes, but keeping it simple for now as requested.
 
         revalidatePath("/tasks");
+        revalidatePath("/dashboard");
         return { success: true };
     } catch (e) {
         console.error("Unexpected error in updateTask:", e);
@@ -278,6 +281,7 @@ export async function createTask(data: {
     }
 
     revalidatePath("/tasks");
+    revalidatePath("/dashboard");
     return { success: true, data: task };
 }
 
@@ -365,6 +369,7 @@ export async function deleteTask(taskId: string) {
         }
 
         revalidatePath("/tasks");
+        revalidatePath("/dashboard");
         return { success: true };
     } catch (e) {
         console.error("Unexpected error in deleteTask:", e);

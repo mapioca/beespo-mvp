@@ -49,16 +49,7 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
         ? (Array.isArray(statusParam) ? statusParam : statusParam.split(","))
         : [];
 
-    // Get workspace_id first
-    const { data: rawProfile } = await supabase
-        .from('profiles')
-        .select('workspace_id')
-        .eq('id', user.id)
-        .single();
-
-    const currentUserProfile = rawProfile as { workspace_id: string | null } | null;
-
-    // Build query with filters
+    // Build the main task query based on active filters (no await yet).
     let query = supabase
         .from('tasks')
         .select(`
@@ -69,27 +60,41 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
             )
         `, { count: "exact" });
 
-    // Apply search filter
     if (searchQuery) {
         query = query.or(`title.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%,workspace_task_id.ilike.%${searchQuery}%`);
     }
-
-    // Apply status filter
     if (statusFilters.length > 0) {
         query = query.in("status", statusFilters);
     }
 
-    // Apply sorting and pagination
-    const { data: rawTasks, count, error } = await query
-        .order('created_at', { ascending: false })
-        .range(from, to);
+    // Fire profile, paginated tasks, and all 7 badge-count queries in one parallel batch.
+    // Badge counts use HEAD requests — no row data is transferred, just the COUNT header.
+    const [
+        profileResult,
+        taskResult,
+        pendingRes, inProgressRes, completedRes, cancelledRes,
+        lowRes, mediumRes, highRes,
+    ] = await Promise.all([
+        supabase.from('profiles').select('workspace_id').eq('id', user.id).single(),
+        query.order('created_at', { ascending: false }).range(from, to),
+        supabase.from('tasks').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
+        supabase.from('tasks').select('*', { count: 'exact', head: true }).eq('status', 'in_progress'),
+        supabase.from('tasks').select('*', { count: 'exact', head: true }).eq('status', 'completed'),
+        supabase.from('tasks').select('*', { count: 'exact', head: true }).eq('status', 'cancelled'),
+        supabase.from('tasks').select('*', { count: 'exact', head: true }).eq('priority', 'low'),
+        supabase.from('tasks').select('*', { count: 'exact', head: true }).eq('priority', 'medium'),
+        supabase.from('tasks').select('*', { count: 'exact', head: true }).eq('priority', 'high'),
+    ]);
+
+    const currentUserProfile = profileResult.data as { workspace_id: string | null } | null;
+    const { data: rawTasks, count, error } = taskResult;
 
     if (error) {
         console.error("Error fetching tasks:", error);
         return <div className="p-8">Error loading tasks. Please try again.</div>;
     }
 
-    // Fetch workspace profiles if needed
+    // Fetch workspace member profiles (needs workspace_id from the parallel batch above).
     let profiles: { id: string; full_name: string; email: string }[] = [];
     if (currentUserProfile?.workspace_id) {
         const { data } = await supabase
@@ -103,27 +108,17 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
         }
     }
 
-    // Fetch counts for filter badges (unfiltered counts)
-    const { data: allTasks } = await supabase
-        .from('tasks')
-        .select('status, priority, assigned_to');
-
-    const statusCounts: Record<string, number> = {
-        pending: 0,
-        in_progress: 0,
-        completed: 0,
-        cancelled: 0,
+    const statusCounts = {
+        pending: pendingRes.count ?? 0,
+        in_progress: inProgressRes.count ?? 0,
+        completed: completedRes.count ?? 0,
+        cancelled: cancelledRes.count ?? 0,
     };
-    const priorityCounts: Record<string, number> = {
-        low: 0,
-        medium: 0,
-        high: 0,
+    const priorityCounts = {
+        low: lowRes.count ?? 0,
+        medium: mediumRes.count ?? 0,
+        high: highRes.count ?? 0,
     };
-
-    allTasks?.forEach((task: { status: string; priority: string | null }) => {
-        if (task.status in statusCounts) statusCounts[task.status]++;
-        if (task.priority && task.priority in priorityCounts) priorityCounts[task.priority]++;
-    });
 
     // Transform to match Table props
     const typedTasks = rawTasks as unknown as TaskWithRelations[] | null;

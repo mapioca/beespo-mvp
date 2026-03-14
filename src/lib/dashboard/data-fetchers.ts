@@ -329,22 +329,32 @@ export async function fetchTables(
 ): Promise<TablesData> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: tables } = await (supabase.from("dynamic_tables") as any)
-    .select("id, name, icon, updated_at, dynamic_rows(id)")
+    .select("id, name, icon, updated_at")
     .eq("workspace_id", workspaceId)
     .order("updated_at", { ascending: false })
     .limit(3);
 
-  return {
-    tables: (tables || []).map(
+  const tableList = (tables || []) as { id: string; name: string; icon: string | null; updated_at: string }[];
+
+  // Use parallel HEAD COUNT queries (≤3 tables, so ≤3 lightweight requests).
+  // HEAD requests return only the COUNT header with zero row data.
+  const rowCounts = await Promise.all(
+    tableList.map((t) =>
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (t: any) => ({
-        id: t.id,
-        name: t.name,
-        icon: t.icon ?? null,
-        row_count: (t.dynamic_rows || []).length,
-        updated_at: t.updated_at,
-      })
-    ),
+      (supabase.from("dynamic_rows") as any)
+        .select("*", { count: "exact", head: true })
+        .eq("table_id", t.id)
+    )
+  );
+
+  return {
+    tables: tableList.map((t, i) => ({
+      id: t.id,
+      name: t.name,
+      icon: t.icon ?? null,
+      row_count: rowCounts[i].count ?? 0,
+      updated_at: t.updated_at,
+    })),
   };
 }
 
@@ -354,22 +364,31 @@ export async function fetchForms(
 ): Promise<FormsData> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: forms } = await (supabase.from("forms") as any)
-    .select("id, title, is_published, updated_at, form_submissions(id)")
+    .select("id, title, is_published, updated_at")
     .eq("workspace_id", workspaceId)
     .order("updated_at", { ascending: false })
     .limit(3);
 
-  return {
-    forms: (forms || []).map(
+  const formList = (forms || []) as { id: string; title: string; is_published: boolean; updated_at: string }[];
+
+  // Use parallel HEAD COUNT queries (≤3 forms, so ≤3 lightweight requests).
+  const submissionCounts = await Promise.all(
+    formList.map((f) =>
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (f: any) => ({
-        id: f.id,
-        title: f.title,
-        is_published: f.is_published ?? false,
-        response_count: (f.form_submissions || []).length,
-        updated_at: f.updated_at,
-      })
-    ),
+      (supabase.from("form_submissions") as any)
+        .select("*", { count: "exact", head: true })
+        .eq("form_id", f.id)
+    )
+  );
+
+  return {
+    forms: formList.map((f, i) => ({
+      id: f.id,
+      title: f.title,
+      is_published: f.is_published ?? false,
+      response_count: submissionCounts[i].count ?? 0,
+      updated_at: f.updated_at,
+    })),
   };
 }
 
