@@ -1,12 +1,13 @@
 import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
+import type { FeatureTier } from "@/types/database";
 
 export type CachedProfile = {
   full_name: string;
   workspace_id: string | null;
   role: string;
   role_title: string;
-  feature_tier: string;
+  feature_tier: FeatureTier | null;
   last_read_release_note_at: string | null;
   workspaces: { name: string } | null;
 } | null;
