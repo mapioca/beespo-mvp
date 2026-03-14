@@ -404,7 +404,7 @@ export function PropertiesPane({
                                             className="flex items-center justify-between group cursor-pointer hover:bg-muted/30 -mx-1 px-1 rounded transition-colors h-7"
                                             onClick={() => setShowItemNotes(true)}
                                         >
-                                            <span className="text-sm border-b border-dashed border-muted-foreground/50 pb-0.5">Add Notes</span>
+                                            <span className="text-sm">Item Notes</span>
                                             <Plus className="h-4 w-4 text-muted-foreground/60 group-hover:text-foreground group-hover:scale-110 transition-all" />
                                         </div>
                                     )}
