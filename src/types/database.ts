@@ -148,7 +148,6 @@ export type Database = {
           requires_assignee: boolean | null;
           requires_resource: boolean | null;
           has_rich_text: boolean | null;
-          is_core: boolean | null;
           icon: string | null;
         };
         Insert: {
@@ -165,7 +164,6 @@ export type Database = {
           requires_assignee?: boolean | null;
           requires_resource?: boolean | null;
           has_rich_text?: boolean | null;
-          is_core?: boolean | null;
           icon?: string | null;
         };
         Update: {
@@ -182,7 +180,6 @@ export type Database = {
           requires_assignee?: boolean | null;
           requires_resource?: boolean | null;
           has_rich_text?: boolean | null;
-          is_core?: boolean | null;
           icon?: string | null;
         };
       };
@@ -441,6 +438,7 @@ export type Database = {
           template_id: string;
           title: string;
           description: string | null;
+          item_notes: string | null;
           order_index: number;
           duration_minutes: number | null;
           item_type: AgendaItemType;
@@ -453,6 +451,7 @@ export type Database = {
           template_id: string;
           title: string;
           description?: string | null;
+          item_notes?: string | null;
           order_index: number;
           duration_minutes?: number | null;
           item_type?: AgendaItemType;
@@ -465,6 +464,7 @@ export type Database = {
           template_id?: string;
           title?: string;
           description?: string | null;
+          item_notes?: string | null;
           order_index?: number;
           duration_minutes?: number | null;
           item_type?: AgendaItemType;
@@ -555,6 +555,7 @@ export type Database = {
           hymn_id: string | null;
           title: string;
           description: string | null;
+          item_notes: string | null;
           order_index: number;
           duration_minutes: number | null;
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -576,6 +577,7 @@ export type Database = {
           hymn_id?: string | null;
           title: string;
           description?: string | null;
+          item_notes?: string | null;
           order_index: number;
           duration_minutes?: number | null;
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -597,6 +599,7 @@ export type Database = {
           hymn_id?: string | null;
           title?: string;
           description?: string | null;
+          item_notes?: string | null;
           order_index?: number;
           duration_minutes?: number | null;
           // eslint-disable-next-line @typescript-eslint/no-explicit-any

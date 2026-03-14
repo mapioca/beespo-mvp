@@ -116,6 +116,9 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
     // Save as Template state
     const [isSavingTemplate, setIsSavingTemplate] = useState(false);
 
+    // Meeting-level notes state
+    const [meetingNotes, setMeetingNotes] = useState<string | null>(null);
+
     // DnD sensors
     const sensors = useSensors(
         useSensor(PointerSensor, {
@@ -195,6 +198,9 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                 form.setValue("date", scheduledDate);
                 form.setValue("time", format(scheduledDate, "HH:mm"));
             }
+            if (meeting.notes && typeof meeting.notes === "string") {
+                setMeetingNotes(meeting.notes);
+            }
 
             // Load agenda items with joined speaker and hymn data
             const { data: agendaItems, error: itemsError } = await supabase
@@ -222,6 +228,7 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                         id: `child-${Math.random().toString(36).substr(2, 9)}`,
                         title: child.title || "",
                         description: child.description || "",
+                        item_notes: child.item_notes || null,
                         discussion_id: child.discussion_id,
                         business_item_id: child.business_item_id,
                         announcement_id: child.announcement_id,
@@ -237,6 +244,7 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                     category: item.item_type,
                     title: item.title,
                     description: item.description,
+                    item_notes: item.item_notes,
                     duration_minutes: item.duration_minutes,
                     order_index: item.order_index,
                     procedural_item_type_id: item.procedural_item_type_id,
@@ -831,6 +839,14 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
         );
     }, []);
 
+    const handleUpdateItemNotes = useCallback((id: string, newNotes: string) => {
+        setCanvasItems((prev) =>
+            prev.map((item) =>
+                item.id === id ? { ...item, item_notes: newNotes } : item
+            )
+        );
+    }, []);
+
     const handleUpdateDuration = useCallback((id: string, newDuration: number) => {
         setCanvasItems((prev) =>
             prev.map((item) =>
@@ -962,13 +978,14 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                 conducting: form.getValues("conducting"),
                 chorister: form.getValues("chorister"),
                 pianistOrganist: form.getValues("pianistOrganist"),
+                meetingNotes,
                 canvasItems,
             });
 
             setPreviewMarkdown(markdown);
             setIsGeneratingPreview(false);
         }, 100);
-    }, [form, canvasItems, workspaceName]);
+    }, [form, canvasItems, workspaceName, meetingNotes]);
 
     const handleValidate = useCallback(() => {
         setValidationModalOpen(true);
@@ -1029,6 +1046,7 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
             const agendaJson = agendaItems.map((item) => ({
                 title: item.title,
                 description: item.description,
+                item_notes: item.item_notes || null,
                 duration_minutes: item.duration_minutes,
                 order_index: item.order_index,
                 item_type: item.category,
@@ -1044,6 +1062,7 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                 child_items: item.isContainer && item.childItems ? item.childItems.map((child) => ({
                     title: child.title,
                     description: child.description,
+                    item_notes: child.item_notes || null,
                     discussion_id: child.discussion_id || null,
                     business_item_id: child.business_item_id || null,
                     announcement_id: child.announcement_id || null,
@@ -1066,6 +1085,7 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                         p_title: title,
                         p_scheduled_date: scheduledDate.toISOString(),
                         p_agenda_items: agendaJson,
+                        p_notes: meetingNotes,
                     }
                 );
 
@@ -1089,6 +1109,7 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                     conducting: form.getValues("conducting"),
                     chorister: form.getValues("chorister"),
                     pianistOrganist: form.getValues("pianistOrganist"),
+                    meetingNotes,
                     canvasItems,
                 });
 
@@ -1110,6 +1131,7 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                     p_title: title,
                     p_scheduled_date: scheduledDate.toISOString(),
                     p_agenda_items: agendaJson,
+                    p_notes: meetingNotes,
                 }
             );
 
@@ -1144,6 +1166,7 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                     conducting: form.getValues("conducting"),
                     chorister: form.getValues("chorister"),
                     pianistOrganist: form.getValues("pianistOrganist"),
+                    meetingNotes,
                     canvasItems,
                 });
                 saveMeetingMarkdown(fallbackData, fallbackMarkdown).catch(() => { });
@@ -1174,6 +1197,7 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                 conducting: form.getValues("conducting"),
                 chorister: form.getValues("chorister"),
                 pianistOrganist: form.getValues("pianistOrganist"),
+                meetingNotes,
                 canvasItems,
             });
             saveMeetingMarkdown(data, markdown).catch(() => { });
@@ -1193,7 +1217,7 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
         } finally {
             setIsCreating(false);
         }
-    }, [canvasItems, date, time, title, selectedTemplateId, router, form, workspaceName, initialMeetingId]);
+    }, [canvasItems, date, time, title, selectedTemplateId, router, form, workspaceName, initialMeetingId, meetingNotes]);
 
     const handleOverwriteTemplate = useCallback(async () => {
         if (!selectedTemplateId || selectedTemplateId === "none" || canvasItems.length === 0) return;
@@ -1413,6 +1437,9 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                                         selectedItem={canvasItems.find(i => i.id === selectedItemId)}
                                         onUpdateItem={handleUpdateTitle}
                                         onUpdateDescription={handleUpdateDescription}
+                                        onUpdateItemNotes={handleUpdateItemNotes}
+                                        meetingNotes={meetingNotes}
+                                        onUpdateMeetingNotes={setMeetingNotes}
                                         onUpdateDuration={handleUpdateDuration}
                                         onSelectHymn={handleSelectHymn}
                                         onSelectParticipant={handleSelectParticipant}
@@ -1463,6 +1490,9 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                                     selectedItem={canvasItems.find(i => i.id === selectedItemId)}
                                     onUpdateItem={handleUpdateTitle}
                                     onUpdateDescription={handleUpdateDescription}
+                                    onUpdateItemNotes={handleUpdateItemNotes}
+                                    meetingNotes={meetingNotes}
+                                    onUpdateMeetingNotes={setMeetingNotes}
                                     onUpdateDuration={handleUpdateDuration}
                                     onSelectHymn={handleSelectHymn}
                                     onSelectParticipant={handleSelectParticipant}

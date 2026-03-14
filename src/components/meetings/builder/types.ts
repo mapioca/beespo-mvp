@@ -18,6 +18,7 @@ export interface ToolboxItem {
     category: CategoryType;
     title: string;
     description?: string | null;
+    item_notes?: string | null;
     duration_minutes: number;
     procedural_item_type_id?: string;
     is_hymn?: boolean;
@@ -37,6 +38,7 @@ export interface CanvasItem {
     category: CategoryType;
     title: string;
     description?: string | null;
+    item_notes?: string | null;
     duration_minutes: number;
     order_index: number;
     // Type-specific IDs

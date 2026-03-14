@@ -33,6 +33,7 @@ export function AgendaEditor({ items, setItems, onDeleteItem }: AgendaEditorProp
             meeting_id: items[0]?.meeting_id || "",
 
             notes: null,
+            item_notes: null,
             is_completed: false,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),

@@ -19,6 +19,7 @@ export interface ContainerChildItem {
     id: string;
     title: string;
     description?: string | null;
+    item_notes?: string | null;
     // For discussions
     discussion_id?: string;
     status?: string;

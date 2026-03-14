@@ -10,6 +10,7 @@ export interface MeetingMarkdownData {
   conducting?: string;
   chorister?: string;
   pianistOrganist?: string;
+  meetingNotes?: string | null;
   canvasItems: CanvasItem[];
 }
 
@@ -19,12 +20,52 @@ const CONTAINER_HEADERS: Record<string, string> = {
   announcement: "Announcements",
 };
 
+/**
+ * Converts Tiptap HTML output to markdown-compatible text.
+ * Handles: <strong>, <em>, <s>, <p>, <ul>/<ol>/<li>, <br>.
+ * Falls back to stripping all remaining tags for unknown elements.
+ */
+function htmlToMarkdown(html: string | null | undefined): string {
+  if (!html) return "";
+
+  let md = html
+    // Inline formatting
+    .replace(/<strong>(.*?)<\/strong>/gis, "**$1**")
+    .replace(/<em>(.*?)<\/em>/gis, "_$1_")
+    .replace(/<s>(.*?)<\/s>/gis, "~~$1~~")
+    // Line break
+    .replace(/<br\s*\/?>/gi, "\n")
+    // Paragraphs → content + newline
+    .replace(/<p>(.*?)<\/p>/gis, (_, inner) => inner.trim() + "\n")
+    // Unordered list items
+    .replace(/<li>(.*?)<\/li>/gis, (_, inner) => `- ${inner.trim()}\n`)
+    // Ordered list: track index manually
+    .replace(/<ol>(.*?)<\/ol>/gis, (_, body) => {
+      let i = 0;
+      return body.replace(/^- /gm, () => `${++i}. `);
+    })
+    // Strip remaining tags (<ul>, <ol>, etc.)
+    .replace(/<[^>]+>/g, "")
+    // Decode HTML entities
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&nbsp;/g, " ");
+
+  // Collapse more than 2 consecutive newlines
+  md = md.replace(/\n{3,}/g, "\n\n").trim();
+  return md;
+}
+
 function formatTime12h(time24: string): string {
   const [hours, minutes] = time24.split(":").map(Number);
   const period = hours >= 12 ? "PM" : "AM";
   const displayHours = hours % 12 || 12;
   return `${displayHours}:${minutes.toString().padStart(2, "0")} ${period}`;
 }
+
 
 export function generateMeetingMarkdown(data: MeetingMarkdownData): string {
   const lines: string[] = [];
@@ -105,15 +146,15 @@ export function generateMeetingMarkdown(data: MeetingMarkdownData): string {
           // Add a line break indicator to the title line
           lines.push(titleLine + "  ");
 
-          if (child.description) {
-            // Add a blank line to make it a loose list item, forcing the description to a new paragraph/line
-            lines.push("  "); 
-            
-            const descriptionLines = child.description.split("\n");
-            descriptionLines.forEach((dLine) => {
-              // Indent even blank lines to keep them within the list item context
-              lines.push(`  ${dLine.trim()}`);
-            });
+          if (child.item_notes) {
+            // Convert HTML from the RichTextEditor to plain markdown text
+            const notesMd = htmlToMarkdown(child.item_notes);
+            if (notesMd) {
+              lines.push("  ");
+              notesMd.split("\n").forEach((dLine) => {
+                lines.push(`  ${dLine}`);
+              });
+            }
           }
         }
         lines.push("");
@@ -138,10 +179,14 @@ export function generateMeetingMarkdown(data: MeetingMarkdownData): string {
     if (item.is_hymn) {
       if (item.hymn_number && item.hymn_title) {
         lines.push(
-          `*${item.title}:* #${item.hymn_number} — ${item.hymn_title}`
+          `**${item.title}:** #${item.hymn_number} — ${item.hymn_title}`
         );
       } else {
-        lines.push(`*${item.title}:* TBD`);
+        lines.push(`**${item.title}:** TBD`);
+      }
+      if (item.item_notes) {
+        lines.push("");
+        lines.push(htmlToMarkdown(item.item_notes));
       }
       lines.push("");
       continue;
@@ -154,9 +199,13 @@ export function generateMeetingMarkdown(data: MeetingMarkdownData): string {
       // Use the item's title as the label (supports renamed speaker items)
       const speakerLabel = item.title?.trim() || "Speaker";
       if (item.speaker_name) {
-        lines.push(`*${speakerLabel}:* ${item.speaker_name}`);
+        lines.push(`**${speakerLabel}:** ${item.speaker_name}`);
       } else {
-        lines.push(`*${speakerLabel}:* TBD`);
+        lines.push(`**${speakerLabel}:** TBD`);
+      }
+      if (item.item_notes) {
+        lines.push("");
+        lines.push(htmlToMarkdown(item.item_notes));
       }
       lines.push("");
       continue;
@@ -165,19 +214,35 @@ export function generateMeetingMarkdown(data: MeetingMarkdownData): string {
     // Participant items (prayers, etc.)
     if (item.requires_participant) {
       if (item.participant_name) {
-        lines.push(`*${item.title}:* ${item.participant_name}`);
+        lines.push(`**${item.title}:** ${item.participant_name}`);
       } else {
-        lines.push(`*${item.title}:* TBD`);
+        lines.push(`**${item.title}:** TBD`);
+      }
+      if (item.item_notes) {
+        lines.push("");
+        lines.push(htmlToMarkdown(item.item_notes));
       }
       lines.push("");
       continue;
     }
 
     // Other procedural items
-    lines.push(`*${item.title}*`);
-    if (item.description) {
-      lines.push(`${item.description}`);
+    lines.push(`**${item.title}**`);
+    if (item.item_notes) {
+      lines.push("");
+      lines.push(htmlToMarkdown(item.item_notes));
     }
+    lines.push("");
+  }
+
+  // Meeting Notes (added at the end)
+  if (data.meetingNotes) {
+    if (lines[lines.length - 1] !== "") lines.push("");
+    lines.push("---");
+    lines.push("");
+    lines.push("## Meeting Notes");
+    lines.push("");
+    lines.push(htmlToMarkdown(data.meetingNotes));
     lines.push("");
   }
 

@@ -5,6 +5,7 @@ import { useFormContext } from "react-hook-form";
 import { format } from "date-fns";
 import { CalendarDays, Clock, Loader2, Minus, Play, Plus, Save } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -46,6 +47,9 @@ interface PropertiesPaneProps {
     selectedItem?: CanvasItem;
     onUpdateItem?: (id: string, newTitle: string) => void;
     onUpdateDescription?: (id: string, newDescription: string) => void;
+    onUpdateItemNotes?: (id: string, newNotes: string) => void;
+    meetingNotes?: string | null;
+    onUpdateMeetingNotes?: (newNotes: string) => void;
     onUpdateDuration?: (id: string, newDuration: number) => void;
     onSelectHymn?: (hymn: { id: string; number: number; title: string }) => void;
     onSelectParticipant?: (participant: { id: string; name: string }) => void;
@@ -71,6 +75,9 @@ export function PropertiesPane({
     selectedItem,
     onUpdateItem,
     onUpdateDescription,
+    onUpdateItemNotes,
+    meetingNotes,
+    onUpdateMeetingNotes,
     onUpdateDuration,
     onSelectHymn,
     onSelectParticipant,
@@ -103,6 +110,12 @@ export function PropertiesPane({
     const [showConducting, setShowConducting] = useState(false);
     const [showChorister, setShowChorister] = useState(false);
     const [showPianist, setShowPianist] = useState(false);
+    const [showMeetingNotes, setShowMeetingNotes] = useState(false);
+    
+    // Sacrament prayers state
+    const [showSacramentPrayers, setShowSacramentPrayers] = useState(false);
+    const [sacramentLanguage, setSacramentLanguage] = useState("");
+    const [showItemNotes, setShowItemNotes] = useState(false);
 
     // Save as Template dialog state
     // 'closed' | 'choose' (overwrite vs create new) | 'create' (name input)
@@ -351,15 +364,101 @@ export function PropertiesPane({
                             {selectedItem.config?.has_rich_text && (
                                 <div className="space-y-1.5">
                                     <Label htmlFor="item-description" className="text-xs">
-                                        Description / Notes
+                                        Description (Internal)
                                     </Label>
                                     <textarea
                                         id="item-description"
                                         value={selectedItem.description || ""}
                                         onChange={(e) => onUpdateDescription?.(selectedItem.id, e.target.value)}
                                         className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-50"
-                                        placeholder="Add notes..."
+                                        placeholder="Add internal description..."
                                     />
+                                </div>
+                            )}
+
+                            {/* Item Notes (Global for all items) */}
+                            {selectedItem.structural_type !== "divider" && (
+                                <div className="py-2.5 space-y-1.5 border-t">
+                                    {showItemNotes || selectedItem.item_notes ? (
+                                        <div className="space-y-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
+                                            <div className="flex items-center justify-between">
+                                                <Label className="text-xs">Notes</Label>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setShowItemNotes(false);
+                                                        onUpdateItemNotes?.(selectedItem.id, "");
+                                                    }}
+                                                    className="text-muted-foreground hover:text-destructive transition-colors"
+                                                >
+                                                    <Minus className="h-3 w-3" />
+                                                </button>
+                                            </div>
+                                            <RichTextEditor
+                                                content={selectedItem.item_notes || ""}
+                                                onSave={async (content) => onUpdateItemNotes?.(selectedItem.id, content)}
+                                            />
+                                        </div>
+                                    ) : (
+                                        <div
+                                            className="flex items-center justify-between group cursor-pointer hover:bg-muted/30 -mx-1 px-1 rounded transition-colors h-7"
+                                            onClick={() => setShowItemNotes(true)}
+                                        >
+                                            <span className="text-sm border-b border-dashed border-muted-foreground/50 pb-0.5">Add Notes</span>
+                                            <Plus className="h-4 w-4 text-muted-foreground/60 group-hover:text-foreground group-hover:scale-110 transition-all" />
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* Sacrament Prayers (Special case for global_sacrament) */}
+                            {selectedItem.procedural_item_type_id === "global_sacrament" && (
+                                <div className="py-2.5">
+                                    {showSacramentPrayers ? (
+                                        <div className="space-y-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
+                                            <div className="flex items-center justify-between">
+                                                <Label className="text-xs">Sacrament Prayers</Label>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setShowSacramentPrayers(false);
+                                                        setSacramentLanguage("");
+                                                    }}
+                                                    className="text-muted-foreground hover:text-destructive transition-colors"
+                                                >
+                                                    <Minus className="h-3 w-3" />
+                                                </button>
+                                            </div>
+                                            <Select
+                                                value={sacramentLanguage}
+                                                onValueChange={(val) => {
+                                                    setSacramentLanguage(val);
+                                                    if (val && onUpdateItemNotes) {
+                                                        import("@/lib/sacrament-prayers").then((m) => {
+                                                            onUpdateItemNotes(selectedItem.id, m.getSacramentPrayersText(val));
+                                                            setShowItemNotes(true);
+                                                        });
+                                                    }
+                                                }}
+                                            >
+                                                <SelectTrigger className="bg-background h-8 text-sm">
+                                                    <SelectValue placeholder="Select Language" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="en">English</SelectItem>
+                                                    <SelectItem value="es">Spanish</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                    ) : (
+                                        <div
+                                            className="flex items-center justify-between group cursor-pointer hover:bg-muted/30 -mx-1 px-1 rounded transition-colors h-7"
+                                            onClick={() => setShowSacramentPrayers(true)}
+                                        >
+                                            <span className="text-sm">Sacrament Prayers</span>
+                                            <Plus className="h-4 w-4 text-muted-foreground/60 group-hover:text-foreground group-hover:scale-110 transition-all" />
+                                        </div>
+                                    )}
                                 </div>
                             )}
 
@@ -783,6 +882,40 @@ export function PropertiesPane({
                                     onClick={() => setShowPianist(true)}
                                 >
                                     <span className="text-sm">Pianist / Organist</span>
+                                    <Plus className="h-4 w-4 text-muted-foreground/60 group-hover:text-foreground group-hover:scale-110 transition-all" />
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Meeting Notes */}
+                        <div className="py-2.5">
+                            {meetingNotes || showMeetingNotes ? (
+                                <div className="space-y-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
+                                    <div className="flex items-center justify-between">
+                                        <Label className="text-xs">Notes</Label>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                onUpdateMeetingNotes?.("");
+                                                setShowMeetingNotes(false);
+                                            }}
+                                            className="text-muted-foreground hover:text-destructive transition-colors"
+                                        >
+                                            <Minus className="h-3 w-3" />
+                                        </button>
+                                    </div>
+                                    <RichTextEditor
+                                        content={meetingNotes || ""}
+                                        onSave={async (content) => onUpdateMeetingNotes?.(content)}
+                                        placeholder="Add notes for the overall meeting..."
+                                    />
+                                </div>
+                            ) : (
+                                <div
+                                    className="flex items-center justify-between group cursor-pointer hover:bg-muted/30 -mx-1 px-1 rounded transition-colors h-7"
+                                    onClick={() => setShowMeetingNotes(true)}
+                                >
+                                    <span className="text-sm">Notes</span>
                                     <Plus className="h-4 w-4 text-muted-foreground/60 group-hover:text-foreground group-hover:scale-110 transition-all" />
                                 </div>
                             )}
