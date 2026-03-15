@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useFormContext } from "react-hook-form";
 import { format } from "date-fns";
-import { CalendarDays, Clock, Loader2, Minus, Play, Plus, Save } from "lucide-react";
+import { CalendarDays, Clock, Minus, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -39,10 +39,6 @@ import {
 
 interface PropertiesPaneProps {
     templates: Template[];
-    onCreateMeeting: () => void;
-    onPreview: () => void;
-    isCreating: boolean;
-    isValid: boolean;
     selectedItem?: CanvasItem;
     onUpdateItem?: (id: string, newTitle: string) => void;
     onUpdateDescription?: (id: string, newDescription: string) => void;
@@ -58,16 +54,10 @@ interface PropertiesPaneProps {
     onSelectAnnouncement?: (announcements: AnnouncementSelection[]) => void;
     onSaveAsTemplate?: (name: string) => void;
     onOverwriteTemplate?: () => void;
-    isSavingTemplate?: boolean;
-    canSaveAsTemplate?: boolean;
 }
 
 export function PropertiesPane({
     templates,
-    onCreateMeeting,
-    onPreview,
-    isCreating,
-    isValid,
     selectedItem,
     onUpdateItem,
     onUpdateDescription,
@@ -83,8 +73,6 @@ export function PropertiesPane({
     onSelectAnnouncement,
     onSaveAsTemplate,
     onOverwriteTemplate,
-    isSavingTemplate,
-    canSaveAsTemplate,
 }: PropertiesPaneProps) {
     const { watch, setValue } = useFormContext();
 
@@ -112,27 +100,6 @@ export function PropertiesPane({
 
     const selectedTemplate = templates.find((t) => t.id === selectedTemplateId && selectedTemplateId !== "none");
 
-    // Beespo Official templates have workspace_id = null;
-    // workspace users cannot overwrite those — only create their own copy.
-    const isSharedTemplate = selectedTemplate?.workspace_id === null || selectedTemplate?.workspace_id === undefined;
-
-    const openSaveDialog = () => {
-        if (selectedTemplate) {
-            if (isSharedTemplate) {
-                // Skip to create-new directly for shared templates
-                setTemplateName(title || "");
-                setTemplateDialogStep("create");
-            } else {
-                // A template is active — ask overwrite or create new
-                setTemplateDialogStep("choose");
-            }
-        } else {
-            // No template — go straight to naming
-            setTemplateName(title || "");
-            setTemplateDialogStep("create");
-        }
-    };
-
     const closeDialog = () => setTemplateDialogStep("closed");
 
     const duplicateNameExists = templates.some(
@@ -147,42 +114,6 @@ export function PropertiesPane({
         <div className="h-full flex flex-col bg-muted/30 border-l overflow-y-auto">
             {/* Actions & Header */}
             <div className="sticky top-0 bg-background/95 backdrop-blur z-10 shrink-0 border-b">
-                <div className="h-14 px-3 flex items-center gap-2 border-b">
-                    <Button
-                        variant="outline"
-                        size="icon"
-                        className="h-8 w-8 rounded-lg border-zinc-200 shrink-0"
-                        onClick={onPreview}
-                        disabled={!isValid}
-                        type="button"
-                        title="Preview"
-                    >
-                        <Play className="h-4 w-4" />
-                    </Button>
-                    <Button
-                        variant="outline"
-                        size="icon"
-                        className="h-8 w-8 rounded-lg border-zinc-200 shrink-0"
-                        onClick={openSaveDialog}
-                        disabled={!canSaveAsTemplate || isSavingTemplate}
-                        type="button"
-                        title="Save as Template"
-                    >
-                        {isSavingTemplate ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                            <Save className="h-4 w-4" />
-                        )}
-                    </Button>
-                    <Button
-                        className="flex-1 h-8 gap-1.5 bg-zinc-900 text-white hover:bg-zinc-800 text-xs font-medium rounded-lg"
-                        onClick={onCreateMeeting}
-                        disabled={isCreating || !isValid}
-                        type="button"
-                    >
-                        {isCreating ? "Saving..." : "Create Agenda"}
-                    </Button>
-                </div>
                 <div className="px-3 py-2.5 bg-muted/10">
                     <h2 className="font-semibold text-xs">Properties</h2>
                 </div>
