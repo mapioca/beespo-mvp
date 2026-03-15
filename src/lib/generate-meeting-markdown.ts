@@ -146,9 +146,17 @@ export function generateMeetingMarkdown(data: MeetingMarkdownData): string {
           }
           lines.push(titleLine);
 
-          // Add description on a new line if present
+          // Add description on new line(s) if present, properly cleaned and indented
           if (child.description?.trim()) {
-            lines.push(`  ${child.description.trim()}`);
+            const descMd = htmlToMarkdown(child.description);
+            if (descMd) {
+              descMd.split("\n").forEach((dLine) => {
+                const trimmedLine = dLine.trim();
+                if (trimmedLine) {
+                  lines.push(`  ${trimmedLine}`);
+                }
+              });
+            }
           }
 
           // Add notes if present, indented
@@ -235,8 +243,15 @@ export function generateMeetingMarkdown(data: MeetingMarkdownData): string {
 
     // Other procedural items
     lines.push(`**${item.title}**`);
+    if (item.description?.trim()) {
+      const descMd = htmlToMarkdown(item.description);
+      if (descMd) {
+        lines.push("");
+        lines.push(descMd);
+      }
+    }
     if (item.item_notes) {
-      lines.push("");
+      if (!item.description?.trim()) lines.push("");
       lines.push(htmlToMarkdown(item.item_notes));
     }
     lines.push("");
