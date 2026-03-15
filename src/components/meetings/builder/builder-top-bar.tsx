@@ -44,6 +44,8 @@ interface BuilderTopBarProps {
     onPreview: () => void;
     /** Duplicate the meeting with a new name */
     onSaveAsNew: (newTitle: string) => Promise<void>;
+    /** Open the save as template flow */
+    onSaveAsTemplate: () => void;
 }
 
 export function BuilderTopBar({
@@ -55,6 +57,7 @@ export function BuilderTopBar({
     onSave,
     onPreview,
     onSaveAsNew,
+    onSaveAsTemplate,
 }: BuilderTopBarProps) {
     const router = useRouter();
     const [shareOpen, setShareOpen] = useState(false);
@@ -221,6 +224,9 @@ export function BuilderTopBar({
                                 </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="w-48">
+                                <DropdownMenuItem onSelect={onSaveAsTemplate}>
+                                    Save as Template
+                                </DropdownMenuItem>
                                 <DropdownMenuItem onSelect={openSaveAsNew}>
                                     Save as New Meeting
                                 </DropdownMenuItem>

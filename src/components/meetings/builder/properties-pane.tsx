@@ -28,14 +28,6 @@ import { Template, CanvasItem } from "./types";
 import { DiscussionSelectorPopover, type DiscussionSelection } from "./discussion-selector-popover";
 import { BusinessSelectorPopover, type BusinessSelection } from "./business-selector-popover";
 import { AnnouncementSelectorPopover, type AnnouncementSelection } from "./announcement-selector-popover";
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogFooter,
-    DialogClose,
-} from "@/components/ui/dialog";
 
 interface PropertiesPaneProps {
     templates: Template[];
@@ -52,8 +44,6 @@ interface PropertiesPaneProps {
     onSelectDiscussion?: (discussions: DiscussionSelection[]) => void;
     onSelectBusiness?: (items: BusinessSelection[]) => void;
     onSelectAnnouncement?: (announcements: AnnouncementSelection[]) => void;
-    onSaveAsTemplate?: (name: string) => void;
-    onOverwriteTemplate?: () => void;
 }
 
 export function PropertiesPane({
@@ -71,8 +61,6 @@ export function PropertiesPane({
     onSelectDiscussion,
     onSelectBusiness,
     onSelectAnnouncement,
-    onSaveAsTemplate,
-    onOverwriteTemplate,
 }: PropertiesPaneProps) {
     const { watch, setValue } = useFormContext();
 
@@ -92,24 +80,6 @@ export function PropertiesPane({
     const [showChorister, setShowChorister] = useState(false);
     const [showPianist, setShowPianist] = useState(false);
 
-    // Save as Template dialog state
-    // 'closed' | 'choose' (overwrite vs create new) | 'create' (name input)
-    type DialogStep = "closed" | "choose" | "create";
-    const [templateDialogStep, setTemplateDialogStep] = useState<DialogStep>("closed");
-    const [templateName, setTemplateName] = useState("");
-
-    const selectedTemplate = templates.find((t) => t.id === selectedTemplateId && selectedTemplateId !== "none");
-
-    const closeDialog = () => setTemplateDialogStep("closed");
-
-    const duplicateNameExists = templates.some(
-        (t) => t.name.trim().toLowerCase() === templateName.trim().toLowerCase()
-    );
-
-    const isSameAsSelected =
-        selectedTemplate &&
-        selectedTemplate.name.trim().toLowerCase() === templateName.trim().toLowerCase();
-
     return (
         <div className="h-full flex flex-col bg-muted/30 border-l overflow-y-auto">
             {/* Actions & Header */}
@@ -118,101 +88,6 @@ export function PropertiesPane({
                     <h2 className="font-semibold text-xs">Properties</h2>
                 </div>
             </div>
-
-            {/* Save as Template — Step 1: Overwrite or Create New (only for non-shared workspace templates) */}
-            <Dialog open={templateDialogStep === "choose"} onOpenChange={(open) => !open && closeDialog()}>
-                <DialogContent className="sm:max-w-sm">
-                    <DialogHeader>
-                        <DialogTitle>Save as Template</DialogTitle>
-                    </DialogHeader>
-                    <p className="text-sm text-muted-foreground">
-                        You currently have <span className="font-medium text-foreground">{selectedTemplate?.name}</span> selected as a template. What would you like to do?
-                    </p>
-                    <DialogFooter className="flex-col gap-2 sm:flex-col">
-                        <Button
-                            type="button"
-                            className="w-full"
-                            onClick={() => {
-                                closeDialog();
-                                onOverwriteTemplate?.();
-                            }}
-                        >
-                            Overwrite &ldquo;{selectedTemplate?.name}&rdquo;
-                        </Button>
-                        <Button
-                            type="button"
-                            variant="outline"
-                            className="w-full"
-                            onClick={() => {
-                                setTemplateName(title || "");
-                                setTemplateDialogStep("create");
-                            }}
-                        >
-                            Create New Template
-                        </Button>
-                        <DialogClose asChild>
-                            <Button variant="ghost" size="sm" type="button" className="w-full">
-                                Cancel
-                            </Button>
-                        </DialogClose>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
-
-            {/* Save as Template — Step 2: Name the new template */}
-            <Dialog open={templateDialogStep === "create"} onOpenChange={(open) => !open && closeDialog()}>
-                <DialogContent className="sm:max-w-sm">
-                    <DialogHeader>
-                        <DialogTitle>Create New Template</DialogTitle>
-                    </DialogHeader>
-                    <p className="text-sm text-muted-foreground">
-                        This will save the current agenda structure as a reusable template. Values like hymns and participants will not be saved.
-                    </p>
-                    <div className="space-y-1.5">
-                        <Label htmlFor="template-name" className="text-xs">Template Name</Label>
-                        <Input
-                            id="template-name"
-                            value={templateName}
-                            onChange={(e) => setTemplateName(e.target.value)}
-                            onKeyDown={(e) => {
-                                if (e.key === "Enter" && templateName.trim() && !duplicateNameExists) {
-                                    closeDialog();
-                                    onSaveAsTemplate?.(templateName);
-                                }
-                            }}
-                            placeholder="e.g. Sacrament Meeting"
-                            className="bg-background h-8 text-sm"
-                            autoFocus
-                        />
-                        {isSameAsSelected && (
-                            <p className="text-xs text-amber-600">
-                                This is the same name as the currently selected template. Please choose a different name.
-                            </p>
-                        )}
-                        {!isSameAsSelected && duplicateNameExists && (
-                            <p className="text-xs text-destructive">
-                                A template named &ldquo;{templateName.trim()}&rdquo; already exists. Template names must be unique.
-                            </p>
-                        )}
-                    </div>
-                    <DialogFooter>
-                        <DialogClose asChild>
-                            <Button variant="outline" size="sm" type="button">Cancel</Button>
-                        </DialogClose>
-                        <Button
-                            size="sm"
-                            type="button"
-                            disabled={!templateName.trim() || duplicateNameExists}
-                            onClick={() => {
-                                closeDialog();
-                                onSaveAsTemplate?.(templateName);
-                            }}
-                        >
-                            Save Template
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
 
             {/* Scrollable Content */}
             <div className="p-3 space-y-6 flex-1">
