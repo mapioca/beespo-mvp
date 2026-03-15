@@ -35,8 +35,8 @@ function htmlToMarkdown(html: string | null | undefined): string {
     .replace(/<s>(.*?)<\/s>/gis, "~~$1~~")
     // Line break
     .replace(/<br\s*\/?>/gi, "\n")
-    // Paragraphs → content + newline
-    .replace(/<p>(.*?)<\/p>/gis, (_, inner) => inner.trim() + "\n")
+    // Paragraphs → content + double newline for markdown paragraph separation
+    .replace(/<p>(.*?)<\/p>/gis, (_, inner) => inner.trim() + "\n\n")
     // Unordered list items
     .replace(/<li>(.*?)<\/li>/gis, (_, inner) => `- ${inner.trim()}\n`)
     // Ordered list: track index manually
@@ -54,7 +54,7 @@ function htmlToMarkdown(html: string | null | undefined): string {
     .replace(/&#39;/g, "'")
     .replace(/&nbsp;/g, " ");
 
-  // Collapse more than 2 consecutive newlines
+  // Collapse more than 2 consecutive newlines to exactly 2
   md = md.replace(/\n{3,}/g, "\n\n").trim();
   return md;
 }
@@ -139,20 +139,27 @@ export function generateMeetingMarkdown(data: MeetingMarkdownData): string {
         lines.push("");
       } else {
         for (const child of children) {
+          // Main bullet line: **Title** (Priority)
           let titleLine = `- **${child.title}**`;
           if (child.priority && child.priority !== "normal") {
-            titleLine += ` *(${child.priority} priority)*`;
+            titleLine += ` *(${child.priority})*`;
           }
-          // Add a line break indicator to the title line
-          lines.push(titleLine + "  ");
+          lines.push(titleLine);
 
+          // Add description on a new line if present
+          if (child.description?.trim()) {
+            lines.push(`  ${child.description.trim()}`);
+          }
+
+          // Add notes if present, indented
           if (child.item_notes) {
-            // Convert HTML from the RichTextEditor to plain markdown text
             const notesMd = htmlToMarkdown(child.item_notes);
             if (notesMd) {
-              lines.push("  ");
               notesMd.split("\n").forEach((dLine) => {
-                lines.push(`  ${dLine}`);
+                const trimmedLine = dLine.trim();
+                if (trimmedLine) {
+                  lines.push(`  ${trimmedLine}`);
+                }
               });
             }
           }

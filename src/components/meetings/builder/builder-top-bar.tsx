@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Eye, Share2, ChevronDown, Download, Link, Loader2 } from "lucide-react";
+import { ArrowLeft, Eye, Share2, ChevronDown, Link, Loader2, FileText, FileCode, FileType } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
     Popover,
@@ -26,6 +26,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { toast } from "@/lib/toast";
+import { 
+    generateMeetingPdf, 
+    generateMeetingDocx, 
+    generateMeetingTxt, 
+    downloadBlob 
+} from "@/lib/agenda-export-utils";
 
 interface BuilderTopBarProps {
     /** Current meeting title from form */
@@ -64,6 +70,7 @@ export function BuilderTopBar({
     const [saveAsNewOpen, setSaveAsNewOpen] = useState(false);
     const [newTitle, setNewTitle] = useState("");
     const [isSavingAsNew, setIsSavingAsNew] = useState(false);
+    const [exportingFormat, setExportingFormat] = useState<string | null>(null);
 
     // ─── Share actions ─────────────────────────────────────────
     const handleCopyLink = async () => {
@@ -75,20 +82,41 @@ export function BuilderTopBar({
         setShareOpen(false);
     };
 
-    const handleDownload = () => {
+    const handleExport = async (format: "pdf" | "docx" | "md" | "txt") => {
         const md = markdownForDownload();
         if (!md.trim()) {
             toast.error("No agenda content to download");
             return;
         }
-        const blob = new Blob([md], { type: "text/plain" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `${(title || "agenda").replace(/[^a-z0-9]/gi, "_").toLowerCase()}.md`;
-        a.click();
-        URL.revokeObjectURL(url);
-        setShareOpen(false);
+
+        const safeTitle = (title || "agenda").replace(/[^a-z0-9]/gi, "_").toLowerCase();
+        setExportingFormat(format);
+
+        try {
+            switch (format) {
+                case "pdf":
+                    await generateMeetingPdf(md, safeTitle);
+                    break;
+                case "docx":
+                    await generateMeetingDocx(md, safeTitle);
+                    break;
+                case "md": {
+                    const blob = new Blob([md], { type: "text/markdown;charset=utf-8" });
+                    downloadBlob(blob, `${safeTitle}.md`);
+                    break;
+                }
+                case "txt":
+                    await generateMeetingTxt(md, safeTitle);
+                    break;
+            }
+            toast.success(`${format.toUpperCase()} downloaded successfully`);
+            setShareOpen(false);
+        } catch (error) {
+            console.error(`Export to ${format} failed:`, error);
+            toast.error(`Failed to generate ${format.toUpperCase()}`);
+        } finally {
+            setExportingFormat(null);
+        }
     };
 
     // ─── Save as New Meeting ───────────────────────────────────
@@ -173,23 +201,74 @@ export function BuilderTopBar({
                                 <span className="hidden sm:inline">Share</span>
                             </Button>
                         </PopoverTrigger>
-                        <PopoverContent align="end" className="w-52 p-1.5">
+                        <PopoverContent align="end" className="w-60 p-1.5">
+                            <div className="px-2 py-1.5 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                                Share Link
+                            </div>
                             <button
                                 type="button"
                                 onClick={handleCopyLink}
                                 className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-sm hover:bg-muted transition-colors"
                             >
                                 <Link className="h-3.5 w-3.5 text-muted-foreground" />
-                                Copy link
+                                Copy public link
                             </button>
-                            <button
-                                type="button"
-                                onClick={handleDownload}
-                                className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-sm hover:bg-muted transition-colors"
-                            >
-                                <Download className="h-3.5 w-3.5 text-muted-foreground" />
-                                Download (.md)
-                            </button>
+
+                            <div className="h-px bg-border/40 my-1.5 mx-1" />
+
+                            <div className="px-2 py-1.5 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                                Download As
+                            </div>
+                            <div className="space-y-0.5">
+                                <button
+                                    type="button"
+                                    disabled={!!exportingFormat}
+                                    onClick={() => handleExport("pdf")}
+                                    className="w-full flex items-center justify-between gap-2.5 px-2.5 py-2 rounded-md text-sm hover:bg-muted transition-colors disabled:opacity-50"
+                                >
+                                    <div className="flex items-center gap-2.5">
+                                        <FileText className="h-3.5 w-3.5 text-red-500/80" />
+                                        <span>PDF Document (.pdf)</span>
+                                    </div>
+                                    {exportingFormat === "pdf" && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
+                                </button>
+                                <button
+                                    type="button"
+                                    disabled={!!exportingFormat}
+                                    onClick={() => handleExport("docx")}
+                                    className="w-full flex items-center justify-between gap-2.5 px-2.5 py-2 rounded-md text-sm hover:bg-muted transition-colors disabled:opacity-50"
+                                >
+                                    <div className="flex items-center gap-2.5">
+                                        <FileType className="h-3.5 w-3.5 text-blue-500/80" />
+                                        <span>Word Document (.docx)</span>
+                                    </div>
+                                    {exportingFormat === "docx" && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
+                                </button>
+                                <button
+                                    type="button"
+                                    disabled={!!exportingFormat}
+                                    onClick={() => handleExport("md")}
+                                    className="w-full flex items-center justify-between gap-2.5 px-2.5 py-2 rounded-md text-sm hover:bg-muted transition-colors disabled:opacity-50"
+                                >
+                                    <div className="flex items-center gap-2.5">
+                                        <FileCode className="h-3.5 w-3.5 text-orange-500/80" />
+                                        <span>Markdown (.md)</span>
+                                    </div>
+                                    {exportingFormat === "md" && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
+                                </button>
+                                <button
+                                    type="button"
+                                    disabled={!!exportingFormat}
+                                    onClick={() => handleExport("txt")}
+                                    className="w-full flex items-center justify-between gap-2.5 px-2.5 py-2 rounded-md text-sm hover:bg-muted transition-colors disabled:opacity-50"
+                                >
+                                    <div className="flex items-center gap-2.5">
+                                        <FileText className="h-3.5 w-3.5 text-slate-500/80" />
+                                        <span>Plain Text (.txt)</span>
+                                    </div>
+                                    {exportingFormat === "txt" && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
+                                </button>
+                            </div>
                         </PopoverContent>
                     </Popover>
 
