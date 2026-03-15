@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { AppSidebar } from "@/components/dashboard/app-sidebar";
+import { getProfile } from "@/lib/supabase/cached-queries";
 
 export default async function DashboardLayout({
   children,
@@ -17,12 +18,9 @@ export default async function DashboardLayout({
     redirect("/login");
   }
 
-  const { data: profile } = await (supabase
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    .from("profiles") as any)
-    .select("full_name, workspace_id, role, role_title, workspaces(name)")
-    .eq("id", user.id)
-    .single();
+  // getProfile() is memoised with React cache() — if a child page also calls
+  // getProfile(user.id) during the same request, only one DB query fires.
+  const profile = await getProfile(user.id);
 
   if (!profile?.workspace_id) {
     redirect("/onboarding");

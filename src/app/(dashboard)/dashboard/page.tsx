@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { fetchDashboardData } from "@/lib/dashboard/data-fetchers";
 import { getDefaultLayout } from "@/lib/dashboard/widget-registry";
 import { MissionControl } from "@/components/dashboard/mission-control";
+import { getProfile } from "@/lib/supabase/cached-queries";
 import type { DashboardConfig } from "@/types/dashboard";
 import type { ReleaseNote } from "@/types/release-notes";
 
@@ -17,12 +18,8 @@ export default async function DashboardPage() {
 
   if (!user) redirect("/auth/login");
 
-  // Get user profile
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: profile } = await (supabase.from("profiles") as any)
-    .select("full_name, role, workspace_id, feature_tier, last_read_release_note_at")
-    .eq("id", user.id)
-    .single();
+  // getProfile() is memoised — layout already called it, so this is a cache hit (no extra DB query).
+  const profile = await getProfile(user.id);
 
   if (!profile?.workspace_id) redirect("/onboarding");
 

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Plus, Table2, MoreHorizontal, Trash2, Settings2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { getProfile } from "@/lib/supabase/cached-queries";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -33,18 +34,15 @@ export default async function TablesPage() {
         redirect("/login");
     }
 
-    // Get user's workspace
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: profile } = await (supabase.from("profiles") as any)
-        .select("workspace_id")
-        .eq("id", user.id)
-        .single();
+    // getProfile() is memoised — layout already called it, so this is a cache hit.
+    const profile = await getProfile(user.id);
 
     if (!profile?.workspace_id) {
         redirect("/onboarding");
     }
 
-    // Get tables with row counts
+    // Fetch tables and their row counts in exactly 2 queries instead of N+1.
+    // Query 1: all tables for the workspace.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: tables } = await (supabase.from("dynamic_tables") as any)
         .select("*")
@@ -53,16 +51,24 @@ export default async function TablesPage() {
 
     const tablesList = (tables || []) as DynamicTable[];
 
-    // Get row counts for each table
-    const tablesWithCounts = await Promise.all(
-        tablesList.map(async (table) => {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const { count } = await (supabase.from("dynamic_rows") as any)
-                .select("*", { count: "exact", head: true })
-                .eq("table_id", table.id);
-            return { ...table, row_count: count || 0 };
-        })
-    );
+    // Query 2: fetch only the table_id column for all rows in those tables in one shot.
+    // Counting is done in JS. This avoids N separate round-trips to the database.
+    const countMap: Record<string, number> = {};
+    if (tablesList.length > 0) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: rowData } = await (supabase.from("dynamic_rows") as any)
+            .select("table_id")
+            .in("table_id", tablesList.map((t) => t.id));
+
+        ((rowData || []) as { table_id: string }[]).forEach((r) => {
+            countMap[r.table_id] = (countMap[r.table_id] || 0) + 1;
+        });
+    }
+
+    const tablesWithCounts = tablesList.map((table) => ({
+        ...table,
+        row_count: countMap[table.id] || 0,
+    }));
 
     return (
         <div className="h-full overflow-auto">

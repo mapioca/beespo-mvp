@@ -99,6 +99,7 @@ export async function createTable(data: CreateTableRequest) {
     });
 
     revalidatePath("/tables");
+    revalidatePath("/dashboard");
     return { data: table as DynamicTable };
 }
 
@@ -173,6 +174,7 @@ export async function deleteTable(tableId: string) {
     }
 
     revalidatePath("/tables");
+    revalidatePath("/dashboard");
     return { success: true };
 }
 
