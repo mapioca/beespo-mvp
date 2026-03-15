@@ -149,7 +149,6 @@ export function CreateItemTypeDialog({
                     name: name.trim(),
                     description: description.trim() || null,
                     is_custom: true,
-                    is_core: false,
                     icon: iconName,
                     workspace_id: workspaceId,
                     category: requiresSpeaker ? "speaker" : "procedural",
