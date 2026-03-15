@@ -38,8 +38,19 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Form } from "@/components/ui/form";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription } from "@/components/ui/sheet";
-import { List, SlidersHorizontal } from "lucide-react";
+import { List, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { BuilderTopBar } from "./builder-top-bar";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogFooter,
+    DialogClose,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 
 const meetingFormSchema = z.object({
     title: z.string().min(1, "Title is required"),
@@ -115,6 +126,29 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
 
     // Save as Template state
     const [isSavingTemplate, setIsSavingTemplate] = useState(false);
+    const [templateDialogStep, setTemplateDialogStep] = useState<"closed" | "choose" | "create">("closed");
+    const [templateName, setTemplateName] = useState("");
+
+    const openSaveTemplateDialog = useCallback(() => {
+        const selectedTemplateId = form.getValues("templateId") || "none";
+        const selectedTemplate = templates.find((t) => t.id === selectedTemplateId && selectedTemplateId !== "none");
+        const title = form.getValues("title") || "";
+
+        if (selectedTemplate) {
+            const isSharedTemplate = selectedTemplate.workspace_id === null || selectedTemplate.workspace_id === undefined;
+            if (isSharedTemplate) {
+                setTemplateName(title);
+                setTemplateDialogStep("create");
+            } else {
+                setTemplateDialogStep("choose");
+            }
+        } else {
+            setTemplateName(title);
+            setTemplateDialogStep("create");
+        }
+    }, [templates, form]);
+
+    const closeSaveTemplateDialog = useCallback(() => setTemplateDialogStep("closed"), []);
 
     // Meeting-level notes state
     const [meetingNotes, setMeetingNotes] = useState<string | null>(null);
@@ -1219,6 +1253,75 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
         }
     }, [canvasItems, date, time, title, selectedTemplateId, router, form, workspaceName, initialMeetingId, meetingNotes]);
 
+    // Duplicate the current agenda as a brand-new meeting with a different name
+    const handleSaveAsNew = useCallback(async (newTitle: string) => {
+        try {
+            const supabase = createClient();
+            const [hours, minutes] = time.split(":").map(Number);
+            const scheduledDate = new Date(date!);
+            scheduledDate.setHours(hours, minutes);
+
+            const agendaItems: CanvasItem[] = [];
+            let orderIndex = 0;
+            for (const item of canvasItems) {
+                if (item.isContainer) {
+                    agendaItems.push({ ...item, order_index: orderIndex++, id: undefined as unknown as string });
+                } else {
+                    agendaItems.push({ ...item, order_index: orderIndex++, id: undefined as unknown as string });
+                }
+            }
+
+            const agendaJson = agendaItems.map((item) => ({
+                title: item.title,
+                description: item.description,
+                duration_minutes: item.duration_minutes,
+                order_index: item.order_index,
+                item_type: item.category,
+                hymn_id: item.hymn_id || null,
+                speaker_id: item.speaker_id || null,
+                participant_id: item.participant_id || null,
+                participant_name: item.participant_name || item.speaker_name || null,
+                discussion_id: item.discussion_id || null,
+                business_item_id: item.business_item_id || null,
+                announcement_id: item.announcement_id || null,
+                structural_type: item.structural_type || null,
+                child_items: item.isContainer && item.childItems ? item.childItems.map((child) => ({
+                    title: child.title,
+                    description: child.description,
+                    discussion_id: child.discussion_id || null,
+                    business_item_id: child.business_item_id || null,
+                    announcement_id: child.announcement_id || null,
+                    person_name: child.person_name || null,
+                    position_calling: child.position_calling || null,
+                    business_category: child.business_category || null,
+                    business_details: child.business_details || null,
+                })) : null,
+            }));
+
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const { data, error } = await (supabase as any).rpc("create_meeting_with_agenda", {
+                p_template_id: null,
+                p_title: newTitle,
+                p_scheduled_date: scheduledDate.toISOString(),
+                p_agenda_items: agendaJson,
+            });
+
+            if (error) {
+                toast.error("Failed to duplicate meeting", { description: error.message });
+                throw error;
+            }
+
+            toast.success("Meeting duplicated", { description: `"${newTitle}" has been created.` });
+            router.push(`/meetings/builder?meeting=${data}`);
+            router.refresh();
+        } catch (err: unknown) {
+            if (!(err instanceof Error && err.message)) {
+                toast.error("Failed to duplicate meeting");
+            }
+            throw err;
+        }
+    }, [canvasItems, date, time, router]);
+
     const handleOverwriteTemplate = useCallback(async () => {
         if (!selectedTemplateId || selectedTemplateId === "none" || canvasItems.length === 0) return;
 
@@ -1309,7 +1412,7 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
             const supabase = createClient();
 
             // Get current user + workspace_id
-            const { data: { user } } = await supabase.auth.getUser();
+            const { data: { user } = {} } = await supabase.auth.getUser();
             if (!user) {
                 toast.error("You must be signed in to save a template.");
                 return;
@@ -1402,8 +1505,31 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                     onDragEnd={handleDragEnd}
                 >
                     <div className="flex-1 flex flex-col overflow-hidden">
-                        {/* Mobile Header (Hidden on lg+) */}
-                        <div className="lg:hidden flex items-center justify-between p-4 border-b bg-background shrink-0">
+                        {/* Global Top Bar (all screen sizes) */}
+                        <BuilderTopBar
+                            title={title}
+                            initialMeetingId={initialMeetingId}
+                            isCreating={isCreating}
+                            isValid={isValid}
+                            onPreview={handlePreview}
+                            onSave={handleValidate}
+                            onSaveAsNew={handleSaveAsNew}
+                            markdownForDownload={() => generateMeetingMarkdown({
+                                title: form.getValues("title"),
+                                date: form.getValues("date") ?? new Date(),
+                                time: form.getValues("time") ?? "07:00",
+                                unitName: workspaceName,
+                                presiding: form.getValues("presiding"),
+                                conducting: form.getValues("conducting"),
+                                chorister: form.getValues("chorister"),
+                                pianistOrganist: form.getValues("pianistOrganist"),
+                                canvasItems,
+                            })}
+                            onSaveAsTemplate={openSaveTemplateDialog}
+                        />
+
+                        {/* Mobile sheet toggle (hidden on lg+) — toolbox & properties */}
+                        <div className="lg:hidden flex items-center justify-between px-4 py-2 border-b bg-background shrink-0">
                             <Sheet>
                                 <SheetTrigger asChild>
                                     <Button variant="outline" size="icon" type="button">
@@ -1422,7 +1548,8 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                             <Sheet>
                                 <SheetTrigger asChild>
                                     <Button variant="outline" size="icon" type="button">
-                                        <SlidersHorizontal className="h-4 w-4" />
+                                        <span className="sr-only">Properties</span>
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>
                                     </Button>
                                 </SheetTrigger>
                                 <SheetContent side="right" className="w-[300px] sm:w-[400px] p-0 overflow-y-auto">
@@ -1430,10 +1557,6 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                                     <SheetDescription className="sr-only">Meeting properties</SheetDescription>
                                     <PropertiesPane
                                         templates={templates}
-                                        onCreateMeeting={handleValidate}
-                                        onPreview={handlePreview}
-                                        isCreating={isCreating}
-                                        isValid={isValid}
                                         selectedItem={canvasItems.find(i => i.id === selectedItemId)}
                                         onUpdateItem={handleUpdateTitle}
                                         onUpdateDescription={handleUpdateDescription}
@@ -1450,10 +1573,6 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                                         selectedSpeakerIdsInMeeting={selectedSpeakerIds}
                                         onAddToContainer={openContainerAddForSelected}
                                         onRemoveChildItem={handleRemoveChildFromSelected}
-                                        onSaveAsTemplate={handleSaveAsTemplate}
-                                        onOverwriteTemplate={handleOverwriteTemplate}
-                                        isSavingTemplate={isSavingTemplate}
-                                        canSaveAsTemplate={canvasItems.length > 0}
                                     />
                                 </SheetContent>
                             </Sheet>
@@ -1483,10 +1602,6 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                             <div className="hidden lg:block w-[280px] h-full overflow-hidden border-l shrink-0">
                                 <PropertiesPane
                                     templates={templates}
-                                    onCreateMeeting={handleValidate}
-                                    onPreview={handlePreview}
-                                    isCreating={isCreating}
-                                    isValid={isValid}
                                     selectedItem={canvasItems.find(i => i.id === selectedItemId)}
                                     onUpdateItem={handleUpdateTitle}
                                     onUpdateDescription={handleUpdateDescription}
@@ -1503,10 +1618,6 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                                     selectedSpeakerIdsInMeeting={selectedSpeakerIds}
                                     onAddToContainer={openContainerAddForSelected}
                                     onRemoveChildItem={handleRemoveChildFromSelected}
-                                    onSaveAsTemplate={handleSaveAsTemplate}
-                                    onOverwriteTemplate={handleOverwriteTemplate}
-                                    isSavingTemplate={isSavingTemplate}
-                                    canSaveAsTemplate={canvasItems.length > 0}
                                 />
                             </div>
                         </div>
@@ -1561,6 +1672,108 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                         onRetry={handleValidate}
                         isCreating={isCreating}
                     />
+
+                    {/* Save as Template — Step 1: Choose Overwrite or Create New */}
+                    <Dialog open={templateDialogStep === "choose"} onOpenChange={(open) => !open && closeSaveTemplateDialog()}>
+                        <DialogContent className="sm:max-w-sm">
+                            <DialogHeader>
+                                <DialogTitle>Save Template</DialogTitle>
+                            </DialogHeader>
+                            <p className="text-sm text-muted-foreground">
+                                You currently have <span className="font-medium text-foreground">{templates.find(t => t.id === form.getValues("templateId"))?.name}</span> selected as a template. What would you like to do?
+                            </p>
+                            <DialogFooter className="flex-col gap-2 sm:flex-col">
+                                <Button
+                                    type="button"
+                                    className="w-full"
+                                    onClick={() => {
+                                        closeSaveTemplateDialog();
+                                        handleOverwriteTemplate();
+                                    }}
+                                    disabled={isSavingTemplate}
+                                >
+                                    {isSavingTemplate ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                                    Overwrite Existing
+                                </Button>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    className="w-full"
+                                    onClick={() => {
+                                        setTemplateName(title || "");
+                                        setTemplateDialogStep("create");
+                                    }}
+                                >
+                                    Create New Template
+                                </Button>
+                                <DialogClose asChild>
+                                    <Button variant="ghost" size="sm" type="button" className="w-full">
+                                        Cancel
+                                    </Button>
+                                </DialogClose>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
+
+                    {/* Save as Template — Step 2: Name the new template */}
+                    <Dialog open={templateDialogStep === "create"} onOpenChange={(open) => !open && closeSaveTemplateDialog()}>
+                        <DialogContent className="sm:max-w-sm">
+                            <DialogHeader>
+                                <DialogTitle>Create New Template</DialogTitle>
+                            </DialogHeader>
+                            <p className="text-sm text-muted-foreground">
+                                This will save the current agenda structure as a reusable template. Values like hymns and participants will not be saved.
+                            </p>
+                            <div className="space-y-1.5">
+                                <Label htmlFor="template-name" className="text-xs">Template Name</Label>
+                                <Input
+                                    id="template-name"
+                                    value={templateName}
+                                    onChange={(e) => setTemplateName(e.target.value)}
+                                    onKeyDown={(e) => {
+                                        const duplicateNameExists = templates.some(
+                                            (t) => t.name.trim().toLowerCase() === templateName.trim().toLowerCase()
+                                        );
+                                        if (e.key === "Enter" && templateName.trim() && !duplicateNameExists) {
+                                            closeSaveTemplateDialog();
+                                            handleSaveAsTemplate(templateName);
+                                        }
+                                    }}
+                                    placeholder="e.g. Sacrament Meeting"
+                                    className="bg-background h-8 text-sm"
+                                    autoFocus
+                                />
+                                {templates.find(t => t.id === form.getValues("templateId"))?.name.trim().toLowerCase() === templateName.trim().toLowerCase() && (
+                                    <p className="text-xs text-amber-600">
+                                        This is the same name as the currently selected template. Please choose a different name.
+                                    </p>
+                                )}
+                                {templates.find(t => t.id === form.getValues("templateId"))?.name.trim().toLowerCase() !== templateName.trim().toLowerCase() && 
+                                 templates.some(t => t.name.trim().toLowerCase() === templateName.trim().toLowerCase()) && (
+                                    <p className="text-xs text-destructive">
+                                        A template named &ldquo;{templateName.trim()}&rdquo; already exists. Template names must be unique.
+                                    </p>
+                                )}
+                            </div>
+                            <DialogFooter>
+                                <DialogClose asChild>
+                                    <Button variant="outline" size="sm" type="button">Cancel</Button>
+                                </DialogClose>
+                                <Button
+                                    size="sm"
+                                    type="button"
+                                    disabled={!templateName.trim() || templates.some(t => t.name.trim().toLowerCase() === templateName.trim().toLowerCase()) || isSavingTemplate}
+                                    onClick={() => {
+                                        closeSaveTemplateDialog();
+                                        handleSaveAsTemplate(templateName);
+                                    }}
+                                >
+                                    {isSavingTemplate ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                                    Save Template
+                                </Button>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
                 </DndContext>
             </form>
         </Form>
