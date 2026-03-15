@@ -250,6 +250,7 @@ export function HymnSelectorPopover({
                                 const logo = getHymnBookLogo(hymn.book_id);
                                 return (
                                     <button
+                                        type="button"
                                         key={hymn.id}
                                         onClick={() => handleSelect(hymn)}
                                         className={cn(

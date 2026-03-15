@@ -214,7 +214,9 @@ export function generateMeetingMarkdown(data: MeetingMarkdownData): string {
       // Use the item's title as the label (supports renamed speaker items)
       const speakerLabel = item.title?.trim() || "Speaker";
       if (item.speaker_name) {
-        lines.push(`**${speakerLabel}:** ${item.speaker_name}`);
+        const topicStr = item.speaker_topic ? ` — ${item.speaker_topic}` : "";
+        const durationStr = item.duration_minutes ? ` (${item.duration_minutes} min)` : "";
+        lines.push(`**${speakerLabel}:** ${item.speaker_name}${topicStr}${durationStr}`);
       } else {
         lines.push(`**${speakerLabel}:** TBD`);
       }

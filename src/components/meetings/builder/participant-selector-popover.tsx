@@ -149,6 +149,7 @@ export function ParticipantSelectorPopover({
                         <Button
                             variant="ghost"
                             size="icon"
+                            type="button"
                             className="h-6 w-6"
                             onClick={() => setIsCreating(!isCreating)}
                         >
@@ -170,10 +171,10 @@ export function ParticipantSelectorPopover({
                                 }}
                             />
                             <div className="flex gap-2">
-                                <Button size="sm" className="h-7 flex-1 text-xs" onClick={handleCreate} disabled={!newName.trim()}>
+                                <Button size="sm" type="button" className="h-7 flex-1 text-xs" onClick={handleCreate} disabled={!newName.trim()}>
                                     Create & Select
                                 </Button>
-                                <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setIsCreating(false)}>
+                                <Button size="sm" type="button" variant="outline" className="h-7 text-xs" onClick={() => setIsCreating(false)}>
                                     Cancel
                                 </Button>
                             </div>
@@ -206,6 +207,7 @@ export function ParticipantSelectorPopover({
                             <div className="p-1">
                                 {filteredParticipants.map((p) => (
                                     <button
+                                        type="button"
                                         key={p.id}
                                         onClick={() => handleSelect(p)}
                                         className={cn(

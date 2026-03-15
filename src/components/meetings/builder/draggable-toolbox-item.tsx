@@ -136,6 +136,7 @@ export function DraggableToolboxItem({ item, disabled, onAddItem, onEditItem }: 
             <div className="absolute right-2 top-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
                 {onEditItem && (
                     <button
+                        type="button"
                         onClick={(e) => {
                             e.stopPropagation();
                             e.preventDefault();
@@ -144,13 +145,13 @@ export function DraggableToolboxItem({ item, disabled, onAddItem, onEditItem }: 
                         onPointerDown={(e) => e.stopPropagation()}
                         className="p-1.5 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-md transition-all"
                         title="Edit Item Type"
-                        type="button"
                     >
                         <Pencil className="h-4 w-4" />
                     </button>
                 )}
                 {onAddItem && (
                     <button
+                        type="button"
                         onClick={(e) => {
                             e.stopPropagation();
                             // Prevent the click from starting a drag

@@ -218,7 +218,9 @@ function SortableAgendaRow({
     // Derive secondary text for assigned data
     const secondaryText = item.hymn_title
         ? `#${item.hymn_number} ${item.hymn_title}`
-        : item.participant_name || item.speaker_name || null;
+        : item.speaker_name 
+            ? `${item.speaker_name}${item.speaker_topic ? ` — ${item.speaker_topic}` : ""}`
+            : item.participant_name || null;
 
     // Regular item — read-only card
     return (

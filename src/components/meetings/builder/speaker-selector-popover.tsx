@@ -207,6 +207,7 @@ export function SpeakerSelectorPopover({
                         <Button
                             variant="ghost"
                             size="icon"
+                            type="button"
                             className="h-6 w-6"
                             onClick={() => setIsCreating(!isCreating)}
                             title={isCreating ? "Cancel" : "Add new speaker"}
@@ -243,6 +244,7 @@ export function SpeakerSelectorPopover({
                             <div className="flex gap-2">
                                 <Button
                                     size="sm"
+                                    type="button"
                                     className="h-7 flex-1 text-xs"
                                     onClick={handleCreate}
                                     disabled={!newName.trim() || isSubmitting}
@@ -252,6 +254,7 @@ export function SpeakerSelectorPopover({
                                 <Button
                                     size="sm"
                                     variant="outline"
+                                    type="button"
                                     className="h-7 text-xs"
                                     onClick={() => setIsCreating(false)}
                                 >
@@ -293,6 +296,7 @@ export function SpeakerSelectorPopover({
                             <div className="p-1">
                                 {filteredSpeakers.map((s) => (
                                     <button
+                                        type="button"
                                         key={s.id}
                                         onClick={() => handleSelect(s)}
                                         className={cn(

@@ -341,7 +341,9 @@ export function PropertiesPane({
                                             )}
                                         >
                                             <span className="truncate">
-                                                {selectedItem.speaker_name || "Select Speaker..."}
+                                                {selectedItem.speaker_name 
+                                                    ? `${selectedItem.speaker_name}${selectedItem.speaker_topic ? ` — ${selectedItem.speaker_topic}` : ""}`
+                                                    : "Select Speaker..."}
                                             </span>
                                         </button>
                                     </SpeakerSelectorPopover>
@@ -497,6 +499,7 @@ export function PropertiesPane({
                         <Popover>
                             <PopoverTrigger asChild>
                                 <Button
+                                    type="button"
                                     variant="outline"
                                     className={cn(
                                         "w-full justify-start text-left font-normal bg-background h-8 text-sm",

@@ -295,9 +295,11 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                     hymn_title: item.hymns?.title,
                     speaker_id: item.speaker_id,
                     speaker_name: item.speakers?.name || item.participant_name,
+                    speaker_topic: item.speaker_topic || item.speakers?.topic,
                     speaker_is_confirmed: item.speakers?.is_confirmed,
                     participant_id: item.participant_id,
                     participant_name: item.participant_name,
+                    speaker_topic: item.speaker_topic,
                     discussion_id: item.discussion_id,
                     business_item_id: item.business_item_id,
                     announcement_id: item.announcement_id,
@@ -753,6 +755,7 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                             ...item,
                             speaker_id: speaker.id,
                             speaker_name: speaker.name,
+                            speaker_topic: speaker.topic,
                             speaker_is_confirmed: speaker.is_confirmed
                         }
                         : item
@@ -1086,6 +1089,7 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                 item_type: item.category,
                 hymn_id: item.hymn_id || null,
                 speaker_id: item.speaker_id || null,
+                speaker_topic: item.speaker_topic || null,
                 participant_id: item.participant_id || null,
                 participant_name: item.participant_name || item.speaker_name || null,
                 discussion_id: item.discussion_id || null,
@@ -1279,6 +1283,7 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                 item_type: item.category,
                 hymn_id: item.hymn_id || null,
                 speaker_id: item.speaker_id || null,
+                speaker_topic: item.speaker_topic || null,
                 participant_id: item.participant_id || null,
                 participant_name: item.participant_name || item.speaker_name || null,
                 discussion_id: item.discussion_id || null,

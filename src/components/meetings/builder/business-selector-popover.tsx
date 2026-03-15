@@ -384,6 +384,7 @@ export function BusinessSelectorPopover({
                         {isCreating ? "New Business Item" : "Select Business Items"}
                     </h3>
                     <Button
+                        type="button"
                         variant="ghost"
                         size="icon"
                         className="h-6 w-6"
@@ -575,6 +576,7 @@ export function BusinessSelectorPopover({
 
                             <div className="flex gap-2 pt-2 sticky bottom-0 bg-background pb-1">
                                 <Button
+                                    type="button"
                                     size="sm"
                                     className="flex-1 h-8 text-xs"
                                     onClick={handleCreate}
@@ -583,6 +585,7 @@ export function BusinessSelectorPopover({
                                     {isSubmitting ? "Creating..." : "Create & Select"}
                                 </Button>
                                 <Button
+                                    type="button"
                                     size="sm"
                                     variant="outline"
                                     className="h-8 text-xs"
