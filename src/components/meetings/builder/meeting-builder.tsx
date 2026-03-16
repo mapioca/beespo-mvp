@@ -299,7 +299,6 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                     speaker_is_confirmed: item.speakers?.is_confirmed,
                     participant_id: item.participant_id,
                     participant_name: item.participant_name,
-                    speaker_topic: item.speaker_topic,
                     discussion_id: item.discussion_id,
                     business_item_id: item.business_item_id,
                     announcement_id: item.announcement_id,
