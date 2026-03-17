@@ -44,20 +44,20 @@ export const breadcrumbConfigs: BreadcrumbConfig[] = [
 
   // Meetings Hub
   {
-    pattern: "/meetings/overview",
-    trail: [{ label: "Meetings", href: "/meetings/overview" }, { label: "Overview" }],
+    pattern: "/meetings/agendas",
+    trail: [{ label: "Meetings", href: "/meetings/agendas" }, { label: "Agendas" }],
   },
   {
     pattern: "/meetings/business",
-    trail: [{ label: "Meetings", href: "/meetings/overview" }, { label: "Business" }],
+    trail: [{ label: "Meetings", href: "/meetings/agendas" }, { label: "Business" }],
   },
   {
     pattern: "/meetings/announcements",
-    trail: [{ label: "Meetings", href: "/meetings/overview" }, { label: "Announcements" }],
+    trail: [{ label: "Meetings", href: "/meetings/agendas" }, { label: "Announcements" }],
   },
   {
     pattern: "/meetings/discussions",
-    trail: [{ label: "Meetings", href: "/meetings/overview" }, { label: "Discussions" }],
+    trail: [{ label: "Meetings", href: "/meetings/agendas" }, { label: "Discussions" }],
   },
   {
     pattern: "/templates/library",
@@ -69,12 +69,12 @@ export const breadcrumbConfigs: BreadcrumbConfig[] = [
   },
   {
     pattern: "/meetings/new",
-    trail: [{ label: "Meetings", href: "/meetings/overview" }, { label: "New Meeting" }],
+    trail: [{ label: "Meetings", href: "/meetings/agendas" }, { label: "New Meeting" }],
   },
   {
     pattern: /^\/meetings\/[^/]+$/,
     trail: [
-      { label: "Meetings", href: "/meetings/overview" },
+      { label: "Meetings", href: "/meetings/agendas" },
       { label: "Meeting Details" },
     ],
     dynamic: true,
@@ -82,7 +82,7 @@ export const breadcrumbConfigs: BreadcrumbConfig[] = [
   {
     pattern: /^\/meetings\/[^/]+\/conduct$/,
     trail: [
-      { label: "Meetings", href: "/meetings/overview" },
+      { label: "Meetings", href: "/meetings/agendas" },
       { label: "Conduct Meeting" },
     ],
     dynamic: true,

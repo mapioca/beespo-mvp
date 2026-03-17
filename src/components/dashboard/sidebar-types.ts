@@ -1,11 +1,12 @@
 import { LucideIcon } from "lucide-react"
+import React from "react"
 
 /**
  * A leaf navigation item that links to a specific route
  */
 export interface NavItemLeaf {
   href: string
-  icon: LucideIcon
+  icon: LucideIcon | React.ElementType
   label: string
 }
 
@@ -13,7 +14,7 @@ export interface NavItemLeaf {
  * A parent navigation item that contains child items (collapsible group)
  */
 export interface NavItemParent {
-  icon: LucideIcon
+  icon: LucideIcon | React.ElementType
   label: string
   children: NavItemLeaf[]
   defaultOpen?: boolean

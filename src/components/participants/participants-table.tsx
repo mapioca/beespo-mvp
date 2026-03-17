@@ -27,12 +27,19 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { MoreHorizontal, Pencil, Trash2, ArrowUp, ArrowDown, ArrowUpDown, User } from "lucide-react";
+import { MoreHorizontal, Pencil, Trash2, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
 import { format } from "date-fns";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface Participant {
     id: string;
@@ -49,6 +56,16 @@ interface ParticipantsTableProps {
 
 type SortKey = "name" | "created_at";
 type SortDirection = "asc" | "desc";
+
+function getInitials(name: string) {
+    if (!name) return "";
+    return name
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .toUpperCase()
+        .substring(0, 2);
+}
 
 export function ParticipantsTable({ participants, canManage }: ParticipantsTableProps) {
     const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: SortDirection } | null>(null);
@@ -167,7 +184,7 @@ export function ParticipantsTable({ participants, canManage }: ParticipantsTable
                             <SortHeader column="name" label="Name" className="w-[400px]" />
                             <SortHeader column="created_at" label="Created" />
                             <TableHead>Created By</TableHead>
-                            {canManage && <TableHead className="w-[50px]"></TableHead>}
+                            {canManage && <TableHead className="text-right w-[80px]">Actions</TableHead>}
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -204,7 +221,6 @@ export function ParticipantsTable({ participants, canManage }: ParticipantsTable
                                             />
                                         ) : (
                                             <div className="flex items-center gap-2">
-                                                <User className="h-4 w-4 text-muted-foreground" />
                                                 <span>{participant.name}</span>
                                             </div>
                                         )}
@@ -212,17 +228,34 @@ export function ParticipantsTable({ participants, canManage }: ParticipantsTable
                                     <TableCell className="text-muted-foreground">
                                         {format(new Date(participant.created_at), "MMM d, yyyy")}
                                     </TableCell>
-                                    <TableCell className="text-muted-foreground">
-                                        {participant.profiles?.full_name || "—"}
+                                    <TableCell>
+                                        {participant.profiles?.full_name ? (
+                                            <TooltipProvider>
+                                                <Tooltip>
+                                                    <TooltipTrigger asChild>
+                                                        <Avatar className="h-7 w-7 border">
+                                                            <AvatarFallback className="text-[10px] bg-blue-50 text-blue-600 font-semibold border-none">
+                                                                {getInitials(participant.profiles.full_name)}
+                                                            </AvatarFallback>
+                                                        </Avatar>
+                                                    </TooltipTrigger>
+                                                    <TooltipContent>
+                                                        <p>{participant.profiles.full_name}</p>
+                                                    </TooltipContent>
+                                                </Tooltip>
+                                            </TooltipProvider>
+                                        ) : (
+                                            <span className="text-muted-foreground">—</span>
+                                        )}
                                     </TableCell>
                                     {canManage && (
-                                        <TableCell>
+                                        <TableCell className="text-right">
                                             <DropdownMenu>
                                                 <DropdownMenuTrigger asChild>
                                                     <Button
                                                         variant="ghost"
                                                         size="icon"
-                                                        className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                        className="h-8 w-8"
                                                     >
                                                         <MoreHorizontal className="h-4 w-4" />
                                                     </Button>

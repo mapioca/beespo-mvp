@@ -70,7 +70,7 @@ export function UpcomingMeetingsWidget({
       )}
       {data.meetings.length > 0 && (
         <Link
-          href="/meetings/overview"
+          href="/meetings/agendas"
           className="flex items-center gap-1 text-xs font-medium text-primary hover:text-primary/80 mt-3 pt-3 border-t"
         >
           View all meetings

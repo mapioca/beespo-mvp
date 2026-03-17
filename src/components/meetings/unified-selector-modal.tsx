@@ -18,13 +18,12 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Speech, Megaphone } from "lucide-react";
 import {
     ChatCenteredTextIcon,
     BriefcaseIcon,
-    MegaphoneIcon,
     UserPlusIcon,
     PlusIcon,
-    MicrophoneIcon,
 } from "@phosphor-icons/react";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
@@ -391,9 +390,9 @@ export function UnifiedSelectorModal({
     const modalConfig: Record<UnifiedSelectorMode, { title: string; icon: React.ElementType; color: string }> = {
         discussion: { title: "Select Discussion", icon: ChatCenteredTextIcon, color: "text-green-500" },
         business: { title: "Select Business Item", icon: BriefcaseIcon, color: "text-purple-500" },
-        announcement: { title: "Select Announcement", icon: MegaphoneIcon, color: "text-orange-500" },
+        announcement: { title: "Select Announcement", icon: Megaphone, color: "text-orange-500" },
         participant: { title: "Select Participant", icon: UserPlusIcon, color: "text-slate-500" },
-        speaker: { title: "Select Speaker", icon: MicrophoneIcon, color: "text-indigo-500" },
+        speaker: { title: "Select Speaker", icon: Speech, color: "text-indigo-500" },
     };
 
     const config = modalConfig[mode];
@@ -571,7 +570,7 @@ export function UnifiedSelectorModal({
                                                                 currentSelectionId === ann.id && "bg-accent"
                                                             )}
                                                         >
-                                                            <MegaphoneIcon className="h-4 w-4 text-orange-500 shrink-0" />
+                                                            <Megaphone className="h-4 w-4 text-orange-500 shrink-0" />
                                                             <div className="flex-1 min-w-0">
                                                                 <div className="flex items-center gap-2">
                                                                     <span className="font-medium truncate">
@@ -659,7 +658,7 @@ export function UnifiedSelectorModal({
                                                                     currentSelectionId === speaker.id && "bg-accent"
                                                                 )}
                                                             >
-                                                                <MicrophoneIcon className="h-4 w-4 text-indigo-500 shrink-0" />
+                                                                <Speech className="h-4 w-4 text-indigo-500 shrink-0" />
                                                                 <div className="flex-1 min-w-0">
                                                                     <div className="flex items-center gap-2">
                                                                         <span className="font-medium truncate">

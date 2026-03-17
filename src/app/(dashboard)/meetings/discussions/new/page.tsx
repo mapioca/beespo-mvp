@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "@/lib/toast";
 import { createClient } from "@/lib/supabase/client";
-import { ArrowLeft, MessageSquare, X } from "lucide-react";
+import { ArrowLeft, MessagesSquare, X } from "lucide-react";
 import Link from "next/link";
 
 export default function NewDiscussionPage() {
@@ -242,7 +242,7 @@ export default function NewDiscussionPage() {
             {/* Template Association */}
             <div className="space-y-3 pt-4 border-t">
               <div className="flex items-center gap-2">
-                <MessageSquare className="h-4 w-4 text-blue-500" />
+                <MessagesSquare className="h-4 w-4 text-blue-500" />
                 <Label className="font-medium">Applies to Templates</Label>
               </div>
               <p className="text-xs text-muted-foreground">

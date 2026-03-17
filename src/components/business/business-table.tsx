@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowUp, ArrowDown, ArrowUpDown, Circle, CheckCheck, Briefcase } from "lucide-react";
+import { ArrowUp, ArrowDown, ArrowUpDown, Briefcase } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 
@@ -33,13 +33,6 @@ interface BusinessTableProps {
     onSort?: (key: string) => void;
 }
 
-function getStatusIcon(status: string) {
-    switch (status) {
-        case "pending": return <Circle className="h-4 w-4 text-muted-foreground" />;
-        case "completed": return <CheckCheck className="h-4 w-4 text-green-500" />;
-        default: return <Circle className="h-4 w-4" />;
-    }
-}
 
 function formatCategory(category: string): string {
     return category.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
@@ -75,7 +68,6 @@ export function BusinessTable({ items, sortConfig, onSort }: BusinessTableProps)
             <Table>
                 <TableHeader>
                     <TableRow className="group">
-                        <SortHeader column="workspace_business_id" label="ID" className="w-[100px]" />
                         <SortHeader column="person_name" label="Person Name" className="w-[200px]" />
                         <SortHeader column="position_calling" label="Position/Calling" />
                         <SortHeader column="category" label="Category" />
@@ -87,7 +79,7 @@ export function BusinessTable({ items, sortConfig, onSort }: BusinessTableProps)
                 <TableBody>
                     {items.length === 0 ? (
                         <TableRow>
-                            <TableCell colSpan={7} className="h-24 text-center">
+                            <TableCell colSpan={6} className="h-24 text-center">
                                 <div className="flex flex-col items-center justify-center py-4">
                                     <Briefcase className="h-8 w-8 text-muted-foreground mb-2" />
                                     <p className="text-muted-foreground">No business items found.</p>
@@ -97,9 +89,6 @@ export function BusinessTable({ items, sortConfig, onSort }: BusinessTableProps)
                     ) : (
                         items.map((item) => (
                             <TableRow key={item.id} className="group hover:bg-muted/50">
-                                <TableCell className="font-mono text-xs text-muted-foreground uppercase">
-                                    {item.workspace_business_id || 'BIZ-0000'}
-                                </TableCell>
                                 <TableCell className="font-medium">
                                     <Link href={`/business/${item.id}`} className="hover:underline">
                                         {item.person_name}
@@ -110,12 +99,9 @@ export function BusinessTable({ items, sortConfig, onSort }: BusinessTableProps)
                                     <Badge variant="outline">{formatCategory(item.category)}</Badge>
                                 </TableCell>
                                 <TableCell>
-                                    <div className="flex items-center gap-2">
-                                        {getStatusIcon(item.status)}
-                                        <Badge variant={getStatusVariant(item.status)}>
-                                            {item.status === "pending" ? "Pending" : "Completed"}
-                                        </Badge>
-                                    </div>
+                                    <Badge variant={getStatusVariant(item.status)}>
+                                        {item.status === "pending" ? "Pending" : "Completed"}
+                                    </Badge>
                                 </TableCell>
                                 <TableCell>
                                     {item.action_date

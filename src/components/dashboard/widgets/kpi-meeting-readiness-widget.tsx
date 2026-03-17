@@ -42,7 +42,7 @@ export function KpiMeetingReadinessWidget({ data }: Props) {
       trend={data.nextMeeting ? trend : "neutral"}
       sparklineData={data.sparkline}
       sparklineColor="#8b5cf6"
-      href="/meetings/overview"
+      href="/meetings/agendas"
     />
   );
 }

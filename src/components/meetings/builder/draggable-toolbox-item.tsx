@@ -14,7 +14,8 @@ import {
     Heading1,
     Minus,
     Hand,
-    MessageSquare,
+    MessagesSquare,
+    Speech,
     Pencil
 } from "lucide-react";
 import * as LucideIcons from "lucide-react";
@@ -71,10 +72,10 @@ const getCategoryIcon = (item: ToolboxItem) => {
 
     const icons: Record<CategoryType, React.ReactNode> = {
         procedural: <BookOpen className="h-4 w-4" />,
-        discussion: <MessageSquare className="h-4 w-4" />,
+        discussion: <MessagesSquare className="h-4 w-4" />,
         business: <Briefcase className="h-4 w-4" />,
         announcement: <Megaphone className="h-4 w-4" />,
-        speaker: <User className="h-4 w-4" />,
+        speaker: <Speech className="h-4 w-4" />,
         structural: <Layers className="h-4 w-4" />,
     };
     return icons[item.category] || <Layers className="h-4 w-4" />;

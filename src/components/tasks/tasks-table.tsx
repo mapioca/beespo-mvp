@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Calendar as CalendarIcon, Circle, CheckCircle2, ArrowUp, ArrowDown, Minus, ArrowUpDown, CircleSlash } from "lucide-react";
+import { ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
 import { format } from "date-fns";
 import { Database } from "@/types/database";
 import { TaskCompletionDialog } from "./task-completion-dialog";
@@ -24,6 +24,12 @@ import { updateTask } from "@/lib/actions/task-actions";
 import { toast } from "@/lib/toast";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 type Task = Database['public']['Tables']['tasks']['Row'] & {
     assignee?: { full_name: string; email?: string } | null;
@@ -40,17 +46,6 @@ interface TasksTableProps {
     onSort?: (key: string) => void;
 }
 
-function getPriorityIcon(priority?: 'low' | 'medium' | 'high') {
-    switch (priority) {
-        case 'high':
-            return <ArrowUp className="h-4 w-4 text-destructive" />;
-        case 'low':
-            return <ArrowDown className="h-4 w-4 text-muted-foreground" />;
-        default:
-            return <Minus className="h-4 w-4 text-muted-foreground" />;
-    }
-}
-
 function getPriorityText(priority?: 'low' | 'medium' | 'high') {
     switch (priority) {
         case 'high':
@@ -60,6 +55,16 @@ function getPriorityText(priority?: 'low' | 'medium' | 'high') {
         default:
             return 'Medium';
     }
+}
+
+function getInitials(name: string) {
+    if (!name) return "";
+    return name
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .toUpperCase()
+        .substring(0, 2);
 }
 
 export function TasksTable({ tasks, profiles = [], sortConfig, onSort }: TasksTableProps) {
@@ -99,7 +104,6 @@ export function TasksTable({ tasks, profiles = [], sortConfig, onSort }: TasksTa
                 <Table>
                     <TableHeader>
                         <TableRow className="group">
-                            <SortHeader column="workspace_task_id" label="Task" className="w-[100px]" />
                             <SortHeader column="title" label="Title" className="w-[400px]" />
                             <SortHeader column="status" label="Status" />
                             <SortHeader column="priority" label="Priority" />
@@ -111,7 +115,7 @@ export function TasksTable({ tasks, profiles = [], sortConfig, onSort }: TasksTa
                     <TableBody>
                         {tasks.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={7} className="h-24 text-center">
+                                <TableCell colSpan={6} className="h-24 text-center">
                                     No tasks found.
                                 </TableCell>
                             </TableRow>
@@ -121,12 +125,6 @@ export function TasksTable({ tasks, profiles = [], sortConfig, onSort }: TasksTa
                                     key={task.id}
                                     className="group hover:bg-muted/50"
                                 >
-                                    <TableCell
-                                        className="text-sm cursor-pointer uppercase"
-                                        onClick={() => setSelectedTask(task)}
-                                    >
-                                        {task.workspace_task_id || 'TASK-0000'}
-                                    </TableCell>
                                     <TableCell
                                         className="font-medium cursor-pointer"
                                         onClick={() => setSelectedTask(task)}
@@ -160,13 +158,6 @@ export function TasksTable({ tasks, profiles = [], sortConfig, onSort }: TasksTa
                                         >
                                             <SelectTrigger className="h-8 w-[140px] border-none shadow-none bg-transparent hover:bg-muted p-0 px-2 justify-start focus:ring-0">
                                                 <div className="flex items-center gap-2">
-                                                    {task.status === 'completed' ? (
-                                                        <CheckCircle2 className="h-4 w-4 text-primary" />
-                                                    ) : task.status === 'cancelled' ? (
-                                                        <CircleSlash className="h-4 w-4 text-muted-foreground" />
-                                                    ) : (
-                                                        <Circle className="h-4 w-4 text-muted-foreground" />
-                                                    )}
                                                     <span className="text-sm capitalize">
                                                         {['pending', 'in_progress'].includes(task.status) ? 'Todo' : task.status}
                                                     </span>
@@ -186,7 +177,6 @@ export function TasksTable({ tasks, profiles = [], sortConfig, onSort }: TasksTa
                                         >
                                             <SelectTrigger className="h-8 w-[110px] border-none shadow-none bg-transparent hover:bg-muted p-0 px-2 justify-start focus:ring-0">
                                                 <div className="flex items-center gap-2">
-                                                    {getPriorityIcon(task.priority)}
                                                     <span className="text-sm">{getPriorityText(task.priority)}</span>
                                                 </div>
                                             </SelectTrigger>
@@ -202,16 +192,24 @@ export function TasksTable({ tasks, profiles = [], sortConfig, onSort }: TasksTa
                                             value={task.assigned_to || "unassigned"}
                                             onValueChange={(val) => handleUpdate(task.id, { assigned_to: val === "unassigned" ? null : val })}
                                         >
-                                            <SelectTrigger className="h-8 w-[150px] border-none shadow-none bg-transparent hover:bg-muted p-0 px-2 justify-start focus:ring-0">
+                                            <SelectTrigger className="h-8 w-[70px] border-none shadow-none bg-transparent hover:bg-muted p-0 px-2 justify-start focus:ring-0">
                                                 {task.assignee ? (
-                                                    <div className="flex items-center gap-2">
-                                                        <Avatar className="h-6 w-6">
-                                                            <AvatarFallback className="text-[10px]">
-                                                                {task.assignee.full_name.charAt(0)}
-                                                            </AvatarFallback>
-                                                        </Avatar>
-                                                        <span className="text-sm truncate max-w-[100px]">{task.assignee.full_name}</span>
-                                                    </div>
+                                                    <TooltipProvider>
+                                                        <Tooltip>
+                                                            <TooltipTrigger asChild>
+                                                                <div className="flex items-center gap-2">
+                                                                    <Avatar className="h-6 w-6 border">
+                                                                        <AvatarFallback className="text-[10px] bg-blue-50 text-blue-600 font-semibold border-none">
+                                                                            {getInitials(task.assignee.full_name)}
+                                                                        </AvatarFallback>
+                                                                    </Avatar>
+                                                                </div>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent>
+                                                                <p>{task.assignee.full_name}</p>
+                                                            </TooltipContent>
+                                                        </Tooltip>
+                                                    </TooltipProvider>
                                                 ) : (
                                                     <span className="text-sm text-muted-foreground pl-2">Unassigned</span>
                                                 )}
@@ -228,7 +226,6 @@ export function TasksTable({ tasks, profiles = [], sortConfig, onSort }: TasksTa
                                         <Popover>
                                             <PopoverTrigger asChild>
                                                 <Button variant="ghost" className={cn("h-8 w-auto px-2 justify-start font-normal hover:bg-muted bg-transparent shadow-none border-none", !task.due_date && "text-muted-foreground")}>
-                                                    <CalendarIcon className="mr-2 h-3 w-3" />
                                                     {task.due_date ? format(new Date(task.due_date), "MMM d") : <span>Set Date</span>}
                                                 </Button>
                                             </PopoverTrigger>

@@ -14,10 +14,6 @@ import {
     ArrowUp,
     ArrowDown,
     ArrowUpDown,
-    Calendar,
-    CirclePlay,
-    CheckCheck,
-    CircleX,
     CalendarDays
 } from "lucide-react";
 import { format } from "date-fns";
@@ -41,15 +37,6 @@ interface MeetingsTableProps {
     onMeetingDelete?: (meetingId: string) => void;
 }
 
-function getStatusIcon(status: string) {
-    switch (status) {
-        case "scheduled": return <Calendar className="h-4 w-4 text-blue-500" />;
-        case "in_progress": return <CirclePlay className="h-4 w-4 text-yellow-500" />;
-        case "completed": return <CheckCheck className="h-4 w-4 text-green-500" />;
-        case "cancelled": return <CircleX className="h-4 w-4 text-red-500" />;
-        default: return <Calendar className="h-4 w-4" />;
-    }
-}
 
 function formatStatus(status: string): string {
     return status.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
@@ -94,7 +81,6 @@ export function MeetingsTable({
             <Table>
                 <TableHeader>
                     <TableRow className="group">
-                        <SortHeader column="workspace_meeting_id" label="ID" className="w-[100px]" />
                         <SortHeader column="title" label="Title" className="w-[300px]" />
                         <SortHeader column="template" label="Template" />
                         <SortHeader column="status" label="Status" />
@@ -105,7 +91,7 @@ export function MeetingsTable({
                 <TableBody>
                     {meetings.length === 0 ? (
                         <TableRow>
-                            <TableCell colSpan={6} className="h-24 text-center">
+                            <TableCell colSpan={5} className="h-24 text-center">
                                 <div className="flex flex-col items-center justify-center py-4">
                                     <CalendarDays className="h-8 w-8 text-muted-foreground mb-2" />
                                     <p className="text-muted-foreground">No meetings found.</p>
@@ -115,9 +101,6 @@ export function MeetingsTable({
                     ) : (
                         meetings.map((meeting) => (
                             <TableRow key={meeting.id} className="group hover:bg-muted/50">
-                                <TableCell className="font-mono text-xs text-muted-foreground uppercase">
-                                    {meeting.workspace_meeting_id || '-'}
-                                </TableCell>
                                 <TableCell className="font-medium">
                                     <Link href={`/meetings/${meeting.id}`} className="hover:underline">
                                         {meeting.title}
@@ -129,12 +112,9 @@ export function MeetingsTable({
                                     </span>
                                 </TableCell>
                                 <TableCell>
-                                    <div className="flex items-center gap-2">
-                                        {getStatusIcon(meeting.status)}
-                                        <Badge variant={getStatusVariant(meeting.status)}>
-                                            {formatStatus(meeting.status)}
-                                        </Badge>
-                                    </div>
+                                    <Badge variant={getStatusVariant(meeting.status)}>
+                                        {formatStatus(meeting.status)}
+                                    </Badge>
                                 </TableCell>
                                 <TableCell>
                                     {meeting.scheduled_date

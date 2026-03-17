@@ -33,11 +33,7 @@ import {
     ArrowUp,
     ArrowDown,
     ArrowUpDown,
-    FileEdit,
-    CheckCircle,
-    Minus,
     Megaphone,
-    StopCircle,
     MoreHorizontal,
     Eye,
     Trash2,
@@ -63,23 +59,6 @@ interface AnnouncementsTableProps {
     onDelete?: (id: string) => Promise<void>;
 }
 
-function getStatusIcon(status: string) {
-    switch (status) {
-        case "draft": return <FileEdit className="h-4 w-4 text-muted-foreground" />;
-        case "active": return <CheckCircle className="h-4 w-4 text-green-500" />;
-        case "stopped": return <StopCircle className="h-4 w-4 text-muted-foreground" />;
-        default: return <FileEdit className="h-4 w-4" />;
-    }
-}
-
-function getPriorityIcon(priority: string) {
-    switch (priority) {
-        case "high": return <ArrowUp className="h-4 w-4 text-destructive" />;
-        case "medium": return <Minus className="h-4 w-4 text-yellow-500" />;
-        case "low": return <ArrowDown className="h-4 w-4 text-muted-foreground" />;
-        default: return <Minus className="h-4 w-4 text-muted-foreground" />;
-    }
-}
 
 function formatStatus(status: string): string {
     return status.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
@@ -135,7 +114,6 @@ export function AnnouncementsTable({ announcements, sortConfig, onSort, onDelete
             <Table>
                 <TableHeader>
                     <TableRow className="group">
-                        <SortHeader column="workspace_announcement_id" label="ID" className="w-[100px]" />
                         <SortHeader column="title" label="Title" className="w-[300px]" />
                         <SortHeader column="priority" label="Priority" />
                         <SortHeader column="status" label="Status" />
@@ -146,7 +124,7 @@ export function AnnouncementsTable({ announcements, sortConfig, onSort, onDelete
                 <TableBody>
                     {announcements.length === 0 ? (
                         <TableRow>
-                            <TableCell colSpan={6} className="h-24 text-center">
+                            <TableCell colSpan={5} className="h-24 text-center">
                                 <div className="flex flex-col items-center justify-center py-4">
                                     <Megaphone className="h-8 w-8 text-muted-foreground mb-2" />
                                     <p className="text-muted-foreground">No announcements found.</p>
@@ -156,9 +134,6 @@ export function AnnouncementsTable({ announcements, sortConfig, onSort, onDelete
                     ) : (
                         announcements.map((announcement) => (
                             <TableRow key={announcement.id} className="group hover:bg-muted/50">
-                                <TableCell className="font-mono text-xs text-muted-foreground uppercase">
-                                    {announcement.workspace_announcement_id || 'ANNC-0000'}
-                                </TableCell>
                                 <TableCell className="font-medium">
                                     <Link href={`/meetings/announcements/${announcement.id}`} className="hover:underline">
                                         <div className="flex flex-col">
@@ -172,20 +147,14 @@ export function AnnouncementsTable({ announcements, sortConfig, onSort, onDelete
                                     </Link>
                                 </TableCell>
                                 <TableCell>
-                                    <div className="flex items-center gap-2">
-                                        {getPriorityIcon(announcement.priority)}
-                                        <Badge variant={getPriorityVariant(announcement.priority)}>
-                                            {announcement.priority.toUpperCase()}
-                                        </Badge>
-                                    </div>
+                                    <Badge variant={getPriorityVariant(announcement.priority)}>
+                                        {announcement.priority.toUpperCase()}
+                                    </Badge>
                                 </TableCell>
                                 <TableCell>
-                                    <div className="flex items-center gap-2">
-                                        {getStatusIcon(announcement.status)}
-                                        <Badge variant={getStatusVariant(announcement.status)}>
-                                            {formatStatus(announcement.status)}
-                                        </Badge>
-                                    </div>
+                                    <Badge variant={getStatusVariant(announcement.status)}>
+                                        {formatStatus(announcement.status)}
+                                    </Badge>
                                 </TableCell>
                                 <TableCell>
                                     {announcement.deadline

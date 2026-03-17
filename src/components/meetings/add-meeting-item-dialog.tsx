@@ -15,10 +15,10 @@ import {
     Search,
     BookOpen,
     Music,
-    MessageSquare,
+    MessagesSquare,
     Briefcase,
     Megaphone,
-    User,
+    Speech,
     ChevronRight,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -91,10 +91,10 @@ interface AddMeetingItemDialogProps {
 
 const categories = [
     { id: "procedural" as const, label: "Procedural", icon: BookOpen, color: "text-slate-500" },
-    { id: "discussion" as const, label: "Discussions", icon: MessageSquare, color: "text-green-500" },
+    { id: "discussion" as const, label: "Discussions", icon: MessagesSquare, color: "text-green-500" },
     { id: "business" as const, label: "Business", icon: Briefcase, color: "text-purple-500" },
     { id: "announcement" as const, label: "Announcements", icon: Megaphone, color: "text-orange-500" },
-    { id: "speaker" as const, label: "Speakers", icon: User, color: "text-pink-500" },
+    { id: "speaker" as const, label: "Speakers", icon: Speech, color: "text-pink-500" },
 ];
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -270,7 +270,7 @@ export function AddMeetingItemDialog({
                     filteredDiscussions.map((disc) => (
                         <ItemRow
                             key={disc.id}
-                            icon={<MessageSquare className="h-4 w-4 text-green-500" />}
+                            icon={<MessagesSquare className="h-4 w-4 text-green-500" />}
                             title={disc.title}
                             subtitle={disc.description}
                             badge={<StatusBadge status={disc.status} />}
@@ -352,7 +352,7 @@ export function AddMeetingItemDialog({
                     filteredSpeakers.map((speaker) => (
                         <ItemRow
                             key={speaker.id}
-                            icon={<User className="h-4 w-4 text-pink-500" />}
+                            icon={<Speech className="h-4 w-4 text-pink-500" />}
                             title={speaker.name}
                             subtitle={speaker.topic}
                             badge={

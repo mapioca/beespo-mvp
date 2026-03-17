@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import {
     Table,
@@ -11,7 +12,24 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowUp, ArrowDown, ArrowUpDown, Circle, CheckCheck, Mic } from "lucide-react";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { ArrowUp, ArrowDown, ArrowUpDown, Speech, MoreHorizontal, Eye, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 
@@ -35,19 +53,26 @@ interface SpeakersTableProps {
     speakers: Speaker[];
     sortConfig?: { key: string; direction: 'asc' | 'desc' } | null;
     onSort?: (key: string) => void;
+    onDelete?: (id: string) => Promise<void>;
 }
 
-function getStatusIcon(isConfirmed: boolean) {
-    return isConfirmed
-        ? <CheckCheck className="h-4 w-4 text-green-500" />
-        : <Circle className="h-4 w-4 text-muted-foreground" />;
-}
+
 
 function getStatusVariant(isConfirmed: boolean): "default" | "secondary" | "outline" {
     return isConfirmed ? "default" : "secondary";
 }
 
-export function SpeakersTable({ speakers, sortConfig, onSort }: SpeakersTableProps) {
+export function SpeakersTable({ speakers, sortConfig, onSort, onDelete }: SpeakersTableProps) {
+    const [deleteTarget, setDeleteTarget] = useState<Speaker | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
+
+    const handleDelete = async () => {
+        if (!deleteTarget || !onDelete) return;
+        setIsDeleting(true);
+        await onDelete(deleteTarget.id);
+        setIsDeleting(false);
+        setDeleteTarget(null);
+    };
     const SortHeader = ({ column, label, className }: { column: string; label: string; className?: string }) => (
         <TableHead
             className={cn("cursor-pointer bg-white hover:bg-gray-50 transition-colors", className)}
@@ -69,7 +94,6 @@ export function SpeakersTable({ speakers, sortConfig, onSort }: SpeakersTablePro
             <Table>
                 <TableHeader>
                     <TableRow className="group">
-                        <SortHeader column="workspace_speaker_id" label="ID" className="w-[100px]" />
                         <SortHeader column="name" label="Name" className="w-[200px]" />
                         <SortHeader column="topic" label="Topic" />
                         <TableHead>Meeting</TableHead>
@@ -81,9 +105,9 @@ export function SpeakersTable({ speakers, sortConfig, onSort }: SpeakersTablePro
                 <TableBody>
                     {speakers.length === 0 ? (
                         <TableRow>
-                            <TableCell colSpan={7} className="h-24 text-center">
+                            <TableCell colSpan={6} className="h-24 text-center">
                                 <div className="flex flex-col items-center justify-center py-4">
-                                    <Mic className="h-8 w-8 text-muted-foreground mb-2" />
+                                    <Speech className="h-8 w-8 text-muted-foreground mb-2" />
                                     <p className="text-muted-foreground">No speakers found.</p>
                                 </div>
                             </TableCell>
@@ -93,9 +117,6 @@ export function SpeakersTable({ speakers, sortConfig, onSort }: SpeakersTablePro
                             const meeting = speaker.agenda_items?.[0]?.meeting;
                             return (
                                 <TableRow key={speaker.id} className="group hover:bg-muted/50">
-                                    <TableCell className="font-mono text-xs text-muted-foreground uppercase">
-                                        {speaker.workspace_speaker_id || 'SPKR-0000'}
-                                    </TableCell>
                                     <TableCell className="font-medium">
                                         <Link href={`/speakers/${speaker.id}`} className="hover:underline">
                                             {speaker.name}
@@ -124,17 +145,38 @@ export function SpeakersTable({ speakers, sortConfig, onSort }: SpeakersTablePro
                                             : "-"}
                                     </TableCell>
                                     <TableCell>
-                                        <div className="flex items-center gap-2">
-                                            {getStatusIcon(speaker.is_confirmed)}
-                                            <Badge variant={getStatusVariant(speaker.is_confirmed)}>
-                                                {speaker.is_confirmed ? "Confirmed" : "Pending"}
-                                            </Badge>
-                                        </div>
+                                        <Badge variant={getStatusVariant(speaker.is_confirmed)}>
+                                            {speaker.is_confirmed ? "Confirmed" : "Pending"}
+                                        </Badge>
                                     </TableCell>
                                     <TableCell className="text-right">
-                                        <Button variant="ghost" size="sm" asChild>
-                                            <Link href={`/speakers/${speaker.id}`}>View</Link>
-                                        </Button>
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                                    <MoreHorizontal className="h-4 w-4" />
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end">
+                                                <DropdownMenuItem asChild>
+                                                    <Link href={`/speakers/${speaker.id}`}>
+                                                        <Eye className="mr-2 h-4 w-4" />
+                                                        View
+                                                    </Link>
+                                                </DropdownMenuItem>
+                                                {onDelete && (
+                                                    <>
+                                                        <DropdownMenuSeparator />
+                                                        <DropdownMenuItem 
+                                                            className="text-destructive focus:text-destructive"
+                                                            onClick={() => setDeleteTarget(speaker)}
+                                                        >
+                                                            <Trash2 className="mr-2 h-4 w-4" />
+                                                            Delete
+                                                        </DropdownMenuItem>
+                                                    </>
+                                                )}
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
                                     </TableCell>
                                 </TableRow>
                             );
@@ -142,6 +184,27 @@ export function SpeakersTable({ speakers, sortConfig, onSort }: SpeakersTablePro
                     )}
                 </TableBody>
             </Table>
+
+            <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Speaker</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Are you sure you want to delete &quot;{deleteTarget?.name}&quot;? This action cannot be undone.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+                        <AlertDialogAction 
+                            onClick={handleDelete}
+                            disabled={isDeleting}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                            {isDeleting ? "Deleting..." : "Delete"}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

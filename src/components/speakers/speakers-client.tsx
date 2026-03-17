@@ -7,6 +7,9 @@ import { Separator } from "@/components/ui/separator";
 import { Plus } from "lucide-react";
 import { SpeakersFilters, SpeakerStatus } from "./speakers-filters";
 import { SpeakersTable, Speaker } from "./speakers-table";
+import { createClient } from "@/lib/supabase/client";
+import { toast } from "@/lib/toast";
+import { useRouter } from "next/navigation";
 
 interface SpeakersClientProps {
     speakers: Speaker[];
@@ -22,6 +25,8 @@ export function SpeakersClient({
     totalCount,
     statusCounts,
 }: SpeakersClientProps) {
+    const router = useRouter();
+    const supabase = createClient();
     // Client-side filters for status (not in URL yet)
     const [localFilters, setLocalFilters] = useState<{
         search: string;
@@ -31,6 +36,21 @@ export function SpeakersClient({
         status: [],
     });
     const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>(null);
+
+    const handleDelete = async (id: string) => {
+        const { error } = await supabase
+            .from("speakers")
+            .delete()
+            .eq("id", id);
+
+        if (error) {
+            console.error("Error deleting speaker:", error);
+            toast.error(error.message || "Failed to delete speaker");
+        } else {
+            toast.success("Speaker deleted successfully");
+            router.refresh();
+        }
+    };
 
     // Apply client-side filters (status) and sort
     const filteredSpeakers = useMemo(() => {
@@ -112,6 +132,7 @@ export function SpeakersClient({
                             return { key, direction: 'asc' };
                         });
                     }}
+                    onDelete={handleDelete}
                 />
             </div>
         </div>

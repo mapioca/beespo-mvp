@@ -1,10 +1,13 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Plus } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
+import { toast } from "@/lib/toast";
 import { DiscussionsFilters, DiscussionStatus, DiscussionPriority, DiscussionCategory } from "./discussions-filters";
 import { DiscussionsTable, Discussion } from "./discussions-table";
 
@@ -40,6 +43,22 @@ export function DiscussionsClient({
         category: [],
     });
     const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>(null);
+    const router = useRouter();
+
+    const handleDelete = async (id: string) => {
+        const supabase = createClient();
+        const { error } = await supabase
+            .from("discussions")
+            .delete()
+            .eq("id", id);
+
+        if (error) {
+            toast.error(error.message || "Failed to delete discussion.");
+        } else {
+            toast.success("Discussion deleted.");
+            router.refresh();
+        }
+    };
 
     // Apply client-side filters (priority, category) and sort
     const filteredDiscussions = useMemo(() => {
@@ -123,6 +142,7 @@ export function DiscussionsClient({
                 <DiscussionsTable
                     discussions={filteredDiscussions}
                     sortConfig={sortConfig}
+                    onDelete={handleDelete}
                     onSort={(key) => {
                         setSortConfig(current => {
                             if (current?.key === key) {

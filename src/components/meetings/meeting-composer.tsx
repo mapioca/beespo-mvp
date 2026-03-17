@@ -13,16 +13,14 @@ import {
     BookOpenIcon as BookOpen,
     ChatCenteredTextIcon as MessageSquare,
     BriefcaseIcon as Briefcase,
-    MegaphoneIcon as Megaphone,
-    UserIcon as User,
-    PencilIcon as Pencil,
     UserPlusIcon as UserPlus,
-    MicrophoneIcon as Mic,
+    PencilIcon as Pencil,
     CheckCircleIcon as CheckCircle,
     MinusIcon as Minus,
 } from "@phosphor-icons/react";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "@/lib/toast";
+import { Speech, Megaphone } from "lucide-react";
 import { AddMeetingItemDialog, SelectedItem, CategoryType } from "./add-meeting-item-dialog";
 import { UnifiedSelectorModal, UnifiedSelectorMode, SpeakerSelection } from "./unified-selector-modal";
 import { ContainerAgendaItem, ContainerChildItem, ContainerType } from "./container-agenda-item";
@@ -460,7 +458,7 @@ export function MeetingComposer({
             discussion: <MessageSquare className="h-4 w-4 text-green-500" />,
             business: <Briefcase className="h-4 w-4 text-purple-500" />,
             announcement: <Megaphone className="h-4 w-4 text-orange-500" />,
-            speaker: <User className="h-4 w-4 text-pink-500" />,
+            speaker: <Speech className="h-4 w-4 text-pink-500" />,
             structural: <Minus className="h-4 w-4 text-slate-500" />
         };
         return icons[category];
@@ -819,7 +817,7 @@ export function MeetingComposer({
                                                         className="h-6 text-xs mt-1 text-indigo-600"
                                                         onClick={() => openSpeakerSelector(item.id)}
                                                     >
-                                                        <Mic className="h-3 w-3 mr-1" />
+                                                        <Speech className="h-3 w-3 mr-1" />
                                                         {item.speaker_name
                                                             ? item.speaker_name
                                                             : "Select speaker →"

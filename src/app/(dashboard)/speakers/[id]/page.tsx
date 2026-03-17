@@ -10,7 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Edit, Calendar, Mic } from "lucide-react";
+import { ArrowLeft, Edit, Calendar, Speech } from "lucide-react";
 import { format } from "date-fns";
 import {
   formatSpeakerStatus,
@@ -93,7 +93,7 @@ export default async function SpeakerDetailPage({
               <div className="flex items-start justify-between">
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
-                    <Mic className="h-8 w-8 text-muted-foreground" />
+                    <Speech className="h-8 w-8 text-muted-foreground" />
                     <CardTitle className="text-3xl">{speaker.name}</CardTitle>
                   </div>
                   <div className="flex gap-2">

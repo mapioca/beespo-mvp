@@ -9,7 +9,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Search, Mic, Check, Plus } from "lucide-react";
+import { Search, Speech, Check, Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import { toast } from "@/lib/toast";
@@ -287,7 +287,7 @@ export function SpeakerSelectorPopover({
                             </div>
                         ) : filteredSpeakers.length === 0 ? (
                             <div className="p-8 text-center text-sm text-muted-foreground flex flex-col items-center gap-2">
-                                <Mic className="h-8 w-8 text-muted-foreground/40" />
+                                <Speech className="h-8 w-8 text-muted-foreground/40" />
                                 <span>
                                     {search ? "No matches found" : "No available speakers"}
                                 </span>

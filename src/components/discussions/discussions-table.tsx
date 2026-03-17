@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import {
     Table,
@@ -12,17 +13,30 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
     ArrowUp,
     ArrowDown,
     ArrowUpDown,
-    Minus,
-    Circle,
-    CheckCircle2,
-    AlertTriangle,
     Eye,
-    CheckCheck,
-    Clock,
-    MessageSquare
+    Trash2,
+    MoreHorizontal,
+    MessagesSquare
 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -43,19 +57,9 @@ interface DiscussionsTableProps {
     discussions: Discussion[];
     sortConfig?: { key: string; direction: 'asc' | 'desc' } | null;
     onSort?: (key: string) => void;
+    onDelete?: (id: string) => Promise<void>;
 }
 
-function getStatusIcon(status: string) {
-    switch (status) {
-        case "new": return <Circle className="h-4 w-4 text-muted-foreground" />;
-        case "active": return <CheckCircle2 className="h-4 w-4 text-blue-500" />;
-        case "decision_required": return <AlertTriangle className="h-4 w-4 text-destructive" />;
-        case "monitoring": return <Eye className="h-4 w-4 text-muted-foreground" />;
-        case "resolved": return <CheckCheck className="h-4 w-4 text-green-500" />;
-        case "deferred": return <Clock className="h-4 w-4 text-muted-foreground" />;
-        default: return <Circle className="h-4 w-4" />;
-    }
-}
 
 function formatStatus(status: string): string {
     return status.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
@@ -65,13 +69,6 @@ function formatCategory(category: string): string {
     return category.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
 }
 
-function getPriorityIcon(priority: string) {
-    switch (priority) {
-        case "high": return <ArrowUp className="h-4 w-4 text-destructive" />;
-        case "low": return <ArrowDown className="h-4 w-4 text-muted-foreground" />;
-        default: return <Minus className="h-4 w-4 text-muted-foreground" />;
-    }
-}
 
 function getStatusVariant(status: string): "default" | "secondary" | "destructive" | "outline" {
     switch (status) {
@@ -85,7 +82,18 @@ function getStatusVariant(status: string): "default" | "secondary" | "destructiv
     }
 }
 
-export function DiscussionsTable({ discussions, sortConfig, onSort }: DiscussionsTableProps) {
+export function DiscussionsTable({ discussions, sortConfig, onSort, onDelete }: DiscussionsTableProps) {
+    const [deleteTarget, setDeleteTarget] = useState<Discussion | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
+
+    const handleDelete = async () => {
+        if (!deleteTarget || !onDelete) return;
+        setIsDeleting(true);
+        await onDelete(deleteTarget.id);
+        setIsDeleting(false);
+        setDeleteTarget(null);
+    };
+
     const SortHeader = ({ column, label, className }: { column: string; label: string; className?: string }) => (
         <TableHead
             className={cn("cursor-pointer bg-white hover:bg-gray-50 transition-colors", className)}
@@ -107,7 +115,6 @@ export function DiscussionsTable({ discussions, sortConfig, onSort }: Discussion
             <Table>
                 <TableHeader>
                     <TableRow className="group">
-                        <SortHeader column="workspace_discussion_id" label="ID" className="w-[100px]" />
                         <SortHeader column="title" label="Title" className="w-[300px]" />
                         <SortHeader column="category" label="Category" />
                         <SortHeader column="status" label="Status" />
@@ -119,9 +126,9 @@ export function DiscussionsTable({ discussions, sortConfig, onSort }: Discussion
                 <TableBody>
                     {discussions.length === 0 ? (
                         <TableRow>
-                            <TableCell colSpan={7} className="h-24 text-center">
+                            <TableCell colSpan={6} className="h-24 text-center">
                                 <div className="flex flex-col items-center justify-center py-4">
-                                    <MessageSquare className="h-8 w-8 text-muted-foreground mb-2" />
+                                    <MessagesSquare className="h-8 w-8 text-muted-foreground mb-2" />
                                     <p className="text-muted-foreground">No discussions found.</p>
                                 </div>
                             </TableCell>
@@ -129,11 +136,8 @@ export function DiscussionsTable({ discussions, sortConfig, onSort }: Discussion
                     ) : (
                         discussions.map((discussion) => (
                             <TableRow key={discussion.id} className="group hover:bg-muted/50">
-                                <TableCell className="font-mono text-xs text-muted-foreground uppercase">
-                                    {discussion.workspace_discussion_id || 'DISC-0000'}
-                                </TableCell>
                                 <TableCell className="font-medium">
-                                    <Link href={`/discussions/${discussion.id}`} className="hover:underline">
+                                    <Link href={`/meetings/discussions/${discussion.id}`} className="hover:underline">
                                         <div className="flex flex-col">
                                             <span>{discussion.title}</span>
                                             {discussion.description && (
@@ -148,18 +152,12 @@ export function DiscussionsTable({ discussions, sortConfig, onSort }: Discussion
                                     <Badge variant="outline">{formatCategory(discussion.category)}</Badge>
                                 </TableCell>
                                 <TableCell>
-                                    <div className="flex items-center gap-2">
-                                        {getStatusIcon(discussion.status)}
-                                        <Badge variant={getStatusVariant(discussion.status)}>
-                                            {formatStatus(discussion.status)}
-                                        </Badge>
-                                    </div>
+                                    <Badge variant={getStatusVariant(discussion.status)}>
+                                        {formatStatus(discussion.status)}
+                                    </Badge>
                                 </TableCell>
                                 <TableCell>
-                                    <div className="flex items-center gap-2">
-                                        {getPriorityIcon(discussion.priority)}
-                                        <span className="text-sm capitalize">{discussion.priority}</span>
-                                    </div>
+                                    <span className="text-sm capitalize">{discussion.priority}</span>
                                 </TableCell>
                                 <TableCell>
                                     {discussion.due_date
@@ -167,15 +165,60 @@ export function DiscussionsTable({ discussions, sortConfig, onSort }: Discussion
                                         : "-"}
                                 </TableCell>
                                 <TableCell className="text-right">
-                                    <Button variant="ghost" size="sm" asChild>
-                                        <Link href={`/discussions/${discussion.id}`}>View</Link>
-                                    </Button>
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                                <MoreHorizontal className="h-4 w-4" />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end">
+                                            <DropdownMenuItem asChild>
+                                                <Link href={`/meetings/discussions/${discussion.id}`}>
+                                                    <Eye className="mr-2 h-4 w-4" />
+                                                    View
+                                                </Link>
+                                            </DropdownMenuItem>
+                                            {onDelete && (
+                                                <>
+                                                    <DropdownMenuSeparator />
+                                                    <DropdownMenuItem
+                                                        className="text-destructive focus:text-destructive"
+                                                        onClick={() => setDeleteTarget(discussion)}
+                                                    >
+                                                        <Trash2 className="mr-2 h-4 w-4" />
+                                                        Delete
+                                                    </DropdownMenuItem>
+                                                </>
+                                            )}
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
                                 </TableCell>
                             </TableRow>
                         ))
                     )}
                 </TableBody>
             </Table>
+
+            <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Discussion</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Are you sure you want to delete &quot;{deleteTarget?.title}&quot;? This action cannot be undone.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleDelete}
+                            disabled={isDeleting}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                            {isDeleting ? "Deleting..." : "Delete"}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

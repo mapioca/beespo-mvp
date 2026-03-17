@@ -4,7 +4,7 @@ import { PaginationControls } from "@/components/ui/pagination-controls"
 import { Metadata } from "next"
 
 export const metadata: Metadata = {
-  title: "Overview | Beespo",
+  title: "Agendas | Beespo",
   description: "Manage your meetings and agendas",
 }
 
@@ -13,11 +13,11 @@ export const dynamic = "force-dynamic"
 
 const ITEMS_PER_PAGE = 10
 
-interface OverviewPageProps {
+interface AgendasPageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }
 
-export default async function OverviewPage({ searchParams }: OverviewPageProps) {
+export default async function AgendasPage({ searchParams }: AgendasPageProps) {
   const supabase = await createClient()
 
   // Await searchParams (Next.js 15 requirement)
