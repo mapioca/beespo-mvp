@@ -7,6 +7,7 @@ import { Separator } from "@/components/ui/separator";
 import { Plus } from "lucide-react";
 import { SpeakersFilters, SpeakerStatus } from "./speakers-filters";
 import { SpeakersTable, Speaker } from "./speakers-table";
+import { SpeakerDrawer } from "./speaker-drawer";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "@/lib/toast";
 import { useRouter } from "next/navigation";
@@ -36,6 +37,8 @@ export function SpeakersClient({
         status: [],
     });
     const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>(null);
+    const [selectedSpeaker, setSelectedSpeaker] = useState<Speaker | null>(null);
+    const [drawerOpen, setDrawerOpen] = useState(false);
 
     const handleDelete = async (id: string) => {
         const { error } = await supabase
@@ -90,6 +93,11 @@ export function SpeakersClient({
         return result;
     }, [speakers, localFilters.status, sortConfig]);
 
+    const handleViewSpeaker = (speaker: Speaker) => {
+        setSelectedSpeaker(speaker);
+        setDrawerOpen(true);
+    };
+
     return (
         <div className="p-8 max-w-7xl mx-auto space-y-6">
             <div className="flex justify-between items-center">
@@ -133,8 +141,16 @@ export function SpeakersClient({
                         });
                     }}
                     onDelete={handleDelete}
+                    onViewSpeaker={handleViewSpeaker}
                 />
             </div>
+
+            <SpeakerDrawer
+                speaker={selectedSpeaker}
+                open={drawerOpen}
+                onOpenChange={setDrawerOpen}
+                onDelete={handleDelete}
+            />
         </div>
     );
 }

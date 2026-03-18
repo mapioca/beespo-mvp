@@ -40,6 +40,8 @@ export interface Speaker {
     is_confirmed: boolean;
     workspace_speaker_id?: string | null;
     created_at: string;
+    created_by?: string | null;
+    creator?: { full_name?: string | null } | null;
     agenda_items?: Array<{
         meeting?: {
             id: string;
@@ -54,6 +56,7 @@ interface SpeakersTableProps {
     sortConfig?: { key: string; direction: 'asc' | 'desc' } | null;
     onSort?: (key: string) => void;
     onDelete?: (id: string) => Promise<void>;
+    onViewSpeaker?: (speaker: Speaker) => void;
 }
 
 
@@ -62,7 +65,7 @@ function getStatusVariant(isConfirmed: boolean): "default" | "secondary" | "outl
     return isConfirmed ? "default" : "secondary";
 }
 
-export function SpeakersTable({ speakers, sortConfig, onSort, onDelete }: SpeakersTableProps) {
+export function SpeakersTable({ speakers, sortConfig, onSort, onDelete, onViewSpeaker }: SpeakersTableProps) {
     const [deleteTarget, setDeleteTarget] = useState<Speaker | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
 
@@ -118,9 +121,12 @@ export function SpeakersTable({ speakers, sortConfig, onSort, onDelete }: Speake
                             return (
                                 <TableRow key={speaker.id} className="group hover:bg-muted/50">
                                     <TableCell className="font-medium">
-                                        <Link href={`/speakers/${speaker.id}`} className="hover:underline">
+                                        <button
+                                            onClick={() => onViewSpeaker?.(speaker)}
+                                            className="hover:underline text-left"
+                                        >
                                             {speaker.name}
-                                        </Link>
+                                        </button>
                                     </TableCell>
                                     <TableCell className="max-w-xs truncate">
                                         {speaker.topic || "-"}
@@ -157,11 +163,9 @@ export function SpeakersTable({ speakers, sortConfig, onSort, onDelete }: Speake
                                                 </Button>
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end">
-                                                <DropdownMenuItem asChild>
-                                                    <Link href={`/speakers/${speaker.id}`}>
-                                                        <Eye className="mr-2 h-4 w-4" />
-                                                        View
-                                                    </Link>
+                                                <DropdownMenuItem onClick={() => onViewSpeaker?.(speaker)}>
+                                                    <Eye className="mr-2 h-4 w-4" />
+                                                    View
                                                 </DropdownMenuItem>
                                                 {onDelete && (
                                                     <>

@@ -59,6 +59,7 @@ export default async function SpeakersPage({ searchParams }: SpeakersPageProps) 
         .from("speakers" as any)
         .select(`
             *,
+            creator:profiles!created_by(full_name),
             agenda_items(
                 meeting:meetings(
                     id,
