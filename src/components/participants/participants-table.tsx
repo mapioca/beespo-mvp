@@ -10,11 +10,11 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
+    DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -27,11 +27,8 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { MoreHorizontal, Pencil, Trash2, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
+import { MoreHorizontal, Eye, Trash2, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
 import { format } from "date-fns";
-import { createClient } from "@/lib/supabase/client";
-import { useRouter } from "next/navigation";
-import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -41,7 +38,7 @@ import {
     TooltipTrigger,
 } from "@/components/ui/tooltip";
 
-interface Participant {
+export interface Participant {
     id: string;
     name: string;
     created_at: string;
@@ -52,6 +49,8 @@ interface Participant {
 interface ParticipantsTableProps {
     participants: Participant[];
     canManage: boolean;
+    onViewParticipant?: (participant: Participant) => void;
+    onDeleteParticipant?: (id: string) => Promise<void>;
 }
 
 type SortKey = "name" | "created_at";
@@ -67,81 +66,37 @@ function getInitials(name: string) {
         .substring(0, 2);
 }
 
-export function ParticipantsTable({ participants, canManage }: ParticipantsTableProps) {
+export function ParticipantsTable({ participants, canManage, onViewParticipant, onDeleteParticipant }: ParticipantsTableProps) {
     const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: SortDirection } | null>(null);
-    const [editingId, setEditingId] = useState<string | null>(null);
-    const [editName, setEditName] = useState("");
-    const [deleteId, setDeleteId] = useState<string | null>(null);
-    const router = useRouter();
-    // Sort participants
+    const [deleteTarget, setDeleteTarget] = useState<Participant | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
     const sortedParticipants = [...participants].sort((a, b) => {
         if (!sortConfig) return 0;
-
         const { key, direction } = sortConfig;
         let comparison = 0;
-
         if (key === "name") {
             comparison = a.name.localeCompare(b.name);
         } else if (key === "created_at") {
             comparison = new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
         }
-
         return direction === "asc" ? comparison : -comparison;
     });
 
     const handleSort = (key: SortKey) => {
         setSortConfig((current) => {
             if (current?.key === key) {
-                return current.direction === "asc"
-                    ? { key, direction: "desc" }
-                    : null;
+                return current.direction === "asc" ? { key, direction: "desc" } : null;
             }
             return { key, direction: "asc" };
         });
     };
 
-    const handleStartEdit = (participant: Participant) => {
-        setEditingId(participant.id);
-        setEditName(participant.name);
-    };
-
-    const handleSaveEdit = async () => {
-        if (!editingId || !editName.trim()) return;
-
-        const supabase = createClient();
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { error } = await (supabase.from("participants") as any)
-            .update({ name: editName.trim() })
-            .eq("id", editingId);
-
-        if (error) {
-            toast.error("Failed to update participant");
-        } else {
-            toast.success("Participant updated");
-            router.refresh();
-        }
-
-        setEditingId(null);
-        setEditName("");
-    };
-
     const handleDelete = async () => {
-        if (!deleteId) return;
-
-        const supabase = createClient();
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { error } = await (supabase.from("participants") as any)
-            .delete()
-            .eq("id", deleteId);
-
-        if (error) {
-            toast.error("Failed to delete participant");
-        } else {
-            toast.success("Participant deleted");
-            router.refresh();
-        }
-
-        setDeleteId(null);
+        if (!deleteTarget || !onDeleteParticipant) return;
+        setIsDeleting(true);
+        await onDeleteParticipant(deleteTarget.id);
+        setIsDeleting(false);
+        setDeleteTarget(null);
     };
 
     const SortHeader = ({
@@ -184,14 +139,14 @@ export function ParticipantsTable({ participants, canManage }: ParticipantsTable
                             <SortHeader column="name" label="Name" className="w-[400px]" />
                             <SortHeader column="created_at" label="Created" />
                             <TableHead>Created By</TableHead>
-                            {canManage && <TableHead className="text-right w-[80px]">Actions</TableHead>}
+                            <TableHead className="text-right w-[80px]">Actions</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {sortedParticipants.length === 0 ? (
                             <TableRow>
                                 <TableCell
-                                    colSpan={canManage ? 4 : 3}
+                                    colSpan={4}
                                     className="h-24 text-center"
                                 >
                                     No participants found.
@@ -199,31 +154,14 @@ export function ParticipantsTable({ participants, canManage }: ParticipantsTable
                             </TableRow>
                         ) : (
                             sortedParticipants.map((participant) => (
-                                <TableRow
-                                    key={participant.id}
-                                    className="group hover:bg-muted/50"
-                                >
+                                <TableRow key={participant.id} className="group hover:bg-muted/50">
                                     <TableCell className="font-medium">
-                                        {editingId === participant.id ? (
-                                            <Input
-                                                value={editName}
-                                                onChange={(e) => setEditName(e.target.value)}
-                                                onBlur={handleSaveEdit}
-                                                onKeyDown={(e) => {
-                                                    if (e.key === "Enter") handleSaveEdit();
-                                                    if (e.key === "Escape") {
-                                                        setEditingId(null);
-                                                        setEditName("");
-                                                    }
-                                                }}
-                                                autoFocus
-                                                className="h-8 w-full max-w-[300px]"
-                                            />
-                                        ) : (
-                                            <div className="flex items-center gap-2">
-                                                <span>{participant.name}</span>
-                                            </div>
-                                        )}
+                                        <button
+                                            onClick={() => onViewParticipant?.(participant)}
+                                            className="hover:underline text-left"
+                                        >
+                                            {participant.name}
+                                        </button>
                                     </TableCell>
                                     <TableCell className="text-muted-foreground">
                                         {format(new Date(participant.created_at), "MMM d, yyyy")}
@@ -248,36 +186,33 @@ export function ParticipantsTable({ participants, canManage }: ParticipantsTable
                                             <span className="text-muted-foreground">—</span>
                                         )}
                                     </TableCell>
-                                    {canManage && (
-                                        <TableCell className="text-right">
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="h-8 w-8"
-                                                    >
-                                                        <MoreHorizontal className="h-4 w-4" />
-                                                    </Button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end">
-                                                    <DropdownMenuItem
-                                                        onClick={() => handleStartEdit(participant)}
-                                                    >
-                                                        <Pencil className="mr-2 h-4 w-4" />
-                                                        Edit
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem
-                                                        onClick={() => setDeleteId(participant.id)}
-                                                        className="text-destructive focus:text-destructive"
-                                                    >
-                                                        <Trash2 className="mr-2 h-4 w-4" />
-                                                        Delete
-                                                    </DropdownMenuItem>
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
-                                        </TableCell>
-                                    )}
+                                    <TableCell className="text-right">
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button variant="ghost" size="icon" className="h-8 w-8">
+                                                    <MoreHorizontal className="h-4 w-4" />
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end">
+                                                <DropdownMenuItem onClick={() => onViewParticipant?.(participant)}>
+                                                    <Eye className="mr-2 h-4 w-4" />
+                                                    View
+                                                </DropdownMenuItem>
+                                                {canManage && onDeleteParticipant && (
+                                                    <>
+                                                        <DropdownMenuSeparator />
+                                                        <DropdownMenuItem
+                                                            onClick={() => setDeleteTarget(participant)}
+                                                            className="text-destructive focus:text-destructive"
+                                                        >
+                                                            <Trash2 className="mr-2 h-4 w-4" />
+                                                            Delete
+                                                        </DropdownMenuItem>
+                                                    </>
+                                                )}
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    </TableCell>
                                 </TableRow>
                             ))
                         )}
@@ -285,23 +220,22 @@ export function ParticipantsTable({ participants, canManage }: ParticipantsTable
                 </Table>
             </div>
 
-            {/* Delete Confirmation Dialog */}
-            <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+            <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle>Delete Participant</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Are you sure you want to delete this participant? This action cannot
-                            be undone.
+                            Are you sure you want to delete &quot;{deleteTarget?.name}&quot;? This action cannot be undone.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
                         <AlertDialogAction
                             onClick={handleDelete}
+                            disabled={isDeleting}
                             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                         >
-                            Delete
+                            {isDeleting ? "Deleting..." : "Delete"}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

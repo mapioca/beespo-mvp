@@ -12,7 +12,8 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 import { Plus, Search, Users } from "lucide-react";
-import { ParticipantsTable } from "@/components/participants/participants-table";
+import { ParticipantsTable, Participant } from "@/components/participants/participants-table";
+import { ParticipantDrawer } from "@/components/participants/participant-drawer";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { toast } from "@/lib/toast";
@@ -41,6 +42,8 @@ export function ParticipantsClient({
     const [createDialogOpen, setCreateDialogOpen] = useState(false);
     const [newName, setNewName] = useState("");
     const [isCreating, setIsCreating] = useState(false);
+    const [selectedParticipant, setSelectedParticipant] = useState<Participant | null>(null);
+    const [drawerOpen, setDrawerOpen] = useState(false);
     const router = useRouter();
     const pathname = usePathname();
     const searchParams = useSearchParams();
@@ -121,6 +124,21 @@ export function ParticipantsClient({
         setIsCreating(false);
     };
 
+    const handleDelete = async (id: string) => {
+        const supabase = createClient();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { error } = await (supabase.from("participants") as any)
+            .delete()
+            .eq("id", id);
+
+        if (error) {
+            toast.error("Failed to delete participant");
+        } else {
+            toast.success("Participant deleted");
+            router.refresh();
+        }
+    };
+
     return (
         <div className="p-8 max-w-5xl mx-auto space-y-6">
             {/* Header */}
@@ -162,6 +180,16 @@ export function ParticipantsClient({
             {/* Table */}
             <ParticipantsTable
                 participants={participants}
+                canManage={canManage}
+                onViewParticipant={(p) => { setSelectedParticipant(p); setDrawerOpen(true); }}
+                onDeleteParticipant={canManage ? handleDelete : undefined}
+            />
+
+            <ParticipantDrawer
+                participant={selectedParticipant}
+                open={drawerOpen}
+                onOpenChange={setDrawerOpen}
+                onDelete={handleDelete}
                 canManage={canManage}
             />
 
