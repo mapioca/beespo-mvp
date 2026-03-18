@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import {
     Table,
     TableBody,
@@ -48,8 +47,12 @@ export interface Announcement {
     priority: string;
     status: string;
     deadline?: string | null;
+    display_start?: string | null;
+    display_until?: string | null;
     workspace_announcement_id?: string | null;
     created_at: string;
+    created_by?: string | null;
+    creator?: { full_name?: string | null } | null;
 }
 
 interface AnnouncementsTableProps {
@@ -57,6 +60,7 @@ interface AnnouncementsTableProps {
     sortConfig?: { key: string; direction: 'asc' | 'desc' } | null;
     onSort?: (key: string) => void;
     onDelete?: (id: string) => Promise<void>;
+    onViewAnnouncement?: (announcement: Announcement) => void;
 }
 
 
@@ -82,7 +86,7 @@ function getPriorityVariant(priority: string): "default" | "secondary" | "destru
     }
 }
 
-export function AnnouncementsTable({ announcements, sortConfig, onSort, onDelete }: AnnouncementsTableProps) {
+export function AnnouncementsTable({ announcements, sortConfig, onSort, onDelete, onViewAnnouncement }: AnnouncementsTableProps) {
     const [deleteTarget, setDeleteTarget] = useState<Announcement | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
 
@@ -135,7 +139,10 @@ export function AnnouncementsTable({ announcements, sortConfig, onSort, onDelete
                         announcements.map((announcement) => (
                             <TableRow key={announcement.id} className="group hover:bg-muted/50">
                                 <TableCell className="font-medium">
-                                    <Link href={`/meetings/announcements/${announcement.id}`} className="hover:underline">
+                                    <button
+                                        onClick={() => onViewAnnouncement?.(announcement)}
+                                        className="hover:underline text-left"
+                                    >
                                         <div className="flex flex-col">
                                             <span>{announcement.title}</span>
                                             {announcement.content && (
@@ -144,7 +151,7 @@ export function AnnouncementsTable({ announcements, sortConfig, onSort, onDelete
                                                 </span>
                                             )}
                                         </div>
-                                    </Link>
+                                    </button>
                                 </TableCell>
                                 <TableCell>
                                     <Badge variant={getPriorityVariant(announcement.priority)}>
@@ -169,11 +176,9 @@ export function AnnouncementsTable({ announcements, sortConfig, onSort, onDelete
                                             </Button>
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent align="end">
-                                            <DropdownMenuItem asChild>
-                                                <Link href={`/meetings/announcements/${announcement.id}`}>
-                                                    <Eye className="mr-2 h-4 w-4" />
-                                                    View
-                                                </Link>
+                                            <DropdownMenuItem onClick={() => onViewAnnouncement?.(announcement)}>
+                                                <Eye className="mr-2 h-4 w-4" />
+                                                View
                                             </DropdownMenuItem>
                                             {onDelete && (
                                                 <>

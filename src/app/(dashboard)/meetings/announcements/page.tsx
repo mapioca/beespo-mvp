@@ -67,7 +67,7 @@ export default async function AnnouncementsPage({
   let query = supabase
     .from("announcements" as string)
     .select(
-      "id, title, content, priority, status, deadline, created_at, updated_at, workspace_id, workspace_announcement_id, created_by",
+      "id, title, content, priority, status, deadline, display_start, display_until, created_at, updated_at, workspace_id, workspace_announcement_id, created_by, creator:profiles!created_by(full_name)",
       { count: "exact" }
     )
     .eq("workspace_id", profile.workspace_id)

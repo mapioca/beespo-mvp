@@ -42,7 +42,7 @@ export default async function BusinessPage() {
     supabase.from("business_items") as ReturnType<typeof supabase.from>
   )
     .select(
-      "id, person_name, position_calling, category, status, action_date, notes, created_at, updated_at, workspace_id, workspace_business_id, created_by"
+      "id, person_name, position_calling, category, status, action_date, notes, created_at, updated_at, workspace_id, workspace_business_id, created_by, creator:profiles!created_by(full_name)"
     )
     .eq("workspace_id", profile.workspace_id)
     .order("created_at", { ascending: false })

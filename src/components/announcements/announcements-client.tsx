@@ -10,6 +10,7 @@ import { createClient } from "@/lib/supabase/client";
 import { toast } from "@/lib/toast";
 import { AnnouncementsFilters, AnnouncementStatus, AnnouncementPriority } from "./announcements-filters";
 import { AnnouncementsTable, Announcement } from "./announcements-table";
+import { AnnouncementDrawer } from "./announcement-drawer";
 
 interface AnnouncementsClientProps {
     announcements: Announcement[];
@@ -39,6 +40,8 @@ export function AnnouncementsClient({
         priority: [],
     });
     const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>(null);
+    const [selectedAnnouncement, setSelectedAnnouncement] = useState<Announcement | null>(null);
+    const [drawerOpen, setDrawerOpen] = useState(false);
     const router = useRouter();
 
     const handleDelete = async (id: string) => {
@@ -132,6 +135,7 @@ export function AnnouncementsClient({
                     announcements={filteredAnnouncements}
                     sortConfig={sortConfig}
                     onDelete={handleDelete}
+                    onViewAnnouncement={(a) => { setSelectedAnnouncement(a); setDrawerOpen(true); }}
                     onSort={(key) => {
                         setSortConfig(current => {
                             if (current?.key === key) {
@@ -143,6 +147,13 @@ export function AnnouncementsClient({
                     }}
                 />
             </div>
+
+            <AnnouncementDrawer
+                announcement={selectedAnnouncement}
+                open={drawerOpen}
+                onOpenChange={setDrawerOpen}
+                onDelete={handleDelete}
+            />
         </div>
     );
 }

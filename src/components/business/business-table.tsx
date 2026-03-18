@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { useState } from "react";
 import {
     Table,
     TableBody,
@@ -11,7 +11,24 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowUp, ArrowDown, ArrowUpDown, Briefcase } from "lucide-react";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { ArrowUp, ArrowDown, ArrowUpDown, Briefcase, MoreHorizontal, Eye, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 
@@ -25,12 +42,16 @@ export interface BusinessItem {
     notes?: string | null;
     workspace_business_id?: string | null;
     created_at: string;
+    created_by?: string | null;
+    creator?: { full_name?: string | null } | null;
 }
 
 interface BusinessTableProps {
     items: BusinessItem[];
     sortConfig?: { key: string; direction: 'asc' | 'desc' } | null;
     onSort?: (key: string) => void;
+    onViewItem?: (item: BusinessItem) => void;
+    onDeleteItem?: (id: string) => Promise<void>;
 }
 
 
@@ -46,7 +67,18 @@ function getStatusVariant(status: string): "default" | "secondary" | "outline" {
     }
 }
 
-export function BusinessTable({ items, sortConfig, onSort }: BusinessTableProps) {
+export function BusinessTable({ items, sortConfig, onSort, onViewItem, onDeleteItem }: BusinessTableProps) {
+    const [deleteTarget, setDeleteTarget] = useState<BusinessItem | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
+
+    const handleDelete = async () => {
+        if (!deleteTarget || !onDeleteItem) return;
+        setIsDeleting(true);
+        await onDeleteItem(deleteTarget.id);
+        setIsDeleting(false);
+        setDeleteTarget(null);
+    };
+
     const SortHeader = ({ column, label, className }: { column: string; label: string; className?: string }) => (
         <TableHead
             className={cn("cursor-pointer bg-white hover:bg-gray-50 transition-colors", className)}
@@ -64,6 +96,7 @@ export function BusinessTable({ items, sortConfig, onSort }: BusinessTableProps)
     );
 
     return (
+        <>
         <div className="rounded-md border">
             <Table>
                 <TableHeader>
@@ -90,9 +123,12 @@ export function BusinessTable({ items, sortConfig, onSort }: BusinessTableProps)
                         items.map((item) => (
                             <TableRow key={item.id} className="group hover:bg-muted/50">
                                 <TableCell className="font-medium">
-                                    <Link href={`/business/${item.id}`} className="hover:underline">
+                                    <button
+                                        onClick={() => onViewItem?.(item)}
+                                        className="hover:underline text-left"
+                                    >
                                         {item.person_name}
-                                    </Link>
+                                    </button>
                                 </TableCell>
                                 <TableCell>{item.position_calling || "-"}</TableCell>
                                 <TableCell>
@@ -109,9 +145,31 @@ export function BusinessTable({ items, sortConfig, onSort }: BusinessTableProps)
                                         : "-"}
                                 </TableCell>
                                 <TableCell className="text-right">
-                                    <Button variant="ghost" size="sm" asChild>
-                                        <Link href={`/business/${item.id}`}>View</Link>
-                                    </Button>
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                                <MoreHorizontal className="h-4 w-4" />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end">
+                                            <DropdownMenuItem onClick={() => onViewItem?.(item)}>
+                                                <Eye className="mr-2 h-4 w-4" />
+                                                View
+                                            </DropdownMenuItem>
+                                            {onDeleteItem && (
+                                                <>
+                                                    <DropdownMenuSeparator />
+                                                    <DropdownMenuItem
+                                                        className="text-destructive focus:text-destructive"
+                                                        onClick={() => setDeleteTarget(item)}
+                                                    >
+                                                        <Trash2 className="mr-2 h-4 w-4" />
+                                                        Delete
+                                                    </DropdownMenuItem>
+                                                </>
+                                            )}
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
                                 </TableCell>
                             </TableRow>
                         ))
@@ -119,5 +177,27 @@ export function BusinessTable({ items, sortConfig, onSort }: BusinessTableProps)
                 </TableBody>
             </Table>
         </div>
+
+            <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Business Item</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Are you sure you want to delete &quot;{deleteTarget?.person_name}&quot;? This action cannot be undone.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleDelete}
+                            disabled={isDeleting}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                            {isDeleting ? "Deleting..." : "Delete"}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+        </>
     );
 }

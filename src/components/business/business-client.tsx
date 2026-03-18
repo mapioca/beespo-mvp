@@ -7,12 +7,19 @@ import { Separator } from "@/components/ui/separator";
 import { Plus } from "lucide-react";
 import { BusinessFilters, BusinessStatus, BusinessCategory } from "./business-filters";
 import { BusinessTable, BusinessItem } from "./business-table";
+import { BusinessDrawer } from "./business-drawer";
+import { createClient } from "@/lib/supabase/client";
+import { toast } from "@/lib/toast";
+import { useRouter } from "next/navigation";
 
 interface BusinessClientProps {
     items: BusinessItem[];
 }
 
 export function BusinessClient({ items }: BusinessClientProps) {
+    const router = useRouter();
+    const [selectedItem, setSelectedItem] = useState<BusinessItem | null>(null);
+    const [drawerOpen, setDrawerOpen] = useState(false);
     const [filters, setFilters] = useState<{
         search: string;
         status: BusinessStatus[];
@@ -81,6 +88,26 @@ export function BusinessClient({ items }: BusinessClientProps) {
         return counts;
     }, [items]);
 
+    const handleDelete = async (id: string) => {
+        const supabase = createClient();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { error } = await (supabase.from("business_items") as any)
+            .delete()
+            .eq("id", id);
+
+        if (error) {
+            toast.error(error.message || "Failed to delete business item");
+        } else {
+            toast.success("Business item deleted successfully");
+            router.refresh();
+        }
+    };
+
+    const handleViewItem = (item: BusinessItem) => {
+        setSelectedItem(item);
+        setDrawerOpen(true);
+    };
+
     return (
         <div className="p-8 max-w-7xl mx-auto space-y-6">
             <div className="flex justify-between items-center">
@@ -119,8 +146,17 @@ export function BusinessClient({ items }: BusinessClientProps) {
                             return { key, direction: 'asc' };
                         });
                     }}
+                    onViewItem={handleViewItem}
+                    onDeleteItem={handleDelete}
                 />
             </div>
+
+            <BusinessDrawer
+                item={selectedItem}
+                open={drawerOpen}
+                onOpenChange={setDrawerOpen}
+                onDelete={handleDelete}
+            />
         </div>
     );
 }
