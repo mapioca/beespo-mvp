@@ -14,7 +14,16 @@ const nextConfig: NextConfig = {
 
   // Optimize package imports to reduce bundle size
   experimental: {
-    optimizePackageImports: ['lucide-react', '@radix-ui/react-icons', 'date-fns'],
+    optimizePackageImports: [
+      'lucide-react',
+      '@radix-ui/react-icons',
+      'date-fns',
+      'framer-motion',
+      'recharts',
+      '@dnd-kit/core',
+      '@dnd-kit/sortable',
+      '@dnd-kit/utilities',
+    ],
   },
 
   // Handle route redirects at the routing layer (before any component rendering)

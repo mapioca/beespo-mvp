@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { format } from "date-fns";
 import {
@@ -12,17 +13,8 @@ import {
     ChevronDown,
     ChevronUp,
 } from "lucide-react";
-import {
-    BarChart,
-    Bar,
-    XAxis,
-    YAxis,
-    CartesianGrid,
-    Tooltip,
-    ResponsiveContainer,
-    LineChart,
-    Line,
-} from "recharts";
+import { Skeleton } from "@/components/ui/skeleton";
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -39,6 +31,14 @@ import {
     CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import type { Form, FormSubmission } from "@/types/form-types";
+
+const ResultsCharts = dynamic(
+    () => import("./results-charts").then((m) => m.ResultsCharts),
+    {
+        ssr: false,
+        loading: () => <Skeleton className="h-[300px] w-full rounded-lg" />,
+    }
+);
 
 interface ResultsDashboardClientProps {
     form: Form;
@@ -168,89 +168,11 @@ export function ResultsDashboardClient({
                     </Card>
                 </div>
 
-                {/* Submissions Over Time */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Submissions Over Time</CardTitle>
-                        <CardDescription>Last 30 days</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="h-[300px]">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <LineChart data={submissionsOverTime}>
-                                    <CartesianGrid strokeDasharray="3 3" />
-                                    <XAxis
-                                        dataKey="date"
-                                        tickFormatter={(value) => format(new Date(value), "MMM d")}
-                                        fontSize={12}
-                                    />
-                                    <YAxis allowDecimals={false} fontSize={12} />
-                                    <Tooltip
-                                        labelFormatter={(value) =>
-                                            format(new Date(value), "MMM d, yyyy")
-                                        }
-                                        formatter={(value) => [`${value} submissions`, "Count"]}
-                                    />
-                                    <Line
-                                        type="monotone"
-                                        dataKey="count"
-                                        stroke="hsl(var(--primary))"
-                                        strokeWidth={2}
-                                        dot={false}
-                                    />
-                                </LineChart>
-                            </ResponsiveContainer>
-                        </div>
-                    </CardContent>
-                </Card>
-
-                {/* Field Distributions */}
-                {Object.keys(fieldDistributions).length > 0 && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {form.schema.fields
-                            .filter((field) => field.type === "select" || field.type === "radio")
-                            .map((field) => {
-                                const distribution = fieldDistributions[field.id];
-                                const chartData = Object.entries(distribution).map(
-                                    ([option, count]) => ({
-                                        option,
-                                        count,
-                                    })
-                                );
-
-                                return (
-                                    <Card key={field.id}>
-                                        <CardHeader>
-                                            <CardTitle className="text-base">{field.label}</CardTitle>
-                                            <CardDescription>Response distribution</CardDescription>
-                                        </CardHeader>
-                                        <CardContent>
-                                            <div className="h-[200px]">
-                                                <ResponsiveContainer width="100%" height="100%">
-                                                    <BarChart data={chartData} layout="vertical">
-                                                        <CartesianGrid strokeDasharray="3 3" />
-                                                        <XAxis type="number" allowDecimals={false} />
-                                                        <YAxis
-                                                            type="category"
-                                                            dataKey="option"
-                                                            width={100}
-                                                            fontSize={12}
-                                                        />
-                                                        <Tooltip />
-                                                        <Bar
-                                                            dataKey="count"
-                                                            fill="hsl(var(--primary))"
-                                                            radius={[0, 4, 4, 0]}
-                                                        />
-                                                    </BarChart>
-                                                </ResponsiveContainer>
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-                                );
-                            })}
-                    </div>
-                )}
+                <ResultsCharts
+                    submissionsOverTime={submissionsOverTime}
+                    fieldDistributions={fieldDistributions}
+                    fields={form.schema.fields}
+                />
 
                 {/* Raw Responses Table */}
                 <Collapsible open={isTableExpanded} onOpenChange={setIsTableExpanded}>
