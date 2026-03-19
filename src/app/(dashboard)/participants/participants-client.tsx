@@ -18,14 +18,6 @@ import { createClient } from "@/lib/supabase/client";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { toast } from "@/lib/toast";
 
-interface Participant {
-    id: string;
-    name: string;
-    created_at: string;
-    created_by: string | null;
-    profiles?: { full_name: string } | null;
-}
-
 interface ParticipantsClientProps {
     participants: Participant[];
     userRole: string;
