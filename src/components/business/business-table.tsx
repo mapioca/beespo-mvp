@@ -31,6 +31,7 @@ import {
 import { ArrowUp, ArrowDown, ArrowUpDown, Briefcase, MoreHorizontal, Eye, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import type { BusinessItemDetails } from "@/lib/business-script-generator";
 
 export interface BusinessItem {
     id: string;
@@ -40,6 +41,7 @@ export interface BusinessItem {
     status: string;
     action_date?: string | null;
     notes?: string | null;
+    details?: BusinessItemDetails | null;
     workspace_business_id?: string | null;
     created_at: string;
     created_by?: string | null;

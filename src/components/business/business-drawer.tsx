@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
@@ -34,6 +33,7 @@ import { format } from "date-fns";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "@/lib/toast";
 import { useRouter } from "next/navigation";
+import { generateBusinessScript, type Language } from "@/lib/business-script-generator";
 import type { BusinessItem } from "./business-table";
 
 const CATEGORY_OPTIONS = [
@@ -44,8 +44,6 @@ const CATEGORY_OPTIONS = [
     { value: "setting_apart", label: "Setting Apart" },
     { value: "other", label: "Other" },
 ];
-
-
 
 interface BusinessDrawerProps {
     item: BusinessItem | null;
@@ -65,6 +63,8 @@ export function BusinessDrawer({ item, open, onOpenChange, onDelete }: BusinessD
     const [personName, setPersonName] = useState("");
     const [positionCalling, setPositionCalling] = useState("");
     const [category, setCategory] = useState("");
+    const [status, setStatus] = useState("pending");
+    const [language, setLanguage] = useState<Language>("ENG");
     const [showNotes, setShowNotes] = useState(false);
     const [notes, setNotes] = useState("");
 
@@ -74,13 +74,27 @@ export function BusinessDrawer({ item, open, onOpenChange, onDelete }: BusinessD
             setPersonName(item.person_name);
             setPositionCalling(item.position_calling ?? "");
             setCategory(item.category);
+            setStatus(item.status);
+            setLanguage(item.details?.language ?? "ENG");
             setNotes(item.notes ?? "");
             setShowNotes(!!item.notes);
         }
     }, [item?.id]);
 
-    const isCompleted = item?.status === "completed";
+    const isCompleted = status === "completed";
     const creatorName = item?.creator?.full_name;
+
+    // Generate conducting script from current form state + item details
+    const conductingScript = useMemo(() => {
+        if (!personName || !category) return "";
+        return generateBusinessScript({
+            person_name: personName,
+            position_calling: positionCalling || null,
+            category,
+            notes: showNotes ? notes || null : null,
+            details: { ...(item?.details ?? {}), language },
+        });
+    }, [personName, positionCalling, category, notes, showNotes, item?.details, language]);
 
     const handleSave = async () => {
         if (!item || !personName.trim() || !category) return;
@@ -92,7 +106,9 @@ export function BusinessDrawer({ item, open, onOpenChange, onDelete }: BusinessD
                 person_name: personName.trim(),
                 position_calling: positionCalling.trim() || null,
                 category,
+                status,
                 notes: showNotes && notes.trim() ? notes.trim() : null,
+                details: { ...(item?.details ?? {}), language },
             })
             .eq("id", item.id);
 
@@ -105,11 +121,11 @@ export function BusinessDrawer({ item, open, onOpenChange, onDelete }: BusinessD
         setIsSaving(false);
     };
 
-    const handleToggleStatus = async () => {
+    const handleSetStatus = async (newStatus: "pending" | "completed") => {
         if (!item) return;
         setIsUpdatingStatus(true);
+        setStatus(newStatus);
         const supabase = createClient();
-        const newStatus = isCompleted ? "pending" : "completed";
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { error } = await (supabase.from("business_items") as any)
             .update({
@@ -120,6 +136,7 @@ export function BusinessDrawer({ item, open, onOpenChange, onDelete }: BusinessD
 
         if (error) {
             toast.error(error.message);
+            setStatus(item.status);
         } else {
             toast.success(newStatus === "completed" ? "Marked as complete!" : "Marked as pending.");
             router.refresh();
@@ -200,6 +217,18 @@ export function BusinessDrawer({ item, open, onOpenChange, onDelete }: BusinessD
                                     </SelectContent>
                                 </Select>
                             </div>
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-medium">Script Language</label>
+                                <Select value={language} onValueChange={(val) => setLanguage(val as Language)}>
+                                    <SelectTrigger className="h-8 text-sm">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="ENG">English</SelectItem>
+                                        <SelectItem value="SPA">Spanish</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
                         </div>
 
                         <Separator />
@@ -209,13 +238,18 @@ export function BusinessDrawer({ item, open, onOpenChange, onDelete }: BusinessD
                             <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
                                 Details
                             </p>
-                            <div className="flex items-center justify-between">
-                                <span className="text-xs text-muted-foreground">Status</span>
-                                <Badge variant={isCompleted ? "outline" : "secondary"} className="text-xs">
-                                    {isCompleted ? "Completed" : "Pending"}
-                                </Badge>
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-medium">Status</label>
+                                <Select value={status} onValueChange={setStatus}>
+                                    <SelectTrigger className="h-8 text-sm">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="pending">Pending</SelectItem>
+                                        <SelectItem value="completed">Completed</SelectItem>
+                                    </SelectContent>
+                                </Select>
                             </div>
-
                             {item?.action_date && (
                                 <div className="flex items-start justify-between gap-4">
                                     <span className="text-xs text-muted-foreground shrink-0">Action Date</span>
@@ -242,6 +276,26 @@ export function BusinessDrawer({ item, open, onOpenChange, onDelete }: BusinessD
 
                         <Separator />
 
+                        {/* CONDUCTING SCRIPT section */}
+                        <div className="px-5 py-4 space-y-3">
+                            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+                                Conducting Script
+                            </p>
+                            {conductingScript ? (
+                                <div className="rounded-md border border-blue-200 bg-blue-50 p-3">
+                                    <p className="text-xs text-blue-900 font-serif whitespace-pre-line leading-relaxed">
+                                        {conductingScript}
+                                    </p>
+                                </div>
+                            ) : (
+                                <p className="text-xs text-muted-foreground italic">
+                                    Fill in person name and category to generate a script.
+                                </p>
+                            )}
+                        </div>
+
+                        <Separator />
+
                         {/* QUICK ACTIONS section */}
                         <div className="px-5 py-4 space-y-2">
                             <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
@@ -251,7 +305,7 @@ export function BusinessDrawer({ item, open, onOpenChange, onDelete }: BusinessD
                                 variant="outline"
                                 size="sm"
                                 className="w-full justify-start gap-2 h-8 text-xs font-normal"
-                                onClick={handleToggleStatus}
+                                onClick={() => handleSetStatus(isCompleted ? "pending" : "completed")}
                                 disabled={isUpdatingStatus}
                             >
                                 <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />

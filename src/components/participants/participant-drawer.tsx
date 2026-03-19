@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
@@ -20,12 +20,24 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { User, Trash2 } from "lucide-react";
+import { User, Trash2, Loader2, Calendar } from "lucide-react";
 import { format } from "date-fns";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "@/lib/toast";
 import { useRouter } from "next/navigation";
+import {
+    getParticipantHistory,
+    type ParticipantHistoryItem,
+} from "@/lib/actions/meeting-actions";
 import type { Participant } from "./participants-table";
+
+const ITEM_TYPE_LABELS: Record<string, string> = {
+    speaker: "Speaker",
+    procedural: "Procedural",
+    discussion: "Discussion",
+    business: "Business",
+    announcement: "Announcement",
+};
 
 interface ParticipantDrawerProps {
     participant: Participant | null;
@@ -35,18 +47,47 @@ interface ParticipantDrawerProps {
     canManage: boolean;
 }
 
-export function ParticipantDrawer({ participant, open, onOpenChange, onDelete, canManage }: ParticipantDrawerProps) {
+export function ParticipantDrawer({
+    participant,
+    open,
+    onOpenChange,
+    onDelete,
+    canManage,
+}: ParticipantDrawerProps) {
     const router = useRouter();
     const [isSaving, setIsSaving] = useState(false);
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
     const [name, setName] = useState("");
 
+    // History state
+    const [historyLoading, setHistoryLoading] = useState(false);
+    const [historyItems, setHistoryItems] = useState<ParticipantHistoryItem[]>([]);
+
     useEffect(() => {
         if (participant) {
             setName(participant.name);
         }
     }, [participant?.id]);
+
+    const fetchHistory = useCallback(async () => {
+        if (!participant) return;
+        setHistoryLoading(true);
+        setHistoryItems([]);
+        const { items, error } = await getParticipantHistory(participant.id);
+        if (error) {
+            toast.error("Failed to load assignment history");
+        } else {
+            setHistoryItems(items);
+        }
+        setHistoryLoading(false);
+    }, [participant?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    useEffect(() => {
+        if (open && participant) {
+            fetchHistory();
+        }
+    }, [open, participant?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const creatorName = participant?.profiles?.full_name;
 
@@ -145,6 +186,58 @@ export function ParticipantDrawer({ participant, open, onOpenChange, onDelete, c
                                 </div>
                             )}
                         </div>
+
+                        <Separator />
+
+                        {/* ASSIGNMENT HISTORY section */}
+                        <div className="px-5 py-4 space-y-3">
+                            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+                                Assignment History
+                            </p>
+
+                            {historyLoading ? (
+                                <div className="flex items-center gap-2 py-2">
+                                    <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+                                    <span className="text-xs text-muted-foreground">Loading...</span>
+                                </div>
+                            ) : historyItems.length === 0 ? (
+                                <p className="text-xs text-muted-foreground italic">
+                                    No assignment history found.
+                                </p>
+                            ) : (
+                                <div className="space-y-3">
+                                    {historyItems.map((item) => (
+                                        <div key={item.id} className="space-y-0.5">
+                                            <div className="flex items-start justify-between gap-3">
+                                                <span className="text-xs font-medium leading-snug">
+                                                    {item.title}
+                                                </span>
+                                                <span className="text-[10px] text-muted-foreground shrink-0 mt-0.5 bg-muted px-1.5 py-0.5 rounded">
+                                                    {ITEM_TYPE_LABELS[item.item_type] ?? item.item_type}
+                                                </span>
+                                            </div>
+                                            {item.meeting && (
+                                                <div className="flex items-center gap-1.5">
+                                                    <Calendar className="h-3 w-3 text-muted-foreground/60 shrink-0" />
+                                                    <span className="text-[11px] text-muted-foreground">
+                                                        {format(new Date(item.meeting.scheduled_date), "MMM d, yyyy")}
+                                                    </span>
+                                                    <span className="text-muted-foreground/40 text-[11px]">·</span>
+                                                    <span className="text-[11px] text-muted-foreground truncate">
+                                                        {item.meeting.title}
+                                                    </span>
+                                                </div>
+                                            )}
+                                            {item.description && (
+                                                <p className="text-[11px] text-muted-foreground/70 truncate">
+                                                    {item.description}
+                                                </p>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
                     </div>
 
                     {/* Footer */}
@@ -170,7 +263,8 @@ export function ParticipantDrawer({ participant, open, onOpenChange, onDelete, c
                     <AlertDialogHeader>
                         <AlertDialogTitle>Delete Participant</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Are you sure you want to delete &quot;{participant?.name}&quot;? This action cannot be undone.
+                            Are you sure you want to delete &quot;{participant?.name}&quot;? This
+                            action cannot be undone.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
