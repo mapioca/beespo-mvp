@@ -30,13 +30,7 @@ import {
 import { MoreHorizontal, Eye, Trash2, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
-} from "@/components/ui/tooltip";
+
 
 export interface Participant {
     id: string;
@@ -56,15 +50,6 @@ interface ParticipantsTableProps {
 type SortKey = "name" | "created_at";
 type SortDirection = "asc" | "desc";
 
-function getInitials(name: string) {
-    if (!name) return "";
-    return name
-        .split(" ")
-        .map((n) => n[0])
-        .join("")
-        .toUpperCase()
-        .substring(0, 2);
-}
 
 export function ParticipantsTable({ participants, canManage, onViewParticipant, onDeleteParticipant }: ParticipantsTableProps) {
     const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: SortDirection } | null>(null);
@@ -138,7 +123,6 @@ export function ParticipantsTable({ participants, canManage, onViewParticipant, 
                         <TableRow className="group">
                             <SortHeader column="name" label="Name" className="w-[400px]" />
                             <SortHeader column="created_at" label="Created" />
-                            <TableHead>Created By</TableHead>
                             <TableHead className="text-right w-[80px]">Actions</TableHead>
                         </TableRow>
                     </TableHeader>
@@ -146,7 +130,7 @@ export function ParticipantsTable({ participants, canManage, onViewParticipant, 
                         {sortedParticipants.length === 0 ? (
                             <TableRow>
                                 <TableCell
-                                    colSpan={4}
+                                    colSpan={3}
                                     className="h-24 text-center"
                                 >
                                     No participants found.
@@ -165,26 +149,6 @@ export function ParticipantsTable({ participants, canManage, onViewParticipant, 
                                     </TableCell>
                                     <TableCell className="text-muted-foreground">
                                         {format(new Date(participant.created_at), "MMM d, yyyy")}
-                                    </TableCell>
-                                    <TableCell>
-                                        {participant.profiles?.full_name ? (
-                                            <TooltipProvider>
-                                                <Tooltip>
-                                                    <TooltipTrigger asChild>
-                                                        <Avatar className="h-7 w-7 border">
-                                                            <AvatarFallback className="text-[10px] bg-blue-50 text-blue-600 font-semibold border-none">
-                                                                {getInitials(participant.profiles.full_name)}
-                                                            </AvatarFallback>
-                                                        </Avatar>
-                                                    </TooltipTrigger>
-                                                    <TooltipContent>
-                                                        <p>{participant.profiles.full_name}</p>
-                                                    </TooltipContent>
-                                                </Tooltip>
-                                            </TooltipProvider>
-                                        ) : (
-                                            <span className="text-muted-foreground">—</span>
-                                        )}
                                     </TableCell>
                                     <TableCell className="text-right">
                                         <DropdownMenu>

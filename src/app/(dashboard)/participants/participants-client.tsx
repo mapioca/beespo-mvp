@@ -102,6 +102,7 @@ export function ParticipantsClient({
             .insert({
                 name: newName.trim(),
                 workspace_id: profile.workspace_id,
+                created_by: user.id,
             });
 
         if (error) {
