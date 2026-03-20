@@ -1,7 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import { AnnouncementsClient } from "@/components/announcements/announcements-client"
-import { PaginationControls } from "@/components/ui/pagination-controls"
 import { Metadata } from "next"
 
 export const metadata: Metadata = {
@@ -9,18 +8,9 @@ export const metadata: Metadata = {
   description: "Manage time-based announcements for your organization",
 }
 
-// Force dynamic rendering to ensure searchParams trigger fresh data fetch
 export const dynamic = "force-dynamic"
 
-const ITEMS_PER_PAGE = 5
-
-interface AnnouncementsPageProps {
-  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
-}
-
-export default async function AnnouncementsPage({
-  searchParams,
-}: AnnouncementsPageProps) {
+export default async function AnnouncementsPage() {
   const supabase = await createClient()
 
   const {
@@ -31,27 +21,6 @@ export default async function AnnouncementsPage({
     redirect("/login")
   }
 
-  // Await searchParams (Next.js 15 requirement)
-  const params = await searchParams
-
-  // Parse pagination
-  const rawPage = params?.page
-  const currentPage = Number(rawPage) || 1
-  const from = (currentPage - 1) * ITEMS_PER_PAGE
-  const to = from + ITEMS_PER_PAGE - 1
-
-  // Parse search param
-  const searchQuery = typeof params?.search === "string" ? params.search : ""
-
-  // Parse filter params
-  const statusParam = params?.status
-  const statusFilters: string[] = statusParam
-    ? Array.isArray(statusParam)
-      ? statusParam
-      : statusParam.split(",")
-    : []
-
-  // Get user profile to check role
   const { data: profile } = await (
     supabase.from("profiles") as ReturnType<typeof supabase.from>
   )
@@ -63,33 +32,17 @@ export default async function AnnouncementsPage({
     redirect("/onboarding")
   }
 
-  // Build query with filters
-  let query = supabase
-    .from("announcements" as string)
-    .select(
-      "id, title, content, priority, status, deadline, display_start, display_until, created_at, updated_at, workspace_id, workspace_announcement_id, created_by, creator:profiles!created_by(full_name)",
-      { count: "exact" }
-    )
-    .eq("workspace_id", profile.workspace_id)
-
-  // Apply search filter
-  if (searchQuery) {
-    query = query.or(
-      `title.ilike.%${searchQuery}%,content.ilike.%${searchQuery}%,workspace_announcement_id.ilike.%${searchQuery}%`
-    )
-  }
-
-  // Apply status filter
-  if (statusFilters.length > 0) {
-    query = query.in("status", statusFilters)
-  }
-
-  // Apply sorting and pagination
+  // Fetch all announcements for this workspace (no pagination — client handles filtering/scroll)
   const {
     data: announcements,
-    count,
     error,
-  } = await query.order("created_at", { ascending: false }).range(from, to)
+  } = await supabase
+    .from("announcements" as string)
+    .select(
+      "id, title, content, priority, status, deadline, display_start, display_until, created_at, updated_at, workspace_id, workspace_announcement_id, created_by, creator:profiles!created_by(full_name)"
+    )
+    .eq("workspace_id", profile.workspace_id)
+    .order("created_at", { ascending: false })
 
   if (error) {
     console.error("Announcements query error:", error)
@@ -98,13 +51,7 @@ export default async function AnnouncementsPage({
     )
   }
 
-  // Fetch counts for filter badges (unfiltered counts)
-  const { data: allAnnouncements } = await (
-    supabase.from("announcements") as ReturnType<typeof supabase.from>
-  )
-    .select("status, priority")
-    .eq("workspace_id", profile.workspace_id)
-
+  // Compute counts for filter badges
   const statusCounts: Record<string, number> = {
     draft: 0,
     active: 0,
@@ -116,49 +63,21 @@ export default async function AnnouncementsPage({
     high: 0,
   }
 
-  allAnnouncements?.forEach(
+  announcements?.forEach(
     (a: { status: string; priority: string | null }) => {
       if (a.status in statusCounts) statusCounts[a.status]++
-      if (a.priority && a.priority in priorityCounts) priorityCounts[a.priority]++
+      if (a.priority && a.priority in priorityCounts)
+        priorityCounts[a.priority]++
     }
   )
 
-  const totalPages = Math.ceil((count || 0) / ITEMS_PER_PAGE)
-  const hasNextPage = to < (count || 0) - 1
-  const hasPrevPage = currentPage > 1
-
-  // Current filter state to pass to client
-  const currentFilters = {
-    search: searchQuery,
-    status: statusFilters,
-  }
-
   return (
-    <>
-      <AnnouncementsClient
-        key={`${currentPage}-${searchQuery}-${statusFilters.join()}`}
-        announcements={announcements || []}
-        totalCount={count || 0}
-        statusCounts={statusCounts}
-        priorityCounts={priorityCounts}
-        currentFilters={currentFilters}
-      />
-      {(count || 0) > 0 && (
-        <div className="px-8 pb-8 max-w-7xl mx-auto">
-          <div className="flex items-center justify-between border-t pt-4">
-            <p className="text-sm text-muted-foreground">
-              Showing {from + 1}-{Math.min(to + 1, count || 0)} of {count}{" "}
-              announcements
-            </p>
-            <PaginationControls
-              currentPage={currentPage}
-              totalPages={totalPages}
-              hasNextPage={hasNextPage}
-              hasPrevPage={hasPrevPage}
-            />
-          </div>
-        </div>
-      )}
-    </>
+    <AnnouncementsClient
+      announcements={announcements || []}
+      totalCount={announcements?.length || 0}
+      statusCounts={statusCounts}
+      priorityCounts={priorityCounts}
+      currentFilters={{ search: "", status: [] }}
+    />
   )
 }

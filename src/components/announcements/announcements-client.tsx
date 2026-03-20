@@ -1,115 +1,267 @@
-"use client";
+"use client"
 
-import { useState, useMemo } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import { Plus } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
-import { toast } from "@/lib/toast";
-import { AnnouncementsFilters, AnnouncementStatus, AnnouncementPriority } from "./announcements-filters";
-import { AnnouncementsTable, Announcement } from "./announcements-table";
-import { AnnouncementDrawer } from "./announcement-drawer";
+import { useState, useMemo, useCallback } from "react"
+import { useRouter } from "next/navigation"
+import Link from "next/link"
+import { Button } from "@/components/ui/button"
+import { Plus, X, Trash2 } from "lucide-react"
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { createClient } from "@/lib/supabase/client"
+import { toast } from "@/lib/toast"
+import {
+    AnnouncementsTable,
+    Announcement,
+    AnnouncementStatus,
+    AnnouncementPriority,
+} from "./announcements-table"
+import { AnnouncementDrawer } from "./announcement-drawer"
 
 interface AnnouncementsClientProps {
-    announcements: Announcement[];
-    totalCount: number;
-    statusCounts: Record<string, number>;
-    priorityCounts: Record<string, number>;
+    announcements: Announcement[]
+    totalCount: number
+    statusCounts: Record<string, number>
+    priorityCounts: Record<string, number>
     currentFilters: {
-        search: string;
-        status: string[];
-    };
+        search: string
+        status: string[]
+    }
 }
 
 export function AnnouncementsClient({
     announcements,
-    totalCount,
     statusCounts,
     priorityCounts,
 }: AnnouncementsClientProps) {
-    // Client-side filters for priority (not in URL yet)
-    const [localFilters, setLocalFilters] = useState<{
-        search: string;
-        status: AnnouncementStatus[];
-        priority: AnnouncementPriority[];
-    }>({
-        search: "",
-        status: [],
-        priority: [],
-    });
-    const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>(null);
-    const [selectedAnnouncement, setSelectedAnnouncement] = useState<Announcement | null>(null);
-    const [drawerOpen, setDrawerOpen] = useState(false);
-    const router = useRouter();
+    const router = useRouter()
+    const [selectedAnnouncement, setSelectedAnnouncement] =
+        useState<Announcement | null>(null)
+    const [drawerOpen, setDrawerOpen] = useState(false)
 
-    const handleDelete = async (id: string) => {
-        const supabase = createClient();
-        const { error } = await (supabase
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            .from("announcements") as any)
-            .delete()
-            .eq("id", id);
+    // Search
+    const [search, setSearch] = useState("")
 
-        if (error) {
-            toast.error(error.message || "Failed to delete announcement.");
-        } else {
-            toast.success("Announcement deleted.");
-            router.refresh();
-        }
-    };
+    // Filters
+    const [selectedStatuses, setSelectedStatuses] = useState<
+        AnnouncementStatus[]
+    >([])
+    const [selectedPriorities, setSelectedPriorities] = useState<
+        AnnouncementPriority[]
+    >([])
 
-    // Apply client-side filters (priority) and sort
-    // Server already filtered by search and status
+    // Sort
+    const [sortConfig, setSortConfig] = useState<{
+        key: string
+        direction: "asc" | "desc"
+    } | null>(null)
+
+    // Column visibility
+    const [hiddenColumns, setHiddenColumns] = useState<Set<string>>(new Set())
+
+    // Row selection
+    const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set())
+
+    // Bulk delete
+    const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false)
+    const [isBulkDeleting, setIsBulkDeleting] = useState(false)
+
+    // ── Derived data ────────────────────────────────────────────────────────
+
     const filteredAnnouncements = useMemo(() => {
-        let result = announcements;
+        let result = announcements
 
-        // Priority filter (client-side)
-        if (localFilters.priority.length > 0) {
-            result = result.filter((announcement) =>
-                localFilters.priority.includes(announcement.priority as AnnouncementPriority)
-            );
+        // Search (client-side on title, content, workspace id)
+        if (search) {
+            const q = search.toLowerCase()
+            result = result.filter(
+                (a) =>
+                    a.title?.toLowerCase().includes(q) ||
+                    a.content?.toLowerCase().includes(q) ||
+                    a.workspace_announcement_id?.toLowerCase().includes(q)
+            )
+        }
+
+        // Status filter
+        if (selectedStatuses.length > 0) {
+            result = result.filter((a) =>
+                selectedStatuses.includes(a.status as AnnouncementStatus)
+            )
+        }
+
+        // Priority filter
+        if (selectedPriorities.length > 0) {
+            result = result.filter((a) =>
+                selectedPriorities.includes(
+                    a.priority as AnnouncementPriority
+                )
+            )
         }
 
         // Sort
         if (sortConfig) {
             result = [...result].sort((a, b) => {
-                const { key, direction } = sortConfig;
+                const { key, direction } = sortConfig
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                let aValue: any = a[key as keyof Announcement];
+                let aValue: any = a[key as keyof Announcement]
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                let bValue: any = b[key as keyof Announcement];
+                let bValue: any = b[key as keyof Announcement]
 
-                if (aValue === null || aValue === undefined) return 1;
-                if (bValue === null || bValue === undefined) return -1;
+                if (aValue === null || aValue === undefined) return 1
+                if (bValue === null || bValue === undefined) return -1
 
-                // Priority ordering
-                if (key === 'priority') {
-                    const priorityOrder = { high: 1, medium: 2, low: 3 };
-                    aValue = priorityOrder[aValue as keyof typeof priorityOrder] || 99;
-                    bValue = priorityOrder[bValue as keyof typeof priorityOrder] || 99;
+                if (key === "priority") {
+                    const order = { high: 1, medium: 2, low: 3 }
+                    aValue =
+                        order[aValue as keyof typeof order] || 99
+                    bValue =
+                        order[bValue as keyof typeof order] || 99
                 }
 
-                if (aValue < bValue) return direction === 'asc' ? -1 : 1;
-                if (aValue > bValue) return direction === 'asc' ? 1 : -1;
-                return 0;
-            });
+                if (aValue < bValue) return direction === "asc" ? -1 : 1
+                if (aValue > bValue) return direction === "asc" ? 1 : -1
+                return 0
+            })
         }
 
-        return result;
-    }, [announcements, localFilters.priority, sortConfig]);
+        return result
+    }, [
+        announcements,
+        search,
+        selectedStatuses,
+        selectedPriorities,
+        sortConfig,
+    ])
+
+    // ── Handlers ────────────────────────────────────────────────────────────
+
+    const handleSort = useCallback(
+        (key: string, direction: "asc" | "desc") => {
+            setSortConfig((current) => {
+                if (
+                    current?.key === key &&
+                    current.direction === direction
+                )
+                    return null
+                return { key, direction }
+            })
+        },
+        []
+    )
+
+    const handleStatusToggle = useCallback((status: string) => {
+        setSelectedStatuses((prev) =>
+            prev.includes(status as AnnouncementStatus)
+                ? prev.filter((s) => s !== status)
+                : [...prev, status as AnnouncementStatus]
+        )
+    }, [])
+
+    const handlePriorityToggle = useCallback((priority: string) => {
+        setSelectedPriorities((prev) =>
+            prev.includes(priority as AnnouncementPriority)
+                ? prev.filter((p) => p !== priority)
+                : [...prev, priority as AnnouncementPriority]
+        )
+    }, [])
+
+    const handleHideColumn = useCallback((column: string) => {
+        setHiddenColumns((prev) => {
+            const next = new Set(prev)
+            next.add(column)
+            return next
+        })
+    }, [])
+
+    const handleToggleRow = useCallback((id: string) => {
+        setSelectedRows((prev) => {
+            const next = new Set(prev)
+            if (next.has(id)) next.delete(id)
+            else next.add(id)
+            return next
+        })
+    }, [])
+
+    const handleToggleAllRows = useCallback(() => {
+        setSelectedRows((prev) => {
+            if (prev.size === filteredAnnouncements.length) return new Set()
+            return new Set(filteredAnnouncements.map((a) => a.id))
+        })
+    }, [filteredAnnouncements])
+
+    const handleDelete = async (id: string) => {
+        const supabase = createClient()
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { error } = await (supabase.from("announcements") as any)
+            .delete()
+            .eq("id", id)
+
+        if (error) {
+            toast.error(error.message || "Failed to delete announcement.")
+        } else {
+            toast.success("Announcement deleted.")
+            router.refresh()
+        }
+    }
+
+    const handleBulkDelete = async () => {
+        if (selectedRows.size === 0) return
+        setIsBulkDeleting(true)
+        const supabase = createClient()
+        const ids = Array.from(selectedRows)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { error } = await (supabase.from("announcements") as any)
+            .delete()
+            .in("id", ids)
+
+        if (error) {
+            toast.error(error.message || "Failed to delete items")
+        } else {
+            toast.success(
+                `${ids.length} announcement${ids.length > 1 ? "s" : ""} deleted`
+            )
+            setSelectedRows(new Set())
+            router.refresh()
+        }
+        setIsBulkDeleting(false)
+        setShowBulkDeleteDialog(false)
+    }
+
+    const handleViewAnnouncement = (announcement: Announcement) => {
+        setSelectedAnnouncement(announcement)
+        setDrawerOpen(true)
+    }
+
+    // ── Active filter chips ─────────────────────────────────────────────────
+
+    const hasActiveFilters =
+        search.length > 0 ||
+        selectedStatuses.length > 0 ||
+        selectedPriorities.length > 0 ||
+        hiddenColumns.size > 0
+
+    // ── Render ──────────────────────────────────────────────────────────────
 
     return (
-        <div className="p-8 max-w-7xl mx-auto space-y-6">
-            <div className="flex justify-between items-center">
+        <div className="flex flex-col h-full">
+            {/* Header */}
+            <div className="flex justify-between items-center px-6 py-5 shrink-0">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Announcements</h1>
-                    <p className="text-muted-foreground mt-2">
+                    <h1 className="text-2xl font-semibold tracking-tight">
+                        Announcements
+                    </h1>
+                    <p className="text-sm text-muted-foreground mt-1">
                         Manage time-based announcements for your organization
                     </p>
                 </div>
-                <Button asChild>
+                <Button asChild size="sm">
                     <Link href="/meetings/announcements/new">
                         <Plus className="mr-2 h-4 w-4" />
                         New Announcement
@@ -117,43 +269,158 @@ export function AnnouncementsClient({
                 </Button>
             </div>
 
-            <Separator />
+            {/* Selection action bar */}
+            {selectedRows.size > 0 && (
+                <div className="flex items-center gap-3 px-6 pb-3 shrink-0">
+                    <span className="text-xs font-medium tabular-nums">
+                        {selectedRows.size} selected
+                    </span>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 px-2.5 text-xs text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30"
+                        onClick={() => setShowBulkDeleteDialog(true)}
+                    >
+                        <Trash2 className="mr-1.5 h-3 w-3" />
+                        Delete
+                    </Button>
+                    <button
+                        onClick={() => setSelectedRows(new Set())}
+                        className="text-xs text-muted-foreground hover:text-foreground ml-auto"
+                    >
+                        Deselect all
+                    </button>
+                </div>
+            )}
 
-            <AnnouncementsFilters
-                onFilterChange={setLocalFilters}
-                statusCounts={statusCounts as Record<AnnouncementStatus, number>}
-                priorityCounts={priorityCounts as Record<AnnouncementPriority, number>}
-            />
+            {/* Active filter chips (hidden when selection bar is showing) */}
+            {hasActiveFilters && selectedRows.size === 0 && (
+                <div className="flex items-center gap-2 px-6 pb-3 flex-wrap">
+                    {search && (
+                        <span className="inline-flex items-center gap-1.5 rounded-md bg-muted px-2.5 py-1 text-xs font-medium">
+                            Search: &quot;{search}&quot;
+                            <button
+                                onClick={() => setSearch("")}
+                                className="text-muted-foreground hover:text-foreground"
+                            >
+                                <X className="h-3 w-3" />
+                            </button>
+                        </span>
+                    )}
+                    {selectedStatuses.map((s) => (
+                        <span
+                            key={s}
+                            className="inline-flex items-center gap-1.5 rounded-md bg-muted px-2.5 py-1 text-xs font-medium capitalize"
+                        >
+                            {s}
+                            <button
+                                onClick={() => handleStatusToggle(s)}
+                                className="text-muted-foreground hover:text-foreground"
+                            >
+                                <X className="h-3 w-3" />
+                            </button>
+                        </span>
+                    ))}
+                    {selectedPriorities.map((p) => (
+                        <span
+                            key={p}
+                            className="inline-flex items-center gap-1.5 rounded-md bg-muted px-2.5 py-1 text-xs font-medium capitalize"
+                        >
+                            {p}
+                            <button
+                                onClick={() => handlePriorityToggle(p)}
+                                className="text-muted-foreground hover:text-foreground"
+                            >
+                                <X className="h-3 w-3" />
+                            </button>
+                        </span>
+                    ))}
+                    {hiddenColumns.size > 0 && (
+                        <button
+                            onClick={() => setHiddenColumns(new Set())}
+                            className="text-xs text-muted-foreground hover:text-foreground underline"
+                        >
+                            Show all columns
+                        </button>
+                    )}
+                    <button
+                        onClick={() => {
+                            setSearch("")
+                            setSelectedStatuses([])
+                            setSelectedPriorities([])
+                            setHiddenColumns(new Set())
+                        }}
+                        className="text-xs text-muted-foreground hover:text-foreground"
+                    >
+                        Clear all
+                    </button>
+                </div>
+            )}
 
-            {/* Announcement count */}
-            <div className="text-sm text-muted-foreground">
-                {totalCount} announcement{totalCount !== 1 ? 's' : ''} total
-            </div>
-
-            <div className="mt-6">
+            {/* Table */}
+            <div className="flex-1 overflow-auto px-6">
                 <AnnouncementsTable
                     announcements={filteredAnnouncements}
                     sortConfig={sortConfig}
+                    onSort={handleSort}
+                    searchValue={search}
+                    onSearchChange={setSearch}
+                    selectedStatuses={selectedStatuses}
+                    statusCounts={statusCounts}
+                    onStatusToggle={handleStatusToggle}
+                    selectedPriorities={selectedPriorities}
+                    priorityCounts={priorityCounts}
+                    onPriorityToggle={handlePriorityToggle}
+                    hiddenColumns={hiddenColumns}
+                    onHideColumn={handleHideColumn}
+                    selectedRows={selectedRows}
+                    onToggleRow={handleToggleRow}
+                    onToggleAllRows={handleToggleAllRows}
+                    onViewAnnouncement={handleViewAnnouncement}
                     onDelete={handleDelete}
-                    onViewAnnouncement={(a) => { setSelectedAnnouncement(a); setDrawerOpen(true); }}
-                    onSort={(key) => {
-                        setSortConfig(current => {
-                            if (current?.key === key) {
-                                if (current.direction === 'asc') return { key, direction: 'desc' };
-                                return null;
-                            }
-                            return { key, direction: 'asc' };
-                        });
-                    }}
                 />
             </div>
 
+            {/* Drawer */}
             <AnnouncementDrawer
                 announcement={selectedAnnouncement}
                 open={drawerOpen}
                 onOpenChange={setDrawerOpen}
                 onDelete={handleDelete}
             />
+
+            {/* Bulk delete confirmation */}
+            <AlertDialog
+                open={showBulkDeleteDialog}
+                onOpenChange={setShowBulkDeleteDialog}
+            >
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>
+                            Delete {selectedRows.size} announcement
+                            {selectedRows.size > 1 ? "s" : ""}
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This will permanently delete the selected
+                            announcement
+                            {selectedRows.size > 1 ? "s" : ""}. This action
+                            cannot be undone.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={isBulkDeleting}>
+                            Cancel
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleBulkDelete}
+                            disabled={isBulkDeleting}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                            {isBulkDeleting ? "Deleting..." : "Delete"}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
-    );
+    )
 }
