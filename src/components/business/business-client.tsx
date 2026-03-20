@@ -3,7 +3,17 @@
 import { useState, useMemo, useCallback } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Plus, X } from "lucide-react"
+import { Plus, X, Trash2 } from "lucide-react"
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import {
     BusinessTable,
     BusinessItem,
@@ -64,11 +74,14 @@ export function BusinessClient({ items }: BusinessClientProps) {
                 !selectedStatuses.includes(item.status as BusinessStatus)
             )
                 return false
-            return !(selectedCategories.length > 0 &&
+            if (
+                selectedCategories.length > 0 &&
                 !selectedCategories.includes(
                     item.category as BusinessCategory
-                ));
-
+                )
+            )
+                return false
+            return true
         })
 
         if (sortConfig) {
@@ -168,6 +181,9 @@ export function BusinessClient({ items }: BusinessClientProps) {
         })
     }, [filteredItems])
 
+    const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false)
+    const [isBulkDeleting, setIsBulkDeleting] = useState(false)
+
     const handleDelete = async (id: string) => {
         const supabase = createClient()
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -181,6 +197,27 @@ export function BusinessClient({ items }: BusinessClientProps) {
             toast.success("Business item deleted successfully")
             router.refresh()
         }
+    }
+
+    const handleBulkDelete = async () => {
+        if (selectedRows.size === 0) return
+        setIsBulkDeleting(true)
+        const supabase = createClient()
+        const ids = Array.from(selectedRows)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { error } = await (supabase.from("business_items") as any)
+            .delete()
+            .in("id", ids)
+
+        if (error) {
+            toast.error(error.message || "Failed to delete items")
+        } else {
+            toast.success(`${ids.length} item${ids.length > 1 ? "s" : ""} deleted`)
+            setSelectedRows(new Set())
+            router.refresh()
+        }
+        setIsBulkDeleting(false)
+        setShowBulkDeleteDialog(false)
     }
 
     const handleViewItem = (item: BusinessItem) => {
@@ -222,8 +259,32 @@ export function BusinessClient({ items }: BusinessClientProps) {
                 </Button>
             </div>
 
-            {/* Active filter chips */}
-            {hasActiveFilters && (
+            {/* Selection action bar — replaces filter chips when rows are selected */}
+            {selectedRows.size > 0 && (
+                <div className="flex items-center gap-3 px-6 pb-3 shrink-0">
+                    <span className="text-xs font-medium tabular-nums">
+                        {selectedRows.size} selected
+                    </span>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 px-2.5 text-xs text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30"
+                        onClick={() => setShowBulkDeleteDialog(true)}
+                    >
+                        <Trash2 className="mr-1.5 h-3 w-3" />
+                        Delete
+                    </Button>
+                    <button
+                        onClick={() => setSelectedRows(new Set())}
+                        className="text-xs text-muted-foreground hover:text-foreground ml-auto"
+                    >
+                        Deselect all
+                    </button>
+                </div>
+            )}
+
+            {/* Active filter chips (hidden when selection bar is showing) */}
+            {hasActiveFilters && selectedRows.size === 0 && (
                 <div className="flex items-center gap-2 px-6 pb-3 flex-wrap">
                     {search && (
                         <span className="inline-flex items-center gap-1.5 rounded-md bg-muted px-2.5 py-1 text-xs font-medium">
@@ -317,6 +378,36 @@ export function BusinessClient({ items }: BusinessClientProps) {
                 onOpenChange={setDrawerOpen}
                 onDelete={handleDelete}
             />
+
+            {/* Bulk delete confirmation */}
+            <AlertDialog
+                open={showBulkDeleteDialog}
+                onOpenChange={setShowBulkDeleteDialog}
+            >
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>
+                            Delete {selectedRows.size} item{selectedRows.size > 1 ? "s" : ""}
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This will permanently delete the selected business
+                            item{selectedRows.size > 1 ? "s" : ""}. This action cannot be undone.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={isBulkDeleting}>
+                            Cancel
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleBulkDelete}
+                            disabled={isBulkDeleting}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                            {isBulkDeleting ? "Deleting..." : "Delete"}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     )
 }
