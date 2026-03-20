@@ -1,123 +1,220 @@
-"use client";
+"use client"
 
-import { useState, useMemo } from "react";
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import { Plus } from "lucide-react";
-import { BusinessFilters, BusinessStatus, BusinessCategory } from "./business-filters";
-import { BusinessTable, BusinessItem } from "./business-table";
-import { BusinessDrawer } from "./business-drawer";
-import { createClient } from "@/lib/supabase/client";
-import { toast } from "@/lib/toast";
-import { useRouter } from "next/navigation";
+import { useState, useMemo, useCallback } from "react"
+import Link from "next/link"
+import { Button } from "@/components/ui/button"
+import { Plus, X } from "lucide-react"
+import {
+    BusinessTable,
+    BusinessItem,
+    BusinessStatus,
+    BusinessCategory,
+} from "./business-table"
+import { BusinessDrawer } from "./business-drawer"
+import { createClient } from "@/lib/supabase/client"
+import { toast } from "@/lib/toast"
+import { useRouter } from "next/navigation"
 
 interface BusinessClientProps {
-    items: BusinessItem[];
+    items: BusinessItem[]
 }
 
 export function BusinessClient({ items }: BusinessClientProps) {
-    const router = useRouter();
-    const [selectedItem, setSelectedItem] = useState<BusinessItem | null>(null);
-    const [drawerOpen, setDrawerOpen] = useState(false);
-    const [filters, setFilters] = useState<{
-        search: string;
-        status: BusinessStatus[];
-        category: BusinessCategory[];
-    }>({
-        search: "",
-        status: [],
-        category: [],
-    });
-    const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>(null);
+    const router = useRouter()
+    const [selectedItem, setSelectedItem] = useState<BusinessItem | null>(null)
+    const [drawerOpen, setDrawerOpen] = useState(false)
+
+    // Search
+    const [search, setSearch] = useState("")
+
+    // Filters
+    const [selectedStatuses, setSelectedStatuses] = useState<BusinessStatus[]>(
+        []
+    )
+    const [selectedCategories, setSelectedCategories] = useState<
+        BusinessCategory[]
+    >([])
+
+    // Sort
+    const [sortConfig, setSortConfig] = useState<{
+        key: string
+        direction: "asc" | "desc"
+    } | null>(null)
+
+    // Column visibility
+    const [hiddenColumns, setHiddenColumns] = useState<Set<string>>(new Set())
+
+    // Row selection
+    const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set())
+
+    // ── Derived data ────────────────────────────────────────────────────────
 
     const filteredItems = useMemo(() => {
         const result = items.filter((item) => {
-            // Search filter
-            if (filters.search) {
-                const searchLower = filters.search.toLowerCase();
-                const matchesSearch =
-                    item.person_name?.toLowerCase().includes(searchLower) ||
-                    item.position_calling?.toLowerCase().includes(searchLower) ||
-                    item.workspace_business_id?.toLowerCase().includes(searchLower);
-                if (!matchesSearch) return false;
+            if (search) {
+                const q = search.toLowerCase()
+                const matches =
+                    item.person_name?.toLowerCase().includes(q) ||
+                    item.position_calling?.toLowerCase().includes(q) ||
+                    item.workspace_business_id?.toLowerCase().includes(q)
+                if (!matches) return false
             }
+            if (
+                selectedStatuses.length > 0 &&
+                !selectedStatuses.includes(item.status as BusinessStatus)
+            )
+                return false
+            return !(selectedCategories.length > 0 &&
+                !selectedCategories.includes(
+                    item.category as BusinessCategory
+                ));
 
-            // Status filter
-            if (filters.status.length > 0 && !filters.status.includes(item.status as BusinessStatus)) {
-                return false;
-            }
-
-            // Category filter
-            return filters.category.length === 0 || filters.category.includes(item.category as BusinessCategory);
-        });
+        })
 
         if (sortConfig) {
             result.sort((a, b) => {
-                const { key, direction } = sortConfig;
-                const aValue = a[key as keyof BusinessItem];
-                const bValue = b[key as keyof BusinessItem];
-
-                if (aValue === null || aValue === undefined) return 1;
-                if (bValue === null || bValue === undefined) return -1;
-
-                if (aValue < bValue) return direction === 'asc' ? -1 : 1;
-                if (aValue > bValue) return direction === 'asc' ? 1 : -1;
-                return 0;
-            });
+                const { key, direction } = sortConfig
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const aValue = a[key as keyof BusinessItem] as any
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const bValue = b[key as keyof BusinessItem] as any
+                if (aValue === null || aValue === undefined) return 1
+                if (bValue === null || bValue === undefined) return -1
+                if (aValue < bValue) return direction === "asc" ? -1 : 1
+                if (aValue > bValue) return direction === "asc" ? 1 : -1
+                return 0
+            })
         }
 
-        return result;
-    }, [items, filters, sortConfig]);
+        return result
+    }, [items, search, selectedStatuses, selectedCategories, sortConfig])
 
     const statusCounts = useMemo(() => {
-        const counts: Record<BusinessStatus, number> = { pending: 0, completed: 0 };
+        const counts: Record<string, number> = { pending: 0, completed: 0 }
         items.forEach((item) => {
-            if (item.status in counts) counts[item.status as BusinessStatus]++;
-        });
-        return counts;
-    }, [items]);
+            if (item.status in counts) counts[item.status]++
+        })
+        return counts
+    }, [items])
 
     const categoryCounts = useMemo(() => {
-        const counts: Record<BusinessCategory, number> = {
-            sustaining: 0, release: 0, confirmation: 0, ordination: 0, setting_apart: 0, other: 0,
-        };
+        const counts: Record<string, number> = {
+            sustaining: 0,
+            release: 0,
+            confirmation: 0,
+            ordination: 0,
+            setting_apart: 0,
+            other: 0,
+        }
         items.forEach((item) => {
-            if (item.category in counts) counts[item.category as BusinessCategory]++;
-        });
-        return counts;
-    }, [items]);
+            if (item.category in counts) counts[item.category]++
+        })
+        return counts
+    }, [items])
+
+    // ── Handlers ────────────────────────────────────────────────────────────
+
+    const handleSort = useCallback(
+        (key: string, direction: "asc" | "desc") => {
+            setSortConfig((current) => {
+                if (
+                    current?.key === key &&
+                    current.direction === direction
+                )
+                    return null
+                return { key, direction }
+            })
+        },
+        []
+    )
+
+    const handleStatusToggle = useCallback((status: string) => {
+        setSelectedStatuses((prev) =>
+            prev.includes(status as BusinessStatus)
+                ? prev.filter((s) => s !== status)
+                : [...prev, status as BusinessStatus]
+        )
+    }, [])
+
+    const handleCategoryToggle = useCallback((category: string) => {
+        setSelectedCategories((prev) =>
+            prev.includes(category as BusinessCategory)
+                ? prev.filter((c) => c !== category)
+                : [...prev, category as BusinessCategory]
+        )
+    }, [])
+
+    const handleHideColumn = useCallback((column: string) => {
+        setHiddenColumns((prev) => {
+            const next = new Set(prev)
+            next.add(column)
+            return next
+        })
+    }, [])
+
+    const handleToggleRow = useCallback((id: string) => {
+        setSelectedRows((prev) => {
+            const next = new Set(prev)
+            if (next.has(id)) next.delete(id)
+            else next.add(id)
+            return next
+        })
+    }, [])
+
+    const handleToggleAllRows = useCallback(() => {
+        setSelectedRows((prev) => {
+            if (prev.size === filteredItems.length) return new Set()
+            return new Set(filteredItems.map((item) => item.id))
+        })
+    }, [filteredItems])
 
     const handleDelete = async (id: string) => {
-        const supabase = createClient();
+        const supabase = createClient()
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { error } = await (supabase.from("business_items") as any)
             .delete()
-            .eq("id", id);
+            .eq("id", id)
 
         if (error) {
-            toast.error(error.message || "Failed to delete business item");
+            toast.error(error.message || "Failed to delete business item")
         } else {
-            toast.success("Business item deleted successfully");
-            router.refresh();
+            toast.success("Business item deleted successfully")
+            router.refresh()
         }
-    };
+    }
 
     const handleViewItem = (item: BusinessItem) => {
-        setSelectedItem(item);
-        setDrawerOpen(true);
-    };
+        setSelectedItem(item)
+        setDrawerOpen(true)
+    }
+
+    // ── Active filter chips ─────────────────────────────────────────────────
+
+    const hasActiveFilters =
+        search.length > 0 ||
+        selectedStatuses.length > 0 ||
+        selectedCategories.length > 0 ||
+        hiddenColumns.size > 0
+
+    function formatCategoryLabel(c: string) {
+        return c.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())
+    }
+
+    // ── Render ──────────────────────────────────────────────────────────────
 
     return (
-        <div className="p-8 max-w-7xl mx-auto space-y-6">
-            <div className="flex justify-between items-center">
+        <div className="flex flex-col h-full">
+            {/* Header */}
+            <div className="flex justify-between items-center px-6 py-5 shrink-0">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Business</h1>
-                    <p className="text-muted-foreground mt-2">
+                    <h1 className="text-2xl font-semibold tracking-tight">
+                        Business
+                    </h1>
+                    <p className="text-sm text-muted-foreground mt-1">
                         Track formal church procedures and sustainings
                     </p>
                 </div>
-                <Button asChild>
+                <Button asChild size="sm">
                     <Link href="/meetings/business/new">
                         <Plus className="mr-2 h-4 w-4" />
                         New Business Item
@@ -125,32 +222,95 @@ export function BusinessClient({ items }: BusinessClientProps) {
                 </Button>
             </div>
 
-            <Separator />
+            {/* Active filter chips */}
+            {hasActiveFilters && (
+                <div className="flex items-center gap-2 px-6 pb-3 flex-wrap">
+                    {search && (
+                        <span className="inline-flex items-center gap-1.5 rounded-md bg-muted px-2.5 py-1 text-xs font-medium">
+                            Search: &quot;{search}&quot;
+                            <button
+                                onClick={() => setSearch("")}
+                                className="text-muted-foreground hover:text-foreground"
+                            >
+                                <X className="h-3 w-3" />
+                            </button>
+                        </span>
+                    )}
+                    {selectedStatuses.map((s) => (
+                        <span
+                            key={s}
+                            className="inline-flex items-center gap-1.5 rounded-md bg-muted px-2.5 py-1 text-xs font-medium capitalize"
+                        >
+                            {s}
+                            <button
+                                onClick={() => handleStatusToggle(s)}
+                                className="text-muted-foreground hover:text-foreground"
+                            >
+                                <X className="h-3 w-3" />
+                            </button>
+                        </span>
+                    ))}
+                    {selectedCategories.map((c) => (
+                        <span
+                            key={c}
+                            className="inline-flex items-center gap-1.5 rounded-md bg-muted px-2.5 py-1 text-xs font-medium"
+                        >
+                            {formatCategoryLabel(c)}
+                            <button
+                                onClick={() => handleCategoryToggle(c)}
+                                className="text-muted-foreground hover:text-foreground"
+                            >
+                                <X className="h-3 w-3" />
+                            </button>
+                        </span>
+                    ))}
+                    {hiddenColumns.size > 0 && (
+                        <button
+                            onClick={() => setHiddenColumns(new Set())}
+                            className="text-xs text-muted-foreground hover:text-foreground underline"
+                        >
+                            Show all columns
+                        </button>
+                    )}
+                    <button
+                        onClick={() => {
+                            setSearch("")
+                            setSelectedStatuses([])
+                            setSelectedCategories([])
+                            setHiddenColumns(new Set())
+                        }}
+                        className="text-xs text-muted-foreground hover:text-foreground"
+                    >
+                        Clear all
+                    </button>
+                </div>
+            )}
 
-            <BusinessFilters
-                onFilterChange={setFilters}
-                statusCounts={statusCounts}
-                categoryCounts={categoryCounts}
-            />
-
-            <div className="mt-6">
+            {/* Table */}
+            <div className="flex-1 overflow-auto px-6">
                 <BusinessTable
                     items={filteredItems}
                     sortConfig={sortConfig}
-                    onSort={(key) => {
-                        setSortConfig(current => {
-                            if (current?.key === key) {
-                                if (current.direction === 'asc') return { key, direction: 'desc' };
-                                return null;
-                            }
-                            return { key, direction: 'asc' };
-                        });
-                    }}
+                    onSort={handleSort}
+                    searchValue={search}
+                    onSearchChange={setSearch}
+                    selectedStatuses={selectedStatuses}
+                    statusCounts={statusCounts}
+                    onStatusToggle={handleStatusToggle}
+                    selectedCategories={selectedCategories}
+                    categoryCounts={categoryCounts}
+                    onCategoryToggle={handleCategoryToggle}
+                    hiddenColumns={hiddenColumns}
+                    onHideColumn={handleHideColumn}
+                    selectedRows={selectedRows}
+                    onToggleRow={handleToggleRow}
+                    onToggleAllRows={handleToggleAllRows}
                     onViewItem={handleViewItem}
                     onDeleteItem={handleDelete}
                 />
             </div>
 
+            {/* Drawer */}
             <BusinessDrawer
                 item={selectedItem}
                 open={drawerOpen}
@@ -158,5 +318,5 @@ export function BusinessClient({ items }: BusinessClientProps) {
                 onDelete={handleDelete}
             />
         </div>
-    );
+    )
 }
