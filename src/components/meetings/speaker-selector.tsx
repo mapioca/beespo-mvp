@@ -56,11 +56,12 @@ export function SpeakerSelector({
         setIsLoading(true);
         const supabase = createClient();
 
-        // Get all speakers in the workspace
+        // Get all speaker assignments from meeting_assignments joined with directory
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { data: allSpeakers, error } = await (supabase.from("speakers") as any)
-            .select("id, name, topic, is_confirmed")
-            .order("name");
+        const { data: allAssignments, error } = await (supabase.from("meeting_assignments") as any)
+            .select("id, topic, is_confirmed, directory:directory(name)")
+            .eq("assignment_type", "speaker")
+            .order("created_at", { ascending: false });
 
         if (error) {
             console.error("Error loading speakers:", error);
@@ -68,11 +69,18 @@ export function SpeakerSelector({
             return;
         }
 
-        if (!allSpeakers) {
+        if (!allAssignments) {
             setSpeakers([]);
             setIsLoading(false);
             return;
         }
+
+        const allSpeakers: Speaker[] = allAssignments.map((a: { id: string; topic: string | null; is_confirmed: boolean; directory: { name: string } | null }) => ({
+            id: a.id,
+            name: a.directory?.name ?? "",
+            topic: a.topic,
+            is_confirmed: a.is_confirmed,
+        }));
 
         // Get speakers that are already assigned to existing meetings (via agenda_items)
         // eslint-disable-next-line @typescript-eslint/no-explicit-any

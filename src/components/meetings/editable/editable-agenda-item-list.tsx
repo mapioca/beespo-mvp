@@ -654,7 +654,7 @@ export function EditableAgendaItemList({
         }
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { data, error } = await (supabase.from("participants") as any)
+        const { data, error } = await (supabase.from("directory") as any)
             .select("id, name")
             .eq("workspace_id", profile.workspace_id)
             .order("name");
@@ -704,7 +704,7 @@ export function EditableAgendaItemList({
             if (!profile?.workspace_id) return null;
 
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const { data, error } = await (supabase.from("participants") as any)
+            const { data, error } = await (supabase.from("directory") as any)
                 .insert({
                     name: name.trim(),
                     workspace_id: profile.workspace_id,

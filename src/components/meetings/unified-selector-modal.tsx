@@ -232,7 +232,7 @@ export function UnifiedSelectorModal({
                 }
                 case "participant": {
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    let query = (supabase.from("participants") as any)
+                    let query = (supabase.from("directory") as any)
                         .select("id, name, created_at");
 
                     if (workspaceId) {
@@ -245,22 +245,30 @@ export function UnifiedSelectorModal({
                     break;
                 }
                 case "speaker": {
-                    // Get all speakers in the workspace
+                    // Get all speaker assignments joined with directory for name
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    let query = (supabase.from("speakers") as any)
-                        .select("id, name, topic, is_confirmed");
+                    let query = (supabase.from("meeting_assignments") as any)
+                        .select("id, topic, is_confirmed, directory:directory(name)")
+                        .eq("assignment_type", "speaker");
 
                     if (workspaceId) {
                         query = query.eq("workspace_id", workspaceId);
                     }
 
-                    const { data: allSpeakers, error } = await query.order("name");
+                    const { data: allAssignments, error } = await query.order("created_at", { ascending: false });
                     if (error) console.error("Error loading speakers:", error);
 
-                    if (!allSpeakers) {
+                    if (!allAssignments) {
                         setSpeakers([]);
                         break;
                     }
+
+                    const allSpeakers: Speaker[] = allAssignments.map((a: { id: string; topic: string | null; is_confirmed: boolean; directory: { name: string } | null }) => ({
+                        id: a.id,
+                        name: a.directory?.name ?? "",
+                        topic: a.topic,
+                        is_confirmed: a.is_confirmed,
+                    }));
 
                     // Get speakers that are already assigned to existing meetings
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -369,7 +377,7 @@ export function UnifiedSelectorModal({
         if (!profile?.workspace_id) return;
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { data, error } = await (supabase.from("participants") as any)
+        const { data, error } = await (supabase.from("directory") as any)
             .insert({
                 name: newParticipantName.trim(),
                 workspace_id: profile.workspace_id,

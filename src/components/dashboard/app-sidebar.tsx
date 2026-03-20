@@ -17,7 +17,6 @@ import {
   ClipboardList,
   Table2,
   MessagesSquare,
-  Speech,
   NotebookTabs,
   BookUser,
   Handshake,
@@ -54,8 +53,7 @@ const navSections: NavSection[] = [
           { href: "/meetings/business", icon: Handshake, label: "Business" },
           { href: "/meetings/announcements", icon: Megaphone, label: "Announcements" },
           { href: "/meetings/discussions", icon: MessagesSquare, label: "Discussions" },
-          { href: "/meetings/speakers", icon: Speech, label: "Speakers" },
-          { href: "/meetings/participants", icon: BookUser, label: "Participants" },
+          { href: "/meetings/directory", icon: BookUser, label: "Directory" },
           { href: "/templates/library", icon: Library, label: "Library" },
         ]
       },

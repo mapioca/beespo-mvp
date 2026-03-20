@@ -61,7 +61,7 @@ export function ParticipantSelectorPopover({
         }
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { data, error } = await (supabase.from("participants") as any)
+        const { data, error } = await (supabase.from("directory") as any)
             .select("id, name, workspace_id")
             .eq("workspace_id", profile.workspace_id)
             .order("name");
@@ -110,7 +110,7 @@ export function ParticipantSelectorPopover({
         if (!profile?.workspace_id) return;
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { data, error } = await (supabase.from("participants") as any)
+        const { data, error } = await (supabase.from("directory") as any)
             .insert({
                 name: newName.trim(),
                 workspace_id: profile.workspace_id,

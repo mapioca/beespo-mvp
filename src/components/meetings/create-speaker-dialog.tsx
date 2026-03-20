@@ -81,11 +81,39 @@ export function CreateSpeakerDialog({
             return;
         }
 
-        // Create speaker
+        // Find or create directory entry
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { data: speaker, error } = await (supabase.from("speakers") as any)
+        let { data: dirEntry } = await (supabase.from("directory") as any)
+            .select("id")
+            .eq("workspace_id", profile.workspace_id)
+            .eq("name", name.trim())
+            .single();
+
+        if (!dirEntry) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const { data: newDir, error: dirError } = await (supabase.from("directory") as any)
+                .insert({
+                    name: name.trim(),
+                    workspace_id: profile.workspace_id,
+                    created_by: user.id,
+                })
+                .select()
+                .single();
+
+            if (dirError) {
+                toast.error(dirError.message || "Failed to create directory entry.");
+                setIsLoading(false);
+                return;
+            }
+            dirEntry = newDir;
+        }
+
+        // Create meeting_assignment with type 'speaker'
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: assignment, error } = await (supabase.from("meeting_assignments") as any)
             .insert({
-                name,
+                directory_id: dirEntry.id,
+                assignment_type: "speaker",
                 topic,
                 is_confirmed: isConfirmed,
                 workspace_id: profile.workspace_id,
@@ -99,6 +127,13 @@ export function CreateSpeakerDialog({
             setIsLoading(false);
             return;
         }
+
+        const speaker: Speaker = {
+            id: assignment.id,
+            name: name.trim(),
+            topic: assignment.topic,
+            is_confirmed: assignment.is_confirmed,
+        };
 
         toast.success("Speaker created and selected!");
 

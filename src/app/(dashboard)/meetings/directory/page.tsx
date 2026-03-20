@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { ParticipantsClient } from "./participants-client";
+import { DirectoryClient } from "@/app/(dashboard)/participants/participants-client";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -10,11 +10,11 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic";
 
-interface ParticipantsPageProps {
+interface DirectoryPageProps {
     searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
-export default async function ParticipantsPage({ searchParams }: ParticipantsPageProps) {
+export default async function DirectoryPage({ searchParams }: DirectoryPageProps) {
     const supabase = await createClient();
 
     const { data: { user } } = await supabase.auth.getUser();
@@ -57,7 +57,7 @@ export default async function ParticipantsPage({ searchParams }: ParticipantsPag
     }
 
     return (
-        <ParticipantsClient
+        <DirectoryClient
             key={searchQuery}
             participants={participants || []}
             userRole={profile.role}

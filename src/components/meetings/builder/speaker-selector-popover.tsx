@@ -54,11 +54,12 @@ export function SpeakerSelectorPopover({
         setIsLoading(true);
         const supabase = createClient();
 
-        // Get all workspace speakers via RLS
+        // Get speaker assignments from meeting_assignments joined with directory for name
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { data: allSpeakers, error } = await (supabase.from("speakers") as any)
-            .select("id, name, topic, is_confirmed")
-            .order("name");
+        const { data: allAssignments, error } = await (supabase.from("meeting_assignments") as any)
+            .select("id, topic, is_confirmed, directory:directory(name)")
+            .eq("assignment_type", "speaker")
+            .order("created_at", { ascending: false });
 
         if (error) {
             console.error("Error loading speakers:", error);
@@ -66,11 +67,18 @@ export function SpeakerSelectorPopover({
             return;
         }
 
-        if (!allSpeakers) {
+        if (!allAssignments) {
             setSpeakers([]);
             setIsLoading(false);
             return;
         }
+
+        const allSpeakers: Speaker[] = allAssignments.map((a: { id: string; topic: string | null; is_confirmed: boolean; directory: { name: string } | null }) => ({
+            id: a.id,
+            name: a.directory?.name ?? "",
+            topic: a.topic,
+            is_confirmed: a.is_confirmed,
+        }));
 
         // Get speakers already assigned to existing meetings
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -82,7 +90,6 @@ export function SpeakerSelectorPopover({
         const assignedToOtherMeetingIds = new Set(
             (assignedSpeakers || [])
                 .map((a: { speaker_id: string }) => a.speaker_id)
-                // Keep the current item's speaker and speakers in this meeting draft
                 .filter((id: string) => id !== currentSpeakerId && !selectedSpeakerIdsInMeeting.includes(id))
         );
 
@@ -149,23 +156,58 @@ export function SpeakerSelectorPopover({
             return;
         }
 
+        // Find or create directory entry
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { data, error } = await (supabase.from("speakers") as any)
+        let { data: dirEntry } = await (supabase.from("directory") as any)
+            .select("id")
+            .eq("workspace_id", profile.workspace_id)
+            .eq("name", newName.trim())
+            .single();
+
+        if (!dirEntry) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const { data: newDir, error: dirError } = await (supabase.from("directory") as any)
+                .insert({
+                    name: newName.trim(),
+                    workspace_id: profile.workspace_id,
+                    created_by: user.id,
+                })
+                .select()
+                .single();
+
+            if (dirError) {
+                toast.error("Failed to create directory entry.", { description: dirError.message });
+                setIsSubmitting(false);
+                return;
+            }
+            dirEntry = newDir;
+        }
+
+        // Create meeting_assignment with type 'speaker'
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data, error } = await (supabase.from("meeting_assignments") as any)
             .insert({
-                name: newName.trim(),
+                directory_id: dirEntry.id,
+                assignment_type: "speaker",
                 topic: newTopic.trim() || null,
                 is_confirmed: false,
                 workspace_id: profile.workspace_id,
                 created_by: user.id,
             })
-            .select()
+            .select("id, topic, is_confirmed")
             .single();
 
         if (!error && data) {
+            const newSpeaker: Speaker = {
+                id: data.id,
+                name: newName.trim(),
+                topic: data.topic,
+                is_confirmed: data.is_confirmed,
+            };
             setSpeakers((prev) =>
-                [...prev, data].sort((a, b) => a.name.localeCompare(b.name))
+                [...prev, newSpeaker].sort((a, b) => a.name.localeCompare(b.name))
             );
-            onSelect({ id: data.id, name: data.name, topic: data.topic, is_confirmed: data.is_confirmed });
+            onSelect({ id: data.id, name: newName.trim(), topic: data.topic, is_confirmed: data.is_confirmed });
             setIsCreating(false);
             setNewName("");
             setNewTopic("");
