@@ -27,8 +27,8 @@ export default async function DashboardLayout({
   }
 
   return (
-    <div className="flex h-screen-dynamic">
-      {/* Sidebar */}
+    <div className="flex h-screen-dynamic bg-canvas">
+      {/* Sidebar — transparent, sits on the canvas base layer */}
       <AppSidebar
         workspaceName={profile?.workspaces?.name || "Workspace"}
         userName={profile?.full_name || ""}
@@ -36,8 +36,11 @@ export default async function DashboardLayout({
         userRoleTitle={profile?.role_title || ""}
       />
 
-      {/* Main Content - flex-1 fills remaining width, overflow-hidden contains internal scrolling */}
-      <main className="flex-1 min-w-0 overflow-hidden">{children}</main>
+      {/* Inset wrapper — canvas peeks through on top, bottom, and right */}
+      <div className="flex-1 min-w-0 py-2 pr-2">
+        {/* Main content — elevated surface card on top of the canvas */}
+        <main className="h-full overflow-hidden bg-card rounded-xl ring-1 ring-border">{children}</main>
+      </div>
     </div>
   );
 }

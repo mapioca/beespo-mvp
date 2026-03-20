@@ -5,6 +5,7 @@
 @layer base {
   :root {
     /* Black & White Elegance Theme */
+    --canvas: 45 29% 97%; /* Base layer behind the app shell (#FAF9F6) */
     --background: 0 0% 100%; /* Pure white */
     --foreground: 0 0% 0%; /* Pure black */
     --card: 0 0% 100%;
@@ -33,6 +34,7 @@
   }
 
   .dark {
+    --canvas: 0 0% 0%; /* Pure black canvas in dark mode — content surface sits above it */
     --background: 0 0% 0%;
     --foreground: 0 0% 100%;
     --card: 0 0% 5%;
@@ -81,6 +83,10 @@
    Uses dvh with vh fallback for older browsers
 ============================================ */
 @layer utilities {
+  .bg-canvas {
+    background-color: hsl(var(--canvas));
+  }
+
   .h-screen-dynamic {
     /*height: 100vh; !* Fallback for older browsers *!*/
     height: 100dvh; /* Modern browsers with dynamic viewport */

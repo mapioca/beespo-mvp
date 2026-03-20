@@ -103,7 +103,7 @@ export function AppSidebar({
     <TooltipProvider delayDuration={0}>
       <aside
         className={cn(
-          "border-r bg-card shrink-0 flex flex-col h-full transition-[width] duration-300 ease-in-out",
+          "shrink-0 flex flex-col h-full transition-[width] duration-300 ease-in-out",
           isCollapsed ? "w-16" : "w-60"
         )}
       >
