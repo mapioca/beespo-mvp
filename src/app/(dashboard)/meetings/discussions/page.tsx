@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import { DiscussionsClient } from "@/components/discussions/discussions-client"
-import { PaginationControls } from "@/components/ui/pagination-controls"
+
 import { Metadata } from "next"
 
 export const metadata: Metadata = {
@@ -137,10 +137,6 @@ export default async function DiscussionsPage({
     }
   )
 
-  const totalPages = Math.ceil((count || 0) / ITEMS_PER_PAGE)
-  const hasNextPage = to < (count || 0) - 1
-  const hasPrevPage = currentPage > 1
-
   // Current filter state to pass to client
   const currentFilters = {
     search: searchQuery,
@@ -148,32 +144,14 @@ export default async function DiscussionsPage({
   }
 
   return (
-    <>
-      <DiscussionsClient
-        key={`${currentPage}-${searchQuery}-${statusFilters.join()}`}
-        discussions={discussions || []}
-        totalCount={count || 0}
-        statusCounts={statusCounts}
-        priorityCounts={priorityCounts}
-        categoryCounts={categoryCounts}
-        currentFilters={currentFilters}
-      />
-      {(count || 0) > 0 && (
-        <div className="px-8 pb-8 max-w-7xl mx-auto">
-          <div className="flex items-center justify-between border-t pt-4">
-            <p className="text-sm text-muted-foreground">
-              Showing {from + 1}-{Math.min(to + 1, count || 0)} of {count}{" "}
-              discussions
-            </p>
-            <PaginationControls
-              currentPage={currentPage}
-              totalPages={totalPages}
-              hasNextPage={hasNextPage}
-              hasPrevPage={hasPrevPage}
-            />
-          </div>
-        </div>
-      )}
-    </>
+    <DiscussionsClient
+      key={`${currentPage}-${searchQuery}-${statusFilters.join()}`}
+      discussions={discussions || []}
+      totalCount={count || 0}
+      statusCounts={statusCounts}
+      priorityCounts={priorityCounts}
+      categoryCounts={categoryCounts}
+      currentFilters={currentFilters}
+    />
   )
 }
