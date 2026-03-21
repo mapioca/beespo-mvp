@@ -1,0 +1,367 @@
+"use client"
+
+import Link from "next/link"
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table"
+import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { FileText, MoreHorizontal, BarChart2, ExternalLink, Trash2 } from "lucide-react"
+import { format } from "date-fns"
+import { cn } from "@/lib/utils"
+import { DataTableColumnHeader } from "@/components/ui/data-table-header"
+import { useState } from "react"
+import type { Form } from "@/types/form-types"
+
+// ── Types ────────────────────────────────────────────────────────────────────
+
+export type FormStatus = "published" | "draft"
+export type FormWithCount = Form & { submissions_count: number }
+
+// ── Filter option data ────────────────────────────────────────────────────────
+
+const STATUS_OPTIONS = [
+    { value: "published", label: "Published" },
+    { value: "draft", label: "Draft" },
+]
+
+// ── Badge helper ──────────────────────────────────────────────────────────────
+
+function getStatusStyle(isPublished: boolean): string {
+    return isPublished
+        ? "bg-emerald-50 text-emerald-700"
+        : "bg-gray-100 text-gray-600"
+}
+
+// ── Props ─────────────────────────────────────────────────────────────────────
+
+interface FormsTableProps {
+    forms: FormWithCount[]
+    // Sort
+    sortConfig?: { key: string; direction: "asc" | "desc" } | null
+    onSort?: (key: string, direction: "asc" | "desc") => void
+    // Search
+    searchValue?: string
+    onSearchChange?: (value: string) => void
+    // Status filter
+    selectedStatuses?: FormStatus[]
+    statusCounts?: Record<string, number>
+    onStatusToggle?: (status: string) => void
+    // Column visibility
+    hiddenColumns?: Set<string>
+    onHideColumn?: (column: string) => void
+    // Row selection
+    selectedRows?: Set<string>
+    onToggleRow?: (id: string) => void
+    onToggleAllRows?: () => void
+    // Actions
+    onDelete?: (id: string) => Promise<void>
+}
+
+// ── Component ─────────────────────────────────────────────────────────────────
+
+export function FormsTable({
+    forms,
+    sortConfig,
+    onSort,
+    searchValue,
+    onSearchChange,
+    selectedStatuses = [],
+    statusCounts,
+    onStatusToggle,
+    hiddenColumns = new Set(),
+    onHideColumn,
+    selectedRows = new Set(),
+    onToggleRow,
+    onToggleAllRows,
+    onDelete,
+}: FormsTableProps) {
+    const [deleteTarget, setDeleteTarget] = useState<FormWithCount | null>(null)
+    const [isDeleting, setIsDeleting] = useState(false)
+
+    const handleDelete = async () => {
+        if (!deleteTarget || !onDelete) return
+        setIsDeleting(true)
+        await onDelete(deleteTarget.id)
+        setIsDeleting(false)
+        setDeleteTarget(null)
+    }
+
+    const allSelected = forms.length > 0 && selectedRows.size === forms.length
+
+    const visibleColumns =
+        ["title", "status", "views", "responses", "created_at"].filter(
+            (c) => !hiddenColumns.has(c)
+        ).length + 2 // +2 for checkbox + actions
+
+    return (
+        <>
+            <Table>
+                <TableHeader>
+                    <TableRow className="bg-muted/40 hover:bg-muted/40 border-b">
+                        {/* Checkbox */}
+                        <TableHead className="w-10 px-3">
+                            <Checkbox
+                                checked={allSelected}
+                                onCheckedChange={() => onToggleAllRows?.()}
+                            />
+                        </TableHead>
+
+                        {/* Title */}
+                        {!hiddenColumns.has("title") && (
+                            <DataTableColumnHeader
+                                label="Title"
+                                sortActive={sortConfig?.key === "title"}
+                                sortDirection={sortConfig?.direction}
+                                onSortAsc={() => onSort?.("title", "asc")}
+                                onSortDesc={() => onSort?.("title", "desc")}
+                                searchable
+                                searchValue={searchValue}
+                                onSearchChange={onSearchChange}
+                                searchPlaceholder="Search forms..."
+                                onHide={() => onHideColumn?.("title")}
+                                className="min-w-[250px]"
+                            />
+                        )}
+
+                        {/* Status */}
+                        {!hiddenColumns.has("status") && (
+                            <DataTableColumnHeader
+                                label="Status"
+                                sortActive={sortConfig?.key === "status"}
+                                sortDirection={sortConfig?.direction}
+                                onSortAsc={() => onSort?.("status", "asc")}
+                                onSortDesc={() => onSort?.("status", "desc")}
+                                filterOptions={STATUS_OPTIONS.map((opt) => ({
+                                    ...opt,
+                                    count: statusCounts?.[opt.value] || 0,
+                                }))}
+                                selectedFilters={selectedStatuses}
+                                onFilterToggle={onStatusToggle}
+                                onHide={() => onHideColumn?.("status")}
+                                className="w-[130px]"
+                            />
+                        )}
+
+                        {/* Views */}
+                        {!hiddenColumns.has("views") && (
+                            <DataTableColumnHeader
+                                label="Views"
+                                sortActive={sortConfig?.key === "views_count"}
+                                sortDirection={sortConfig?.direction}
+                                onSortAsc={() => onSort?.("views_count", "asc")}
+                                onSortDesc={() => onSort?.("views_count", "desc")}
+                                onHide={() => onHideColumn?.("views")}
+                                className="w-[100px]"
+                            />
+                        )}
+
+                        {/* Responses */}
+                        {!hiddenColumns.has("responses") && (
+                            <DataTableColumnHeader
+                                label="Responses"
+                                sortActive={sortConfig?.key === "submissions_count"}
+                                sortDirection={sortConfig?.direction}
+                                onSortAsc={() => onSort?.("submissions_count", "asc")}
+                                onSortDesc={() => onSort?.("submissions_count", "desc")}
+                                onHide={() => onHideColumn?.("responses")}
+                                className="w-[120px]"
+                            />
+                        )}
+
+                        {/* Created */}
+                        {!hiddenColumns.has("created_at") && (
+                            <DataTableColumnHeader
+                                label="Created"
+                                sortActive={sortConfig?.key === "created_at"}
+                                sortDirection={sortConfig?.direction}
+                                onSortAsc={() => onSort?.("created_at", "asc")}
+                                onSortDesc={() => onSort?.("created_at", "desc")}
+                                onHide={() => onHideColumn?.("created_at")}
+                                className="w-[140px]"
+                            />
+                        )}
+
+                        {/* Actions */}
+                        <TableHead className="w-[52px]">
+                            <span className="sr-only">Actions</span>
+                        </TableHead>
+                    </TableRow>
+                </TableHeader>
+
+                <TableBody>
+                    {forms.length === 0 ? (
+                        <TableRow className="hover:bg-transparent">
+                            <TableCell colSpan={visibleColumns} className="h-32 text-center">
+                                <div className="flex flex-col items-center justify-center py-4">
+                                    <FileText className="h-8 w-8 text-muted-foreground mb-2" />
+                                    <p className="text-muted-foreground">No forms found.</p>
+                                </div>
+                            </TableCell>
+                        </TableRow>
+                    ) : (
+                        forms.map((form) => (
+                                <TableRow key={form.id} className="group">
+                                    {/* Checkbox */}
+                                    <TableCell className="px-3">
+                                        <Checkbox
+                                            checked={selectedRows.has(form.id)}
+                                            onCheckedChange={() => onToggleRow?.(form.id)}
+                                        />
+                                    </TableCell>
+
+                                    {/* Title */}
+                                    {!hiddenColumns.has("title") && (
+                                        <TableCell className="font-medium px-3">
+                                            <div className="flex flex-col">
+                                                <Link
+                                                    href={`/forms/${form.id}`}
+                                                    className="hover:underline"
+                                                >
+                                                    {form.title}
+                                                </Link>
+                                                {form.description && (
+                                                    <span className="text-xs text-muted-foreground line-clamp-2">
+                                                        {form.description}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </TableCell>
+                                    )}
+
+                                    {/* Status */}
+                                    {!hiddenColumns.has("status") && (
+                                        <TableCell className="px-3">
+                                            <span
+                                                className={cn(
+                                                    "inline-flex items-center rounded px-2 py-0.5 text-[10px] uppercase tracking-wide font-semibold",
+                                                    getStatusStyle(form.is_published)
+                                                )}
+                                            >
+                                                {form.is_published ? "Published" : "Draft"}
+                                            </span>
+                                        </TableCell>
+                                    )}
+
+                                    {/* Views */}
+                                    {!hiddenColumns.has("views") && (
+                                        <TableCell className="px-3 text-muted-foreground tabular-nums">
+                                            {form.views_count}
+                                        </TableCell>
+                                    )}
+
+                                    {/* Responses */}
+                                    {!hiddenColumns.has("responses") && (
+                                        <TableCell className="px-3 text-muted-foreground tabular-nums">
+                                            {form.submissions_count}
+                                        </TableCell>
+                                    )}
+
+                                    {/* Created */}
+                                    {!hiddenColumns.has("created_at") && (
+                                        <TableCell className="px-3 text-muted-foreground">
+                                            {format(new Date(form.created_at), "MMM d, yyyy")}
+                                        </TableCell>
+                                    )}
+
+                                    {/* Actions */}
+                                    <TableCell className="px-3 text-right">
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                >
+                                                    <MoreHorizontal className="h-4 w-4" />
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end">
+                                                <DropdownMenuItem asChild>
+                                                    <Link href={`/forms/${form.id}`}>
+                                                        <FileText className="mr-2 h-4 w-4" />
+                                                        Edit
+                                                    </Link>
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem asChild>
+                                                    <Link href={`/forms/${form.id}/results`}>
+                                                        <BarChart2 className="mr-2 h-4 w-4" />
+                                                        View Results
+                                                    </Link>
+                                                </DropdownMenuItem>
+                                                {form.is_published && (
+                                                    <DropdownMenuItem asChild>
+                                                        <Link href={`/f/${form.slug}`} target="_blank">
+                                                            <ExternalLink className="mr-2 h-4 w-4" />
+                                                            Open Form
+                                                        </Link>
+                                                    </DropdownMenuItem>
+                                                )}
+                                                <DropdownMenuSeparator />
+                                                <DropdownMenuItem
+                                                    className="text-destructive focus:text-destructive"
+                                                    onClick={() => setDeleteTarget(form)}
+                                                >
+                                                    <Trash2 className="mr-2 h-4 w-4" />
+                                                    Delete
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    </TableCell>
+                                </TableRow>
+                        ))
+                    )}
+                </TableBody>
+            </Table>
+
+            {/* Delete confirmation */}
+            <AlertDialog
+                open={!!deleteTarget}
+                onOpenChange={(open) => !open && setDeleteTarget(null)}
+            >
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Form</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Are you sure you want to delete &quot;{deleteTarget?.title}&quot;?
+                            This will permanently delete the form and all its responses. This
+                            action cannot be undone.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleDelete}
+                            disabled={isDeleting}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                            {isDeleting ? "Deleting..." : "Delete"}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+        </>
+    )
+}
