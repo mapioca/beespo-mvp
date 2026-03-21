@@ -37,6 +37,7 @@ import { SupportModal } from "@/components/support/support-modal"
 import { NavSection } from "./sidebar-types"
 import { SidebarNavSection } from "./sidebar-nav-section"
 import { SidebarAppsSection } from "./sidebar-apps-section"
+import { SidebarFavoritesSection } from "./sidebar-favorites-section"
 import { useSidebarState } from "@/hooks/use-sidebar-state"
 
 const navSections: NavSection[] = [
@@ -200,6 +201,9 @@ export function AppSidebar({
             isExpanded={isGroupExpanded("apps-section")}
             onToggle={() => toggleGroup("apps-section")}
           />
+
+          {/* Favorites Section */}
+          <SidebarFavoritesSection isCollapsed={isCollapsed} />
         </nav>
 
         {/* Help & Support Button */}

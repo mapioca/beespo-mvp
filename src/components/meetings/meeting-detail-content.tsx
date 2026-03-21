@@ -4,6 +4,7 @@ import { useState } from "react";
 import { CalendarDays, Clock, Pencil, Download, Printer } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { MeetingFavoriteButton } from "@/components/meetings/meeting-favorite-button";
 import { MeetingStatusBadge } from "@/components/meetings/meeting-status-badge";
 import { MarkdownRenderer } from "@/components/meetings/markdown-renderer";
 import { formatMeetingDateTime } from "@/lib/meeting-helpers";
@@ -103,6 +104,11 @@ export function MeetingDetailContent({
 
                             {/* Actions Toolbar */}
                             <div className="flex items-center gap-2 shrink-0">
+                                <MeetingFavoriteButton
+                                    meetingId={currentMeeting.id}
+                                    meetingTitle={currentMeeting.title}
+                                />
+
                                 {isLeader && (
                                     <Button asChild variant="outline" size="icon" title="Edit Agenda" className="hidden sm:flex">
                                         <Link href={`/meetings/${currentMeeting.id}/edit`}>

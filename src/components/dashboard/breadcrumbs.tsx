@@ -16,9 +16,10 @@ export interface BreadcrumbItemWithIcon extends BreadcrumbItem {
 interface BreadcrumbsProps {
   items?: BreadcrumbItemWithIcon[]
   className?: string
+  action?: ReactNode
 }
 
-export function Breadcrumbs({ items, className }: BreadcrumbsProps) {
+export function Breadcrumbs({ items, className, action }: BreadcrumbsProps) {
   const pathname = usePathname()
   const trail: BreadcrumbItemWithIcon[] = items ?? getBreadcrumbTrail(pathname)
 
@@ -27,8 +28,8 @@ export function Breadcrumbs({ items, className }: BreadcrumbsProps) {
   }
 
   return (
-    <div className={cn("flex-shrink-0 px-6 py-3 border-b", className)}>
-      <nav aria-label="Breadcrumb">
+    <div className={cn("flex-shrink-0 px-6 py-3 border-b flex items-center gap-3", className)}>
+      <nav aria-label="Breadcrumb" className="flex-1">
         <ol className="flex items-center gap-1 text-sm text-muted-foreground">
           {trail.map((item, index) => {
             const isLast = index === trail.length - 1
@@ -57,6 +58,7 @@ export function Breadcrumbs({ items, className }: BreadcrumbsProps) {
           })}
         </ol>
       </nav>
+      {action}
     </div>
   )
 }
