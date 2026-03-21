@@ -1,6 +1,6 @@
-"use client";
+"use client"
 
-import { useState } from "react";
+import { useState } from "react"
 import {
     Table,
     TableBody,
@@ -8,266 +8,441 @@ import {
     TableHead,
     TableHeader,
     TableRow,
-} from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
-import { format } from "date-fns";
-import { Database } from "@/types/database";
-import { TaskCompletionDialog } from "./task-completion-dialog";
-import { TaskDetailsSheet } from "./task-details-sheet";
-import { TaskActionsMenu } from "./task-actions-menu";
-import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import { updateTask } from "@/lib/actions/task-actions";
-import { toast } from "@/lib/toast";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+} from "@/components/ui/table"
+import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
 import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
-} from "@/components/ui/tooltip";
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { MoreHorizontal, Eye, Trash2, CheckSquare } from "lucide-react"
+import { format } from "date-fns"
+import { cn } from "@/lib/utils"
+import { DataTableColumnHeader } from "@/components/ui/data-table-header"
 
-type Task = Database['public']['Tables']['tasks']['Row'] & {
-    assignee?: { full_name: string; email?: string } | null;
-    comment_count?: number;
-    workspace_task_id?: string | null;
-    priority?: 'low' | 'medium' | 'high';
-    labels?: Array<{ id: string; name: string; color: string }>;
-};
+// ── Types ───────────────────────────────────────────────────────────────────
 
-interface TasksTableProps {
-    tasks: Task[];
-    profiles?: { id: string; full_name: string }[];
-    sortConfig?: { key: string; direction: 'asc' | 'desc' } | null;
-    onSort?: (key: string) => void;
+export type TaskStatus = "pending" | "in_progress" | "completed" | "cancelled"
+export type TaskPriority = "low" | "medium" | "high"
+
+export interface Task {
+    id: string
+    title: string
+    description?: string | null
+    status: string
+    priority?: string | null
+    due_date?: string | null
+    assigned_to?: string | null
+    workspace_task_id?: string | null
+    created_at: string
+    created_by?: string | null
+    assignee?: { full_name: string; email?: string } | null
+    labels?: Array<{ id: string; name: string; color: string }>
 }
 
-function getPriorityText(priority?: 'low' | 'medium' | 'high') {
-    switch (priority) {
-        case 'high':
-            return 'High';
-        case 'low':
-            return 'Low';
+// ── Filter option data ──────────────────────────────────────────────────────
+
+const STATUS_OPTIONS = [
+    { value: "pending", label: "Pending" },
+    { value: "in_progress", label: "In Progress" },
+    { value: "completed", label: "Completed" },
+    { value: "cancelled", label: "Cancelled" },
+]
+
+const PRIORITY_OPTIONS = [
+    { value: "low", label: "Low" },
+    { value: "medium", label: "Medium" },
+    { value: "high", label: "High" },
+]
+
+// ── Badge helpers ───────────────────────────────────────────────────────────
+
+function formatLabel(value: string): string {
+    return value.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())
+}
+
+function getStatusStyle(status: string): string {
+    switch (status) {
+        case "pending":
+            return "bg-blue-50 text-blue-700"
+        case "in_progress":
+            return "bg-amber-50 text-amber-700"
+        case "completed":
+            return "bg-emerald-50 text-emerald-700"
+        case "cancelled":
+            return "bg-gray-100 text-gray-600"
         default:
-            return 'Medium';
+            return "bg-gray-100 text-gray-600"
     }
 }
 
-function getInitials(name: string) {
-    if (!name) return "";
-    return name
-        .split(" ")
-        .map((n) => n[0])
-        .join("")
-        .toUpperCase()
-        .substring(0, 2);
+function getPriorityStyle(priority: string): string {
+    switch (priority) {
+        case "high":
+            return "bg-rose-50 text-rose-700"
+        case "medium":
+            return "bg-amber-50 text-amber-700"
+        case "low":
+            return "bg-gray-100 text-gray-600"
+        default:
+            return "bg-gray-100 text-gray-600"
+    }
 }
 
-export function TasksTable({ tasks, profiles = [], sortConfig, onSort }: TasksTableProps) {
-    const [completionTask, setCompletionTask] = useState<{ id: string; title: string } | null>(null);
-    const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+// ── Props ───────────────────────────────────────────────────────────────────
 
-    const handleUpdate = async (taskId: string, data: Record<string, unknown>) => {
-        const result = await updateTask(taskId, data);
-        if (result.error) {
-            toast.error("Failed to update", { description: result.error });
-        } else {
-            toast.success("Updated");
-        }
-    };
+interface TasksTableProps {
+    tasks: Task[]
+    // Sort
+    sortConfig?: { key: string; direction: "asc" | "desc" } | null
+    onSort?: (key: string, direction: "asc" | "desc") => void
+    // Search (applied from Title header)
+    searchValue?: string
+    onSearchChange?: (value: string) => void
+    // Status filter
+    selectedStatuses?: TaskStatus[]
+    statusCounts?: Record<string, number>
+    onStatusToggle?: (status: string) => void
+    // Priority filter
+    selectedPriorities?: TaskPriority[]
+    priorityCounts?: Record<string, number>
+    onPriorityToggle?: (priority: string) => void
+    // Column visibility
+    hiddenColumns?: Set<string>
+    onHideColumn?: (column: string) => void
+    // Row selection
+    selectedRows?: Set<string>
+    onToggleRow?: (id: string) => void
+    onToggleAllRows?: () => void
+    // Actions
+    onViewTask?: (task: Task) => void
+    onDelete?: (id: string) => Promise<void>
+}
 
-    const SortHeader = ({ column, label, className }: { column: string, label: string, className?: string }) => {
-        return (
-            <TableHead
-                className={cn("cursor-pointer bg-white hover:bg-gray-50 transition-colors", className)}
-                onClick={() => onSort?.(column)}
-            >
-                <div className="flex items-center space-x-1">
-                    <span>{label}</span>
-                    {sortConfig?.key === column ? (
-                        sortConfig.direction === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
-                    ) : (
-                        <ArrowUpDown className="h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity" />
-                    )}
-                </div>
-            </TableHead>
-        )
-    };
+// ── Component ───────────────────────────────────────────────────────────────
+
+export function TasksTable({
+    tasks,
+    sortConfig,
+    onSort,
+    searchValue,
+    onSearchChange,
+    selectedStatuses = [],
+    statusCounts,
+    onStatusToggle,
+    selectedPriorities = [],
+    priorityCounts,
+    onPriorityToggle,
+    hiddenColumns = new Set(),
+    onHideColumn,
+    selectedRows = new Set(),
+    onToggleRow,
+    onToggleAllRows,
+    onViewTask,
+    onDelete,
+}: TasksTableProps) {
+    const [deleteTarget, setDeleteTarget] = useState<Task | null>(null)
+    const [isDeleting, setIsDeleting] = useState(false)
+
+    const handleDelete = async () => {
+        if (!deleteTarget || !onDelete) return
+        setIsDeleting(true)
+        await onDelete(deleteTarget.id)
+        setIsDeleting(false)
+        setDeleteTarget(null)
+    }
+
+    const allSelected =
+        tasks.length > 0 && selectedRows.size === tasks.length
+
+    const visibleColumns =
+        ["title", "status", "priority", "assignee", "due_date"]
+            .filter((c) => !hiddenColumns.has(c)).length + 2 // +2 for checkbox + actions
 
     return (
         <>
-            <div className="rounded-md border">
-                <Table>
-                    <TableHeader>
-                        <TableRow className="group">
-                            <SortHeader column="title" label="Title" className="w-[400px]" />
-                            <SortHeader column="status" label="Status" />
-                            <SortHeader column="priority" label="Priority" />
-                            <SortHeader column="assignee" label="Assignee" />
-                            <SortHeader column="due_date" label="Due Date" />
-                            <TableHead className="w-[50px]"></TableHead>
+            <Table>
+                <TableHeader>
+                    <TableRow className="bg-muted/40 hover:bg-muted/40 border-b">
+                        {/* Checkbox */}
+                        <TableHead className="w-10 px-3">
+                            <Checkbox
+                                checked={allSelected}
+                                onCheckedChange={() => onToggleAllRows?.()}
+                            />
+                        </TableHead>
+
+                        {/* Title */}
+                        {!hiddenColumns.has("title") && (
+                            <DataTableColumnHeader
+                                label="Title"
+                                sortActive={sortConfig?.key === "title"}
+                                sortDirection={sortConfig?.direction}
+                                onSortAsc={() => onSort?.("title", "asc")}
+                                onSortDesc={() => onSort?.("title", "desc")}
+                                searchable
+                                searchValue={searchValue}
+                                onSearchChange={onSearchChange}
+                                searchPlaceholder="Search tasks..."
+                                onHide={() => onHideColumn?.("title")}
+                                className="min-w-[250px]"
+                            />
+                        )}
+
+                        {/* Status */}
+                        {!hiddenColumns.has("status") && (
+                            <DataTableColumnHeader
+                                label="Status"
+                                sortActive={sortConfig?.key === "status"}
+                                sortDirection={sortConfig?.direction}
+                                onSortAsc={() => onSort?.("status", "asc")}
+                                onSortDesc={() => onSort?.("status", "desc")}
+                                filterOptions={STATUS_OPTIONS.map((opt) => ({
+                                    ...opt,
+                                    count: statusCounts?.[opt.value] || 0,
+                                }))}
+                                selectedFilters={selectedStatuses}
+                                onFilterToggle={onStatusToggle}
+                                onHide={() => onHideColumn?.("status")}
+                                className="w-[160px]"
+                            />
+                        )}
+
+                        {/* Priority */}
+                        {!hiddenColumns.has("priority") && (
+                            <DataTableColumnHeader
+                                label="Priority"
+                                sortActive={sortConfig?.key === "priority"}
+                                sortDirection={sortConfig?.direction}
+                                onSortAsc={() => onSort?.("priority", "asc")}
+                                onSortDesc={() => onSort?.("priority", "desc")}
+                                filterOptions={PRIORITY_OPTIONS.map((opt) => ({
+                                    ...opt,
+                                    count: priorityCounts?.[opt.value] || 0,
+                                }))}
+                                selectedFilters={selectedPriorities}
+                                onFilterToggle={onPriorityToggle}
+                                onHide={() => onHideColumn?.("priority")}
+                                className="w-[120px]"
+                            />
+                        )}
+
+                        {/* Assignee */}
+                        {!hiddenColumns.has("assignee") && (
+                            <DataTableColumnHeader
+                                label="Assignee"
+                                sortActive={sortConfig?.key === "assignee"}
+                                sortDirection={sortConfig?.direction}
+                                onSortAsc={() => onSort?.("assignee", "asc")}
+                                onSortDesc={() => onSort?.("assignee", "desc")}
+                                onHide={() => onHideColumn?.("assignee")}
+                                className="w-[160px]"
+                            />
+                        )}
+
+                        {/* Due Date */}
+                        {!hiddenColumns.has("due_date") && (
+                            <DataTableColumnHeader
+                                label="Due Date"
+                                sortActive={sortConfig?.key === "due_date"}
+                                sortDirection={sortConfig?.direction}
+                                onSortAsc={() => onSort?.("due_date", "asc")}
+                                onSortDesc={() => onSort?.("due_date", "desc")}
+                                onHide={() => onHideColumn?.("due_date")}
+                                className="w-[130px]"
+                            />
+                        )}
+
+                        {/* Actions */}
+                        <TableHead className="w-[52px]">
+                            <span className="sr-only">Actions</span>
+                        </TableHead>
+                    </TableRow>
+                </TableHeader>
+
+                <TableBody>
+                    {tasks.length === 0 ? (
+                        <TableRow className="hover:bg-transparent">
+                            <TableCell
+                                colSpan={visibleColumns}
+                                className="h-32 text-center"
+                            >
+                                <div className="flex flex-col items-center justify-center py-4">
+                                    <CheckSquare className="h-8 w-8 text-muted-foreground mb-2" />
+                                    <p className="text-muted-foreground">
+                                        No tasks found.
+                                    </p>
+                                </div>
+                            </TableCell>
                         </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {tasks.length === 0 ? (
-                            <TableRow>
-                                <TableCell colSpan={6} className="h-24 text-center">
-                                    No tasks found.
+                    ) : (
+                        tasks.map((task) => (
+                            <TableRow key={task.id} className="group">
+                                {/* Checkbox */}
+                                <TableCell className="px-3">
+                                    <Checkbox
+                                        checked={selectedRows.has(task.id)}
+                                        onCheckedChange={() =>
+                                            onToggleRow?.(task.id)
+                                        }
+                                    />
+                                </TableCell>
+
+                                {/* Title */}
+                                {!hiddenColumns.has("title") && (
+                                    <TableCell className="font-medium px-3">
+                                        <button
+                                            onClick={() => onViewTask?.(task)}
+                                            className="hover:underline text-left"
+                                        >
+                                            <div className="flex flex-col">
+                                                <span>{task.title}</span>
+                                                {task.description && (
+                                                    <span className="text-xs text-muted-foreground line-clamp-1">
+                                                        {task.description}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </button>
+                                    </TableCell>
+                                )}
+
+                                {/* Status */}
+                                {!hiddenColumns.has("status") && (
+                                    <TableCell className="px-3">
+                                        <span
+                                            className={cn(
+                                                "inline-flex items-center rounded px-2 py-0.5 text-[10px] uppercase tracking-wide font-semibold",
+                                                getStatusStyle(task.status)
+                                            )}
+                                        >
+                                            {formatLabel(task.status)}
+                                        </span>
+                                    </TableCell>
+                                )}
+
+                                {/* Priority */}
+                                {!hiddenColumns.has("priority") && (
+                                    <TableCell className="px-3">
+                                        {task.priority ? (
+                                            <span
+                                                className={cn(
+                                                    "inline-flex items-center rounded px-2 py-0.5 text-[10px] uppercase tracking-wide font-semibold",
+                                                    getPriorityStyle(task.priority)
+                                                )}
+                                            >
+                                                {formatLabel(task.priority)}
+                                            </span>
+                                        ) : (
+                                            <span className="text-muted-foreground">—</span>
+                                        )}
+                                    </TableCell>
+                                )}
+
+                                {/* Assignee */}
+                                {!hiddenColumns.has("assignee") && (
+                                    <TableCell className="px-3 text-sm text-muted-foreground">
+                                        {task.assignee?.full_name || "—"}
+                                    </TableCell>
+                                )}
+
+                                {/* Due Date */}
+                                {!hiddenColumns.has("due_date") && (
+                                    <TableCell className="px-3 text-muted-foreground">
+                                        {task.due_date
+                                            ? format(
+                                                  new Date(task.due_date),
+                                                  "MMM d, yyyy"
+                                              )
+                                            : "—"}
+                                    </TableCell>
+                                )}
+
+                                {/* Actions */}
+                                <TableCell className="px-3 text-right">
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                                            >
+                                                <MoreHorizontal className="h-4 w-4" />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end">
+                                            <DropdownMenuItem
+                                                onClick={() =>
+                                                    onViewTask?.(task)
+                                                }
+                                            >
+                                                <Eye className="mr-2 h-4 w-4" />
+                                                View
+                                            </DropdownMenuItem>
+                                            {onDelete && (
+                                                <>
+                                                    <DropdownMenuSeparator />
+                                                    <DropdownMenuItem
+                                                        className="text-destructive focus:text-destructive"
+                                                        onClick={() =>
+                                                            setDeleteTarget(task)
+                                                        }
+                                                    >
+                                                        <Trash2 className="mr-2 h-4 w-4" />
+                                                        Delete
+                                                    </DropdownMenuItem>
+                                                </>
+                                            )}
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
                                 </TableCell>
                             </TableRow>
-                        ) : (
-                            tasks.map((task) => (
-                                <TableRow
-                                    key={task.id}
-                                    className="group hover:bg-muted/50"
-                                >
-                                    <TableCell
-                                        className="font-medium cursor-pointer"
-                                        onClick={() => setSelectedTask(task)}
-                                    >
-                                        <div className="flex flex-col gap-1">
-                                            <span>{task.title}</span>
-                                            {task.labels && task.labels.length > 0 && (
-                                                <div className="flex gap-1 flex-wrap">
-                                                    {task.labels.map((label) => (
-                                                        <Badge
-                                                            key={label.id}
-                                                            style={{ backgroundColor: label.color }}
-                                                            className="text-white border-0 text-xs"
-                                                        >
-                                                            {label.name}
-                                                        </Badge>
-                                                    ))}
-                                                </div>
-                                            )}
-                                            {task.description && (
-                                                <span className="text-xs text-muted-foreground truncate max-w-[380px]">
-                                                    {task.description}
-                                                </span>
-                                            )}
-                                        </div>
-                                    </TableCell>
-                                    <TableCell>
-                                        <Select
-                                            defaultValue={['pending', 'in_progress'].includes(task.status) ? 'pending' : task.status}
-                                            onValueChange={(val) => handleUpdate(task.id, { status: val })}
-                                        >
-                                            <SelectTrigger className="h-8 w-[140px] border-none shadow-none bg-transparent hover:bg-muted p-0 px-2 justify-start focus:ring-0">
-                                                <div className="flex items-center gap-2">
-                                                    <span className="text-sm capitalize">
-                                                        {['pending', 'in_progress'].includes(task.status) ? 'Todo' : task.status}
-                                                    </span>
-                                                </div>
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="pending">Todo</SelectItem>
-                                                <SelectItem value="completed">Done</SelectItem>
-                                                <SelectItem value="cancelled">Canceled</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </TableCell>
-                                    <TableCell>
-                                        <Select
-                                            defaultValue={task.priority}
-                                            onValueChange={(val) => handleUpdate(task.id, { priority: val })}
-                                        >
-                                            <SelectTrigger className="h-8 w-[110px] border-none shadow-none bg-transparent hover:bg-muted p-0 px-2 justify-start focus:ring-0">
-                                                <div className="flex items-center gap-2">
-                                                    <span className="text-sm">{getPriorityText(task.priority)}</span>
-                                                </div>
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="low">Low</SelectItem>
-                                                <SelectItem value="medium">Medium</SelectItem>
-                                                <SelectItem value="high">High</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </TableCell>
-                                    <TableCell>
-                                        <Select
-                                            value={task.assigned_to || "unassigned"}
-                                            onValueChange={(val) => handleUpdate(task.id, { assigned_to: val === "unassigned" ? null : val })}
-                                        >
-                                            <SelectTrigger className="h-8 w-[70px] border-none shadow-none bg-transparent hover:bg-muted p-0 px-2 justify-start focus:ring-0">
-                                                {task.assignee ? (
-                                                    <TooltipProvider>
-                                                        <Tooltip>
-                                                            <TooltipTrigger asChild>
-                                                                <div className="flex items-center gap-2">
-                                                                    <Avatar className="h-6 w-6 border">
-                                                                        <AvatarFallback className="text-[10px] bg-blue-50 text-blue-600 font-semibold border-none">
-                                                                            {getInitials(task.assignee.full_name)}
-                                                                        </AvatarFallback>
-                                                                    </Avatar>
-                                                                </div>
-                                                            </TooltipTrigger>
-                                                            <TooltipContent>
-                                                                <p>{task.assignee.full_name}</p>
-                                                            </TooltipContent>
-                                                        </Tooltip>
-                                                    </TooltipProvider>
-                                                ) : (
-                                                    <span className="text-sm text-muted-foreground pl-2">Unassigned</span>
-                                                )}
-                                            </SelectTrigger>
-                                            <SelectContent align="start">
-                                                <SelectItem value="unassigned">Unassigned</SelectItem>
-                                                {profiles.map(p => (
-                                                    <SelectItem key={p.id} value={p.id}>{p.full_name}</SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                    </TableCell>
-                                    <TableCell>
-                                        <Popover>
-                                            <PopoverTrigger asChild>
-                                                <Button variant="ghost" className={cn("h-8 w-auto px-2 justify-start font-normal hover:bg-muted bg-transparent shadow-none border-none", !task.due_date && "text-muted-foreground")}>
-                                                    {task.due_date ? format(new Date(task.due_date), "MMM d") : <span>Set Date</span>}
-                                                </Button>
-                                            </PopoverTrigger>
-                                            <PopoverContent className="w-auto p-0" align="start">
-                                                <Calendar
-                                                    mode="single"
-                                                    selected={task.due_date ? new Date(task.due_date) : undefined}
-                                                    onSelect={(date) => handleUpdate(task.id, { due_date: date ? format(date, 'yyyy-MM-dd') : null })}
-                                                />
-                                            </PopoverContent>
-                                        </Popover>
-                                    </TableCell>
-                                    <TableCell>
-                                        <TaskActionsMenu
-                                            taskId={task.id}
-                                            taskTitle={task.title}
-                                            workspaceTaskId={task.workspace_task_id || 'TASK-0000'}
-                                            onEdit={() => setSelectedTask(task)}
-                                        />
-                                    </TableCell>
-                                </TableRow>
-                            ))
-                        )}
-                    </TableBody>
-                </Table>
-            </div>
+                        ))
+                    )}
+                </TableBody>
+            </Table>
 
-            {completionTask && (
-                <TaskCompletionDialog
-                    open={!!completionTask}
-                    onOpenChange={(open) => !open && setCompletionTask(null)}
-                    taskId={completionTask.id}
-                    taskTitle={completionTask.title}
-                    onSuccess={() => setCompletionTask(null)}
-                />
-            )}
-
-            <TaskDetailsSheet
-                open={!!selectedTask}
-                onOpenChange={(open) => !open && setSelectedTask(null)}
-                task={selectedTask}
-            />
+            {/* Delete confirmation dialog */}
+            <AlertDialog
+                open={!!deleteTarget}
+                onOpenChange={(open) => !open && setDeleteTarget(null)}
+            >
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Task</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Are you sure you want to delete &quot;
+                            {deleteTarget?.title}&quot;? This action cannot be
+                            undone.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={isDeleting}>
+                            Cancel
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleDelete}
+                            disabled={isDeleting}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                            {isDeleting ? "Deleting..." : "Delete"}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </>
-    );
+    )
 }
