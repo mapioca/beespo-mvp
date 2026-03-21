@@ -6,21 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-    PlusIcon as Plus,
-    TrashIcon as Trash2,
-    MusicNotesIcon as Music,
-    BookOpenIcon as BookOpen,
-    ChatCenteredTextIcon as MessageSquare,
-    BriefcaseIcon as Briefcase,
-    UserPlusIcon as UserPlus,
-    PencilIcon as Pencil,
-    CheckCircleIcon as CheckCircle,
-    MinusIcon as Minus,
-} from "@phosphor-icons/react";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "@/lib/toast";
-import { Speech, Megaphone } from "lucide-react";
+import { Speech, Megaphone, Plus, Trash2, Music, BookOpen, MessageSquare, Briefcase, UserPlus, Pencil, CheckCircle, Minus } from "lucide-react";
 import { AddMeetingItemDialog, SelectedItem, CategoryType } from "./add-meeting-item-dialog";
 import { UnifiedSelectorModal, UnifiedSelectorMode, SpeakerSelection } from "./unified-selector-modal";
 import { ContainerAgendaItem, ContainerChildItem, ContainerType } from "./container-agenda-item";

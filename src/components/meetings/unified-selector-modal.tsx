@@ -18,13 +18,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Speech, Megaphone } from "lucide-react";
-import {
-    ChatCenteredTextIcon,
-    BriefcaseIcon,
-    UserPlusIcon,
-    PlusIcon,
-} from "@phosphor-icons/react";
+import { Speech, Megaphone, MessageSquare, Briefcase, UserPlus, Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
@@ -396,10 +390,10 @@ export function UnifiedSelectorModal({
 
     // Modal title based on mode
     const modalConfig: Record<UnifiedSelectorMode, { title: string; icon: React.ElementType; color: string }> = {
-        discussion: { title: "Select Discussion", icon: ChatCenteredTextIcon, color: "text-green-500" },
-        business: { title: "Select Business Item", icon: BriefcaseIcon, color: "text-purple-500" },
+        discussion: { title: "Select Discussion", icon: MessageSquare, color: "text-green-500" },
+        business: { title: "Select Business Item", icon: Briefcase, color: "text-purple-500" },
         announcement: { title: "Select Announcement", icon: Megaphone, color: "text-orange-500" },
-        participant: { title: "Select Participant", icon: UserPlusIcon, color: "text-slate-500" },
+        participant: { title: "Select Participant", icon: UserPlus, color: "text-slate-500" },
         speaker: { title: "Select Speaker", icon: Speech, color: "text-indigo-500" },
     };
 
@@ -419,7 +413,7 @@ export function UnifiedSelectorModal({
                 {isCreatingParticipant ? (
                     <div className="p-6 space-y-6">
                         <div className="flex flex-col items-center gap-2 mb-2">
-                            <UserPlusIcon size={32} color="#030303" weight="fill" />
+                            <UserPlus className="h-8 w-8 text-foreground" />
                             <h3 className="text-lg font-semibold tracking-tight">Create Participant</h3>
                         </div>
                         <div>
@@ -483,7 +477,7 @@ export function UnifiedSelectorModal({
                                                                 currentSelectionId === disc.id && "bg-accent"
                                                             )}
                                                         >
-                                                            <ChatCenteredTextIcon className="h-4 w-4 text-green-500 shrink-0" />
+                                                            <MessageSquare className="h-4 w-4 text-green-500 shrink-0" />
                                                             <div className="flex-1 min-w-0">
                                                                 <div className="flex items-center gap-2">
                                                                     <span className="font-medium truncate">
@@ -530,7 +524,7 @@ export function UnifiedSelectorModal({
                                                                 currentSelectionId === item.id && "bg-accent"
                                                             )}
                                                         >
-                                                            <BriefcaseIcon className="h-4 w-4 text-purple-500 shrink-0" />
+                                                            <Briefcase className="h-4 w-4 text-purple-500 shrink-0" />
                                                             <div className="flex-1 min-w-0">
                                                                 <div className="flex items-center gap-2">
                                                                     <span className="font-medium truncate">
@@ -608,7 +602,7 @@ export function UnifiedSelectorModal({
                                                     onSelect={() => setIsCreatingParticipant(true)}
                                                     className="flex items-center gap-3 py-2 text-primary"
                                                 >
-                                                    <PlusIcon className="h-4 w-4" />
+                                                    <Plus className="h-4 w-4" />
                                                     <span className="font-medium">Create new participant</span>
                                                 </CommandItem>
 
@@ -628,7 +622,7 @@ export function UnifiedSelectorModal({
                                                             currentSelectionId === p.id && "bg-accent"
                                                         )}
                                                     >
-                                                        <UserPlusIcon className="h-4 w-4 text-slate-500 shrink-0" />
+                                                        <UserPlus className="h-4 w-4 text-slate-500 shrink-0" />
                                                         <span className="font-medium">{p.name}</span>
                                                     </CommandItem>
                                                 ))}

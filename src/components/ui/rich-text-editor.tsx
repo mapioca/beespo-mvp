@@ -4,8 +4,7 @@ import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import { useEffect, useRef, useCallback, useState } from "react";
-import { TextB, TextItalic, TextStrikethrough } from "@phosphor-icons/react";
-import { List, ListOrdered, Loader2, Check } from "lucide-react";
+import { Bold, Italic, Strikethrough, List, ListOrdered, Loader2, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /* ============================================
@@ -210,21 +209,21 @@ export function RichTextEditor({
                         isActive={editor.isActive("bold")}
                         title="Bold (Ctrl+B)"
                     >
-                        <TextB className="h-3.5 w-3.5" weight="bold" />
+                        <Bold className="h-3.5 w-3.5" />
                     </BubbleButton>
                     <BubbleButton
                         onClick={() => editor.chain().focus().toggleItalic().run()}
                         isActive={editor.isActive("italic")}
                         title="Italic (Ctrl+I)"
                     >
-                        <TextItalic className="h-3.5 w-3.5" weight="bold" />
+                        <Italic className="h-3.5 w-3.5" />
                     </BubbleButton>
                     <BubbleButton
                         onClick={() => editor.chain().focus().toggleStrike().run()}
                         isActive={editor.isActive("strike")}
                         title="Strikethrough"
                     >
-                        <TextStrikethrough className="h-3.5 w-3.5" weight="bold" />
+                        <Strikethrough className="h-3.5 w-3.5" />
                     </BubbleButton>
                     <div className="w-px h-3.5 bg-white/15 mx-0.5" />
                     <BubbleButton

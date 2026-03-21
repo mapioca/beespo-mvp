@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ShareNetworkIcon, LinkIcon, EnvelopeIcon, DownloadSimpleIcon } from "@phosphor-icons/react";
+import { Share2, Link, Mail, Download } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -145,7 +145,7 @@ export function ShareDialog({
       {!hideTrigger && (
         <DialogTrigger asChild>
           <Button variant="outline" size="icon" title="Share">
-            <ShareNetworkIcon weight="fill" className="h-4 w-4" />
+            <Share2 className="h-4 w-4" />
           </Button>
         </DialogTrigger>
       )}
@@ -169,17 +169,17 @@ export function ShareDialog({
         >
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="public-link" className="flex items-center gap-1.5">
-              <LinkIcon weight="fill" className="h-4 w-4" />
+              <Link className="h-4 w-4" />
               <span className="hidden sm:inline">Public Link</span>
               <span className="sm:hidden">Link</span>
             </TabsTrigger>
             <TabsTrigger value="invite" className="flex items-center gap-1.5">
-              <EnvelopeIcon weight="fill" className="h-4 w-4" />
+              <Mail className="h-4 w-4" />
               <span className="hidden sm:inline">Invite</span>
               <span className="sm:hidden">Invite</span>
             </TabsTrigger>
             <TabsTrigger value="export" className="flex items-center gap-1.5">
-              <DownloadSimpleIcon weight="fill" className="h-4 w-4" />
+              <Download className="h-4 w-4" />
               <span className="hidden sm:inline">Export</span>
               <span className="sm:hidden">Export</span>
             </TabsTrigger>

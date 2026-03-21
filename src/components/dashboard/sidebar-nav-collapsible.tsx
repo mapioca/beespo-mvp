@@ -1,5 +1,7 @@
 "use client"
 
+import { useState, useRef, useCallback, useEffect } from "react"
+import Link from "next/link"
 import { ChevronRight } from "lucide-react"
 import { cn } from "@/lib/utils"
 import {
@@ -12,6 +14,11 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import {
+  Popover,
+  PopoverAnchor,
+  PopoverContent,
+} from "@/components/ui/popover"
 import { NavItemParent } from "./sidebar-types"
 import { SidebarNavItem } from "./sidebar-nav-item"
 
@@ -33,14 +40,40 @@ export function SidebarNavCollapsible({
   const Icon = item.icon
   const groupId = `nav-group-${item.label.toLowerCase().replace(/\s+/g, "-")}`
 
-  // Check if any child is active
   const hasActiveChild = item.children.some(
     (child) =>
       pathname === child.href ||
       (child.href !== "/dashboard" && pathname.startsWith(child.href))
   )
 
-  // When sidebar is collapsed, show a tooltip with the parent name
+  // Flyout hover state — only active when sidebar is full-width and group is collapsed
+  const [flyoutOpen, setFlyoutOpen] = useState(false)
+  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Flyout only makes sense when the sidebar is expanded but the group is not
+  const flyoutEnabled = !isCollapsed && !isExpanded
+
+  const openFlyout = useCallback(() => {
+    if (closeTimerRef.current) {
+      clearTimeout(closeTimerRef.current)
+      closeTimerRef.current = null
+    }
+    setFlyoutOpen(true)
+  }, [])
+
+  const scheduleFlyoutClose = useCallback(() => {
+    closeTimerRef.current = setTimeout(() => setFlyoutOpen(false), 100)
+  }, [])
+
+  // Close flyout immediately when the group expands (user clicked to expand)
+  useEffect(() => {
+    if (isExpanded) {
+      if (closeTimerRef.current) clearTimeout(closeTimerRef.current)
+      setFlyoutOpen(false)
+    }
+  }, [isExpanded])
+
+  // Sidebar collapsed → icon-only mode with tooltip listing children
   if (isCollapsed) {
     return (
       <Tooltip>
@@ -50,8 +83,8 @@ export function SidebarNavCollapsible({
             className={cn(
               "flex items-center justify-center rounded-lg px-2 py-2 text-sm font-medium transition-colors w-full",
               hasActiveChild
-                ? "bg-accent text-accent-foreground"
-                : "hover:bg-accent hover:text-accent-foreground"
+                ? "bg-stone-300 text-foreground"
+                : "hover:bg-stone-200 hover:text-foreground"
             )}
           >
             <Icon className="h-4 w-4 shrink-0" />
@@ -73,25 +106,73 @@ export function SidebarNavCollapsible({
 
   return (
     <Collapsible open={isExpanded} onOpenChange={onToggle}>
-      <CollapsibleTrigger
-        className={cn(
-          "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors w-full",
-          hasActiveChild
-            ? "bg-accent/50 text-accent-foreground"
-            : "hover:bg-accent hover:text-accent-foreground"
-        )}
-        aria-expanded={isExpanded}
-        aria-controls={groupId}
-      >
-        <Icon className="h-4 w-4 shrink-0" />
-        <span className="flex-1 text-left">{item.label}</span>
-        <ChevronRight
-          className={cn(
-            "h-4 w-4 shrink-0 transition-transform duration-200",
-            isExpanded && "rotate-90"
-          )}
-        />
-      </CollapsibleTrigger>
+      {/* Popover wraps the trigger and flyout content.
+          open is only true when flyout is enabled (group collapsed) AND mouse is over. */}
+      <Popover open={flyoutEnabled && flyoutOpen} onOpenChange={() => {}}>
+        <PopoverAnchor asChild>
+          <CollapsibleTrigger
+            className={cn(
+              "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors w-full",
+              hasActiveChild
+                ? "bg-stone-200 text-foreground"
+                : "hover:bg-stone-200 hover:text-foreground"
+            )}
+            aria-expanded={isExpanded}
+            aria-controls={groupId}
+            onMouseEnter={openFlyout}
+            onMouseLeave={scheduleFlyoutClose}
+          >
+            <Icon className="h-4 w-4 shrink-0" />
+            <span className="flex-1 text-left">{item.label}</span>
+            <ChevronRight
+              className={cn(
+                "h-4 w-4 shrink-0 transition-transform duration-200",
+                isExpanded && "rotate-90"
+              )}
+            />
+          </CollapsibleTrigger>
+        </PopoverAnchor>
+
+        <PopoverContent
+          side="right"
+          align="start"
+          sideOffset={8}
+          className="w-44 p-1"
+          onMouseEnter={openFlyout}
+          onMouseLeave={scheduleFlyoutClose}
+          onOpenAutoFocus={(e) => e.preventDefault()}
+          onInteractOutside={(e) => e.preventDefault()}
+        >
+          <p className="px-2 py-1 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+            {item.label}
+          </p>
+          <div className="mt-0.5 space-y-0.5">
+            {item.children.map((child) => {
+              const ChildIcon = child.icon
+              const isActive =
+                pathname === child.href ||
+                (child.href !== "/dashboard" && pathname.startsWith(child.href))
+              return (
+                <Link
+                  key={child.href}
+                  href={child.href}
+                  onClick={() => setFlyoutOpen(false)}
+                  className={cn(
+                    "flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors",
+                    isActive
+                      ? "bg-stone-300 text-foreground font-medium"
+                      : "hover:bg-stone-200 hover:text-foreground"
+                  )}
+                >
+                  <ChildIcon className="h-4 w-4 shrink-0" />
+                  {child.label}
+                </Link>
+              )
+            })}
+          </div>
+        </PopoverContent>
+      </Popover>
+
       <CollapsibleContent
         id={groupId}
         className="overflow-hidden data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down"
@@ -101,7 +182,6 @@ export function SidebarNavCollapsible({
             const isActive =
               pathname === child.href ||
               (child.href !== "/dashboard" && pathname.startsWith(child.href))
-
             return (
               <SidebarNavItem
                 key={child.href}

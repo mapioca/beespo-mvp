@@ -1,12 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CalendarDays, Clock } from "lucide-react";
-import {
-    PencilSimpleIcon,
-    DownloadSimpleIcon,
-    PrinterIcon,
-} from "@phosphor-icons/react";
+import { CalendarDays, Clock, Pencil, Download, Printer } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { MeetingStatusBadge } from "@/components/meetings/meeting-status-badge";
@@ -111,7 +106,7 @@ export function MeetingDetailContent({
                                 {isLeader && (
                                     <Button asChild variant="outline" size="icon" title="Edit Agenda" className="hidden sm:flex">
                                         <Link href={`/meetings/${currentMeeting.id}/edit`}>
-                                            <PencilSimpleIcon weight="fill" className="w-4 h-4" />
+                                            <Pencil className="w-4 h-4" />
                                         </Link>
                                     </Button>
                                 )}
@@ -129,12 +124,12 @@ export function MeetingDetailContent({
                                     onClick={handleDownload}
                                     disabled={isDownloading}
                                 >
-                                    <DownloadSimpleIcon weight="fill" className="w-4 h-4" />
+                                    <Download className="w-4 h-4" />
                                 </Button>
 
                                 <Button asChild variant="outline" size="icon" title="Print Agenda">
                                     <a href={`/meetings/${currentMeeting.id}/print`} target="_blank" rel="noopener noreferrer">
-                                        <PrinterIcon weight="fill" className="w-4 h-4" />
+                                        <Printer className="w-4 h-4" />
                                     </a>
                                 </Button>
 
@@ -142,7 +137,7 @@ export function MeetingDetailContent({
                                 {isLeader && (
                                     <Button asChild variant="outline" size="icon" title="Edit Agenda" className="sm:hidden">
                                         <Link href={`/meetings/${currentMeeting.id}/edit`}>
-                                            <PencilSimpleIcon weight="fill" className="w-4 h-4" />
+                                            <Pencil className="w-4 h-4" />
                                         </Link>
                                     </Button>
                                 )}

@@ -22,6 +22,7 @@ import {
   Handshake,
   Megaphone,
   Library,
+  Database,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { TooltipProvider } from "@/components/ui/tooltip"
@@ -57,11 +58,17 @@ const navSections: NavSection[] = [
           { href: "/templates/library", icon: Library, label: "Library" },
         ]
       },
-      { href: "/tasks", icon: CheckSquare, label: "Tasks" },
       { href: "/callings", icon: HandHeart, label: "Callings" },
-      { href: "/forms", icon: ClipboardList, label: "Forms" },
-      { href: "/tables", icon: Table2, label: "Tables" },
-      { href: "/notebooks", icon: BookOpen, label: "Notebooks" },
+      { href: "/tasks", icon: CheckSquare, label: "Tasks" },
+      {
+        icon: Database,
+        label: "Data",
+        children: [
+          { href: "/forms", icon: ClipboardList, label: "Forms" },
+          { href: "/tables", icon: Table2, label: "Tables" },
+          { href: "/notebooks", icon: BookOpen, label: "Notebooks" },
+        ],
+      },
     ],
   },
 ]
