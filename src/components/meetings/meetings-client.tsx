@@ -113,12 +113,12 @@ export function MeetingsClient({
             result = [...result].sort((a, b) => {
                 const { key, direction } = sortConfig
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                let aValue: any =
+                const aValue: any =
                     key === "template"
                         ? a.templates?.name || ""
                         : a[key as keyof Meeting]
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                let bValue: any =
+                const bValue: any =
                     key === "template"
                         ? b.templates?.name || ""
                         : b[key as keyof Meeting]
