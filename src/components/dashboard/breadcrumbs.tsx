@@ -31,7 +31,7 @@ export function Breadcrumbs({ items, className, inlineAction, action }: Breadcru
   }
 
   return (
-    <div className={cn("flex-shrink-0 px-6 py-3 border-b flex items-center gap-3", className)}>
+    <div className={cn("flex-shrink-0 px-6 py-3 flex items-center gap-3", className)}>
       <nav aria-label="Breadcrumb" className="flex-1">
         <ol className="flex items-center gap-1 text-sm text-muted-foreground">
           {trail.map((item, index) => {

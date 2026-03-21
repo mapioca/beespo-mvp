@@ -166,8 +166,10 @@ export function MeetingDetailContent({
     };
 
     return (
-        <div className="flex flex-col h-full overflow-hidden">
+        <div className="flex flex-col h-full overflow-hidden bg-muted/30">
+            <div className="px-3 pt-3">
             <Breadcrumbs
+                className="rounded-lg bg-card ring-1 ring-border"
                 items={[
                     { label: "Meetings", href: "/meetings/agendas", icon: <CalendarDays className="h-3.5 w-3.5" /> },
                     { label: "Agendas", href: "/meetings/agendas", icon: <ClipboardList className="h-3.5 w-3.5" /> },
@@ -261,9 +263,10 @@ export function MeetingDetailContent({
                     </div>
                 }
             />
+            </div>
 
             {/* Scrollable agenda body */}
-            <div className="flex-1 min-h-0 overflow-y-auto bg-muted/30 p-4 sm:p-6 lg:p-8">
+            <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-6 lg:p-8">
                 <div className="max-w-[850px] mx-auto w-full">
                     {currentMeeting.markdown_agenda ? (
                         <div className="bg-background border rounded-none sm:rounded-lg shadow-sm w-full min-h-[1056px] p-8 sm:p-12 lg:p-16">
