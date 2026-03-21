@@ -31,42 +31,44 @@ export function Breadcrumbs({ items, className, inlineAction, action }: Breadcru
   }
 
   return (
-    <div className={cn("flex-shrink-0 px-6 py-3 flex items-center gap-3", className)}>
-      <nav aria-label="Breadcrumb" className="flex-1">
-        <ol className="flex items-center gap-1 text-sm text-muted-foreground">
-          {trail.map((item, index) => {
-            const isLast = index === trail.length - 1
+    <div className="flex-shrink-0 px-3 pt-3">
+      <div className={cn("px-6 py-3 flex items-center gap-3 rounded-lg bg-card ring-1 ring-border", className)}>
+        <nav aria-label="Breadcrumb" className="flex-1">
+          <ol className="flex items-center gap-1 text-sm text-muted-foreground">
+            {trail.map((item, index) => {
+              const isLast = index === trail.length - 1
 
-            return (
-              <li key={index} className="flex items-center gap-1">
-                {index > 0 && (
-                  <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/40" />
-                )}
-                {item.href && !isLast ? (
-                  <Link
-                    href={item.href}
-                    className="flex items-center gap-1 hover:text-foreground transition-colors"
-                  >
-                    {item.icon}
-                    {item.label}
-                  </Link>
-                ) : (
-                  <span className={cn("flex items-center gap-1", isLast && "text-foreground font-medium")}>
-                    {item.icon}
-                    {item.label}
-                  </span>
-                )}
+              return (
+                <li key={index} className="flex items-center gap-1">
+                  {index > 0 && (
+                    <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/40" />
+                  )}
+                  {item.href && !isLast ? (
+                    <Link
+                      href={item.href}
+                      className="flex items-center gap-1 hover:text-foreground transition-colors"
+                    >
+                      {item.icon}
+                      {item.label}
+                    </Link>
+                  ) : (
+                    <span className={cn("flex items-center gap-1", isLast && "text-foreground font-medium")}>
+                      {item.icon}
+                      {item.label}
+                    </span>
+                  )}
+                </li>
+              )
+            })}
+            {inlineAction && (
+              <li className="flex items-center gap-0.5 ml-1">
+                {inlineAction}
               </li>
-            )
-          })}
-          {inlineAction && (
-            <li className="flex items-center gap-0.5 ml-1">
-              {inlineAction}
-            </li>
-          )}
-        </ol>
-      </nav>
-      {action}
+            )}
+          </ol>
+        </nav>
+        {action}
+      </div>
     </div>
   )
 }

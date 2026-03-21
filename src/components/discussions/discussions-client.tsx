@@ -284,7 +284,7 @@ export function DiscussionsClient({
     // ── Render ──────────────────────────────────────────────────────────────
 
     return (
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col h-full bg-muted/30">
             {/* Breadcrumb */}
             <Breadcrumbs
                 items={[
