@@ -1,8 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import { MeetingDetailContent } from "@/components/meetings/meeting-detail-content";
-import { Breadcrumbs } from "@/components/dashboard/breadcrumbs";
-import { CalendarDays, ClipboardList, FileText } from "lucide-react";
 
 // Force dynamic rendering to ensure fresh data on each request
 export const dynamic = "force-dynamic";
@@ -61,25 +59,13 @@ export default async function MeetingDetailPage({ params }: MeetingDetailPagePro
     const totalDuration = agendaItems?.reduce((acc: number, item: any) => acc + (item.duration_minutes || 0), 0) || 0;
 
     return (
-        <div className="flex flex-col h-full overflow-hidden">
-            {/* Breadcrumb */}
-            <Breadcrumbs
-                items={[
-                    { label: "Meetings", href: "/meetings/agendas", icon: <CalendarDays className="h-3.5 w-3.5" /> },
-                    { label: "Agendas", href: "/meetings/agendas", icon: <ClipboardList className="h-3.5 w-3.5" /> },
-                    { label: meeting.title, icon: <FileText className="h-3.5 w-3.5" /> },
-                ]}
-            />
-
-            {/* App Shell: Main Content + Sidebar - Takes remaining height */}
-            <MeetingDetailContent
-                meeting={meeting}
-                agendaItems={agendaItems || []}
-                workspaceSlug={workspaceSlug}
-                isLeader={isLeader}
-                totalDuration={totalDuration}
-                currentUserName={profile?.full_name || ""}
-            />
-        </div>
+        <MeetingDetailContent
+            meeting={meeting}
+            agendaItems={agendaItems || []}
+            workspaceSlug={workspaceSlug}
+            isLeader={isLeader}
+            totalDuration={totalDuration}
+            currentUserName={profile?.full_name || ""}
+        />
     );
 }

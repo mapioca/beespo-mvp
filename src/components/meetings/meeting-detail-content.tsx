@@ -1,15 +1,27 @@
 "use client";
 
 import { useState } from "react";
-import { CalendarDays, Clock, Pencil, Download, Printer } from "lucide-react";
+import { useRouter } from "next/navigation";
+import {
+    CalendarDays, Clock, Pencil, Download, Printer, Copy, Trash2,
+    ClipboardList, FileText, MoreHorizontal, Share2, Star,
+} from "lucide-react";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { MeetingFavoriteButton } from "@/components/meetings/meeting-favorite-button";
-import { MeetingStatusBadge } from "@/components/meetings/meeting-status-badge";
+import { cn } from "@/lib/utils";
+import { Breadcrumbs } from "@/components/dashboard/breadcrumbs";
 import { MarkdownRenderer } from "@/components/meetings/markdown-renderer";
-import { formatMeetingDateTime } from "@/lib/meeting-helpers";
 import { calculateTotalDurationWithGrouping } from "@/lib/agenda-grouping";
 import { ShareDialog } from "@/components/conduct/share-dialog";
+import { useFavoritesStore } from "@/stores/favorites-store";
+import { createClient } from "@/lib/supabase/client";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
 import { Database } from "@/types/database";
 
 type Meeting = Database["public"]["Tables"]["meetings"]["Row"] & {
@@ -29,17 +41,50 @@ interface MeetingDetailContentProps {
     currentUserName: string;
 }
 
+/** Small borderless icon button for use inline in the breadcrumb */
+function GhostIconButton({
+    onClick,
+    title,
+    children,
+    className,
+}: {
+    onClick?: () => void;
+    title: string;
+    children: React.ReactNode;
+    className?: string;
+}) {
+    return (
+        <button
+            type="button"
+            title={title}
+            onClick={onClick}
+            className={cn(
+                "inline-flex items-center justify-center h-6 w-6 rounded",
+                "text-muted-foreground hover:text-foreground hover:bg-accent",
+                "transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                className
+            )}
+        >
+            {children}
+        </button>
+    );
+}
+
 export function MeetingDetailContent({
     meeting,
     agendaItems: initialAgendaItems,
     workspaceSlug,
     isLeader,
 }: MeetingDetailContentProps) {
+    const router = useRouter();
     const [currentMeeting, setCurrentMeeting] = useState(meeting);
     const [isDownloading, setIsDownloading] = useState(false);
-    // Recalculate total duration using grouped logic (time-boxing)
-    // Groups use their fixed duration, not sum of children
+    const [shareOpen, setShareOpen] = useState(false);
+
     const totalDuration = calculateTotalDurationWithGrouping(initialAgendaItems);
+
+    const { isFavorite, toggleFavorite } = useFavoritesStore();
+    const favorited = isFavorite(currentMeeting.id, "meeting");
 
     const handleMeetingUpdate = (updatedMeeting: Meeting) => {
         setCurrentMeeting(updatedMeeting);
@@ -64,116 +109,190 @@ export function MeetingDetailContent({
         }
     };
 
+    const handleToggleFavorite = () => {
+        toggleFavorite({
+            id: currentMeeting.id,
+            type: "meeting",
+            title: currentMeeting.title,
+            href: `/meetings/${currentMeeting.id}`,
+        });
+    };
+
+    const handleDuplicate = async () => {
+        const supabase = createClient();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: newMeeting, error } = await (supabase.from("meetings") as any)
+            .insert({
+                workspace_id: currentMeeting.workspace_id,
+                template_id: currentMeeting.template_id,
+                title: `${currentMeeting.title} (copy)`,
+                scheduled_date: currentMeeting.scheduled_date,
+                status: "scheduled",
+                markdown_agenda: currentMeeting.markdown_agenda,
+            })
+            .select()
+            .single();
+        if (error || !newMeeting) return;
+
+        if (initialAgendaItems.length > 0) {
+            const copies = initialAgendaItems.map((item) => ({
+                meeting_id: newMeeting.id,
+                title: item.title,
+                description: item.description,
+                duration_minutes: item.duration_minutes,
+                order_index: item.order_index,
+                item_type: item.item_type,
+                hymn_id: item.hymn_id ?? null,
+                speaker_id: item.speaker_id ?? null,
+                participant_id: item.participant_id ?? null,
+            }));
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            await (supabase.from("agenda_items") as any).insert(copies);
+        }
+
+        router.push(`/meetings/${newMeeting.id}`);
+        router.refresh();
+    };
+
+    const handleDelete = async () => {
+        if (!window.confirm("Delete this meeting? This cannot be undone.")) return;
+        const supabase = createClient();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (supabase.from("agenda_items") as any).delete().eq("meeting_id", currentMeeting.id);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (supabase.from("meetings") as any).delete().eq("id", currentMeeting.id);
+        router.push("/meetings/agendas");
+        router.refresh();
+    };
+
     return (
-        <div className="flex flex-1 min-h-0 overflow-hidden bg-muted/30">
-            {/* Main Content (Agenda) */}
-            <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
-                {/* Header Container (Pinned) */}
-                <div className="shrink-0 bg-background border-b border-border z-10 shadow-sm">
-                    <div className="max-w-5xl mx-auto px-6 lg:px-8 py-6">
-                        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-                            <div>
-                                <div className="flex items-center gap-3 mb-2 flex-wrap">
-                                    <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">
-                                        {currentMeeting.title}
-                                    </h1>
-                                    <MeetingStatusBadge status={currentMeeting.status} />
-                                </div>
-                                <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
-                                    {currentMeeting.templates?.name && (
-                                        <span>{currentMeeting.templates.name}</span>
-                                    )}
-                                    {currentMeeting.templates?.name && currentMeeting.profiles?.full_name && (
-                                        <span aria-hidden="true">·</span>
-                                    )}
-                                    {currentMeeting.profiles?.full_name && (
-                                        <span>{currentMeeting.profiles.full_name}</span>
-                                    )}
-                                </div>
-                                <div className="flex items-center gap-6 mt-2 text-sm text-muted-foreground font-medium">
-                                    <span className="flex items-center gap-2">
-                                        <CalendarDays className="w-4 h-4" />
-                                        {formatMeetingDateTime(currentMeeting.scheduled_date)}
-                                    </span>
-                                    <span className="flex items-center gap-2">
-                                        <Clock className="w-4 h-4" />
-                                        Total Est: {totalDuration} min
-                                    </span>
-                                </div>
-                            </div>
-
-                            {/* Actions Toolbar */}
-                            <div className="flex items-center gap-2 shrink-0">
-                                <MeetingFavoriteButton
-                                    meetingId={currentMeeting.id}
-                                    meetingTitle={currentMeeting.title}
-                                />
-
-                                {isLeader && (
-                                    <Button asChild variant="outline" size="icon" title="Edit Agenda" className="hidden sm:flex">
-                                        <Link href={`/meetings/${currentMeeting.id}/edit`}>
-                                            <Pencil className="w-4 h-4" />
-                                        </Link>
-                                    </Button>
+        <div className="flex flex-col h-full overflow-hidden">
+            <Breadcrumbs
+                items={[
+                    { label: "Meetings", href: "/meetings/agendas", icon: <CalendarDays className="h-3.5 w-3.5" /> },
+                    { label: "Agendas", href: "/meetings/agendas", icon: <ClipboardList className="h-3.5 w-3.5" /> },
+                    { label: currentMeeting.title, icon: <FileText className="h-3.5 w-3.5" /> },
+                ]}
+                inlineAction={
+                    <>
+                        {/* Favorite toggle */}
+                        <GhostIconButton
+                            title={favorited ? "Remove from favorites" : "Add to favorites"}
+                            onClick={handleToggleFavorite}
+                        >
+                            <Star
+                                className={cn(
+                                    "h-3.5 w-3.5 transition-colors",
+                                    favorited ? "fill-amber-400 text-amber-400" : ""
                                 )}
+                            />
+                        </GhostIconButton>
 
-                                <ShareDialog
-                                    meeting={currentMeeting}
-                                    workspaceSlug={workspaceSlug}
-                                    onUpdate={handleMeetingUpdate}
-                                />
-
-                                <Button
-                                    variant="outline"
-                                    size="icon"
-                                    title={isDownloading ? "Generating PDF…" : "Download PDF"}
-                                    onClick={handleDownload}
-                                    disabled={isDownloading}
+                        {/* More options */}
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <button
+                                    type="button"
+                                    title="More options"
+                                    className={cn(
+                                        "inline-flex items-center justify-center h-6 w-6 rounded",
+                                        "text-muted-foreground hover:text-foreground hover:bg-accent",
+                                        "transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                    )}
                                 >
-                                    <Download className="w-4 h-4" />
-                                </Button>
-
-                                <Button asChild variant="outline" size="icon" title="Print Agenda">
-                                    <a href={`/meetings/${currentMeeting.id}/print`} target="_blank" rel="noopener noreferrer">
-                                        <Printer className="w-4 h-4" />
-                                    </a>
-                                </Button>
-
-                                {/* Mobile fallback for edit */}
+                                    <MoreHorizontal className="h-3.5 w-3.5" />
+                                </button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="start" className="w-48">
                                 {isLeader && (
-                                    <Button asChild variant="outline" size="icon" title="Edit Agenda" className="sm:hidden">
-                                        <Link href={`/meetings/${currentMeeting.id}/edit`}>
-                                            <Pencil className="w-4 h-4" />
+                                    <DropdownMenuItem asChild>
+                                        <Link href={`/meetings/${currentMeeting.id}/edit`} className="flex items-center gap-2">
+                                            <Pencil className="h-4 w-4" />
+                                            Edit agenda
                                         </Link>
-                                    </Button>
+                                    </DropdownMenuItem>
                                 )}
-                            </div>
+                                <DropdownMenuItem onClick={handleDuplicate}>
+                                    <Copy className="h-4 w-4" />
+                                    Duplicate agenda
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={handleDownload} disabled={isDownloading}>
+                                    <Download className="h-4 w-4" />
+                                    {isDownloading ? "Generating PDF…" : "Download PDF"}
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={handleDelete}>
+                                    <Trash2 className="h-4 w-4" />
+                                    Delete
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </>
+                }
+                action={
+                    <div className="flex items-center gap-1 shrink-0">
+                        {/* Estimated duration */}
+                        <span className="flex items-center gap-1 text-xs text-muted-foreground whitespace-nowrap mr-2">
+                            <Clock className="h-3.5 w-3.5" />
+                            ~{totalDuration} min
+                        </span>
+
+                        {/* Share */}
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            title="Share"
+                            className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                            onClick={() => setShareOpen(true)}
+                        >
+                            <Share2 className="h-4 w-4" />
+                        </Button>
+
+                        {/* Print */}
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            title="Print Agenda"
+                            className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                            onClick={() => window.open(`/meetings/${currentMeeting.id}/print`, "_blank", "noopener,noreferrer")}
+                        >
+                            <Printer className="h-4 w-4" />
+                        </Button>
+                    </div>
+                }
+            />
+
+            {/* Scrollable agenda body */}
+            <div className="flex-1 min-h-0 overflow-y-auto bg-muted/30 p-4 sm:p-6 lg:p-8">
+                <div className="max-w-[850px] mx-auto w-full">
+                    {currentMeeting.markdown_agenda ? (
+                        <div className="bg-background border rounded-none sm:rounded-lg shadow-sm w-full min-h-[1056px] p-8 sm:p-12 lg:p-16">
+                            <MarkdownRenderer markdown={currentMeeting.markdown_agenda} />
                         </div>
-                    </div>
-                </div>
-
-                {/* Scrollable Body (Reactive) */}
-                <div className="flex-1 min-h-0 overflow-y-auto w-full p-4 sm:p-6 lg:p-8">
-                    <div className="max-w-[850px] mx-auto w-full">
-                        {currentMeeting.markdown_agenda ? (
-                            <div className="bg-background border rounded-none sm:rounded-lg shadow-sm w-full min-h-[1056px] p-8 sm:p-12 lg:p-16 relative">
-                                <MarkdownRenderer markdown={currentMeeting.markdown_agenda} />
-                            </div>
-                        ) : (
-                            <div className="p-8 text-center text-muted-foreground border rounded-lg bg-background shadow-sm">
-                                <p>No agenda available for this meeting.</p>
-                                {isLeader && (
-                                    <Button asChild variant="outline" className="mt-4">
-                                        <Link href={`/meetings/${currentMeeting.id}/edit`}>
-                                            Create Agenda
-                                        </Link>
-                                    </Button>
-                                )}
-                            </div>
-                        )}
-                    </div>
+                    ) : (
+                        <div className="p-8 text-center text-muted-foreground border rounded-lg bg-background shadow-sm">
+                            <p>No agenda available for this meeting.</p>
+                            {isLeader && (
+                                <Button asChild variant="outline" className="mt-4">
+                                    <Link href={`/meetings/${currentMeeting.id}/edit`}>
+                                        Create Agenda
+                                    </Link>
+                                </Button>
+                            )}
+                        </div>
+                    )}
                 </div>
             </div>
+
+            {/* Share dialog — rendered via portal, triggered from the toolbar */}
+            <ShareDialog
+                meeting={currentMeeting}
+                workspaceSlug={workspaceSlug}
+                onUpdate={handleMeetingUpdate}
+                open={shareOpen}
+                onOpenChange={setShareOpen}
+                hideTrigger
+            />
         </div>
     );
 }
