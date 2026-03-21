@@ -3,7 +3,8 @@
 import { useState, useMemo, useCallback } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Plus, X, Trash2 } from "lucide-react"
+import { Plus, X, Trash2, CalendarDays, Briefcase } from "lucide-react"
+import { Breadcrumbs } from "@/components/dashboard/breadcrumbs"
 import {
     AlertDialog,
     AlertDialogAction,
@@ -241,6 +242,14 @@ export function BusinessClient({ items }: BusinessClientProps) {
 
     return (
         <div className="flex flex-col h-full">
+            {/* Breadcrumb */}
+            <Breadcrumbs
+                items={[
+                    { label: "Meetings", href: "/meetings/agendas", icon: <CalendarDays className="h-3.5 w-3.5" /> },
+                    { label: "Business", icon: <Briefcase className="h-3.5 w-3.5" /> },
+                ]}
+            />
+
             {/* Header */}
             <div className="flex justify-between items-center px-6 py-5 shrink-0">
                 <div>

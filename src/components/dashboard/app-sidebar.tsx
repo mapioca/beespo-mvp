@@ -43,7 +43,7 @@ const navSections: NavSection[] = [
     id: "main",
     title: "", // No section header for clean look
     items: [
-      { href: "/dashboard", icon: Home, label: "Dashboard" },
+      { href: "/dashboard", icon: Home, label: "Home" },
       { href: "/calendar", icon: Calendar, label: "Calendar" },
       {
         icon: CalendarDays,

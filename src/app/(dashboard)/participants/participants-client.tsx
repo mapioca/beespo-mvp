@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Checkbox as UICheckbox } from "@/components/ui/checkbox"
-import { Plus, X, Trash2 } from "lucide-react"
+import { Plus, X, Trash2, Users, BookUser } from "lucide-react"
+import { Breadcrumbs } from "@/components/dashboard/breadcrumbs"
 import {
     Dialog,
     DialogContent,
@@ -304,6 +305,14 @@ export function ParticipantsClient({
 
     return (
         <div className="flex flex-col h-full">
+            {/* Breadcrumb */}
+            <Breadcrumbs
+                items={[
+                    { label: "Directory", href: "/directory", icon: <Users className="h-3.5 w-3.5" /> },
+                    { label: "Members", icon: <BookUser className="h-3.5 w-3.5" /> },
+                ]}
+            />
+
             {/* Header */}
             <div className="flex justify-between items-center px-6 py-5 shrink-0">
                 <div>

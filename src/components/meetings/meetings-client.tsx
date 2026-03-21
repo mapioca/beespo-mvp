@@ -23,6 +23,8 @@ import {
     MeetingStatus,
     Template,
 } from "./meetings-table"
+import { Breadcrumbs } from "@/components/dashboard/breadcrumbs"
+import { CalendarDays, ClipboardList } from "lucide-react"
 
 interface MeetingsClientProps {
     meetings: Meeting[]
@@ -243,6 +245,14 @@ export function MeetingsClient({
 
     return (
         <div className="flex flex-col h-full">
+            {/* Breadcrumb */}
+            <Breadcrumbs
+                items={[
+                    { label: "Meetings", href: "/meetings/agendas", icon: <CalendarDays className="h-3.5 w-3.5" /> },
+                    { label: "Agendas", icon: <ClipboardList className="h-3.5 w-3.5" /> },
+                ]}
+            />
+
             {/* Header */}
             <div className="flex justify-between items-center px-6 py-5 shrink-0">
                 <div>

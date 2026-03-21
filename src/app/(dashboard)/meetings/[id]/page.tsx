@@ -1,9 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import { MeetingDetailContent } from "@/components/meetings/meeting-detail-content";
-import { ArrowLeft } from "lucide-react";
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { Breadcrumbs } from "@/components/dashboard/breadcrumbs";
+import { CalendarDays, ClipboardList, FileText } from "lucide-react";
 
 // Force dynamic rendering to ensure fresh data on each request
 export const dynamic = "force-dynamic";
@@ -63,15 +62,14 @@ export default async function MeetingDetailPage({ params }: MeetingDetailPagePro
 
     return (
         <div className="flex flex-col h-full overflow-hidden">
-            {/* Header / Nav - Pinned at top, never scrolls */}
-            <div className="shrink-0 px-6 py-4 border-b bg-background z-10">
-                <Button variant="ghost" size="sm" asChild className="-ml-2">
-                    <Link href="/meetings">
-                        <ArrowLeft className="w-4 h-4 mr-2" />
-                        Back to Meetings
-                    </Link>
-                </Button>
-            </div>
+            {/* Breadcrumb */}
+            <Breadcrumbs
+                items={[
+                    { label: "Meetings", href: "/meetings/agendas", icon: <CalendarDays className="h-3.5 w-3.5" /> },
+                    { label: "Agendas", href: "/meetings/agendas", icon: <ClipboardList className="h-3.5 w-3.5" /> },
+                    { label: meeting.title, icon: <FileText className="h-3.5 w-3.5" /> },
+                ]}
+            />
 
             {/* App Shell: Main Content + Sidebar - Takes remaining height */}
             <MeetingDetailContent
