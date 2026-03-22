@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Beespo × Zoom Architecture</title>
+  <style>
+    html, body { margin: 0; padding: 0; background: white; }
+  </style>
+</head>
+<body>
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="660">
+  <defs>
+    <marker id="a" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0,8 3,0 6" fill="#6B7280"/>
+    </marker>
+    <marker id="b" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0,8 3,0 6" fill="#3B82F6"/>
+    </marker>
+    <marker id="c" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0,8 3,0 6" fill="#22C55E"/>
+    </marker>
+    <marker id="d" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0,8 3,0 6" fill="#9CA3AF"/>
+    </marker>
+  </defs>
+
+  <!-- Canvas -->
+  <rect width="1100" height="660" fill="#F9FAFB"/>
+  <rect x="10" y="10" width="1080" height="640" rx="12" fill="white" stroke="#E5E7EB" stroke-width="1.5"/>
+
+  <!-- Title -->
+  <text x="550" y="46" text-anchor="middle" font-family="system-ui,sans-serif" font-size="19" font-weight="700" fill="#111827">Beespo × Zoom Integration — Architecture Diagram</text>
+  <text x="550" y="64" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" fill="#9CA3AF">All communications over HTTPS / TLS · OAuth tokens stored encrypted at rest · Never exposed to client</text>
+
+  <!-- ── USER BROWSER ── -->
+  <rect x="35" y="275" width="155" height="100" rx="10" fill="#EFF6FF" stroke="#93C5FD" stroke-width="1.5"/>
+  <text x="112" y="308" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" font-weight="600" fill="#1E40AF">User</text>
+  <text x="112" y="325" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" fill="#3B82F6">Web Browser</text>
+  <text x="112" y="341" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" fill="#3B82F6">beespo.com</text>
+  <text x="112" y="357" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" fill="#3B82F6">(Authenticated User)</text>
+
+  <!-- ── BEESPO WEB APP ── x=385 y=195 w=230 h=210 -->
+  <rect x="385" y="195" width="230" height="210" rx="10" fill="#FFFBEB" stroke="#FCD34D" stroke-width="2"/>
+  <text x="500" y="222" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" font-weight="700" fill="#92400E">Beespo Web App</text>
+  <text x="500" y="239" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10.5" fill="#B45309">Next.js 15 · Vercel · TypeScript</text>
+  <line x1="390" y1="248" x2="610" y2="248" stroke="#FCD34D" stroke-width="1"/>
+  <text x="500" y="264" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="#78350F">• OAuth 2.0 token management</text>
+  <text x="500" y="279" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="#78350F">• Meeting create / edit / delete via API</text>
+  <text x="500" y="294" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="#78350F">• Webhook signature verification (HMAC-SHA256)</text>
+  <text x="500" y="309" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="#78350F">• Deauthorization + data compliance handler</text>
+  <text x="500" y="324" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="#78350F">• Token auto-refresh mechanism</text>
+  <text x="500" y="339" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="#78350F">• Role-based access control (RLS)</text>
+  <text x="500" y="354" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="#78350F">• supabase-js · node:crypto · Zod</text>
+  <text x="500" y="369" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="#78350F">• /api/auth/zoom/callback</text>
+  <text x="500" y="384" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="#78350F">• /api/webhooks/zoom/deauthorize</text>
+
+  <!-- ── ZOOM OAUTH 2.0 ── x=830 y=105 w=215 h=105 -->
+  <rect x="830" y="105" width="215" height="105" rx="10" fill="#EFF6FF" stroke="#3B82F6" stroke-width="1.5"/>
+  <text x="937" y="138" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" font-weight="600" fill="#1E40AF">Zoom OAuth 2.0</text>
+  <text x="937" y="155" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" fill="#3B82F6">zoom.us/oauth</text>
+  <text x="937" y="172" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" fill="#3B82F6">Authorization Server</text>
+  <text x="937" y="189" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" fill="#3B82F6">Token Exchange / Refresh</text>
+
+  <!-- ── ZOOM API v2 ── x=830 y=365 w=215 h=105 -->
+  <rect x="830" y="365" width="215" height="105" rx="10" fill="#EFF6FF" stroke="#3B82F6" stroke-width="1.5"/>
+  <text x="937" y="398" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" font-weight="600" fill="#1E40AF">Zoom API v2</text>
+  <text x="937" y="415" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" fill="#3B82F6">api.zoom.us/v2/meetings</text>
+  <text x="937" y="432" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" fill="#3B82F6">Create / Update / Delete</text>
+  <text x="937" y="449" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" fill="#3B82F6">Deauthorization Notifications</text>
+
+  <!-- ── SUPABASE ── x=385 y=505 w=230 h=110 -->
+  <rect x="385" y="505" width="230" height="110" rx="10" fill="#F0FDF4" stroke="#86EFAC" stroke-width="1.5"/>
+  <text x="500" y="535" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" font-weight="600" fill="#15803D">Supabase</text>
+  <text x="500" y="552" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" fill="#16A34A">PostgreSQL Database</text>
+  <line x1="390" y1="561" x2="610" y2="561" stroke="#86EFAC" stroke-width="1"/>
+  <text x="500" y="576" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="#166534">OAuth tokens — encrypted at rest</text>
+  <text x="500" y="591" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="#166534">Meeting data — encrypted at rest</text>
+  <text x="500" y="606" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="#166534">User auth · Row-level security (RLS)</text>
+
+  <!-- ════════ ARROWS ════════ -->
+
+  <!-- 1. User → Beespo -->
+  <line x1="191" y1="312" x2="382" y2="312" stroke="#6B7280" stroke-width="1.5" marker-end="url(#a)"/>
+  <text x="286" y="305" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#374151">Create / Edit / Delete Meeting</text>
+
+  <!-- 2. Beespo → User (return) -->
+  <line x1="382" y1="332" x2="191" y2="332" stroke="#6B7280" stroke-width="1.5" marker-end="url(#a)"/>
+  <text x="286" y="347" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#374151">Meeting URLs returned to UI</text>
+
+  <!-- 3. Beespo → Zoom OAuth -->
+  <line x1="615" y1="243" x2="828" y2="153" stroke="#3B82F6" stroke-width="1.5" marker-end="url(#b)"/>
+  <text x="726" y="183" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#1D4ED8" transform="rotate(-23,726,183)">OAuth Authorization Request</text>
+
+  <!-- 4. Zoom OAuth → Beespo (return) -->
+  <line x1="828" y1="175" x2="615" y2="263" stroke="#3B82F6" stroke-width="1.5" marker-end="url(#b)"/>
+  <text x="726" y="234" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#1D4ED8" transform="rotate(-23,726,234)">Access Token + Refresh Token</text>
+
+  <!-- 5. Beespo → Zoom API -->
+  <line x1="615" y1="350" x2="828" y2="393" stroke="#3B82F6" stroke-width="1.5" marker-end="url(#b)"/>
+  <text x="726" y="358" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#1D4ED8" transform="rotate(11,726,358)">Create / Update / Delete Meeting</text>
+
+  <!-- 6. Zoom API → Beespo (return) -->
+  <line x1="828" y1="413" x2="615" y2="373" stroke="#3B82F6" stroke-width="1.5" marker-end="url(#b)"/>
+  <text x="726" y="407" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#1D4ED8" transform="rotate(11,726,407)">Meeting ID · Join URL · Passcode</text>
+
+  <!-- 7. Zoom API → Beespo deauth webhook (dashed) -->
+  <line x1="828" y1="445" x2="615" y2="400" stroke="#9CA3AF" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#d)"/>
+  <text x="726" y="442" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#6B7280" transform="rotate(12,726,442)">Deauth Webhook (HMAC-SHA256 signed)</text>
+
+  <!-- 8. Beespo → Supabase (down) -->
+  <line x1="500" y1="406" x2="500" y2="502" stroke="#22C55E" stroke-width="1.5" marker-end="url(#c)"/>
+  <text x="516" y="458" font-family="system-ui,sans-serif" font-size="9" fill="#166534">Store / Delete</text>
+  <text x="516" y="471" font-family="system-ui,sans-serif" font-size="9" fill="#166534">Tokens + Meeting Data</text>
+
+  <!-- ════════ LEGEND ════════ -->
+  <rect x="35" y="510" width="320" height="118" rx="8" fill="#F9FAFB" stroke="#E5E7EB" stroke-width="1"/>
+  <text x="50" y="530" font-family="system-ui,sans-serif" font-size="11" font-weight="600" fill="#374151">Legend</text>
+  <line x1="50" y1="546" x2="92" y2="546" stroke="#6B7280" stroke-width="1.5" marker-end="url(#a)"/>
+  <text x="100" y="550" font-family="system-ui,sans-serif" font-size="10" fill="#374151">User interaction / UI data flow</text>
+  <line x1="50" y1="564" x2="92" y2="564" stroke="#3B82F6" stroke-width="1.5" marker-end="url(#b)"/>
+  <text x="100" y="568" font-family="system-ui,sans-serif" font-size="10" fill="#374151">Zoom OAuth 2.0 / API v2 communication</text>
+  <line x1="50" y1="582" x2="92" y2="582" stroke="#9CA3AF" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#d)"/>
+  <text x="100" y="586" font-family="system-ui,sans-serif" font-size="10" fill="#374151">Deauthorization webhook (HMAC-signed)</text>
+  <line x1="50" y1="600" x2="92" y2="600" stroke="#22C55E" stroke-width="1.5" marker-end="url(#c)"/>
+  <text x="100" y="604" font-family="system-ui,sans-serif" font-size="10" fill="#374151">Database operation (encrypted at rest)</text>
+  <text x="50" y="621" font-family="system-ui,sans-serif" font-size="9" fill="#9CA3AF">All network communication over HTTPS / TLS</text>
+</svg>
+</body>
+</html>

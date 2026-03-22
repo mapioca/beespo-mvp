@@ -153,6 +153,9 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
     // Meeting-level notes state
     const [meetingNotes, setMeetingNotes] = useState<string | null>(null);
 
+    // Zoom — track if this meeting has a linked Zoom meeting so we can sync on save
+    const [linkedZoomMeetingId, setLinkedZoomMeetingId] = useState<string | null>(null);
+
     // DnD sensors
     const sensors = useSensors(
         useSensor(PointerSensor, {
@@ -231,6 +234,9 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                 const scheduledDate = new Date(meeting.scheduled_date);
                 form.setValue("date", scheduledDate);
                 form.setValue("time", format(scheduledDate, "HH:mm"));
+            }
+            if (meeting.zoom_meeting_id) {
+                setLinkedZoomMeetingId(meeting.zoom_meeting_id);
             }
             if (meeting.notes && typeof meeting.notes === "string") {
                 setMeetingNotes(meeting.notes);
@@ -1152,6 +1158,16 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
 
                 // Fire-and-forget
                 saveMeetingMarkdown(initialMeetingId, markdown).catch(() => { });
+
+                // Sync the linked Zoom meeting's start time (keepalive so it survives the redirect)
+                if (linkedZoomMeetingId) {
+                    fetch(`/api/meetings/${initialMeetingId}/zoom`, {
+                        method: "PATCH",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ start_time: scheduledDate.toISOString() }),
+                        keepalive: true,
+                    }).catch(() => { });
+                }
 
                 toast.success("Meeting updated", { description: "Redirecting..." });
                 router.push(`/meetings/${initialMeetingId}`);

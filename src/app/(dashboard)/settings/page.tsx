@@ -73,6 +73,19 @@ export default async function SettingsPage() {
         .eq("status", "pending")
         .order("created_at", { ascending: false });
 
+    // Check if the current user has Zoom connected
+    const { data: zoomApp } = await (supabase as any)
+        .from("apps")
+        .select("id")
+        .eq("slug", "zoom")
+        .single();
+    const { count: zoomTokenCount } = await (supabase as any)
+        .from("app_tokens")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user.id)
+        .eq("app_id", zoomApp?.id ?? "");
+    const isZoomConnected = (zoomTokenCount ?? 0) > 0;
+
     return (
         <SettingsClient
             workspace={workspace}
@@ -85,6 +98,7 @@ export default async function SettingsPage() {
                 email: user.email || "",
                 roleTitle: profile.role_title || "",
             }}
+            isZoomConnected={isZoomConnected}
         />
     );
 }

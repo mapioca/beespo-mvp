@@ -21,7 +21,8 @@ import { TeamMembersList } from "@/components/team/team-members-list";
 import { PendingInvitations } from "@/components/team/pending-invitations";
 import { ChangePasswordForm } from "@/components/auth/change-password-form";
 import { DeleteAccountDialog } from "@/components/auth/delete-account-dialog";
-import { Building2, Users, Save, Loader2, User, AlertTriangle } from "lucide-react";
+import { Building2, Users, Save, Loader2, User, AlertTriangle, Plug } from "lucide-react";
+import { ZoomFullLogo } from "@/components/ui/zoom-icon";
 
 interface Workspace {
     id: string;
@@ -60,6 +61,7 @@ interface SettingsClientProps {
         email: string;
         roleTitle: string;
     };
+    isZoomConnected: boolean;
 }
 
 const workspaceTypeLabels: Record<string, string> = {
@@ -88,6 +90,7 @@ export function SettingsClient({
     currentUserId,
     currentUserRole,
     currentUserDetails,
+    isZoomConnected,
 }: SettingsClientProps) {
     const router = useRouter();
     const [workspaceName, setWorkspaceName] = useState(workspace.name);
@@ -95,7 +98,22 @@ export function SettingsClient({
     const [userRoleTitle, setUserRoleTitle] = useState(currentUserDetails.roleTitle);
     const [isSaving, setIsSaving] = useState(false);
     const [isSavingProfile, setIsSavingProfile] = useState(false);
+    const [isDisconnectingZoom, setIsDisconnectingZoom] = useState(false);
     const isAdmin = currentUserRole === "admin";
+
+    const handleDisconnectZoom = async () => {
+        setIsDisconnectingZoom(true);
+        try {
+            const res = await fetch("/api/auth/zoom/disconnect", { method: "POST" });
+            if (!res.ok) throw new Error("Failed to disconnect");
+            toast.success("Zoom disconnected");
+            router.refresh();
+        } catch {
+            toast.error("Failed to disconnect Zoom. Please try again.");
+        } finally {
+            setIsDisconnectingZoom(false);
+        }
+    };
 
     const hasProfileChanges = userFullName !== currentUserDetails.fullName || userRoleTitle !== currentUserDetails.roleTitle;
 
@@ -172,6 +190,10 @@ export function SettingsClient({
                     <TabsTrigger value="team" className="gap-2">
                         <Users className="h-4 w-4" />
                         Team
+                    </TabsTrigger>
+                    <TabsTrigger value="integrations" className="gap-2">
+                        <Plug className="h-4 w-4" />
+                        Integrations
                     </TabsTrigger>
                 </TabsList>
 
@@ -352,6 +374,57 @@ export function SettingsClient({
                             </CardContent>
                         </Card>
                     )}
+                </TabsContent>
+
+                <TabsContent value="integrations" className="space-y-6">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Integrations</CardTitle>
+                            <CardDescription>
+                                Connect third-party services to enhance your meeting workflow
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="flex items-center justify-between p-4 rounded-lg border">
+                                <div className="flex items-center gap-3">
+                                    <div className="h-10 w-10 overflow-hidden rounded-lg">
+                                        <ZoomFullLogo className="h-full w-full" />
+                                    </div>
+                                    <div>
+                                        <p className="font-medium">Zoom</p>
+                                        <p className="text-sm text-muted-foreground">
+                                            Connect your personal Zoom account to create meetings from agendas
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-2 shrink-0 ml-4">
+                                    {isZoomConnected ? (
+                                        <>
+                                            <Badge variant="secondary" className="text-green-600 bg-green-500/10">
+                                                Connected
+                                            </Badge>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={handleDisconnectZoom}
+                                                disabled={isDisconnectingZoom}
+                                            >
+                                                {isDisconnectingZoom ? (
+                                                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                                ) : (
+                                                    "Disconnect"
+                                                )}
+                                            </Button>
+                                        </>
+                                    ) : (
+                                        <Button asChild size="sm">
+                                            <a href="/api/auth/zoom/authorize">Connect Zoom</a>
+                                        </Button>
+                                    )}
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
                 </TabsContent>
             </Tabs>
         </div>

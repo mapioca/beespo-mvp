@@ -25,6 +25,24 @@ export default async function MeetingDetailPage({ params }: MeetingDetailPagePro
 
     const isLeader = profile?.role === "leader" || profile?.role === "admin";
 
+    // Check if this user has Zoom connected and read the stored plan type
+    const { data: zoomApp } = await (supabase as any)
+        .from("apps")
+        .select("id")
+        .eq("slug", "zoom")
+        .single();
+    const { data: zoomToken } = await (supabase as any)
+        .from("app_tokens")
+        .select("zoom_plan_type")
+        .eq("user_id", user?.id ?? "")
+        .eq("app_id", zoomApp?.id ?? "")
+        .maybeSingle();
+    const isZoomConnected = zoomToken !== null;
+    // 1 = Basic (Free), 2+ = Licensed (Paid), null = unknown (scope not yet granted)
+    const zoomPlanType: number | null = zoomToken?.zoom_plan_type ?? null;
+    const isZoomFreeAccount: boolean | null =
+        zoomPlanType === 1 ? true : zoomPlanType !== null ? false : null;
+
     // Fetch meeting details with workspace for slug
     const { data: meeting, error } = await (supabase
         .from("meetings") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -66,6 +84,8 @@ export default async function MeetingDetailPage({ params }: MeetingDetailPagePro
             isLeader={isLeader}
             totalDuration={totalDuration}
             currentUserName={profile?.full_name || ""}
+            isZoomConnected={isZoomConnected}
+            isZoomFreeAccount={isZoomFreeAccount}
         />
     );
 }
