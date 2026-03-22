@@ -26,12 +26,12 @@ export default async function MeetingDetailPage({ params }: MeetingDetailPagePro
     const isLeader = profile?.role === "leader" || profile?.role === "admin";
 
     // Check if this user has Zoom connected and read the stored plan type
-    const { data: zoomApp } = await (supabase as any)
+    const { data: zoomApp } = await (supabase as ReturnType<typeof supabase.from>)
         .from("apps")
         .select("id")
         .eq("slug", "zoom")
         .single();
-    const { data: zoomToken } = await (supabase as any)
+    const { data: zoomToken } = await (supabase as ReturnType<typeof supabase.from>)
         .from("app_tokens")
         .select("zoom_plan_type")
         .eq("user_id", user?.id ?? "")

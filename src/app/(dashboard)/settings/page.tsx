@@ -74,12 +74,12 @@ export default async function SettingsPage() {
         .order("created_at", { ascending: false });
 
     // Check if the current user has Zoom connected
-    const { data: zoomApp } = await (supabase as any)
+    const { data: zoomApp } = await (supabase as ReturnType<typeof supabase.from>)
         .from("apps")
         .select("id")
         .eq("slug", "zoom")
         .single();
-    const { count: zoomTokenCount } = await (supabase as any)
+    const { count: zoomTokenCount } = await (supabase as ReturnType<typeof supabase.from>)
         .from("app_tokens")
         .select("*", { count: "exact", head: true })
         .eq("user_id", user.id)

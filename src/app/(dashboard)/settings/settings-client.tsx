@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
@@ -418,7 +419,7 @@ export function SettingsClient({
                                         </>
                                     ) : (
                                         <Button asChild size="sm">
-                                            <a href="/api/auth/zoom/authorize">Connect Zoom</a>
+                                            <Link href="/api/auth/zoom/authorize">Connect Zoom</Link>
                                         </Button>
                                     )}
                                 </div>
