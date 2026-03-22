@@ -245,7 +245,7 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
             // Load agenda items with joined speaker and hymn data
             const { data: agendaItems, error: itemsError } = await supabase
                 .from("agenda_items")
-                .select("*, speakers(name, is_confirmed), hymns(title, hymn_number)")
+                .select("*, speakers:meeting_assignments!speaker_id(topic, is_confirmed, directory(name)), hymns(title, hymn_number)")
                 .eq("meeting_id", initialMeetingId)
                 .order("order_index");
 
@@ -300,7 +300,7 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                     hymn_number: item.hymns?.hymn_number,
                     hymn_title: item.hymns?.title,
                     speaker_id: item.speaker_id,
-                    speaker_name: item.speakers?.name || item.participant_name,
+                    speaker_name: item.speakers?.directory?.name || item.participant_name,
                     speaker_topic: item.speaker_topic || item.speakers?.topic,
                     speaker_is_confirmed: item.speakers?.is_confirmed,
                     participant_id: item.participant_id,
@@ -1270,7 +1270,7 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
         } finally {
             setIsCreating(false);
         }
-    }, [canvasItems, date, time, title, selectedTemplateId, router, form, workspaceName, initialMeetingId, meetingNotes]);
+    }, [canvasItems, date, time, title, selectedTemplateId, router, form, workspaceName, initialMeetingId, meetingNotes, linkedZoomMeetingId]);
 
     // Duplicate the current agenda as a brand-new meeting with a different name
     const handleSaveAsNew = useCallback(async (newTitle: string) => {
