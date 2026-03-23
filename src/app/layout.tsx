@@ -16,6 +16,9 @@ export const metadata: Metadata = {
   icons: {
     icon: "/beespo-favicon.png",
   },
+  other: {
+    "zoom-domain-verification": "ZOOM_verify_9532e3df21144d538c14515b2717638d",
+  },
 };
 
 export default function RootLayout({
