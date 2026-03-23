@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { validateInviteCode } from "@/lib/services/access-control";
+import { checkRateLimit } from "@/lib/rate-limiter";
 import type { ValidateInviteCodeResponse } from "@/lib/services/access-control";
 
 /**
@@ -25,6 +26,15 @@ export async function POST(request: NextRequest): Promise<NextResponse<ValidateI
         const ip = request.headers.get("x-forwarded-for")?.split(",")[0] ||
             request.headers.get("x-real-ip") ||
             "unknown";
+
+        // Check rate limit (max 10 requests per minute)
+        const rateLimit = checkRateLimit(ip, 10, 60 * 1000);
+        if (!rateLimit.allowed) {
+            return NextResponse.json(
+                { valid: false, error: "Too many requests. Please try again later." },
+                { status: 429, headers: { "Retry-After": String(Math.ceil((rateLimit.resetAt - Date.now()) / 1000)) } }
+            );
+        }
 
         const supabase = await createClient();
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { normalizeInviteCode, isValidCodeFormat } from "@/lib/services/access-control";
+import { checkRateLimit } from "@/lib/rate-limiter";
 
 interface ConsumeInviteCodeResponse {
     success: boolean;
@@ -39,6 +40,15 @@ export async function POST(request: NextRequest): Promise<NextResponse<ConsumeIn
         const ip = request.headers.get("x-forwarded-for")?.split(",")[0] ||
             request.headers.get("x-real-ip") ||
             "unknown";
+
+        // Check rate limit (max 5 requests per minute for consume - stricter than validate)
+        const rateLimit = checkRateLimit(ip, 5, 60 * 1000);
+        if (!rateLimit.allowed) {
+            return NextResponse.json(
+                { success: false, error: "Too many requests. Please try again later." },
+                { status: 429, headers: { "Retry-After": String(Math.ceil((rateLimit.resetAt - Date.now()) / 1000)) } }
+            );
+        }
 
         // Use admin client to call the RPC function (bypasses RLS for atomic operation)
         const supabaseAdmin = createAdminClient();

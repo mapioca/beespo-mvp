@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import type { SharePermission } from "@/types/share";
 import { sendMeetingShareInviteEmail } from "@/lib/email/send-meeting-share-email";
 import type { UserRole } from "@/types/database";
+import { z } from "zod";
 
 interface ProfileResult {
   workspace_id: string | null;
@@ -107,7 +108,8 @@ export async function GET(request: NextRequest) {
     .order("created_at", { ascending: false });
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error('Failed to fetch meeting share invitations:', error);
+    return NextResponse.json({ error: 'Failed to fetch invitations' }, { status: 500 });
   }
 
   // Handle invitation type for the frontend/response if needed
@@ -164,6 +166,14 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // Validate email format
+  const emailSchema = z.string().email().toLowerCase().trim();
+  const emailValidation = emailSchema.safeParse(email);
+  if (!emailValidation.success) {
+    return NextResponse.json({ error: "Invalid email address" }, { status: 400 });
+  }
+  const validatedEmail = emailValidation.data;
+
   if (!["viewer", "editor"].includes(permission)) {
     return NextResponse.json(
       { error: "permission must be viewer or editor" },
@@ -197,7 +207,7 @@ export async function POST(request: NextRequest) {
     .from("meeting_share_invitations")
     .select("id")
     .eq("meeting_id", meeting_id)
-    .eq("email", email)
+    .eq("email", validatedEmail)
     .eq("status", "pending")
     .maybeSingle();
 
@@ -221,7 +231,7 @@ export async function POST(request: NextRequest) {
     .from("meeting_share_invitations")
     .insert({
       meeting_id,
-      email,
+      email: validatedEmail,
       permission,
       invited_by: user.id,
     })
@@ -229,7 +239,8 @@ export async function POST(request: NextRequest) {
     .single();
 
   if (insertError) {
-    return NextResponse.json({ error: insertError.message }, { status: 500 });
+    console.error('Failed to create meeting share invitation:', insertError);
+    return NextResponse.json({ error: 'Failed to create invitation' }, { status: 500 });
   }
 
   // Send email notification via Resend
@@ -238,7 +249,7 @@ export async function POST(request: NextRequest) {
   const inviteLink = invitation?.token ? `${appUrl}/api/share/invite/${invitation.token}` : "";
 
   const emailResult = await sendMeetingShareInviteEmail({
-    toEmail: email,
+    toEmail: validatedEmail,
     inviterName: (profile as unknown as ProfileResult)?.full_name || "Someone",
     meetingTitle: (meeting as unknown as MeetingResult).title || "A meeting",
     workspaceName: workspaceData?.name || "Beespo",
@@ -334,7 +345,8 @@ export async function DELETE(request: NextRequest) {
     .eq("id", invitationId);
 
   if (updateError) {
-    return NextResponse.json({ error: updateError.message }, { status: 500 });
+    console.error('Failed to revoke meeting share invitation:', updateError);
+    return NextResponse.json({ error: 'Failed to revoke invitation' }, { status: 500 });
   }
 
   return NextResponse.json({ success: true });

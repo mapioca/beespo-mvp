@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { sendInviteEmail } from '@/lib/email/send-invite-email';
+import { z } from 'zod';
 
 // GET /api/invitations - List pending invitations for workspace
 export async function GET() {
@@ -41,7 +42,8 @@ export async function GET() {
         .order('created_at', { ascending: false });
 
     if (error) {
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        console.error('Failed to fetch invitations:', error);
+        return NextResponse.json({ error: 'Failed to fetch invitations' }, { status: 500 });
     }
 
     return NextResponse.json({ invitations });
@@ -86,6 +88,14 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Email and role are required' }, { status: 400 });
     }
 
+    // Validate email format
+    const emailSchema = z.string().email().toLowerCase().trim();
+    const emailValidation = emailSchema.safeParse(email);
+    if (!emailValidation.success) {
+        return NextResponse.json({ error: 'Invalid email address' }, { status: 400 });
+    }
+    const validatedEmail = emailValidation.data;
+
     if (!['admin', 'leader', 'guest'].includes(role)) {
         return NextResponse.json({ error: 'Invalid role' }, { status: 400 });
     }
@@ -94,7 +104,7 @@ export async function POST(request: NextRequest) {
     const { data: existingUser } = await (supabase
         .from('profiles') as any) // eslint-disable-line @typescript-eslint/no-explicit-any
         .select('id')
-        .eq('email', email)
+        .eq('email', validatedEmail)
         .eq('workspace_id', profile.workspace_id)
         .single();
 
@@ -106,7 +116,7 @@ export async function POST(request: NextRequest) {
     const { data: existingInvite } = await (supabase
         .from('workspace_invitations') as any) // eslint-disable-line @typescript-eslint/no-explicit-any
         .select('id')
-        .eq('email', email)
+        .eq('email', validatedEmail)
         .eq('workspace_id', profile.workspace_id)
         .eq('status', 'pending')
         .single();
@@ -120,7 +130,7 @@ export async function POST(request: NextRequest) {
         .from('workspace_invitations') as any) // eslint-disable-line @typescript-eslint/no-explicit-any
         .insert({
             workspace_id: profile.workspace_id,
-            email,
+            email: validatedEmail,
             role,
             invited_by: user.id,
         })
@@ -128,7 +138,8 @@ export async function POST(request: NextRequest) {
         .single();
 
     if (insertError) {
-        return NextResponse.json({ error: insertError.message }, { status: 500 });
+        console.error('Failed to create invitation:', insertError);
+        return NextResponse.json({ error: 'Failed to create invitation' }, { status: 500 });
     }
 
     // Send email
@@ -136,7 +147,7 @@ export async function POST(request: NextRequest) {
     const inviteLink = `${baseUrl}/accept-invite?token=${invitation.token}`;
 
     const emailResult = await sendInviteEmail({
-        toEmail: email,
+        toEmail: validatedEmail,
         inviterName: profile.full_name,
         workspaceName: workspace?.name || 'your workspace',
         role: role.charAt(0).toUpperCase() + role.slice(1),
