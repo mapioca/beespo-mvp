@@ -6,11 +6,14 @@ export const maxDuration = 300; // Allow sufficient time for cron job since mult
 
 export async function GET(request: Request) {
   // Check authorization (Vercel Cron automatically attaches CRON_SECRET as a Bearer token)
+  const cronSecret = process.env.CRON_SECRET;
+  if (!cronSecret) {
+    console.error('CRON_SECRET not configured - endpoint is unprotected!');
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+
   const authHeader = request.headers.get('authorization');
-  if (
-    process.env.CRON_SECRET &&
-    authHeader !== `Bearer ${process.env.CRON_SECRET}`
-  ) {
+  if (authHeader !== `Bearer ${cronSecret}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
