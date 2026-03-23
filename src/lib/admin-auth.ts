@@ -2,15 +2,14 @@
  * Admin authentication utilities for MFA enforcement
  */
 
-import { createServerClient } from '@supabase/ssr';
-import { CookieOptions } from '@supabase/ssr';
-import { ReadonlyRequestCookies } from 'next/dist/server/web/spec-extension/cookies';
+// No imports needed currently, using passed in supabase client
+
 
 /**
  * Check if user has completed MFA (AAL2 level)
  * Throws error if MFA is not verified
  */
-export async function verifyAdminMFA(supabase: any) {
+export async function verifyAdminMFA(supabase: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
   const { data: { user }, error: userError } = await supabase.auth.getUser();
 
   if (userError || !user) {
@@ -38,7 +37,7 @@ export async function verifyAdminMFA(supabase: any) {
 /**
  * Check if user is sys_admin
  */
-export async function verifyAdminRole(supabase: any, userId: string) {
+export async function verifyAdminRole(supabase: any, userId: string) { // eslint-disable-line @typescript-eslint/no-explicit-any
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: profile } = await (supabase.from('profiles') as any)
@@ -51,7 +50,7 @@ export async function verifyAdminRole(supabase: any, userId: string) {
     }
 
     return profile;
-  } catch (error) {
+  } catch {
     throw new Error('NOT_ADMIN');
   }
 }
@@ -59,7 +58,7 @@ export async function verifyAdminRole(supabase: any, userId: string) {
 /**
  * Full admin verification: user + sys_admin + MFA
  */
-export async function verifyFullAdminAccess(supabase: any) {
+export async function verifyFullAdminAccess(supabase: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
   const user = await verifyAdminMFA(supabase);
   await verifyAdminRole(supabase, user.id);
   return user;
