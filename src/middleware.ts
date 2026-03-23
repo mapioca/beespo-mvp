@@ -46,6 +46,9 @@ export async function middleware(request: NextRequest) {
     // Admin public routes (no auth required)
     const isAdminLoginPage = pathname === "/login";
     const isAuthCallback = pathname.startsWith("/auth/callback");
+    const isMFASetup = pathname.startsWith("/mfa/setup");
+    const isMFAVerify = pathname.startsWith("/mfa/verify");
+    const isAdminPublicRoute = isAdminLoginPage || isAuthCallback || isMFASetup || isMFAVerify;
 
     // Authenticated admin user on login page → redirect to dashboard
     if (user && isAdminLoginPage) {
@@ -62,10 +65,29 @@ export async function middleware(request: NextRequest) {
     }
 
     // Protected admin routes: everything except login, auth callback, and MFA pages
-    if (!user && !isAdminLoginPage && !isAuthCallback) {
+    if (!user && !isAdminPublicRoute) {
       const url = request.nextUrl.clone();
       url.pathname = "/login";
       return NextResponse.redirect(url);
+    }
+
+    // For authenticated users accessing dashboard or other protected routes, enforce MFA
+    if (user && !isAdminPublicRoute && !isAdminLoginPage) {
+      try {
+        const { data: aalData } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+        if (aalData?.currentLevel !== 'aal2') {
+          // MFA not verified - redirect to MFA verify
+          const url = request.nextUrl.clone();
+          url.pathname = "/mfa/verify";
+          return NextResponse.redirect(url);
+        }
+      } catch (error) {
+        // If we can't check AAL level, redirect to MFA verify for safety
+        console.error('Failed to verify AAL level:', error);
+        const url = request.nextUrl.clone();
+        url.pathname = "/mfa/verify";
+        return NextResponse.redirect(url);
+      }
     }
 
     // Rewrite admin subdomain requests to /admin/* route group internally

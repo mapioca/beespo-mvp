@@ -53,7 +53,7 @@ export default function ConnectingZoomDocs() {
           <div>
             <h3 className="text-xl font-medium mb-2">4. Verify Connection</h3>
             <p className="text-muted-foreground">
-              You will be returned to the Beespo settings page. If successful, you will see your Zoom account email listed as "Connected."
+              You will be returned to the Beespo settings page. If successful, you will see your Zoom account email listed as &quot;Connected.&quot;
             </p>
           </div>
         </div>

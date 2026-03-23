@@ -22,7 +22,7 @@ export default function CreatingZoomMeetingsDocs() {
       <section className="mb-10">
         <h2 className="text-2xl font-semibold mb-4 border-b pb-2">Overview</h2>
         <p className="text-muted-foreground">
-          With a connected Zoom account, you can quickly link a new Zoom meeting to your Beespo agenda. Beespo will use the title, date, and duration you've already set for the meeting.
+          With a connected Zoom account, you can quickly link a new Zoom meeting to your Beespo agenda. Beespo will use the title, date, and duration you&apos;ve already set for the meeting.
         </p>
       </section>
 
@@ -37,9 +37,9 @@ export default function CreatingZoomMeetingsDocs() {
           </div>
 
           <div>
-            <h3 className="text-xl font-medium mb-2">2. Click "Add Zoom Meeting"</h3>
+            <h3 className="text-xl font-medium mb-2">2. Click &quot;Add Zoom Meeting&quot;</h3>
             <p className="text-muted-foreground">
-              In the meeting details panel, you'll see an "Add Zoom Meeting" button. Click it to initiate the creation process.
+              In the meeting details panel, you&apos;ll see an &quot;Add Zoom Meeting&quot; button. Click it to initiate the creation process.
             </p>
           </div>
 
@@ -53,7 +53,7 @@ export default function CreatingZoomMeetingsDocs() {
           <div>
             <h3 className="text-xl font-medium mb-2">4. Meeting Created</h3>
             <p className="text-muted-foreground">
-              Your Zoom meeting is now created and linked to your agenda. You'll see the join link and other details in the Zoom Meeting Sheet panel.
+              Your Zoom meeting is now created and linked to your agenda. You&apos;ll see the join link and other details in the Zoom Meeting Sheet panel.
             </p>
           </div>
         </div>
