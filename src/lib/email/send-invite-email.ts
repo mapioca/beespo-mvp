@@ -29,7 +29,7 @@ export async function sendInviteEmail({
 
   try {
     const { error } = await resend.emails.send({
-      from: 'Beespo <onboarding@resend.dev>',
+      from: 'Beespo <noreply@beespo.com>',
       to: toEmail,
       subject: `You've been invited to join ${workspaceName} on Beespo`,
       html: `

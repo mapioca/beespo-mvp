@@ -39,7 +39,7 @@ export async function forgotPasswordAction(email: string) {
     if (resend) {
         try {
             await resend.emails.send({
-                from: 'Beespo <onboarding@resend.dev>', // Update this to verified domain when ready, e.g. team@beespo.com
+                from: 'Beespo <noreply@beespo.com>',
                 to: email,
                 subject: 'Reset your password',
                 html: getResetPasswordEmailHtml(data.properties.action_link, email),
