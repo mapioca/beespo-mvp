@@ -10,8 +10,8 @@ const sections = [
   {
     title: "Getting Started",
     items: [
-      { label: "Creating your account", href: "#" },
-      { label: "Setting up your workspace", href: "#" },
+      { label: "Creating your account", href: "/docs/creating-your-account" },
+      { label: "Setting up your workspace", href: "/docs/setting-up-your-workspace" },
       { label: "Inviting team members", href: "#" },
     ],
   },
