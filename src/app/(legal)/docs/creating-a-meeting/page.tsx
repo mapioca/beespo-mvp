@@ -34,17 +34,14 @@ export default function CreatingAMeetingDocs() {
           <div>
             <h3 className="text-xl font-medium mb-2">1. Start the New Meeting Wizard</h3>
             <p className="text-muted-foreground">
-              From your dashboard, click the <strong>Meetings</strong> tab in the sidebar, then click the 
-              <strong>New Meeting</strong> button (or the <strong>+</strong> icon).
+              From your dashboard, click the <strong>Meetings</strong> tab in the sidebar, then click the <strong>New Meeting</strong> button (or the <strong>+</strong> icon).
             </p>
           </div>
 
           <div>
             <h3 className="text-xl font-medium mb-2">2. Set Basic Information</h3>
             <p className="text-muted-foreground">
-              Enter the meeting <strong>Title</strong> (e.g., &#34;Ward Council Meeting&#34;), select the 
-              <strong>Date</strong>, and set the <strong>Time</strong>. By default, the title will automatically 
-              update to include the meeting date if you use a template.
+              Enter the meeting <strong>Title</strong> (e.g., &#34;Ward Council Meeting&#34;), select the <strong>Date</strong>, and set the <strong>Time</strong>. By default, the title will automatically update to include the meeting date if you use a template.
             </p>
           </div>
 

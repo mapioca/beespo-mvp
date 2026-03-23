@@ -34,8 +34,7 @@ export default function WorkspaceSettingsDocs() {
           <div>
             <h3 className="text-xl font-medium mb-2">1. Access Workspace Settings</h3>
             <p className="text-muted-foreground">
-              Click on <strong>Settings</strong> in the left-hand sidebar, then select the 
-              <strong>Workspace</strong> tab.
+              Click on <strong>Settings</strong> in the left-hand sidebar, then select the <strong>Workspace</strong> tab.
             </p>
           </div>
 
@@ -67,18 +66,18 @@ export default function WorkspaceSettingsDocs() {
           Workspace-wide settings are restricted to ensure consistency across the organization.
         </p>
         <div className="space-y-4">
-          <div className="border border-primary/20 rounded-lg p-4 bg-background">
-            <h4 className="font-semibold mb-1 text-primary">Administrator Required</h4>
+          <div className="border rounded-lg p-4 bg-background">
+            <h4 className="font-semibold mb-1">Administrator Required</h4>
             <p className="text-sm text-neutral-600">
               Only workspace <strong>Admins</strong> have the permission to change the workspace name or modify 
               the core structure. If you are a <strong>Leader</strong> or <strong>Guest</strong>, you 
               can view these settings but cannot save changes.
             </p>
           </div>
-          <div className="border border-amber-200 rounded-lg p-4 bg-amber-50 text-amber-900">
+          <div className="border rounded-lg p-4 bg-background">
             <h4 className="font-semibold mb-1">Consistency Matters</h4>
-            <p className="text-sm">
-              Keep your workspace name clear and consistent with your official church unit naming to prevent 
+            <p className="text-sm text-muted-foreground">
+              Keep your workspace name clear and consistent with your official church unit naming to prevent
               confusion when members are added or when collaborating on multiple workspaces.
             </p>
           </div>

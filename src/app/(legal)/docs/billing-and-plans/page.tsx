@@ -8,9 +8,9 @@ export const metadata: Metadata = {
 
 export default function BillingDocs() {
   return (
-    <article className="prose prose-slate dark:prose-invert max-w-none text-center py-20">
+    <article className="prose prose-slate dark:prose-invert max-w-none">
       <div className="mb-10">
-        <Link href="/docs" className="text-sm text-primary hover:underline underline-offset-4 flex items-center justify-center gap-1 mb-4">
+        <Link href="/docs" className="text-sm text-primary hover:underline underline-offset-4 flex items-center gap-1 mb-4">
           ← Back to Documentation
         </Link>
         <h1 className="text-4xl font-bold tracking-tight mb-2">Billing and plans</h1>
@@ -19,7 +19,7 @@ export default function BillingDocs() {
         </p>
       </div>
 
-      <div className="p-8 border border-dashed rounded-xl bg-muted/30 inline-block mx-auto max-w-2xl text-center">
+      <div className="p-8 border rounded-lg bg-muted/30 max-w-2xl">
         <h2 className="text-2xl font-semibold mb-2">Coming Soon</h2>
         <p className="text-muted-foreground mb-6">
           We are currently in early access, and all features are available to invited users free of charge. 

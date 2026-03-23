@@ -9,25 +9,25 @@ export const metadata: Metadata = {
 export default function DeletingYourAccountDocs() {
   return (
     <article className="prose prose-slate dark:prose-invert max-w-none">
-      <div className="mb-10 text-destructive/80">
+      <div className="mb-10">
         <Link href="/docs" className="text-sm text-primary hover:underline underline-offset-4 flex items-center gap-1 mb-4">
           ← Back to Documentation
         </Link>
         <h1 className="text-4xl font-bold tracking-tight mb-2">Deleting your account</h1>
-        <p className="text-xl">
+        <p className="text-xl text-muted-foreground">
           Permanently delete your account and personal information from the Beespo platform.
         </p>
       </div>
 
-      <section className="mb-10 bg-destructive/10 border border-destructive/20 p-6 rounded-lg text-destructive-900 border-l-4">
-        <h2 className="text-2xl font-bold mb-4">Warning: Irreversible Action</h2>
-        <p className="font-semibold text-lg mb-4">Proceeding with account deletion will:</p>
-        <ul className="list-disc pl-6 space-y-2">
+      <section className="mb-10 bg-muted/30 p-6 rounded-lg border border-slate-200">
+        <h2 className="text-2xl font-semibold mb-4">Warning: Irreversible Action</h2>
+        <p className="text-muted-foreground mb-4">Proceeding with account deletion will:</p>
+        <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
           <li><strong>Permanently remove:</strong> Your name, email address, password, and profile preferences from our servers.</li>
           <li><strong>Detach:</strong> Your workspace membership and any roles you currently hold.</li>
           <li><strong>Leave content intact:</strong> Meetings, agendas, notes, and tasks you created will remain in the workspace, with your name attributed to them or replaced by &#34;Former Member&#34; for privacy and workspace continuity.</li>
         </ul>
-        <p className="mt-4 font-bold text-lg">THIS ACTION CANNOT BE UNDONE.</p>
+        <p className="mt-4 text-muted-foreground font-semibold">THIS ACTION CANNOT BE UNDONE.</p>
       </section>
 
       <section className="mb-10">

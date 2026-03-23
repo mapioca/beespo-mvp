@@ -8,19 +8,19 @@ export const metadata: Metadata = {
 
 export default function DisconnectingZoomDocs() {
   return (
-    <article className="prose prose-slate dark:prose-invert max-w-none underline decoration-sky-100">
-      <div className="mb-10 text-destructive/80">
+    <article className="prose prose-slate dark:prose-invert max-w-none">
+      <div className="mb-10">
         <Link href="/docs" className="text-sm text-primary hover:underline underline-offset-4 flex items-center gap-1 mb-4">
           ← Back to Documentation
         </Link>
-        <h1 className="text-4xl font-bold tracking-tight mb-2 uppercase">Disconnecting Zoom</h1>
-        <p className="text-xl">
+        <h1 className="text-4xl font-bold tracking-tight mb-2">Disconnecting Zoom</h1>
+        <p className="text-xl text-muted-foreground">
           Learn how to remove Zoom integration from your workspace or disconnect individual meetings from your agendas.
         </p>
       </div>
 
-      <section className="mb-10 text-destructive-900 bg-destructive/5 border border-destructive/20 p-6 rounded-lg shadow-sm shadow-destructive/10 border-l-4">
-        <h2 className="text-2xl mb-4 font-bold tracking-tight">Warning: Data Removal</h2>
+      <section className="mb-10 bg-muted/30 p-6 rounded-lg border border-slate-200">
+        <h2 className="text-2xl font-semibold mb-4">Warning: Data Removal</h2>
         <p className="font-semibold text-lg mb-4">Disconnecting Zoom will:</p>
         <ul className="list-disc pl-6 space-y-2">
           <li><strong>Clear Integration:</strong> Beespo will no longer be able to manage meetings on your Zoom account.</li>
@@ -30,17 +30,17 @@ export default function DisconnectingZoomDocs() {
       </section>
 
       <section className="mb-10">
-        <h2 className="text-2xl font-semibold mb-4 border-b pb-2 tracking-tight">Disconnecting Your Zoom Account</h2>
+        <h2 className="text-2xl font-semibold mb-4 border-b pb-2">Disconnecting Your Zoom Account</h2>
         <div className="space-y-8">
           <div>
-            <h3 className="text-xl font-medium mb-2 tracking-tight">Step 1: Open Integrations</h3>
+            <h3 className="text-xl font-medium mb-2">Step 1: Open Integrations</h3>
             <p className="text-muted-foreground leading-relaxed">
               Navigate to <strong>Settings</strong>  <strong>Integrations</strong> from your dashboard.
             </p>
           </div>
 
           <div>
-            <h3 className="text-xl font-medium mb-2 tracking-tight">Step 2: Click Disconnect</h3>
+            <h3 className="text-xl font-medium mb-2">Step 2: Click Disconnect</h3>
             <p className="text-muted-foreground leading-relaxed">
               Locate the Zoom integration card and click the <strong>Disconnect</strong> button. 
               Confirm your choice in the dialog that follows.
@@ -49,8 +49,8 @@ export default function DisconnectingZoomDocs() {
         </div>
       </section>
 
-      <section className="mb-10 bg-slate-50 dark:bg-slate-900/50 p-6 rounded-lg border border-slate-200 shadow-sm shadow-slate-100/50">
-        <h2 className="text-2xl font-semibold mb-4 tracking-tight">Disconnecting an Individual Meeting</h2>
+      <section className="mb-10">
+        <h2 className="text-2xl font-semibold mb-4 border-b pb-2">Disconnecting an individual meeting</h2>
         <p className="text-muted-foreground mb-4">
           Sometimes you only want to remove Zoom from a single agenda without disconnecting your 
           entire account.
