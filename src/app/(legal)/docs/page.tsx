@@ -12,34 +12,34 @@ const sections = [
     items: [
       { label: "Creating your account", href: "/docs/creating-your-account" },
       { label: "Setting up your workspace", href: "/docs/setting-up-your-workspace" },
-      { label: "Inviting team members", href: "#" },
+      { label: "Inviting team members", href: "/docs/inviting-team-members" },
     ],
   },
   {
     title: "Meetings & Agendas",
     items: [
-      { label: "Creating a meeting", href: "#" },
-      { label: "Building an agenda", href: "#" },
-      { label: "Using templates", href: "#" },
-      { label: "Sharing your agenda", href: "#" },
+      { label: "Creating a meeting", href: "/docs/creating-a-meeting" },
+      { label: "Building an agenda", href: "/docs/building-an-agenda" },
+      { label: "Using templates", href: "/docs/using-templates" },
+      { label: "Sharing your agenda", href: "/docs/sharing-your-agenda" },
     ],
   },
   {
     title: "Zoom Integration",
     items: [
-      { label: "Connecting your Zoom account", href: "#" },
-      { label: "Creating a Zoom meeting from Beespo", href: "#" },
-      { label: "Managing Zoom meetings", href: "#" },
-      { label: "Disconnecting Zoom", href: "#" },
+      { label: "Connecting your Zoom account", href: "/docs/connecting-zoom" },
+      { label: "Creating a Zoom meeting from Beespo", href: "/docs/creating-zoom-meetings" },
+      { label: "Managing Zoom meetings", href: "/docs/managing-zoom-meetings" },
+      { label: "Disconnecting Zoom", href: "/docs/disconnecting-zoom" },
     ],
   },
   {
     title: "Account & Settings",
     items: [
-      { label: "Managing your profile", href: "#" },
-      { label: "Workspace settings", href: "#" },
-      { label: "Billing and plans", href: "#" },
-      { label: "Deleting your account", href: "#" },
+      { label: "Managing your profile", href: "/docs/managing-your-profile" },
+      { label: "Workspace settings", href: "/docs/workspace-settings" },
+      { label: "Billing and plans", href: "/docs/billing-and-plans" },
+      { label: "Deleting your account", href: "/docs/deleting-your-account" },
     ],
   },
 ];
