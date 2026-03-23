@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { encryptToken, decryptToken } from '@/lib/encryption';
 import type { ZoomTokenResponse } from '@/types/zoom';
 
 const ZOOM_TOKEN_URL = 'https://zoom.us/oauth/token';
@@ -151,17 +152,30 @@ export async function getValidAccessToken(
 
   if (expiresAt.getTime() - Date.now() < bufferMs) {
     try {
-      const newTokens = await refreshAccessToken(tokenRecord.refresh_token);
+      // Decrypt refresh token before use
+      let refreshToken = tokenRecord.refresh_token;
+      try {
+        refreshToken = decryptToken(tokenRecord.refresh_token);
+      } catch {
+        // Token might be unencrypted (backward compatibility)
+        console.warn('Failed to decrypt refresh token, using as-is');
+      }
+
+      const newTokens = await refreshAccessToken(refreshToken);
       const newExpiresAt = new Date(Date.now() + newTokens.expires_in * 1000);
 
       // Re-fetch plan type on each token refresh (keeps it current if user upgrades/downgrades)
       const planType = await fetchZoomPlanType(newTokens.access_token);
 
+      // Encrypt tokens before storing
+      const encryptedAccessToken = encryptToken(newTokens.access_token);
+      const encryptedRefreshToken = encryptToken(newTokens.refresh_token);
+
       await (supabase
         .from('app_tokens') as ReturnType<typeof supabase.from>)
         .update({
-          access_token: newTokens.access_token,
-          refresh_token: newTokens.refresh_token,
+          access_token: encryptedAccessToken,
+          refresh_token: encryptedRefreshToken,
           expires_at: newExpiresAt.toISOString(),
           scopes: newTokens.scope.split(' '),
           ...(planType !== null ? { zoom_plan_type: planType } : {}),
@@ -174,7 +188,16 @@ export async function getValidAccessToken(
     }
   }
 
-  return tokenRecord.access_token;
+  // Decrypt access token before returning
+  let accessToken = tokenRecord.access_token;
+  try {
+    accessToken = decryptToken(tokenRecord.access_token);
+  } catch {
+    // Token might be unencrypted (backward compatibility)
+    console.warn('Failed to decrypt access token, using as-is');
+  }
+
+  return accessToken;
 }
 
 export async function storeTokens(
@@ -189,14 +212,18 @@ export async function storeTokens(
   // Fetch plan type and Zoom user ID at connect time — non-fatal if it fails
   const { planType, zoomUserId } = await fetchZoomUserInfo(tokens.access_token);
 
+  // Encrypt tokens before storing
+  const encryptedAccessToken = encryptToken(tokens.access_token);
+  const encryptedRefreshToken = encryptToken(tokens.refresh_token);
+
   const { error } = await (supabase
     .from('app_tokens') as ReturnType<typeof supabase.from>)
     .upsert({
       user_id: userId,
       app_id: appId,
       workspace_id: workspaceId,
-      access_token: tokens.access_token,
-      refresh_token: tokens.refresh_token,
+      access_token: encryptedAccessToken,
+      refresh_token: encryptedRefreshToken,
       expires_at: expiresAt.toISOString(),
       scopes: tokens.scope.split(' '),
       ...(planType !== null ? { zoom_plan_type: planType } : {}),

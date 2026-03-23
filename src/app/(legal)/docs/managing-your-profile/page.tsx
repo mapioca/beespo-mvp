@@ -34,8 +34,7 @@ export default function ManagingYourProfileDocs() {
           <div>
             <h3 className="text-xl font-medium mb-2">1. Access Personal Account Settings</h3>
             <p className="text-muted-foreground">
-              Click on <strong>Settings</strong> in the left-hand sidebar. This will open the 
-              <strong>Account</strong> tab by default.
+              Click on <strong>Settings</strong> in the left-hand sidebar. This will open the <strong>Account</strong> tab by default.
             </p>
           </div>
 
@@ -72,11 +71,11 @@ export default function ManagingYourProfileDocs() {
               a password that at least 8 characters and is not easy to guess.
             </p>
           </div>
-          <div className="border border-destructive/20 rounded-lg p-4 bg-destructive/5 text-destructive">
+          <div className="border rounded-lg p-4 bg-background">
             <h4 className="font-semibold mb-1">Deleting Your Account</h4>
-            <p className="text-sm">
-              In the <strong>Danger Zone</strong>, you can permanently delete your account. This will remove your personal 
-              data, but your workspace content will remain visible with an attribution to &#34;Former Member.&#34; 
+            <p className="text-sm text-muted-foreground">
+              In the <strong>Danger Zone</strong>, you can permanently delete your account. This will remove your personal
+              data, but your workspace content will remain visible with an attribution to &#34;Former Member.&#34;
               THIS ACTION CANNOT BE UNDONE.
             </p>
           </div>

@@ -15,6 +15,12 @@ export async function GET(
     const { id } = await params;
     const supabase = await createClient();
 
+    // Authenticate user
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: meeting, error } = await (supabase.from("meetings") as any)
         .select("*, templates(name), profiles(full_name)")

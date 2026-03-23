@@ -2,19 +2,19 @@ import { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'Creating a Zoom Meeting from Beespo | Beespo Documentation',
+  title: 'Creating a Zoom meeting from Beespo | Beespo Documentation',
   description: 'How to easily create and link a Zoom meeting to any Beespo agenda.',
 };
 
 export default function CreatingZoomMeetingsDocs() {
   return (
     <article className="prose prose-slate dark:prose-invert max-w-none">
-      <div className="mb-10 text-[#2D8CFF]">
+      <div className="mb-10">
         <Link href="/docs" className="text-sm text-primary hover:underline underline-offset-4 flex items-center gap-1 mb-4">
           ← Back to Documentation
         </Link>
-        <h1 className="text-4xl font-bold tracking-tight mb-2 font-bold tracking-tight uppercase">Creating a Zoom meeting from Beespo</h1>
-        <p className="text-xl">
+        <h1 className="text-4xl font-bold tracking-tight mb-2">Creating a Zoom meeting from Beespo</h1>
+        <p className="text-xl text-muted-foreground">
           Learn how to generate a video call directly from any meeting agenda.
         </p>
       </div>
@@ -22,60 +22,48 @@ export default function CreatingZoomMeetingsDocs() {
       <section className="mb-10">
         <h2 className="text-2xl font-semibold mb-4 border-b pb-2">Overview</h2>
         <p className="text-muted-foreground">
-          With a connected Zoom account, you can quickly link a new Zoom meeting 
-          to your Beespo agenda. Beespo will use the title, date, and duration 
-          you&#39;ve already set for the meeting.
+          With a connected Zoom account, you can quickly link a new Zoom meeting to your Beespo agenda. Beespo will use the title, date, and duration you&apos;ve already set for the meeting.
         </p>
       </section>
 
       <section className="mb-10">
-        <h2 className="text-2xl font-semibold mb-4 border-b pb-2">Steps to Create</h2>
+        <h2 className="text-2xl font-semibold mb-4 border-b pb-2">Steps</h2>
         <div className="space-y-8">
           <div>
-            <h3 className="text-xl font-medium mb-2 font-bold tracking-tight">Step 1: Open an Agenda</h3>
-            <p className="text-muted-foreground leading-relaxed">
-              Open the <strong>Agenda Builder</strong> for any meeting you want to conduct.
+            <h3 className="text-xl font-medium mb-2">1. Open Your Meeting</h3>
+            <p className="text-muted-foreground">
+              Navigate to the meeting you want to add Zoom to. Click the meeting title to open the details view.
             </p>
           </div>
 
           <div>
-            <h3 className="text-xl font-medium mb-2 font-bold tracking-tight">Step 2: Find the Zoom Icon</h3>
-            <p className="text-muted-foreground leading-relaxed">
-              Look for the <strong>Zoom Icon</strong> at the bottom of the left-hand sidebar 
-              (if in builder) or at the top of the meeting details page.
+            <h3 className="text-xl font-medium mb-2">2. Click &quot;Add Zoom Meeting&quot;</h3>
+            <p className="text-muted-foreground">
+              In the meeting details panel, you&apos;ll see an &quot;Add Zoom Meeting&quot; button. Click it to initiate the creation process.
             </p>
           </div>
 
           <div>
-            <h3 className="text-xl font-medium mb-2 font-bold tracking-tight text-[#2D8CFF]">Step 3: Click &#34;Create Zoom Meeting&#34;</h3>
-            <p className="text-muted-foreground leading-relaxed">
-              In the dialog that appears, click the <strong>Create Zoom Meeting</strong> button. 
-              Beespo will instantly create a meeting on your Zoom account and link it 
-              to this agenda.
+            <h3 className="text-xl font-medium mb-2">3. Confirm Meeting Details</h3>
+            <p className="text-muted-foreground">
+              Beespo will pre-populate the meeting title, date, and time from your agenda. Review the details and click <strong>Create Meeting</strong> to proceed.
             </p>
           </div>
 
           <div>
-            <h3 className="text-xl font-medium mb-2 font-bold tracking-tight">Step 4: Success!</h3>
-            <p className="text-muted-foreground leading-relaxed">
-              The join link and passcode will be automatically saved to your Beespo agenda. 
-              The <strong>Zoom Meeting Sheet</strong> will open from the right to show you 
-              the linked details and join options.
+            <h3 className="text-xl font-medium mb-2">4. Meeting Created</h3>
+            <p className="text-muted-foreground">
+              Your Zoom meeting is now created and linked to your agenda. You&apos;ll see the join link and other details in the Zoom Meeting Sheet panel.
             </p>
           </div>
         </div>
       </section>
 
-      <section className="mb-10 bg-[#2D8CFF]/5 p-6 rounded-lg border border-[#2D8CFF]/20 shadow-sm shadow-[#2D8CFF]/10">
-        <h2 className="text-2xl font-semibold mb-4 text-[#2D8CFF] font-bold tracking-tight underline-offset-4 decoration-current underline">Automatic Information Mapping</h2>
-        <p className="text-muted-foreground mb-4">
-          Beespo ensures your Zoom and Beespo meetings stay in sync:
+      <section className="mb-10">
+        <h2 className="text-2xl font-semibold mb-4 border-b pb-2">Next Steps</h2>
+        <p className="text-muted-foreground">
+          Once your meeting is created, you can manage it directly from Beespo. See <Link href="/docs/managing-zoom-meetings" className="text-primary underline">Managing Zoom meetings</Link> for details on sharing links, updating meeting info, and managing attendees.
         </p>
-        <ul className="list-disc pl-6 space-y-2 text-muted-foreground text-sm font-medium">
-          <li><strong>Topic:</strong> Beespo uses your meeting title for the Zoom topic.</li>
-          <li><strong>Start Time:</strong> Beespo uses the scheduled date and time from your agenda.</li>
-          <li><strong>Duration:</strong> Beespo calculates the total agenda duration and uses that for your Zoom meeting length.</li>
-        </ul>
       </section>
 
       <hr className="my-10" />

@@ -13,7 +13,7 @@ export default function UsingTemplatesDocs() {
         <Link href="/docs" className="text-sm text-primary hover:underline underline-offset-4 flex items-center gap-1 mb-4">
           ← Back to Documentation
         </Link>
-        <h1 className="text-4xl font-bold tracking-tight mb-2 font-bold tracking-tight">Using templates</h1>
+        <h1 className="text-4xl font-bold tracking-tight mb-2">Using templates</h1>
         <p className="text-xl text-muted-foreground">
           Agenda templates save you time and keep your meetings consistent across your entire organization.
         </p>
@@ -32,7 +32,7 @@ export default function UsingTemplatesDocs() {
         <h2 className="text-2xl font-semibold mb-4 border-b pb-2">Types of Templates</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 my-6">
           <div className="p-6 border rounded-xl bg-primary/5 border-primary/20 shadow-sm shadow-primary/10">
-            <h3 className="font-bold text-lg mb-2 text-primary">Beespo Official Templates</h3>
+            <h3 className="font-bold text-lg mb-2">Beespo Official Templates</h3>
             <p className="text-sm text-muted-foreground">
               These are standard templates verified by Beespo for common church meetings:
             </p>
@@ -77,7 +77,7 @@ export default function UsingTemplatesDocs() {
           </div>
 
           <div>
-            <h3 className="text-xl font-medium mb-2 font-bold tracking-tight text-destructive-700">Step 3: Manage Template Library</h3>
+            <h3 className="text-xl font-medium mb-2">Step 3: Manage Template Library</h3>
             <p className="text-muted-foreground">
               Navigate to the <strong>Templates</strong> tab in the sidebar to review, 
               edit, or delete existing workspace templates.
@@ -87,7 +87,7 @@ export default function UsingTemplatesDocs() {
       </section>
 
       <section className="mb-10 bg-primary/5 p-6 rounded-lg border border-primary/10">
-        <h2 className="text-2xl font-semibold mb-4 underline decoration-primary/30 underline-offset-4 font-bold tracking-tight">Best Practices</h2>
+        <h2 className="text-2xl font-semibold mb-4 border-b pb-2">Best Practices</h2>
         <ul className="list-disc pl-6 space-y-3 text-muted-foreground">
           <li>
             <strong className="text-foreground">Set Durations:</strong> Ensure your templates have estimated 

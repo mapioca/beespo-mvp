@@ -34,8 +34,7 @@ export default function InvitingTeamMembersDocs() {
           <div>
             <h3 className="text-xl font-medium mb-2">1. Open Team Settings</h3>
             <p className="text-muted-foreground">
-              From your dashboard, click on <strong>Settings</strong> in the left-hand sidebar, then navigate to 
-              the <strong>Team</strong> tab.
+              From your dashboard, click on <strong>Settings</strong> in the left-hand sidebar, then navigate to the <strong>Team</strong> tab.
             </p>
           </div>
 

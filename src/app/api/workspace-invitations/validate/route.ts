@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
+import { checkRateLimit } from '@/lib/rate-limiter';
 
 // POST /api/workspace-invitations/validate - Validate a workspace invitation token
 // Used during signup to check if a token is valid without accepting it
@@ -17,6 +18,19 @@ export async function POST(request: NextRequest) {
 
   if (!token) {
     return NextResponse.json({ valid: false, error: 'Token is required' }, { status: 400 });
+  }
+
+  // Rate limiting
+  const ip = request.headers.get('x-forwarded-for')?.split(',')[0] ||
+    request.headers.get('x-real-ip') ||
+    'unknown';
+
+  const rateLimit = checkRateLimit(ip, 10, 60 * 1000);
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      { valid: false, error: 'Too many requests. Please try again later.' },
+      { status: 429, headers: { 'Retry-After': String(Math.ceil((rateLimit.resetAt - Date.now()) / 1000)) } }
+    );
   }
 
   // Get the invitation by token (RLS allows anyone to view by token)

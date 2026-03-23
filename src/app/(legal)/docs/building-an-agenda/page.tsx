@@ -58,15 +58,15 @@ export default function BuildingAnAgendaDocs() {
             </ul>
           </div>
 
-          <div className="border border-green-200 rounded-lg p-4 bg-green-50 shadow-xs">
-            <h3 className="text-lg font-semibold mb-2 text-green-800">Containers (Integrated Content)</h3>
-            <p className="text-sm text-green-700 mb-4">Dynamically pull in active discussions, business items, or announcements from the rest of Beespo.</p>
-            <ul className="list-disc pl-6 text-xs text-green-600 space-y-1 font-bold">
+          <div className="border border-neutral-100 rounded-lg p-4 bg-background shadow-xs">
+            <h3 className="text-lg font-semibold mb-2">Containers (Integrated Content)</h3>
+            <p className="text-sm text-muted-foreground mb-4">Dynamically pull in active discussions, business items, or announcements from the rest of Beespo.</p>
+            <ul className="list-disc pl-6 text-xs text-muted-foreground space-y-1">
               <li><strong>Discussions:</strong> Link to specific ongoing presidency discussion items.</li>
               <li><strong>Business Items:</strong> Bring in calls for sustaining, releases, or other unit business.</li>
               <li><strong>Announcements:</strong> Organize and prioritize important announcements.</li>
             </ul>
-            <p className="text-xs text-green-800 mt-4 italic font-medium">Click the <strong>(+) icon</strong> on a container to choose items to add.</p>
+            <p className="text-xs text-muted-foreground mt-4">Click the <strong>(+) icon</strong> on a container to choose items to add.</p>
           </div>
 
           <div className="border border-neutral-100 rounded-lg p-4 bg-background shadow-xs">
@@ -82,16 +82,14 @@ export default function BuildingAnAgendaDocs() {
           <div>
             <h3 className="text-xl font-medium mb-2 font-bold tracking-tight">Step 1: Drag & Drop Items</h3>
             <p className="text-muted-foreground">
-              Scroll through the <strong>Toolbox</strong> on the left. Click and drag an item onto the <strong>Agenda Canvas</strong>. 
-              Beespo will automatically snap it into place.
+              Scroll through the <strong>Toolbox</strong> on the left. Click and drag an item onto the <strong>Agenda Canvas</strong>. Beespo will automatically snap it into place.
             </p>
           </div>
 
           <div>
             <h3 className="text-xl font-medium mb-2 font-bold tracking-tight">Step 2: Reorder & Organize</h3>
             <p className="text-muted-foreground">
-              Need to move a talk or move announcements after the sacrament? Just <strong>click and drag</strong> items 
-              already on the canvas to their new position.
+              Need to move a talk or move announcements after the sacrament? Just <strong>click and drag</strong> items already on the canvas to their new position.
             </p>
           </div>
 
