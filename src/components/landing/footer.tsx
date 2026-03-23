@@ -15,16 +15,22 @@ export function Footer() {
 
         <nav className="flex justify-center gap-6 mt-6">
           <Link
-            href="#"
+            href="/terms"
             className="text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
             Terms
           </Link>
           <Link
-            href="#"
+            href="/privacy"
             className="text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
             Privacy
+          </Link>
+          <Link
+            href="/support"
+            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Support
           </Link>
           <Link
             href="/login"

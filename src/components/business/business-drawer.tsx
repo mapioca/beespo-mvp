@@ -79,7 +79,7 @@ export function BusinessDrawer({ item, open, onOpenChange, onDelete }: BusinessD
             setNotes(item.notes ?? "");
             setShowNotes(!!item.notes);
         }
-    }, [item?.id]);
+    }, [item]);
 
     const isCompleted = status === "completed";
     const creatorName = item?.creator?.full_name;

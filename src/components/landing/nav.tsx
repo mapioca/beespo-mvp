@@ -11,9 +11,23 @@ export function Nav() {
         >
           Beespo
         </Link>
-        <Button asChild variant="ghost" size="sm">
-          <Link href="/login">Sign In</Link>
-        </Button>
+        <div className="flex items-center gap-1">
+          <Button asChild variant="ghost" size="sm">
+            <Link href="/terms">Terms</Link>
+          </Button>
+          <Button asChild variant="ghost" size="sm">
+            <Link href="/privacy">Privacy</Link>
+          </Button>
+          <Button asChild variant="ghost" size="sm">
+            <Link href="/support">Support</Link>
+          </Button>
+          <Button asChild variant="ghost" size="sm">
+            <Link href="/docs">Docs</Link>
+          </Button>
+          <Button asChild variant="ghost" size="sm">
+            <Link href="/login">Sign In</Link>
+          </Button>
+        </div>
       </div>
     </nav>
   );

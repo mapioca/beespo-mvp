@@ -56,7 +56,7 @@ export function SpeakerDrawer({ speaker, open, onOpenChange, onDelete }: Speaker
             setNote("");
             setShowNote(false);
         }
-    }, [speaker?.id]);
+    }, [speaker]);
 
     const meeting = speaker?.agenda_items?.[0]?.meeting;
     const isConfirmed = speaker?.is_confirmed ?? false;

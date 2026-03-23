@@ -68,7 +68,7 @@ export function ParticipantDrawer({
         if (participant) {
             setName(participant.name);
         }
-    }, [participant?.id]);
+    }, [participant]);
 
     const fetchHistory = useCallback(async () => {
         if (!participant) return;

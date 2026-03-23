@@ -92,7 +92,7 @@ export function DiscussionDrawer({ discussion, open, onOpenChange, onDelete }: D
             setPriority(discussion.priority)
             setDueDate(discussion.due_date?.split("T")[0] ?? "")
         }
-    }, [discussion?.id])
+    }, [discussion])
 
     const creatorName = discussion?.creator?.full_name
 

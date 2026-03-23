@@ -156,7 +156,7 @@ export function TaskDetailsSheet({
             setAssignee(task.assigned_to || "unassigned");
             setDueDate(task.due_date ? new Date(task.due_date) : undefined);
         }
-    }, [task?.id]);
+    }, [task]);
 
     useEffect(() => {
         if (open && task) {

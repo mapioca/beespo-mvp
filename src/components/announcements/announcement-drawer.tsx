@@ -70,7 +70,7 @@ export function AnnouncementDrawer({ announcement, open, onOpenChange, onDelete 
             setDisplayStart(announcement.display_start?.split("T")[0] ?? "");
             setDisplayUntil(announcement.display_until?.split("T")[0] ?? "");
         }
-    }, [announcement?.id]);
+    }, [announcement]);
 
     const creatorName = announcement?.creator?.full_name;
 
