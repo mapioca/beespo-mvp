@@ -52,7 +52,7 @@ export async function POST(
     return NextResponse.json({ error: "Group not found" }, { status: 404 });
   }
 
-  const body = await request.json();
+  const body = await request.json().catch(() => null);
   const parsed = addMemberSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(

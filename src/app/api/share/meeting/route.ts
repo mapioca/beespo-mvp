@@ -140,35 +140,65 @@ async function handlePost(request: NextRequest) {
     const recipientUserId = (recipientProfile as any)?.id ?? null;
     const isBeespoUser = Boolean(recipientUserId);
 
-    // Upsert: if share already exists, skip (don't overwrite existing)
+    // Check for any existing share record (active OR revoked) to avoid
+    // UNIQUE (meeting_id, recipient_email) constraint violations.
     const { data: existing } = await (supabase as any)
       .from("meeting_shares")
-      .select("id")
+      .select("id, status, token")
       .eq("meeting_id", meeting_id)
       .eq("recipient_email", email)
-      .eq("status", "active")
       .maybeSingle();
 
-    if (existing) {
-      // Already shared — skip
+    let shareRecord: { id: string; token: string } | null = null;
+
+    if (existing?.status === "active") {
+      // Already shared and active — skip without counting
       continue;
+    } else if (existing?.status === "revoked") {
+      // Reactivate the revoked share rather than inserting a new one
+      const { data: updated, error: updateError } = await (supabase as any)
+        .from("meeting_shares")
+        .update({
+          status: "active",
+          permission,
+          recipient_user_id: recipientUserId,
+          shared_by: user.id,
+          sharing_group_id: groupId ?? null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", existing.id)
+        .select("id, token")
+        .single();
+
+      if (updateError) {
+        errors.push(`Failed to share with ${email}`);
+        continue;
+      }
+      shareRecord = updated;
+    } else {
+      // No existing record — insert fresh
+      const { data: inserted, error: insertError } = await (supabase as any)
+        .from("meeting_shares")
+        .insert({
+          meeting_id,
+          recipient_email: email,
+          recipient_user_id: recipientUserId,
+          permission,
+          shared_by: user.id,
+          sharing_group_id: groupId ?? null,
+          status: "active",
+        })
+        .select("id, token")
+        .single();
+
+      if (insertError) {
+        errors.push(`Failed to share with ${email}`);
+        continue;
+      }
+      shareRecord = inserted;
     }
 
-    const { data: shareRecord, error: insertError } = await (supabase as any)
-      .from("meeting_shares")
-      .insert({
-        meeting_id,
-        recipient_email: email,
-        recipient_user_id: recipientUserId,
-        permission,
-        shared_by: user.id,
-        sharing_group_id: groupId ?? null,
-        status: "active",
-      })
-      .select("id, token")
-      .single();
-
-    if (insertError) {
+    if (!shareRecord) {
       errors.push(`Failed to share with ${email}`);
       continue;
     }
@@ -188,7 +218,9 @@ async function handlePost(request: NextRequest) {
       permission,
       isBeespoUser,
       viewLink,
-    }).catch(() => {}); // non-blocking
+    }).catch((err) => {
+      console.error(`[share] Email notification failed for ${email}:`, err);
+    });
 
     // Log activity (non-blocking)
     try {

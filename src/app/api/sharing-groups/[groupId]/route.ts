@@ -99,7 +99,7 @@ export async function PUT(
     );
   }
 
-  const body = await request.json();
+  const body = await request.json().catch(() => null);
   const parsed = updateGroupSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(
