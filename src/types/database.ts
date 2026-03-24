@@ -1684,6 +1684,137 @@ export type Database = {
           updated_at?: string;
         };
       };
+      sharing_groups: {
+        Row: {
+          id: string;
+          workspace_id: string;
+          name: string;
+          description: string | null;
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          workspace_id: string;
+          name: string;
+          description?: string | null;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          workspace_id?: string;
+          name?: string;
+          description?: string | null;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      sharing_group_members: {
+        Row: {
+          id: string;
+          group_id: string;
+          email: string;
+          added_by: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          group_id: string;
+          email: string;
+          added_by?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          group_id?: string;
+          email?: string;
+          added_by?: string | null;
+          created_at?: string;
+        };
+      };
+      meeting_shares: {
+        Row: {
+          id: string;
+          meeting_id: string;
+          recipient_email: string;
+          recipient_user_id: string | null;
+          permission: 'viewer' | 'editor';
+          shared_by: string;
+          sharing_group_id: string | null;
+          status: 'active' | 'revoked';
+          token: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          meeting_id: string;
+          recipient_email: string;
+          recipient_user_id?: string | null;
+          permission: 'viewer' | 'editor';
+          shared_by: string;
+          sharing_group_id?: string | null;
+          status?: 'active' | 'revoked';
+          token?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          meeting_id?: string;
+          recipient_email?: string;
+          recipient_user_id?: string | null;
+          permission?: 'viewer' | 'editor';
+          shared_by?: string;
+          sharing_group_id?: string | null;
+          status?: 'active' | 'revoked';
+          token?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      share_activity_log: {
+        Row: {
+          id: string;
+          workspace_id: string;
+          action: 'shared' | 'revoked' | 'group_created' | 'group_updated' | 'member_added' | 'member_removed';
+          entity_type: string;
+          entity_id: string | null;
+          target_email: string | null;
+          sharing_group_id: string | null;
+          performed_by: string;
+          details: Record<string, unknown>;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          workspace_id: string;
+          action: 'shared' | 'revoked' | 'group_created' | 'group_updated' | 'member_added' | 'member_removed';
+          entity_type?: string;
+          entity_id?: string | null;
+          target_email?: string | null;
+          sharing_group_id?: string | null;
+          performed_by: string;
+          details?: Record<string, unknown>;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          workspace_id?: string;
+          action?: 'shared' | 'revoked' | 'group_created' | 'group_updated' | 'member_added' | 'member_removed';
+          entity_type?: string;
+          entity_id?: string | null;
+          target_email?: string | null;
+          sharing_group_id?: string | null;
+          performed_by?: string;
+          details?: Record<string, unknown>;
+          created_at?: string;
+        };
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -1694,6 +1825,13 @@ export type Database = {
           p_scheduled_date: string;
         };
         Returns: string;
+      };
+      link_shares_to_new_user: {
+        Args: {
+          p_user_id: string;
+          p_user_email: string;
+        };
+        Returns: number;
       };
     };
     Enums: Record<string, never>;

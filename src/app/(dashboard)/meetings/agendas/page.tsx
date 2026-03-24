@@ -64,6 +64,57 @@ export default async function AgendasPage() {
     )
   }
 
+  // Fetch meetings shared WITH the current user (cross-workspace)
+  const { data: inboundShareData } = await (supabase as any)
+    .from("meeting_shares")
+    .select(
+      `
+      id,
+      permission,
+      meeting_id,
+      meetings!meeting_id (
+        id, workspace_id, title, description, scheduled_date, status,
+        created_by, notes, created_at, updated_at,
+        templates (id, name),
+        workspaces (name, slug)
+      ),
+      shared_by_profile:shared_by (full_name)
+    `
+    )
+    .eq("recipient_user_id", user.id)
+    .eq("status", "active")
+
+  // Fetch meeting IDs that the current user has shared outward
+  const { data: outboundShareData } = await (supabase as any)
+    .from("meeting_shares")
+    .select("meeting_id")
+    .eq("shared_by", user.id)
+    .eq("status", "active")
+
+  // Build annotated shared-with-me meeting list
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const sharedMeetings = (inboundShareData || []).flatMap((share: any) => {
+    const m = share.meetings
+    if (!m) return []
+    return [
+      {
+        ...m,
+        templates: m.templates || null,
+        _shareType: "shared_with_me" as const,
+        _sharePermission: share.permission,
+        _sharedByName: share.shared_by_profile?.full_name ?? undefined,
+        _sharedFromWorkspace: m.workspaces?.name ?? undefined,
+      },
+    ]
+  })
+
+  // Build Set of outward-shared meeting IDs (serialised as array for client)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const sharedOutwardIds: string[] = (outboundShareData || []).map(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (row: any) => row.meeting_id
+  )
+
   // Fetch all templates for filter dropdown
   const { data: templates } = await (
     supabase.from("templates") as ReturnType<typeof supabase.from>
@@ -100,6 +151,8 @@ export default async function AgendasPage() {
       isLeader={isLeader}
       statusCounts={statusCounts}
       templateCounts={templateCounts}
+      sharedMeetings={sharedMeetings}
+      sharedOutwardIds={sharedOutwardIds}
     />
   )
 }

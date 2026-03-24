@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { SettingsClient } from "./settings-client";
+import type { SharingGroupWithMembers } from "@/types/share";
 
 type Profile = {
     workspace_id: string;
@@ -73,6 +74,24 @@ export default async function SettingsPage() {
         .eq("status", "pending")
         .order("created_at", { ascending: false });
 
+    // Get sharing groups with member counts
+    const { data: rawSharingGroups } = await (supabase as any)
+        .from("sharing_groups")
+        .select(`
+            id, workspace_id, name, description, created_by, created_at, updated_at,
+            sharing_group_members (id, group_id, email, added_by, created_at)
+        `)
+        .eq("workspace_id", profile.workspace_id)
+        .order("name", { ascending: true });
+
+    const sharingGroups: SharingGroupWithMembers[] = (rawSharingGroups ?? []).map(
+        (g: any) => ({
+            ...g,
+            members: g.sharing_group_members ?? [],
+            member_count: (g.sharing_group_members ?? []).length,
+        })
+    );
+
     // Check if the current user has Zoom connected
     const { data: zoomApp } = await (supabase as ReturnType<typeof supabase.from>)
         .from("apps")
@@ -99,6 +118,11 @@ export default async function SettingsPage() {
                 roleTitle: profile.role_title || "",
             }}
             isZoomConnected={isZoomConnected}
+            sharingGroups={sharingGroups}
+            workspaceMembers={(members || []).map((m: any) => ({
+                email: m.email,
+                full_name: m.full_name,
+            }))}
         />
     );
 }

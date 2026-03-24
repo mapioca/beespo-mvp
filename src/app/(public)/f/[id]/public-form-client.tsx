@@ -73,10 +73,6 @@ export function PublicFormClient({ form }: PublicFormClientProps) {
                     </CardContent>
                 </Card>
 
-                {/* Footer */}
-                <p className="text-center text-xs text-muted-foreground mt-6">
-                    Powered by Beespo
-                </p>
             </div>
         </div>
     );

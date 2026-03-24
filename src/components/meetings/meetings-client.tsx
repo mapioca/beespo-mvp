@@ -33,6 +33,8 @@ interface MeetingsClientProps {
     isLeader: boolean
     statusCounts: Record<string, number>
     templateCounts: Record<string, number>
+    sharedMeetings?: Meeting[]
+    sharedOutwardIds?: string[]
 }
 
 export function MeetingsClient({
@@ -42,8 +44,13 @@ export function MeetingsClient({
     isLeader,
     statusCounts,
     templateCounts,
+    sharedMeetings = [],
+    sharedOutwardIds = [],
 }: MeetingsClientProps) {
     const router = useRouter()
+
+    // Category filter
+    const [activeCategory, setActiveCategory] = useState<"mine" | "shared" | "all">("mine")
 
     // Search
     const [search, setSearch] = useState("")
@@ -72,8 +79,30 @@ export function MeetingsClient({
 
     // ── Derived data ────────────────────────────────────────────────────────
 
+    // Build a Set of outward-shared meeting IDs for O(1) lookup
+    const sharedOutwardSet = useMemo(
+        () => new Set(sharedOutwardIds),
+        [sharedOutwardIds]
+    )
+
+    // Annotate owned meetings with outward-share flag
+    const annotatedMeetings = useMemo(
+        () =>
+            meetings.map((m) => ({
+                ...m,
+                _isSharedOutward: sharedOutwardSet.has(m.id),
+            })),
+        [meetings, sharedOutwardSet]
+    )
+
     const filteredMeetings = useMemo(() => {
-        let result = meetings
+        // Pick the base list based on the active category
+        let result: Meeting[] =
+            activeCategory === "mine"
+                ? annotatedMeetings
+                : activeCategory === "shared"
+                  ? sharedMeetings
+                  : [...annotatedMeetings, ...sharedMeetings]
 
         // Search (client-side on title, workspace meeting id)
         if (search) {
@@ -135,7 +164,7 @@ export function MeetingsClient({
         }
 
         return result
-    }, [meetings, search, selectedStatuses, selectedTemplates, sortConfig])
+    }, [activeCategory, annotatedMeetings, sharedMeetings, search, selectedStatuses, selectedTemplates, sortConfig])
 
     // ── Handlers ────────────────────────────────────────────────────────────
 
@@ -273,6 +302,29 @@ export function MeetingsClient({
                 )}
             </div>
 
+            {/* Category filter */}
+            <div className="flex items-center gap-1.5 px-6 pb-4 shrink-0">
+                {(
+                    [
+                        { value: "mine", label: "My Meetings" },
+                        { value: "shared", label: "Shared with Me" },
+                        { value: "all", label: "All" },
+                    ] as const
+                ).map(({ value, label }) => (
+                    <button
+                        key={value}
+                        onClick={() => setActiveCategory(value)}
+                        className={
+                            activeCategory === value
+                                ? "rounded-full border px-3.5 py-1 text-xs font-medium bg-foreground text-background border-foreground transition-colors"
+                                : "rounded-full border px-3.5 py-1 text-xs font-medium text-muted-foreground border-border hover:text-foreground hover:border-foreground/40 transition-colors"
+                        }
+                    >
+                        {label}
+                    </button>
+                ))}
+            </div>
+
             {/* Selection action bar */}
             {selectedRows.size > 0 && (
                 <div className="flex items-center gap-3 px-6 pb-3 shrink-0">
@@ -363,27 +415,35 @@ export function MeetingsClient({
 
             {/* Table */}
             <div className="flex-1 overflow-auto px-6">
-                <MeetingsTable
-                    meetings={filteredMeetings}
-                    templates={templates}
-                    workspaceSlug={workspaceSlug}
-                    isLeader={isLeader}
-                    sortConfig={sortConfig}
-                    onSort={handleSort}
-                    searchValue={search}
-                    onSearchChange={setSearch}
-                    selectedStatuses={selectedStatuses}
-                    statusCounts={statusCounts}
-                    onStatusToggle={handleStatusToggle}
-                    selectedTemplates={selectedTemplates}
-                    templateCounts={templateCounts}
-                    onTemplateToggle={handleTemplateToggle}
-                    hiddenColumns={hiddenColumns}
-                    onHideColumn={handleHideColumn}
-                    selectedRows={selectedRows}
-                    onToggleRow={handleToggleRow}
-                    onToggleAllRows={handleToggleAllRows}
-                />
+                {activeCategory === "shared" && sharedMeetings.length === 0 && !search ? (
+                    <div className="flex flex-col items-center justify-center h-48 text-center">
+                        <p className="text-muted-foreground text-sm">
+                            No meetings shared with you yet.
+                        </p>
+                    </div>
+                ) : (
+                    <MeetingsTable
+                        meetings={filteredMeetings}
+                        templates={templates}
+                        workspaceSlug={workspaceSlug}
+                        isLeader={isLeader}
+                        sortConfig={sortConfig}
+                        onSort={handleSort}
+                        searchValue={search}
+                        onSearchChange={setSearch}
+                        selectedStatuses={selectedStatuses}
+                        statusCounts={statusCounts}
+                        onStatusToggle={handleStatusToggle}
+                        selectedTemplates={selectedTemplates}
+                        templateCounts={templateCounts}
+                        onTemplateToggle={handleTemplateToggle}
+                        hiddenColumns={hiddenColumns}
+                        onHideColumn={handleHideColumn}
+                        selectedRows={selectedRows}
+                        onToggleRow={handleToggleRow}
+                        onToggleAllRows={handleToggleAllRows}
+                    />
+                )}
             </div>
 
             {/* Bulk delete confirmation */}
