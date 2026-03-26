@@ -20,12 +20,14 @@ export async function GET() {
     .eq("id", user.id)
     .single();
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const workspaceId = (profile as any)?.workspace_id;
   if (!workspaceId) {
     return NextResponse.json({ emails: [] });
   }
 
   // Get the most recently shared-with emails via activity log for this workspace
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: log } = await (supabase as any)
     .from("share_activity_log")
     .select("target_email")

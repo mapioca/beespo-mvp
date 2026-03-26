@@ -103,6 +103,7 @@ async function handlePost(request: NextRequest) {
       emailsToShare.push({ email: recipient.email.toLowerCase(), permission: recipient.permission });
     } else if (recipient.type === "group" && recipient.group_id) {
       // Fetch group members
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: groupMembers } = await (supabase as any)
         .from("sharing_group_members")
         .select("email")
@@ -137,11 +138,13 @@ async function handlePost(request: NextRequest) {
       .eq("email", email)
       .maybeSingle();
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const recipientUserId = (recipientProfile as any)?.id ?? null;
     const isBeespoUser = Boolean(recipientUserId);
 
     // Check for any existing share record (active OR revoked) to avoid
     // UNIQUE (meeting_id, recipient_email) constraint violations.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: existing } = await (supabase as any)
       .from("meeting_shares")
       .select("id, status, token")
@@ -156,6 +159,7 @@ async function handlePost(request: NextRequest) {
       continue;
     } else if (existing?.status === "revoked") {
       // Reactivate the revoked share rather than inserting a new one
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: updated, error: updateError } = await (supabase as any)
         .from("meeting_shares")
         .update({
@@ -177,6 +181,7 @@ async function handlePost(request: NextRequest) {
       shareRecord = updated;
     } else {
       // No existing record — insert fresh
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: inserted, error: insertError } = await (supabase as any)
         .from("meeting_shares")
         .insert({
@@ -224,6 +229,7 @@ async function handlePost(request: NextRequest) {
 
     // Log activity (non-blocking)
     try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await (supabase as any)
         .from("share_activity_log")
         .insert({
@@ -268,6 +274,7 @@ export async function GET(request: NextRequest) {
     .eq("id", user.id)
     .single();
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const workspaceId = (profile as any)?.workspace_id;
   if (!workspaceId) {
     return NextResponse.json({ error: "No workspace" }, { status: 404 });
@@ -280,10 +287,12 @@ export async function GET(request: NextRequest) {
     .eq("id", meetingId)
     .single();
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   if (!meeting || (meeting as any).workspace_id !== workspaceId) {
     return NextResponse.json({ error: "Meeting not found" }, { status: 404 });
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: shares } = await (supabase as any)
     .from("meeting_shares")
     .select("id, recipient_email, recipient_user_id, permission, status, sharing_group_id, token, created_at, updated_at")
@@ -335,16 +344,19 @@ async function handleDelete(request: NextRequest) {
   }
 
   // Verify share belongs to workspace's meeting
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: share } = await (supabase as any)
     .from("meeting_shares")
     .select("id, meeting_id, recipient_email, meetings!meeting_id (workspace_id)")
     .eq("id", shareId)
     .single();
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   if (!share || (share as any)?.meetings?.workspace_id !== p.workspace_id) {
     return NextResponse.json({ error: "Share not found" }, { status: 404 });
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { error: updateError } = await (supabase as any)
     .from("meeting_shares")
     .update({ status: "revoked", updated_at: new Date().toISOString() })
@@ -356,13 +368,16 @@ async function handleDelete(request: NextRequest) {
 
   // Log activity (non-blocking)
   try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (supabase as any)
       .from("share_activity_log")
       .insert({
         workspace_id: p.workspace_id,
         action: "revoked",
         entity_type: "meeting",
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         entity_id: (share as any).meeting_id,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         target_email: (share as any).recipient_email,
         performed_by: user.id,
         details: {},

@@ -122,6 +122,7 @@ async function handleInvitedUserOnboarding(
 
   // Link any meeting shares sent to this email before they had an account
   try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (supabase as any).rpc('link_shares_to_new_user', {
       p_user_id: user.id,
       p_user_email: user.email!,
@@ -221,6 +222,7 @@ async function handleWorkspaceCreation(
 
   // Link any meeting shares sent to this email before they had an account
   try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (supabase as any).rpc('link_shares_to_new_user', {
       p_user_id: user.id,
       p_user_email: user.email!,

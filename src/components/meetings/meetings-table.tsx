@@ -18,6 +18,7 @@ import { DataTableColumnHeader } from "@/components/ui/data-table-header"
 import { MeetingRowActions } from "./meeting-row-actions"
 import { MeetingShareBadge } from "./meeting-share-badge"
 import { ShareDialog } from "@/components/conduct/share-dialog"
+import { ZoomIcon } from "@/components/ui/zoom-icon"
 import { Database } from "@/types/database"
 
 // ── Types ───────────────────────────────────────────────────────────────────
@@ -282,6 +283,9 @@ export function MeetingsTable({
                                                 type="shared_outward"
                                                 onClick={() => setShareDialogMeeting(meeting)}
                                             />
+                                        )}
+                                        {meeting.zoom_meeting_id && (
+                                            <ZoomIcon className="h-4 w-4 shrink-0" />
                                         )}
                                     </div>
                                 </TableCell>

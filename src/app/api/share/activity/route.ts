@@ -24,6 +24,7 @@ export async function GET(request: NextRequest) {
     .eq("id", user.id)
     .single();
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const workspaceId = (profile as any)?.workspace_id;
   if (!workspaceId) {
     return NextResponse.json({ error: "No workspace" }, { status: 404 });
@@ -35,6 +36,7 @@ export async function GET(request: NextRequest) {
   const limit = Math.min(parseInt(params.get("limit") ?? "20", 10), 100);
   const offset = parseInt(params.get("offset") ?? "0", 10);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let query = (supabase as any)
     .from("share_activity_log")
     .select(`

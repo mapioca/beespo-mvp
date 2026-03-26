@@ -22,6 +22,7 @@ async function logActivity(
 ) {
   // Fire-and-forget — do not block on errors
   try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (supabase.from("share_activity_log") as any)
       .insert(entry);
   } catch {}

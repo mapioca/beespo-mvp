@@ -65,6 +65,7 @@ export default async function AgendasPage() {
   }
 
   // Fetch meetings shared WITH the current user (cross-workspace)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: inboundShareData } = await (supabase as any)
     .from("meeting_shares")
     .select(
@@ -85,6 +86,7 @@ export default async function AgendasPage() {
     .eq("status", "active")
 
   // Fetch meeting IDs that the current user has shared outward
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: outboundShareData } = await (supabase as any)
     .from("meeting_shares")
     .select("meeting_id")

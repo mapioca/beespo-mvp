@@ -80,6 +80,7 @@ export async function POST(
 
   // Fire-and-forget audit log
   try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (supabase.from("share_activity_log") as any)
       .insert({
         workspace_id: profile.workspace_id,
@@ -185,6 +186,7 @@ export async function DELETE(
 
   // Fire-and-forget audit log
   try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (supabase.from("share_activity_log") as any)
       .insert({
         workspace_id: profile.workspace_id,

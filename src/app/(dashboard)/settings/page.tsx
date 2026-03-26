@@ -75,6 +75,7 @@ export default async function SettingsPage() {
         .order("created_at", { ascending: false });
 
     // Get sharing groups with member counts
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: rawSharingGroups } = await (supabase as any)
         .from("sharing_groups")
         .select(`
@@ -85,6 +86,7 @@ export default async function SettingsPage() {
         .order("name", { ascending: true });
 
     const sharingGroups: SharingGroupWithMembers[] = (rawSharingGroups ?? []).map(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (g: any) => ({
             ...g,
             members: g.sharing_group_members ?? [],
@@ -119,6 +121,7 @@ export default async function SettingsPage() {
             }}
             isZoomConnected={isZoomConnected}
             sharingGroups={sharingGroups}
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             workspaceMembers={(members || []).map((m: any) => ({
                 email: m.email,
                 full_name: m.full_name,
