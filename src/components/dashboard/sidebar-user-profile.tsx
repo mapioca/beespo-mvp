@@ -80,9 +80,11 @@ export function SidebarUserProfile({ name, email, roleTitle, avatarUrl, isCollap
                         <CreditCard className="mr-2 h-4 w-4" />
                         <span>Billing</span>
                     </DropdownMenuItem>
-                    <DropdownMenuItem disabled className="cursor-not-allowed opacity-50">
-                        <Bell className="mr-2 h-4 w-4" />
-                        <span>Notifications</span>
+                    <DropdownMenuItem asChild>
+                        <Link href="/settings?tab=notifications" className="cursor-pointer">
+                            <Bell className="mr-2 h-4 w-4" />
+                            <span>Notifications</span>
+                        </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
                         <Link href="/changelog" className="cursor-pointer">

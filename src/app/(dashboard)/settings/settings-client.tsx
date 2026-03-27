@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
     Card,
@@ -22,9 +22,10 @@ import { TeamMembersList } from "@/components/team/team-members-list";
 import { PendingInvitations } from "@/components/team/pending-invitations";
 import { ChangePasswordForm } from "@/components/auth/change-password-form";
 import { DeleteAccountDialog } from "@/components/auth/delete-account-dialog";
-import { Building2, Users, Users2, Save, Loader2, User, AlertTriangle, Plug } from "lucide-react";
+import { Building2, Users, Users2, Save, Loader2, User, AlertTriangle, Plug, Bell } from "lucide-react";
 import { ZoomFullLogo } from "@/components/ui/zoom-icon";
 import { SharingGroupsTab } from "@/components/settings/sharing-groups-tab";
+import { NotificationPreferencesTab } from "@/components/settings/notification-preferences-tab";
 import type { SharingGroupWithMembers } from "@/types/share";
 
 interface Workspace {
@@ -105,6 +106,8 @@ export function SettingsClient({
     workspaceMembers,
 }: SettingsClientProps) {
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const defaultTab = searchParams.get("tab") || "account";
     const [workspaceName, setWorkspaceName] = useState(workspace.name);
     const [userFullName, setUserFullName] = useState(currentUserDetails.fullName);
     const [userRoleTitle, setUserRoleTitle] = useState(currentUserDetails.roleTitle);
@@ -189,7 +192,7 @@ export function SettingsClient({
                 </p>
             </div>
 
-            <Tabs defaultValue="account" className="space-y-6">
+            <Tabs defaultValue={defaultTab} className="space-y-6">
                 <TabsList>
                     <TabsTrigger value="account" className="gap-2">
                         <User className="h-4 w-4" />
@@ -206,6 +209,10 @@ export function SettingsClient({
                     <TabsTrigger value="sharing-groups" className="gap-2">
                         <Users2 className="h-4 w-4" />
                         Sharing Groups
+                    </TabsTrigger>
+                    <TabsTrigger value="notifications" className="gap-2">
+                        <Bell className="h-4 w-4" />
+                        Notifications
                     </TabsTrigger>
                     <TabsTrigger value="integrations" className="gap-2">
                         <Plug className="h-4 w-4" />
@@ -398,6 +405,10 @@ export function SettingsClient({
                         workspaceMembers={workspaceMembers}
                         canManage={isAdmin || currentUserRole === "leader"}
                     />
+                </TabsContent>
+
+                <TabsContent value="notifications" className="space-y-6">
+                    <NotificationPreferencesTab />
                 </TabsContent>
 
                 <TabsContent value="integrations" className="space-y-6">

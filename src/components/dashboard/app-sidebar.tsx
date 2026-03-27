@@ -34,6 +34,7 @@ import {
 import { SidebarUserProfile } from "@/components/dashboard/sidebar-user-profile"
 import { Button } from "@/components/ui/button"
 import { SupportModal } from "@/components/support/support-modal"
+import { NotificationBell } from "@/components/notifications/notification-bell"
 import { NavSection } from "./sidebar-types"
 import { SidebarNavSection } from "./sidebar-nav-section"
 import { SidebarFavoritesSection } from "./sidebar-favorites-section"
@@ -82,6 +83,7 @@ interface AppSidebarProps {
   workspaceName: string
   userName: string
   userEmail: string
+  userId: string
   userAvatarUrl?: string
   userRoleTitle?: string
 }
@@ -90,6 +92,7 @@ export function AppSidebar({
   workspaceName,
   userName,
   userEmail,
+  userId,
   userAvatarUrl,
   userRoleTitle,
 }: AppSidebarProps) {
@@ -196,8 +199,8 @@ export function AppSidebar({
           <SidebarFavoritesSection isCollapsed={isCollapsed} />
         </nav>
 
-        {/* Help & Support Button */}
-        <div className={cn("border-t p-2", isCollapsed && "flex justify-center")}>
+        {/* Help & Support + Notifications */}
+        <div className={cn("border-t p-2 space-y-0.5", isCollapsed && "flex flex-col items-center")}>
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
@@ -216,6 +219,7 @@ export function AppSidebar({
             </TooltipTrigger>
             <TooltipContent side="right">Help & Support</TooltipContent>
           </Tooltip>
+          <NotificationBell userId={userId} isCollapsed={isCollapsed} />
         </div>
 
         {/* User Profile */}

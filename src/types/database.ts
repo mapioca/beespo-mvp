@@ -73,6 +73,12 @@ export interface ExternalEventLink {
   created_at: string;
 }
 
+// Notification types
+export type NotificationType = 'meeting_shared' | 'meeting_starting_soon' | 'meeting_status_changed' | 'workspace_member_joined';
+
+// Notification email frequency
+export type NotificationEmailFrequency = 'immediate' | 'daily_digest' | 'weekly_digest' | 'never';
+
 // Invitation status
 export type InvitationStatus = 'pending' | 'accepted' | 'revoked' | 'expired';
 
@@ -1792,6 +1798,70 @@ export type Database = {
           sharing_group_id?: string | null;
           status?: 'active' | 'revoked';
           token?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      notifications: {
+        Row: {
+          id: string;
+          user_id: string;
+          type: string;
+          title: string;
+          body: string | null;
+          metadata: Record<string, unknown>;
+          read_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          type: string;
+          title: string;
+          body?: string | null;
+          metadata?: Record<string, unknown>;
+          read_at?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          type?: string;
+          title?: string;
+          body?: string | null;
+          metadata?: Record<string, unknown>;
+          read_at?: string | null;
+          created_at?: string;
+        };
+      };
+      notification_preferences: {
+        Row: {
+          id: string;
+          user_id: string;
+          notification_type: string;
+          in_app_enabled: boolean;
+          email_enabled: boolean;
+          email_frequency: 'immediate' | 'daily_digest' | 'weekly_digest' | 'never';
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          notification_type: string;
+          in_app_enabled?: boolean;
+          email_enabled?: boolean;
+          email_frequency?: 'immediate' | 'daily_digest' | 'weekly_digest' | 'never';
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          notification_type?: string;
+          in_app_enabled?: boolean;
+          email_enabled?: boolean;
+          email_frequency?: 'immediate' | 'daily_digest' | 'weekly_digest' | 'never';
           created_at?: string;
           updated_at?: string;
         };
