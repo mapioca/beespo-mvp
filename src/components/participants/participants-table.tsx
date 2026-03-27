@@ -47,6 +47,8 @@ import {
     type ParticipantHistoryItem,
     type SpeakingAssignment,
 } from "@/lib/actions/meeting-actions"
+import { TagChip } from "@/components/ui/tag-chip"
+import type { DirectoryTag } from "@/types/database"
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -56,6 +58,7 @@ export interface Participant {
     created_at: string
     created_by: string | null
     profiles?: { full_name: string } | null
+    tags?: DirectoryTag[]
 }
 
 interface ExpandedData {
@@ -262,17 +265,26 @@ export function ParticipantsTable({
                                             />
                                         </TableCell>
 
-                                        {/* Name */}
+                                        {/* Name + Tags */}
                                         {!hiddenColumns.has("name") && (
                                             <TableCell className="font-medium px-3">
-                                                <div className="flex items-center gap-2">
-                                                    <ChevronRight
-                                                        className={cn(
-                                                            "h-3.5 w-3.5 text-muted-foreground transition-transform shrink-0",
-                                                            isExpanded && "rotate-90"
-                                                        )}
-                                                    />
-                                                    <span>{participant.name}</span>
+                                                <div className="flex items-center gap-2 flex-wrap">
+                                                    <div className="flex items-center gap-2 shrink-0">
+                                                        <ChevronRight
+                                                            className={cn(
+                                                                "h-3.5 w-3.5 text-muted-foreground transition-transform shrink-0",
+                                                                isExpanded && "rotate-90"
+                                                            )}
+                                                        />
+                                                        <span>{participant.name}</span>
+                                                    </div>
+                                                    {participant.tags && participant.tags.length > 0 && (
+                                                        <div className="flex flex-wrap gap-1">
+                                                            {participant.tags.map((tag) => (
+                                                                <TagChip key={tag.id} tag={tag} />
+                                                            ))}
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </TableCell>
                                         )}

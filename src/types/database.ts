@@ -101,6 +101,25 @@ export type CallingHistoryAction =
   | 'task_created'
   | 'task_completed';
 
+// Directory Tags
+export interface DirectoryTag {
+  id: string;
+  workspace_id: string;
+  name: string;
+  color: string;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DirectoryTagAssignment {
+  id: string;
+  directory_id: string;
+  tag_id: string;
+  created_at: string;
+  tag?: DirectoryTag;
+}
+
 export type Database = {
   public: {
     Tables: {

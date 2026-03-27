@@ -29,6 +29,13 @@ import {
     getParticipantHistory,
     type ParticipantHistoryItem,
 } from "@/lib/actions/meeting-actions";
+import {
+    assignTagToDirectoryEntry,
+    removeTagFromDirectoryEntry,
+    createDirectoryTag,
+} from "@/lib/actions/directory-tag-actions";
+import { TagPicker } from "@/components/participants/tag-picker";
+import type { DirectoryTag } from "@/types/database";
 import type { Participant } from "./participants-table";
 
 const ITEM_TYPE_LABELS: Record<string, string> = {
@@ -45,6 +52,8 @@ interface ParticipantDrawerProps {
     onOpenChange: (open: boolean) => void;
     onDelete: (id: string) => Promise<void>;
     canManage: boolean;
+    workspaceTags: DirectoryTag[];
+    onTagCreated?: (tag: DirectoryTag) => void;
 }
 
 export function ParticipantDrawer({
@@ -53,6 +62,8 @@ export function ParticipantDrawer({
     onOpenChange,
     onDelete,
     canManage,
+    workspaceTags,
+    onTagCreated,
 }: ParticipantDrawerProps) {
     const router = useRouter();
     const [isSaving, setIsSaving] = useState(false);
@@ -64,9 +75,13 @@ export function ParticipantDrawer({
     const [historyLoading, setHistoryLoading] = useState(false);
     const [historyItems, setHistoryItems] = useState<ParticipantHistoryItem[]>([]);
 
+    // Tags state
+    const [localTags, setLocalTags] = useState<DirectoryTag[]>([]);
+
     useEffect(() => {
         if (participant) {
             setName(participant.name);
+            setLocalTags(participant.tags || []);
         }
     }, [participant]);
 
@@ -118,6 +133,41 @@ export function ParticipantDrawer({
         onOpenChange(false);
     };
 
+    const handleTagToggle = async (tag: DirectoryTag, add: boolean) => {
+        if (!participant) return;
+
+        if (add) {
+            const { error } = await assignTagToDirectoryEntry(participant.id, tag.id);
+            if (error) {
+                toast.error(error);
+            } else {
+                setLocalTags((prev) => [...prev, tag]);
+                router.refresh();
+            }
+        } else {
+            const { error } = await removeTagFromDirectoryEntry(participant.id, tag.id);
+            if (error) {
+                toast.error(error);
+            } else {
+                setLocalTags((prev) => prev.filter((t) => t.id !== tag.id));
+                router.refresh();
+            }
+        }
+    };
+
+    const handleCreateTag = async (name: string, color: string) => {
+        const { data, error } = await createDirectoryTag({ name, color });
+        if (error) {
+            toast.error(error);
+            return null;
+        }
+        if (data) {
+            onTagCreated?.(data);
+            return data;
+        }
+        return null;
+    };
+
     return (
         <>
             <Sheet open={open} onOpenChange={onOpenChange}>
@@ -162,6 +212,23 @@ export function ParticipantDrawer({
                                     onKeyDown={(e) => e.key === "Enter" && canManage && handleSave()}
                                 />
                             </div>
+                        </div>
+
+                        <Separator />
+
+                        {/* TAGS section */}
+                        <div className="px-5 py-4 space-y-3">
+                            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+                                Tags
+                            </p>
+                            <TagPicker
+                                participantId={participant?.id || ""}
+                                currentTags={localTags}
+                                workspaceTags={workspaceTags}
+                                canManage={canManage}
+                                onToggle={handleTagToggle}
+                                onCreateTag={handleCreateTag}
+                            />
                         </div>
 
                         <Separator />
