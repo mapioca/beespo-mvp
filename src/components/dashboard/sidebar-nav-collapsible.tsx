@@ -10,11 +10,6 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible"
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
-import {
   Popover,
   PopoverAnchor,
   PopoverContent,
@@ -46,12 +41,12 @@ export function SidebarNavCollapsible({
       (child.href !== "/dashboard" && pathname.startsWith(child.href))
   )
 
-  // Flyout hover state — only active when sidebar is full-width and group is collapsed
+  // Flyout hover state — active when sidebar group is collapsed OR sidebar is fully collapsed
   const [flyoutOpen, setFlyoutOpen] = useState(false)
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // Flyout only makes sense when the sidebar is expanded but the group is not
-  const flyoutEnabled = !isCollapsed && !isExpanded
+  // Flyout enabled when sidebar is icon-only (collapsed) OR sidebar is expanded but group is not open
+  const flyoutEnabled = isCollapsed || !isExpanded
 
   const openFlyout = useCallback(() => {
     if (closeTimerRef.current) {
@@ -73,13 +68,15 @@ export function SidebarNavCollapsible({
     }
   }, [isExpanded])
 
-  // Sidebar collapsed → icon-only mode with tooltip listing children
+  // Sidebar collapsed → icon-only mode with the same Popover flyout (fully clickable)
   if (isCollapsed) {
     return (
-      <Tooltip>
-        <TooltipTrigger asChild>
+      <Popover open={flyoutOpen} onOpenChange={() => {}}>
+        <PopoverAnchor asChild>
           <button
             type="button"
+            onMouseEnter={openFlyout}
+            onMouseLeave={scheduleFlyoutClose}
             className={cn(
               "flex items-center justify-center rounded-lg px-2 py-2 text-sm font-medium transition-colors w-full",
               hasActiveChild
@@ -89,18 +86,47 @@ export function SidebarNavCollapsible({
           >
             <Icon className="h-4 w-4 shrink-0" />
           </button>
-        </TooltipTrigger>
-        <TooltipContent side="right" className="font-medium">
-          <div className="space-y-1">
-            <div className="font-semibold">{item.label}</div>
-            {item.children.map((child) => (
-              <div key={child.href} className="text-muted-foreground text-xs">
-                {child.label}
-              </div>
-            ))}
+        </PopoverAnchor>
+
+        <PopoverContent
+          side="right"
+          align="start"
+          sideOffset={8}
+          className="w-44 p-1"
+          onMouseEnter={openFlyout}
+          onMouseLeave={scheduleFlyoutClose}
+          onOpenAutoFocus={(e) => e.preventDefault()}
+          onInteractOutside={(e) => e.preventDefault()}
+        >
+          <p className="px-2 py-1 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+            {item.label}
+          </p>
+          <div className="mt-0.5 space-y-0.5">
+            {item.children.map((child) => {
+              const ChildIcon = child.icon
+              const isActive =
+                pathname === child.href ||
+                (child.href !== "/dashboard" && pathname.startsWith(child.href))
+              return (
+                <Link
+                  key={child.href}
+                  href={child.href}
+                  onClick={() => setFlyoutOpen(false)}
+                  className={cn(
+                    "flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors",
+                    isActive
+                      ? "bg-stone-300 text-foreground font-medium"
+                      : "hover:bg-stone-200 hover:text-foreground"
+                  )}
+                >
+                  <ChildIcon className="h-4 w-4 shrink-0" />
+                  {child.label}
+                </Link>
+              )
+            })}
           </div>
-        </TooltipContent>
-      </Tooltip>
+        </PopoverContent>
+      </Popover>
     )
   }
 

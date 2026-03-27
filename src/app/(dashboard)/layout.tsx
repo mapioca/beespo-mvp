@@ -33,6 +33,7 @@ export default async function DashboardLayout({
         workspaceName={profile?.workspaces?.name || "Workspace"}
         userName={profile?.full_name || ""}
         userEmail={user?.email || ""}
+        userId={user.id}
         userRoleTitle={profile?.role_title || ""}
       />
 

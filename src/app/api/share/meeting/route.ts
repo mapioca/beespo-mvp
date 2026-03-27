@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { sendShareNotificationEmail } from "@/lib/email/send-share-notification-email";
+import { createNotification } from "@/lib/actions/notification-actions";
 
 const recipientSchema = z.object({
   type: z.enum(["group", "individual"]),
@@ -226,6 +227,19 @@ async function handlePost(request: NextRequest) {
     }).catch((err) => {
       console.error(`[share] Email notification failed for ${email}:`, err);
     });
+
+    // In-app notification for existing Beespo users (non-blocking)
+    if (recipientUserId) {
+      createNotification({
+        recipientUserId,
+        type: "meeting_shared",
+        title: `${sharerName} shared "${m.title}" with you`,
+        body: `From ${workspaceName} · ${permission} access`,
+        metadata: { meeting_id, shared_by: user.id, permission },
+      }).catch((err) => {
+        console.error(`[share] In-app notification failed for ${email}:`, err);
+      });
+    }
 
     // Log activity (non-blocking)
     try {
