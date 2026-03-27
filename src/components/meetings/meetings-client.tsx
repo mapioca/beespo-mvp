@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useCallback } from "react"
+import { useState, useMemo, useCallback, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -25,6 +25,9 @@ import {
 } from "./meetings-table"
 import { Breadcrumbs } from "@/components/dashboard/breadcrumbs"
 import { CalendarDays, ClipboardList } from "lucide-react"
+import { AgendaView, deleteAgendaView } from "@/lib/agenda-views"
+import { CreateViewDialog } from "./create-view-dialog"
+import { cn } from "@/lib/utils"
 
 interface MeetingsClientProps {
     meetings: Meeting[]
@@ -35,6 +38,7 @@ interface MeetingsClientProps {
     templateCounts: Record<string, number>
     sharedMeetings?: Meeting[]
     sharedOutwardIds?: string[]
+    initialViews?: AgendaView[]
 }
 
 export function MeetingsClient({
@@ -46,19 +50,24 @@ export function MeetingsClient({
     templateCounts,
     sharedMeetings = [],
     sharedOutwardIds = [],
+    initialViews = [],
 }: MeetingsClientProps) {
     const router = useRouter()
+    const [, startDeleteTransition] = useTransition()
 
-    // Category filter
+    // ── Views state ──────────────────────────────────────────────────────────
+    const [views, setViews] = useState<AgendaView[]>(initialViews)
+    const [activeViewId, setActiveViewId] = useState<string | null>(null)
+    const [deletingViewId, setDeletingViewId] = useState<string | null>(null)
+
+    // Category filter (used when no custom view is active)
     const [activeCategory, setActiveCategory] = useState<"mine" | "shared" | "all">("mine")
 
     // Search
     const [search, setSearch] = useState("")
 
     // Filters
-    const [selectedStatuses, setSelectedStatuses] = useState<MeetingStatus[]>(
-        []
-    )
+    const [selectedStatuses, setSelectedStatuses] = useState<MeetingStatus[]>([])
     const [selectedTemplates, setSelectedTemplates] = useState<string[]>([])
 
     // Sort
@@ -77,15 +86,13 @@ export function MeetingsClient({
     const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false)
     const [isBulkDeleting, setIsBulkDeleting] = useState(false)
 
-    // ── Derived data ────────────────────────────────────────────────────────
+    // ── Derived data ─────────────────────────────────────────────────────────
 
-    // Build a Set of outward-shared meeting IDs for O(1) lookup
     const sharedOutwardSet = useMemo(
         () => new Set(sharedOutwardIds),
         [sharedOutwardIds]
     )
 
-    // Annotate owned meetings with outward-share flag
     const annotatedMeetings = useMemo(
         () =>
             meetings.map((m) => ({
@@ -95,16 +102,24 @@ export function MeetingsClient({
         [meetings, sharedOutwardSet]
     )
 
+    // Resolve the active view object
+    const activeView = useMemo(
+        () => views.find((v) => v.id === activeViewId) ?? null,
+        [views, activeViewId]
+    )
+
     const filteredMeetings = useMemo(() => {
-        // Pick the base list based on the active category
+        // Determine which category to use
+        const effectiveCategory = activeView?.filters.category ?? activeCategory
+
         let result: Meeting[] =
-            activeCategory === "mine"
+            effectiveCategory === "mine"
                 ? annotatedMeetings
-                : activeCategory === "shared"
+                : effectiveCategory === "shared"
                   ? sharedMeetings
                   : [...annotatedMeetings, ...sharedMeetings]
 
-        // Search (client-side on title, workspace meeting id)
+        // Search (always applied, even in views)
         if (search) {
             const q = search.toLowerCase()
             result = result.filter(
@@ -114,29 +129,38 @@ export function MeetingsClient({
             )
         }
 
-        // Status filter
-        if (selectedStatuses.length > 0) {
+        // Status filter — use view's statuses if active, otherwise manual selection
+        const effectiveStatuses =
+            activeView?.filters.statuses && activeView.filters.statuses.length > 0
+                ? activeView.filters.statuses
+                : selectedStatuses
+
+        if (effectiveStatuses.length > 0) {
             result = result.filter((m) =>
-                selectedStatuses.includes(m.status as MeetingStatus)
+                effectiveStatuses.includes(m.status as MeetingStatus)
             )
         }
 
-        // Template filter
-        if (selectedTemplates.length > 0) {
-            const hasNoTemplate = selectedTemplates.includes("no-template")
-            const templateIds = selectedTemplates.filter(
-                (id) => id !== "no-template"
-            )
+        // Template filter — use view's templateIds if active, otherwise manual selection
+        const effectiveTemplates =
+            activeView?.filters.templateIds && activeView.filters.templateIds.length > 0
+                ? activeView.filters.templateIds
+                : selectedTemplates
+
+        if (effectiveTemplates.length > 0) {
+            const hasNoTemplate = effectiveTemplates.includes("no-template")
+            const templateIds = effectiveTemplates.filter((id) => id !== "no-template")
             result = result.filter((m) => {
                 if (hasNoTemplate && !m.template_id) return true
-                if (
-                    templateIds.length > 0 &&
-                    m.template_id &&
-                    templateIds.includes(m.template_id)
-                )
+                if (templateIds.length > 0 && m.template_id && templateIds.includes(m.template_id))
                     return true
                 return false
             })
+        }
+
+        // Zoom filter (view only)
+        if (activeView?.filters.hasZoom) {
+            result = result.filter((m) => !!m.zoom_meeting_id)
         }
 
         // Sort
@@ -164,17 +188,23 @@ export function MeetingsClient({
         }
 
         return result
-    }, [activeCategory, annotatedMeetings, sharedMeetings, search, selectedStatuses, selectedTemplates, sortConfig])
+    }, [
+        activeView,
+        activeCategory,
+        annotatedMeetings,
+        sharedMeetings,
+        search,
+        selectedStatuses,
+        selectedTemplates,
+        sortConfig,
+    ])
 
-    // ── Handlers ────────────────────────────────────────────────────────────
+    // ── Handlers ─────────────────────────────────────────────────────────────
 
     const handleSort = useCallback(
         (key: string, direction: "asc" | "desc") => {
             setSortConfig((current) => {
-                if (
-                    current?.key === key &&
-                    current.direction === direction
-                )
+                if (current?.key === key && current.direction === direction)
                     return null
                 return { key, direction }
             })
@@ -228,13 +258,11 @@ export function MeetingsClient({
         const supabase = createClient()
         const ids = Array.from(selectedRows)
 
-        // Delete agenda items first (foreign key constraint)
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         await (supabase.from("agenda_items") as any)
             .delete()
             .in("meeting_id", ids)
 
-        // Then delete the meetings
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { error } = await (supabase.from("meetings") as any)
             .delete()
@@ -253,13 +281,41 @@ export function MeetingsClient({
         setShowBulkDeleteDialog(false)
     }
 
-    // ── Active filter chips ─────────────────────────────────────────────────
+    function handleViewCreated(view: AgendaView) {
+        setViews((prev) => [...prev, view])
+        setActiveViewId(view.id)
+    }
 
+    function handleDeleteView(viewId: string) {
+        setDeletingViewId(viewId)
+    }
+
+    async function confirmDeleteView() {
+        if (!deletingViewId) return
+        const id = deletingViewId
+        setDeletingViewId(null)
+
+        startDeleteTransition(async () => {
+            const result = await deleteAgendaView(id)
+            if (result.error) {
+                toast.error(result.error)
+                return
+            }
+            setViews((prev) => prev.filter((v) => v.id !== id))
+            if (activeViewId === id) setActiveViewId(null)
+            toast.success("View deleted")
+        })
+    }
+
+    // ── Active filter chips ───────────────────────────────────────────────────
+
+    // In view mode, manual filter chips are not relevant (view owns the filters)
     const hasActiveFilters =
-        search.length > 0 ||
-        selectedStatuses.length > 0 ||
-        selectedTemplates.length > 0 ||
-        hiddenColumns.size > 0
+        !activeView &&
+        (search.length > 0 ||
+            selectedStatuses.length > 0 ||
+            selectedTemplates.length > 0 ||
+            hiddenColumns.size > 0)
 
     function formatStatusLabel(s: string) {
         return s.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())
@@ -270,7 +326,7 @@ export function MeetingsClient({
         return templates.find((t) => t.id === id)?.name || id
     }
 
-    // ── Render ──────────────────────────────────────────────────────────────
+    // ── Render ────────────────────────────────────────────────────────────────
 
     return (
         <div className="flex flex-col h-full bg-muted/30">
@@ -286,10 +342,12 @@ export function MeetingsClient({
             <div className="flex justify-between items-center px-6 py-5 shrink-0">
                 <div>
                     <h1 className="text-2xl font-semibold tracking-tight">
-                        Agendas
+                        {activeView ? activeView.name : "Agendas"}
                     </h1>
                     <p className="text-sm text-muted-foreground mt-1">
-                        Manage your meeting agendas
+                        {activeView
+                            ? "Custom view · click a tab below to switch"
+                            : "Manage your meeting agendas"}
                     </p>
                 </div>
                 {isLeader && (
@@ -302,8 +360,9 @@ export function MeetingsClient({
                 )}
             </div>
 
-            {/* Category filter */}
-            <div className="flex items-center gap-1.5 px-6 pb-4 shrink-0">
+            {/* Category + view tabs */}
+            <div className="flex items-center gap-1.5 px-6 pb-4 shrink-0 flex-wrap">
+                {/* Built-in tabs */}
                 {(
                     [
                         { value: "mine", label: "My Meetings" },
@@ -313,9 +372,12 @@ export function MeetingsClient({
                 ).map(({ value, label }) => (
                     <button
                         key={value}
-                        onClick={() => setActiveCategory(value)}
+                        onClick={() => {
+                            setActiveViewId(null)
+                            setActiveCategory(value)
+                        }}
                         className={
-                            activeCategory === value
+                            activeViewId === null && activeCategory === value
                                 ? "rounded-full border px-3.5 py-1 text-xs font-medium bg-foreground text-background border-foreground transition-colors"
                                 : "rounded-full border px-3.5 py-1 text-xs font-medium text-muted-foreground border-border hover:text-foreground hover:border-foreground/40 transition-colors"
                         }
@@ -323,7 +385,87 @@ export function MeetingsClient({
                         {label}
                     </button>
                 ))}
+
+                {/* Divider before custom views */}
+                {views.length > 0 && (
+                    <span className="h-4 w-px bg-border mx-1 shrink-0" aria-hidden />
+                )}
+
+                {/* Custom view tabs */}
+                {views.map((view) => (
+                    <span key={view.id} className="relative group/view inline-flex items-center">
+                        <button
+                            onClick={() => setActiveViewId(view.id)}
+                            className={cn(
+                                "rounded-full border pl-3.5 pr-7 py-1 text-xs font-medium transition-colors",
+                                activeViewId === view.id
+                                    ? "bg-foreground text-background border-foreground"
+                                    : "text-muted-foreground border-border hover:text-foreground hover:border-foreground/40"
+                            )}
+                        >
+                            {view.name}
+                        </button>
+                        {/* Delete (×) button — appears on hover */}
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation()
+                                handleDeleteView(view.id)
+                            }}
+                            title="Delete view"
+                            className={cn(
+                                "absolute right-2 top-1/2 -translate-y-1/2",
+                                "flex items-center justify-center h-3.5 w-3.5 rounded-full",
+                                "opacity-0 group-hover/view:opacity-100 transition-opacity",
+                                activeViewId === view.id
+                                    ? "text-background/70 hover:text-background"
+                                    : "text-muted-foreground hover:text-foreground"
+                            )}
+                        >
+                            <X className="h-2.5 w-2.5" />
+                        </button>
+                    </span>
+                ))}
+
+                {/* Add view button */}
+                <CreateViewDialog
+                    templates={templates}
+                    onCreated={handleViewCreated}
+                />
             </div>
+
+            {/* View filter summary bar (shown when a custom view is active) */}
+            {activeView && (
+                <div className="flex items-center gap-2 px-6 pb-3 flex-wrap text-xs text-muted-foreground">
+                    <span className="font-medium text-foreground">Filters:</span>
+                    <span className="rounded-md bg-muted px-2 py-0.5 capitalize">
+                        {activeView.filters.category ?? "all"} meetings
+                    </span>
+                    {activeView.filters.statuses?.map((s) => (
+                        <span key={s} className="rounded-md bg-muted px-2 py-0.5">
+                            {formatStatusLabel(s)}
+                        </span>
+                    ))}
+                    {activeView.filters.templateIds?.map((id) => (
+                        <span key={id} className="rounded-md bg-muted px-2 py-0.5">
+                            {getTemplateName(id)}
+                        </span>
+                    ))}
+                    {activeView.filters.hasZoom && (
+                        <span className="rounded-md bg-muted px-2 py-0.5">🎥 Has Zoom</span>
+                    )}
+                    {search && (
+                        <span className="rounded-md bg-muted px-2 py-0.5">
+                            Search: &quot;{search}&quot;
+                            <button
+                                onClick={() => setSearch("")}
+                                className="ml-1 text-muted-foreground hover:text-foreground"
+                            >
+                                <X className="h-3 w-3 inline" />
+                            </button>
+                        </span>
+                    )}
+                </div>
+            )}
 
             {/* Selection action bar */}
             {selectedRows.size > 0 && (
@@ -349,7 +491,7 @@ export function MeetingsClient({
                 </div>
             )}
 
-            {/* Active filter chips (hidden when selection bar is showing) */}
+            {/* Active filter chips — only in non-view mode */}
             {hasActiveFilters && selectedRows.size === 0 && (
                 <div className="flex items-center gap-2 px-6 pb-3 flex-wrap">
                     {search && (
@@ -415,7 +557,7 @@ export function MeetingsClient({
 
             {/* Table */}
             <div className="flex-1 overflow-auto px-6">
-                {activeCategory === "shared" && sharedMeetings.length === 0 && !search ? (
+                {activeCategory === "shared" && !activeView && sharedMeetings.length === 0 && !search ? (
                     <div className="flex flex-col items-center justify-center h-48 text-center">
                         <p className="text-muted-foreground text-sm">
                             No meetings shared with you yet.
@@ -431,12 +573,12 @@ export function MeetingsClient({
                         onSort={handleSort}
                         searchValue={search}
                         onSearchChange={setSearch}
-                        selectedStatuses={selectedStatuses}
+                        selectedStatuses={activeView?.filters.statuses as MeetingStatus[] ?? selectedStatuses}
                         statusCounts={statusCounts}
-                        onStatusToggle={handleStatusToggle}
-                        selectedTemplates={selectedTemplates}
+                        onStatusToggle={activeView ? undefined : handleStatusToggle}
+                        selectedTemplates={activeView?.filters.templateIds ?? selectedTemplates}
                         templateCounts={templateCounts}
-                        onTemplateToggle={handleTemplateToggle}
+                        onTemplateToggle={activeView ? undefined : handleTemplateToggle}
                         hiddenColumns={hiddenColumns}
                         onHideColumn={handleHideColumn}
                         selectedRows={selectedRows}
@@ -473,6 +615,33 @@ export function MeetingsClient({
                             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                         >
                             {isBulkDeleting ? "Deleting..." : "Delete"}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            {/* Delete view confirmation */}
+            <AlertDialog
+                open={!!deletingViewId}
+                onOpenChange={(o) => { if (!o) setDeletingViewId(null) }}
+            >
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Delete this view?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This view will be removed for everyone in your workspace.
+                            This action cannot be undone.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel onClick={() => setDeletingViewId(null)}>
+                            Cancel
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={confirmDeleteView}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                            Delete view
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

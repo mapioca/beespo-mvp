@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import { MeetingsClient } from "@/components/meetings/meetings-client"
 import { Metadata } from "next"
+import { AgendaView } from "@/lib/agenda-views"
 
 export const metadata: Metadata = {
   title: "Agendas | Beespo",
@@ -145,6 +146,15 @@ export default async function AgendasPage() {
     }
   })
 
+  // Fetch workspace-scoped custom agenda views (RLS enforces workspace isolation)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: agendaViewsData } = await (supabase.from("agenda_views") as any)
+    .select("*")
+    .eq("workspace_id", profile.workspace_id)
+    .order("created_at", { ascending: true })
+
+  const initialViews: AgendaView[] = agendaViewsData ?? []
+
   return (
     <MeetingsClient
       meetings={meetings || []}
@@ -155,6 +165,7 @@ export default async function AgendasPage() {
       templateCounts={templateCounts}
       sharedMeetings={sharedMeetings}
       sharedOutwardIds={sharedOutwardIds}
+      initialViews={initialViews}
     />
   )
 }
