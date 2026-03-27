@@ -1,10 +1,10 @@
 'use client'
 
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Tags } from 'lucide-react'
 import type { DirectoryTag } from '@/types/database'
+import { cn } from '@/lib/utils'
 import {
   Command,
   CommandEmpty,
@@ -48,14 +48,24 @@ export function TagFilterDropdown({
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button variant="outline" size="icon" className="h-9 w-9 relative">
-          <Tags className="h-4 w-4" />
+        <button
+          type="button"
+          title="Filter by tags"
+          className={cn(
+            "flex items-center justify-center rounded-full h-[30px] w-[30px] border transition-colors relative",
+            isActive
+              ? "border-foreground text-foreground"
+              : "border-border text-muted-foreground hover:text-foreground hover:border-foreground/40"
+          )}
+        >
+          <Tags className="h-3.5 w-3.5" />
           {isActive && (
-            <span className="absolute -top-1.5 -right-1.5 bg-primary text-primary-foreground rounded-full h-5 w-5 text-[10px] font-semibold flex items-center justify-center">
+            <span className="absolute -top-1.5 -right-1.5 bg-primary text-primary-foreground rounded-full h-4 w-4 text-[9px] font-semibold flex items-center justify-center">
               {selectedTagIds.length}
             </span>
           )}
-        </Button>
+          <span className="sr-only">Filter by tags</span>
+        </button>
       </PopoverTrigger>
       <PopoverContent className="w-[220px] p-0" align="start">
         <Command>

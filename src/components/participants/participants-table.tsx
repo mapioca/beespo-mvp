@@ -52,6 +52,15 @@ import type { DirectoryTag } from "@/types/database"
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
+export interface MeetingAssignmentSummary {
+    id: string
+    assignment_type: string
+    is_confirmed: boolean
+    created_at: string
+    /** The scheduled_date of the meeting this assignment is linked to (null if standalone) */
+    meeting_scheduled_date?: string | null
+}
+
 export interface Participant {
     id: string
     name: string
@@ -59,6 +68,8 @@ export interface Participant {
     created_by: string | null
     profiles?: { full_name: string } | null
     tags?: DirectoryTag[]
+    /** Enriched by the directory page for view-based filtering */
+    meeting_assignments?: MeetingAssignmentSummary[]
 }
 
 interface ExpandedData {

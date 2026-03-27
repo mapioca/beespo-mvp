@@ -151,6 +151,7 @@ export default async function AgendasPage() {
   const { data: agendaViewsData } = await (supabase.from("agenda_views") as any)
     .select("*")
     .eq("workspace_id", profile.workspace_id)
+    .eq("view_type", "agendas")
     .order("created_at", { ascending: true })
 
   const initialViews: AgendaView[] = agendaViewsData ?? []

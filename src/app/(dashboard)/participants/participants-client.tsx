@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useCallback, useEffect } from "react"
+import { useState, useMemo, useCallback, useEffect, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -44,12 +44,101 @@ import {
     deleteDirectoryTag,
 } from "@/lib/actions/directory-tag-actions"
 import type { DirectoryTag } from "@/types/database"
+import { DirectoryView, DirectoryViewFilters, deleteDirectoryView } from "@/lib/directory-views"
+import { CreateDirectoryViewDialog } from "@/components/participants/create-directory-view-dialog"
+import { cn } from "@/lib/utils"
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+/**
+ * Returns true if the participant matches the given directory view filters.
+ * All criteria are AND-ed together.
+ */
+function matchesViewFilters(
+    participant: Participant,
+    filters: DirectoryViewFilters
+): boolean {
+    const assignments = participant.meeting_assignments ?? []
+
+    // ── Tag filter ────────────────────────────────────────────────────────────
+    if (filters.tagIds && filters.tagIds.length > 0) {
+        const pTagIds = (participant.tags ?? []).map((t) => t.id)
+        const wantsUntagged = filters.tagIds.includes("untagged")
+        const specificTags = filters.tagIds.filter((id) => id !== "untagged")
+
+        if (wantsUntagged && pTagIds.length > 0) return false
+        if (!wantsUntagged && specificTags.length > 0) {
+            // All requested tags must be present
+            if (!specificTags.every((id) => pTagIds.includes(id))) return false
+        }
+    }
+
+    // ── Speaker assignment filter ─────────────────────────────────────────────
+    const speakerAssignments = assignments.filter(
+        (a) => a.assignment_type === "speaker"
+    )
+
+    if (filters.speakerDateOperator === "none") {
+        if (speakerAssignments.length > 0) return false
+    } else if (filters.speakerDateOperator === "any") {
+        if (speakerAssignments.length === 0) return false
+        if (filters.speakerConfirmed && filters.speakerConfirmed !== "any") {
+            const wantConfirmed = filters.speakerConfirmed === "confirmed"
+            if (!speakerAssignments.some((a) => a.is_confirmed === wantConfirmed))
+                return false
+        }
+    } else if (
+        filters.speakerDateOperator &&
+        ["after", "before", "not_before", "not_after"].includes(filters.speakerDateOperator)
+    ) {
+        if (speakerAssignments.length === 0) return false
+
+        if (filters.speakerDateValue) {
+            // Compare against the actual meeting's scheduled_date
+            // (only assignments linked to a meeting have this; standalone ones are skipped)
+            const targetDate = new Date(filters.speakerDateValue)
+            const matchingAssignments = speakerAssignments.filter((a) => {
+                if (!a.meeting_scheduled_date) return false
+                const d = new Date(a.meeting_scheduled_date)
+                
+                if (filters.speakerDateOperator === "after") return d > targetDate
+                if (filters.speakerDateOperator === "not_before") return d >= targetDate
+                if (filters.speakerDateOperator === "before") return d < targetDate
+                if (filters.speakerDateOperator === "not_after") return d <= targetDate
+                return false
+            })
+            if (matchingAssignments.length === 0) return false
+
+            if (filters.speakerConfirmed && filters.speakerConfirmed !== "any") {
+                const wantConfirmed = filters.speakerConfirmed === "confirmed"
+                if (!matchingAssignments.some((a) => a.is_confirmed === wantConfirmed))
+                    return false
+            }
+        } else if (filters.speakerConfirmed && filters.speakerConfirmed !== "any") {
+            const wantConfirmed = filters.speakerConfirmed === "confirmed"
+            if (!speakerAssignments.some((a) => a.is_confirmed === wantConfirmed))
+                return false
+        }
+    }
+
+    // ── Meeting history filter ────────────────────────────────────────────────
+    if (filters.historyFilter === "has_history") {
+        if (assignments.length === 0) return false
+    } else if (filters.historyFilter === "no_history") {
+        if (assignments.length > 0) return false
+    }
+
+    return true
+}
+
+// ── Props ─────────────────────────────────────────────────────────────────────
 
 interface ParticipantsClientProps {
     participants: Participant[]
     userRole: string
     totalCount: number
     currentSearch: string
+    initialViews?: DirectoryView[]
 }
 
 // Export as both names for backward compat and new directory route
@@ -60,9 +149,16 @@ export function DirectoryClient(props: ParticipantsClientProps) {
 export function ParticipantsClient({
     participants,
     userRole,
+    initialViews = [],
 }: ParticipantsClientProps) {
     const router = useRouter()
+    const [, startDeleteTransition] = useTransition()
     const canManage = userRole === "leader" || userRole === "admin"
+
+    // ── Views state ──────────────────────────────────────────────────────────
+    const [views, setViews] = useState<DirectoryView[]>(initialViews)
+    const [activeViewId, setActiveViewId] = useState<string | null>(null)
+    const [deletingViewId, setDeletingViewId] = useState<string | null>(null)
 
     // Drawer
     const [selectedParticipant, setSelectedParticipant] =
@@ -156,11 +252,33 @@ export function ParticipantsClient({
         }
     }
 
-    // ── Derived data ────────────────────────────────────────────────────────
+    // ── Derived data ─────────────────────────────────────────────────────────
+
+    const activeView = useMemo(
+        () => views.find((v) => v.id === activeViewId) ?? null,
+        [views, activeViewId]
+    )
 
     const filteredParticipants = useMemo(() => {
         let result = participants
 
+        // Apply view filters first
+        if (activeView) {
+            result = result.filter((p) =>
+                matchesViewFilters(p, activeView.filters)
+            )
+        } else {
+            // Manual tag filter (only in non-view mode)
+            if (tagFilter.length > 0) {
+                result = result.filter((p) =>
+                    tagFilter.every((tagId) =>
+                        p.tags?.some((t) => t.id === tagId)
+                    )
+                )
+            }
+        }
+
+        // Search always applies
         if (search) {
             const q = search.toLowerCase()
             result = result.filter((p) =>
@@ -168,19 +286,10 @@ export function ParticipantsClient({
             )
         }
 
-        if (tagFilter.length > 0) {
-            result = result.filter((p) =>
-                tagFilter.every((tagId) =>
-                    p.tags?.some((t) => t.id === tagId)
-                )
-            )
-        }
-
         if (sortConfig) {
             result = [...result].sort((a, b) => {
                 const { key, direction } = sortConfig
 
-                // Special handling for tags column
                 if (key === "tags") {
                     const aValue = (a.tags?.length ?? 0)
                     const bValue = (b.tags?.length ?? 0)
@@ -202,9 +311,9 @@ export function ParticipantsClient({
         }
 
         return result
-    }, [participants, search, sortConfig, tagFilter])
+    }, [participants, search, sortConfig, tagFilter, activeView])
 
-    // ── Handlers ────────────────────────────────────────────────────────────
+    // ── Handlers ─────────────────────────────────────────────────────────────
 
     const handleSort = useCallback(
         (key: string, direction: "asc" | "desc") => {
@@ -355,7 +464,6 @@ export function ParticipantsClient({
             return
         }
 
-        // Create meeting_assignment with type 'speaker' using the directory entry
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { error } = await (supabase.from("meeting_assignments") as any).insert({
             directory_id: speakerTarget.id,
@@ -381,11 +489,93 @@ export function ParticipantsClient({
         setDrawerOpen(true)
     }
 
-    // ── Active filter chips ─────────────────────────────────────────────────
+    // ── View handlers ─────────────────────────────────────────────────────────
 
-    const hasActiveFilters = search.length > 0 || hiddenColumns.size > 0 || tagFilter.length > 0
+    function handleViewCreated(view: DirectoryView) {
+        setViews((prev) => [...prev, view])
+        setActiveViewId(view.id)
+    }
 
-    // ── Render ──────────────────────────────────────────────────────────────
+    function handleDeleteView(viewId: string) {
+        setDeletingViewId(viewId)
+    }
+
+    async function confirmDeleteView() {
+        if (!deletingViewId) return
+        const id = deletingViewId
+        setDeletingViewId(null)
+
+        startDeleteTransition(async () => {
+            const result = await deleteDirectoryView(id)
+            if (result.error) {
+                toast.error(result.error)
+                return
+            }
+            setViews((prev) => prev.filter((v) => v.id !== id))
+            if (activeViewId === id) setActiveViewId(null)
+            toast.success("View deleted")
+        })
+    }
+
+    // ── Filter summary helpers ────────────────────────────────────────────────
+
+    function describeViewFilters(filters: DirectoryViewFilters): string[] {
+        const parts: string[] = []
+
+        if (filters.tagIds && filters.tagIds.length > 0) {
+            const names = filters.tagIds.map((id) => {
+                if (id === "untagged") return "Untagged"
+                return workspaceTags.find((t) => t.id === id)?.name ?? id
+            })
+            parts.push(`Tags: ${names.join(", ")}`)
+        }
+
+        if (filters.speakerDateOperator === "none") {
+            parts.push("No speaker assignments")
+        } else if (filters.speakerDateOperator === "any") {
+            const conf =
+                filters.speakerConfirmed === "confirmed"
+                    ? " (confirmed)"
+                    : filters.speakerConfirmed === "pending"
+                      ? " (pending)"
+                      : ""
+            parts.push(`Has speaker assignment${conf}`)
+        } else if (
+            filters.speakerDateOperator &&
+            ["after", "before", "not_before", "not_after"].includes(filters.speakerDateOperator)
+        ) {
+            const opMap: Record<string, string> = {
+                after: "is after",
+                before: "is before",
+                not_before: "is not before",
+                not_after: "is not after",
+            }
+            const op = opMap[filters.speakerDateOperator as string] || filters.speakerDateOperator
+            const date = filters.speakerDateValue
+                ? new Date(filters.speakerDateValue).toLocaleDateString()
+                : "—"
+            const conf =
+                filters.speakerConfirmed === "confirmed"
+                    ? " · confirmed"
+                    : filters.speakerConfirmed === "pending"
+                      ? " · pending"
+                      : ""
+            parts.push(`Speaker assignment ${op} ${date}${conf}`)
+        }
+
+        if (filters.historyFilter === "has_history") parts.push("Has meeting history")
+        if (filters.historyFilter === "no_history") parts.push("No meeting history")
+
+        return parts
+    }
+
+    // ── Active filter chips ───────────────────────────────────────────────────
+
+    const hasActiveFilters =
+        !activeView &&
+        (search.length > 0 || hiddenColumns.size > 0 || tagFilter.length > 0)
+
+    // ── Render ────────────────────────────────────────────────────────────────
 
     return (
         <div className="flex flex-col h-full bg-muted/30">
@@ -401,10 +591,12 @@ export function ParticipantsClient({
             <div className="flex justify-between items-center px-6 py-5 shrink-0">
                 <div>
                     <h1 className="text-2xl font-semibold tracking-tight">
-                        Directory
+                        {activeView ? activeView.name : "Directory"}
                     </h1>
                     <p className="text-sm text-muted-foreground mt-1">
-                        Manage people and assignments
+                        {activeView
+                            ? "Custom view · click a tab below to switch"
+                            : "Manage people and assignments"}
                     </p>
                 </div>
                 {canManage && (
@@ -417,6 +609,105 @@ export function ParticipantsClient({
                     </Button>
                 )}
             </div>
+
+            {/* View tabs */}
+            <div className="flex items-center gap-1.5 px-6 pb-3 shrink-0 flex-wrap">
+                {/* All tab */}
+                <button
+                    onClick={() => setActiveViewId(null)}
+                    className={
+                        activeViewId === null
+                            ? "rounded-full border px-3.5 py-1 text-xs font-medium bg-foreground text-background border-foreground transition-colors"
+                            : "rounded-full border px-3.5 py-1 text-xs font-medium text-muted-foreground border-border hover:text-foreground hover:border-foreground/40 transition-colors"
+                    }
+                >
+                    All Members
+                </button>
+
+                {/* Divider */}
+                {views.length > 0 && (
+                    <span className="h-4 w-px bg-border mx-1 shrink-0" aria-hidden />
+                )}
+
+                {/* Custom view tabs */}
+                {views.map((view) => (
+                    <span key={view.id} className="relative group/view inline-flex items-center">
+                        <button
+                            onClick={() => setActiveViewId(view.id)}
+                            className={cn(
+                                "rounded-full border pl-3.5 pr-7 py-1 text-xs font-medium transition-colors",
+                                activeViewId === view.id
+                                    ? "bg-foreground text-background border-foreground"
+                                    : "text-muted-foreground border-border hover:text-foreground hover:border-foreground/40"
+                            )}
+                        >
+                            {view.name}
+                        </button>
+                        {/* Delete × on hover */}
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation()
+                                handleDeleteView(view.id)
+                            }}
+                            title="Delete view"
+                            className={cn(
+                                "absolute right-2 top-1/2 -translate-y-1/2",
+                                "flex items-center justify-center h-3.5 w-3.5 rounded-full",
+                                "opacity-0 group-hover/view:opacity-100 transition-opacity",
+                                activeViewId === view.id
+                                    ? "text-background/70 hover:text-background"
+                                    : "text-muted-foreground hover:text-foreground"
+                            )}
+                        >
+                            <X className="h-2.5 w-2.5" />
+                        </button>
+                    </span>
+                ))}
+
+                {/* Divider before action buttons */}
+                <span className="h-4 w-px bg-border mx-1 shrink-0" aria-hidden />
+
+                {/* Tags filter — hidden when a view is active */}
+                {!activeView && (
+                    <TagFilterDropdown
+                        workspaceTags={workspaceTags}
+                        selectedTagIds={tagFilter}
+                        onSelectionChange={setTagFilter}
+                        canManage={canManage}
+                        onCreateTag={() => setCreateTagDialogOpen(true)}
+                        onManageTags={() => setManageTagsDialogOpen(true)}
+                    />
+                )}
+
+                {/* Add view button */}
+                <CreateDirectoryViewDialog
+                    workspaceTags={workspaceTags}
+                    onCreated={handleViewCreated}
+                />
+            </div>
+
+            {/* View filter summary */}
+            {activeView && (
+                <div className="flex items-center gap-2 px-6 pb-3 flex-wrap text-xs text-muted-foreground">
+                    <span className="font-medium text-foreground">Filters:</span>
+                    {describeViewFilters(activeView.filters).map((desc, i) => (
+                        <span key={i} className="rounded-md bg-muted px-2 py-0.5">
+                            {desc}
+                        </span>
+                    ))}
+                    {search && (
+                        <span className="rounded-md bg-muted px-2 py-0.5">
+                            Search: &quot;{search}&quot;
+                            <button
+                                onClick={() => setSearch("")}
+                                className="ml-1 text-muted-foreground hover:text-foreground"
+                            >
+                                <X className="h-3 w-3 inline" />
+                            </button>
+                        </span>
+                    )}
+                </div>
+            )}
 
             {/* Selection action bar */}
             {selectedRows.size > 0 && (
@@ -442,7 +733,7 @@ export function ParticipantsClient({
                 </div>
             )}
 
-            {/* Active filter chips */}
+            {/* Active filter chips — non-view mode only */}
             {hasActiveFilters && selectedRows.size === 0 && (
                 <div className="flex items-center gap-2 px-6 pb-3 flex-wrap">
                     {search && (
@@ -498,18 +789,6 @@ export function ParticipantsClient({
                 </div>
             )}
 
-            {/* Filter bar */}
-            <div className="flex items-center gap-2 px-6 pb-3 shrink-0">
-                <TagFilterDropdown
-                    workspaceTags={workspaceTags}
-                    selectedTagIds={tagFilter}
-                    onSelectionChange={setTagFilter}
-                    canManage={canManage}
-                    onCreateTag={() => setCreateTagDialogOpen(true)}
-                    onManageTags={() => setManageTagsDialogOpen(true)}
-                />
-            </div>
-
             {/* Table */}
             <div className="flex-1 overflow-auto px-6">
                 <ParticipantsTable
@@ -546,7 +825,7 @@ export function ParticipantsClient({
                 }}
             />
 
-            {/* Create dialog */}
+            {/* Create person dialog */}
             <Dialog
                 open={createDialogOpen}
                 onOpenChange={setCreateDialogOpen}
@@ -702,6 +981,33 @@ export function ParticipantsClient({
                             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                         >
                             {isBulkDeleting ? "Deleting..." : "Delete"}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            {/* Delete view confirmation */}
+            <AlertDialog
+                open={!!deletingViewId}
+                onOpenChange={(o) => { if (!o) setDeletingViewId(null) }}
+            >
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Delete this view?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This view will be removed for everyone in your workspace.
+                            This action cannot be undone.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel onClick={() => setDeletingViewId(null)}>
+                            Cancel
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={confirmDeleteView}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                            Delete view
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
