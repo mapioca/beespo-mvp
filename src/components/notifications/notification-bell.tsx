@@ -28,6 +28,8 @@ import Link from "next/link"
 interface NotificationBellProps {
     userId: string
     isCollapsed?: boolean
+    /** Render as a compact icon button (no label text) */
+    iconOnly?: boolean
 }
 
 const NOTIFICATION_ICONS: Record<string, typeof Bell> = {
@@ -37,7 +39,7 @@ const NOTIFICATION_ICONS: Record<string, typeof Bell> = {
     workspace_member_joined: Users,
 }
 
-export function NotificationBell({ userId, isCollapsed = false }: NotificationBellProps) {
+export function NotificationBell({ userId, isCollapsed = false, iconOnly = false }: NotificationBellProps) {
     const [open, setOpen] = useState(false)
     const [notifications, setNotifications] = useState<Notification[]>([])
     const [unreadCount, setUnreadCount] = useState(0)
@@ -117,23 +119,25 @@ export function NotificationBell({ userId, isCollapsed = false }: NotificationBe
         return null
     }
 
+    const useIconMode = iconOnly || isCollapsed
+
     const bellButton = (
         <PopoverTrigger asChild>
             <Button
                 variant="ghost"
-                size={isCollapsed ? "icon" : "default"}
+                size={useIconMode ? "icon" : "default"}
                 className={cn(
                     "relative text-muted-foreground hover:text-foreground hover:bg-accent",
-                    isCollapsed ? "h-8 w-8" : "w-full justify-start gap-3"
+                    useIconMode ? "h-8 w-8 shrink-0" : "w-full justify-start gap-3"
                 )}
             >
                 <Bell className="h-4 w-4" />
-                {!isCollapsed && <span>Notifications</span>}
+                {!useIconMode && <span>Notifications</span>}
                 {unreadCount > 0 && (
                     <span
                         className={cn(
                             "flex items-center justify-center rounded-full bg-primary text-primary-foreground text-[10px] font-bold",
-                            isCollapsed
+                            useIconMode
                                 ? "absolute -top-0.5 -right-0.5 h-4 min-w-4 px-0.5"
                                 : "ml-auto h-5 min-w-5 px-1"
                         )}
@@ -152,17 +156,13 @@ export function NotificationBell({ userId, isCollapsed = false }: NotificationBe
 
     return (
         <Popover open={open} onOpenChange={setOpen}>
-            {isCollapsed ? (
-                <Tooltip>
-                    <TooltipTrigger asChild>{bellButton}</TooltipTrigger>
-                    <TooltipContent side="right">
-                        Notifications
-                        {unreadCount > 0 && ` (${unreadCount})`}
-                    </TooltipContent>
-                </Tooltip>
-            ) : (
-                bellButton
-            )}
+            <Tooltip>
+                <TooltipTrigger asChild>{bellButton}</TooltipTrigger>
+                <TooltipContent side="right">
+                    Notifications
+                    {unreadCount > 0 && ` (${unreadCount})`}
+                </TooltipContent>
+            </Tooltip>
 
             <PopoverContent
                 side="right"

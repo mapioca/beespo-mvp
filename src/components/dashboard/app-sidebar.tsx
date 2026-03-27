@@ -1,9 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import Image from "next/image"
 import { usePathname } from "next/navigation"
-import { useState } from "react"
 import {
   Home,
   Calendar,
@@ -12,7 +10,6 @@ import {
   BookOpen,
   PanelLeftClose,
   PanelLeft,
-  LifeBuoy,
   HandHeart,
   ClipboardList,
   Table2,
@@ -33,8 +30,6 @@ import {
 } from "@/components/ui/tooltip"
 import { SidebarUserProfile } from "@/components/dashboard/sidebar-user-profile"
 import { Button } from "@/components/ui/button"
-import { SupportModal } from "@/components/support/support-modal"
-import { NotificationBell } from "@/components/notifications/notification-bell"
 import { NavSection } from "./sidebar-types"
 import { SidebarNavSection } from "./sidebar-nav-section"
 import { SidebarFavoritesSection } from "./sidebar-favorites-section"
@@ -96,7 +91,6 @@ export function AppSidebar({
   userAvatarUrl,
   userRoleTitle,
 }: AppSidebarProps) {
-  const [supportModalOpen, setSupportModalOpen] = useState(false)
   const pathname = usePathname()
 
   const {
@@ -121,30 +115,23 @@ export function AppSidebar({
               "flex transition-all duration-300 ease-in-out",
               isCollapsed
                 ? "flex-col items-center justify-center gap-4 py-4"
-                : "flex-row items-center justify-between px-4 py-1.5"
+                : "flex-row items-center justify-between px-4 pt-1.5 pb-0"
             )}
           >
-            <Link href="/dashboard" className="block">
-              <div
-                className={cn(
-                  "relative transition-all duration-300 ease-in-out overflow-hidden",
-                  isCollapsed ? "h-8 w-8" : "h-9 w-40"
-                )}
-              >
-                <Image
-                  src={
-                    isCollapsed
-                      ? "/images/beespo-logo-icon.svg"
-                      : "/images/beespo-logo-full.svg"
-                  }
-                  alt="Beespo"
-                  fill
-                  className={cn(
-                    "object-contain",
-                    isCollapsed ? "object-center" : "object-left"
-                  )}
-                />
-              </div>
+            <Link
+              href="/dashboard"
+              className="block select-none"
+              aria-label="Beespo home"
+            >
+              {isCollapsed ? (
+                <span className="flex items-center justify-center h-8 w-8 text-sm font-semibold text-foreground leading-none">
+                  B
+                </span>
+              ) : (
+                <span className="text-sm font-semibold text-foreground leading-none">
+                  Beespo
+                </span>
+              )}
             </Link>
 
             {/* Toggle Button */}
@@ -199,46 +186,16 @@ export function AppSidebar({
           <SidebarFavoritesSection isCollapsed={isCollapsed} />
         </nav>
 
-        {/* Help & Support + Notifications */}
-        <div className={cn("border-t p-2 space-y-0.5", isCollapsed && "flex flex-col items-center")}>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size={isCollapsed ? "icon" : "default"}
-                onClick={() => setSupportModalOpen(true)}
-                className={cn(
-                  "text-muted-foreground hover:text-foreground hover:bg-accent",
-                  isCollapsed ? "h-8 w-8" : "w-full justify-start gap-3"
-                )}
-              >
-                <LifeBuoy className="h-4 w-4" />
-                {!isCollapsed && <span>Help & Support</span>}
-                <span className="sr-only">Help & Support</span>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="right">Help & Support</TooltipContent>
-          </Tooltip>
-          <NotificationBell userId={userId} isCollapsed={isCollapsed} />
-        </div>
-
         {/* User Profile */}
         <SidebarUserProfile
           name={userName}
           email={userEmail}
+          userId={userId}
           roleTitle={userRoleTitle}
           avatarUrl={userAvatarUrl}
           isCollapsed={isCollapsed}
         />
       </aside>
-
-      {/* Support Modal */}
-      <SupportModal
-        open={supportModalOpen}
-        onOpenChange={setSupportModalOpen}
-        userEmail={userEmail}
-        userName={userName}
-      />
     </TooltipProvider>
   )
 }
