@@ -1811,6 +1811,7 @@ export type Database = {
           body: string | null;
           metadata: Record<string, unknown>;
           read_at: string | null;
+          digest_sent_at: string | null;
           created_at: string;
         };
         Insert: {
@@ -1821,6 +1822,7 @@ export type Database = {
           body?: string | null;
           metadata?: Record<string, unknown>;
           read_at?: string | null;
+          digest_sent_at?: string | null;
           created_at?: string;
         };
         Update: {
@@ -1831,6 +1833,7 @@ export type Database = {
           body?: string | null;
           metadata?: Record<string, unknown>;
           read_at?: string | null;
+          digest_sent_at?: string | null;
           created_at?: string;
         };
       };

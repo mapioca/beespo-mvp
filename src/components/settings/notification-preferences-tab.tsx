@@ -116,7 +116,7 @@ export function NotificationPreferencesTab() {
             </CardHeader>
             <CardContent>
                 <div className="space-y-6">
-                    {NOTIFICATION_TYPES.map(({ type, label, description }) => {
+                    {NOTIFICATION_TYPES.map(({ type, label, description, supportsDigest }) => {
                         const pref = getPref(type)
                         const isSaving = saving === type
 
@@ -172,8 +172,8 @@ export function NotificationPreferencesTab() {
                                         </Label>
                                     </div>
 
-                                    {/* Frequency selector (only when email is enabled) */}
-                                    {pref.emailEnabled && (
+                                    {/* Frequency selector (only for types that support digest, and when email is enabled) */}
+                                    {pref.emailEnabled && supportsDigest && (
                                         <div className="flex items-center gap-2">
                                             <Select
                                                 value={pref.emailFrequency}

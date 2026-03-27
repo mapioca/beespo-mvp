@@ -9,8 +9,9 @@ CREATE TABLE IF NOT EXISTS public.notifications (
     title       text NOT NULL,
     body        text,
     metadata    jsonb DEFAULT '{}'::jsonb,  -- { meeting_id, shared_by, ... }
-    read_at     timestamptz,
-    created_at  timestamptz DEFAULT now() NOT NULL
+    read_at         timestamptz,
+    digest_sent_at  timestamptz,
+    created_at      timestamptz DEFAULT now() NOT NULL
 );
 
 CREATE INDEX idx_notifications_user_unread
