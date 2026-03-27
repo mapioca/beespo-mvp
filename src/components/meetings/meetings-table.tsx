@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import Link from "next/link"
 import {
     Table,
@@ -15,6 +16,9 @@ import { format } from "date-fns"
 import { cn } from "@/lib/utils"
 import { DataTableColumnHeader } from "@/components/ui/data-table-header"
 import { MeetingRowActions } from "./meeting-row-actions"
+import { MeetingShareBadge } from "./meeting-share-badge"
+import { ShareDialog } from "@/components/conduct/share-dialog"
+import { ZoomIcon } from "@/components/ui/zoom-icon"
 import { Database } from "@/types/database"
 
 // ── Types ───────────────────────────────────────────────────────────────────
@@ -31,6 +35,12 @@ export interface Template {
 export interface Meeting extends MeetingRow {
     workspace_meeting_id?: string | null
     templates: { id: string; name: string } | null
+    // Share metadata — populated by meetings-client for display purposes
+    _shareType?: "owned" | "shared_with_me"
+    _sharePermission?: "viewer" | "editor"
+    _sharedByName?: string
+    _sharedFromWorkspace?: string
+    _isSharedOutward?: boolean
 }
 
 // ── Filter option data ──────────────────────────────────────────────────────
@@ -116,6 +126,8 @@ export function MeetingsTable({
     onToggleRow,
     onToggleAllRows,
 }: MeetingsTableProps) {
+    const [shareDialogMeeting, setShareDialogMeeting] = useState<Meeting | null>(null)
+
     const allSelected =
         meetings.length > 0 && selectedRows.size === meetings.length
 
@@ -137,6 +149,7 @@ export function MeetingsTable({
             .filter((c) => !hiddenColumns.has(c)).length + 2 // +2 for checkbox + actions
 
     return (
+        <>
         <Table>
             <TableHeader>
                 <TableRow className="bg-muted/40 hover:bg-muted/40 border-b">
@@ -251,12 +264,30 @@ export function MeetingsTable({
                             {/* Title */}
                             {!hiddenColumns.has("title") && (
                                 <TableCell className="font-medium px-3">
-                                    <Link
-                                        href={`/meetings/${meeting.id}`}
-                                        className="hover:underline"
-                                    >
-                                        {meeting.title}
-                                    </Link>
+                                    <div className="flex items-center gap-1.5">
+                                        <Link
+                                            href={`/meetings/${meeting.id}`}
+                                            className="hover:underline"
+                                        >
+                                            {meeting.title}
+                                        </Link>
+                                        {meeting._shareType === "shared_with_me" && (
+                                            <MeetingShareBadge
+                                                type="shared_with_me"
+                                                sharedBy={meeting._sharedByName}
+                                                fromWorkspace={meeting._sharedFromWorkspace}
+                                            />
+                                        )}
+                                        {meeting._isSharedOutward && meeting._shareType !== "shared_with_me" && (
+                                            <MeetingShareBadge
+                                                type="shared_outward"
+                                                onClick={() => setShareDialogMeeting(meeting)}
+                                            />
+                                        )}
+                                        {meeting.zoom_meeting_id && (
+                                            <ZoomIcon className="h-4 w-4 shrink-0" />
+                                        )}
+                                    </div>
                                 </TableCell>
                             )}
 
@@ -310,5 +341,18 @@ export function MeetingsTable({
                 )}
             </TableBody>
         </Table>
+
+        {/* Share dialog — opened by clicking the shared_outward badge */}
+        {shareDialogMeeting && (
+            <ShareDialog
+                meeting={shareDialogMeeting}
+                workspaceSlug={workspaceSlug}
+                open={true}
+                onOpenChange={(open) => { if (!open) setShareDialogMeeting(null) }}
+                hideTrigger
+                defaultTab="invite"
+            />
+        )}
+        </>
     )
 }

@@ -58,13 +58,41 @@ export function MeetingRowActions({
     const [isShareOpen, setIsShareOpen] = useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
+    const [activeShareCount, setActiveShareCount] = useState<number | null>(null);
     const [currentMeeting, setCurrentMeeting] = useState(meeting);
 
 
 
+    const handleOpenDeleteDialog = async () => {
+        setIsDropdownOpen(false);
+        // Fetch active share count before showing dialog
+        try {
+            const res = await fetch(`/api/share/meeting?meeting_id=${meeting.id}`);
+            if (res.ok) {
+                const data = await res.json();
+                setActiveShareCount((data.shares ?? []).length);
+            }
+        } catch {
+            setActiveShareCount(0);
+        }
+        setIsDeleteDialogOpen(true);
+    };
+
     const handleDelete = async () => {
         setIsDeleting(true);
         try {
+            // Revoke all active shares before deleting
+            const sharesRes = await fetch(`/api/share/meeting?meeting_id=${meeting.id}`);
+            if (sharesRes.ok) {
+                const sharesData = await sharesRes.json();
+                const shares = sharesData.shares ?? [];
+                await Promise.all(
+                    shares.map((s: { id: string }) =>
+                        fetch(`/api/share/meeting?id=${s.id}`, { method: "DELETE" })
+                    )
+                );
+            }
+
             const supabase = createClient();
 
             // Delete agenda items first (foreign key constraint)
@@ -171,10 +199,7 @@ export function MeetingRowActions({
                         <>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
-                                onClick={() => {
-                                    setIsDropdownOpen(false);
-                                    setIsDeleteDialogOpen(true);
-                                }}
+                                onClick={handleOpenDeleteDialog}
                                 className="flex items-center text-destructive focus:text-destructive"
                             >
                                 <Trash2 className="mr-2 h-4 w-4" />
@@ -204,6 +229,13 @@ export function MeetingRowActions({
                             Are you sure you want to delete &quot;{meeting.title}&quot;? This action
                             cannot be undone. All agenda items and associated data will be
                             permanently removed.
+                            {activeShareCount !== null && activeShareCount > 0 && (
+                                <span className="block mt-2 font-medium text-destructive">
+                                    This meeting is currently shared with {activeShareCount}{" "}
+                                    {activeShareCount === 1 ? "person" : "people"}. Deleting it
+                                    will remove their access immediately.
+                                </span>
+                            )}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>

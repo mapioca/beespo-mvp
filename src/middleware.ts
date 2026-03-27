@@ -109,6 +109,13 @@ export async function middleware(request: NextRequest) {
   // MAIN APP FLOW (existing logic unchanged)
   // =====================================================
 
+  // Public routes that never require authentication
+  const publicRoutes = ["/shared"];
+  const isPublicRoute = publicRoutes.some(route => request.nextUrl.pathname.startsWith(route));
+  if (isPublicRoute) {
+    return supabaseResponse;
+  }
+
   // Protected routes - redirect to login if not authenticated
   const protectedRoutes = ["/dashboard", "/templates", "/discussions", "/meetings", "/tasks", "/members", "/business", "/announcements", "/speakers", "/settings", "/calendar", "/callings", "/notebooks", "/apps"];
   const isProtectedRoute = protectedRoutes.some(route => request.nextUrl.pathname.startsWith(route));

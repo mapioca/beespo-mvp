@@ -120,6 +120,17 @@ async function handleInvitedUserOnboarding(
     .update({ status: 'accepted' })
     .eq('id', inv.id);
 
+  // Link any meeting shares sent to this email before they had an account
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase as any).rpc('link_shares_to_new_user', {
+      p_user_id: user.id,
+      p_user_email: user.email!,
+    });
+  } catch (err) {
+    console.error('Failed to link meeting shares to new user:', err);
+  }
+
   return NextResponse.json({
     success: true,
     workspaceId: inv.workspace_id,
@@ -207,6 +218,17 @@ async function handleWorkspaceCreation(
       { error: 'Failed to create profile' },
       { status: 500 }
     );
+  }
+
+  // Link any meeting shares sent to this email before they had an account
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase as any).rpc('link_shares_to_new_user', {
+      p_user_id: user.id,
+      p_user_email: user.email!,
+    });
+  } catch (err) {
+    console.error('Failed to link meeting shares to new user:', err);
   }
 
   // Get user's full name for invitations

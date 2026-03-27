@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useCallback } from "react"
+import { useState, useMemo, useCallback, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -34,6 +34,16 @@ import {
     Participant,
 } from "@/components/participants/participants-table"
 import { ParticipantDrawer } from "@/components/participants/participant-drawer"
+import { TagFilterDropdown } from "@/components/participants/tag-filter-dropdown"
+import { CreateTagDialog } from "@/components/participants/create-tag-dialog"
+import { ManageTagsDialog } from "@/components/participants/manage-tags-dialog"
+import {
+    getDirectoryTags,
+    createDirectoryTag,
+    updateDirectoryTag,
+    deleteDirectoryTag,
+} from "@/lib/actions/directory-tag-actions"
+import type { DirectoryTag } from "@/types/database"
 
 interface ParticipantsClientProps {
     participants: Participant[]
@@ -90,6 +100,62 @@ export function ParticipantsClient({
     const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false)
     const [isBulkDeleting, setIsBulkDeleting] = useState(false)
 
+    // Tags
+    const [tagFilter, setTagFilter] = useState<string[]>([])
+    const [workspaceTags, setWorkspaceTags] = useState<DirectoryTag[]>([])
+    const [createTagDialogOpen, setCreateTagDialogOpen] = useState(false)
+    const [isCreatingTag, setIsCreatingTag] = useState(false)
+    const [manageTagsDialogOpen, setManageTagsDialogOpen] = useState(false)
+
+    // Fetch workspace tags on mount
+    useEffect(() => {
+        getDirectoryTags().then(({ data }) => {
+            if (data) setWorkspaceTags(data)
+        })
+    }, [])
+
+    const handleCreateTag = async (name: string, color: string) => {
+        setIsCreatingTag(true)
+        try {
+            const { data, error } = await createDirectoryTag({ name, color })
+            if (error) {
+                toast.error(error)
+            } else if (data) {
+                setWorkspaceTags((prev) =>
+                    [...prev, data].sort((a, b) => a.name.localeCompare(b.name))
+                )
+                toast.success("Tag created")
+            }
+        } finally {
+            setIsCreatingTag(false)
+        }
+    }
+
+    const handleUpdateTag = async (id: string, name: string, color: string) => {
+        const { data, error } = await updateDirectoryTag(id, { name, color })
+        if (error) {
+            toast.error(error)
+        } else if (data) {
+            setWorkspaceTags((prev) =>
+                prev.map((t) => (t.id === id ? data : t)).sort((a, b) => a.name.localeCompare(b.name))
+            )
+            toast.success("Tag updated")
+            router.refresh()
+        }
+    }
+
+    const handleDeleteTag = async (id: string) => {
+        const { error } = await deleteDirectoryTag(id)
+        if (error) {
+            toast.error(error)
+        } else {
+            setWorkspaceTags((prev) => prev.filter((t) => t.id !== id))
+            setTagFilter((prev) => prev.filter((tId) => tId !== id))
+            toast.success("Tag deleted")
+            router.refresh()
+        }
+    }
+
     // ── Derived data ────────────────────────────────────────────────────────
 
     const filteredParticipants = useMemo(() => {
@@ -102,9 +168,27 @@ export function ParticipantsClient({
             )
         }
 
+        if (tagFilter.length > 0) {
+            result = result.filter((p) =>
+                tagFilter.every((tagId) =>
+                    p.tags?.some((t) => t.id === tagId)
+                )
+            )
+        }
+
         if (sortConfig) {
             result = [...result].sort((a, b) => {
                 const { key, direction } = sortConfig
+
+                // Special handling for tags column
+                if (key === "tags") {
+                    const aValue = (a.tags?.length ?? 0)
+                    const bValue = (b.tags?.length ?? 0)
+                    if (aValue < bValue) return direction === "asc" ? -1 : 1
+                    if (aValue > bValue) return direction === "asc" ? 1 : -1
+                    return 0
+                }
+
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const aValue = a[key as keyof Participant] as any
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -118,7 +202,7 @@ export function ParticipantsClient({
         }
 
         return result
-    }, [participants, search, sortConfig])
+    }, [participants, search, sortConfig, tagFilter])
 
     // ── Handlers ────────────────────────────────────────────────────────────
 
@@ -299,7 +383,7 @@ export function ParticipantsClient({
 
     // ── Active filter chips ─────────────────────────────────────────────────
 
-    const hasActiveFilters = search.length > 0 || hiddenColumns.size > 0
+    const hasActiveFilters = search.length > 0 || hiddenColumns.size > 0 || tagFilter.length > 0
 
     // ── Render ──────────────────────────────────────────────────────────────
 
@@ -372,6 +456,27 @@ export function ParticipantsClient({
                             </button>
                         </span>
                     )}
+                    {tagFilter.map((tagId) => {
+                        const tag = workspaceTags.find((t) => t.id === tagId)
+                        return tag ? (
+                            <span
+                                key={tagId}
+                                className="inline-flex items-center gap-1.5 rounded-md bg-muted px-2.5 py-1 text-xs font-medium"
+                            >
+                                Tag: {tag.name}
+                                <button
+                                    onClick={() =>
+                                        setTagFilter((prev) =>
+                                            prev.filter((id) => id !== tagId)
+                                        )
+                                    }
+                                    className="text-muted-foreground hover:text-foreground"
+                                >
+                                    <X className="h-3 w-3" />
+                                </button>
+                            </span>
+                        ) : null
+                    })}
                     {hiddenColumns.size > 0 && (
                         <button
                             onClick={() => setHiddenColumns(new Set())}
@@ -384,6 +489,7 @@ export function ParticipantsClient({
                         onClick={() => {
                             setSearch("")
                             setHiddenColumns(new Set())
+                            setTagFilter([])
                         }}
                         className="text-xs text-muted-foreground hover:text-foreground"
                     >
@@ -391,6 +497,18 @@ export function ParticipantsClient({
                     </button>
                 </div>
             )}
+
+            {/* Filter bar */}
+            <div className="flex items-center gap-2 px-6 pb-3 shrink-0">
+                <TagFilterDropdown
+                    workspaceTags={workspaceTags}
+                    selectedTagIds={tagFilter}
+                    onSelectionChange={setTagFilter}
+                    canManage={canManage}
+                    onCreateTag={() => setCreateTagDialogOpen(true)}
+                    onManageTags={() => setManageTagsDialogOpen(true)}
+                />
+            </div>
 
             {/* Table */}
             <div className="flex-1 overflow-auto px-6">
@@ -418,6 +536,14 @@ export function ParticipantsClient({
                 onOpenChange={setDrawerOpen}
                 onDelete={handleDelete}
                 canManage={canManage}
+                workspaceTags={workspaceTags}
+                onTagCreated={(tag) => {
+                    setWorkspaceTags((prev) =>
+                        [...prev, tag].sort((a, b) =>
+                            a.name.localeCompare(b.name)
+                        )
+                    )
+                }}
             />
 
             {/* Create dialog */}
@@ -530,6 +656,23 @@ export function ParticipantsClient({
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+            {/* Create tag dialog */}
+            <CreateTagDialog
+                open={createTagDialogOpen}
+                onOpenChange={setCreateTagDialogOpen}
+                onCreateTag={handleCreateTag}
+                isLoading={isCreatingTag}
+            />
+
+            {/* Manage tags dialog */}
+            <ManageTagsDialog
+                open={manageTagsDialogOpen}
+                onOpenChange={setManageTagsDialogOpen}
+                tags={workspaceTags}
+                onUpdateTag={handleUpdateTag}
+                onDeleteTag={handleDeleteTag}
+            />
 
             {/* Bulk delete confirmation */}
             <AlertDialog

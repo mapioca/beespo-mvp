@@ -22,8 +22,10 @@ import { TeamMembersList } from "@/components/team/team-members-list";
 import { PendingInvitations } from "@/components/team/pending-invitations";
 import { ChangePasswordForm } from "@/components/auth/change-password-form";
 import { DeleteAccountDialog } from "@/components/auth/delete-account-dialog";
-import { Building2, Users, Save, Loader2, User, AlertTriangle, Plug } from "lucide-react";
+import { Building2, Users, Users2, Save, Loader2, User, AlertTriangle, Plug } from "lucide-react";
 import { ZoomFullLogo } from "@/components/ui/zoom-icon";
+import { SharingGroupsTab } from "@/components/settings/sharing-groups-tab";
+import type { SharingGroupWithMembers } from "@/types/share";
 
 interface Workspace {
     id: string;
@@ -51,6 +53,11 @@ interface Invitation {
     } | null;
 }
 
+interface WorkspaceMember {
+    email: string;
+    full_name: string | null;
+}
+
 interface SettingsClientProps {
     workspace: Workspace;
     members: TeamMember[];
@@ -63,6 +70,8 @@ interface SettingsClientProps {
         roleTitle: string;
     };
     isZoomConnected: boolean;
+    sharingGroups: SharingGroupWithMembers[];
+    workspaceMembers: WorkspaceMember[];
 }
 
 const workspaceTypeLabels: Record<string, string> = {
@@ -92,6 +101,8 @@ export function SettingsClient({
     currentUserRole,
     currentUserDetails,
     isZoomConnected,
+    sharingGroups,
+    workspaceMembers,
 }: SettingsClientProps) {
     const router = useRouter();
     const [workspaceName, setWorkspaceName] = useState(workspace.name);
@@ -191,6 +202,10 @@ export function SettingsClient({
                     <TabsTrigger value="team" className="gap-2">
                         <Users className="h-4 w-4" />
                         Team
+                    </TabsTrigger>
+                    <TabsTrigger value="sharing-groups" className="gap-2">
+                        <Users2 className="h-4 w-4" />
+                        Sharing Groups
                     </TabsTrigger>
                     <TabsTrigger value="integrations" className="gap-2">
                         <Plug className="h-4 w-4" />
@@ -375,6 +390,14 @@ export function SettingsClient({
                             </CardContent>
                         </Card>
                     )}
+                </TabsContent>
+
+                <TabsContent value="sharing-groups" className="space-y-6">
+                    <SharingGroupsTab
+                        sharingGroups={sharingGroups}
+                        workspaceMembers={workspaceMembers}
+                        canManage={isAdmin || currentUserRole === "leader"}
+                    />
                 </TabsContent>
 
                 <TabsContent value="integrations" className="space-y-6">

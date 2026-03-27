@@ -144,6 +144,87 @@ export interface PublicMeetingView {
   workspace_name?: string;
 }
 
+// ── Sharing Groups ────────────────────────────────────────────────────────────
+
+export type MeetingShareStatus = 'active' | 'revoked';
+
+export type ShareActivityAction =
+  | 'shared'
+  | 'revoked'
+  | 'group_created'
+  | 'group_updated'
+  | 'member_added'
+  | 'member_removed';
+
+export type ShareEntityType = 'meeting'; // extensible: 'form' | 'table' later
+
+export interface SharingGroup {
+  id: string;
+  workspace_id: string;
+  name: string;
+  description: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SharingGroupMember {
+  id: string;
+  group_id: string;
+  email: string;
+  added_by: string | null;
+  created_at: string;
+}
+
+export interface SharingGroupWithMembers extends SharingGroup {
+  members: SharingGroupMember[];
+  member_count: number;
+}
+
+export interface MeetingShare {
+  id: string;
+  meeting_id: string;
+  recipient_email: string;
+  recipient_user_id: string | null;
+  permission: SharePermission;
+  shared_by: string;
+  sharing_group_id: string | null;
+  status: MeetingShareStatus;
+  token: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ShareActivityLogEntry {
+  id: string;
+  workspace_id: string;
+  action: ShareActivityAction;
+  entity_type: ShareEntityType;
+  entity_id: string | null;
+  target_email: string | null;
+  sharing_group_id: string | null;
+  performed_by: string;
+  details: Record<string, unknown>;
+  created_at: string;
+}
+
+/**
+ * A staged recipient in the share dialog before the share is executed.
+ * Can represent a group (expanded at share-time) or an individual email.
+ */
+export interface ShareRecipient {
+  type: 'group' | 'individual';
+  /** Unique key for React lists: group_id or a generated temp id for individuals */
+  id: string;
+  /** Display label: group name or email address */
+  label: string;
+  /** Populated for individual recipients */
+  email?: string;
+  /** Populated for group recipients */
+  group?: SharingGroupWithMembers;
+  permission: SharePermission;
+}
+
 /**
  * Share dialog tab values
  */

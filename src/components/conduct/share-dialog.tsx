@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { InviteTab, PublicLinkTab, ExportTab, ShareAnalyticsBadge } from "@/components/share";
+import { ShareRecipientsTab, PublicLinkTab, ExportTab, ShareAnalyticsBadge } from "@/components/share";
 import { useShareDialogStore } from "@/stores/share-dialog-store";
 import type { Database } from "@/types/database";
 import type { ShareDialogTab } from "@/types/share";
@@ -195,7 +195,7 @@ export function ShareDialog({
             </TabsContent>
 
             <TabsContent value="invite" className="m-0">
-              <InviteTab meetingId={meeting.id} />
+              <ShareRecipientsTab meetingId={meeting.id} />
             </TabsContent>
 
             <TabsContent value="export" className="m-0">
