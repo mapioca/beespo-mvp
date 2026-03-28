@@ -6,6 +6,7 @@
 export interface BreadcrumbItem {
   label: string
   href?: string
+  iconType?: "database" | "table" | "notebook"
 }
 
 export interface BreadcrumbConfig {
@@ -88,15 +89,39 @@ export const breadcrumbConfigs: BreadcrumbConfig[] = [
     dynamic: true,
   },
 
-  // Notebooks (future feature)
+  // Data section
+  {
+    pattern: "/tables",
+    trail: [{ label: "Data", iconType: "database" }, { label: "Tables", iconType: "table" }],
+  },
+  {
+    pattern: "/tables/new",
+    trail: [{ label: "Data", iconType: "database" }, { label: "Tables", href: "/tables", iconType: "table" }, { label: "New Table" }],
+  },
+  {
+    pattern: /^\/tables\/[^/]+$/,
+    trail: [
+      { label: "Data", iconType: "database" },
+      { label: "Tables", href: "/tables", iconType: "table" },
+      { label: "Table", iconType: "table" },
+    ],
+    dynamic: true,
+  },
+
+  // Notebooks
   {
     pattern: "/notebooks",
-    trail: [{ label: "Notebooks" }],
+    trail: [{ label: "Data", iconType: "database" }, { label: "Notebooks", iconType: "notebook" }],
+  },
+  {
+    pattern: "/notebooks/new",
+    trail: [{ label: "Data", iconType: "database" }, { label: "Notebooks", href: "/notebooks", iconType: "notebook" }, { label: "New Notebook" }],
   },
   {
     pattern: /^\/notebooks\/[^/]+$/,
     trail: [
-      { label: "Notebooks", href: "/notebooks" },
+      { label: "Data", iconType: "database" },
+      { label: "Notebooks", href: "/notebooks", iconType: "notebook" },
       { label: "Notebook" },
     ],
     dynamic: true,

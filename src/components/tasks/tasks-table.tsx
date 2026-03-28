@@ -30,7 +30,6 @@ import {
 } from "@/components/ui/alert-dialog"
 import { MoreHorizontal, Eye, Trash2, CheckSquare } from "lucide-react"
 import { format } from "date-fns"
-import { cn } from "@/lib/utils"
 import { DataTableColumnHeader } from "@/components/ui/data-table-header"
 
 // ── Types ───────────────────────────────────────────────────────────────────
@@ -72,34 +71,6 @@ const PRIORITY_OPTIONS = [
 
 function formatLabel(value: string): string {
     return value.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())
-}
-
-function getStatusStyle(status: string): string {
-    switch (status) {
-        case "pending":
-            return "bg-blue-50 text-blue-700"
-        case "in_progress":
-            return "bg-amber-50 text-amber-700"
-        case "completed":
-            return "bg-emerald-50 text-emerald-700"
-        case "cancelled":
-            return "bg-gray-100 text-gray-600"
-        default:
-            return "bg-gray-100 text-gray-600"
-    }
-}
-
-function getPriorityStyle(priority: string): string {
-    switch (priority) {
-        case "high":
-            return "bg-rose-50 text-rose-700"
-        case "medium":
-            return "bg-amber-50 text-amber-700"
-        case "low":
-            return "bg-gray-100 text-gray-600"
-        default:
-            return "bg-gray-100 text-gray-600"
-    }
 }
 
 // ── Props ───────────────────────────────────────────────────────────────────
@@ -322,33 +293,15 @@ export function TasksTable({
 
                                 {/* Status */}
                                 {!hiddenColumns.has("status") && (
-                                    <TableCell className="px-3">
-                                        <span
-                                            className={cn(
-                                                "inline-flex items-center rounded px-2 py-0.5 text-[10px] uppercase tracking-wide font-semibold",
-                                                getStatusStyle(task.status)
-                                            )}
-                                        >
-                                            {formatLabel(task.status)}
-                                        </span>
+                                    <TableCell className="px-3 text-sm text-muted-foreground">
+                                        {formatLabel(task.status)}
                                     </TableCell>
                                 )}
 
                                 {/* Priority */}
                                 {!hiddenColumns.has("priority") && (
-                                    <TableCell className="px-3">
-                                        {task.priority ? (
-                                            <span
-                                                className={cn(
-                                                    "inline-flex items-center rounded px-2 py-0.5 text-[10px] uppercase tracking-wide font-semibold",
-                                                    getPriorityStyle(task.priority)
-                                                )}
-                                            >
-                                                {formatLabel(task.priority)}
-                                            </span>
-                                        ) : (
-                                            <span className="text-muted-foreground">—</span>
-                                        )}
+                                    <TableCell className="px-3 text-sm text-muted-foreground">
+                                        {task.priority ? formatLabel(task.priority) : "—"}
                                     </TableCell>
                                 )}
 

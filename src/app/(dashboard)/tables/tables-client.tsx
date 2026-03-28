@@ -4,7 +4,7 @@ import { useState, useMemo, useCallback } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { Plus, X, Trash2, Database } from "lucide-react"
+import { Plus, X, Trash2 } from "lucide-react"
 import { Breadcrumbs } from "@/components/dashboard/breadcrumbs"
 import {
     AlertDialog,
@@ -151,11 +151,7 @@ export function TablesClient({ tables }: TablesClientProps) {
     return (
         <div className="flex flex-col h-full bg-muted/30">
             {/* Breadcrumb */}
-            <Breadcrumbs
-                items={[
-                    { label: "Tables", icon: <Database className="h-3.5 w-3.5" /> },
-                ]}
-            />
+            <Breadcrumbs />
 
             {/* Action Bar */}
             <div className="flex items-center justify-between w-full px-6 pt-5 pb-4 shrink-0 flex-wrap gap-4">

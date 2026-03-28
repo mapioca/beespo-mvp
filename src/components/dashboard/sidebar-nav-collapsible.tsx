@@ -186,8 +186,8 @@ export function SidebarNavCollapsible({
                   className={cn(
                     "flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors",
                     isActive
-                      ? "bg-stone-300 text-foreground font-medium"
-                      : "hover:bg-stone-200 hover:text-foreground"
+                      ? "bg-stone-200 text-foreground font-medium"
+                      : "hover:bg-stone-100 hover:text-foreground"
                   )}
                 >
                   <ChildIcon className="h-4 w-4 shrink-0" />

@@ -4,7 +4,7 @@ import { useState, useMemo, useCallback } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { Plus, X, Trash2, ClipboardList } from "lucide-react"
+import { Plus, X, Trash2, ClipboardList, Database } from "lucide-react"
 import { Breadcrumbs } from "@/components/dashboard/breadcrumbs"
 import {
     AlertDialog,
@@ -178,6 +178,7 @@ export function FormsClient({ forms, statusCounts }: FormsClientProps) {
             {/* Breadcrumb */}
             <Breadcrumbs
                 items={[
+                    { label: "Data", icon: <Database className="h-3.5 w-3.5" /> },
                     { label: "Forms", icon: <ClipboardList className="h-3.5 w-3.5" /> },
                 ]}
             />

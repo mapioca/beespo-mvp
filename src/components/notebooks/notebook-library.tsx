@@ -7,7 +7,7 @@ import { NotebookGrid } from "./notebook-grid";
 import { CreateNotebookModal } from "./create-notebook-modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Search, Book } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 import { Breadcrumbs } from "@/components/dashboard/breadcrumbs";
 import { toast } from "@/lib/toast";
 
@@ -113,11 +113,7 @@ export function NotebookLibrary() {
     return (
         <div className="flex flex-col h-full bg-muted/30">
             {/* Breadcrumb */}
-            <Breadcrumbs
-                items={[
-                    { label: "Notebooks", icon: <Book className="h-3.5 w-3.5" /> },
-                ]}
-            />
+            <Breadcrumbs />
 
             {/* Action Bar */}
             <div className="flex items-center justify-between w-full px-6 pt-5 pb-4 shrink-0 flex-wrap gap-4">

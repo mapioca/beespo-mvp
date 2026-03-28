@@ -30,7 +30,6 @@ import {
 } from "@/components/ui/alert-dialog"
 import { MoreHorizontal, Eye, Trash2, Briefcase } from "lucide-react"
 import { format } from "date-fns"
-import { cn } from "@/lib/utils"
 import { DataTableColumnHeader } from "@/components/ui/data-table-header"
 import type { BusinessItemDetails } from "@/lib/business-script-generator"
 
@@ -80,34 +79,6 @@ const CATEGORY_OPTIONS = [
 
 function formatCategory(category: string): string {
     return category.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())
-}
-
-function getCategoryStyle(category: string): string {
-    switch (category) {
-        case "sustaining":
-            return "bg-blue-50 text-blue-700"
-        case "release":
-            return "bg-amber-50 text-amber-700"
-        case "confirmation":
-            return "bg-purple-50 text-purple-700"
-        case "ordination":
-            return "bg-emerald-50 text-emerald-700"
-        case "setting_apart":
-            return "bg-rose-50 text-rose-700"
-        default:
-            return "bg-gray-100 text-gray-600"
-    }
-}
-
-function getStatusStyle(status: string): string {
-    switch (status) {
-        case "completed":
-            return "bg-emerald-50 text-emerald-700"
-        case "pending":
-            return "bg-gray-100 text-gray-600"
-        default:
-            return "bg-gray-100 text-gray-600"
-    }
 }
 
 // ── Props ───────────────────────────────────────────────────────────────────
@@ -360,33 +331,17 @@ export function BusinessTable({
 
                                 {/* Category */}
                                 {!hiddenColumns.has("category") && (
-                                    <TableCell className="px-3">
-                                        <span
-                                            className={cn(
-                                                "inline-flex items-center rounded px-2 py-0.5 text-[10px] uppercase tracking-wide font-semibold",
-                                                getCategoryStyle(
-                                                    item.category
-                                                )
-                                            )}
-                                        >
-                                            {formatCategory(item.category)}
-                                        </span>
+                                    <TableCell className="px-3 text-muted-foreground capitalize">
+                                        {formatCategory(item.category)}
                                     </TableCell>
                                 )}
 
                                 {/* Status */}
                                 {!hiddenColumns.has("status") && (
-                                    <TableCell className="px-3">
-                                        <span
-                                            className={cn(
-                                                "inline-flex items-center rounded px-2 py-0.5 text-[10px] uppercase tracking-wide font-semibold",
-                                                getStatusStyle(item.status)
-                                            )}
-                                        >
-                                            {item.status === "pending"
-                                                ? "Pending"
-                                                : "Completed"}
-                                        </span>
+                                    <TableCell className="px-3 text-muted-foreground capitalize">
+                                        {item.status === "pending"
+                                            ? "Pending"
+                                            : "Completed"}
                                     </TableCell>
                                 )}
 

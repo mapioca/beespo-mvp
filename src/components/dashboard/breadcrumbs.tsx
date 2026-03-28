@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { ChevronRight } from "lucide-react"
+import { ChevronRight, Database, Table2, BookOpen } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { getBreadcrumbTrail, BreadcrumbItem } from "@/lib/navigation/breadcrumb-config"
 import type { ReactNode } from "react"
@@ -11,6 +11,19 @@ export type { BreadcrumbItem }
 
 export interface BreadcrumbItemWithIcon extends BreadcrumbItem {
   icon?: ReactNode
+}
+
+function getIconForType(iconType?: "database" | "table" | "notebook"): ReactNode {
+  switch (iconType) {
+    case "database":
+      return <Database className="h-3.5 w-3.5" />
+    case "table":
+      return <Table2 className="h-3.5 w-3.5" />
+    case "notebook":
+      return <BookOpen className="h-3.5 w-3.5" />
+    default:
+      return null
+  }
 }
 
 interface BreadcrumbsProps {
@@ -26,7 +39,7 @@ export function Breadcrumbs({ items, className, inlineAction, action }: Breadcru
   const pathname = usePathname()
   const trail: BreadcrumbItemWithIcon[] = items ?? getBreadcrumbTrail(pathname)
 
-  if (trail.length <= 1) {
+  if (trail.length === 0) {
     return null
   }
 
@@ -38,6 +51,8 @@ export function Breadcrumbs({ items, className, inlineAction, action }: Breadcru
             {trail.map((item, index) => {
               const isLast = index === trail.length - 1
 
+              const icon = "icon" in item && item.icon ? item.icon : getIconForType(item.iconType)
+
               return (
                 <li key={index} className="flex items-center gap-1">
                   {index > 0 && (
@@ -48,12 +63,12 @@ export function Breadcrumbs({ items, className, inlineAction, action }: Breadcru
                       href={item.href}
                       className="flex items-center gap-1 hover:text-foreground transition-colors"
                     >
-                      {item.icon}
+                      {icon}
                       {item.label}
                     </Link>
                   ) : (
                     <span className={cn("flex items-center gap-1", isLast && "text-foreground font-medium")}>
-                      {item.icon}
+                      {icon}
                       {item.label}
                     </span>
                   )}

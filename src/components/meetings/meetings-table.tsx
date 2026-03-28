@@ -13,7 +13,6 @@ import {
 import { Checkbox } from "@/components/ui/checkbox"
 import { CalendarDays } from "lucide-react"
 import { format } from "date-fns"
-import { cn } from "@/lib/utils"
 import { DataTableColumnHeader } from "@/components/ui/data-table-header"
 import { MeetingRowActions } from "./meeting-row-actions"
 import { MeetingShareBadge } from "./meeting-share-badge"
@@ -56,21 +55,6 @@ const STATUS_OPTIONS = [
 
 function formatLabel(value: string): string {
     return value.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())
-}
-
-function getStatusStyle(status: string): string {
-    switch (status) {
-        case "scheduled":
-            return "bg-blue-50 text-blue-700"
-        case "in_progress":
-            return "bg-amber-50 text-amber-700"
-        case "completed":
-            return "bg-emerald-50 text-emerald-700"
-        case "cancelled":
-            return "bg-gray-100 text-gray-600"
-        default:
-            return "bg-gray-100 text-gray-600"
-    }
 }
 
 // ── Props ───────────────────────────────────────────────────────────────────
@@ -304,15 +288,8 @@ export function MeetingsTable({
 
                             {/* Status */}
                             {!hiddenColumns.has("status") && (
-                                <TableCell className="px-3">
-                                    <span
-                                        className={cn(
-                                            "inline-flex items-center rounded px-2 py-0.5 text-[10px] uppercase tracking-wide font-semibold",
-                                            getStatusStyle(meeting.status)
-                                        )}
-                                    >
-                                        {formatLabel(meeting.status)}
-                                    </span>
+                                <TableCell className="px-3 text-muted-foreground capitalize">
+                                    {formatLabel(meeting.status)}
                                 </TableCell>
                             )}
 

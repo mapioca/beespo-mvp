@@ -30,7 +30,6 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Megaphone, MoreHorizontal, Eye, Trash2 } from "lucide-react"
 import { format } from "date-fns"
-import { cn } from "@/lib/utils"
 import { DataTableColumnHeader } from "@/components/ui/data-table-header"
 
 // ── Types ───────────────────────────────────────────────────────────────────
@@ -67,33 +66,7 @@ const PRIORITY_OPTIONS = [
     { value: "high", label: "High" },
 ]
 
-// ── Badge helpers ───────────────────────────────────────────────────────────
-
-function getStatusStyle(status: string): string {
-    switch (status) {
-        case "active":
-            return "bg-emerald-50 text-emerald-700"
-        case "draft":
-            return "bg-gray-100 text-gray-600"
-        case "stopped":
-            return "bg-amber-50 text-amber-700"
-        default:
-            return "bg-gray-100 text-gray-600"
-    }
-}
-
-function getPriorityStyle(priority: string): string {
-    switch (priority) {
-        case "high":
-            return "bg-rose-50 text-rose-700"
-        case "medium":
-            return "bg-amber-50 text-amber-700"
-        case "low":
-            return "bg-gray-100 text-gray-600"
-        default:
-            return "bg-gray-100 text-gray-600"
-    }
-}
+// ── Helpers ──────────────────────────────────────────────────────────────────
 
 function formatStatus(status: string): string {
     return status.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())
@@ -323,35 +296,17 @@ export function AnnouncementsTable({
 
                                 {/* Priority */}
                                 {!hiddenColumns.has("priority") && (
-                                    <TableCell className="px-3">
-                                        <span
-                                            className={cn(
-                                                "inline-flex items-center rounded px-2 py-0.5 text-[10px] uppercase tracking-wide font-semibold",
-                                                getPriorityStyle(
-                                                    announcement.priority
-                                                )
-                                            )}
-                                        >
-                                            {announcement.priority}
-                                        </span>
+                                    <TableCell className="px-3 text-muted-foreground capitalize">
+                                        {announcement.priority}
                                     </TableCell>
                                 )}
 
                                 {/* Status */}
                                 {!hiddenColumns.has("status") && (
-                                    <TableCell className="px-3">
-                                        <span
-                                            className={cn(
-                                                "inline-flex items-center rounded px-2 py-0.5 text-[10px] uppercase tracking-wide font-semibold",
-                                                getStatusStyle(
-                                                    announcement.status
-                                                )
-                                            )}
-                                        >
-                                            {formatStatus(
-                                                announcement.status
-                                            )}
-                                        </span>
+                                    <TableCell className="px-3 text-muted-foreground capitalize">
+                                        {formatStatus(
+                                            announcement.status
+                                        )}
                                     </TableCell>
                                 )}
 

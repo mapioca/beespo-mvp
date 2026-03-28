@@ -16,10 +16,13 @@ const nextConfig: NextConfig = {
   experimental: {
     optimizePackageImports: [
       'lucide-react',
+      '@phosphor-icons/react',
       '@radix-ui/react-icons',
       'date-fns',
       'framer-motion',
       'recharts',
+      'lodash',
+      'react-day-picker',
       '@dnd-kit/core',
       '@dnd-kit/sortable',
       '@dnd-kit/utilities',

@@ -30,7 +30,6 @@ import {
 } from "@/components/ui/alert-dialog"
 import { MoreHorizontal, Eye, Trash2, MessagesSquare } from "lucide-react"
 import { format } from "date-fns"
-import { cn } from "@/lib/utils"
 import { DataTableColumnHeader } from "@/components/ui/data-table-header"
 
 // ── Types ───────────────────────────────────────────────────────────────────
@@ -85,61 +84,6 @@ const CATEGORY_OPTIONS = [
 
 function formatLabel(value: string): string {
     return value.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())
-}
-
-function getStatusStyle(status: string): string {
-    switch (status) {
-        case "new":
-            return "bg-blue-50 text-blue-700"
-        case "active":
-            return "bg-emerald-50 text-emerald-700"
-        case "decision_required":
-            return "bg-rose-50 text-rose-700"
-        case "monitoring":
-            return "bg-amber-50 text-amber-700"
-        case "resolved":
-            return "bg-gray-100 text-gray-600"
-        case "deferred":
-            return "bg-purple-50 text-purple-700"
-        default:
-            return "bg-gray-100 text-gray-600"
-    }
-}
-
-function getPriorityStyle(priority: string): string {
-    switch (priority) {
-        case "high":
-            return "bg-rose-50 text-rose-700"
-        case "medium":
-            return "bg-amber-50 text-amber-700"
-        case "low":
-            return "bg-gray-100 text-gray-600"
-        default:
-            return "bg-gray-100 text-gray-600"
-    }
-}
-
-function getCategoryStyle(category: string): string {
-    switch (category) {
-        case "general":
-            return "bg-gray-100 text-gray-600"
-        case "budget":
-            return "bg-emerald-50 text-emerald-700"
-        case "personnel":
-            return "bg-blue-50 text-blue-700"
-        case "programs":
-            return "bg-purple-50 text-purple-700"
-        case "facilities":
-            return "bg-amber-50 text-amber-700"
-        case "welfare":
-            return "bg-rose-50 text-rose-700"
-        case "youth":
-            return "bg-cyan-50 text-cyan-700"
-        case "activities":
-            return "bg-orange-50 text-orange-700"
-        default:
-            return "bg-gray-100 text-gray-600"
-    }
 }
 
 // ── Props ───────────────────────────────────────────────────────────────────
@@ -383,49 +327,22 @@ export function DiscussionsTable({
 
                                 {/* Category */}
                                 {!hiddenColumns.has("category") && (
-                                    <TableCell className="px-3">
-                                        <span
-                                            className={cn(
-                                                "inline-flex items-center rounded px-2 py-0.5 text-[10px] uppercase tracking-wide font-semibold whitespace-nowrap",
-                                                getCategoryStyle(
-                                                    discussion.category
-                                                )
-                                            )}
-                                        >
-                                            {formatLabel(discussion.category)}
-                                        </span>
+                                    <TableCell className="px-3 text-muted-foreground capitalize whitespace-nowrap">
+                                        {formatLabel(discussion.category)}
                                     </TableCell>
                                 )}
 
                                 {/* Status */}
                                 {!hiddenColumns.has("status") && (
-                                    <TableCell className="px-3">
-                                        <span
-                                            className={cn(
-                                                "inline-flex items-center rounded px-2 py-0.5 text-[10px] uppercase tracking-wide font-semibold",
-                                                getStatusStyle(
-                                                    discussion.status
-                                                )
-                                            )}
-                                        >
-                                            {formatLabel(discussion.status)}
-                                        </span>
+                                    <TableCell className="px-3 text-muted-foreground capitalize">
+                                        {formatLabel(discussion.status)}
                                     </TableCell>
                                 )}
 
                                 {/* Priority */}
                                 {!hiddenColumns.has("priority") && (
-                                    <TableCell className="px-3">
-                                        <span
-                                            className={cn(
-                                                "inline-flex items-center rounded px-2 py-0.5 text-[10px] uppercase tracking-wide font-semibold",
-                                                getPriorityStyle(
-                                                    discussion.priority
-                                                )
-                                            )}
-                                        >
-                                            {formatLabel(discussion.priority)}
-                                        </span>
+                                    <TableCell className="px-3 text-muted-foreground capitalize">
+                                        {formatLabel(discussion.priority)}
                                     </TableCell>
                                 )}
 

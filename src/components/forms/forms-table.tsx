@@ -30,7 +30,6 @@ import {
 } from "@/components/ui/alert-dialog"
 import { FileText, MoreHorizontal, BarChart2, ExternalLink, Trash2 } from "lucide-react"
 import { format } from "date-fns"
-import { cn } from "@/lib/utils"
 import { DataTableColumnHeader } from "@/components/ui/data-table-header"
 import { useState } from "react"
 import type { Form } from "@/types/form-types"
@@ -46,14 +45,6 @@ const STATUS_OPTIONS = [
     { value: "published", label: "Published" },
     { value: "draft", label: "Draft" },
 ]
-
-// ── Badge helper ──────────────────────────────────────────────────────────────
-
-function getStatusStyle(isPublished: boolean): string {
-    return isPublished
-        ? "bg-emerald-50 text-emerald-700"
-        : "bg-gray-100 text-gray-600"
-}
 
 // ── Props ─────────────────────────────────────────────────────────────────────
 
@@ -253,15 +244,8 @@ export function FormsTable({
 
                                     {/* Status */}
                                     {!hiddenColumns.has("status") && (
-                                        <TableCell className="px-3">
-                                            <span
-                                                className={cn(
-                                                    "inline-flex items-center rounded px-2 py-0.5 text-[10px] uppercase tracking-wide font-semibold",
-                                                    getStatusStyle(form.is_published)
-                                                )}
-                                            >
-                                                {form.is_published ? "Published" : "Draft"}
-                                            </span>
+                                        <TableCell className="px-3 text-muted-foreground capitalize">
+                                            {form.is_published ? "Published" : "Draft"}
                                         </TableCell>
                                     )}
 
