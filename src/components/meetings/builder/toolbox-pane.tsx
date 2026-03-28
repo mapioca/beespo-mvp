@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import { Search, Plus, LayoutGrid } from "lucide-react";
+import { Search, Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { DraggableToolboxItem } from "./draggable-toolbox-item";
 import { ToolboxItem, ProceduralItemType, ItemConfig, CategoryType } from "./types";
@@ -296,31 +296,25 @@ export function ToolboxPane({ onItemsLoaded, onAddItem }: ToolboxPaneProps) {
     }, [reloadCustomTypes]);
 
     return (
-        <div className="flex flex-col h-full bg-muted/50 border-r border-border">
-            {/* Header */}
-            <div className="h-14 px-4 border-b border-border bg-background flex items-center gap-2.5 shrink-0">
-                <LayoutGrid className="h-5 w-5 text-primary" />
-                <h2 className="text-base font-semibold tracking-tight text-foreground">
-                    Agenda Builder
-                </h2>
-            </div>
-
-            <div className="p-4 border-b border-border bg-background">
-                <h3 className="font-semibold text-sm mb-3 text-foreground">Items Library</h3>
-                <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                        placeholder="Search items..."
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        className="pl-9 h-9 bg-background border-input"
-                    />
+        <div className="flex flex-col h-full overflow-hidden p-3">
+            {/* Card container */}
+            <div className="bg-card rounded-lg ring-1 ring-border flex flex-col flex-1 overflow-hidden">
+                <div className="p-4 pb-3 shrink-0">
+                    <h3 className="font-semibold text-sm mb-3 text-foreground">Items Library</h3>
+                    <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                            placeholder="Search items..."
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            className="pl-9 h-9 bg-background border-input"
+                        />
+                    </div>
                 </div>
-            </div>
 
-            {/* Items */}
-            <ScrollArea className="flex-1">
-                <div className="p-2">
+                {/* Items */}
+                <ScrollArea className="flex-1">
+                    <div className="px-4 pb-2">
                     {isLoading ? (
                         <div className="p-4 text-center text-sm text-muted-foreground">
                             Loading items...
@@ -374,13 +368,14 @@ export function ToolboxPane({ onItemsLoaded, onAddItem }: ToolboxPaneProps) {
                         </div>
                     )}
                 </div>
-            </ScrollArea>
+                </ScrollArea>
 
-            {/* Hint */}
-            <div className="p-3 border-t border-border bg-background">
-                <p className="text-xs text-muted-foreground text-center">
-                    Drag items onto the agenda canvas
-                </p>
+                {/* Hint */}
+                <div className="p-3 border-t border-border/50 shrink-0">
+                    <p className="text-xs text-muted-foreground text-center">
+                        Drag items onto the agenda canvas
+                    </p>
+                </div>
             </div>
 
             {/* Create/Edit Item Type Dialog */}

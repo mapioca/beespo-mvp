@@ -12,7 +12,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Trash2, ChevronDown, ChevronRight, GripVertical } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CanvasItem } from "./types";
-import { useFormContext } from "react-hook-form";
+
 
 interface AgendaCanvasProps {
     items: CanvasItem[];
@@ -293,9 +293,6 @@ export function AgendaCanvas({
     onSelectItem,
     isOver,
 }: AgendaCanvasProps) {
-    const { watch } = useFormContext();
-    const title = watch("title");
-
     const { setNodeRef } = useDroppable({
         id: "canvas-drop-zone",
     });
@@ -305,71 +302,70 @@ export function AgendaCanvas({
 
     return (
         <div
-            className="flex flex-col h-full bg-slate-50/50 bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] [background-size:16px_16px]"
+            className="flex flex-col h-full p-3 overflow-hidden"
             onClick={() => onSelectItem?.(null)}
         >
-            {/* Header */}
-            <div className="h-14 px-4 border-b bg-background grid grid-cols-3 items-center shrink-0" onClick={(e) => e.stopPropagation()}>
-                <div /> {/* Left spacer */}
-                <h3 className="font-semibold text-sm text-center truncate">
-                    {title || "Untitled Meeting Agenda"}
-                </h3>
-                <div className="text-right">
-                    <span className="text-xs text-muted-foreground whitespace-nowrap">
-                        {items.length} items • {totalDuration} min
-                    </span>
-                </div>
-            </div>
+            {/* Card container */}
+            <div className="bg-card rounded-lg ring-1 ring-border flex flex-col flex-1 overflow-hidden relative bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] [background-size:16px_16px]">
+                {/* Stats badge */}
+                {items.length > 0 && (
+                    <div className="absolute top-3 right-3 z-10 bg-card/90 backdrop-blur-sm rounded-full px-3 py-1 ring-1 ring-border shadow-sm">
+                        <span className="text-xs text-muted-foreground whitespace-nowrap">
+                            {items.length} {items.length === 1 ? "item" : "items"} &bull; {totalDuration} min
+                        </span>
+                    </div>
+                )}
 
-            {/* Canvas */}
-            <ScrollArea className="flex-1">
-                <div
-                    ref={setNodeRef}
-                    className={cn(
-                        "p-3 min-h-full flex flex-col items-center",
-                        isOver && "bg-primary/5"
-                    )}
-                >
-                    {items.length === 0 ? (
-                        <div
-                            className={cn(
-                                "flex flex-col items-center justify-center py-16 mt-8 bg-background/50 backdrop-blur-sm w-full max-w-xl",
-                                "border-2 border-dashed rounded-lg",
-                                "text-muted-foreground transition-all",
-                                isOver ? "border-primary bg-primary/5" : "border-muted-foreground/20"
-                            )}
-                        >
-                            <div className="text-center">
-                                <p className="font-medium">Drag items here</p>
-                                <p className="text-sm mt-1">
-                                    Or select a template to get started
-                                </p>
-                            </div>
-                        </div>
-                    ) : (
-                        <div className="bg-background/80 backdrop-blur-sm rounded-lg shadow-sm border p-3 w-full max-w-xl">
-                            <SortableContext
-                                items={itemIds}
-                                strategy={verticalListSortingStrategy}
+                {/* Canvas */}
+                <ScrollArea className="flex-1">
+                    <div
+                        ref={setNodeRef}
+                        className={cn(
+                            "p-4 min-h-full flex flex-col items-center",
+                            isOver && "bg-primary/5"
+                        )}
+                    >
+                        {items.length === 0 ? (
+                            <div
+                                className={cn(
+                                    "flex flex-col items-center justify-center py-16 mt-8 w-full max-w-xl",
+                                    "border-2 border-dashed rounded-lg",
+                                    "text-muted-foreground transition-all",
+                                    isOver ? "border-primary bg-primary/5" : "border-muted-foreground/20"
+                                )}
                             >
-                                <div className="space-y-1">
-                                    {items.map((item) => (
-                                        <SortableAgendaRow
-                                            key={item.id}
-                                            item={item}
-                                            onRemove={() => onRemoveItem(item.id)}
-                                            isExpanded={expandedContainers.has(item.id)}
-                                            onToggleExpand={() => onToggleContainer(item.id)}
-                                            isSelected={selectedItemId === item.id}
-                                            onSelect={() => onSelectItem?.(item.id)}
-                                        />
-                                    ))}
+                                <div className="text-center">
+                                    <p className="font-medium">Drag items here</p>
+                                    <p className="text-sm mt-1">
+                                        Or select a template to get started
+                                    </p>
                                 </div>
-                            </SortableContext>
-                        </div>
-                    )}
-                </div>
-            </ScrollArea>
+                            </div>
+                        ) : (
+                            <div className="w-full max-w-xl">
+                                <SortableContext
+                                    items={itemIds}
+                                    strategy={verticalListSortingStrategy}
+                                >
+                                    <div className="space-y-1">
+                                        {items.map((item) => (
+                                            <SortableAgendaRow
+                                                key={item.id}
+                                                item={item}
+                                                onRemove={() => onRemoveItem(item.id)}
+                                                isExpanded={expandedContainers.has(item.id)}
+                                                onToggleExpand={() => onToggleContainer(item.id)}
+                                                isSelected={selectedItemId === item.id}
+                                                onSelect={() => onSelectItem?.(item.id)}
+                                            />
+                                        ))}
+                                    </div>
+                                </SortableContext>
+                            </div>
+                        )}
+                    </div>
+                </ScrollArea>
+            </div>
         </div>
     );
 }

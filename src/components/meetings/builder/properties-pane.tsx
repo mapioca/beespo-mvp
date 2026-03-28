@@ -94,16 +94,9 @@ export function PropertiesPane({
     const [showItemNotes, setShowItemNotes] = useState(false);
 
     return (
-        <div className="h-full flex flex-col bg-muted/30 border-l overflow-y-auto">
-            {/* Actions & Header */}
-            <div className="sticky top-0 bg-background/95 backdrop-blur z-10 shrink-0 border-b">
-                <div className="px-3 py-2.5 bg-muted/10">
-                    <h2 className="font-semibold text-xs">Properties</h2>
-                </div>
-            </div>
-
-            {/* Scrollable Content */}
-            <div className="p-3 space-y-6 flex-1">
+        <div className="h-full flex flex-col overflow-y-auto p-3">
+            {/* Card container */}
+            <div className="bg-card rounded-lg ring-1 ring-border p-4 space-y-6 flex-1">
                 {/* Item Settings (permanently shown, state depends on selection) */}
                 <div className="space-y-3">
                     <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">

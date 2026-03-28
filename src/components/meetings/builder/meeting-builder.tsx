@@ -1601,7 +1601,7 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                         {/* 3-Column Workspace */}
                         <div className="flex-1 flex overflow-hidden">
                             {/* Left Pane - Library */}
-                            <div className="hidden lg:block w-80 h-full overflow-hidden border-r shrink-0">
+                            <div className="hidden lg:block w-80 h-full overflow-hidden shrink-0">
                                 <ToolboxPane onAddItem={handleAddCanvasItem} />
                             </div>
 
@@ -1619,7 +1619,7 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                             </div>
 
                             {/* Right Pane - Properties */}
-                            <div className="hidden lg:block w-[280px] h-full overflow-hidden border-l shrink-0">
+                            <div className="hidden lg:block w-[280px] h-full overflow-hidden shrink-0">
                                 <PropertiesPane
                                     templates={templates}
                                     selectedItem={canvasItems.find(i => i.id === selectedItemId)}
