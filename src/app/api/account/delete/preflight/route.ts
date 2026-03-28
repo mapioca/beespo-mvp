@@ -28,8 +28,8 @@ export async function GET() {
     const totalMembers = (members ?? []).length;
 
     if (totalMembers <= 1) {
-        const { data: workspace } = await supabase
-            .from('workspaces')
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: workspace } = await (supabase.from('workspaces') as any)
             .select('name')
             .eq('id', profile.workspace_id)
             .single();
@@ -37,7 +37,7 @@ export async function GET() {
         return NextResponse.json({
             canDelete: true,
             scenario: 'last_member',
-            workspaceName: workspace?.name,
+            workspaceName: (workspace as { name: string } | null)?.name,
             memberCount: totalMembers,
         });
     }
@@ -49,8 +49,8 @@ export async function GET() {
         if (otherAdmins.length === 0) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const promotableMembers = (members ?? []).filter((m: any) => m.id !== user.id);
-            const { data: workspace } = await supabase
-                .from('workspaces')
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const { data: workspace } = await (supabase.from('workspaces') as any)
                 .select('name')
                 .eq('id', profile.workspace_id)
                 .single();
@@ -58,7 +58,7 @@ export async function GET() {
             return NextResponse.json({
                 canDelete: false,
                 scenario: 'last_admin',
-                workspaceName: workspace?.name,
+                workspaceName: (workspace as { name: string } | null)?.name,
                 memberCount: totalMembers,
                 promotableMembers,
             });
