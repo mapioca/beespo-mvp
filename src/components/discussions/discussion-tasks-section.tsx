@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Calendar } from "lucide-react";
 import { format } from "date-fns";
@@ -28,66 +27,51 @@ export function DiscussionTasksSection({ initialTasks }: DiscussionTasksSectionP
     const handleSheetClose = (open: boolean) => {
         if (!open) {
             setSelectedTask(null);
-            // Refresh the page to get updated task data
             router.refresh();
         }
     };
 
     return (
         <>
-            <Card>
-                <CardHeader>
-                    <CardTitle className="text-lg">Tasks</CardTitle>
-                    <CardDescription>
-                        {initialTasks.length} task{initialTasks.length !== 1 ? "s" : ""}
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    {initialTasks && initialTasks.length > 0 ? (
-                        <div className="space-y-2">
-                            {initialTasks.map((task) => (
-                                <div
-                                    key={task.id}
-                                    onClick={() => handleTaskClick(task)}
-                                    className="block p-3 hover:bg-muted rounded-md transition-colors cursor-pointer border border-transparent hover:border-border"
-                                >
-                                    <div className="flex items-start justify-between gap-3">
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-sm font-medium truncate">{task.title}</p>
-                                            {task.description && (
-                                                <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                                                    {task.description}
-                                                </p>
-                                            )}
-                                            <div className="flex items-center gap-3 mt-2">
-                                                {task.assignee && (
-                                                    <span className="text-xs text-muted-foreground">
-                                                        Assigned to: {task.assignee.full_name}
-                                                    </span>
-                                                )}
-                                                {task.due_date && (
-                                                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                                                        <Calendar className="h-3 w-3" />
-                                                        Due: {format(new Date(task.due_date), "MMM d")}
-                                                    </div>
-                                                )}
-                                            </div>
+            {initialTasks.length > 0 ? (
+                <div className="space-y-1">
+                    {initialTasks.map((task) => (
+                        <div
+                            key={task.id}
+                            onClick={() => handleTaskClick(task)}
+                            className="flex items-start justify-between gap-3 p-3 hover:bg-muted rounded-md transition-colors cursor-pointer"
+                        >
+                            <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium truncate">{task.title}</p>
+                                {task.description && (
+                                    <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
+                                        {task.description}
+                                    </p>
+                                )}
+                                <div className="flex items-center gap-3 mt-1.5">
+                                    {task.assignee && (
+                                        <span className="text-xs text-muted-foreground">
+                                            {task.assignee.full_name}
+                                        </span>
+                                    )}
+                                    {task.due_date && (
+                                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                            <Calendar className="h-3 w-3" />
+                                            {format(new Date(task.due_date), "MMM d")}
                                         </div>
-                                        <Badge
-                                            variant={task.status === 'completed' ? 'secondary' : 'outline'}
-                                            className="text-xs shrink-0"
-                                        >
-                                            {task.status}
-                                        </Badge>
-                                    </div>
+                                    )}
                                 </div>
-                            ))}
+                            </div>
+                            <Badge
+                                variant={task.status === 'completed' ? 'secondary' : 'outline'}
+                                className="text-xs shrink-0"
+                            >
+                                {task.status}
+                            </Badge>
                         </div>
-                    ) : (
-                        <p className="text-sm text-muted-foreground">No tasks yet</p>
-                    )}
-                </CardContent>
-            </Card>
+                    ))}
+                </div>
+            ) : null}
 
             <TaskDetailsSheet
                 open={!!selectedTask}

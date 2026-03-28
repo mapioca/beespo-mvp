@@ -3,18 +3,12 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { toast } from "@/lib/toast";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
-import { format } from "date-fns";
-import { Trash2, Edit2, Save, X } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
+import { Trash2, Edit2, Save, X, Send, Loader2 } from "lucide-react";
+import { logDiscussionActivity } from "@/lib/actions/discussion-actions";
 
 interface Note {
   id: string;
@@ -31,6 +25,15 @@ interface DiscussionNotesSectionProps {
   discussionId: string;
   initialNotes: Note[];
   currentUserId: string;
+}
+
+function UserInitial({ name }: { name?: string }) {
+  const initial = name ? name.charAt(0).toUpperCase() : "?";
+  return (
+    <div className="h-7 w-7 rounded-full bg-muted flex items-center justify-center shrink-0 mt-0.5">
+      <span className="text-xs font-medium text-muted-foreground">{initial}</span>
+    </div>
+  );
 }
 
 export function DiscussionNotesSection({
@@ -59,12 +62,7 @@ export function DiscussionNotesSection({
         content: newNoteContent,
         created_by: currentUserId,
       })
-      .select(
-        `
-        *,
-        creator:profiles!discussion_notes_created_by_fkey(full_name)
-      `
-      )
+      .select(`*, creator:profiles!discussion_notes_created_by_fkey(full_name)`)
       .single();
 
     if (error) {
@@ -73,10 +71,10 @@ export function DiscussionNotesSection({
       return;
     }
 
-    setNotes([data, ...notes]);
+    setNotes([...notes, data]);
     setNewNoteContent("");
     setIsAddingNote(false);
-    toast.success("Note added successfully!");
+    logDiscussionActivity(discussionId, "note_added");
     router.refresh();
   };
 
@@ -99,13 +97,9 @@ export function DiscussionNotesSection({
       return;
     }
 
-    setNotes(
-      notes.map((note) =>
-        note.id === noteId ? { ...note, content: editContent } : note
-      )
-    );
+    setNotes(notes.map((n) => (n.id === noteId ? { ...n, content: editContent } : n)));
     setEditingNoteId(null);
-    toast.success("Note updated successfully!");
+    logDiscussionActivity(discussionId, "note_updated");
     router.refresh();
   };
 
@@ -125,129 +119,107 @@ export function DiscussionNotesSection({
       return;
     }
 
-    setNotes(notes.filter((note) => note.id !== noteId));
-    toast.success("Note deleted successfully!");
+    setNotes(notes.filter((n) => n.id !== noteId));
+    logDiscussionActivity(discussionId, "note_deleted");
     router.refresh();
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Notes</CardTitle>
-        <CardDescription>
-          Discussion timeline and meeting notes ({notes.length} note
-          {notes.length !== 1 ? "s" : ""})
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {/* Quick Add Note */}
-        <div className="space-y-2">
-          <Textarea
-            value={newNoteContent}
-            onChange={(e) => setNewNoteContent(e.target.value)}
-            placeholder="Add a note to this discussion..."
-            rows={3}
-            disabled={isAddingNote}
-          />
-          <div className="flex justify-end">
-            <Button
-              onClick={handleAddNote}
-              disabled={isAddingNote || !newNoteContent.trim()}
-            >
-              {isAddingNote ? "Adding..." : "Add Note"}
-            </Button>
-          </div>
-        </div>
+    <div>
+      <p className="text-sm font-semibold mb-4">Notes</p>
 
-        {/* Notes Timeline */}
-        {notes.length > 0 ? (
-          <div className="space-y-3 mt-6">
-            {notes.map((note) => (
-              <div
-                key={note.id}
-                className="p-4 border rounded-lg bg-card space-y-2"
-              >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <span className="font-medium">
-                        {note.creator?.full_name || "Unknown"}
-                      </span>
-                      <span>•</span>
-                      <span>
-                        {format(
-                          new Date(note.created_at),
-                          "MMM d, yyyy 'at' h:mm a"
-                        )}
-                      </span>
-                      {note.meeting && (
-                        <>
-                          <span>•</span>
-                          <span className="text-primary">
-                            From: {note.meeting.title}
-                          </span>
-                        </>
-                      )}
-                    </div>
-                  </div>
+      {/* Notes timeline — ascending, oldest first */}
+      {notes.length > 0 && (
+        <div className="space-y-5 mb-6">
+          {notes.map((note) => (
+            <div key={note.id} className="flex gap-3 group">
+              <UserInitial name={note.creator?.full_name} />
+
+              <div className="flex-1 min-w-0">
+                <div className="flex items-baseline gap-2 mb-1">
+                  <span className="text-sm font-medium">
+                    {note.creator?.full_name || "Unknown"}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {formatDistanceToNow(new Date(note.created_at), { addSuffix: true })}
+                  </span>
+                  {note.meeting && (
+                    <span className="text-xs text-muted-foreground">
+                      · from {note.meeting.title}
+                    </span>
+                  )}
                   {note.created_by === currentUserId && (
-                    <div className="flex gap-1">
+                    <div className="ml-auto flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                       {editingNoteId === note.id ? (
                         <>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleSaveEdit(note.id)}
-                          >
-                            <Save className="h-4 w-4" />
+                          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleSaveEdit(note.id)}>
+                            <Save className="h-3 w-3" />
                           </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => setEditingNoteId(null)}
-                          >
-                            <X className="h-4 w-4" />
+                          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setEditingNoteId(null)}>
+                            <X className="h-3 w-3" />
                           </Button>
                         </>
                       ) : (
                         <>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleEditNote(note)}
-                          >
-                            <Edit2 className="h-4 w-4" />
+                          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleEditNote(note)}>
+                            <Edit2 className="h-3 w-3" />
                           </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleDeleteNote(note.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
+                          <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:text-destructive" onClick={() => handleDeleteNote(note.id)}>
+                            <Trash2 className="h-3 w-3" />
                           </Button>
                         </>
                       )}
                     </div>
                   )}
                 </div>
+
                 {editingNoteId === note.id ? (
                   <Textarea
                     value={editContent}
                     onChange={(e) => setEditContent(e.target.value)}
                     rows={3}
+                    className="text-sm"
                   />
                 ) : (
-                  <p className="text-sm whitespace-pre-wrap">{note.content}</p>
+                  <p className="text-sm text-foreground/80 whitespace-pre-wrap">{note.content}</p>
                 )}
               </div>
-            ))}
-          </div>
-        ) : (
-          <p className="text-center text-muted-foreground py-8">
-            No notes yet. Add the first note above.
-          </p>
-        )}
-      </CardContent>
-    </Card>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {notes.length === 0 && (
+        <p className="text-sm text-muted-foreground mb-6">
+          No notes yet. Add the first one below.
+        </p>
+      )}
+
+      {/* Add note input */}
+      <div className="border rounded-lg overflow-hidden">
+        <Textarea
+          value={newNoteContent}
+          onChange={(e) => setNewNoteContent(e.target.value)}
+          placeholder="Add a note..."
+          rows={3}
+          disabled={isAddingNote}
+          className="border-0 focus-visible:ring-0 resize-none rounded-none text-sm"
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) handleAddNote();
+          }}
+        />
+        <div className="flex items-center justify-end px-3 py-2 border-t bg-muted/30">
+          <Button
+            size="sm"
+            onClick={handleAddNote}
+            disabled={isAddingNote || !newNoteContent.trim()}
+            className="h-7 text-xs gap-1.5"
+          >
+            {isAddingNote ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}
+            Add Note
+          </Button>
+        </div>
+      </div>
+    </div>
   );
 }

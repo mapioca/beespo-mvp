@@ -25,7 +25,6 @@ import {
     DiscussionPriority,
     DiscussionCategory,
 } from "./discussions-table"
-import { DiscussionDrawer } from "./discussion-drawer"
 
 interface DiscussionsClientProps {
     discussions: Discussion[]
@@ -46,10 +45,6 @@ export function DiscussionsClient({
     categoryCounts,
 }: DiscussionsClientProps) {
     const router = useRouter()
-    const [selectedDiscussion, setSelectedDiscussion] =
-        useState<Discussion | null>(null)
-    const [drawerOpen, setDrawerOpen] = useState(false)
-
     // Search
     const [search, setSearch] = useState("")
 
@@ -260,8 +255,7 @@ export function DiscussionsClient({
     }
 
     const handleViewDiscussion = (discussion: Discussion) => {
-        setSelectedDiscussion(discussion)
-        setDrawerOpen(true)
+        router.push(`/meetings/discussions/${discussion.id}`)
     }
 
     // ── Active filter chips ─────────────────────────────────────────────────
@@ -436,14 +430,6 @@ export function DiscussionsClient({
                     onDelete={handleDelete}
                 />
             </div>
-
-            {/* Drawer */}
-            <DiscussionDrawer
-                discussion={selectedDiscussion}
-                open={drawerOpen}
-                onOpenChange={setDrawerOpen}
-                onDelete={handleDelete}
-            />
 
             {/* Bulk delete confirmation */}
             <AlertDialog

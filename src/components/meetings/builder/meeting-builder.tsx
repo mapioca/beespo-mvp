@@ -1516,7 +1516,7 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
 
     return (
         <Form {...form}>
-            <form onSubmit={(e) => { e.preventDefault(); handleValidate(); }} className="h-screen flex flex-col">
+            <form onSubmit={(e) => { e.preventDefault(); handleValidate(); }} className="h-screen flex flex-col bg-muted/30">
                 <DndContext
                     sensors={sensors}
                     collisionDetection={closestCenter}

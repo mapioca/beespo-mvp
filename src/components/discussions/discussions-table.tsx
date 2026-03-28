@@ -31,6 +31,7 @@ import {
 import { MoreHorizontal, Eye, Trash2, MessagesSquare } from "lucide-react"
 import { format } from "date-fns"
 import { DataTableColumnHeader } from "@/components/ui/data-table-header"
+import Link from "next/link"
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -305,10 +306,8 @@ export function DiscussionsTable({
                                 {/* Title */}
                                 {!hiddenColumns.has("title") && (
                                     <TableCell className="font-medium px-3">
-                                        <button
-                                            onClick={() =>
-                                                onViewDiscussion?.(discussion)
-                                            }
+                                        <Link
+                                            href={`/meetings/discussions/${discussion.id}`}
                                             className="hover:underline text-left"
                                         >
                                             <div className="flex flex-col">
@@ -321,7 +320,7 @@ export function DiscussionsTable({
                                                     </span>
                                                 )}
                                             </div>
-                                        </button>
+                                        </Link>
                                     </TableCell>
                                 )}
 

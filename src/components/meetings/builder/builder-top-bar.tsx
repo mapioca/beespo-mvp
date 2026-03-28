@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { ArrowLeft, Eye, Share2, ChevronDown, Link, Loader2, FileText, FileCode, FileType } from "lucide-react";
+import { Eye, Share2, ChevronDown, Link, Loader2, FileText, FileCode, FileType, CalendarDays, ClipboardList } from "lucide-react";
+import { Breadcrumbs } from "@/components/dashboard/breadcrumbs";
 import { Button } from "@/components/ui/button";
 import {
     Popover,
@@ -65,7 +65,6 @@ export function BuilderTopBar({
     onSaveAsNew,
     onSaveAsTemplate,
 }: BuilderTopBarProps) {
-    const router = useRouter();
     const [shareOpen, setShareOpen] = useState(false);
     const [saveAsNewOpen, setSaveAsNewOpen] = useState(false);
     const [newTitle, setNewTitle] = useState("");
@@ -149,171 +148,159 @@ export function BuilderTopBar({
             ? "Save Changes"
             : "Create Agenda";
 
-    return (
-        <>
-            {/* Top Bar */}
-            <div className="h-14 flex items-center gap-3 px-4 border-b bg-background shrink-0 z-20">
-                {/* Left — back */}
-                <button
-                    type="button"
-                    onClick={() => router.push("/meetings")}
-                    className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors text-sm"
-                >
-                    <ArrowLeft className="h-4 w-4" />
-                </button>
+    const actions = (
+        <div className="flex items-center gap-2">
+            {/* Preview */}
+            <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-8 gap-1.5 text-muted-foreground hover:text-foreground"
+                onClick={onPreview}
+                disabled={!isValid}
+                title="Preview agenda"
+            >
+                <Eye className="h-4 w-4" />
+                <span className="hidden sm:inline text-xs">Preview</span>
+            </Button>
 
-                <div className="h-4 w-px bg-border/60" />
-
-                {/* Title badge */}
-                <span className="text-sm font-medium truncate max-w-[240px] text-foreground/80">
-                    {title || "Untitled Agenda"}
-                </span>
-
-                {/* Spacer */}
-                <div className="flex-1" />
-
-                {/* Right — actions */}
-                <div className="flex items-center gap-2">
-                    {/* Preview */}
+            {/* Share popover */}
+            <Popover open={shareOpen} onOpenChange={setShareOpen}>
+                <PopoverTrigger asChild>
                     <Button
                         type="button"
-                        variant="ghost"
+                        variant="outline"
                         size="sm"
-                        className="h-8 gap-1.5 text-muted-foreground hover:text-foreground"
-                        onClick={onPreview}
-                        disabled={!isValid}
-                        title="Preview agenda"
+                        className="h-8 gap-1.5 border-border/60 text-xs"
                     >
-                        <Eye className="h-4 w-4" />
-                        <span className="hidden sm:inline text-xs">Preview</span>
+                        <Share2 className="h-3.5 w-3.5" />
+                        <span className="hidden sm:inline">Share</span>
                     </Button>
+                </PopoverTrigger>
+                <PopoverContent align="end" className="w-60 p-1.5">
+                    <div className="px-2 py-1.5 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                        Share Link
+                    </div>
+                    <button
+                        type="button"
+                        onClick={handleCopyLink}
+                        className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-sm hover:bg-muted transition-colors"
+                    >
+                        <Link className="h-3.5 w-3.5 text-muted-foreground" />
+                        Copy public link
+                    </button>
 
-                    {/* Share popover */}
-                    <Popover open={shareOpen} onOpenChange={setShareOpen}>
-                        <PopoverTrigger asChild>
-                            <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                className="h-8 gap-1.5 border-border/60 text-xs"
-                            >
-                                <Share2 className="h-3.5 w-3.5" />
-                                <span className="hidden sm:inline">Share</span>
-                            </Button>
-                        </PopoverTrigger>
-                        <PopoverContent align="end" className="w-60 p-1.5">
-                            <div className="px-2 py-1.5 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-                                Share Link
+                    <div className="h-px bg-border/40 my-1.5 mx-1" />
+
+                    <div className="px-2 py-1.5 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                        Download As
+                    </div>
+                    <div className="space-y-0.5">
+                        <button
+                            type="button"
+                            disabled={!!exportingFormat}
+                            onClick={() => handleExport("pdf")}
+                            className="w-full flex items-center justify-between gap-2.5 px-2.5 py-2 rounded-md text-sm hover:bg-muted transition-colors disabled:opacity-50"
+                        >
+                            <div className="flex items-center gap-2.5">
+                                <FileText className="h-3.5 w-3.5 text-red-500/80" />
+                                <span>PDF Document (.pdf)</span>
                             </div>
-                            <button
-                                type="button"
-                                onClick={handleCopyLink}
-                                className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-sm hover:bg-muted transition-colors"
-                            >
-                                <Link className="h-3.5 w-3.5 text-muted-foreground" />
-                                Copy public link
-                            </button>
-
-                            <div className="h-px bg-border/40 my-1.5 mx-1" />
-
-                            <div className="px-2 py-1.5 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-                                Download As
+                            {exportingFormat === "pdf" && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
+                        </button>
+                        <button
+                            type="button"
+                            disabled={!!exportingFormat}
+                            onClick={() => handleExport("docx")}
+                            className="w-full flex items-center justify-between gap-2.5 px-2.5 py-2 rounded-md text-sm hover:bg-muted transition-colors disabled:opacity-50"
+                        >
+                            <div className="flex items-center gap-2.5">
+                                <FileType className="h-3.5 w-3.5 text-blue-500/80" />
+                                <span>Word Document (.docx)</span>
                             </div>
-                            <div className="space-y-0.5">
-                                <button
-                                    type="button"
-                                    disabled={!!exportingFormat}
-                                    onClick={() => handleExport("pdf")}
-                                    className="w-full flex items-center justify-between gap-2.5 px-2.5 py-2 rounded-md text-sm hover:bg-muted transition-colors disabled:opacity-50"
-                                >
-                                    <div className="flex items-center gap-2.5">
-                                        <FileText className="h-3.5 w-3.5 text-red-500/80" />
-                                        <span>PDF Document (.pdf)</span>
-                                    </div>
-                                    {exportingFormat === "pdf" && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
-                                </button>
-                                <button
-                                    type="button"
-                                    disabled={!!exportingFormat}
-                                    onClick={() => handleExport("docx")}
-                                    className="w-full flex items-center justify-between gap-2.5 px-2.5 py-2 rounded-md text-sm hover:bg-muted transition-colors disabled:opacity-50"
-                                >
-                                    <div className="flex items-center gap-2.5">
-                                        <FileType className="h-3.5 w-3.5 text-blue-500/80" />
-                                        <span>Word Document (.docx)</span>
-                                    </div>
-                                    {exportingFormat === "docx" && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
-                                </button>
-                                <button
-                                    type="button"
-                                    disabled={!!exportingFormat}
-                                    onClick={() => handleExport("md")}
-                                    className="w-full flex items-center justify-between gap-2.5 px-2.5 py-2 rounded-md text-sm hover:bg-muted transition-colors disabled:opacity-50"
-                                >
-                                    <div className="flex items-center gap-2.5">
-                                        <FileCode className="h-3.5 w-3.5 text-orange-500/80" />
-                                        <span>Markdown (.md)</span>
-                                    </div>
-                                    {exportingFormat === "md" && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
-                                </button>
-                                <button
-                                    type="button"
-                                    disabled={!!exportingFormat}
-                                    onClick={() => handleExport("txt")}
-                                    className="w-full flex items-center justify-between gap-2.5 px-2.5 py-2 rounded-md text-sm hover:bg-muted transition-colors disabled:opacity-50"
-                                >
-                                    <div className="flex items-center gap-2.5">
-                                        <FileText className="h-3.5 w-3.5 text-slate-500/80" />
-                                        <span>Plain Text (.txt)</span>
-                                    </div>
-                                    {exportingFormat === "txt" && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
-                                </button>
+                            {exportingFormat === "docx" && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
+                        </button>
+                        <button
+                            type="button"
+                            disabled={!!exportingFormat}
+                            onClick={() => handleExport("md")}
+                            className="w-full flex items-center justify-between gap-2.5 px-2.5 py-2 rounded-md text-sm hover:bg-muted transition-colors disabled:opacity-50"
+                        >
+                            <div className="flex items-center gap-2.5">
+                                <FileCode className="h-3.5 w-3.5 text-orange-500/80" />
+                                <span>Markdown (.md)</span>
                             </div>
-                        </PopoverContent>
-                    </Popover>
+                            {exportingFormat === "md" && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
+                        </button>
+                        <button
+                            type="button"
+                            disabled={!!exportingFormat}
+                            onClick={() => handleExport("txt")}
+                            className="w-full flex items-center justify-between gap-2.5 px-2.5 py-2 rounded-md text-sm hover:bg-muted transition-colors disabled:opacity-50"
+                        >
+                            <div className="flex items-center gap-2.5">
+                                <FileText className="h-3.5 w-3.5 text-slate-500/80" />
+                                <span>Plain Text (.txt)</span>
+                            </div>
+                            {exportingFormat === "txt" && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
+                        </button>
+                    </div>
+                </PopoverContent>
+            </Popover>
 
-                    {/* Save split button */}
-                    <div className="flex items-center">
+            {/* Save split button */}
+            <div className="flex items-center">
+                <Button
+                    type="button"
+                    size="sm"
+                    className={cn(
+                        "h-8 text-xs font-medium rounded-r-none border-r-0",
+                        "bg-zinc-900 text-white hover:bg-zinc-800"
+                    )}
+                    onClick={onSave}
+                    disabled={isCreating || !isValid}
+                >
+                    {isCreating && <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />}
+                    {saveLabel}
+                </Button>
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
                         <Button
                             type="button"
                             size="sm"
                             className={cn(
-                                "h-8 text-xs font-medium rounded-r-none border-r-0",
-                                "bg-zinc-900 text-white hover:bg-zinc-800"
+                                "h-8 w-8 rounded-l-none px-0",
+                                "bg-zinc-900 text-white hover:bg-zinc-700",
+                                "border-l border-white/20"
                             )}
-                            onClick={onSave}
-                            disabled={isCreating || !isValid}
+                            disabled={isCreating}
                         >
-                            {isCreating && <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />}
-                            {saveLabel}
+                            <ChevronDown className="h-3.5 w-3.5" />
                         </Button>
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button
-                                    type="button"
-                                    size="sm"
-                                    className={cn(
-                                        "h-8 w-8 rounded-l-none px-0",
-                                        "bg-zinc-900 text-white hover:bg-zinc-700",
-                                        "border-l border-white/20"
-                                    )}
-                                    disabled={isCreating}
-                                >
-                                    <ChevronDown className="h-3.5 w-3.5" />
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-48">
-                                <DropdownMenuItem onSelect={onSaveAsTemplate}>
-                                    Save as Template
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onSelect={openSaveAsNew}>
-                                    Save as New Meeting
-                                </DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
-                    </div>
-                </div>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-48">
+                        <DropdownMenuItem onSelect={onSaveAsTemplate}>
+                            Save as Template
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onSelect={openSaveAsNew}>
+                            Save as New Meeting
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
             </div>
+        </div>
+    );
+
+    return (
+        <>
+            <Breadcrumbs
+                items={[
+                    { label: "Meetings", href: "/meetings/agendas", icon: <CalendarDays className="h-3.5 w-3.5" /> },
+                    { label: "Agendas", href: "/meetings/agendas", icon: <ClipboardList className="h-3.5 w-3.5" /> },
+                    { label: title || "Untitled Agenda", icon: <FileText className="h-3.5 w-3.5" /> },
+                ]}
+                action={actions}
+            />
 
             {/* Save as New Meeting — dialog */}
             <Dialog open={saveAsNewOpen} onOpenChange={(o) => !isSavingAsNew && setSaveAsNewOpen(o)}>
