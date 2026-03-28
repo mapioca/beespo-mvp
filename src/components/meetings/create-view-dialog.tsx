@@ -59,8 +59,8 @@ function ToggleChip({
       className={cn(
         "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors",
         active
-          ? "bg-foreground text-background border-foreground"
-          : "text-muted-foreground border-border hover:text-foreground hover:border-foreground/40"
+          ? "bg-stone-200 text-foreground border-stone-200 shadow-sm"
+          : "text-muted-foreground border-border hover:bg-stone-100 hover:text-foreground hover:border-foreground/20"
       )}
     >
       {active && <Check className="h-3 w-3" />}

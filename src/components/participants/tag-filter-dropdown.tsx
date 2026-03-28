@@ -54,8 +54,8 @@ export function TagFilterDropdown({
           className={cn(
             "flex items-center justify-center rounded-full h-[30px] w-[30px] border transition-colors relative",
             isActive
-              ? "border-foreground text-foreground"
-              : "border-border text-muted-foreground hover:text-foreground hover:border-foreground/40"
+              ? "bg-stone-200 border-stone-200 text-foreground shadow-sm"
+              : "border-border text-muted-foreground hover:text-foreground hover:bg-stone-100 hover:border-foreground/20"
           )}
         >
           <Tags className="h-3.5 w-3.5" />

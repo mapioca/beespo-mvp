@@ -80,8 +80,8 @@ export function SidebarNavCollapsible({
             className={cn(
               "flex items-center justify-center rounded-lg px-2 py-2 text-sm font-medium transition-colors w-full",
               hasActiveChild
-                ? "bg-stone-300 text-foreground"
-                : "hover:bg-stone-200 hover:text-foreground"
+                ? "text-foreground"
+                : "text-muted-foreground hover:bg-stone-100 hover:text-foreground"
             )}
           >
             <Icon className="h-4 w-4 shrink-0" />
@@ -115,8 +115,8 @@ export function SidebarNavCollapsible({
                   className={cn(
                     "flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors",
                     isActive
-                      ? "bg-stone-300 text-foreground font-medium"
-                      : "hover:bg-stone-200 hover:text-foreground"
+                      ? "bg-stone-200 text-foreground font-medium"
+                      : "hover:bg-stone-100 hover:text-foreground"
                   )}
                 >
                   <ChildIcon className="h-4 w-4 shrink-0" />
@@ -140,8 +140,8 @@ export function SidebarNavCollapsible({
             className={cn(
               "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors w-full",
               hasActiveChild
-                ? "bg-stone-200 text-foreground"
-                : "hover:bg-stone-200 hover:text-foreground"
+                ? "text-foreground"
+                : "text-muted-foreground hover:bg-stone-100 hover:text-foreground"
             )}
             aria-expanded={isExpanded}
             aria-controls={groupId}

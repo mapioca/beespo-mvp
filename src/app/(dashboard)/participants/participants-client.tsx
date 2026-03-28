@@ -587,38 +587,16 @@ export function ParticipantsClient({
                 ]}
             />
 
-            {/* Header */}
-            <div className="flex justify-between items-center px-6 py-5 shrink-0">
-                <div>
-                    <h1 className="text-2xl font-semibold tracking-tight">
-                        {activeView ? activeView.name : "Directory"}
-                    </h1>
-                    <p className="text-sm text-muted-foreground mt-1">
-                        {activeView
-                            ? "Custom view · click a tab below to switch"
-                            : "Manage people and assignments"}
-                    </p>
-                </div>
-                {canManage && (
-                    <Button
-                        size="sm"
-                        onClick={() => setCreateDialogOpen(true)}
-                    >
-                        <Plus className="mr-2 h-4 w-4" />
-                        Add Person
-                    </Button>
-                )}
-            </div>
-
-            {/* View tabs */}
-            <div className="flex items-center gap-1.5 px-6 pb-3 shrink-0 flex-wrap">
-                {/* All tab */}
+            {/* Action Bar + Tabs */}
+            <div className="flex items-center justify-between w-full px-6 pt-5 pb-3 shrink-0 flex-wrap gap-4">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                    {/* All tab */}
                 <button
                     onClick={() => setActiveViewId(null)}
                     className={
                         activeViewId === null
-                            ? "rounded-full border px-3.5 py-1 text-xs font-medium bg-foreground text-background border-foreground transition-colors"
-                            : "rounded-full border px-3.5 py-1 text-xs font-medium text-muted-foreground border-border hover:text-foreground hover:border-foreground/40 transition-colors"
+                            ? "rounded-full border px-3.5 py-1 text-xs font-medium bg-stone-200 text-foreground border-stone-200 transition-all shadow-sm"
+                            : "rounded-full border px-3.5 py-1 text-xs font-medium text-muted-foreground border-border hover:text-foreground hover:bg-stone-100/50 hover:border-foreground/20 transition-all"
                     }
                 >
                     All Members
@@ -635,10 +613,10 @@ export function ParticipantsClient({
                         <button
                             onClick={() => setActiveViewId(view.id)}
                             className={cn(
-                                "rounded-full border pl-3.5 pr-7 py-1 text-xs font-medium transition-colors",
+                                "rounded-full border pl-3.5 pr-7 py-1 text-xs font-medium transition-all shadow-sm",
                                 activeViewId === view.id
-                                    ? "bg-foreground text-background border-foreground"
-                                    : "text-muted-foreground border-border hover:text-foreground hover:border-foreground/40"
+                                    ? "bg-stone-200 text-foreground border-stone-200"
+                                    : "text-muted-foreground border-border hover:text-foreground hover:bg-stone-100/50 hover:border-foreground/20"
                             )}
                         >
                             {view.name}
@@ -655,7 +633,7 @@ export function ParticipantsClient({
                                 "flex items-center justify-center h-3.5 w-3.5 rounded-full",
                                 "opacity-0 group-hover/view:opacity-100 transition-opacity",
                                 activeViewId === view.id
-                                    ? "text-background/70 hover:text-background"
+                                    ? "text-muted-foreground/70 hover:text-foreground"
                                     : "text-muted-foreground hover:text-foreground"
                             )}
                         >
@@ -684,6 +662,21 @@ export function ParticipantsClient({
                     workspaceTags={workspaceTags}
                     onCreated={handleViewCreated}
                 />
+                </div>
+
+                {/* Top Actions */}
+                <div className="flex items-center gap-2">
+                    {canManage && (
+                        <Button
+                            variant="ghost"
+                            className="rounded-full border px-3.5 py-1 text-xs font-medium text-muted-foreground border-border hover:bg-stone-200 hover:text-foreground hover:border-stone-200 transition-all shadow-sm"
+                            onClick={() => setCreateDialogOpen(true)}
+                        >
+                            <Plus className="h-3.5 w-3.5 mr-1.5" />
+                            New
+                        </Button>
+                    )}
+                </div>
             </div>
 
             {/* View filter summary */}

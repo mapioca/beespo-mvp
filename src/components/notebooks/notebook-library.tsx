@@ -7,7 +7,8 @@ import { NotebookGrid } from "./notebook-grid";
 import { CreateNotebookModal } from "./create-notebook-modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Search } from "lucide-react";
+import { Plus, Search, Book } from "lucide-react";
+import { Breadcrumbs } from "@/components/dashboard/breadcrumbs";
 import { toast } from "@/lib/toast";
 
 interface Notebook {
@@ -110,34 +111,35 @@ export function NotebookLibrary() {
     );
 
     return (
-        <div className="flex flex-col h-full">
-            {/* Header */}
-            <div className="flex-shrink-0 p-6 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                    <div>
-                        <h1 className="text-2xl font-bold tracking-tight">Notebooks</h1>
-                        <p className="text-sm text-muted-foreground">
-                            Organize your notes into beautiful notebooks
-                        </p>
-                    </div>
-                    <Button onClick={() => setIsModalOpen(true)}>
-                        <Plus className="w-4 h-4 mr-2" />
-                        New Notebook
-                    </Button>
+        <div className="flex flex-col h-full bg-muted/30">
+            {/* Breadcrumb */}
+            <Breadcrumbs
+                items={[
+                    { label: "Notebooks", icon: <Book className="h-3.5 w-3.5" /> },
+                ]}
+            />
+
+            {/* Action Bar */}
+            <div className="flex items-center justify-between w-full px-6 pt-5 pb-4 shrink-0 flex-wrap gap-4">
+                <div className="flex items-center gap-4 flex-wrap flex-1">
+                    {/* Search */}
+                    {notebooks.length > 0 && (
+                        <div className="relative max-w-sm w-full">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input
+                                placeholder="Search notebooks..."
+                                className="pl-9 h-9 bg-background"
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                            />
+                        </div>
+                    )}
                 </div>
 
-                {/* Search */}
-                {notebooks.length > 0 && (
-                    <div className="relative mt-4 max-w-sm">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input
-                            placeholder="Search notebooks..."
-                            className="pl-9"
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                        />
-                    </div>
-                )}
+                <Button variant="ghost" className="rounded-full border px-3.5 py-1 text-xs font-medium text-muted-foreground border-border hover:bg-stone-200 hover:text-foreground hover:border-stone-200 transition-all shadow-sm" onClick={() => setIsModalOpen(true)}>
+                    <Plus className="h-3.5 w-3.5 mr-1.5" />
+                    New
+                </Button>
             </div>
 
             {/* Grid */}

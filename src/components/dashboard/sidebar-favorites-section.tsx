@@ -65,7 +65,7 @@ function FavoriteItemRow({
     <div
       className={cn(
         "group flex items-center rounded-lg transition-colors",
-        isActive ? "bg-stone-300" : "hover:bg-stone-200"
+        isActive ? "bg-stone-200" : "hover:bg-stone-100"
       )}
     >
       <Link
@@ -87,7 +87,7 @@ function FavoriteItemRow({
             className={cn(
               "mr-1 flex h-6 w-6 shrink-0 items-center justify-center rounded transition-opacity",
               "opacity-0 group-hover:opacity-100 data-[state=open]:opacity-100",
-              "hover:bg-stone-300 focus-visible:outline-none"
+              "hover:bg-stone-200 focus-visible:outline-none"
             )}
             onClick={(e) => e.preventDefault()}
           >
@@ -159,7 +159,7 @@ export function SidebarFavoritesSection({
         <Popover open={flyoutEnabled && flyoutOpen} onOpenChange={() => {}}>
           <PopoverAnchor asChild>
             <CollapsibleTrigger
-              className="flex items-center gap-1 w-full px-3 py-1 rounded-md transition-colors hover:bg-stone-200 group"
+              className="flex items-center gap-1 w-full px-3 py-1 rounded-md transition-colors hover:bg-stone-100 group"
               onMouseEnter={openFlyout}
               onMouseLeave={scheduleFlyoutClose}
             >

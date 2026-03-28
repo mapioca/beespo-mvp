@@ -260,20 +260,16 @@ export function AnnouncementsClient({
                 ]}
             />
 
-            {/* Header */}
-            <div className="flex justify-between items-center px-6 py-5 shrink-0">
-                <div>
-                    <h1 className="text-2xl font-semibold tracking-tight">
-                        Announcements
-                    </h1>
-                    <p className="text-sm text-muted-foreground mt-1">
-                        Manage time-based announcements for your organization
-                    </p>
+            {/* Action Bar */}
+            <div className="flex items-center justify-between w-full px-6 pt-5 pb-4 shrink-0 flex-wrap gap-4">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                    {/* Placeholder for future tabs */}
                 </div>
-                <Button asChild size="sm">
-                    <Link href="/meetings/announcements/new">
-                        <Plus className="mr-2 h-4 w-4" />
-                        New Announcement
+
+                <Button asChild variant="ghost" className="rounded-full border px-3.5 py-1 text-xs font-medium text-muted-foreground border-border hover:bg-stone-200 hover:text-foreground hover:border-stone-200 transition-all shadow-sm">
+                    <Link href="/meetings/announcements/new" className="flex items-center gap-1.5">
+                        <Plus className="h-3.5 w-3.5" />
+                        New
                     </Link>
                 </Button>
             </div>

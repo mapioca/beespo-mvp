@@ -3,7 +3,8 @@
 import { useState, useMemo, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { Plus, X, Trash2 } from "lucide-react"
+import { Plus, X, Trash2, ListTodo } from "lucide-react"
+import { Breadcrumbs } from "@/components/dashboard/breadcrumbs"
 import {
     AlertDialog,
     AlertDialogAction,
@@ -239,21 +240,24 @@ export function TasksClient({
     // ── Render ──────────────────────────────────────────────────────────────
 
     return (
-        <div className="flex flex-col h-full">
-            {/* Header */}
-            <div className="flex justify-between items-center px-6 py-5 shrink-0">
-                <div>
-                    <h1 className="text-2xl font-semibold tracking-tight">
-                        Tasks
-                    </h1>
-                    <p className="text-sm text-muted-foreground mt-1">
-                        Manage your action items and assignments
-                    </p>
+        <div className="flex flex-col h-full bg-muted/30">
+            {/* Breadcrumb */}
+            <Breadcrumbs
+                items={[
+                    { label: "Tasks", icon: <ListTodo className="h-3.5 w-3.5" /> },
+                ]}
+            />
+
+            {/* Action Bar */}
+            <div className="flex items-center justify-between w-full px-6 pt-5 pb-4 shrink-0 flex-wrap gap-4">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                    {/* Placeholder for future tabs */}
                 </div>
+
                 <CreateTaskDialog>
-                    <Button size="sm">
-                        <Plus className="mr-2 h-4 w-4" />
-                        New Task
+                    <Button variant="ghost" className="rounded-full border px-3.5 py-1 text-xs font-medium text-muted-foreground border-border hover:bg-stone-200 hover:text-foreground hover:border-stone-200 transition-all shadow-sm">
+                        <Plus className="h-3.5 w-3.5 mr-1.5" />
+                        New
                     </Button>
                 </CreateTaskDialog>
             </div>

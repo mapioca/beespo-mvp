@@ -4,7 +4,8 @@ import { useState, useMemo, useCallback } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { Plus, X, Trash2 } from "lucide-react"
+import { Plus, X, Trash2, Database } from "lucide-react"
+import { Breadcrumbs } from "@/components/dashboard/breadcrumbs"
 import {
     AlertDialog,
     AlertDialogAction,
@@ -148,19 +149,24 @@ export function TablesClient({ tables }: TablesClientProps) {
     // ── Render ────────────────────────────────────────────────────────────────
 
     return (
-        <div className="flex flex-col h-full">
-            {/* Header */}
-            <div className="flex justify-between items-center px-6 py-5 shrink-0">
-                <div>
-                    <h1 className="text-2xl font-semibold tracking-tight">Tables</h1>
-                    <p className="text-sm text-muted-foreground mt-1">
-                        Create and manage custom databases
-                    </p>
+        <div className="flex flex-col h-full bg-muted/30">
+            {/* Breadcrumb */}
+            <Breadcrumbs
+                items={[
+                    { label: "Tables", icon: <Database className="h-3.5 w-3.5" /> },
+                ]}
+            />
+
+            {/* Action Bar */}
+            <div className="flex items-center justify-between w-full px-6 pt-5 pb-4 shrink-0 flex-wrap gap-4">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                    {/* Placeholder for future tabs */}
                 </div>
-                <Button asChild size="sm">
-                    <Link href="/tables/new">
-                        <Plus className="mr-2 h-4 w-4" />
-                        New Table
+
+                <Button asChild variant="ghost" className="rounded-full border px-3.5 py-1 text-xs font-medium text-muted-foreground border-border hover:bg-stone-200 hover:text-foreground hover:border-stone-200 transition-all shadow-sm">
+                    <Link href="/tables/new" className="flex items-center gap-1.5">
+                        <Plus className="h-3.5 w-3.5" />
+                        New
                     </Link>
                 </Button>
             </div>
