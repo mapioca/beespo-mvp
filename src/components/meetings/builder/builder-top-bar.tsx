@@ -224,6 +224,7 @@ export function BuilderTopBar({
                     { label: "Agendas", href: "/meetings/agendas", icon: <ClipboardList className="h-3.5 w-3.5" /> },
                     { label: title || "Untitled Agenda", icon: <FileText className="h-3.5 w-3.5" /> },
                 ]}
+                className="bg-transparent ring-0 border-b border-border/60 rounded-none px-4 py-2"
                 inlineAction={(
                     <>
                         {initialMeetingId && (
@@ -335,8 +336,8 @@ export function BuilderTopBar({
                     <div className="flex items-center gap-2">
                         {/* Live status */}
                         {isLive && (
-                            <span className="hidden sm:inline-flex items-center gap-1.5 text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">
-                                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                            <span className="hidden sm:inline-flex items-center gap-1 text-[11px] font-medium text-emerald-600">
+                                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
                                 Live
                             </span>
                         )}

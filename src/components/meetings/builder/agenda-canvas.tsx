@@ -93,10 +93,10 @@ function SortableAgendaRow({
                         {...attributes}
                         {...listeners}
                         className={cn(
-                            "rounded-md border bg-card transition-all group cursor-grab active:cursor-grabbing touch-none",
-                            "hover:border-muted-foreground/30",
-                            isSelected && "ring-2 ring-primary border-primary/50 shadow-sm",
-                            isDragging && "opacity-50 shadow-lg ring-2 ring-primary/40"
+                            "rounded-xl border border-border/50 bg-background/80 transition-all group cursor-grab active:cursor-grabbing touch-none",
+                            "hover:bg-background hover:border-border/70",
+                            isSelected && "ring-2 ring-primary/40 border-primary/40",
+                            isDragging && "opacity-60 shadow-lg ring-2 ring-primary/30"
                         )}
                     >
                         {/* Container Header */}
@@ -190,10 +190,10 @@ function SortableAgendaRow({
                         style={style}
                         onClick={(e) => { e.stopPropagation(); onSelect?.(); }}
                         className={cn(
-                            "flex flex-col border rounded-md bg-card transition-all group cursor-grab active:cursor-grabbing touch-none",
-                            "hover:border-muted-foreground/30",
-                            isSelected && "ring-2 ring-primary border-primary/50 shadow-sm",
-                            isDragging && "opacity-50 shadow-lg ring-2 ring-primary/40"
+                            "flex flex-col border rounded-xl bg-background/80 transition-all group cursor-grab active:cursor-grabbing touch-none",
+                            "hover:bg-background hover:border-border/70",
+                            isSelected && "ring-2 ring-primary/40 border-primary/40",
+                            isDragging && "opacity-60 shadow-lg ring-2 ring-primary/30"
                         )}
                         {...attributes}
                         {...listeners}
@@ -284,10 +284,10 @@ function SortableAgendaRow({
                     style={style}
                     onClick={(e) => { e.stopPropagation(); onSelect?.(); }}
                     className={cn(
-                        "flex flex-col border rounded-md bg-card transition-all group cursor-grab active:cursor-grabbing touch-none",
-                        "hover:border-muted-foreground/30",
-                        isSelected && "ring-2 ring-primary border-primary/50 shadow-sm",
-                        isDragging && "opacity-50 shadow-lg ring-2 ring-primary/40"
+                        "flex flex-col border rounded-xl bg-background/80 transition-all group cursor-grab active:cursor-grabbing touch-none",
+                        "hover:bg-background hover:border-border/70",
+                        isSelected && "ring-2 ring-primary/40 border-primary/40",
+                        isDragging && "opacity-60 shadow-lg ring-2 ring-primary/30"
                     )}
                     {...attributes}
                     {...listeners}
@@ -387,7 +387,12 @@ export function AgendaCanvas({
             onClick={() => onSelectItem?.(null)}
         >
             {/* Card container */}
-            <div className="bg-card rounded-lg ring-1 ring-border flex flex-col flex-1 overflow-hidden relative bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] [background-size:16px_16px]">
+            <div
+                className={cn(
+                    "rounded-2xl border border-border/60 bg-background/70 flex flex-col flex-1 overflow-hidden relative",
+                    items.length === 0 && "bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] [background-size:16px_16px]"
+                )}
+            >
                 {/* Stats badge */}
                 {items.length > 0 && (
                     <div className="absolute top-3 right-3 z-10 bg-card/90 backdrop-blur-sm rounded-full px-3 py-1 ring-1 ring-border shadow-sm">
@@ -428,7 +433,7 @@ export function AgendaCanvas({
                                     items={itemIds}
                                     strategy={verticalListSortingStrategy}
                                 >
-                                    <div className="space-y-1">
+                                    <div className="space-y-2">
                                         {items.map((item) => (
                                             <SortableAgendaRow
                                                 key={item.id}
