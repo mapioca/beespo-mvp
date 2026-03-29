@@ -1,7 +1,19 @@
 "use client";
 
-import { useState } from "react";
-import { Eye, Share2, ChevronDown, Link, Loader2, FileText, FileCode, FileType, CalendarDays, ClipboardList } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Share2, ChevronDown, Link, Loader2, FileText, FileCode, FileType, CalendarDays, ClipboardList, Clock, Star, MoreHorizontal, Trash2 } from "lucide-react";
+import { useFavoritesStore } from "@/stores/favorites-store";
+import { ZoomIcon, ZoomLogo } from "@/components/ui/zoom-icon";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Breadcrumbs } from "@/components/dashboard/breadcrumbs";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,12 +38,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { toast } from "@/lib/toast";
-import { 
-    generateMeetingPdf, 
-    generateMeetingDocx, 
-    generateMeetingTxt, 
-    downloadBlob 
+import {
+    generateMeetingPdf,
+    generateMeetingDocx,
+    generateMeetingTxt,
+    downloadBlob
 } from "@/lib/agenda-export-utils";
+import { ModeSwitcher } from "./mode-switcher";
+import { BuilderMode } from "./types";
 
 interface BuilderTopBarProps {
     /** Current meeting title from form */
@@ -46,12 +60,32 @@ interface BuilderTopBarProps {
     markdownForDownload: () => string;
     /** Trigger validation + save flow */
     onSave: () => void;
-    /** Open the preview modal */
-    onPreview: () => void;
     /** Duplicate the meeting with a new name */
     onSaveAsNew: (newTitle: string) => Promise<void>;
     /** Open the save as template flow */
     onSaveAsTemplate: () => void;
+    /** Current builder mode */
+    mode: BuilderMode;
+    /** Callback to change the builder mode */
+    onModeChange: (mode: BuilderMode) => void;
+    /** Whether the current user is a leader/admin */
+    isLeader: boolean;
+    /** Total agenda duration in minutes */
+    totalDuration: number;
+    /** Workspace slug for program URL */
+    workspaceSlug: string | null;
+    /** Zoom join URL (null if no zoom meeting linked) */
+    zoomJoinUrl: string | null;
+    /** Whether user has Zoom connected via Settings */
+    isZoomConnected: boolean;
+    /** Whether Zoom meeting creation is in progress */
+    isCreatingZoom: boolean;
+    /** Open the Zoom meeting management sheet */
+    onOpenZoomSheet: () => void;
+    /** Trigger the "Add Zoom" flow */
+    onAddZoom: () => void;
+    /** Delete the meeting — resolves when done */
+    onDelete?: () => Promise<void>;
 }
 
 export function BuilderTopBar({
@@ -61,15 +95,53 @@ export function BuilderTopBar({
     isValid,
     markdownForDownload,
     onSave,
-    onPreview,
     onSaveAsNew,
     onSaveAsTemplate,
+    mode,
+    onModeChange,
+    isLeader,
+    totalDuration,
+    zoomJoinUrl,
+    isZoomConnected,
+    isCreatingZoom,
+    onOpenZoomSheet,
+    onAddZoom,
+    onDelete,
 }: BuilderTopBarProps) {
     const [shareOpen, setShareOpen] = useState(false);
     const [saveAsNewOpen, setSaveAsNewOpen] = useState(false);
     const [newTitle, setNewTitle] = useState("");
     const [isSavingAsNew, setIsSavingAsNew] = useState(false);
     const [exportingFormat, setExportingFormat] = useState<string | null>(null);
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
+
+    // Star / Favorite
+    const [mounted, setMounted] = useState(false);
+    useEffect(() => setMounted(true), []);
+    const { isFavorite, toggleFavorite } = useFavoritesStore();
+    const favorited = mounted && initialMeetingId ? isFavorite(initialMeetingId, "meeting") : false;
+
+    const handleToggleFavorite = () => {
+        if (!initialMeetingId) return;
+        toggleFavorite({
+            id: initialMeetingId,
+            type: "meeting",
+            title,
+            href: `/meetings/${initialMeetingId}`,
+        });
+    };
+
+    const handleDelete = async () => {
+        if (!onDelete) return;
+        setIsDeleting(true);
+        try {
+            await onDelete();
+        } finally {
+            setIsDeleting(false);
+            setIsDeleteDialogOpen(false);
+        }
+    };
 
     // ─── Share actions ─────────────────────────────────────────
     const handleCopyLink = async () => {
@@ -156,21 +228,101 @@ export function BuilderTopBar({
                     { label: "Agendas", href: "/meetings/agendas", icon: <ClipboardList className="h-3.5 w-3.5" /> },
                     { label: title || "Untitled Agenda", icon: <FileText className="h-3.5 w-3.5" /> },
                 ]}
+                inlineAction={initialMeetingId ? (
+                    <>
+                        {/* Star / Favorite */}
+                        <button
+                            type="button"
+                            title={favorited ? "Remove from favorites" : "Add to favorites"}
+                            onClick={handleToggleFavorite}
+                            className={cn(
+                                "inline-flex items-center justify-center h-6 w-6 rounded",
+                                "text-muted-foreground hover:text-foreground hover:bg-accent",
+                                "transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                            )}
+                        >
+                            <Star
+                                className={cn(
+                                    "h-3.5 w-3.5 transition-colors",
+                                    favorited ? "fill-amber-400 text-amber-400" : ""
+                                )}
+                            />
+                        </button>
+
+                        {/* More options */}
+                        {isLeader && (
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <button
+                                        type="button"
+                                        title="More options"
+                                        className={cn(
+                                            "inline-flex items-center justify-center h-6 w-6 rounded",
+                                            "text-muted-foreground hover:text-foreground hover:bg-accent",
+                                            "transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                        )}
+                                    >
+                                        <MoreHorizontal className="h-3.5 w-3.5" />
+                                    </button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="start" className="w-48">
+                                    <DropdownMenuItem
+                                        onClick={() => setIsDeleteDialogOpen(true)}
+                                        className="text-destructive focus:text-destructive"
+                                    >
+                                        <Trash2 className="h-4 w-4" />
+                                        Delete agenda
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        )}
+                    </>
+                ) : undefined}
                 action={
                     <div className="flex items-center gap-2">
-                        {/* Preview */}
-                        <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 gap-1.5 text-muted-foreground hover:text-foreground"
-                            onClick={onPreview}
-                            disabled={!isValid}
-                            title="Preview agenda"
-                        >
-                            <Eye className="h-4 w-4" />
-                            <span className="hidden sm:inline text-xs">Preview</span>
-                        </Button>
+                        {/* Duration */}
+                        {totalDuration > 0 && (
+                            <span className="hidden sm:flex items-center gap-1 text-xs text-muted-foreground whitespace-nowrap mr-1">
+                                <Clock className="h-3.5 w-3.5" />
+                                ~{totalDuration} min
+                            </span>
+                        )}
+
+                        {/* Zoom */}
+                        {isLeader && initialMeetingId && (
+                            zoomJoinUrl ? (
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    title="Zoom Meeting"
+                                    className="h-8 gap-1.5 hover:bg-blue-500/10 px-2"
+                                    onClick={onOpenZoomSheet}
+                                >
+                                    <ZoomLogo iconClassName="h-4 w-4" wordmarkClassName="h-3 w-auto" />
+                                </Button>
+                            ) : isZoomConnected ? (
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    title="Add Zoom Meeting"
+                                    className="h-8 gap-1 text-xs text-muted-foreground hover:text-foreground px-2"
+                                    onClick={onAddZoom}
+                                    disabled={isCreatingZoom}
+                                >
+                                    {isCreatingZoom ? (
+                                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                    ) : (
+                                        <ZoomIcon className="h-3.5 w-3.5" />
+                                    )}
+                                    <span className="hidden sm:inline">Zoom</span>
+                                </Button>
+                            ) : null
+                        )}
+
+                        {/* Mode Switcher */}
+                        <ModeSwitcher mode={mode} onModeChange={onModeChange} isLeader={isLeader} />
 
                         {/* Share popover */}
                         <Popover open={shareOpen} onOpenChange={setShareOpen}>
@@ -256,8 +408,8 @@ export function BuilderTopBar({
                             </PopoverContent>
                         </Popover>
 
-                        {/* Save split button */}
-                        <div className="flex items-center">
+                        {/* Save split button — only for leaders */}
+                        {isLeader && <div className="flex items-center">
                             <Button
                                 type="button"
                                 size="sm"
@@ -295,7 +447,7 @@ export function BuilderTopBar({
                                     </DropdownMenuItem>
                                 </DropdownMenuContent>
                             </DropdownMenu>
-                        </div>
+                        </div>}
                     </div>
                 }
             />
@@ -351,6 +503,37 @@ export function BuilderTopBar({
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+            {/* Delete Confirmation Dialog */}
+            <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Agenda</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Are you sure you want to delete &quot;{title}&quot;? This action
+                            cannot be undone. All agenda items and associated data will be
+                            permanently removed.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleDelete}
+                            disabled={isDeleting}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                            {isDeleting ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Deleting...
+                                </>
+                            ) : (
+                                "Delete"
+                            )}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </>
     );
 }

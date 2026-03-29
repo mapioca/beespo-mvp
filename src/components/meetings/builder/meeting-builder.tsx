@@ -22,7 +22,7 @@ import { PropertiesPane } from "./properties-pane";
 import { ToolboxPane } from "./toolbox-pane";
 import { AgendaCanvas } from "./agenda-canvas";
 import { ToolboxItemDragOverlay } from "./draggable-toolbox-item";
-import { CanvasItem, ToolboxItem, Template, CategoryType } from "./types";
+import { CanvasItem, ToolboxItem, Template, CategoryType, BuilderMode } from "./types";
 import { ContainerType, ContainerChildItem } from "../container-agenda-item";
 import {
     UnifiedSelectorModal,
@@ -30,7 +30,10 @@ import {
     SpeakerSelection,
 } from "../unified-selector-modal";
 import { ValidationModal, ValidationItem, ValidationState } from "../validation-modal";
-import { PreviewModal } from "../preview-modal";
+import { PrintPreviewPane } from "./print-preview-pane";
+import { ProgramModePane } from "./program-mode-pane";
+import { ZoomMeetingSheet } from "@/components/meetings/zoom-meeting-sheet";
+import { ZoomIcon } from "@/components/ui/zoom-icon";
 import { generateMeetingMarkdown } from "@/lib/generate-meeting-markdown";
 import { saveMeetingMarkdown } from "@/lib/actions/meeting-actions";
 import { useForm } from "react-hook-form";
@@ -38,7 +41,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Form } from "@/components/ui/form";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription } from "@/components/ui/sheet";
-import { List, Loader2 } from "lucide-react";
+import { List, Loader2, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BuilderTopBar } from "./builder-top-bar";
 import {
@@ -118,11 +121,11 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
     const [validationItems, setValidationItems] = useState<ValidationItem[]>([]);
     const [isCreating, setIsCreating] = useState(false);
 
-    // Preview state
-    const [previewModalOpen, setPreviewModalOpen] = useState(false);
-    const [previewMarkdown, setPreviewMarkdown] = useState("");
-    const [isGeneratingPreview, setIsGeneratingPreview] = useState(false);
+    // Builder mode state — default to print-preview when editing existing, planning when creating new
+    const [builderMode, setBuilderMode] = useState<BuilderMode>(initialMeetingId ? "print-preview" : "planning");
     const [workspaceName, setWorkspaceName] = useState("");
+    const [workspaceSlug, setWorkspaceSlug] = useState<string | null>(null);
+    const [isLeader, setIsLeader] = useState(true); // assume leader until proven otherwise
 
     // Save as Template state
     const [isSavingTemplate, setIsSavingTemplate] = useState(false);
@@ -155,6 +158,14 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
 
     // Zoom — track if this meeting has a linked Zoom meeting so we can sync on save
     const [linkedZoomMeetingId, setLinkedZoomMeetingId] = useState<string | null>(null);
+    const [zoomJoinUrl, setZoomJoinUrl] = useState<string | null>(null);
+    const [zoomStartUrl, setZoomStartUrl] = useState<string | null>(null);
+    const [zoomPasscode, setZoomPasscode] = useState<string | null>(null);
+    const [isZoomConnected, setIsZoomConnected] = useState(false);
+    const [zoomSheetOpen, setZoomSheetOpen] = useState(false);
+    const [zoomCreateOpen, setZoomCreateOpen] = useState(false);
+    const [zoomCreateDuration, setZoomCreateDuration] = useState(0);
+    const [isCreatingZoom, setIsCreatingZoom] = useState(false);
 
     // DnD sensors
     const sensors = useSensors(
@@ -180,7 +191,7 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                 const { data: profile } = await (supabase
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     .from("profiles") as any)
-                    .select("workspace_id, workspaces(name)")
+                    .select("workspace_id, role, workspaces(name, slug)")
                     .eq("id", user.id)
                     .single();
 
@@ -188,6 +199,26 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                 workspaceId = (profile as any)?.workspace_id ?? null;
                 if (profile?.workspaces?.name) {
                     setWorkspaceName(profile.workspaces.name);
+                }
+                if (profile?.workspaces?.slug) {
+                    setWorkspaceSlug(profile.workspaces.slug);
+                }
+                const role = profile?.role;
+                setIsLeader(role === "leader" || role === "admin");
+
+                // Check if user has Zoom connected
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const { data: zoomApp } = await (supabase.from("apps") as any)
+                    .select("id")
+                    .eq("slug", "zoom")
+                    .single();
+                if (zoomApp?.id) {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    const { count } = await (supabase.from("app_tokens") as any)
+                        .select("*", { count: "exact", head: true })
+                        .eq("user_id", user.id)
+                        .eq("app_id", zoomApp.id);
+                    setIsZoomConnected((count ?? 0) > 0);
                 }
             }
 
@@ -237,6 +268,15 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
             }
             if (meeting.zoom_meeting_id) {
                 setLinkedZoomMeetingId(meeting.zoom_meeting_id);
+            }
+            if (meeting.zoom_join_url) {
+                setZoomJoinUrl(meeting.zoom_join_url);
+            }
+            if (meeting.zoom_start_url) {
+                setZoomStartUrl(meeting.zoom_start_url);
+            }
+            if (meeting.zoom_passcode) {
+                setZoomPasscode(meeting.zoom_passcode);
             }
             if (meeting.notes && typeof meeting.notes === "string") {
                 setMeetingNotes(meeting.notes);
@@ -999,36 +1039,6 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
         return items;
     }, [canvasItems]);
 
-    const handlePreview = useCallback(async () => {
-        const valid = await form.trigger();
-        if (!valid) {
-            toast.error("Please fix form errors before previewing");
-            return;
-        }
-
-        setPreviewModalOpen(true);
-        setIsGeneratingPreview(true);
-
-        // Small delay so the modal opens with spinner visible
-        setTimeout(() => {
-            const markdown = generateMeetingMarkdown({
-                title: form.getValues("title"),
-                date: form.getValues("date"),
-                time: form.getValues("time"),
-                unitName: workspaceName,
-                presiding: form.getValues("presiding"),
-                conducting: form.getValues("conducting"),
-                chorister: form.getValues("chorister"),
-                pianistOrganist: form.getValues("pianistOrganist"),
-                meetingNotes,
-                canvasItems,
-            });
-
-            setPreviewMarkdown(markdown);
-            setIsGeneratingPreview(false);
-        }, 100);
-    }, [form, canvasItems, workspaceName, meetingNotes]);
-
     const handleValidate = useCallback(() => {
         setValidationModalOpen(true);
         setValidationState("validating");
@@ -1509,7 +1519,78 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
         }
     }, [canvasItems]);
 
+    // ─── Zoom handlers ──────────────────────────────────────────────
+    const handleCreateZoom = useCallback(() => {
+        if (!isZoomConnected) {
+            toast.error("Zoom not connected", {
+                description: "Go to Settings → Integrations to connect your Zoom account.",
+            });
+            return;
+        }
+        const duration = canvasItems.reduce((acc, item) => acc + (item.duration_minutes || 0), 0);
+        setZoomCreateDuration(duration > 0 ? duration : 40);
+        setZoomCreateOpen(true);
+    }, [isZoomConnected, canvasItems]);
+
+    const handleConfirmCreateZoom = useCallback(async () => {
+        if (!initialMeetingId) return;
+        setIsCreatingZoom(true);
+        setZoomCreateOpen(false);
+        try {
+            const res = await fetch(`/api/meetings/${initialMeetingId}/zoom`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ duration: zoomCreateDuration }),
+            });
+            if (!res.ok) {
+                const data = await res.json();
+                if (data.error === "zoom_not_connected") {
+                    toast.error("Zoom not connected", {
+                        description: "Go to Settings → Integrations to connect your Zoom account.",
+                    });
+                } else {
+                    toast.error("Failed to create Zoom meeting. Please try again.");
+                }
+                return;
+            }
+            const result = await res.json();
+            setZoomJoinUrl(result.zoom_join_url);
+            setZoomStartUrl(result.zoom_start_url);
+            setZoomPasscode(result.zoom_passcode);
+            if (result.zoom_meeting_id) setLinkedZoomMeetingId(result.zoom_meeting_id);
+            toast.success("Zoom meeting created");
+        } catch {
+            toast.error("Failed to create Zoom meeting. Please try again.");
+        } finally {
+            setIsCreatingZoom(false);
+        }
+    }, [initialMeetingId, zoomCreateDuration]);
+
+    // ─── Delete handler ──────────────────────────────────────────
+    const handleDeleteMeeting = useCallback(async () => {
+        if (!initialMeetingId) return;
+
+        // Cancel linked Zoom meeting first
+        if (linkedZoomMeetingId) {
+            try {
+                await fetch(`/api/meetings/${initialMeetingId}/zoom`, { method: "DELETE" });
+            } catch {
+                // Non-fatal — proceed with deletion
+            }
+        }
+
+        const supabase = createClient();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (supabase.from("agenda_items") as any).delete().eq("meeting_id", initialMeetingId);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (supabase.from("meetings") as any).delete().eq("id", initialMeetingId);
+
+        router.push("/meetings/agendas");
+        router.refresh();
+    }, [initialMeetingId, linkedZoomMeetingId, router]);
+
     const isValid = title.trim() !== "" && date !== undefined;
+    const totalDuration = canvasItems.reduce((acc, item) => acc + (item.duration_minutes || 0), 0);
     const selectedSpeakerIds = canvasItems
         .filter((i) => i.speaker_id)
         .map((i) => i.speaker_id as string);
@@ -1531,7 +1612,6 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                             initialMeetingId={initialMeetingId}
                             isCreating={isCreating}
                             isValid={isValid}
-                            onPreview={handlePreview}
                             onSave={handleValidate}
                             onSaveAsNew={handleSaveAsNew}
                             markdownForDownload={() => generateMeetingMarkdown({
@@ -1546,101 +1626,146 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                                 canvasItems,
                             })}
                             onSaveAsTemplate={openSaveTemplateDialog}
+                            mode={builderMode}
+                            onModeChange={setBuilderMode}
+                            isLeader={isLeader}
+                            totalDuration={totalDuration}
+                            workspaceSlug={workspaceSlug}
+                            zoomJoinUrl={zoomJoinUrl}
+                            isZoomConnected={isZoomConnected}
+                            isCreatingZoom={isCreatingZoom}
+                            onOpenZoomSheet={() => setZoomSheetOpen(true)}
+                            onAddZoom={handleCreateZoom}
+                            onDelete={handleDeleteMeeting}
                         />
 
-                        {/* Mobile sheet toggle (hidden on lg+) — toolbox & properties */}
-                        <div className="lg:hidden flex items-center justify-between px-4 py-2 border-b bg-background shrink-0">
-                            <Sheet>
-                                <SheetTrigger asChild>
-                                    <Button variant="outline" size="icon" type="button">
-                                        <List className="h-4 w-4" />
-                                    </Button>
-                                </SheetTrigger>
-                                <SheetContent side="left" className="w-[300px] sm:w-[400px] p-0 overflow-y-auto">
-                                    <SheetTitle className="sr-only">Library</SheetTitle>
-                                    <SheetDescription className="sr-only">Agenda items library</SheetDescription>
-                                    <ToolboxPane onAddItem={handleAddCanvasItem} />
-                                </SheetContent>
-                            </Sheet>
+                        {builderMode === "planning" && (
+                            <>
+                                {/* Mobile sheet toggle (hidden on lg+) — toolbox & properties */}
+                                <div className="lg:hidden flex items-center justify-between px-4 py-2 border-b bg-background shrink-0">
+                                    <Sheet>
+                                        <SheetTrigger asChild>
+                                            <Button variant="outline" size="icon" type="button">
+                                                <List className="h-4 w-4" />
+                                            </Button>
+                                        </SheetTrigger>
+                                        <SheetContent side="left" className="w-[300px] sm:w-[400px] p-0 overflow-y-auto">
+                                            <SheetTitle className="sr-only">Library</SheetTitle>
+                                            <SheetDescription className="sr-only">Agenda items library</SheetDescription>
+                                            <ToolboxPane onAddItem={handleAddCanvasItem} />
+                                        </SheetContent>
+                                    </Sheet>
 
-                            <div className="font-semibold truncate px-4">{title || "Untitled Meeting"}</div>
+                                    <div className="font-semibold truncate px-4">{title || "Untitled Meeting"}</div>
 
-                            <Sheet>
-                                <SheetTrigger asChild>
-                                    <Button variant="outline" size="icon" type="button">
-                                        <span className="sr-only">Properties</span>
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>
-                                    </Button>
-                                </SheetTrigger>
-                                <SheetContent side="right" className="w-[300px] sm:w-[400px] p-0 overflow-y-auto">
-                                    <SheetTitle className="sr-only">Properties</SheetTitle>
-                                    <SheetDescription className="sr-only">Meeting properties</SheetDescription>
-                                    <PropertiesPane
-                                        templates={templates}
-                                        selectedItem={canvasItems.find(i => i.id === selectedItemId)}
-                                        onUpdateItem={handleUpdateTitle}
-                                        onUpdateDescription={handleUpdateDescription}
-                                        onUpdateItemNotes={handleUpdateItemNotes}
-                                        meetingNotes={meetingNotes}
-                                        onUpdateMeetingNotes={setMeetingNotes}
-                                        onUpdateDuration={handleUpdateDuration}
-                                        onSelectHymn={handleSelectHymn}
-                                        onSelectParticipant={handleSelectParticipant}
-                                        onSelectDiscussion={(discs) => handleAddManyToContainer(discs, "discussion")}
-                                        onSelectBusiness={(biz) => handleAddManyToContainer(biz, "business")}
-                                        onSelectAnnouncement={(ann) => handleAddManyToContainer(ann, "announcement")}
-                                        onSelectSpeaker={handleSelectSpeaker}
-                                        selectedSpeakerIdsInMeeting={selectedSpeakerIds}
-                                        onAddToContainer={openContainerAddForSelected}
-                                        onRemoveChildItem={handleRemoveChildFromSelected}
-                                    />
-                                </SheetContent>
-                            </Sheet>
-                        </div>
+                                    <Sheet>
+                                        <SheetTrigger asChild>
+                                            <Button variant="outline" size="icon" type="button">
+                                                <span className="sr-only">Properties</span>
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>
+                                            </Button>
+                                        </SheetTrigger>
+                                        <SheetContent side="right" className="w-[300px] sm:w-[400px] p-0 overflow-y-auto">
+                                            <SheetTitle className="sr-only">Properties</SheetTitle>
+                                            <SheetDescription className="sr-only">Meeting properties</SheetDescription>
+                                            <PropertiesPane
+                                                templates={templates}
+                                                selectedItem={canvasItems.find(i => i.id === selectedItemId)}
+                                                onUpdateItem={handleUpdateTitle}
+                                                onUpdateDescription={handleUpdateDescription}
+                                                onUpdateItemNotes={handleUpdateItemNotes}
+                                                meetingNotes={meetingNotes}
+                                                onUpdateMeetingNotes={setMeetingNotes}
+                                                onUpdateDuration={handleUpdateDuration}
+                                                onSelectHymn={handleSelectHymn}
+                                                onSelectParticipant={handleSelectParticipant}
+                                                onSelectDiscussion={(discs) => handleAddManyToContainer(discs, "discussion")}
+                                                onSelectBusiness={(biz) => handleAddManyToContainer(biz, "business")}
+                                                onSelectAnnouncement={(ann) => handleAddManyToContainer(ann, "announcement")}
+                                                onSelectSpeaker={handleSelectSpeaker}
+                                                selectedSpeakerIdsInMeeting={selectedSpeakerIds}
+                                                onAddToContainer={openContainerAddForSelected}
+                                                onRemoveChildItem={handleRemoveChildFromSelected}
+                                            />
+                                        </SheetContent>
+                                    </Sheet>
+                                </div>
 
-                        {/* 3-Column Workspace */}
-                        <div className="flex-1 flex overflow-hidden">
-                            {/* Left Pane - Library */}
-                            <div className="hidden lg:block w-80 h-full overflow-hidden shrink-0">
-                                <ToolboxPane onAddItem={handleAddCanvasItem} />
-                            </div>
+                                {/* 3-Column Workspace */}
+                                <div className="flex-1 flex overflow-hidden">
+                                    {/* Left Pane - Library */}
+                                    <div className="hidden lg:block w-80 h-full overflow-hidden shrink-0">
+                                        <ToolboxPane onAddItem={handleAddCanvasItem} />
+                                    </div>
 
-                            {/* Center Pane - Canvas */}
-                            <div className="flex-1 h-full overflow-hidden min-w-0">
-                                <AgendaCanvas
-                                    items={canvasItems}
-                                    onRemoveItem={handleRemoveItem}
-                                    expandedContainers={expandedContainers}
-                                    onToggleContainer={toggleContainer}
-                                    selectedItemId={selectedItemId}
-                                    onSelectItem={setSelectedItemId}
-                                    isOver={isOverCanvas}
-                                />
-                            </div>
+                                    {/* Center Pane - Canvas */}
+                                    <div className="flex-1 h-full overflow-hidden min-w-0">
+                                        <AgendaCanvas
+                                            items={canvasItems}
+                                            onRemoveItem={handleRemoveItem}
+                                            expandedContainers={expandedContainers}
+                                            onToggleContainer={toggleContainer}
+                                            selectedItemId={selectedItemId}
+                                            onSelectItem={setSelectedItemId}
+                                            isOver={isOverCanvas}
+                                        />
+                                    </div>
 
-                            {/* Right Pane - Properties */}
-                            <div className="hidden lg:block w-[280px] h-full overflow-hidden shrink-0">
-                                <PropertiesPane
-                                    templates={templates}
-                                    selectedItem={canvasItems.find(i => i.id === selectedItemId)}
-                                    onUpdateItem={handleUpdateTitle}
-                                    onUpdateDescription={handleUpdateDescription}
-                                    onUpdateItemNotes={handleUpdateItemNotes}
-                                    meetingNotes={meetingNotes}
-                                    onUpdateMeetingNotes={setMeetingNotes}
-                                    onUpdateDuration={handleUpdateDuration}
-                                    onSelectHymn={handleSelectHymn}
-                                    onSelectParticipant={handleSelectParticipant}
-                                    onSelectDiscussion={(discs) => handleAddManyToContainer(discs, "discussion")}
-                                    onSelectBusiness={(biz) => handleAddManyToContainer(biz, "business")}
-                                    onSelectAnnouncement={(ann) => handleAddManyToContainer(ann, "announcement")}
-                                    onSelectSpeaker={handleSelectSpeaker}
-                                    selectedSpeakerIdsInMeeting={selectedSpeakerIds}
-                                    onAddToContainer={openContainerAddForSelected}
-                                    onRemoveChildItem={handleRemoveChildFromSelected}
-                                />
-                            </div>
-                        </div>
+                                    {/* Right Pane - Properties */}
+                                    <div className="hidden lg:block w-[280px] h-full overflow-hidden shrink-0">
+                                        <PropertiesPane
+                                            templates={templates}
+                                            selectedItem={canvasItems.find(i => i.id === selectedItemId)}
+                                            onUpdateItem={handleUpdateTitle}
+                                            onUpdateDescription={handleUpdateDescription}
+                                            onUpdateItemNotes={handleUpdateItemNotes}
+                                            meetingNotes={meetingNotes}
+                                            onUpdateMeetingNotes={setMeetingNotes}
+                                            onUpdateDuration={handleUpdateDuration}
+                                            onSelectHymn={handleSelectHymn}
+                                            onSelectParticipant={handleSelectParticipant}
+                                            onSelectDiscussion={(discs) => handleAddManyToContainer(discs, "discussion")}
+                                            onSelectBusiness={(biz) => handleAddManyToContainer(biz, "business")}
+                                            onSelectAnnouncement={(ann) => handleAddManyToContainer(ann, "announcement")}
+                                            onSelectSpeaker={handleSelectSpeaker}
+                                            selectedSpeakerIdsInMeeting={selectedSpeakerIds}
+                                            onAddToContainer={openContainerAddForSelected}
+                                            onRemoveChildItem={handleRemoveChildFromSelected}
+                                        />
+                                    </div>
+                                </div>
+                            </>
+                        )}
+
+                        {builderMode === "print-preview" && (
+                            <PrintPreviewPane
+                                title={form.getValues("title")}
+                                date={form.getValues("date")}
+                                time={form.getValues("time")}
+                                unitName={workspaceName}
+                                presiding={form.getValues("presiding")}
+                                conducting={form.getValues("conducting")}
+                                chorister={form.getValues("chorister")}
+                                pianistOrganist={form.getValues("pianistOrganist")}
+                                meetingNotes={meetingNotes}
+                                canvasItems={canvasItems}
+                            />
+                        )}
+
+                        {builderMode === "program" && (
+                            <ProgramModePane
+                                title={title}
+                                date={date}
+                                time={time}
+                                unitName={workspaceName}
+                                presiding={form.getValues("presiding")}
+                                conducting={form.getValues("conducting")}
+                                chorister={form.getValues("chorister")}
+                                pianistOrganist={form.getValues("pianistOrganist")}
+                                meetingNotes={meetingNotes}
+                                canvasItems={canvasItems}
+                            />
+                        )}
                     </div>
 
                     {/* Drag Overlay */}
@@ -1670,15 +1795,6 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                         onSelectBusiness={(biz) => handleAddToContainer(biz, "business")}
                         onSelectAnnouncement={(ann) => handleAddToContainer(ann, "announcement")}
                         selectedSpeakerIdsInMeeting={selectedSpeakerIds}
-                    />
-
-                    {/* Preview Modal */}
-                    <PreviewModal
-                        open={previewModalOpen}
-                        onClose={() => setPreviewModalOpen(false)}
-                        markdown={previewMarkdown}
-                        unitName={workspaceName}
-                        isLoading={isGeneratingPreview}
                     />
 
                     {/* Validation Modal */}
@@ -1790,6 +1906,87 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                                 >
                                     {isSavingTemplate ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                                     Save Template
+                                </Button>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
+                    {/* Zoom management sheet */}
+                    {initialMeetingId && zoomJoinUrl && (
+                        <ZoomMeetingSheet
+                            meeting={{
+                                id: initialMeetingId,
+                                title: form.getValues("title"),
+                                scheduled_date: (() => {
+                                    const d = form.getValues("date");
+                                    const t = form.getValues("time");
+                                    if (!d) return null;
+                                    const dt = new Date(d);
+                                    if (t) {
+                                        const [h, m] = t.split(":");
+                                        dt.setHours(parseInt(h), parseInt(m));
+                                    }
+                                    return dt.toISOString();
+                                })(),
+                                zoom_meeting_id: linkedZoomMeetingId,
+                                zoom_join_url: zoomJoinUrl,
+                                zoom_start_url: zoomStartUrl,
+                                zoom_passcode: zoomPasscode,
+                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                            } as any}
+                            totalDuration={totalDuration}
+                            isZoomFreeAccount={null}
+                            open={zoomSheetOpen}
+                            onOpenChange={setZoomSheetOpen}
+                            onMeetingUpdate={(fields) => {
+                                if ("zoom_join_url" in fields) setZoomJoinUrl(fields.zoom_join_url ?? null);
+                                if ("zoom_start_url" in fields) setZoomStartUrl(fields.zoom_start_url ?? null);
+                                if ("zoom_passcode" in fields) setZoomPasscode(fields.zoom_passcode ?? null);
+                                if ("zoom_meeting_id" in fields) setLinkedZoomMeetingId(fields.zoom_meeting_id ?? null);
+                            }}
+                        />
+                    )}
+
+                    {/* Add Zoom — create dialog */}
+                    <Dialog open={zoomCreateOpen} onOpenChange={(o) => !isCreatingZoom && setZoomCreateOpen(o)}>
+                        <DialogContent className="sm:max-w-sm">
+                            <DialogHeader>
+                                <DialogTitle className="flex items-center gap-2">
+                                    <ZoomIcon className="h-4 w-4" />
+                                    Add Zoom Meeting
+                                </DialogTitle>
+                            </DialogHeader>
+                            <div className="space-y-4 py-1">
+                                <div className="space-y-1.5">
+                                    <label className="text-sm font-medium">Duration (minutes)</label>
+                                    <Input
+                                        type="number"
+                                        min={1}
+                                        max={600}
+                                        value={zoomCreateDuration}
+                                        onChange={(e) => setZoomCreateDuration(Number(e.target.value))}
+                                        className="h-9"
+                                    />
+                                    {totalDuration === 0 && (
+                                        <p className="text-xs text-muted-foreground">
+                                            No items are timed yet — enter a duration manually.
+                                        </p>
+                                    )}
+                                </div>
+                                <div className="flex gap-2.5 rounded-md border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-400">
+                                    <Info className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                                    <span>
+                                        {zoomCreateDuration > 40
+                                            ? "Free Zoom accounts are capped at 40 minutes. Participants may be disconnected after that."
+                                            : "Free Zoom accounts are limited to 40-minute meetings. Upgrade at zoom.us for longer sessions."}
+                                    </span>
+                                </div>
+                            </div>
+                            <DialogFooter>
+                                <Button variant="outline" size="sm" type="button" onClick={() => setZoomCreateOpen(false)}>
+                                    Cancel
+                                </Button>
+                                <Button size="sm" type="button" onClick={handleConfirmCreateZoom} disabled={!zoomCreateDuration}>
+                                    Create Zoom Meeting
                                 </Button>
                             </DialogFooter>
                         </DialogContent>

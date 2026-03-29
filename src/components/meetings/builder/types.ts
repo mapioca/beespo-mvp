@@ -111,6 +111,9 @@ export interface ProceduralItemType {
     category: string | null;
 }
 
+// Builder mode
+export type BuilderMode = "planning" | "print-preview" | "program";
+
 // Category groups for toolbox
 export const TOOLBOX_CATEGORIES = {
     worship: {

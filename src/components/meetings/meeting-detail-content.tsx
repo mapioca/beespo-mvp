@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
     CalendarDays, Clock, Pencil, Download, Printer, Copy, Trash2,
-    ClipboardList, FileText, MoreHorizontal, Share2, Star, Loader2, Info,
+    ClipboardList, FileText, MoreHorizontal, Share2, Star, Loader2, Info, Smartphone,
 } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
@@ -358,6 +358,17 @@ export function MeetingDetailContent({
                             onClick={() => setShareOpen(true)}
                         >
                             <Share2 className="h-4 w-4" />
+                        </Button>
+
+                        {/* Program View */}
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            title="View Program"
+                            className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                            onClick={() => window.open(`/${workspaceSlug}/program/${currentMeeting.id}`, "_blank", "noopener,noreferrer")}
+                        >
+                            <Smartphone className="h-4 w-4" />
                         </Button>
 
                         {/* Print */}

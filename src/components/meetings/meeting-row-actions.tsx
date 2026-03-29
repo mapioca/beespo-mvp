@@ -27,9 +27,9 @@ import {
     Play,
     Download,
     Share2,
-    Edit,
     Trash2,
     Loader2,
+    Smartphone,
 } from "lucide-react";
 import { ShareDialog } from "@/components/conduct/share-dialog";
 import { createClient } from "@/lib/supabase/client";
@@ -141,11 +141,11 @@ export function MeetingRowActions({
                     </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-[160px]">
-                    {/* View - Always available */}
+                    {/* View/Edit - Goes to builder (mode depends on user role) */}
                     <DropdownMenuItem asChild>
                         <Link href={`/meetings/${meeting.id}`} className="flex items-center">
                             <Eye className="mr-2 h-4 w-4" />
-                            View
+                            {isLeader ? "Open" : "View"}
                         </Link>
                     </DropdownMenuItem>
 
@@ -162,19 +162,6 @@ export function MeetingRowActions({
                         </DropdownMenuItem>
                     )}
 
-                    {/* Edit - Only for scheduled meetings and leaders */}
-                    {meeting.status === "scheduled" && isLeader && (
-                        <DropdownMenuItem asChild>
-                            <Link
-                                href={`/meetings/${meeting.id}/edit`}
-                                className="flex items-center"
-                            >
-                                <Edit className="mr-2 h-4 w-4" />
-                                Edit
-                            </Link>
-                        </DropdownMenuItem>
-                    )}
-
                     <DropdownMenuSeparator />
 
                     {/* Print */}
@@ -182,6 +169,14 @@ export function MeetingRowActions({
                         <a href={`/meetings/${meeting.id}/print`} target="_blank" rel="noopener noreferrer" className="flex items-center cursor-pointer">
                             <Download className="mr-2 h-4 w-4" />
                             Print
+                        </a>
+                    </DropdownMenuItem>
+
+                    {/* Program View */}
+                    <DropdownMenuItem asChild>
+                        <a href={`/${workspaceSlug}/program/${meeting.id}`} target="_blank" rel="noopener noreferrer" className="flex items-center cursor-pointer">
+                            <Smartphone className="mr-2 h-4 w-4" />
+                            Program
                         </a>
                     </DropdownMenuItem>
 
