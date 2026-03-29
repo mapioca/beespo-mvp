@@ -65,16 +65,16 @@ function FavoriteItemRow({
     <div
       className={cn(
         "group flex items-center rounded-lg transition-colors",
-        isActive ? "bg-stone-200" : "hover:bg-stone-100"
+        isActive ? "bg-muted/80" : "hover:bg-muted/60"
       )}
     >
       <Link
         href={fav.href}
-        className={cn(
-          "flex flex-1 min-w-0 items-center gap-3 px-3 transition-colors",
-          compact ? "py-1.5" : "py-1.5",
-          isActive ? "text-foreground font-medium" : "text-muted-foreground hover:text-foreground"
-        )}
+      className={cn(
+        "flex flex-1 min-w-0 items-center gap-3 px-3 transition-colors",
+        compact ? "py-1.5" : "py-1.5",
+        isActive ? "text-foreground font-medium" : "text-muted-foreground hover:text-foreground"
+      )}
       >
         <Icon className={cn("shrink-0", compact ? "h-3.5 w-3.5" : "h-4 w-4")} />
         <span className="truncate text-sm">{fav.title}</span>
@@ -84,11 +84,11 @@ function FavoriteItemRow({
         <DropdownMenuTrigger asChild>
           <button
             type="button"
-            className={cn(
-              "mr-1 flex h-6 w-6 shrink-0 items-center justify-center rounded transition-opacity",
-              "opacity-0 group-hover:opacity-100 data-[state=open]:opacity-100",
-              "hover:bg-stone-200 focus-visible:outline-none"
-            )}
+          className={cn(
+            "mr-1 flex h-6 w-6 shrink-0 items-center justify-center rounded transition-opacity",
+            "opacity-0 group-hover:opacity-100 data-[state=open]:opacity-100",
+            "hover:bg-muted/80 focus-visible:outline-none"
+          )}
             onClick={(e) => e.preventDefault()}
           >
             <MoreHorizontal className="h-3.5 w-3.5 text-muted-foreground" />
@@ -158,12 +158,12 @@ export function SidebarFavoritesSection({
       <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
         <Popover open={flyoutEnabled && flyoutOpen} onOpenChange={() => {}}>
           <PopoverAnchor asChild>
-            <CollapsibleTrigger
-              className="flex items-center gap-1 w-full px-3 py-1 rounded-md transition-colors hover:bg-stone-100 group"
+      <CollapsibleTrigger
+        className="flex items-center gap-1 w-full px-3 py-1 rounded-md transition-colors hover:bg-muted/60 group"
               onMouseEnter={openFlyout}
               onMouseLeave={scheduleFlyoutClose}
             >
-              <span className="flex-1 text-left text-xs font-medium text-muted-foreground">
+              <span className="flex-1 text-left text-[11px] font-medium text-muted-foreground">
                 Favorites
               </span>
               <ChevronRight
@@ -186,7 +186,7 @@ export function SidebarFavoritesSection({
             onOpenAutoFocus={(e) => e.preventDefault()}
             onInteractOutside={(e) => e.preventDefault()}
           >
-            <p className="px-2 py-1 text-xs font-medium text-muted-foreground">
+            <p className="px-2 py-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.2em]">
               Favorites
             </p>
             <div className="mt-0.5 space-y-0.5">

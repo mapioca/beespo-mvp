@@ -78,10 +78,10 @@ export function SidebarNavCollapsible({
             onMouseEnter={openFlyout}
             onMouseLeave={scheduleFlyoutClose}
             className={cn(
-              "flex items-center justify-center rounded-lg px-2 py-2 text-sm font-medium transition-colors w-full",
+              "flex items-center justify-center rounded-lg px-2 py-2 text-sm transition-colors w-full",
               hasActiveChild
                 ? "text-foreground"
-                : "text-muted-foreground hover:bg-stone-100 hover:text-foreground"
+                : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
             )}
           >
             <Icon className="h-4 w-4 shrink-0" />
@@ -98,7 +98,7 @@ export function SidebarNavCollapsible({
           onOpenAutoFocus={(e) => e.preventDefault()}
           onInteractOutside={(e) => e.preventDefault()}
         >
-          <p className="px-2 py-1 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+          <p className="px-2 py-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.2em]">
             {item.label}
           </p>
           <div className="mt-0.5 space-y-0.5">
@@ -115,8 +115,8 @@ export function SidebarNavCollapsible({
                   className={cn(
                     "flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors",
                     isActive
-                      ? "bg-stone-200 text-foreground font-medium"
-                      : "hover:bg-stone-100 hover:text-foreground"
+                      ? "bg-muted/80 text-foreground font-medium"
+                      : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
                   )}
                 >
                   <ChildIcon className="h-4 w-4 shrink-0" />
@@ -138,10 +138,10 @@ export function SidebarNavCollapsible({
         <PopoverAnchor asChild>
           <CollapsibleTrigger
             className={cn(
-              "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors w-full",
+              "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors w-full",
               hasActiveChild
                 ? "text-foreground"
-                : "text-muted-foreground hover:bg-stone-100 hover:text-foreground"
+                : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
             )}
             aria-expanded={isExpanded}
             aria-controls={groupId}
@@ -169,7 +169,7 @@ export function SidebarNavCollapsible({
           onOpenAutoFocus={(e) => e.preventDefault()}
           onInteractOutside={(e) => e.preventDefault()}
         >
-          <p className="px-2 py-1 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+          <p className="px-2 py-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.2em]">
             {item.label}
           </p>
           <div className="mt-0.5 space-y-0.5">
@@ -186,8 +186,8 @@ export function SidebarNavCollapsible({
                   className={cn(
                     "flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors",
                     isActive
-                      ? "bg-stone-200 text-foreground font-medium"
-                      : "hover:bg-stone-100 hover:text-foreground"
+                      ? "bg-muted/80 text-foreground font-medium"
+                      : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
                   )}
                 >
                   <ChildIcon className="h-4 w-4 shrink-0" />

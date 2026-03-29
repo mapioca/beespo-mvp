@@ -104,18 +104,19 @@ export function AppSidebar({
     <TooltipProvider delayDuration={0}>
       <aside
         className={cn(
-          "shrink-0 flex flex-col h-full transition-[width] duration-300 ease-in-out",
+          "shrink-0 flex flex-col h-full border-r border-border/50 bg-background/80 backdrop-blur",
+          "transition-[width] duration-300 ease-in-out",
           isCollapsed ? "w-16" : "w-60"
         )}
       >
         {/* Header with Logo and Toggle */}
-        <div className="border-b">
+        <div className="border-b border-border/50">
           <div
             className={cn(
               "flex transition-all duration-300 ease-in-out",
               isCollapsed
                 ? "flex-col items-center justify-center gap-4 py-4"
-                : "flex-row items-center justify-between px-4 pt-1.5 pb-0"
+                : "flex-row items-center justify-between px-4 pt-2 pb-1"
             )}
           >
             <Link
@@ -128,7 +129,7 @@ export function AppSidebar({
                   B
                 </span>
               ) : (
-                <span className="text-sm font-semibold text-foreground leading-none">
+                <span className="text-sm font-semibold text-foreground leading-none tracking-tight">
                   Beespo
                 </span>
               )}
@@ -161,8 +162,8 @@ export function AppSidebar({
 
           {/* Workspace Name - Below Logo */}
           {!isCollapsed && (
-            <div className="px-4 pb-2">
-              <p className="text-xs font-medium text-muted-foreground truncate">
+            <div className="px-4 pb-3">
+              <p className="text-[11px] font-medium text-muted-foreground/80 truncate">
                 {workspaceName}
               </p>
             </div>
@@ -170,7 +171,7 @@ export function AppSidebar({
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto py-2">
+        <nav className="flex-1 overflow-y-auto py-3">
           {navSections.map((section, index) => (
             <SidebarNavSection
               key={section.id}
