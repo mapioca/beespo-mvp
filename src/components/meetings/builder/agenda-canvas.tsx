@@ -8,10 +8,16 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Trash2, ChevronDown, ChevronRight, GripVertical } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CanvasItem } from "./types";
+import { ItemPropertiesPanel } from "./item-properties-panel";
+import type { SpeakerSelection } from "./speaker-selector-popover";
+import type { DiscussionSelection } from "./discussion-selector-popover";
+import type { BusinessSelection } from "./business-selector-popover";
+import type { AnnouncementSelection } from "./announcement-selector-popover";
 
 
 interface AgendaCanvasProps {
@@ -22,6 +28,19 @@ interface AgendaCanvasProps {
     selectedItemId?: string | null;
     onSelectItem?: (itemId: string | null) => void;
     isOver?: boolean;
+    onUpdateItem?: (id: string, newTitle: string) => void;
+    onUpdateDescription?: (id: string, newDescription: string) => void;
+    onUpdateItemNotes?: (id: string, newNotes: string) => void;
+    onUpdateDuration?: (id: string, newDuration: number) => void;
+    onSelectHymn?: (hymn: { id: string; number: number; title: string }) => void;
+    onSelectParticipant?: (participant: { id: string; name: string }) => void;
+    onSelectSpeaker?: (speaker: SpeakerSelection) => void;
+    selectedSpeakerIdsInMeeting?: string[];
+    onAddToContainer?: () => void;
+    onRemoveChildItem?: (childId: string) => void;
+    onSelectDiscussion?: (discussions: DiscussionSelection[]) => void;
+    onSelectBusiness?: (items: BusinessSelection[]) => void;
+    onSelectAnnouncement?: (announcements: AnnouncementSelection[]) => void;
 }
 
 // Sortable Agenda Row — read-only card
@@ -32,6 +51,8 @@ interface SortableAgendaRowProps {
     onToggleExpand?: () => void;
     isSelected?: boolean;
     onSelect?: () => void;
+    onDeselect?: () => void;
+    itemProperties?: React.ReactNode;
 }
 
 function SortableAgendaRow({
@@ -41,6 +62,8 @@ function SortableAgendaRow({
     onToggleExpand,
     isSelected,
     onSelect,
+    onDeselect,
+    itemProperties,
 }: SortableAgendaRowProps) {
     const {
         attributes,
@@ -61,125 +84,155 @@ function SortableAgendaRow({
         const childCount = item.childItems?.length || 0;
 
         return (
-            <div
-                ref={setNodeRef}
-                style={style}
-                onClick={(e) => { e.stopPropagation(); onSelect?.(); }}
-                {...attributes}
-                {...listeners}
-                className={cn(
-                    "rounded-md border bg-card transition-all group cursor-grab active:cursor-grabbing touch-none",
-                    "hover:border-muted-foreground/30",
-                    isSelected && "ring-2 ring-primary border-primary/50 shadow-sm",
-                    isDragging && "opacity-50 shadow-lg ring-2 ring-primary/40"
-                )}
-            >
-                {/* Container Header */}
-                <div className="flex items-center gap-2 p-1.5">
-                    <button
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); onToggleExpand?.(); }}
-                        className="p-1 hover:bg-muted rounded-md transition-colors"
-                    >
-                        {isExpanded ? (
-                            <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                        ) : (
-                            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            <Popover open={!!isSelected} onOpenChange={(open) => (open ? onSelect?.() : onDeselect?.())}>
+                <PopoverTrigger asChild>
+                    <div
+                        ref={setNodeRef}
+                        style={style}
+                        onClick={(e) => { e.stopPropagation(); onSelect?.(); }}
+                        {...attributes}
+                        {...listeners}
+                        className={cn(
+                            "rounded-md border bg-card transition-all group cursor-grab active:cursor-grabbing touch-none",
+                            "hover:border-muted-foreground/30",
+                            isSelected && "ring-2 ring-primary border-primary/50 shadow-sm",
+                            isDragging && "opacity-50 shadow-lg ring-2 ring-primary/40"
                         )}
-                    </button>
-
-                    <span className="font-medium text-sm flex-1 text-foreground pl-1">
-                        {item.title}
-                    </span>
-
-                    <span className="text-xs text-muted-foreground">
-                        {childCount} item{childCount !== 1 ? "s" : ""}
-                    </span>
-
-                    <span className="text-xs text-muted-foreground ml-2">
-                        {item.duration_minutes}m
-                    </span>
-
-                    <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive hover:bg-destructive/10"
-                        onClick={(e) => { e.stopPropagation(); onRemove(); }}
                     >
-                        <Trash2 className="h-4 w-4" />
-                    </Button>
-                </div>
+                        {/* Container Header */}
+                        <div className="flex items-center gap-2 p-1.5">
+                            <button
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); onToggleExpand?.(); }}
+                                className="p-1 hover:bg-muted rounded-md transition-colors"
+                            >
+                                {isExpanded ? (
+                                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                                ) : (
+                                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                                )}
+                            </button>
 
-                {/* Container Body — read-only child list */}
-                {isExpanded && item.childItems && item.childItems.length > 0 && (
-                    <div className="px-3 pb-2 pt-0">
-                        <div className="pl-6 space-y-1">
-                            {item.childItems.map((child) => (
-                                <div
-                                    key={child.id}
-                                    className="flex flex-col gap-1 p-2 bg-background rounded border border-border/60"
-                                >
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-sm font-medium flex-1 truncate">{child.title}</span>
-                                        {child.status && (
-                                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted/50 capitalize font-medium">
-                                                {child.status.replace("_", " ")}
-                                            </span>
-                                        )}
-                                    </div>
-                                    {child.description && (
-                                        <p className="text-xs text-muted-foreground italic line-clamp-2">
-                                            {child.description}
-                                        </p>
-                                    )}
-                                </div>
-                            ))}
+                            <span className="font-medium text-sm flex-1 text-foreground pl-1">
+                                {item.title}
+                            </span>
+
+                            <span className="text-xs text-muted-foreground">
+                                {childCount} item{childCount !== 1 ? "s" : ""}
+                            </span>
+
+                            <span className="text-xs text-muted-foreground ml-2">
+                                {item.duration_minutes}m
+                            </span>
+
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive hover:bg-destructive/10"
+                                onClick={(e) => { e.stopPropagation(); onRemove(); }}
+                            >
+                                <Trash2 className="h-4 w-4" />
+                            </Button>
                         </div>
+
+                        {/* Container Body — read-only child list */}
+                        {isExpanded && item.childItems && item.childItems.length > 0 && (
+                            <div className="px-3 pb-2 pt-0">
+                                <div className="pl-6 space-y-1">
+                                    {item.childItems.map((child) => (
+                                        <div
+                                            key={child.id}
+                                            className="flex flex-col gap-1 p-2 bg-background rounded border border-border/60"
+                                        >
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-sm font-medium flex-1 truncate">{child.title}</span>
+                                                {child.status && (
+                                                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted/50 capitalize font-medium">
+                                                        {child.status.replace("_", " ")}
+                                                    </span>
+                                                )}
+                                            </div>
+                                            {child.description && (
+                                                <p className="text-xs text-muted-foreground italic line-clamp-2">
+                                                    {child.description}
+                                                </p>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                     </div>
+                </PopoverTrigger>
+                {itemProperties && (
+                    <PopoverContent
+                        side="right"
+                        align="start"
+                        sideOffset={12}
+                        className="p-0 w-auto shadow-xl"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        {itemProperties}
+                    </PopoverContent>
                 )}
-            </div>
+            </Popover>
         );
     }
 
     // Structural: Section Header — read-only
     if (item.structural_type === "section_header") {
         return (
-            <div
-                ref={setNodeRef}
-                style={style}
-                onClick={(e) => { e.stopPropagation(); onSelect?.(); }}
-                className={cn(
-                    "flex flex-col border rounded-md bg-card transition-all group cursor-grab active:cursor-grabbing touch-none",
-                    "hover:border-muted-foreground/30",
-                    isSelected && "ring-2 ring-primary border-primary/50 shadow-sm",
-                    isDragging && "opacity-50 shadow-lg ring-2 ring-primary/40"
-                )}
-                {...attributes}
-                {...listeners}
-            >
-                <div className="flex items-center gap-2 p-1.5">
-                    <div className="w-7 shrink-0" />
-                    <span className="font-medium text-sm flex-1 truncate text-foreground pl-1">
-                        {item.title || "Untitled section"}
-                    </span>
-                    <span className="text-xs text-muted-foreground shrink-0">
-                        Section
-                    </span>
-                    <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive hover:bg-destructive/10"
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            onRemove();
-                        }}
+            <Popover open={!!isSelected} onOpenChange={(open) => (open ? onSelect?.() : onDeselect?.())}>
+                <PopoverTrigger asChild>
+                    <div
+                        ref={setNodeRef}
+                        style={style}
+                        onClick={(e) => { e.stopPropagation(); onSelect?.(); }}
+                        className={cn(
+                            "flex flex-col border rounded-md bg-card transition-all group cursor-grab active:cursor-grabbing touch-none",
+                            "hover:border-muted-foreground/30",
+                            isSelected && "ring-2 ring-primary border-primary/50 shadow-sm",
+                            isDragging && "opacity-50 shadow-lg ring-2 ring-primary/40"
+                        )}
+                        {...attributes}
+                        {...listeners}
                     >
-                        <Trash2 className="h-4 w-4" />
-                    </Button>
-                </div>
-            </div>
+                        <div className="flex items-center gap-2 p-1.5">
+                            <div className="w-7 shrink-0" />
+                            <span className="font-medium text-sm flex-1 truncate text-foreground pl-1">
+                                {item.title || "Untitled section"}
+                            </span>
+                            <span className="text-xs text-muted-foreground shrink-0">
+                                Section
+                            </span>
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive hover:bg-destructive/10"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onRemove();
+                                }}
+                            >
+                                <Trash2 className="h-4 w-4" />
+                            </Button>
+                        </div>
+                    </div>
+                </PopoverTrigger>
+                {itemProperties && (
+                    <PopoverContent
+                        side="right"
+                        align="start"
+                        sideOffset={12}
+                        className="p-0 w-auto shadow-xl"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        {itemProperties}
+                    </PopoverContent>
+                )}
+            </Popover>
         );
     }
 
@@ -224,63 +277,78 @@ function SortableAgendaRow({
 
     // Regular item — read-only card
     return (
-        <div
-            ref={setNodeRef}
-            style={style}
-            onClick={(e) => { e.stopPropagation(); onSelect?.(); }}
-            className={cn(
-                "flex flex-col border rounded-md bg-card transition-all group cursor-grab active:cursor-grabbing touch-none",
-                "hover:border-muted-foreground/30",
-                isSelected && "ring-2 ring-primary border-primary/50 shadow-sm",
-                isDragging && "opacity-50 shadow-lg ring-2 ring-primary/40"
-            )}
-            {...attributes}
-            {...listeners}
-        >
-            {/* Header row */}
-            <div className="flex items-center gap-2 p-1.5">
-                <div className="w-7 shrink-0" />
-                <span className="font-medium text-sm flex-1 truncate text-foreground pl-1">
-                    {item.title}
-                </span>
-
-                <span className="text-xs text-muted-foreground shrink-0">
-                    {item.duration_minutes}m
-                </span>
-
-                <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive hover:bg-destructive/10"
-                    onClick={(e) => { e.stopPropagation(); onRemove(); }}
+        <Popover open={!!isSelected} onOpenChange={(open) => (open ? onSelect?.() : onDeselect?.())}>
+            <PopoverTrigger asChild>
+                <div
+                    ref={setNodeRef}
+                    style={style}
+                    onClick={(e) => { e.stopPropagation(); onSelect?.(); }}
+                    className={cn(
+                        "flex flex-col border rounded-md bg-card transition-all group cursor-grab active:cursor-grabbing touch-none",
+                        "hover:border-muted-foreground/30",
+                        isSelected && "ring-2 ring-primary border-primary/50 shadow-sm",
+                        isDragging && "opacity-50 shadow-lg ring-2 ring-primary/40"
+                    )}
+                    {...attributes}
+                    {...listeners}
                 >
-                    <Trash2 className="h-4 w-4" />
-                </Button>
-            </div>
-
-            {/* Secondary text — assigned data displayed read-only */}
-            {secondaryText && (
-                <div className="px-3 pb-2 pt-0">
-                    <div className="pl-7">
-                        <span className="text-xs text-muted-foreground truncate block">
-                            {secondaryText}
+                    {/* Header row */}
+                    <div className="flex items-center gap-2 p-1.5">
+                        <div className="w-7 shrink-0" />
+                        <span className="font-medium text-sm flex-1 truncate text-foreground pl-1">
+                            {item.title}
                         </span>
-                    </div>
-                </div>
-            )}
 
-            {/* Description — only shown as a placeholder hint when no value is assigned yet */}
-            {item.description && !secondaryText && (
-                <div className="px-3 pb-2 pt-0">
-                    <div className="pl-7">
-                        <span className="text-xs text-muted-foreground/80 line-clamp-2 italic">
-                            {item.description}
+                        <span className="text-xs text-muted-foreground shrink-0">
+                            {item.duration_minutes}m
                         </span>
+
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive hover:bg-destructive/10"
+                            onClick={(e) => { e.stopPropagation(); onRemove(); }}
+                        >
+                            <Trash2 className="h-4 w-4" />
+                        </Button>
                     </div>
+
+                    {/* Secondary text — assigned data displayed read-only */}
+                    {secondaryText && (
+                        <div className="px-3 pb-2 pt-0">
+                            <div className="pl-7">
+                                <span className="text-xs text-muted-foreground truncate block">
+                                    {secondaryText}
+                                </span>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Description — only shown as a placeholder hint when no value is assigned yet */}
+                    {item.description && !secondaryText && (
+                        <div className="px-3 pb-2 pt-0">
+                            <div className="pl-7">
+                                <span className="text-xs text-muted-foreground/80 line-clamp-2 italic">
+                                    {item.description}
+                                </span>
+                            </div>
+                        </div>
+                    )}
                 </div>
+            </PopoverTrigger>
+            {itemProperties && (
+                <PopoverContent
+                    side="right"
+                    align="start"
+                    sideOffset={12}
+                    className="p-0 w-auto shadow-xl"
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    {itemProperties}
+                </PopoverContent>
             )}
-        </div>
+        </Popover>
     );
 }
 
@@ -292,6 +360,19 @@ export function AgendaCanvas({
     selectedItemId,
     onSelectItem,
     isOver,
+    onUpdateItem,
+    onUpdateDescription,
+    onUpdateItemNotes,
+    onUpdateDuration,
+    onSelectHymn,
+    onSelectParticipant,
+    onSelectSpeaker,
+    selectedSpeakerIdsInMeeting = [],
+    onAddToContainer,
+    onRemoveChildItem,
+    onSelectDiscussion,
+    onSelectBusiness,
+    onSelectAnnouncement,
 }: AgendaCanvasProps) {
     const { setNodeRef } = useDroppable({
         id: "canvas-drop-zone",
@@ -357,6 +438,25 @@ export function AgendaCanvas({
                                                 onToggleExpand={() => onToggleContainer(item.id)}
                                                 isSelected={selectedItemId === item.id}
                                                 onSelect={() => onSelectItem?.(item.id)}
+                                                onDeselect={() => onSelectItem?.(null)}
+                                                itemProperties={
+                                                    <ItemPropertiesPanel
+                                                        item={item}
+                                                        onUpdateItem={onUpdateItem}
+                                                        onUpdateDescription={onUpdateDescription}
+                                                        onUpdateItemNotes={onUpdateItemNotes}
+                                                        onUpdateDuration={onUpdateDuration}
+                                                        onSelectHymn={onSelectHymn}
+                                                        onSelectParticipant={onSelectParticipant}
+                                                        onSelectSpeaker={onSelectSpeaker}
+                                                        selectedSpeakerIdsInMeeting={selectedSpeakerIdsInMeeting}
+                                                        onAddToContainer={onAddToContainer}
+                                                        onRemoveChildItem={onRemoveChildItem}
+                                                        onSelectDiscussion={onSelectDiscussion}
+                                                        onSelectBusiness={onSelectBusiness}
+                                                        onSelectAnnouncement={onSelectAnnouncement}
+                                                    />
+                                                }
                                             />
                                         ))}
                                     </div>

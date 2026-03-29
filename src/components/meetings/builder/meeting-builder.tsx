@@ -1670,22 +1670,8 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                                             <SheetDescription className="sr-only">Meeting properties</SheetDescription>
                                             <PropertiesPane
                                                 templates={templates}
-                                                selectedItem={canvasItems.find(i => i.id === selectedItemId)}
-                                                onUpdateItem={handleUpdateTitle}
-                                                onUpdateDescription={handleUpdateDescription}
-                                                onUpdateItemNotes={handleUpdateItemNotes}
                                                 meetingNotes={meetingNotes}
                                                 onUpdateMeetingNotes={setMeetingNotes}
-                                                onUpdateDuration={handleUpdateDuration}
-                                                onSelectHymn={handleSelectHymn}
-                                                onSelectParticipant={handleSelectParticipant}
-                                                onSelectDiscussion={(discs) => handleAddManyToContainer(discs, "discussion")}
-                                                onSelectBusiness={(biz) => handleAddManyToContainer(biz, "business")}
-                                                onSelectAnnouncement={(ann) => handleAddManyToContainer(ann, "announcement")}
-                                                onSelectSpeaker={handleSelectSpeaker}
-                                                selectedSpeakerIdsInMeeting={selectedSpeakerIds}
-                                                onAddToContainer={openContainerAddForSelected}
-                                                onRemoveChildItem={handleRemoveChildFromSelected}
                                             />
                                         </SheetContent>
                                     </Sheet>
@@ -1708,19 +1694,9 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                                             selectedItemId={selectedItemId}
                                             onSelectItem={setSelectedItemId}
                                             isOver={isOverCanvas}
-                                        />
-                                    </div>
-
-                                    {/* Right Pane - Properties */}
-                                    <div className="hidden lg:block w-[280px] h-full overflow-hidden shrink-0">
-                                        <PropertiesPane
-                                            templates={templates}
-                                            selectedItem={canvasItems.find(i => i.id === selectedItemId)}
                                             onUpdateItem={handleUpdateTitle}
                                             onUpdateDescription={handleUpdateDescription}
                                             onUpdateItemNotes={handleUpdateItemNotes}
-                                            meetingNotes={meetingNotes}
-                                            onUpdateMeetingNotes={setMeetingNotes}
                                             onUpdateDuration={handleUpdateDuration}
                                             onSelectHymn={handleSelectHymn}
                                             onSelectParticipant={handleSelectParticipant}
@@ -1731,6 +1707,15 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                                             selectedSpeakerIdsInMeeting={selectedSpeakerIds}
                                             onAddToContainer={openContainerAddForSelected}
                                             onRemoveChildItem={handleRemoveChildFromSelected}
+                                        />
+                                    </div>
+
+                                    {/* Right Pane - Properties */}
+                                    <div className="hidden lg:block w-[280px] h-full overflow-hidden shrink-0">
+                                        <PropertiesPane
+                                            templates={templates}
+                                            meetingNotes={meetingNotes}
+                                            onUpdateMeetingNotes={setMeetingNotes}
                                         />
                                     </div>
                                 </div>
