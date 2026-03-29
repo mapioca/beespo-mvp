@@ -100,7 +100,7 @@ function SortableAgendaRow({
                         )}
                     >
                         {/* Container Header */}
-                        <div className="flex items-center gap-2 px-2 py-2">
+                        <div className="flex items-center gap-2 px-2.5 py-2.5">
                             <button
                                 type="button"
                                 onClick={(e) => { e.stopPropagation(); onToggleExpand?.(); }}
@@ -293,7 +293,7 @@ function SortableAgendaRow({
                     {...listeners}
                 >
                     {/* Header row */}
-                    <div className="flex items-center gap-2 px-2 py-2">
+                    <div className="flex items-center gap-2 px-2.5 py-2.5">
                         <div className="w-7 shrink-0" />
                         <span className="font-medium text-[13px] flex-1 truncate text-foreground pl-1">
                             {item.title}

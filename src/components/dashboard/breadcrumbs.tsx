@@ -47,7 +47,7 @@ export function Breadcrumbs({ items, className, inlineAction, action }: Breadcru
     <div className="flex-shrink-0 px-3 pt-3">
       <div className={cn("px-6 py-3 flex items-center gap-3 rounded-lg bg-card ring-1 ring-border", className)}>
         <nav aria-label="Breadcrumb" className="flex-1">
-          <ol className="flex items-center gap-1 text-sm text-muted-foreground">
+          <ol className="flex items-center gap-1 text-[13px] text-muted-foreground">
             {trail.map((item, index) => {
               const isLast = index === trail.length - 1
 

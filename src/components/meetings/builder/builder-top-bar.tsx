@@ -261,7 +261,7 @@ export function BuilderTopBar({
                                     <MoreHorizontal className="h-3.5 w-3.5" />
                                 </button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="start" className="w-60">
+                            <DropdownMenuContent align="start" className="w-60 rounded-xl border-border/60 shadow-lg">
                                 <DropdownMenuLabel className="text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.2em]">
                                     Share Link
                                 </DropdownMenuLabel>
