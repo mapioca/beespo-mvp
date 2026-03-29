@@ -60,7 +60,7 @@ export function DayView({
 
       {/* All-day events */}
       {allDayEvents.length > 0 && (
-        <div className="p-3 border-b border-border/50 bg-muted/20">
+        <div className="p-3 border-b border-border/50 bg-[hsl(var(--accent-warm)/0.25)]">
           <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground mb-2">
             All-day events
           </div>

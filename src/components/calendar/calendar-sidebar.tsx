@@ -224,8 +224,8 @@ export function CalendarSidebar({
 
             {isLoadingSubscriptions ? (
               <div className="space-y-2">
-                <div className="h-5 bg-muted rounded animate-pulse" />
-                <div className="h-5 bg-muted rounded animate-pulse w-3/4" />
+                <div className="h-5 bg-[hsl(var(--accent-warm)/0.25)] rounded animate-pulse" />
+                <div className="h-5 bg-[hsl(var(--accent-warm)/0.2)] rounded animate-pulse w-3/4" />
               </div>
             ) : enabledSubscriptions.length > 0 ? (
               <div className="space-y-2">
