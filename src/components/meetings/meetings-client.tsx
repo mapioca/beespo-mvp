@@ -336,6 +336,7 @@ export function MeetingsClient({
                     { label: "Meetings", href: "/meetings/agendas", icon: <CalendarDays className="h-3.5 w-3.5" /> },
                     { label: "Agendas", icon: <ClipboardList className="h-3.5 w-3.5" /> },
                 ]}
+                className="bg-transparent ring-0 border-b border-border/60 rounded-none px-4 py-1.5"
             />
 
             {/* Action Bar + Tabs */}
