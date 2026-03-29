@@ -38,6 +38,12 @@ export async function GET(request: Request) {
           return NextResponse.redirect(`${origin}/onboarding`)
         }
 
+        // Check if user has MFA enrolled and needs verification
+        const { data: aalData } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
+        if (aalData?.nextLevel === 'aal2' && aalData?.currentLevel !== 'aal2') {
+          return NextResponse.redirect(`${origin}/mfa/verify`)
+        }
+
         // Profile exists with workspace, redirect to next or dashboard
         return NextResponse.redirect(`${origin}${next}`)
       }

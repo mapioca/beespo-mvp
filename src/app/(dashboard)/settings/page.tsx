@@ -15,6 +15,7 @@ export type Workspace = {
     name: string;
     type: string;
     organization_type: string;
+    mfa_required: boolean;
 };
 
 export default async function SettingsPage() {

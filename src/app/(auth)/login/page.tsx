@@ -55,8 +55,14 @@ export default function LoginPage() {
           toast.info("Complete Setup", { description: "Please complete your profile setup." });
           router.push("/onboarding");
         } else {
-          toast.success("You've been logged in successfully.");
-          router.push("/dashboard");
+          // Check if user has MFA enrolled
+          const { data: aalData } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+          if (aalData?.nextLevel === "aal2" && aalData?.currentLevel !== "aal2") {
+            router.push("/mfa/verify");
+          } else {
+            toast.success("You've been logged in successfully.");
+            router.push("/dashboard");
+          }
         }
         router.refresh();
       }

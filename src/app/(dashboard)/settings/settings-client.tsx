@@ -22,10 +22,12 @@ import { TeamMembersList } from "@/components/team/team-members-list";
 import { PendingInvitations } from "@/components/team/pending-invitations";
 import { ChangePasswordForm } from "@/components/auth/change-password-form";
 import { DeleteAccountDialog } from "@/components/auth/delete-account-dialog";
-import { Building2, Users, Users2, Save, Loader2, User, AlertTriangle, Plug, Bell } from "lucide-react";
+import { Building2, Users, Users2, Save, Loader2, User, AlertTriangle, Plug, Bell, Shield } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { ZoomFullLogo } from "@/components/ui/zoom-icon";
 import { SharingGroupsTab } from "@/components/settings/sharing-groups-tab";
 import { NotificationPreferencesTab } from "@/components/settings/notification-preferences-tab";
+import { MfaSettings } from "@/components/settings/mfa-settings";
 import type { SharingGroupWithMembers } from "@/types/share";
 
 interface Workspace {
@@ -33,6 +35,7 @@ interface Workspace {
     name: string;
     type: string;
     organization_type: string;
+    mfa_required: boolean;
 }
 
 interface TeamMember {
@@ -114,6 +117,8 @@ export function SettingsClient({
     const [isSaving, setIsSaving] = useState(false);
     const [isSavingProfile, setIsSavingProfile] = useState(false);
     const [isDisconnectingZoom, setIsDisconnectingZoom] = useState(false);
+    const [mfaRequired, setMfaRequired] = useState(workspace.mfa_required);
+    const [isSavingMfa, setIsSavingMfa] = useState(false);
     const isAdmin = currentUserRole === "admin";
 
     const handleDisconnectZoom = async () => {
@@ -176,6 +181,26 @@ export function SettingsClient({
         }
 
         setIsSavingProfile(false);
+    };
+
+    const handleToggleMfaRequired = async (enabled: boolean) => {
+        setIsSavingMfa(true);
+        const supabase = createClient();
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { error } = await (supabase.from("workspaces") as any)
+            .update({ mfa_required: enabled })
+            .eq("id", workspace.id);
+
+        if (error) {
+            toast.error("Failed to update MFA setting");
+            setMfaRequired(!enabled);
+        } else {
+            setMfaRequired(enabled);
+            toast.success(enabled ? "MFA is now required for all members" : "MFA requirement removed");
+            router.refresh();
+        }
+        setIsSavingMfa(false);
     };
 
     const handleRefresh = () => {
@@ -275,6 +300,8 @@ export function SettingsClient({
                     </Card>
                     <ChangePasswordForm email={currentUserDetails.email} />
 
+                    <MfaSettings workspaceMfaRequired={workspace.mfa_required} />
+
                     {/* Danger Zone */}
                     <Card className="border-destructive/50">
                         <CardHeader>
@@ -357,6 +384,35 @@ export function SettingsClient({
                             )}
                         </CardContent>
                     </Card>
+
+                    {isAdmin && (
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                    <Shield className="h-5 w-5" />
+                                    Security
+                                </CardTitle>
+                                <CardDescription>
+                                    Manage security settings for your workspace
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="flex items-center justify-between p-4 rounded-lg border">
+                                    <div>
+                                        <p className="font-medium">Require Two-Factor Authentication</p>
+                                        <p className="text-sm text-muted-foreground">
+                                            All workspace members will be required to set up MFA before accessing the workspace.
+                                        </p>
+                                    </div>
+                                    <Switch
+                                        checked={mfaRequired}
+                                        onCheckedChange={handleToggleMfaRequired}
+                                        disabled={isSavingMfa}
+                                    />
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
                 </TabsContent>
 
                 <TabsContent value="team" className="space-y-6">

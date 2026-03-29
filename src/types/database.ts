@@ -272,6 +272,7 @@ export type Database = {
           organization_type: OrganizationType;
           slug: string | null;
           unit_name: string | null;
+          mfa_required: boolean;
           created_at: string;
           updated_at: string;
         };
@@ -282,6 +283,7 @@ export type Database = {
           organization_type: OrganizationType;
           slug?: string | null;
           unit_name?: string | null;
+          mfa_required?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -292,8 +294,35 @@ export type Database = {
           organization_type?: OrganizationType;
           slug?: string | null;
           unit_name?: string | null;
+          mfa_required?: boolean;
           created_at?: string;
           updated_at?: string;
+        };
+      };
+      trusted_devices: {
+        Row: {
+          id: string;
+          user_id: string;
+          device_token: string;
+          device_name: string | null;
+          expires_at: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          device_token: string;
+          device_name?: string | null;
+          expires_at: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          device_token?: string;
+          device_name?: string | null;
+          expires_at?: string;
+          created_at?: string;
         };
       };
       profiles: {

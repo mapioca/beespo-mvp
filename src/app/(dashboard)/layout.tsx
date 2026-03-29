@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { AppSidebar } from "@/components/dashboard/app-sidebar";
 import { getProfile } from "@/lib/supabase/cached-queries";
+import { checkTrustedDevice, checkWorkspaceMfaRequired } from "@/lib/mfa";
 
 export default async function DashboardLayout({
   children,
@@ -24,6 +25,28 @@ export default async function DashboardLayout({
 
   if (!profile?.workspace_id) {
     redirect("/onboarding");
+  }
+
+  // Workspace MFA enforcement
+  const workspaceRequiresMfa = await checkWorkspaceMfaRequired(profile.workspace_id);
+  if (workspaceRequiresMfa) {
+    const { data: factorsData } = await supabase.auth.mfa.listFactors();
+    const hasVerifiedFactor = factorsData?.totp?.some(f => f.status === "verified");
+
+    if (!hasVerifiedFactor) {
+      // User hasn't set up MFA yet — redirect to setup
+      redirect("/mfa/setup?required=true");
+    }
+
+    // User has MFA enrolled, check if verified this session
+    const { data: aalData } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+    if (aalData?.currentLevel !== "aal2") {
+      // Check trusted device before requiring MFA
+      const isTrusted = await checkTrustedDevice(user.id);
+      if (!isTrusted) {
+        redirect("/mfa/verify");
+      }
+    }
   }
 
   return (
