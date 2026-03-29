@@ -38,11 +38,13 @@ export function FilterBuilder({ columns, onClose }: FilterBuilderProps) {
   };
 
   return (
-    <Card className="p-4">
+    <Card className="p-4 bg-muted/30 border-border/50">
       <div className="flex items-center justify-between mb-3">
-        <h4 className="font-medium text-sm">Filters</h4>
-        <Button variant="ghost" size="icon" onClick={onClose}>
-          <X className="h-4 w-4" />
+        <h4 className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+          Filters
+        </h4>
+        <Button variant="ghost" size="icon" onClick={onClose} className="text-muted-foreground hover:text-foreground">
+          <X className="h-4 w-4 stroke-[1.6]" />
         </Button>
       </div>
 
@@ -66,12 +68,12 @@ export function FilterBuilder({ columns, onClose }: FilterBuilderProps) {
       </div>
 
       <div className="flex items-center gap-2 mt-3">
-        <Button variant="outline" size="sm" onClick={handleAddFilter}>
-          <Plus className="h-4 w-4 mr-1" />
+        <Button variant="outline" size="sm" onClick={handleAddFilter} className="border-border/60 hover:bg-[hsl(var(--accent-warm)/0.6)] shadow-none">
+          <Plus className="h-4 w-4 mr-1 stroke-[1.6]" />
           Add filter
         </Button>
         {filters.length > 0 && (
-          <Button variant="ghost" size="sm" onClick={clearFilters}>
+          <Button variant="ghost" size="sm" onClick={clearFilters} className="text-muted-foreground hover:text-foreground">
             Clear all
           </Button>
         )}
@@ -115,15 +117,17 @@ function FilterRow({
   return (
     <div className="flex items-center gap-2">
       {showPrefix && (
-        <span className="text-sm text-muted-foreground w-10">and</span>
+        <span className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground w-12">
+          And
+        </span>
       )}
-      {!showPrefix && <div className="w-10" />}
+      {!showPrefix && <div className="w-12" />}
 
       {/* Column select */}
       <Select value={filter.columnId} onValueChange={handleColumnChange}>
-        <SelectTrigger className="w-[150px]">
-          <SelectValue placeholder="Column" />
-        </SelectTrigger>
+      <SelectTrigger className="w-[150px] h-9 bg-background border-border/60 focus:ring-0 focus:border-foreground/30 text-sm">
+        <SelectValue placeholder="Column" />
+      </SelectTrigger>
         <SelectContent>
           {columns.map((col) => (
             <SelectItem key={col.id} value={col.id}>
@@ -138,9 +142,9 @@ function FilterRow({
         value={filter.operator}
         onValueChange={(op) => onUpdate({ operator: op as FilterOperator })}
       >
-        <SelectTrigger className="w-[160px]">
-          <SelectValue placeholder="Operator" />
-        </SelectTrigger>
+      <SelectTrigger className="w-[160px] h-9 bg-background border-border/60 focus:ring-0 focus:border-foreground/30 text-sm">
+        <SelectValue placeholder="Operator" />
+      </SelectTrigger>
         <SelectContent>
           {operators.map((op) => (
             <SelectItem key={op} value={op}>
@@ -156,12 +160,12 @@ function FilterRow({
           value={String(filter.value ?? "")}
           onChange={(e) => onUpdate({ value: e.target.value })}
           placeholder="Value"
-          className="w-[150px]"
+          className="w-[150px] h-9 bg-background border-border/60 focus-visible:ring-0 focus-visible:border-foreground/30 text-sm"
         />
       )}
 
-      <Button variant="ghost" size="icon" onClick={onRemove}>
-        <X className="h-4 w-4" />
+      <Button variant="ghost" size="icon" onClick={onRemove} className="text-muted-foreground hover:text-foreground">
+        <X className="h-4 w-4 stroke-[1.6]" />
       </Button>
     </div>
   );

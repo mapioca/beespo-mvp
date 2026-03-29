@@ -45,11 +45,11 @@ interface FormBuilderProps {
 }
 
 const FIELD_TYPES: { type: FormFieldType; icon: React.ReactNode }[] = [
-    { type: "text", icon: <Type className="h-4 w-4" /> },
-    { type: "textarea", icon: <AlignLeft className="h-4 w-4" /> },
-    { type: "select", icon: <ChevronDown className="h-4 w-4" /> },
-    { type: "radio", icon: <Circle className="h-4 w-4" /> },
-    { type: "checkbox", icon: <CheckSquare className="h-4 w-4" /> },
+    { type: "text", icon: <Type className="h-4 w-4 stroke-[1.6]" /> },
+    { type: "textarea", icon: <AlignLeft className="h-4 w-4 stroke-[1.6]" /> },
+    { type: "select", icon: <ChevronDown className="h-4 w-4 stroke-[1.6]" /> },
+    { type: "radio", icon: <Circle className="h-4 w-4 stroke-[1.6]" /> },
+    { type: "checkbox", icon: <CheckSquare className="h-4 w-4 stroke-[1.6]" /> },
 ];
 
 export function FormBuilder({
@@ -127,41 +127,51 @@ export function FormBuilder({
             {/* Left Panel - Builder */}
             <div className="flex flex-col space-y-6 overflow-hidden h-full">
                 {/* Form Details */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="text-lg">Form Details</CardTitle>
+                <Card className="border-border/50 bg-background/80">
+                    <CardHeader className="pb-2">
+                        <CardTitle className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+                            Form Details
+                        </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div className="space-y-2">
-                            <Label htmlFor="form-title">Title</Label>
+                            <Label htmlFor="form-title" className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+                                Title
+                            </Label>
                             <Input
                                 id="form-title"
                                 value={title}
                                 onChange={(e) => setTitle(e.target.value)}
                                 placeholder="Enter form title"
+                                className="bg-background border-border/60 focus-visible:ring-0 focus-visible:border-foreground/30"
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="form-description">Description</Label>
+                            <Label htmlFor="form-description" className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+                                Description
+                            </Label>
                             <Textarea
                                 id="form-description"
                                 value={description}
                                 onChange={(e) => setDescription(e.target.value)}
                                 placeholder="Enter form description (optional)"
                                 rows={2}
+                                className="bg-background border-border/60 focus-visible:ring-0 focus-visible:border-foreground/30"
                             />
                         </div>
                     </CardContent>
                 </Card>
 
                 {/* Fields List */}
-                <Card className="flex-1 flex flex-col overflow-hidden">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-                        <CardTitle className="text-lg">Fields</CardTitle>
+                <Card className="flex-1 flex flex-col overflow-hidden border-border/50 bg-background/80">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+                        <CardTitle className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+                            Fields
+                        </CardTitle>
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <Button variant="outline" size="sm">
-                                    <Plus className="h-4 w-4 mr-2" />
+                                <Button variant="outline" size="sm" className="border-border/60 hover:bg-[hsl(var(--accent-warm)/0.6)] shadow-none">
+                                    <Plus className="h-4 w-4 mr-2 stroke-[1.6]" />
                                     Add Field
                                 </Button>
                             </DropdownMenuTrigger>
@@ -178,10 +188,10 @@ export function FormBuilder({
                             </DropdownMenuContent>
                         </DropdownMenu>
                     </CardHeader>
-                    <CardContent className={cn("flex-1 overflow-auto bg-[radial-gradient(#60a5fa_1px,transparent_1px)] [background-size:16px_16px] rounded-b-lg")}>
+                    <CardContent className={cn("flex-1 overflow-auto bg-muted/20 rounded-b-lg p-3")}>
                         {fields.length === 0 ? (
-                            <div className="text-center py-8 text-muted-foreground border-2 border-dashed rounded-lg">
-                                <p className="text-sm">No fields yet</p>
+                            <div className="text-center py-8 text-muted-foreground border border-border/50 bg-background/70 rounded-lg">
+                                <p className="text-sm font-medium text-foreground/80">No fields yet</p>
                                 <p className="text-xs mt-1">Click &quot;Add Field&quot; to get started</p>
                             </div>
                         ) : (
@@ -223,7 +233,7 @@ export function FormBuilder({
                 <Button
                     onClick={handleSave}
                     disabled={isSaving || !title.trim()}
-                    className="w-full"
+                    className="w-full bg-[hsl(var(--accent-warm))] text-foreground hover:bg-[hsl(var(--accent-warm-hover))] shadow-none"
                 >
                     {isSaving ? "Saving..." : "Save Form"}
                 </Button>

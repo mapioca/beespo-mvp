@@ -61,7 +61,7 @@ export function TableToolbar({
   };
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       {/* Main toolbar */}
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-2">
@@ -77,11 +77,12 @@ export function TableToolbar({
             variant={filters.length > 0 ? "secondary" : "outline"}
             size="sm"
             onClick={() => setShowFilters(!showFilters)}
+            className={filters.length > 0 ? "bg-[hsl(var(--accent-warm))] text-slate-800 border border-border/50 hover:bg-[hsl(var(--accent-warm-hover))] shadow-none" : "border-border/60 hover:bg-[hsl(var(--accent-warm)/0.6)] shadow-none"}
           >
-            <Filter className="h-4 w-4 mr-1" />
+            <Filter className="h-4 w-4 mr-1 stroke-[1.6]" />
             Filter
             {filters.length > 0 && (
-              <span className="ml-1 px-1.5 py-0.5 text-xs bg-primary text-primary-foreground rounded">
+              <span className="ml-1 px-1.5 py-0.5 text-xs bg-white/80 text-slate-700 border border-white/60 rounded">
                 {filters.length}
               </span>
             )}
@@ -92,11 +93,12 @@ export function TableToolbar({
             variant={sorts.length > 0 ? "secondary" : "outline"}
             size="sm"
             onClick={() => setShowSorts(!showSorts)}
+            className={sorts.length > 0 ? "bg-[hsl(var(--accent-warm))] text-slate-800 border border-border/50 hover:bg-[hsl(var(--accent-warm-hover))] shadow-none" : "border-border/60 hover:bg-[hsl(var(--accent-warm)/0.6)] shadow-none"}
           >
-            <ArrowUpDown className="h-4 w-4 mr-1" />
+            <ArrowUpDown className="h-4 w-4 mr-1 stroke-[1.6]" />
             Sort
             {sorts.length > 0 && (
-              <span className="ml-1 px-1.5 py-0.5 text-xs bg-primary text-primary-foreground rounded">
+              <span className="ml-1 px-1.5 py-0.5 text-xs bg-white/80 text-slate-700 border border-white/60 rounded">
                 {sorts.length}
               </span>
             )}
@@ -109,12 +111,12 @@ export function TableToolbar({
         <div className="flex items-center gap-2">
           {/* Search */}
           <div className="relative">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground stroke-[1.6]" />
             <Input
               placeholder="Search..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-[200px] pl-8 h-9"
+              className="w-[200px] pl-8 h-9 bg-background/80 border-border/60 focus-visible:ring-0 focus-visible:border-foreground/30"
             />
           </div>
 
@@ -125,7 +127,7 @@ export function TableToolbar({
               size="sm"
               onClick={handleBulkDelete}
             >
-              <Trash2 className="h-4 w-4 mr-1" />
+              <Trash2 className="h-4 w-4 mr-1 stroke-[1.6]" />
               Delete ({selectedCount})
             </Button>
           )}

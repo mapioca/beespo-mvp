@@ -100,9 +100,9 @@ export function ViewSwitcher({ tableId, views, onSave }: ViewSwitcherProps) {
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" className="border-border/60 hover:bg-[hsl(var(--accent-warm)/0.6)] shadow-none">
             {activeView?.name || "All"}
-            <ChevronDown className="h-4 w-4 ml-1" />
+            <ChevronDown className="h-4 w-4 ml-1 stroke-[1.6]" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-56">
@@ -114,7 +114,7 @@ export function ViewSwitcher({ tableId, views, onSave }: ViewSwitcherProps) {
             >
               <span className="flex items-center gap-2">
                 {view.id === activeView?.id && (
-                  <Check className="h-4 w-4" />
+                  <Check className="h-4 w-4 stroke-[1.6]" />
                 )}
                 {view.id !== activeView?.id && <div className="w-4" />}
                 {view.name}
@@ -132,7 +132,7 @@ export function ViewSwitcher({ tableId, views, onSave }: ViewSwitcherProps) {
                     handleDeleteView(view);
                   }}
                 >
-                  <Trash2 className="h-3 w-3" />
+                  <Trash2 className="h-3 w-3 stroke-[1.6]" />
                 </Button>
               )}
             </DropdownMenuItem>
@@ -141,7 +141,7 @@ export function ViewSwitcher({ tableId, views, onSave }: ViewSwitcherProps) {
           <DropdownMenuSeparator />
 
           <DropdownMenuItem onClick={() => setSaveDialogOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" />
+            <Plus className="h-4 w-4 mr-2 stroke-[1.6]" />
             Save current view
           </DropdownMenuItem>
         </DropdownMenuContent>
@@ -159,12 +159,15 @@ export function ViewSwitcher({ tableId, views, onSave }: ViewSwitcherProps) {
 
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="viewName">View name</Label>
+              <Label htmlFor="viewName" className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+                View name
+              </Label>
               <Input
                 id="viewName"
                 value={newViewName}
                 onChange={(e) => setNewViewName(e.target.value)}
                 placeholder="e.g., Active Tasks, This Month"
+                className="bg-background border-border/60 focus-visible:ring-0 focus-visible:border-foreground/30"
               />
             </div>
 
@@ -182,10 +185,11 @@ export function ViewSwitcher({ tableId, views, onSave }: ViewSwitcherProps) {
             <Button
               variant="outline"
               onClick={() => setSaveDialogOpen(false)}
+              className="border-border/60 hover:bg-[hsl(var(--accent-warm)/0.6)] shadow-none"
             >
               Cancel
             </Button>
-            <Button onClick={handleSaveView} disabled={isSaving || !newViewName.trim()}>
+            <Button onClick={handleSaveView} disabled={isSaving || !newViewName.trim()} className="bg-[hsl(var(--accent-warm))] text-foreground hover:bg-[hsl(var(--accent-warm-hover))] shadow-none">
               {isSaving ? "Saving..." : "Save View"}
             </Button>
           </DialogFooter>

@@ -25,11 +25,11 @@ interface FieldItemProps {
 }
 
 const FIELD_ICONS: Record<FormFieldType, React.ReactNode> = {
-    text: <Type className="h-4 w-4" />,
-    textarea: <AlignLeft className="h-4 w-4" />,
-    select: <ChevronDown className="h-4 w-4" />,
-    radio: <Circle className="h-4 w-4" />,
-    checkbox: <CheckSquare className="h-4 w-4" />,
+    text: <Type className="h-4 w-4 stroke-[1.6]" />,
+    textarea: <AlignLeft className="h-4 w-4 stroke-[1.6]" />,
+    select: <ChevronDown className="h-4 w-4 stroke-[1.6]" />,
+    radio: <Circle className="h-4 w-4 stroke-[1.6]" />,
+    checkbox: <CheckSquare className="h-4 w-4 stroke-[1.6]" />,
 };
 
 export function FieldItem({
@@ -60,8 +60,8 @@ export function FieldItem({
             {...attributes}
             {...listeners}
             className={`
-        flex items-center gap-3 p-3 rounded-lg bg-card transition-colors cursor-grab active:cursor-grabbing
-        ${isSelected ? "ring-1 ring-primary bg-accent" : "hover:bg-accent/60"}
+        flex items-center gap-3 rounded-lg border border-border/60 bg-background/80 px-3 py-2.5 transition-colors cursor-grab active:cursor-grabbing
+        ${isSelected ? "border-[hsl(var(--accent-warm-hover))] bg-[hsl(var(--accent-warm)/0.35)]" : "hover:bg-[hsl(var(--accent-warm)/0.25)]"}
         ${isDragging ? "shadow-lg" : ""}
       `}
         >
@@ -74,7 +74,7 @@ export function FieldItem({
                 onKeyDown={(e) => e.key === "Enter" && onSelect()}
             >
                 {/* Boxed Icon */}
-                <div className="flex-shrink-0 h-8 w-8 rounded-md bg-muted flex items-center justify-center text-foreground">
+                <div className="flex-shrink-0 h-8 w-8 rounded-md border border-border/40 bg-[hsl(var(--accent-warm)/0.4)] flex items-center justify-center text-slate-700">
                     {FIELD_ICONS[field.type]}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -85,7 +85,7 @@ export function FieldItem({
                 </div>
                 <div className="flex items-center gap-2">
                     {field.required && (
-                        <Badge variant="secondary" className="text-xs">
+                        <Badge variant="secondary" className="text-xs bg-[hsl(var(--accent-warm)/0.5)] text-slate-700 border border-[hsl(var(--accent-warm)/0.7)]">
                             Required
                         </Badge>
                     )}
@@ -101,16 +101,16 @@ export function FieldItem({
                     onClick={onSelect}
                     aria-label="Edit field"
                 >
-                    <Settings2 className="h-4 w-4" />
+                    <Settings2 className="h-4 w-4 stroke-[1.6]" />
                 </Button>
                 <Button
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8 text-destructive hover:text-destructive"
+                    className="h-8 w-8 text-muted-foreground hover:text-destructive"
                     onClick={onRemove}
                     aria-label="Remove field"
                 >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 className="h-4 w-4 stroke-[1.6]" />
                 </Button>
             </div>
         </div>

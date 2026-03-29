@@ -39,11 +39,12 @@ export function ColumnVisibility({ columns }: ColumnVisibilityProps) {
         <Button
           variant={hiddenCount > 0 ? "secondary" : "outline"}
           size="sm"
+          className={hiddenCount > 0 ? "bg-[hsl(var(--accent-warm))] text-slate-800 border border-border/50 hover:bg-[hsl(var(--accent-warm-hover))] shadow-none" : "border-border/60 hover:bg-[hsl(var(--accent-warm)/0.6)] shadow-none"}
         >
-          <Columns className="h-4 w-4 mr-1" />
+          <Columns className="h-4 w-4 mr-1 stroke-[1.6]" />
           Columns
           {hiddenCount > 0 && (
-            <span className="ml-1 px-1.5 py-0.5 text-xs bg-muted text-muted-foreground rounded">
+            <span className="ml-1 px-1.5 py-0.5 text-xs bg-white/80 text-slate-700 border border-white/60 rounded">
               {hiddenCount} hidden
             </span>
           )}

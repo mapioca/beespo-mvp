@@ -37,15 +37,17 @@ export function LivePreview({ title, description, fields }: LivePreviewProps) {
     };
 
     return (
-        <Card className="h-full">
-            <CardHeader>
-                <CardTitle className="text-lg">Live Preview</CardTitle>
+        <Card className="h-full border-border/50 bg-background/80">
+            <CardHeader className="pb-2">
+                <CardTitle className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+                    Live Preview
+                </CardTitle>
                 <CardDescription>
                     See how your form will appear to respondents
                 </CardDescription>
             </CardHeader>
             <CardContent>
-                <div className="border rounded-lg p-6 bg-background min-h-[400px]">
+                <div className="border border-border/50 rounded-lg p-6 bg-muted/20 min-h-[400px]">
                     {/* Form Header */}
                     <div className="mb-6">
                         <h2 className="text-xl font-semibold">

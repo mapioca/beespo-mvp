@@ -49,14 +49,16 @@ export function FieldEditor({ field, onChange }: FieldEditorProps) {
     };
 
     return (
-        <div className="space-y-6 p-4 border rounded-lg bg-card">
-            <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
+        <div className="space-y-6 p-4 border border-border/50 rounded-lg bg-background/80">
+            <h3 className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
                 Field Properties
             </h3>
 
             {/* Field Type */}
             <div className="space-y-2">
-                <Label htmlFor="field-type">Field Type</Label>
+                <Label htmlFor="field-type" className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+                    Field Type
+                </Label>
                 <Select
                     value={field.type}
                     onValueChange={(value: FormFieldType) => {
@@ -68,7 +70,7 @@ export function FieldEditor({ field, onChange }: FieldEditorProps) {
                         updateField(updates);
                     }}
                 >
-                    <SelectTrigger id="field-type">
+                    <SelectTrigger id="field-type" className="bg-background border-border/60 focus:ring-0 focus:border-foreground/30">
                         <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -83,19 +85,22 @@ export function FieldEditor({ field, onChange }: FieldEditorProps) {
 
             {/* Label */}
             <div className="space-y-2">
-                <Label htmlFor="field-label">Label</Label>
+                <Label htmlFor="field-label" className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+                    Label
+                </Label>
                 <Input
                     id="field-label"
                     value={field.label}
                     onChange={(e) => updateField({ label: e.target.value })}
                     placeholder="Enter field label"
+                    className="bg-background border-border/60 focus-visible:ring-0 focus-visible:border-foreground/30"
                 />
             </div>
 
             {/* Placeholder */}
             {field.type !== "checkbox" && field.type !== "radio" && (
                 <div className="space-y-2">
-                    <Label htmlFor="field-placeholder">
+                    <Label htmlFor="field-placeholder" className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
                         {field.type === "select" ? "Placeholder Text" : "Helper Text"}
                     </Label>
                     <Textarea
@@ -104,6 +109,7 @@ export function FieldEditor({ field, onChange }: FieldEditorProps) {
                         onChange={(e) => updateField({ placeholder: e.target.value })}
                         placeholder={field.type === "select" ? "Select an option..." : "Add helpful context..."}
                         rows={2}
+                        className="bg-background border-border/60 focus-visible:ring-0 focus-visible:border-foreground/30"
                     />
                 </div>
             )}
@@ -111,7 +117,9 @@ export function FieldEditor({ field, onChange }: FieldEditorProps) {
             {/* Required Toggle */}
             <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                    <Label htmlFor="field-required">Required</Label>
+                    <Label htmlFor="field-required" className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+                        Required
+                    </Label>
                     <p className="text-xs text-muted-foreground">
                         {field.type === "checkbox"
                             ? "User must check this box"
@@ -129,14 +137,17 @@ export function FieldEditor({ field, onChange }: FieldEditorProps) {
             {showOptions && (
                 <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                        <Label>Options</Label>
+                        <Label className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+                            Options
+                        </Label>
                         <Button
                             type="button"
                             variant="outline"
                             size="sm"
                             onClick={addOption}
+                            className="border-border/60 hover:bg-[hsl(var(--accent-warm)/0.6)] shadow-none"
                         >
-                            <Plus className="h-3 w-3 mr-1" />
+                            <Plus className="h-3 w-3 mr-1 stroke-[1.6]" />
                             Add Option
                         </Button>
                     </div>
@@ -147,16 +158,17 @@ export function FieldEditor({ field, onChange }: FieldEditorProps) {
                                     value={option}
                                     onChange={(e) => updateOption(index, e.target.value)}
                                     placeholder={`Option ${index + 1}`}
+                                    className="bg-background border-border/60 focus-visible:ring-0 focus-visible:border-foreground/30"
                                 />
                                 <Button
                                     type="button"
                                     variant="ghost"
                                     size="icon"
-                                    className="h-8 w-8 shrink-0"
+                                    className="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground"
                                     onClick={() => removeOption(index)}
                                     disabled={field.options.length <= 1}
                                 >
-                                    <X className="h-4 w-4" />
+                                    <X className="h-4 w-4 stroke-[1.6]" />
                                 </Button>
                             </div>
                         ))}
