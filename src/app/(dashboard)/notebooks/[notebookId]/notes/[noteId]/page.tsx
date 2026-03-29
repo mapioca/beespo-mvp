@@ -69,10 +69,10 @@ export default function NoteEditorPage({ params }: NoteEditorPageProps) {
     }
 
     return (
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col h-full bg-muted/20">
             {/* Breadcrumb Header */}
             <div
-                className="flex-shrink-0 px-6 py-4 border-b"
+                className="flex-shrink-0 px-6 py-3 border-b border-border/60 bg-background/90"
                 style={{
                     background: `linear-gradient(to bottom, ${cover.gradient.match(/\#[0-9a-fA-F]{6}/)?.[0]}10, transparent)`,
                 }}
@@ -82,10 +82,10 @@ export default function NoteEditorPage({ params }: NoteEditorPageProps) {
                         href="/notebooks"
                         className="flex items-center gap-1 hover:text-foreground transition-colors"
                     >
-                        <Library className="w-4 h-4" />
+                        <Library className="w-4 h-4 stroke-[1.6]" />
                         <span>Library</span>
                     </Link>
-                    <ChevronRight className="w-4 h-4" />
+                    <ChevronRight className="w-4 h-4 stroke-[1.6]" />
                     <Link
                         href={`/notebooks/${notebook.id}`}
                         className="flex items-center gap-1 hover:text-foreground transition-colors"
@@ -96,9 +96,9 @@ export default function NoteEditorPage({ params }: NoteEditorPageProps) {
                         />
                         <span>{notebook.title}</span>
                     </Link>
-                    <ChevronRight className="w-4 h-4" />
+                    <ChevronRight className="w-4 h-4 stroke-[1.6]" />
                     <span className="flex items-center gap-1 text-foreground">
-                        <BookOpen className="w-4 h-4" />
+                        <BookOpen className="w-4 h-4 stroke-[1.6]" />
                         <span>Note</span>
                     </span>
                 </nav>

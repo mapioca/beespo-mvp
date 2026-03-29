@@ -39,7 +39,7 @@ export function TablesWidget({ data, dragHandleProps, isDragging }: Props) {
   return (
     <WidgetCard
       title="Tables"
-      icon={<Table2 className="h-4 w-4 text-muted-foreground" />}
+      icon={<Table2 className="h-4 w-4 text-muted-foreground stroke-[1.6]" />}
       dragHandleProps={dragHandleProps}
       isDragging={isDragging}
     >
@@ -53,9 +53,9 @@ export function TablesWidget({ data, dragHandleProps, isDragging }: Props) {
             variant="outline"
             onClick={handleCreate}
             disabled={creating}
-            className="gap-1.5"
+            className="gap-1.5 border-border/60 hover:bg-[hsl(var(--accent-warm)/0.6)]"
           >
-            <Plus className="h-3.5 w-3.5" />
+            <Plus className="h-3.5 w-3.5 stroke-[1.6]" />
             New Table
           </Button>
         </div>
@@ -66,7 +66,7 @@ export function TablesWidget({ data, dragHandleProps, isDragging }: Props) {
               <Link
                 key={table.id}
                 href={`/tables/${table.id}`}
-                className="flex items-center gap-3 py-2 px-2 -mx-2 rounded-md hover:bg-gray-50 transition-colors"
+                className="flex items-center gap-3 py-2 px-2 -mx-2 rounded-md hover:bg-[hsl(var(--accent-warm)/0.5)] transition-colors"
               >
                 <span className="text-base shrink-0">
                   {table.icon || "📊"}
@@ -94,7 +94,7 @@ export function TablesWidget({ data, dragHandleProps, isDragging }: Props) {
               disabled={creating}
               className="h-7 px-2 text-xs gap-1"
             >
-              <Plus className="h-3 w-3" />
+              <Plus className="h-3 w-3 stroke-[1.6]" />
               New
             </Button>
           </div>

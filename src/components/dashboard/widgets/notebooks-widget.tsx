@@ -67,7 +67,7 @@ export function NotebooksWidget({ data, dragHandleProps, isDragging }: Props) {
   return (
     <WidgetCard
       title="Notebooks"
-      icon={<BookOpen className="h-4 w-4 text-muted-foreground" />}
+      icon={<BookOpen className="h-4 w-4 text-muted-foreground stroke-[1.6]" />}
       dragHandleProps={dragHandleProps}
       isDragging={isDragging}
     >
@@ -81,9 +81,9 @@ export function NotebooksWidget({ data, dragHandleProps, isDragging }: Props) {
             variant="outline"
             onClick={handleCreate}
             disabled={creating}
-            className="gap-1.5"
+            className="gap-1.5 border-border/60 hover:bg-[hsl(var(--accent-warm)/0.6)]"
           >
-            <Plus className="h-3.5 w-3.5" />
+            <Plus className="h-3.5 w-3.5 stroke-[1.6]" />
             New Notebook
           </Button>
         </div>
@@ -96,7 +96,7 @@ export function NotebooksWidget({ data, dragHandleProps, isDragging }: Props) {
                 <Link
                   key={nb.id}
                   href={`/notebooks/${nb.id}`}
-                  className="block rounded-lg overflow-hidden hover:ring-2 hover:ring-primary/30 transition-all"
+                  className="block rounded-lg overflow-hidden border border-border/40 hover:shadow-md hover:-translate-y-0.5 transition-all"
                 >
                   <div
                     className="p-3 min-h-[56px] flex items-end"
@@ -130,7 +130,7 @@ export function NotebooksWidget({ data, dragHandleProps, isDragging }: Props) {
               disabled={creating}
               className="h-7 px-2 text-xs gap-1"
             >
-              <Plus className="h-3 w-3" />
+              <Plus className="h-3 w-3 stroke-[1.6]" />
               New
             </Button>
           </div>

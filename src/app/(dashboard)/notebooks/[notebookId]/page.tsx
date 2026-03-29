@@ -174,12 +174,12 @@ export default function NotebookViewPage({ params }: NotebookViewPageProps) {
     }
 
     return (
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col h-full bg-muted/20">
             {/* Header with cover accent */}
             <div
-                className="flex-shrink-0 p-6 border-b"
+                className="flex-shrink-0 p-6 border-b border-border/60 bg-background/90"
                 style={{
-                    background: `linear-gradient(to bottom, ${cover.gradient.match(/\#[0-9a-fA-F]{6}/)?.[0]}15, transparent)`,
+                    background: `linear-gradient(to bottom, ${cover.gradient.match(/\#[0-9a-fA-F]{6}/)?.[0]}12, transparent)`,
                 }}
             >
                 {/* Breadcrumb */}
@@ -188,10 +188,10 @@ export default function NotebookViewPage({ params }: NotebookViewPageProps) {
                         href="/notebooks"
                         className="flex items-center gap-1 hover:text-foreground transition-colors"
                     >
-                        <Library className="w-4 h-4" />
+                        <Library className="w-4 h-4 stroke-[1.6]" />
                         <span>Library</span>
                     </Link>
-                    <ChevronRight className="w-4 h-4" />
+                    <ChevronRight className="w-4 h-4 stroke-[1.6]" />
                     <span className="text-foreground font-medium">{notebook.title}</span>
                 </nav>
 
@@ -210,7 +210,7 @@ export default function NotebookViewPage({ params }: NotebookViewPageProps) {
                                 onChange={(e) => setEditTitle(e.target.value)}
                                 onBlur={handleSaveTitle}
                                 onKeyDown={(e) => e.key === "Enter" && handleSaveTitle()}
-                                className="text-2xl font-bold h-auto py-1 max-w-md"
+                                className="text-2xl font-bold h-auto py-1 max-w-md bg-transparent border-border/60 focus-visible:ring-0 focus-visible:border-foreground/30"
                                 autoFocus
                             />
                         ) : (
@@ -221,27 +221,27 @@ export default function NotebookViewPage({ params }: NotebookViewPageProps) {
                     </div>
 
                     <div className="flex items-center gap-2">
-                        <Button onClick={handleCreateNote}>
-                            <Plus className="w-4 h-4 mr-2" />
+                        <Button onClick={handleCreateNote} className="bg-[hsl(var(--accent-warm))] text-foreground hover:bg-[hsl(var(--accent-warm-hover))]">
+                            <Plus className="w-4 h-4 mr-2 stroke-[1.6]" />
                             New Note
                         </Button>
 
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button variant="ghost" size="icon">
-                                    <MoreHorizontal className="w-4 h-4" />
+                                    <MoreHorizontal className="w-4 h-4 stroke-[1.6]" />
                                 </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                                 <DropdownMenuItem onClick={() => setIsEditing(true)}>
-                                    <Edit2 className="w-4 h-4 mr-2" />
+                                    <Edit2 className="w-4 h-4 mr-2 stroke-[1.6]" />
                                     Rename
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
                                     className="text-destructive"
                                     onClick={() => setShowDeleteDialog(true)}
                                 >
-                                    <Trash2 className="w-4 h-4 mr-2" />
+                                    <Trash2 className="w-4 h-4 mr-2 stroke-[1.6]" />
                                     Delete
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
@@ -258,15 +258,15 @@ export default function NotebookViewPage({ params }: NotebookViewPageProps) {
             <div className="flex-1 overflow-y-auto">
                 {notes.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-full text-center p-8">
-                        <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
-                            <Plus className="w-8 h-8 text-muted-foreground" />
+                        <div className="w-16 h-16 rounded-full bg-[hsl(var(--accent-warm))] border border-border/50 flex items-center justify-center mb-4">
+                            <Plus className="w-8 h-8 text-muted-foreground stroke-[1.6]" />
                         </div>
                         <h3 className="text-lg font-medium mb-2">No notes yet</h3>
                         <p className="text-sm text-muted-foreground mb-4 max-w-sm">
                             Start writing in this notebook by creating your first note.
                         </p>
-                        <Button onClick={handleCreateNote}>
-                            <Plus className="w-4 h-4 mr-2" />
+                        <Button onClick={handleCreateNote} className="bg-[hsl(var(--accent-warm))] text-foreground hover:bg-[hsl(var(--accent-warm-hover))]">
+                            <Plus className="w-4 h-4 mr-2 stroke-[1.6]" />
                             Create First Note
                         </Button>
                     </div>
@@ -277,7 +277,7 @@ export default function NotebookViewPage({ params }: NotebookViewPageProps) {
                                 key={note.id}
                                 href={`/notebooks/${notebook.id}/notes/${note.id}`}
                                 className={cn(
-                                    "block p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
+                                    "block p-4 rounded-lg border border-border/60 bg-background/80 hover:bg-[hsl(var(--accent-warm)/0.5)] transition-colors"
                                 )}
                             >
                                 <h3 className="font-medium truncate">

@@ -57,13 +57,13 @@ export function TableDetailClient({ table }: TableDetailClientProps) {
     };
 
     return (
-        <div className="h-full flex flex-col">
+        <div className="h-full flex flex-col bg-muted/20">
             {/* Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b bg-background">
+            <div className="flex items-center justify-between px-6 py-3 border-b border-border/60 bg-background/90">
                 <div className="flex items-center gap-4">
                     <Button variant="ghost" size="icon" asChild>
                         <Link href="/tables">
-                            <ChevronLeft className="h-4 w-4" />
+                            <ChevronLeft className="h-4 w-4 stroke-[1.6]" />
                         </Link>
                     </Button>
                     <div className="flex items-center gap-2">
@@ -86,13 +86,14 @@ export function TableDetailClient({ table }: TableDetailClientProps) {
                         variant="outline"
                         size="sm"
                         onClick={() => setRecoverColumnOpen(true)}
+                        className="border-border/60 hover:bg-[hsl(var(--accent-warm)/0.6)]"
                     >
-                        <RefreshCw className="h-4 w-4 mr-1" />
+                        <RefreshCw className="h-4 w-4 mr-1 stroke-[1.6]" />
                         Recover
                     </Button>
-                    <Button variant="outline" size="sm" asChild>
+                    <Button variant="outline" size="sm" asChild className="border-border/60 hover:bg-[hsl(var(--accent-warm)/0.6)]">
                         <Link href={`/tables/${table.id}/settings`}>
-                            <Settings2 className="h-4 w-4 mr-1" />
+                            <Settings2 className="h-4 w-4 mr-1 stroke-[1.6]" />
                             Settings
                         </Link>
                     </Button>
@@ -100,7 +101,7 @@ export function TableDetailClient({ table }: TableDetailClientProps) {
             </div>
 
             {/* Toolbar */}
-            <div className="px-6 py-3 border-b bg-muted/30">
+            <div className="px-6 py-3 border-b border-border/60 bg-muted/20">
                 <TableToolbar
                     tableId={table.id}
                     columns={columns}
@@ -109,7 +110,7 @@ export function TableDetailClient({ table }: TableDetailClientProps) {
             </div>
 
             {/* Table */}
-            <div className="flex-1 overflow-auto p-6">
+            <div className="flex-1 overflow-auto p-6 pb-6">
                 <TableRenderer
                     tableId={table.id}
                     columns={columns}

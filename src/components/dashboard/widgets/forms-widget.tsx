@@ -43,7 +43,7 @@ export function FormsWidget({ data, dragHandleProps, isDragging }: Props) {
   return (
     <WidgetCard
       title="Forms"
-      icon={<FileText className="h-4 w-4 text-muted-foreground" />}
+      icon={<FileText className="h-4 w-4 text-muted-foreground stroke-[1.6]" />}
       dragHandleProps={dragHandleProps}
       isDragging={isDragging}
     >
@@ -57,9 +57,9 @@ export function FormsWidget({ data, dragHandleProps, isDragging }: Props) {
             variant="outline"
             onClick={handleCreate}
             disabled={creating}
-            className="gap-1.5"
+            className="gap-1.5 border-border/60 hover:bg-[hsl(var(--accent-warm)/0.6)]"
           >
-            <Plus className="h-3.5 w-3.5" />
+            <Plus className="h-3.5 w-3.5 stroke-[1.6]" />
             New Form
           </Button>
         </div>
@@ -70,7 +70,7 @@ export function FormsWidget({ data, dragHandleProps, isDragging }: Props) {
               <Link
                 key={form.id}
                 href={`/forms/${form.id}`}
-                className="flex items-center gap-3 py-2 px-2 -mx-2 rounded-md hover:bg-gray-50 transition-colors"
+                className="flex items-center gap-3 py-2 px-2 -mx-2 rounded-md hover:bg-[hsl(var(--accent-warm)/0.5)] transition-colors"
               >
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-gray-900 truncate">
@@ -82,10 +82,10 @@ export function FormsWidget({ data, dragHandleProps, isDragging }: Props) {
                 </div>
                 <span
                   className={cn(
-                    "text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0",
+                    "text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 border",
                     form.is_published
-                      ? "bg-emerald-100 text-emerald-700"
-                      : "bg-gray-100 text-gray-600"
+                      ? "bg-emerald-50 text-emerald-700 border-emerald-100"
+                      : "bg-[hsl(var(--accent-warm))] text-slate-800 border-border/50"
                   )}
                 >
                   {form.is_published ? "Published" : "Draft"}
@@ -107,7 +107,7 @@ export function FormsWidget({ data, dragHandleProps, isDragging }: Props) {
               disabled={creating}
               className="h-7 px-2 text-xs gap-1"
             >
-              <Plus className="h-3 w-3" />
+              <Plus className="h-3 w-3 stroke-[1.6]" />
               New
             </Button>
           </div>

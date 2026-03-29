@@ -109,14 +109,14 @@ export function ResultsDashboardClient({
     };
 
     return (
-        <div className="h-full overflow-auto">
+        <div className="h-full overflow-auto bg-muted/20">
             <div className="p-6 max-w-6xl mx-auto space-y-6">
                 {/* Header */}
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
                         <Button variant="ghost" size="icon" asChild>
                             <Link href={`/forms/${form.id}`}>
-                                <ArrowLeft className="h-4 w-4" />
+                                <ArrowLeft className="h-4 w-4 stroke-[1.6]" />
                                 <span className="sr-only">Back to form</span>
                             </Link>
                         </Button>
@@ -125,8 +125,8 @@ export function ResultsDashboardClient({
                             <p className="text-muted-foreground">Response Analytics</p>
                         </div>
                     </div>
-                    <Button variant="outline" onClick={handleExportCSV}>
-                        <Download className="h-4 w-4 mr-2" />
+                    <Button variant="outline" onClick={handleExportCSV} className="border-border/60 hover:bg-[hsl(var(--accent-warm)/0.6)]">
+                        <Download className="h-4 w-4 mr-2 stroke-[1.6]" />
                         Export CSV
                     </Button>
                 </div>
@@ -136,7 +136,7 @@ export function ResultsDashboardClient({
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium">Total Views</CardTitle>
-                            <Eye className="h-4 w-4 text-muted-foreground" />
+                            <Eye className="h-4 w-4 text-muted-foreground stroke-[1.6]" />
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold">{form.views_count}</div>
@@ -148,7 +148,7 @@ export function ResultsDashboardClient({
                             <CardTitle className="text-sm font-medium">
                                 Total Submissions
                             </CardTitle>
-                            <FileText className="h-4 w-4 text-muted-foreground" />
+                            <FileText className="h-4 w-4 text-muted-foreground stroke-[1.6]" />
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold">{submissions.length}</div>
@@ -160,7 +160,7 @@ export function ResultsDashboardClient({
                             <CardTitle className="text-sm font-medium">
                                 Completion Rate
                             </CardTitle>
-                            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                            <TrendingUp className="h-4 w-4 text-muted-foreground stroke-[1.6]" />
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold">{completionRate}%</div>
@@ -189,9 +189,9 @@ export function ResultsDashboardClient({
                                     </div>
                                     <Button variant="ghost" size="icon">
                                         {isTableExpanded ? (
-                                            <ChevronUp className="h-4 w-4" />
+                                            <ChevronUp className="h-4 w-4 stroke-[1.6]" />
                                         ) : (
-                                            <ChevronDown className="h-4 w-4" />
+                                            <ChevronDown className="h-4 w-4 stroke-[1.6]" />
                                         )}
                                     </Button>
                                 </div>

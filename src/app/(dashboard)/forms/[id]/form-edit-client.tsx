@@ -96,20 +96,27 @@ export function FormEditClient({
     };
 
     return (
-        <div className="h-full flex flex-col overflow-hidden">
+        <div className="h-full flex flex-col overflow-hidden bg-muted/20">
             {/* Header */}
-            <div className="border-b px-6 py-4 flex items-center justify-between">
+            <div className="border-b border-border/60 bg-background/90 px-6 py-3 flex items-center justify-between">
                 <div className="flex items-center gap-4">
                     <Button variant="ghost" size="icon" asChild>
                         <Link href="/forms">
-                            <ArrowLeft className="h-4 w-4" />
+                            <ArrowLeft className="h-4 w-4 stroke-[1.6]" />
                             <span className="sr-only">Back to forms</span>
                         </Link>
                     </Button>
                     <div>
                         <div className="flex items-center gap-2">
                             <h1 className="text-xl font-semibold">{currentForm.title}</h1>
-                            <Badge variant={currentForm.is_published ? "default" : "secondary"}>
+                            <Badge
+                                variant="secondary"
+                                className={
+                                    currentForm.is_published
+                                        ? "bg-emerald-50 text-emerald-700 border border-emerald-100"
+                                        : "bg-[hsl(var(--accent-warm))] text-slate-800 border border-border/50"
+                                }
+                            >
                                 {currentForm.is_published ? "Published" : "Draft"}
                             </Badge>
                         </div>
@@ -124,28 +131,29 @@ export function FormEditClient({
                         variant="outline"
                         onClick={handlePublishToggle}
                         disabled={isPublishing}
+                        className="border-border/60 hover:bg-[hsl(var(--accent-warm)/0.6)]"
                     >
                         {currentForm.is_published ? (
                             <>
-                                <EyeOff className="h-4 w-4 mr-2" />
+                                <EyeOff className="h-4 w-4 mr-2 stroke-[1.6]" />
                                 Unpublish
                             </>
                         ) : (
                             <>
-                                <Eye className="h-4 w-4 mr-2" />
+                                <Eye className="h-4 w-4 mr-2 stroke-[1.6]" />
                                 Publish
                             </>
                         )}
                     </Button>
                     {currentForm.is_published && (
-                        <Button variant="outline" onClick={() => setShowShareModal(true)}>
-                            <Share2 className="h-4 w-4 mr-2" />
+                        <Button variant="outline" onClick={() => setShowShareModal(true)} className="border-border/60 hover:bg-[hsl(var(--accent-warm)/0.6)]">
+                            <Share2 className="h-4 w-4 mr-2 stroke-[1.6]" />
                             Share
                         </Button>
                     )}
-                    <Button variant="outline" asChild>
+                    <Button variant="outline" asChild className="border-border/60 hover:bg-[hsl(var(--accent-warm)/0.6)]">
                         <Link href={`/forms/${form.id}/results`}>
-                            <BarChart2 className="h-4 w-4 mr-2" />
+                            <BarChart2 className="h-4 w-4 mr-2 stroke-[1.6]" />
                             Results
                         </Link>
                     </Button>
@@ -153,7 +161,7 @@ export function FormEditClient({
             </div>
 
             {/* Builder */}
-            <div className="flex-1 overflow-auto p-6">
+            <div className="flex-1 overflow-auto p-6 pb-6">
                 <FormBuilder
                     initialTitle={form.title}
                     initialDescription={form.description || ""}
