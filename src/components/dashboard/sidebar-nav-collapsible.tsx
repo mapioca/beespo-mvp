@@ -78,13 +78,13 @@ export function SidebarNavCollapsible({
             onMouseEnter={openFlyout}
             onMouseLeave={scheduleFlyoutClose}
             className={cn(
-              "flex items-center justify-center rounded-lg px-2 py-2 text-sm transition-colors w-full",
+              "flex items-center justify-center rounded-lg px-2 py-1.5 text-sm transition-colors w-full",
               hasActiveChild
                 ? "text-foreground"
                 : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
             )}
           >
-            <Icon className="h-4 w-4 shrink-0" />
+            <Icon className="h-4 w-4 shrink-0 stroke-[1.6]" />
           </button>
         </PopoverAnchor>
 
@@ -119,7 +119,7 @@ export function SidebarNavCollapsible({
                       : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
                   )}
                 >
-                  <ChildIcon className="h-4 w-4 shrink-0" />
+                  <ChildIcon className="h-4 w-4 shrink-0 stroke-[1.6]" />
                   {child.label}
                 </Link>
               )
@@ -138,7 +138,7 @@ export function SidebarNavCollapsible({
         <PopoverAnchor asChild>
           <CollapsibleTrigger
             className={cn(
-              "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors w-full",
+              "flex items-center gap-2.5 rounded-lg px-3 py-1.5 text-sm transition-colors w-full",
               hasActiveChild
                 ? "text-foreground"
                 : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
@@ -148,11 +148,11 @@ export function SidebarNavCollapsible({
             onMouseEnter={openFlyout}
             onMouseLeave={scheduleFlyoutClose}
           >
-            <Icon className="h-4 w-4 shrink-0" />
+            <Icon className="h-4 w-4 shrink-0 stroke-[1.6]" />
             <span className="flex-1 text-left">{item.label}</span>
             <ChevronRight
               className={cn(
-                "h-4 w-4 shrink-0 transition-transform duration-200",
+                "h-4 w-4 shrink-0 transition-transform duration-200 stroke-[1.6]",
                 isExpanded && "rotate-90"
               )}
             />
@@ -190,7 +190,7 @@ export function SidebarNavCollapsible({
                       : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
                   )}
                 >
-                  <ChildIcon className="h-4 w-4 shrink-0" />
+                  <ChildIcon className="h-4 w-4 shrink-0 stroke-[1.6]" />
                   {child.label}
                 </Link>
               )

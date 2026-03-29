@@ -220,11 +220,11 @@ export function BuilderTopBar({
         <>
             <Breadcrumbs
                 items={[
-                    { label: "Meetings", href: "/meetings/agendas", icon: <CalendarDays className="h-3.5 w-3.5" /> },
-                    { label: "Agendas", href: "/meetings/agendas", icon: <ClipboardList className="h-3.5 w-3.5" /> },
-                    { label: title || "Untitled Agenda", icon: <FileText className="h-3.5 w-3.5" /> },
+                    { label: "Meetings", href: "/meetings/agendas", icon: <CalendarDays className="h-4 w-4 stroke-[1.6]" /> },
+                    { label: "Agendas", href: "/meetings/agendas", icon: <ClipboardList className="h-4 w-4 stroke-[1.6]" /> },
+                    { label: title || "Untitled Agenda", icon: <FileText className="h-4 w-4 stroke-[1.6]" /> },
                 ]}
-                className="bg-transparent ring-0 border-b border-border/60 rounded-none px-4 py-2"
+                className="bg-transparent ring-0 border-b border-border/60 rounded-none px-4 py-1.5"
                 inlineAction={(
                     <>
                         {initialMeetingId && (
@@ -240,7 +240,7 @@ export function BuilderTopBar({
                             >
                                 <Star
                                     className={cn(
-                                        "h-3.5 w-3.5 transition-colors",
+                                        "h-4 w-4 stroke-[1.6] transition-colors",
                                         favorited ? "fill-amber-400 text-amber-400" : ""
                                     )}
                                 />
@@ -253,20 +253,20 @@ export function BuilderTopBar({
                                     type="button"
                                     title="More options"
                                     className={cn(
-                                        "inline-flex items-center justify-center h-6 w-6 rounded",
-                                        "text-muted-foreground hover:text-foreground hover:bg-accent",
-                                        "transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                                    )}
-                                >
-                                    <MoreHorizontal className="h-3.5 w-3.5" />
-                                </button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="start" className="w-60 rounded-xl border-border/60 shadow-lg">
+                                    "inline-flex items-center justify-center h-6 w-6 rounded",
+                                    "text-muted-foreground hover:text-foreground hover:bg-accent",
+                                    "transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                )}
+                            >
+                                <MoreHorizontal className="h-4 w-4 stroke-[1.6]" />
+                            </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start" className="w-60 rounded-xl border-border/60 shadow-lg">
                                 <DropdownMenuLabel className="text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.2em]">
                                     Share Link
                                 </DropdownMenuLabel>
                                 <DropdownMenuItem onSelect={() => void handleCopyLink()}>
-                                    <Link className="h-3.5 w-3.5 text-muted-foreground" />
+                                    <Link className="h-4 w-4 stroke-[1.6] text-muted-foreground" />
                                     Copy public link
                                 </DropdownMenuItem>
 
@@ -279,7 +279,7 @@ export function BuilderTopBar({
                                     disabled={!!exportingFormat}
                                     onSelect={() => void handleExport("pdf")}
                                 >
-                                    <FileText className="h-3.5 w-3.5 text-red-500/80" />
+                                    <FileText className="h-4 w-4 stroke-[1.6] text-red-500/80" />
                                     <span className="flex-1">PDF Document (.pdf)</span>
                                     {exportingFormat === "pdf" && (
                                         <Loader2 className="h-3 w-3 shrink-0 animate-spin text-muted-foreground" />
@@ -289,7 +289,7 @@ export function BuilderTopBar({
                                     disabled={!!exportingFormat}
                                     onSelect={() => void handleExport("docx")}
                                 >
-                                    <FileType className="h-3.5 w-3.5 text-blue-500/80" />
+                                    <FileType className="h-4 w-4 stroke-[1.6] text-blue-500/80" />
                                     <span className="flex-1">Word Document (.docx)</span>
                                     {exportingFormat === "docx" && (
                                         <Loader2 className="h-3 w-3 shrink-0 animate-spin text-muted-foreground" />
@@ -299,7 +299,7 @@ export function BuilderTopBar({
                                     disabled={!!exportingFormat}
                                     onSelect={() => void handleExport("md")}
                                 >
-                                    <FileCode className="h-3.5 w-3.5 text-orange-500/80" />
+                                    <FileCode className="h-4 w-4 stroke-[1.6] text-orange-500/80" />
                                     <span className="flex-1">Markdown (.md)</span>
                                     {exportingFormat === "md" && (
                                         <Loader2 className="h-3 w-3 shrink-0 animate-spin text-muted-foreground" />
@@ -309,7 +309,7 @@ export function BuilderTopBar({
                                     disabled={!!exportingFormat}
                                     onSelect={() => void handleExport("txt")}
                                 >
-                                    <FileText className="h-3.5 w-3.5 text-slate-500/80" />
+                                    <FileText className="h-4 w-4 stroke-[1.6] text-slate-500/80" />
                                     <span className="flex-1">Plain Text (.txt)</span>
                                     {exportingFormat === "txt" && (
                                         <Loader2 className="h-3 w-3 shrink-0 animate-spin text-muted-foreground" />
@@ -323,9 +323,9 @@ export function BuilderTopBar({
                                             onSelect={() => setIsDeleteDialogOpen(true)}
                                             className="focus:text-destructive"
                                         >
-                                            <Trash2 className="h-4 w-4" />
-                                            Delete agenda
-                                        </DropdownMenuItem>
+                                        <Trash2 className="h-4 w-4 stroke-[1.6]" />
+                                        Delete agenda
+                                    </DropdownMenuItem>
                                     </>
                                 )}
                             </DropdownMenuContent>
@@ -333,7 +333,7 @@ export function BuilderTopBar({
                     </>
                 )}
                 action={
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5">
                         {/* Live status */}
                         {isLive && (
                             <span className="hidden sm:inline-flex items-center gap-1 text-[11px] font-medium text-emerald-600">
@@ -368,7 +368,7 @@ export function BuilderTopBar({
                                     {isCreatingZoom ? (
                                         <Loader2 className="h-3.5 w-3.5 animate-spin" />
                                     ) : (
-                                        <ZoomIcon className="h-3.5 w-3.5" />
+                                        <ZoomIcon className="h-4 w-4" />
                                     )}
                                 </Button>
                             ) : null
@@ -404,7 +404,7 @@ export function BuilderTopBar({
                                         )}
                                         disabled={isCreating}
                                     >
-                                        <ChevronDown className="h-3.5 w-3.5" />
+                                        <ChevronDown className="h-4 w-4 stroke-[1.6]" />
                                     </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end" className="w-48">

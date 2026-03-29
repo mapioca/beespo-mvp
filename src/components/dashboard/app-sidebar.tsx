@@ -145,9 +145,9 @@ export function AppSidebar({
                   className="h-8 w-8 text-muted-foreground hover:text-foreground shrink-0"
                 >
                   {isCollapsed ? (
-                    <PanelLeft className="h-4 w-4" />
+                    <PanelLeft className="h-4 w-4 stroke-[1.6]" />
                   ) : (
-                    <PanelLeftClose className="h-4 w-4" />
+                    <PanelLeftClose className="h-4 w-4 stroke-[1.6]" />
                   )}
                   <span className="sr-only">
                     {isCollapsed ? "Expand sidebar" : "Collapse sidebar"}

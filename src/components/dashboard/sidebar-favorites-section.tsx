@@ -70,13 +70,13 @@ function FavoriteItemRow({
     >
       <Link
         href={fav.href}
-      className={cn(
-        "flex flex-1 min-w-0 items-center gap-3 px-3 transition-colors",
-        compact ? "py-1.5" : "py-1.5",
-        isActive ? "text-foreground font-medium" : "text-muted-foreground hover:text-foreground"
-      )}
+        className={cn(
+          "flex flex-1 min-w-0 items-center gap-2.5 px-3 transition-colors",
+          compact ? "py-1.5" : "py-1.5",
+          isActive ? "text-foreground font-medium" : "text-muted-foreground hover:text-foreground"
+        )}
       >
-        <Icon className={cn("shrink-0", compact ? "h-3.5 w-3.5" : "h-4 w-4")} />
+        <Icon className={cn("shrink-0 stroke-[1.6]", compact ? "h-3.5 w-3.5" : "h-4 w-4")} />
         <span className="truncate text-sm">{fav.title}</span>
       </Link>
 
@@ -91,25 +91,25 @@ function FavoriteItemRow({
           )}
             onClick={(e) => e.preventDefault()}
           >
-            <MoreHorizontal className="h-3.5 w-3.5 text-muted-foreground" />
+            <MoreHorizontal className="h-3.5 w-3.5 stroke-[1.6] text-muted-foreground" />
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent side="right" align="start" className="w-56">
           <DropdownMenuItem onClick={handleOpenNewTab}>
-            <ExternalLink className="h-4 w-4" />
+            <ExternalLink className="h-4 w-4 stroke-[1.6]" />
             Open in new tab
           </DropdownMenuItem>
           <DropdownMenuItem onClick={handleOpenNewWindow}>
-            <ExternalLink className="h-4 w-4" />
+            <ExternalLink className="h-4 w-4 stroke-[1.6]" />
             Open in new window
           </DropdownMenuItem>
           <DropdownMenuItem onClick={handleCopyLink}>
-            <Link2 className="h-4 w-4" />
+            <Link2 className="h-4 w-4 stroke-[1.6]" />
             Copy link
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={() => removeFavorite(fav.id, fav.type)}>
-            <StarOff className="h-4 w-4" />
+            <StarOff className="h-4 w-4 stroke-[1.6]" />
             Remove from favorites
           </DropdownMenuItem>
         </DropdownMenuContent>
@@ -154,7 +154,7 @@ export function SidebarFavoritesSection({
   if (favorites.length === 0 || isCollapsed) return null;
 
   return (
-    <div className="px-2 mt-4">
+    <div className="px-2.5 mt-3">
       <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
         <Popover open={flyoutEnabled && flyoutOpen} onOpenChange={() => {}}>
           <PopoverAnchor asChild>
@@ -168,7 +168,7 @@ export function SidebarFavoritesSection({
               </span>
               <ChevronRight
                 className={cn(
-                  "h-3 w-3 shrink-0 text-muted-foreground/50 transition-transform duration-200",
+                  "h-3 w-3 shrink-0 stroke-[1.6] text-muted-foreground/50 transition-transform duration-200",
                   "opacity-0 group-hover:opacity-100",
                   isExpanded && "rotate-90 opacity-100"
                 )}
