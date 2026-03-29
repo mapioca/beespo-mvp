@@ -20,30 +20,32 @@ export function ProgramContainerSection({ item }: ProgramContainerSectionProps) 
     const children = item.children || [];
 
     return (
-        <div className="space-y-2 py-2">
+        <div className="space-y-3 py-2">
             <div className="flex items-center gap-2">
-                <Icon className="h-3.5 w-3.5 text-muted-foreground" />
-                <h3 className="text-sm font-semibold">{headerLabel}</h3>
+                <span className="h-6 w-6 rounded-full bg-slate-100 flex items-center justify-center">
+                    <Icon className="h-3.5 w-3.5 text-slate-500" />
+                </span>
+                <h3 className="text-sm font-semibold text-slate-900">{headerLabel}</h3>
             </div>
             {children.length === 0 ? (
-                <p className="text-xs text-muted-foreground italic pl-5">No items</p>
+                <p className="text-xs text-slate-400 italic pl-8">No items</p>
             ) : (
-                <div className="space-y-1.5 pl-5">
+                <div className="space-y-2 pl-8">
                     {children.map((child) => (
                         <div
                             key={child.id}
-                            className="rounded-md border border-border/50 bg-muted/30 px-3 py-2"
+                            className="rounded-xl border border-slate-200/70 bg-white px-3 py-2.5 shadow-[0_1px_0_rgba(15,23,42,0.04)]"
                         >
                             <div className="flex items-start justify-between gap-2">
-                                <p className="text-sm font-medium leading-snug">{child.title}</p>
+                                <p className="text-sm font-medium leading-snug text-slate-900">{child.title}</p>
                                 {child.priority && child.priority !== "normal" && (
-                                    <span className="shrink-0 text-[10px] uppercase tracking-wider text-muted-foreground font-medium">
+                                    <span className="shrink-0 text-[10px] uppercase tracking-[0.2em] text-slate-400 font-semibold">
                                         {child.priority}
                                     </span>
                                 )}
                             </div>
                             {child.person_name && (
-                                <p className="text-xs text-muted-foreground mt-0.5">{child.person_name}</p>
+                                <p className="text-xs text-slate-500 mt-0.5">{child.person_name}</p>
                             )}
                         </div>
                     ))}

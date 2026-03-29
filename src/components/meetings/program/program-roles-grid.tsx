@@ -23,11 +23,11 @@ export function ProgramRolesGrid({ roles }: ProgramRolesGridProps) {
     if (filledRoles.length === 0) return null;
 
     return (
-        <div className="grid grid-cols-2 gap-x-4 gap-y-3 py-4 px-4 rounded-lg bg-muted/50">
+        <div className="grid grid-cols-2 gap-x-4 gap-y-4 rounded-2xl border border-slate-200/70 bg-slate-50/70 px-4 py-3">
             {filledRoles.map(({ key, label }) => (
-                <div key={key} className="min-w-0">
-                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">{label}</p>
-                    <p className="text-sm font-medium truncate">{roles[key]}</p>
+                <div key={key} className="min-w-0 space-y-1">
+                    <p className="text-[10px] uppercase tracking-[0.2em] text-slate-400 font-semibold">{label}</p>
+                    <p className="text-sm font-medium text-slate-900 truncate">{roles[key]}</p>
                 </div>
             ))}
         </div>

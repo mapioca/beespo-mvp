@@ -14,8 +14,8 @@ export function ProgramView({ data, variant = "embedded", className }: ProgramVi
     return (
         <div
             className={cn(
-                "w-full max-w-md mx-auto",
-                isStandalone ? "px-6 py-10" : "px-5 py-6",
+                "w-full max-w-md mx-auto text-slate-900",
+                isStandalone ? "px-7 py-10" : "px-6 py-8",
                 className
             )}
         >
@@ -30,10 +30,10 @@ export function ProgramView({ data, variant = "embedded", className }: ProgramVi
             <ProgramRolesGrid roles={data.roles} />
 
             {/* Separator */}
-            <div className="border-t border-border/60 my-5" />
+            <div className="border-t border-slate-200/80 my-6" />
 
             {/* Agenda items */}
-            <div className="space-y-0.5">
+            <div className="space-y-2">
                 {data.items.map((item, index) => (
                     <motion.div
                         key={item.id}
@@ -41,7 +41,7 @@ export function ProgramView({ data, variant = "embedded", className }: ProgramVi
                         animate={{ opacity: 1, y: 0 }}
                         transition={{
                             duration: 0.3,
-                            delay: index * 0.04,
+                            delay: index * 0.035,
                             ease: "easeOut",
                         }}
                     >
