@@ -262,7 +262,7 @@ export function BuilderTopBar({
                                 </button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="start" className="w-60">
-                                <DropdownMenuLabel className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                                <DropdownMenuLabel className="text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.2em]">
                                     Share Link
                                 </DropdownMenuLabel>
                                 <DropdownMenuItem onSelect={() => void handleCopyLink()}>
@@ -272,7 +272,7 @@ export function BuilderTopBar({
 
                                 <DropdownMenuSeparator />
 
-                                <DropdownMenuLabel className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                                <DropdownMenuLabel className="text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.2em]">
                                     Download As
                                 </DropdownMenuLabel>
                                 <DropdownMenuItem
@@ -384,7 +384,7 @@ export function BuilderTopBar({
                                 size="sm"
                                 className={cn(
                                     "h-8 text-xs font-medium rounded-r-none border-r-0",
-                                    "bg-zinc-900 text-white hover:bg-zinc-800"
+                                    "bg-foreground text-background hover:bg-foreground/90"
                                 )}
                                 onClick={onSave}
                                 disabled={isCreating || !isValid}
@@ -399,7 +399,7 @@ export function BuilderTopBar({
                                         size="sm"
                                         className={cn(
                                             "h-8 w-8 rounded-l-none px-0",
-                                            "bg-zinc-900 text-white hover:bg-zinc-700",
+                                            "bg-foreground text-background hover:bg-foreground/90",
                                             "border-l border-white/20"
                                         )}
                                         disabled={isCreating}

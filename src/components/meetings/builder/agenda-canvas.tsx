@@ -100,7 +100,7 @@ function SortableAgendaRow({
                         )}
                     >
                         {/* Container Header */}
-                        <div className="flex items-center gap-2 p-1.5">
+                        <div className="flex items-center gap-2 px-2 py-2">
                             <button
                                 type="button"
                                 onClick={(e) => { e.stopPropagation(); onToggleExpand?.(); }}
@@ -113,15 +113,15 @@ function SortableAgendaRow({
                                 )}
                             </button>
 
-                            <span className="font-medium text-sm flex-1 text-foreground pl-1">
+                            <span className="font-medium text-[13px] flex-1 text-foreground pl-1">
                                 {item.title}
                             </span>
 
-                            <span className="text-xs text-muted-foreground">
+                            <span className="text-[11px] text-muted-foreground">
                                 {childCount} item{childCount !== 1 ? "s" : ""}
                             </span>
 
-                            <span className="text-xs text-muted-foreground ml-2">
+                            <span className="text-[11px] text-muted-foreground ml-2">
                                 {item.duration_minutes}m
                             </span>
 
@@ -200,10 +200,10 @@ function SortableAgendaRow({
                     >
                         <div className="flex items-center gap-2 p-1.5">
                             <div className="w-7 shrink-0" />
-                            <span className="font-medium text-sm flex-1 truncate text-foreground pl-1">
+                            <span className="font-medium text-[13px] flex-1 truncate text-foreground pl-1">
                                 {item.title || "Untitled section"}
                             </span>
-                            <span className="text-xs text-muted-foreground shrink-0">
+                            <span className="text-[11px] text-muted-foreground shrink-0">
                                 Section
                             </span>
                             <Button
@@ -293,13 +293,13 @@ function SortableAgendaRow({
                     {...listeners}
                 >
                     {/* Header row */}
-                    <div className="flex items-center gap-2 p-1.5">
+                    <div className="flex items-center gap-2 px-2 py-2">
                         <div className="w-7 shrink-0" />
-                        <span className="font-medium text-sm flex-1 truncate text-foreground pl-1">
+                        <span className="font-medium text-[13px] flex-1 truncate text-foreground pl-1">
                             {item.title}
                         </span>
 
-                        <span className="text-xs text-muted-foreground shrink-0">
+                        <span className="text-[11px] text-muted-foreground shrink-0">
                             {item.duration_minutes}m
                         </span>
 
@@ -318,7 +318,7 @@ function SortableAgendaRow({
                     {secondaryText && (
                         <div className="px-3 pb-2 pt-0">
                             <div className="pl-7">
-                                <span className="text-xs text-muted-foreground truncate block">
+                                <span className="text-[11px] text-muted-foreground truncate block">
                                     {secondaryText}
                                 </span>
                             </div>
@@ -329,7 +329,7 @@ function SortableAgendaRow({
                     {item.description && !secondaryText && (
                         <div className="px-3 pb-2 pt-0">
                             <div className="pl-7">
-                                <span className="text-xs text-muted-foreground/80 line-clamp-2 italic">
+                                <span className="text-[11px] text-muted-foreground/80 line-clamp-2 italic">
                                     {item.description}
                                 </span>
                             </div>

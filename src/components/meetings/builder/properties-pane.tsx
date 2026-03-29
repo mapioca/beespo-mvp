@@ -71,7 +71,7 @@ export function PropertiesPane({
                             onChange={(e) => setValue("title", e.target.value, { shouldValidate: true })}
                             onFocus={(e) => e.target.select()}
                             placeholder="e.g. Ward Conference"
-                            className="bg-background h-8 text-sm"
+                            className="bg-background h-8 text-sm border-border/60 focus-visible:ring-0 focus-visible:border-foreground/30"
                         />
                     </div>
 
@@ -81,7 +81,7 @@ export function PropertiesPane({
                             value={selectedTemplateId}
                             onValueChange={(val) => setValue("templateId", val === "none" ? null : val, { shouldValidate: true })}
                         >
-                            <SelectTrigger id="template" className="bg-background h-8 text-sm">
+                            <SelectTrigger id="template" className="bg-background h-8 text-sm border-border/60 focus:ring-0 focus:border-foreground/30">
                                 <SelectValue placeholder="Select template" />
                             </SelectTrigger>
                             <SelectContent>
@@ -105,7 +105,7 @@ export function PropertiesPane({
                                     type="button"
                                     variant="outline"
                                     className={cn(
-                                        "w-full justify-start text-left font-normal bg-background h-8 text-sm",
+                                        "w-full justify-start text-left font-normal bg-background h-8 text-sm border-border/60 focus:ring-0 focus:border-foreground/30",
                                         !date && "text-muted-foreground"
                                     )}
                                 >
@@ -139,7 +139,7 @@ export function PropertiesPane({
                                 type="time"
                                 value={time}
                                 onChange={(e) => setValue("time", e.target.value, { shouldValidate: true })}
-                                className="pl-9 bg-background h-8 text-sm [&::-webkit-calendar-picker-indicator]:hidden relative z-0"
+                                className="pl-9 bg-background h-8 text-sm border-border/60 focus-visible:ring-0 focus-visible:border-foreground/30 [&::-webkit-calendar-picker-indicator]:hidden relative z-0"
                             />
                         </div>
                     </div>

@@ -86,7 +86,7 @@ export function ItemPropertiesPanel({
                             value={item.title}
                             onChange={(e) => onUpdateItem?.(item.id, e.target.value)}
                             onFocus={(e) => e.target.select()}
-                            className="bg-background h-8 text-sm focus-visible:ring-primary/30"
+                            className="bg-background h-8 text-sm border-border/60 focus-visible:ring-0 focus-visible:border-foreground/30"
                             placeholder="Enter title..."
                         />
                     </div>
@@ -104,7 +104,7 @@ export function ItemPropertiesPanel({
                         <Input
                             value={item.structural_type?.replace("_", " ") || item.category || "Unknown"}
                             disabled
-                            className="bg-muted h-8 text-sm capitalize opacity-70 cursor-not-allowed"
+                            className="bg-muted h-8 text-sm capitalize opacity-70 cursor-not-allowed border-border/40"
                         />
                     </div>
 
@@ -121,7 +121,7 @@ export function ItemPropertiesPanel({
                                 max={120}
                                 value={item.duration_minutes}
                                 onChange={(e) => onUpdateDuration?.(item.id, parseInt(e.target.value) || 0)}
-                                className="bg-background h-8 text-sm focus-visible:ring-primary/30"
+                                className="bg-background h-8 text-sm border-border/60 focus-visible:ring-0 focus-visible:border-foreground/30"
                             />
                         </div>
                     )}
