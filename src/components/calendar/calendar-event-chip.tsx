@@ -31,37 +31,37 @@ function getNotionColors(source: EventSource, customColor?: string): {
     case "announcement":
       return {
         border: "border-l-amber-400",
-        bg: "bg-amber-50 dark:bg-amber-950/30",
-        text: "text-amber-900 dark:text-amber-100",
-        hoverBg: "hover:bg-amber-100 dark:hover:bg-amber-900/40",
+        bg: "bg-amber-50/60 dark:bg-amber-950/20",
+        text: "text-amber-800 dark:text-amber-100",
+        hoverBg: "hover:bg-amber-100/60 dark:hover:bg-amber-900/30",
       };
     case "meeting":
       return {
         border: "border-l-blue-400",
-        bg: "bg-blue-50 dark:bg-blue-950/30",
-        text: "text-blue-900 dark:text-blue-100",
-        hoverBg: "hover:bg-blue-100 dark:hover:bg-blue-900/40",
+        bg: "bg-blue-50/60 dark:bg-blue-950/20",
+        text: "text-blue-800 dark:text-blue-100",
+        hoverBg: "hover:bg-blue-100/60 dark:hover:bg-blue-900/30",
       };
     case "task":
       return {
         border: "border-l-green-400",
-        bg: "bg-green-50 dark:bg-green-950/30",
-        text: "text-green-900 dark:text-green-100",
-        hoverBg: "hover:bg-green-100 dark:hover:bg-green-900/40",
+        bg: "bg-green-50/60 dark:bg-green-950/20",
+        text: "text-green-800 dark:text-green-100",
+        hoverBg: "hover:bg-green-100/60 dark:hover:bg-green-900/30",
       };
     case "event":
       return {
         border: "border-l-indigo-400",
-        bg: "bg-indigo-50 dark:bg-indigo-950/30",
-        text: "text-indigo-900 dark:text-indigo-100",
-        hoverBg: "hover:bg-indigo-100 dark:hover:bg-indigo-900/40",
+        bg: "bg-indigo-50/60 dark:bg-indigo-950/20",
+        text: "text-indigo-800 dark:text-indigo-100",
+        hoverBg: "hover:bg-indigo-100/60 dark:hover:bg-indigo-900/30",
       };
     case "external":
       return {
         border: "border-l-purple-400",
-        bg: "bg-purple-50 dark:bg-purple-950/30",
-        text: "text-purple-900 dark:text-purple-100",
-        hoverBg: "hover:bg-purple-100 dark:hover:bg-purple-900/40",
+        bg: "bg-purple-50/60 dark:bg-purple-950/20",
+        text: "text-purple-800 dark:text-purple-100",
+        hoverBg: "hover:bg-purple-100/60 dark:hover:bg-purple-900/30",
       };
   }
 }
@@ -86,7 +86,7 @@ export function CalendarEventChip({
         colors.bg,
         colors.text,
         colors.hoverBg,
-        compact ? "px-1.5 py-0.5 text-xs" : "px-2 py-1.5 text-sm"
+        compact ? "px-1.5 py-0.5 text-[11px]" : "px-2 py-1.5 text-sm"
       )}
       style={event.color ? { borderLeftColor: event.color } : undefined}
     >
@@ -98,7 +98,7 @@ export function CalendarEventChip({
       </div>
       {!compact && event.location && (
         <div className="flex items-center gap-1 mt-0.5 text-xs opacity-70">
-          <MapPin className="h-3 w-3" />
+          <MapPin className="h-3 w-3 stroke-[1.6]" />
           <span className="truncate">{event.location}</span>
         </div>
       )}

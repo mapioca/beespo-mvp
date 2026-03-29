@@ -155,9 +155,9 @@ export function SubscriptionList({
 
   if (subscriptions.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-8 text-center">
-        <Calendar className="h-12 w-12 text-muted-foreground mb-4" />
-        <p className="text-lg font-medium">No external calendars</p>
+      <div className="flex flex-col items-center justify-center py-10 text-center rounded-lg border border-border/50 bg-[hsl(var(--accent-warm)/0.25)]">
+        <Calendar className="h-12 w-12 text-muted-foreground mb-4 stroke-[1.6]" />
+        <p className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">No external calendars</p>
         <p className="text-sm text-muted-foreground">
           Add a calendar subscription to display external events
         </p>

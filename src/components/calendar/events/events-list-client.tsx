@@ -192,15 +192,15 @@ export function EventsListClient({ events }: EventsListClientProps) {
                     </p>
                 </div>
             ) : (
-                <div className="rounded-md border">
-                    <Table>
+                <div className="rounded-md border border-border/50 bg-background/80">
+                    <Table className="text-[13px]">
                         <TableHeader>
                             <TableRow>
-                                <TableHead className="w-[300px]">Event</TableHead>
-                                <TableHead>Date & Time</TableHead>
-                                <TableHead>Location</TableHead>
-                                <TableHead>Type</TableHead>
-                                <TableHead>Status</TableHead>
+                                <TableHead className="w-[300px] text-[11px] uppercase tracking-[0.2em] text-muted-foreground">Event</TableHead>
+                                <TableHead className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">Date & Time</TableHead>
+                                <TableHead className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">Location</TableHead>
+                                <TableHead className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">Type</TableHead>
+                                <TableHead className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">Status</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -218,11 +218,11 @@ export function EventsListClient({ events }: EventsListClientProps) {
                                         )}
                                         onClick={() => handleEventClick(event)}
                                     >
-                                        <TableCell className="font-medium">
+                                        <TableCell className="font-medium text-[13px]">
                                             <div className="flex flex-col gap-1">
                                                 <span className="line-clamp-1">{event.title}</span>
                                                 {event.description && (
-                                                    <span className="text-xs text-muted-foreground line-clamp-1">
+                                                    <span className="text-[12px] text-muted-foreground line-clamp-1">
                                                         {event.description}
                                                     </span>
                                                 )}
@@ -231,7 +231,7 @@ export function EventsListClient({ events }: EventsListClientProps) {
                                         <TableCell>
                                             <div className="flex flex-col gap-0.5">
                                                 <div className="flex items-center gap-1.5 text-sm">
-                                                    <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                                                    <Calendar className="h-3.5 w-3.5 text-muted-foreground stroke-[1.6]" />
                                                     {format(startDate, "MMM d, yyyy")}
                                                     {isToday(startDate) && (
                                                         <Badge variant="secondary" className="text-xs py-0">
@@ -241,7 +241,7 @@ export function EventsListClient({ events }: EventsListClientProps) {
                                                 </div>
                                                 {!event.is_all_day && (
                                                     <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                                                        <Clock className="h-3 w-3" />
+                                                        <Clock className="h-3 w-3 stroke-[1.6]" />
                                                         {format(startDate, "h:mm a")}
                                                     </div>
                                                 )}
@@ -253,7 +253,7 @@ export function EventsListClient({ events }: EventsListClientProps) {
                                         <TableCell>
                                             {event.location ? (
                                                 <div className="flex items-center gap-1.5 text-sm">
-                                                    <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
+                                                    <MapPin className="h-3.5 w-3.5 text-muted-foreground stroke-[1.6]" />
                                                     <span className="line-clamp-1">{event.location}</span>
                                                 </div>
                                             ) : (

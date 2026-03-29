@@ -67,7 +67,7 @@ export function WeekView({
       {/* Header with day names and dates */}
       <div className="grid grid-cols-8 border-b border-border/50 bg-muted/20">
         {/* Time column header */}
-        <div className="p-3 text-center text-[11px] font-semibold text-muted-foreground uppercase tracking-[0.2em] border-r border-border/50">
+        <div className="p-2.5 text-center text-[11px] font-semibold text-muted-foreground uppercase tracking-[0.2em] border-r border-border/50">
 
         </div>
         {/* Day headers */}
