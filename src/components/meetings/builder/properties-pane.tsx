@@ -56,11 +56,10 @@ export function PropertiesPane({
 
     return (
         <div className="h-full flex flex-col overflow-y-auto p-3">
-            {/* Card container */}
-            <div className="bg-card rounded-lg ring-1 ring-border p-4 space-y-6 flex-1">
+            <div className="flex-1 px-2 py-1 space-y-6">
                 {/* General Settings */}
                 <div className="space-y-3">
-                    <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                    <h3 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.2em]">
                         Agenda
                     </h3>
 
@@ -147,7 +146,7 @@ export function PropertiesPane({
 
 
 
-                    <div className="grid grid-cols-1 divide-y divide-border/60">
+                    <div className="grid grid-cols-1 divide-y divide-border/40">
                         {/* Presiding */}
                         <div className="py-2.5">
                             {presiding || showPresiding ? (

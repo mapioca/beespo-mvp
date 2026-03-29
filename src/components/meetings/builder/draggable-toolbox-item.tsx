@@ -143,13 +143,13 @@ export function DraggableToolboxItem({ item, disabled, onAddItem, onEditItem }: 
                 onAddItem(item);
             }}
             className={cn(
-                "group flex items-center gap-3 p-2 bg-card border border-border rounded-md",
-                "hover:border-primary/50 hover:bg-accent/50 transition-all cursor-grab active:cursor-grabbing relative",
-                isDragging && "opacity-50 shadow-lg ring-2 ring-primary/40 z-50",
+                "group flex items-center gap-3 px-2.5 py-2 rounded-lg border border-transparent",
+                "hover:bg-muted/60 hover:border-border/50 transition-all cursor-grab active:cursor-grabbing relative",
+                isDragging && "opacity-60 shadow-lg ring-2 ring-primary/30 z-50",
                 disabled && "opacity-50 cursor-not-allowed"
             )}
         >
-            <div className="flex items-center justify-center shrink-0 w-8 h-8 rounded-md bg-muted text-foreground border border-border/50">
+            <div className="flex items-center justify-center shrink-0 w-7 h-7 rounded-full bg-muted/60 text-foreground">
                 {getCategoryIcon(item)}
             </div>
 
@@ -168,11 +168,11 @@ export function DraggableToolboxItem({ item, disabled, onAddItem, onEditItem }: 
                         }}
                         onPointerDown={(e) => e.stopPropagation()}
                         onPointerUp={(e) => e.stopPropagation()}
-                        className="p-1.5 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-md transition-all"
-                        title="Edit Item Type"
-                    >
-                        <Pencil className="h-4 w-4" />
-                    </button>
+                    className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted/60 rounded-md transition-all"
+                    title="Edit Item Type"
+                >
+                    <Pencil className="h-4 w-4" />
+                </button>
                 </div>
             )}
         </div>
@@ -195,8 +195,8 @@ export function DraggableToolboxItem({ item, disabled, onAddItem, onEditItem }: 
 // Overlay component for drag preview
 export function ToolboxItemDragOverlay({ item }: { item: ToolboxItem }) {
     return (
-        <div className="flex items-center gap-3 p-2 bg-card border rounded-md shadow-lg text-foreground w-[300px]">
-            <div className="flex items-center justify-center shrink-0 w-8 h-8 rounded-md bg-muted text-foreground border border-border/50">
+        <div className="flex items-center gap-3 p-2 bg-background/90 border border-border/60 rounded-lg shadow-lg text-foreground w-[300px]">
+            <div className="flex items-center justify-center shrink-0 w-7 h-7 rounded-full bg-muted/60 text-foreground">
                 {getCategoryIcon(item)}
             </div>
             <div className="flex-1 min-w-0 pr-2">

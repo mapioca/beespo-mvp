@@ -299,17 +299,18 @@ export function ToolboxPane({ onItemsLoaded, onAddItem }: ToolboxPaneProps) {
     return (
         <TooltipProvider delayDuration={400}>
         <div className="flex flex-col h-full overflow-hidden p-3">
-            {/* Card container */}
-            <div className="bg-card rounded-lg ring-1 ring-border flex flex-col flex-1 overflow-hidden">
-                <div className="p-4 pb-3 shrink-0">
-                    <h3 className="font-semibold text-sm mb-3 text-foreground">Items Library</h3>
-                    <div className="relative">
+            <div className="flex flex-col flex-1 overflow-hidden">
+                <div className="px-4 pt-3 pb-2 shrink-0">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                        Items Library
+                    </p>
+                    <div className="relative mt-3">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
                             placeholder="Search items..."
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
-                            className="pl-9 h-9 bg-background border-input"
+                            className="pl-9 h-8 bg-transparent border-border/60 focus-visible:ring-0 focus-visible:border-foreground/30"
                         />
                     </div>
                 </div>
@@ -326,13 +327,13 @@ export function ToolboxPane({ onItemsLoaded, onAddItem }: ToolboxPaneProps) {
                             No items found
                         </div>
                     ) : (
-                        <div className="space-y-6">
+                        <div className="space-y-7">
                             {filteredGroups.map((group) => (
                                 <div key={group.id} className="space-y-3 px-1">
-                                    <h4 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider px-1">
+                                    <h4 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.2em] px-1">
                                         {group.label}
                                     </h4>
-                                    <div className="space-y-1.5">
+                                    <div className="space-y-1">
                                         {group.items.map((item) => (
                                             <DraggableToolboxItem
                                                 key={item.id}
@@ -349,7 +350,7 @@ export function ToolboxPane({ onItemsLoaded, onAddItem }: ToolboxPaneProps) {
                                                 variant="outline"
                                                 size="sm"
                                                 type="button"
-                                                className="w-full mt-2 text-muted-foreground hover:text-foreground border-border hover:bg-accent hover:text-accent-foreground"
+                                                className="w-full mt-2 text-muted-foreground hover:text-foreground border-border/60 hover:bg-muted/60 hover:text-foreground"
                                                 onClick={() => {
                                                     setItemToEdit(null);
                                                     setIsCreateDialogOpen(true);
@@ -373,8 +374,8 @@ export function ToolboxPane({ onItemsLoaded, onAddItem }: ToolboxPaneProps) {
                 </ScrollArea>
 
                 {/* Hint */}
-                <div className="p-3 border-t border-border/50 shrink-0">
-                    <p className="text-xs text-muted-foreground text-center">
+                <div className="p-3 border-t border-border/40 shrink-0">
+                    <p className="text-[11px] text-muted-foreground text-center">
                         Click an item to add it to the end, or drag onto the canvas to place it
                     </p>
                 </div>
