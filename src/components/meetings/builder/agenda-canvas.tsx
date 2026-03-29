@@ -200,10 +200,10 @@ function SortableAgendaRow({
                     >
                         <div className="flex items-center gap-2 p-1.5">
                             <div className="w-7 shrink-0" />
-                            <span className="font-medium text-[13px] flex-1 truncate text-foreground pl-1">
+                            <span className="font-medium text-[12px] tracking-[0.2em] uppercase flex-1 truncate text-muted-foreground pl-1">
                                 {item.title || "Untitled section"}
                             </span>
-                            <span className="text-[11px] text-muted-foreground shrink-0">
+                            <span className="text-[10px] text-muted-foreground shrink-0">
                                 Section
                             </span>
                             <Button
@@ -243,7 +243,7 @@ function SortableAgendaRow({
                 ref={setNodeRef}
                 style={style}
                 className={cn(
-                    "py-4 flex items-center group",
+                    "py-6 flex items-center group",
                     isDragging && "opacity-50"
                 )}
             >
@@ -254,7 +254,7 @@ function SortableAgendaRow({
                 >
                     <GripVertical className="h-4 w-4 text-muted-foreground" />
                 </div>
-                <div className="flex-1 h-px bg-zinc-200" />
+                <div className="flex-1 h-px bg-border/60" />
                 <Button
                     type="button"
                     variant="ghost"

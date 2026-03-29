@@ -136,7 +136,7 @@ export function MeetingsTable({
         <>
         <Table>
             <TableHeader>
-                <TableRow className="bg-muted/40 hover:bg-muted/40 border-b">
+                <TableRow className="bg-transparent border-b border-border/60">
                     {/* Checkbox */}
                     <TableHead className="w-10 px-3">
                         <Checkbox
@@ -234,7 +234,7 @@ export function MeetingsTable({
                     </TableRow>
                 ) : (
                     meetings.map((meeting) => (
-                        <TableRow key={meeting.id} className="group">
+                        <TableRow key={meeting.id} className="group hover:bg-muted/30 transition-colors">
                             {/* Checkbox */}
                             <TableCell className="px-3">
                                 <Checkbox
@@ -247,14 +247,14 @@ export function MeetingsTable({
 
                             {/* Title */}
                             {!hiddenColumns.has("title") && (
-                                <TableCell className="font-medium px-3">
-                                    <div className="flex items-center gap-1.5">
-                                        <Link
-                                            href={`/meetings/${meeting.id}`}
-                                            className="hover:underline"
-                                        >
-                                            {meeting.title}
-                                        </Link>
+                        <TableCell className="font-medium px-3">
+                            <div className="flex items-center gap-1.5">
+                                <Link
+                                    href={`/meetings/${meeting.id}`}
+                                    className="hover:underline"
+                                >
+                                    {meeting.title}
+                                </Link>
                                         {meeting.is_publicly_shared && (
                                             <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
                                                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
@@ -283,28 +283,28 @@ export function MeetingsTable({
 
                             {/* Template */}
                             {!hiddenColumns.has("template") && (
-                                <TableCell className="px-3 text-sm text-muted-foreground">
-                                    {meeting.templates?.name || (
-                                        <span className="italic">
-                                            No Template
-                                        </span>
-                                    )}
-                                </TableCell>
+                        <TableCell className="px-3 text-[13px] text-muted-foreground">
+                            {meeting.templates?.name || (
+                                <span className="italic">
+                                    No Template
+                                </span>
+                            )}
+                        </TableCell>
                             )}
 
                             {/* Status */}
                             {!hiddenColumns.has("status") && (
-                                <TableCell className="px-3 text-muted-foreground capitalize">
-                                    {formatLabel(meeting.status)}
-                                </TableCell>
+                        <TableCell className="px-3 text-[13px] text-muted-foreground capitalize">
+                            {formatLabel(meeting.status)}
+                        </TableCell>
                             )}
 
                             {/* Scheduled Date */}
                             {!hiddenColumns.has("scheduled_date") && (
-                                <TableCell className="px-3 text-muted-foreground">
-                                    {meeting.scheduled_date
-                                        ? format(
-                                              new Date(meeting.scheduled_date),
+                        <TableCell className="px-3 text-[13px] text-muted-foreground">
+                            {meeting.scheduled_date
+                                ? format(
+                                      new Date(meeting.scheduled_date),
                                               "MMM d, yyyy h:mm a"
                                           )
                                         : "—"}

@@ -74,11 +74,11 @@ export function ItemPropertiesPanel({
                 </p>
             </div>
 
-            <div className="p-4 space-y-3">
+            <div className="p-4 space-y-4">
                 {/* Title (all items except dividers) */}
                 {item.structural_type !== "divider" && (
                     <div className="space-y-1.5">
-                        <Label htmlFor={`item-title-${item.id}`} className="text-xs">
+                        <Label htmlFor={`item-title-${item.id}`} className="text-[11px] text-muted-foreground">
                             {item.structural_type === "section_header" ? "Section Title" : "Title"}
                         </Label>
                         <Input
@@ -100,7 +100,7 @@ export function ItemPropertiesPanel({
                 >
                     {/* Item Type (Read-only) */}
                     <div className="space-y-1.5">
-                        <Label className="text-xs">Type</Label>
+                        <Label className="text-[11px] text-muted-foreground">Type</Label>
                         <Input
                             value={item.structural_type?.replace("_", " ") || item.category || "Unknown"}
                             disabled
@@ -111,7 +111,7 @@ export function ItemPropertiesPanel({
                     {/* Duration (non-structural items only) */}
                     {!item.structural_type && (
                         <div className="space-y-1.5">
-                            <Label htmlFor={`item-duration-${item.id}`} className="text-xs">
+                            <Label htmlFor={`item-duration-${item.id}`} className="text-[11px] text-muted-foreground">
                                 Duration (minutes)
                             </Label>
                             <Input
@@ -130,14 +130,14 @@ export function ItemPropertiesPanel({
                 {/* Description/Notes (for items configured with rich text) */}
                 {item.config?.has_rich_text && (
                     <div className="space-y-1.5">
-                        <Label htmlFor={`item-description-${item.id}`} className="text-xs">
+                        <Label htmlFor={`item-description-${item.id}`} className="text-[11px] text-muted-foreground">
                             Description (Internal)
                         </Label>
                         <textarea
                             id={`item-description-${item.id}`}
                             value={item.description || ""}
                             onChange={(e) => onUpdateDescription?.(item.id, e.target.value)}
-                            className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-50"
+                            className="flex min-h-[88px] w-full rounded-md border border-border/60 bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-0 focus-visible:border-foreground/30 disabled:cursor-not-allowed disabled:opacity-50"
                             placeholder="Add internal description..."
                         />
                     </div>
@@ -145,11 +145,11 @@ export function ItemPropertiesPanel({
 
                 {/* Item Notes (Global for all items) */}
                 {item.structural_type !== "divider" && (
-                    <div className="py-2.5 space-y-1.5 border-t">
+                    <div className="pt-3 space-y-1.5 border-t border-border/40">
                         {showItemNotes || item.item_notes ? (
                             <div className="space-y-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
                                 <div className="flex items-center justify-between">
-                                    <Label className="text-xs">Notes</Label>
+                                    <Label className="text-[11px] text-muted-foreground">Notes</Label>
                                     <button
                                         type="button"
                                         onClick={() => {
