@@ -396,8 +396,8 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
         setIsTogglingLive(true);
         const supabase = createClient();
         try {
-            const { error } = await supabase
-                .from("meetings")
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const { error } = await (supabase.from("meetings") as any)
                 .update({ is_publicly_shared: true })
                 .eq("id", initialMeetingId);
 
@@ -1694,9 +1694,6 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                                 onAddZoom={handleCreateZoom}
                                 onDelete={handleDeleteMeeting}
                                 isLive={isLive}
-                                isTogglingLive={isTogglingLive}
-                                onGoLive={handleGoLive}
-                                onCopyLiveLink={handleCopyLiveLink}
                             />
                         </div>
 
@@ -1810,6 +1807,12 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                                 pianistOrganist={form.getValues("pianistOrganist")}
                                 meetingNotes={meetingNotes}
                                 canvasItems={canvasItems}
+                                isLeader={isLeader}
+                                isLive={isLive}
+                                isTogglingLive={isTogglingLive}
+                                liveUrl={getLiveUrl()}
+                                onGoLive={handleGoLive}
+                                onCopyLiveLink={handleCopyLiveLink}
                             />
                         )}
                     </div>

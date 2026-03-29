@@ -255,6 +255,12 @@ export function MeetingsTable({
                                         >
                                             {meeting.title}
                                         </Link>
+                                        {meeting.is_publicly_shared && (
+                                            <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
+                                                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                                Live
+                                            </span>
+                                        )}
                                         {meeting._shareType === "shared_with_me" && (
                                             <MeetingShareBadge
                                                 type="shared_with_me"

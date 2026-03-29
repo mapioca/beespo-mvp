@@ -74,8 +74,8 @@ export default async function AgendasPage() {
       id,
       permission,
       meeting_id,
-      meetings!meeting_id (
-        id, workspace_id, title, description, scheduled_date, status,
+        meetings!meeting_id (
+        id, workspace_id, title, description, scheduled_date, status, is_publicly_shared,
         created_by, notes, created_at, updated_at,
         templates (id, name),
         workspaces (name, slug)

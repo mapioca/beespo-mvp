@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ChevronDown, Link, Loader2, FileText, FileCode, FileType, CalendarDays, ClipboardList, Clock, Star, MoreHorizontal, Trash2 } from "lucide-react";
+import { ChevronDown, Link, Loader2, FileText, FileCode, FileType, CalendarDays, ClipboardList, Star, MoreHorizontal, Trash2 } from "lucide-react";
 import { useFavoritesStore } from "@/stores/favorites-store";
 import { ZoomIcon, ZoomLogo } from "@/components/ui/zoom-icon";
 import {
@@ -85,12 +85,6 @@ interface BuilderTopBarProps {
     onDelete?: () => Promise<void>;
     /** Whether the meeting is live */
     isLive?: boolean;
-    /** Whether a live toggle is in progress */
-    isTogglingLive?: boolean;
-    /** Trigger go live / copy live link */
-    onGoLive?: () => void;
-    /** Copy live link (when already live) */
-    onCopyLiveLink?: () => void;
 }
 
 export function BuilderTopBar({
@@ -105,7 +99,6 @@ export function BuilderTopBar({
     mode,
     onModeChange,
     isLeader,
-    totalDuration,
     zoomJoinUrl,
     isZoomConnected,
     isCreatingZoom,
@@ -113,9 +106,6 @@ export function BuilderTopBar({
     onAddZoom,
     onDelete,
     isLive = false,
-    isTogglingLive = false,
-    onGoLive,
-    onCopyLiveLink,
 }: BuilderTopBarProps) {
     const [saveAsNewOpen, setSaveAsNewOpen] = useState(false);
     const [newTitle, setNewTitle] = useState("");
@@ -223,7 +213,7 @@ export function BuilderTopBar({
     const saveLabel = isCreating
         ? "Saving..."
         : initialMeetingId
-            ? "Save Changes"
+            ? "Save"
             : "Create Agenda";
 
     return (
@@ -343,14 +333,6 @@ export function BuilderTopBar({
                 )}
                 action={
                     <div className="flex items-center gap-2">
-                        {/* Duration */}
-                        {totalDuration > 0 && (
-                            <span className="hidden sm:flex items-center gap-1 text-xs text-muted-foreground whitespace-nowrap mr-1">
-                                <Clock className="h-3.5 w-3.5" />
-                                ~{totalDuration} min
-                            </span>
-                        )}
-
                         {/* Live status */}
                         {isLive && (
                             <span className="hidden sm:inline-flex items-center gap-1.5 text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">
@@ -367,10 +349,10 @@ export function BuilderTopBar({
                                     variant="ghost"
                                     size="sm"
                                     title="Zoom Meeting"
-                                    className="h-8 gap-1.5 hover:bg-blue-500/10 px-2"
+                                    className="h-8 w-8 p-0 hover:bg-blue-500/10"
                                     onClick={onOpenZoomSheet}
                                 >
-                                    <ZoomLogo iconClassName="h-4 w-4" wordmarkClassName="h-3 w-auto" />
+                                    <ZoomLogo iconClassName="h-4 w-4" wordmarkClassName="hidden" />
                                 </Button>
                             ) : isZoomConnected ? (
                                 <Button
@@ -378,7 +360,7 @@ export function BuilderTopBar({
                                     variant="ghost"
                                     size="sm"
                                     title="Add Zoom Meeting"
-                                    className="h-8 gap-1 text-xs text-muted-foreground hover:text-foreground px-2"
+                                    className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
                                     onClick={onAddZoom}
                                     disabled={isCreatingZoom}
                                 >
@@ -387,29 +369,8 @@ export function BuilderTopBar({
                                     ) : (
                                         <ZoomIcon className="h-3.5 w-3.5" />
                                     )}
-                                    <span className="hidden sm:inline">Zoom</span>
                                 </Button>
                             ) : null
-                        )}
-
-                        {/* Go Live / Copy link */}
-                        {isLeader && initialMeetingId && (
-                            <Button
-                                type="button"
-                                size="sm"
-                                variant={isLive ? "outline" : "default"}
-                                className={cn(
-                                    "h-8 text-xs font-medium",
-                                    isLive
-                                        ? "border-emerald-200 text-emerald-700 hover:bg-emerald-50"
-                                        : "bg-emerald-600 hover:bg-emerald-500 text-white"
-                                )}
-                                onClick={isLive ? onCopyLiveLink : onGoLive}
-                                disabled={isTogglingLive}
-                            >
-                                {isTogglingLive && <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />}
-                                {isLive ? "Copy Live Link" : "Go Live"}
-                            </Button>
                         )}
 
                         {/* Mode Switcher */}
