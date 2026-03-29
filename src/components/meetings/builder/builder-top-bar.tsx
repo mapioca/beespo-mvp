@@ -384,7 +384,8 @@ export function BuilderTopBar({
                                 size="sm"
                                 className={cn(
                                     "h-8 text-xs font-medium rounded-r-none border-r-0",
-                                    "bg-foreground text-background hover:bg-foreground/90"
+                                    "bg-[hsl(var(--accent-warm))] text-foreground hover:bg-[hsl(var(--accent-warm-hover))]",
+                                    "shadow-[0_1px_0_rgba(15,23,42,0.08)]"
                                 )}
                                 onClick={onSave}
                                 disabled={isCreating || !isValid}
@@ -399,8 +400,9 @@ export function BuilderTopBar({
                                         size="sm"
                                         className={cn(
                                             "h-8 w-8 rounded-l-none px-0",
-                                            "bg-foreground text-background hover:bg-foreground/90",
-                                            "border-l border-white/20"
+                                            "bg-[hsl(var(--accent-warm))] text-foreground hover:bg-[hsl(var(--accent-warm-hover))]",
+                                            "border-l border-foreground/10",
+                                            "shadow-[0_1px_0_rgba(15,23,42,0.08)]"
                                         )}
                                         disabled={isCreating}
                                     >

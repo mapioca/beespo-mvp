@@ -206,37 +206,39 @@ export function DiscussionDetailView({
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full bg-muted/20">
       {/* Breadcrumb */}
       <Breadcrumbs
         items={[
-          { label: "Meetings", href: "/meetings/agendas", icon: <CalendarDays className="h-3.5 w-3.5" /> },
-          { label: "Discussions", href: "/meetings/discussions", icon: <MessageSquare className="h-3.5 w-3.5" /> },
+          { label: "Meetings", href: "/meetings/agendas", icon: <CalendarDays className="h-4 w-4 stroke-[1.6]" /> },
+          { label: "Discussions", href: "/meetings/discussions", icon: <MessageSquare className="h-4 w-4 stroke-[1.6]" /> },
           { label: title },
         ]}
+        className="bg-transparent ring-0 border-b border-border/60 rounded-none px-4 py-1.5"
       />
 
       {/* Scrollable content */}
       <div className="flex-1 overflow-y-auto">
-        <div className="max-w-3xl mx-auto px-6 py-8">
+        <div className="max-w-3xl mx-auto px-6 py-8 space-y-6">
+          {/* Header card */}
+          <div className="rounded-2xl border border-border/60 bg-background/80 p-5 shadow-[0_1px_0_rgba(15,23,42,0.04)]">
+            {/* Inline-editable Title */}
+            <div className="relative">
+              <input
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                onBlur={handleTitleBlur}
+                disabled={isSavingTitle}
+                className="w-full text-2xl font-semibold bg-transparent border border-transparent rounded-md hover:border-border/50 focus:outline-none focus:ring-2 focus:ring-ring/50 focus:border-transparent px-2 py-1 -mx-2 transition-all duration-150 disabled:opacity-60"
+              />
+            </div>
 
-          {/* Inline-editable Title */}
-          <div className="relative">
-            <input
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              onBlur={handleTitleBlur}
-              disabled={isSavingTitle}
-              className="w-full text-2xl font-bold bg-transparent border border-transparent rounded-md hover:border-border/50 focus:outline-none focus:ring-2 focus:ring-ring/50 focus:border-transparent px-2 py-1 -mx-2 transition-all duration-150 disabled:opacity-60"
-            />
-          </div>
-
-          {/* Properties Row */}
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-4 pb-4 border-b border-border/50">
+            {/* Properties Row */}
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-4 pt-3 border-t border-border/40">
             <div className="flex items-center gap-1.5">
               <span className="text-xs text-muted-foreground">Status</span>
               <Select value={status} onValueChange={handleStatusChange}>
-                <SelectTrigger className="h-7 w-auto border-transparent hover:border-border bg-transparent shadow-none text-xs font-medium px-2 focus:ring-0 focus:ring-offset-0">
+                <SelectTrigger className="h-7 w-auto rounded-full border border-border/40 bg-muted/40 hover:bg-muted/60 shadow-none text-xs font-medium px-3 focus:ring-0 focus:ring-offset-0">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -252,7 +254,7 @@ export function DiscussionDetailView({
             <div className="flex items-center gap-1.5">
               <span className="text-xs text-muted-foreground">Priority</span>
               <Select value={priority} onValueChange={handlePriorityChange}>
-                <SelectTrigger className="h-7 w-auto border-transparent hover:border-border bg-transparent shadow-none text-xs font-medium px-2 focus:ring-0 focus:ring-offset-0">
+                <SelectTrigger className="h-7 w-auto rounded-full border border-border/40 bg-muted/40 hover:bg-muted/60 shadow-none text-xs font-medium px-3 focus:ring-0 focus:ring-offset-0">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -268,7 +270,7 @@ export function DiscussionDetailView({
             <div className="flex items-center gap-1.5">
               <span className="text-xs text-muted-foreground">Category</span>
               <Select value={category} onValueChange={handleCategoryChange}>
-                <SelectTrigger className="h-7 w-auto border-transparent hover:border-border bg-transparent shadow-none text-xs font-medium px-2 focus:ring-0 focus:ring-offset-0">
+                <SelectTrigger className="h-7 w-auto rounded-full border border-border/40 bg-muted/40 hover:bg-muted/60 shadow-none text-xs font-medium px-3 focus:ring-0 focus:ring-offset-0">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -287,7 +289,7 @@ export function DiscussionDetailView({
                 type="date"
                 value={dueDate}
                 onChange={handleDueDateChange}
-                className="h-7 bg-transparent border border-transparent hover:border-border rounded-md text-xs font-medium px-2 focus:outline-none focus:ring-2 focus:ring-ring/50 focus:border-transparent transition-all"
+                className="h-7 bg-muted/40 border border-border/40 hover:bg-muted/60 rounded-full text-xs font-medium px-3 focus:outline-none focus:ring-2 focus:ring-ring/30 focus:border-border/40 transition-all"
               />
             </div>
 
@@ -309,11 +311,12 @@ export function DiscussionDetailView({
                 </div>
               </>
             )}
+            </div>
           </div>
 
           {/* Description */}
-          <div className="mt-6">
-            <p className="text-xs font-medium text-muted-foreground mb-2">Description</p>
+          <div className="rounded-2xl border border-border/60 bg-background/80 p-5 shadow-[0_1px_0_rgba(15,23,42,0.04)]">
+            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-[0.2em] mb-3">Description</p>
             <AutoSaveTextarea
               initialValue={discussion.description ?? ""}
               onSave={handleSaveDescription}
@@ -323,7 +326,7 @@ export function DiscussionDetailView({
           </div>
 
           {/* Notes */}
-          <div className="mt-10">
+          <div className="rounded-2xl border border-border/60 bg-background/80 p-5 shadow-[0_1px_0_rgba(15,23,42,0.04)]">
             <DiscussionNotesSection
               discussionId={discussion.id}
               initialNotes={initialNotes}
@@ -332,17 +335,17 @@ export function DiscussionDetailView({
           </div>
 
           {/* Tasks */}
-          <div className="mt-10">
+          <div className="rounded-2xl border border-border/60 bg-background/80 p-5 shadow-[0_1px_0_rgba(15,23,42,0.04)]">
             <div className="flex items-center justify-between mb-3">
-              <p className="text-xs font-medium text-muted-foreground">
+              <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-[0.2em]">
                 Tasks{initialTasks.length > 0 ? ` (${initialTasks.length})` : ""}
               </p>
               <CreateTaskDialog
                 context={{ discussion_id: discussion.id }}
                 onTaskCreated={() => router.refresh()}
               >
-                <Button variant="ghost" size="icon" className="h-5 w-5 text-muted-foreground hover:text-foreground">
-                  <Plus className="h-3.5 w-3.5" />
+                <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-foreground">
+                  <Plus className="h-3.5 w-3.5 stroke-[1.6]" />
                 </Button>
               </CreateTaskDialog>
             </div>
@@ -354,7 +357,7 @@ export function DiscussionDetailView({
           </div>
 
           {/* Activity */}
-          <div className="mt-10 pb-12">
+          <div className="rounded-2xl border border-border/60 bg-background/80 p-5 shadow-[0_1px_0_rgba(15,23,42,0.04)] pb-6">
             <DiscussionActivitySection activities={initialActivities} />
           </div>
 

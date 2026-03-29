@@ -167,11 +167,12 @@ export function DiscussionsTable({
 
     return (
         <>
+            <div className="rounded-xl border border-border/60 bg-background/80 shadow-[0_1px_0_rgba(15,23,42,0.04)] overflow-hidden">
             <Table>
                 <TableHeader>
-                    <TableRow className="bg-muted/40 hover:bg-muted/40 border-b">
+                    <TableRow className="bg-muted/30 hover:bg-muted/30 border-b">
                         {/* Checkbox */}
-                        <TableHead className="w-10 px-3">
+                        <TableHead className="w-10 px-3 py-2.5">
                             <Checkbox
                                 checked={allSelected}
                                 onCheckedChange={() => onToggleAllRows?.()}
@@ -280,7 +281,7 @@ export function DiscussionsTable({
                                 className="h-32 text-center"
                             >
                                 <div className="flex flex-col items-center justify-center py-4">
-                                    <MessagesSquare className="h-8 w-8 text-muted-foreground mb-2" />
+                                    <MessagesSquare className="h-8 w-8 text-muted-foreground mb-2 stroke-[1.6]" />
                                     <p className="text-muted-foreground">
                                         No discussions found.
                                     </p>
@@ -291,10 +292,10 @@ export function DiscussionsTable({
                         discussions.map((discussion) => (
                             <TableRow
                                 key={discussion.id}
-                                className="group"
+                                className="group hover:bg-[hsl(var(--accent-warm)/0.35)]"
                             >
                                 {/* Checkbox */}
-                                <TableCell className="px-3">
+                                <TableCell className="px-3 py-3">
                                     <Checkbox
                                         checked={selectedRows.has(discussion.id)}
                                         onCheckedChange={() =>
@@ -305,7 +306,7 @@ export function DiscussionsTable({
 
                                 {/* Title */}
                                 {!hiddenColumns.has("title") && (
-                                    <TableCell className="font-medium px-3">
+                                    <TableCell className="font-medium px-3 py-3">
                                         <Link
                                             href={`/meetings/discussions/${discussion.id}`}
                                             className="hover:underline text-left"
@@ -326,28 +327,28 @@ export function DiscussionsTable({
 
                                 {/* Category */}
                                 {!hiddenColumns.has("category") && (
-                                    <TableCell className="px-3 text-muted-foreground capitalize whitespace-nowrap">
+                                    <TableCell className="px-3 py-3 text-muted-foreground capitalize whitespace-nowrap">
                                         {formatLabel(discussion.category)}
                                     </TableCell>
                                 )}
 
                                 {/* Status */}
                                 {!hiddenColumns.has("status") && (
-                                    <TableCell className="px-3 text-muted-foreground capitalize">
+                                    <TableCell className="px-3 py-3 text-muted-foreground capitalize">
                                         {formatLabel(discussion.status)}
                                     </TableCell>
                                 )}
 
                                 {/* Priority */}
                                 {!hiddenColumns.has("priority") && (
-                                    <TableCell className="px-3 text-muted-foreground capitalize">
+                                    <TableCell className="px-3 py-3 text-muted-foreground capitalize">
                                         {formatLabel(discussion.priority)}
                                     </TableCell>
                                 )}
 
                                 {/* Due Date */}
                                 {!hiddenColumns.has("due_date") && (
-                                    <TableCell className="px-3 text-muted-foreground">
+                                    <TableCell className="px-3 py-3 text-muted-foreground">
                                         {discussion.due_date
                                             ? format(
                                                   new Date(discussion.due_date),
@@ -358,7 +359,7 @@ export function DiscussionsTable({
                                 )}
 
                                 {/* Actions */}
-                                <TableCell className="px-3 text-right">
+                                <TableCell className="px-3 py-3 text-right">
                                     <DropdownMenu>
                                         <DropdownMenuTrigger asChild>
                                             <Button
@@ -366,7 +367,7 @@ export function DiscussionsTable({
                                                 size="sm"
                                                 className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
                                             >
-                                                <MoreHorizontal className="h-4 w-4" />
+                                                <MoreHorizontal className="h-4 w-4 stroke-[1.6]" />
                                             </Button>
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent align="end">
@@ -377,7 +378,7 @@ export function DiscussionsTable({
                                                     )
                                                 }
                                             >
-                                                <Eye className="mr-2 h-4 w-4" />
+                                                <Eye className="mr-2 h-4 w-4 stroke-[1.6]" />
                                                 View
                                             </DropdownMenuItem>
                                             {onDelete && (
@@ -391,7 +392,7 @@ export function DiscussionsTable({
                                                             )
                                                         }
                                                     >
-                                                        <Trash2 className="mr-2 h-4 w-4" />
+                                                        <Trash2 className="mr-2 h-4 w-4 stroke-[1.6]" />
                                                         Delete
                                                     </DropdownMenuItem>
                                                 </>
@@ -404,6 +405,7 @@ export function DiscussionsTable({
                     )}
                 </TableBody>
             </Table>
+            </div>
 
             {/* Delete confirmation dialog */}
             <AlertDialog
