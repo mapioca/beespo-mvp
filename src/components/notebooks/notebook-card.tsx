@@ -29,9 +29,9 @@ export function NotebookCard({
         >
             <div
                 className={cn(
-                    "relative overflow-hidden rounded-lg transition-all duration-300 ease-out",
-                    "shadow-md hover:shadow-xl",
-                    "transform hover:scale-[1.03] hover:-translate-y-1",
+                    "relative overflow-hidden rounded-xl transition-all duration-200 ease-out",
+                    "border border-border/40 shadow-[0_1px_0_rgba(15,23,42,0.06)]",
+                    "hover:shadow-md hover:-translate-y-0.5",
                     "cursor-pointer"
                 )}
                 style={{ aspectRatio: "3/4" }}
@@ -49,24 +49,11 @@ export function NotebookCard({
                 <div className="absolute inset-y-2 right-1.5 w-0.5 bg-white/30 rounded-full" />
                 <div className="absolute inset-y-2 right-2.5 w-0.5 bg-white/20 rounded-full" />
 
-                {/* Hover Overlay */}
-                <div
-                    className={cn(
-                        "absolute inset-0 bg-black/0 group-hover:bg-black/30",
-                        "transition-all duration-300",
-                        "flex items-center justify-center opacity-0 group-hover:opacity-100"
-                    )}
-                >
-                    <span className="px-4 py-2 bg-white/90 rounded-md text-sm font-medium text-gray-900 shadow-lg transform scale-90 group-hover:scale-100 transition-transform">
-                        Open
-                    </span>
-                </div>
-
                 {/* Title Label */}
                 <div className="absolute inset-x-0 bottom-0 p-4">
                     <div
                         className={cn(
-                            "backdrop-blur-sm rounded-lg px-3 py-2",
+                            "backdrop-blur-sm rounded-lg px-3 py-2 border border-white/20",
                             cover.textColor === "light"
                                 ? "bg-black/30 text-white"
                                 : "bg-white/70 text-gray-900"

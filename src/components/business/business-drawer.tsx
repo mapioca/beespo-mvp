@@ -156,11 +156,11 @@ export function BusinessDrawer({ item, open, onOpenChange, onDelete }: BusinessD
     return (
         <>
             <Sheet open={open} onOpenChange={onOpenChange}>
-                <SheetContent className="w-full sm:max-w-sm flex flex-col gap-0 p-0 overflow-hidden">
+                <SheetContent className="w-full sm:max-w-sm flex flex-col gap-0 p-0 overflow-hidden bg-background/95 backdrop-blur">
                     {/* Header */}
-                    <div className="flex items-center justify-between px-5 pt-4 pb-3 pr-12 shrink-0">
+                    <div className="flex items-center justify-between px-5 pt-4 pb-3 pr-12 shrink-0 border-b border-border/40">
                         <div className="flex items-center gap-2">
-                            <Briefcase className="h-4 w-4 text-muted-foreground" />
+                            <Briefcase className="h-4 w-4 text-muted-foreground stroke-[1.6]" />
                             <SheetTitle className="text-sm font-semibold">Business Item Details</SheetTitle>
                         </div>
                         <Button
@@ -169,43 +169,41 @@ export function BusinessDrawer({ item, open, onOpenChange, onDelete }: BusinessD
                             className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                             onClick={() => setShowDeleteDialog(true)}
                         >
-                            <Trash2 className="h-3.5 w-3.5" />
+                            <Trash2 className="h-3.5 w-3.5 stroke-[1.6]" />
                         </Button>
                     </div>
                     <SheetDescription className="sr-only">
                         Business item details for {item?.person_name}
                     </SheetDescription>
 
-                    <Separator />
-
                     {/* Scrollable body */}
                     <div className="flex-1 overflow-y-auto">
                         {/* BUSINESS ITEM section */}
                         <div className="px-5 py-4 space-y-4">
-                            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+                            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
                                 Business Item
                             </p>
                             <div className="space-y-1.5">
-                                <label className="text-xs font-medium">Person Name</label>
+                                <label className="text-[11px] text-muted-foreground">Person Name</label>
                                 <Input
                                     value={personName}
                                     onChange={(e) => setPersonName(e.target.value)}
-                                    className="h-8 text-sm"
+                                    className="h-8 text-sm bg-background border-border/60 focus-visible:ring-0 focus-visible:border-foreground/30"
                                 />
                             </div>
                             <div className="space-y-1.5">
-                                <label className="text-xs font-medium">Position / Calling</label>
+                                <label className="text-[11px] text-muted-foreground">Position / Calling</label>
                                 <Input
                                     value={positionCalling}
                                     onChange={(e) => setPositionCalling(e.target.value)}
                                     placeholder="e.g., Sunday School President"
-                                    className="h-8 text-sm"
+                                    className="h-8 text-sm bg-background border-border/60 focus-visible:ring-0 focus-visible:border-foreground/30"
                                 />
                             </div>
                             <div className="space-y-1.5">
-                                <label className="text-xs font-medium">Category</label>
+                                <label className="text-[11px] text-muted-foreground">Category</label>
                                 <Select value={category} onValueChange={setCategory}>
-                                    <SelectTrigger className="h-8 text-sm">
+                                    <SelectTrigger className="h-8 text-sm bg-background border-border/60 focus:ring-0 focus:border-foreground/30">
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -218,9 +216,9 @@ export function BusinessDrawer({ item, open, onOpenChange, onDelete }: BusinessD
                                 </Select>
                             </div>
                             <div className="space-y-1.5">
-                                <label className="text-xs font-medium">Script Language</label>
+                                <label className="text-[11px] text-muted-foreground">Script Language</label>
                                 <Select value={language} onValueChange={(val) => setLanguage(val as Language)}>
-                                    <SelectTrigger className="h-8 text-sm">
+                                    <SelectTrigger className="h-8 text-sm bg-background border-border/60 focus:ring-0 focus:border-foreground/30">
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -231,17 +229,17 @@ export function BusinessDrawer({ item, open, onOpenChange, onDelete }: BusinessD
                             </div>
                         </div>
 
-                        <Separator />
+                        <Separator className="bg-border/40" />
 
                         {/* DETAILS section */}
                         <div className="px-5 py-4 space-y-3">
-                            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+                            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
                                 Details
                             </p>
                             <div className="space-y-1.5">
-                                <label className="text-xs font-medium">Status</label>
+                                <label className="text-[11px] text-muted-foreground">Status</label>
                                 <Select value={status} onValueChange={setStatus}>
-                                    <SelectTrigger className="h-8 text-sm">
+                                    <SelectTrigger className="h-8 text-sm bg-background border-border/60 focus:ring-0 focus:border-foreground/30">
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -274,15 +272,15 @@ export function BusinessDrawer({ item, open, onOpenChange, onDelete }: BusinessD
                             )}
                         </div>
 
-                        <Separator />
+                        <Separator className="bg-border/40" />
 
                         {/* CONDUCTING SCRIPT section */}
                         <div className="px-5 py-4 space-y-3">
-                            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+                            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
                                 Conducting Script
                             </p>
                             {conductingScript ? (
-                                <div className="rounded-md border border-blue-200 bg-blue-50 p-3">
+                                <div className="rounded-md border border-blue-200/60 bg-blue-50/60 p-3">
                                     <p className="text-xs text-blue-900 font-serif whitespace-pre-line leading-relaxed">
                                         {conductingScript}
                                     </p>
@@ -294,21 +292,21 @@ export function BusinessDrawer({ item, open, onOpenChange, onDelete }: BusinessD
                             )}
                         </div>
 
-                        <Separator />
+                        <Separator className="bg-border/40" />
 
                         {/* QUICK ACTIONS section */}
                         <div className="px-5 py-4 space-y-2">
-                            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+                            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
                                 Quick Actions
                             </p>
                             <Button
                                 variant="outline"
                                 size="sm"
-                                className="w-full justify-start gap-2 h-8 text-xs font-normal"
+                                className="w-full justify-start gap-2 h-8 text-xs font-normal border-border/60 hover:bg-[hsl(var(--accent-warm)/0.6)]"
                                 onClick={() => handleSetStatus(isCompleted ? "pending" : "completed")}
                                 disabled={isUpdatingStatus}
                             >
-                                <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />
+                                <CheckCircle2 className="h-3.5 w-3.5 text-green-600 stroke-[1.6]" />
                                 {isUpdatingStatus
                                     ? "Updating..."
                                     : isCompleted
@@ -317,12 +315,12 @@ export function BusinessDrawer({ item, open, onOpenChange, onDelete }: BusinessD
                             </Button>
                         </div>
 
-                        <Separator />
+                        <Separator className="bg-border/40" />
 
                         {/* NOTES section */}
                         <div className="px-5 py-4 space-y-3">
                             <div className="flex items-center justify-between">
-                                <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+                                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
                                     Notes
                                 </p>
                                 <Button
@@ -339,9 +337,9 @@ export function BusinessDrawer({ item, open, onOpenChange, onDelete }: BusinessD
                                     }}
                                 >
                                     {showNotes ? (
-                                        <Minus className="h-3 w-3" />
+                                        <Minus className="h-3 w-3 stroke-[1.6]" />
                                     ) : (
-                                        <Plus className="h-3 w-3" />
+                                        <Plus className="h-3 w-3 stroke-[1.6]" />
                                     )}
                                 </Button>
                             </div>
@@ -350,7 +348,7 @@ export function BusinessDrawer({ item, open, onOpenChange, onDelete }: BusinessD
                                     value={notes}
                                     onChange={(e) => setNotes(e.target.value)}
                                     placeholder="Add a note..."
-                                    className="text-sm resize-none"
+                                    className="text-sm resize-none bg-background border-border/60 focus-visible:ring-0 focus-visible:border-foreground/30"
                                     rows={3}
                                     autoFocus={!item?.notes}
                                 />
@@ -359,14 +357,14 @@ export function BusinessDrawer({ item, open, onOpenChange, onDelete }: BusinessD
                     </div>
 
                     {/* Footer */}
-                    <Separator />
+                    <Separator className="bg-border/40" />
                     <div className="px-5 py-4 shrink-0">
                         <Button
                             onClick={handleSave}
                             disabled={isSaving || !personName.trim() || !category}
-                            className="w-full h-8 text-xs"
+                            className="w-full h-8 text-xs bg-[hsl(var(--accent-warm))] text-foreground hover:bg-[hsl(var(--accent-warm-hover))]"
                         >
-                            {isSaving ? "Saving..." : "Save Changes"}
+                            {isSaving ? "Saving..." : "Save"}
                         </Button>
                     </div>
                 </SheetContent>

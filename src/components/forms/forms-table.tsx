@@ -109,11 +109,12 @@ export function FormsTable({
 
     return (
         <>
-            <Table>
+            <div className="rounded-xl border-y border-border/60 bg-background/80 shadow-[0_1px_0_rgba(15,23,42,0.04)] overflow-hidden">
+            <Table className="text-[13px]">
                 <TableHeader>
-                    <TableRow className="bg-muted/40 hover:bg-muted/40 border-b">
+                    <TableRow className="bg-muted/30 hover:bg-muted/30 border-b">
                         {/* Checkbox */}
-                        <TableHead className="w-10 px-3">
+                        <TableHead className="w-10 px-3 py-2.5">
                             <Checkbox
                                 checked={allSelected}
                                 onCheckedChange={() => onToggleAllRows?.()}
@@ -207,16 +208,16 @@ export function FormsTable({
                         <TableRow className="hover:bg-transparent">
                             <TableCell colSpan={visibleColumns} className="h-32 text-center">
                                 <div className="flex flex-col items-center justify-center py-4">
-                                    <FileText className="h-8 w-8 text-muted-foreground mb-2" />
+                                    <FileText className="h-8 w-8 text-muted-foreground mb-2 stroke-[1.6]" />
                                     <p className="text-muted-foreground">No forms found.</p>
                                 </div>
                             </TableCell>
                         </TableRow>
                     ) : (
                         forms.map((form) => (
-                                <TableRow key={form.id} className="group">
+                                <TableRow key={form.id} className="group hover:bg-[hsl(var(--accent-warm)/0.35)]">
                                     {/* Checkbox */}
-                                    <TableCell className="px-3">
+                                    <TableCell className="px-3 py-3">
                                         <Checkbox
                                             checked={selectedRows.has(form.id)}
                                             onCheckedChange={() => onToggleRow?.(form.id)}
@@ -225,7 +226,7 @@ export function FormsTable({
 
                                     {/* Title */}
                                     {!hiddenColumns.has("title") && (
-                                        <TableCell className="font-medium px-3">
+                                        <TableCell className="font-medium px-3 py-3 text-[13px]">
                                             <div className="flex flex-col">
                                                 <Link
                                                     href={`/forms/${form.id}`}
@@ -234,7 +235,7 @@ export function FormsTable({
                                                     {form.title}
                                                 </Link>
                                                 {form.description && (
-                                                    <span className="text-xs text-muted-foreground line-clamp-2">
+                                                    <span className="text-[12px] text-muted-foreground/80 line-clamp-2">
                                                         {form.description}
                                                     </span>
                                                 )}
@@ -244,34 +245,34 @@ export function FormsTable({
 
                                     {/* Status */}
                                     {!hiddenColumns.has("status") && (
-                                        <TableCell className="px-3 text-muted-foreground capitalize">
+                                        <TableCell className="px-3 py-3 text-[12px] text-muted-foreground capitalize">
                                             {form.is_published ? "Published" : "Draft"}
                                         </TableCell>
                                     )}
 
                                     {/* Views */}
                                     {!hiddenColumns.has("views") && (
-                                        <TableCell className="px-3 text-muted-foreground tabular-nums">
+                                        <TableCell className="px-3 py-3 text-[12px] text-muted-foreground tabular-nums">
                                             {form.views_count}
                                         </TableCell>
                                     )}
 
                                     {/* Responses */}
                                     {!hiddenColumns.has("responses") && (
-                                        <TableCell className="px-3 text-muted-foreground tabular-nums">
+                                        <TableCell className="px-3 py-3 text-[12px] text-muted-foreground tabular-nums">
                                             {form.submissions_count}
                                         </TableCell>
                                     )}
 
                                     {/* Created */}
                                     {!hiddenColumns.has("created_at") && (
-                                        <TableCell className="px-3 text-muted-foreground">
+                                        <TableCell className="px-3 py-3 text-[12px] text-muted-foreground">
                                             {format(new Date(form.created_at), "MMM d, yyyy")}
                                         </TableCell>
                                     )}
 
                                     {/* Actions */}
-                                    <TableCell className="px-3 text-right">
+                                    <TableCell className="px-3 py-3 text-right">
                                         <DropdownMenu>
                                             <DropdownMenuTrigger asChild>
                                                 <Button
@@ -279,26 +280,26 @@ export function FormsTable({
                                                     size="sm"
                                                     className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
                                                 >
-                                                    <MoreHorizontal className="h-4 w-4" />
+                                                    <MoreHorizontal className="h-4 w-4 stroke-[1.6]" />
                                                 </Button>
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end">
                                                 <DropdownMenuItem asChild>
                                                     <Link href={`/forms/${form.id}`}>
-                                                        <FileText className="mr-2 h-4 w-4" />
+                                                        <FileText className="mr-2 h-4 w-4 stroke-[1.6]" />
                                                         Edit
                                                     </Link>
                                                 </DropdownMenuItem>
                                                 <DropdownMenuItem asChild>
                                                     <Link href={`/forms/${form.id}/results`}>
-                                                        <BarChart2 className="mr-2 h-4 w-4" />
+                                                        <BarChart2 className="mr-2 h-4 w-4 stroke-[1.6]" />
                                                         View Results
                                                     </Link>
                                                 </DropdownMenuItem>
                                                 {form.is_published && (
                                                     <DropdownMenuItem asChild>
                                                         <Link href={`/f/${form.slug}`} target="_blank">
-                                                            <ExternalLink className="mr-2 h-4 w-4" />
+                                                            <ExternalLink className="mr-2 h-4 w-4 stroke-[1.6]" />
                                                             Open Form
                                                         </Link>
                                                     </DropdownMenuItem>
@@ -308,7 +309,7 @@ export function FormsTable({
                                                     className="text-destructive focus:text-destructive"
                                                     onClick={() => setDeleteTarget(form)}
                                                 >
-                                                    <Trash2 className="mr-2 h-4 w-4" />
+                                                    <Trash2 className="mr-2 h-4 w-4 stroke-[1.6]" />
                                                     Delete
                                                 </DropdownMenuItem>
                                             </DropdownMenuContent>
@@ -319,6 +320,7 @@ export function FormsTable({
                     )}
                 </TableBody>
             </Table>
+            </div>
 
             {/* Delete confirmation */}
             <AlertDialog

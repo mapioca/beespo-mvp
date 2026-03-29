@@ -132,11 +132,11 @@ export function AnnouncementDrawer({ announcement, open, onOpenChange, onDelete 
     return (
         <>
             <Sheet open={open} onOpenChange={onOpenChange}>
-                <SheetContent className="w-full sm:max-w-sm flex flex-col gap-0 p-0 overflow-hidden">
+                <SheetContent className="w-full sm:max-w-sm flex flex-col gap-0 p-0 overflow-hidden bg-background/95 backdrop-blur">
                     {/* Header */}
-                    <div className="flex items-center justify-between px-5 pt-4 pb-3 pr-12 shrink-0">
+                    <div className="flex items-center justify-between px-5 pt-4 pb-3 pr-12 shrink-0 border-b border-border/40">
                         <div className="flex items-center gap-2">
-                            <Megaphone className="h-4 w-4 text-muted-foreground" />
+                            <Megaphone className="h-4 w-4 text-muted-foreground stroke-[1.6]" />
                             <SheetTitle className="text-sm font-semibold">Announcement Details</SheetTitle>
                         </div>
                         <Button
@@ -145,62 +145,60 @@ export function AnnouncementDrawer({ announcement, open, onOpenChange, onDelete 
                             className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                             onClick={() => setShowDeleteDialog(true)}
                         >
-                            <Trash2 className="h-3.5 w-3.5" />
+                            <Trash2 className="h-3.5 w-3.5 stroke-[1.6]" />
                         </Button>
                     </div>
                     <SheetDescription className="sr-only">
                         Announcement details for {announcement?.title}
                     </SheetDescription>
 
-                    <Separator />
-
                     {/* Scrollable body */}
                     <div className="flex-1 overflow-y-auto">
                         {/* ANNOUNCEMENT section */}
                         <div className="px-5 py-4 space-y-4">
-                            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+                            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
                                 Announcement
                             </p>
                             <div className="space-y-1.5">
-                                <label className="text-xs font-medium">Title</label>
+                                <label className="text-[11px] text-muted-foreground">Title</label>
                                 <Input
                                     value={title}
                                     onChange={(e) => setTitle(e.target.value)}
-                                    className="h-8 text-sm"
+                                    className="h-8 text-sm bg-background border-border/60 focus-visible:ring-0 focus-visible:border-foreground/30"
                                 />
                             </div>
                             <div className="space-y-1.5">
-                                <label className="text-xs font-medium">Content</label>
+                                <label className="text-[11px] text-muted-foreground">Content</label>
                                 <Textarea
                                     value={content}
                                     onChange={(e) => setContent(e.target.value)}
                                     placeholder="Announcement content..."
-                                    className="text-sm resize-none"
+                                    className="text-sm resize-none bg-background border-border/60 focus-visible:ring-0 focus-visible:border-foreground/30"
                                     rows={4}
                                 />
                             </div>
                             <div className="space-y-1.5">
-                                <label className="text-xs font-medium">Deadline</label>
+                                <label className="text-[11px] text-muted-foreground">Deadline</label>
                                 <Input
                                     type="date"
                                     value={deadline}
                                     onChange={(e) => setDeadline(e.target.value)}
-                                    className="h-8 text-sm"
+                                    className="h-8 text-sm bg-background border-border/60 focus-visible:ring-0 focus-visible:border-foreground/30"
                                 />
                             </div>
                         </div>
 
-                        <Separator />
+                        <Separator className="bg-border/40" />
 
                         {/* DETAILS section */}
                         <div className="px-5 py-4 space-y-4">
-                            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+                            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
                                 Details
                             </p>
                             <div className="space-y-1.5">
-                                <label className="text-xs font-medium">Status</label>
+                                <label className="text-[11px] text-muted-foreground">Status</label>
                                 <Select value={status} onValueChange={setStatus}>
-                                    <SelectTrigger className="h-8 text-sm">
+                                    <SelectTrigger className="h-8 text-sm bg-background border-border/60 focus:ring-0 focus:border-foreground/30">
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -211,9 +209,9 @@ export function AnnouncementDrawer({ announcement, open, onOpenChange, onDelete 
                                 </Select>
                             </div>
                             <div className="space-y-1.5">
-                                <label className="text-xs font-medium">Priority</label>
+                                <label className="text-[11px] text-muted-foreground">Priority</label>
                                 <Select value={priority} onValueChange={setPriority}>
-                                    <SelectTrigger className="h-8 text-sm">
+                                    <SelectTrigger className="h-8 text-sm bg-background border-border/60 focus:ring-0 focus:border-foreground/30">
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -224,21 +222,21 @@ export function AnnouncementDrawer({ announcement, open, onOpenChange, onDelete 
                                 </Select>
                             </div>
                             <div className="space-y-1.5">
-                                <label className="text-xs font-medium">Display Start</label>
+                                <label className="text-[11px] text-muted-foreground">Display Start</label>
                                 <Input
                                     type="date"
                                     value={displayStart}
                                     onChange={(e) => setDisplayStart(e.target.value)}
-                                    className="h-8 text-sm"
+                                    className="h-8 text-sm bg-background border-border/60 focus-visible:ring-0 focus-visible:border-foreground/30"
                                 />
                             </div>
                             <div className="space-y-1.5">
-                                <label className="text-xs font-medium">Display Until</label>
+                                <label className="text-[11px] text-muted-foreground">Display Until</label>
                                 <Input
                                     type="date"
                                     value={displayUntil}
                                     onChange={(e) => setDisplayUntil(e.target.value)}
-                                    className="h-8 text-sm"
+                                    className="h-8 text-sm bg-background border-border/60 focus-visible:ring-0 focus-visible:border-foreground/30"
                                 />
                             </div>
                             {announcement && (
@@ -257,22 +255,22 @@ export function AnnouncementDrawer({ announcement, open, onOpenChange, onDelete 
                             )}
                         </div>
 
-                        <Separator />
+                        <Separator className="bg-border/40" />
 
                         {/* QUICK ACTIONS section */}
                         <div className="px-5 py-4 space-y-2">
-                            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+                            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
                                 Quick Actions
                             </p>
                             {status === "draft" && (
                                 <Button
                                     variant="outline"
                                     size="sm"
-                                    className="w-full justify-start gap-2 h-8 text-xs font-normal"
+                                    className="w-full justify-start gap-2 h-8 text-xs font-normal border-border/60 hover:bg-[hsl(var(--accent-warm)/0.6)]"
                                     onClick={() => handleSetStatus("active")}
                                     disabled={isUpdatingStatus}
                                 >
-                                    <Play className="h-3.5 w-3.5 text-green-600" />
+                                    <Play className="h-3.5 w-3.5 text-green-600 stroke-[1.6]" />
                                     {isUpdatingStatus ? "Activating..." : "Activate"}
                                 </Button>
                             )}
@@ -280,11 +278,11 @@ export function AnnouncementDrawer({ announcement, open, onOpenChange, onDelete 
                                 <Button
                                     variant="outline"
                                     size="sm"
-                                    className="w-full justify-start gap-2 h-8 text-xs font-normal"
+                                    className="w-full justify-start gap-2 h-8 text-xs font-normal border-border/60 hover:bg-[hsl(var(--accent-warm)/0.6)]"
                                     onClick={() => handleSetStatus("stopped")}
                                     disabled={isUpdatingStatus}
                                 >
-                                    <Square className="h-3.5 w-3.5 text-orange-500" />
+                                    <Square className="h-3.5 w-3.5 text-orange-500 stroke-[1.6]" />
                                     {isUpdatingStatus ? "Stopping..." : "Stop"}
                                 </Button>
                             )}
@@ -292,11 +290,11 @@ export function AnnouncementDrawer({ announcement, open, onOpenChange, onDelete 
                                 <Button
                                     variant="outline"
                                     size="sm"
-                                    className="w-full justify-start gap-2 h-8 text-xs font-normal"
+                                    className="w-full justify-start gap-2 h-8 text-xs font-normal border-border/60 hover:bg-[hsl(var(--accent-warm)/0.6)]"
                                     onClick={() => handleSetStatus("active")}
                                     disabled={isUpdatingStatus}
                                 >
-                                    <RotateCcw className="h-3.5 w-3.5 text-blue-600" />
+                                    <RotateCcw className="h-3.5 w-3.5 text-blue-600 stroke-[1.6]" />
                                     {isUpdatingStatus ? "Reactivating..." : "Reactivate"}
                                 </Button>
                             )}
@@ -304,14 +302,14 @@ export function AnnouncementDrawer({ announcement, open, onOpenChange, onDelete 
                     </div>
 
                     {/* Footer */}
-                    <Separator />
+                    <Separator className="bg-border/40" />
                     <div className="px-5 py-4 shrink-0">
                         <Button
                             onClick={handleSave}
                             disabled={isSaving || !title.trim()}
-                            className="w-full h-8 text-xs"
+                            className="w-full h-8 text-xs bg-[hsl(var(--accent-warm))] text-foreground hover:bg-[hsl(var(--accent-warm-hover))]"
                         >
-                            {isSaving ? "Saving..." : "Save Changes"}
+                            {isSaving ? "Saving..." : "Save"}
                         </Button>
                     </div>
                 </SheetContent>

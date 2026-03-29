@@ -40,10 +40,10 @@ interface MeetingFiltersProps {
 }
 
 const STATUS_OPTIONS: { value: MeetingStatus; label: string; icon: React.ReactNode }[] = [
-    { value: "scheduled", label: "Scheduled", icon: <Calendar className="h-4 w-4 text-blue-500" /> },
-    { value: "in_progress", label: "In Progress", icon: <CirclePlay className="h-4 w-4 text-yellow-500" /> },
-    { value: "completed", label: "Completed", icon: <CheckCheck className="h-4 w-4 text-green-500" /> },
-    { value: "cancelled", label: "Cancelled", icon: <CircleX className="h-4 w-4 text-red-500" /> },
+    { value: "scheduled", label: "Scheduled", icon: <Calendar className="h-4 w-4 text-blue-500 stroke-[1.6]" /> },
+    { value: "in_progress", label: "In Progress", icon: <CirclePlay className="h-4 w-4 text-yellow-500 stroke-[1.6]" /> },
+    { value: "completed", label: "Completed", icon: <CheckCheck className="h-4 w-4 text-green-500 stroke-[1.6]" /> },
+    { value: "cancelled", label: "Cancelled", icon: <CircleX className="h-4 w-4 text-red-500 stroke-[1.6]" /> },
 ];
 
 export function MeetingsFilters({
@@ -135,11 +135,11 @@ export function MeetingsFilters({
             {/* Status Filter */}
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm" className="h-9 border-0 bg-[hsl(var(--accent-warm))] text-slate-800 hover:bg-[hsl(var(--accent-warm-hover))]">
-                        <PlusCircle className="mr-2 h-4 w-4" />
+                    <Button variant="outline" size="sm" className="h-9 border border-border/50 bg-[hsl(var(--accent-warm))] text-slate-800 hover:bg-[hsl(var(--accent-warm-hover))]">
+                        <PlusCircle className="mr-2 h-4 w-4 stroke-[1.6]" />
                         Status
                         {currentFilters.status.length > 0 && (
-                            <span className="ml-2 rounded-full bg-white/80 px-2 py-0.5 text-xs text-slate-700">
+                            <span className="ml-2 rounded-full bg-white/80 px-2 py-0.5 text-xs text-slate-700 border border-white/60">
                                 {currentFilters.status.length}
                             </span>
                         )}
@@ -157,7 +157,7 @@ export function MeetingsFilters({
                                     <div className="flex items-center gap-2">
                                         {currentFilters.status.includes(option.value) ? (
                                             <div className="h-4 w-4 rounded-sm border border-primary bg-primary flex items-center justify-center">
-                                                <CircleCheck className="h-3 w-3 text-primary-foreground" />
+                                                <CircleCheck className="h-3 w-3 text-primary-foreground stroke-[1.6]" />
                                             </div>
                                         ) : (
                                             <div className="h-4 w-4 rounded-sm border border-input" />
@@ -181,11 +181,11 @@ export function MeetingsFilters({
             {templates.length > 0 && (
                 <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm" className="h-9 border-0 bg-[hsl(var(--accent-warm))] text-slate-800 hover:bg-[hsl(var(--accent-warm-hover))]">
-                        <FileText className="mr-2 h-4 w-4" />
+                    <Button variant="outline" size="sm" className="h-9 border border-border/50 bg-[hsl(var(--accent-warm))] text-slate-800 hover:bg-[hsl(var(--accent-warm-hover))]">
+                        <FileText className="mr-2 h-4 w-4 stroke-[1.6]" />
                         Template
                         {currentFilters.templateIds.length > 0 && (
-                            <span className="ml-2 rounded-full bg-white/80 px-2 py-0.5 text-xs text-slate-700">
+                            <span className="ml-2 rounded-full bg-white/80 px-2 py-0.5 text-xs text-slate-700 border border-white/60">
                                 {currentFilters.templateIds.length}
                             </span>
                         )}
@@ -202,12 +202,12 @@ export function MeetingsFilters({
                                     <div className="flex items-center gap-2">
                                         {currentFilters.templateIds.includes("no-template") ? (
                                             <div className="h-4 w-4 rounded-sm border border-primary bg-primary flex items-center justify-center">
-                                                <CircleCheck className="h-3 w-3 text-primary-foreground" />
+                                                <CircleCheck className="h-3 w-3 text-primary-foreground stroke-[1.6]" />
                                             </div>
                                         ) : (
                                             <div className="h-4 w-4 rounded-sm border border-input" />
                                         )}
-                                        <FileText className="h-4 w-4 text-muted-foreground" />
+                                        <FileText className="h-4 w-4 text-muted-foreground stroke-[1.6]" />
                                         <span className="text-muted-foreground italic">No Template</span>
                                     </div>
                                     <span className="text-xs text-muted-foreground">
@@ -224,13 +224,13 @@ export function MeetingsFilters({
                                     >
                                         <div className="flex items-center gap-2">
                                             {currentFilters.templateIds.includes(template.id) ? (
-                                                <div className="h-4 w-4 rounded-sm border border-primary bg-primary flex items-center justify-center">
-                                                    <CircleCheck className="h-3 w-3 text-primary-foreground" />
-                                                </div>
+                                            <div className="h-4 w-4 rounded-sm border border-primary bg-primary flex items-center justify-center">
+                                                <CircleCheck className="h-3 w-3 text-primary-foreground stroke-[1.6]" />
+                                            </div>
                                             ) : (
                                                 <div className="h-4 w-4 rounded-sm border border-input" />
                                             )}
-                                            <FileText className="h-4 w-4 text-blue-500" />
+                                            <FileText className="h-4 w-4 text-blue-500 stroke-[1.6]" />
                                             <span className="truncate">{template.name}</span>
                                         </div>
                                         <span className="text-xs text-muted-foreground">
@@ -248,9 +248,9 @@ export function MeetingsFilters({
             {currentFilters.status.map((status) => {
                 const option = STATUS_OPTIONS.find((o) => o.value === status);
                 return (
-                <Button key={status} variant="secondary" size="sm" className="h-9 bg-[hsl(var(--accent-warm))] text-slate-800 hover:bg-[hsl(var(--accent-warm-hover))]" onClick={() => toggleStatus(status as MeetingStatus)}>
+                <Button key={status} variant="secondary" size="sm" className="h-9 bg-[hsl(var(--accent-warm))] text-slate-800 hover:bg-[hsl(var(--accent-warm-hover))] border border-border/50" onClick={() => toggleStatus(status as MeetingStatus)}>
                     {option?.label}
-                    <X className="ml-2 h-3 w-3" />
+                    <X className="ml-2 h-3 w-3 stroke-[1.6]" />
                 </Button>
             );
             })}
@@ -261,18 +261,18 @@ export function MeetingsFilters({
                     key={templateId}
                     variant="secondary"
                     size="sm"
-                    className="h-9 bg-[hsl(var(--accent-warm))] text-slate-800 hover:bg-[hsl(var(--accent-warm-hover))]"
+                    className="h-9 bg-[hsl(var(--accent-warm))] text-slate-800 hover:bg-[hsl(var(--accent-warm-hover))] border border-border/50"
                     onClick={() => toggleTemplate(templateId)}
                 >
                     {getTemplateName(templateId)}
-                    <X className="ml-2 h-3 w-3" />
+                    <X className="ml-2 h-3 w-3 stroke-[1.6]" />
                 </Button>
             ))}
 
             {hasActiveFilters && (
                 <Button variant="ghost" size="sm" className="h-9 text-slate-600 hover:text-slate-900" onClick={clearFilters}>
                     Reset
-                    <X className="ml-2 h-4 w-4" />
+                    <X className="ml-2 h-4 w-4 stroke-[1.6]" />
                 </Button>
             )}
 

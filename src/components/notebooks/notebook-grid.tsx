@@ -19,8 +19,8 @@ export function NotebookGrid({ notebooks }: NotebookGridProps) {
     if (notebooks.length === 0) {
         return (
             <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
-                <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mb-4">
-                    <BookOpen className="w-10 h-10 text-muted-foreground" />
+                <div className="w-16 h-16 rounded-full bg-[hsl(var(--accent-warm))] border border-border/50 flex items-center justify-center mb-4">
+                    <BookOpen className="w-8 h-8 text-muted-foreground stroke-[1.6]" />
                 </div>
                 <h3 className="text-lg font-medium text-foreground mb-2">
                     No notebooks yet

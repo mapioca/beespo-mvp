@@ -94,11 +94,12 @@ export function TablesListTable({
 
     return (
         <>
-            <Table>
+            <div className="rounded-xl border-y border-border/60 bg-background/80 shadow-[0_1px_0_rgba(15,23,42,0.04)] overflow-hidden">
+            <Table className="text-[13px]">
                 <TableHeader>
-                    <TableRow className="bg-muted/40 hover:bg-muted/40 border-b">
+                    <TableRow className="bg-muted/30 hover:bg-muted/30 border-b">
                         {/* Checkbox */}
-                        <TableHead className="w-10 px-3">
+                        <TableHead className="w-10 px-3 py-2.5">
                             <Checkbox
                                 checked={allSelected}
                                 onCheckedChange={() => onToggleAllRows?.()}
@@ -160,16 +161,16 @@ export function TablesListTable({
                         <TableRow className="hover:bg-transparent">
                             <TableCell colSpan={visibleColumns} className="h-32 text-center">
                                 <div className="flex flex-col items-center justify-center py-4">
-                                    <Table2 className="h-8 w-8 text-muted-foreground mb-2" />
+                                    <Table2 className="h-8 w-8 text-muted-foreground mb-2 stroke-[1.6]" />
                                     <p className="text-muted-foreground">No tables found.</p>
                                 </div>
                             </TableCell>
                         </TableRow>
                     ) : (
                         tables.map((table) => (
-                            <TableRow key={table.id} className="group">
+                            <TableRow key={table.id} className="group hover:bg-[hsl(var(--accent-warm)/0.35)]">
                                 {/* Checkbox */}
-                                <TableCell className="px-3">
+                                <TableCell className="px-3 py-3">
                                     <Checkbox
                                         checked={selectedRows.has(table.id)}
                                         onCheckedChange={() => onToggleRow?.(table.id)}
@@ -178,7 +179,7 @@ export function TablesListTable({
 
                                 {/* Name */}
                                 {!hiddenColumns.has("name") && (
-                                    <TableCell className="font-medium px-3">
+                                    <TableCell className="font-medium px-3 py-3 text-[13px]">
                                         <div className="flex flex-col">
                                             <Link
                                                 href={`/tables/${table.id}`}
@@ -187,12 +188,12 @@ export function TablesListTable({
                                                 {table.icon ? (
                                                     <span className="text-base leading-none">{table.icon}</span>
                                                 ) : (
-                                                    <Table2 className="h-4 w-4 text-muted-foreground shrink-0" />
+                                                    <Table2 className="h-4 w-4 text-muted-foreground shrink-0 stroke-[1.6]" />
                                                 )}
                                                 {table.name}
                                             </Link>
                                             {table.description && (
-                                                <span className="text-xs text-muted-foreground line-clamp-2 mt-0.5 ml-6">
+                                                <span className="text-[12px] text-muted-foreground/80 line-clamp-2 mt-0.5 ml-6">
                                                     {table.description}
                                                 </span>
                                             )}
@@ -202,20 +203,20 @@ export function TablesListTable({
 
                                 {/* Rows */}
                                 {!hiddenColumns.has("row_count") && (
-                                    <TableCell className="px-3 text-muted-foreground tabular-nums">
+                                    <TableCell className="px-3 py-3 text-[12px] text-muted-foreground tabular-nums">
                                         {table.row_count.toLocaleString()}
                                     </TableCell>
                                 )}
 
                                 {/* Created */}
                                 {!hiddenColumns.has("created_at") && (
-                                    <TableCell className="px-3 text-muted-foreground">
+                                    <TableCell className="px-3 py-3 text-[12px] text-muted-foreground">
                                         {format(new Date(table.created_at), "MMM d, yyyy")}
                                     </TableCell>
                                 )}
 
                                 {/* Actions */}
-                                <TableCell className="px-3 text-right">
+                                <TableCell className="px-3 py-3 text-right">
                                     <DropdownMenu>
                                         <DropdownMenuTrigger asChild>
                                             <Button
@@ -223,19 +224,19 @@ export function TablesListTable({
                                                 size="sm"
                                                 className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
                                             >
-                                                <MoreHorizontal className="h-4 w-4" />
+                                                <MoreHorizontal className="h-4 w-4 stroke-[1.6]" />
                                             </Button>
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent align="end">
                                             <DropdownMenuItem asChild>
                                                 <Link href={`/tables/${table.id}`}>
-                                                    <Table2 className="mr-2 h-4 w-4" />
+                                                    <Table2 className="mr-2 h-4 w-4 stroke-[1.6]" />
                                                     Open
                                                 </Link>
                                             </DropdownMenuItem>
                                             <DropdownMenuItem asChild>
                                                 <Link href={`/tables/${table.id}/settings`}>
-                                                    <Settings2 className="mr-2 h-4 w-4" />
+                                                    <Settings2 className="mr-2 h-4 w-4 stroke-[1.6]" />
                                                     Settings
                                                 </Link>
                                             </DropdownMenuItem>
@@ -244,7 +245,7 @@ export function TablesListTable({
                                                 className="text-destructive focus:text-destructive"
                                                 onClick={() => setDeleteTarget(table)}
                                             >
-                                                <Trash2 className="mr-2 h-4 w-4" />
+                                                <Trash2 className="mr-2 h-4 w-4 stroke-[1.6]" />
                                                 Delete
                                             </DropdownMenuItem>
                                         </DropdownMenuContent>
@@ -255,6 +256,7 @@ export function TablesListTable({
                     )}
                 </TableBody>
             </Table>
+            </div>
 
             {/* Delete confirmation */}
             <AlertDialog

@@ -171,11 +171,11 @@ export function ParticipantDrawer({
     return (
         <>
             <Sheet open={open} onOpenChange={onOpenChange}>
-                <SheetContent className="w-full sm:max-w-sm flex flex-col gap-0 p-0 overflow-hidden">
+                <SheetContent className="w-full sm:max-w-sm flex flex-col gap-0 p-0 overflow-hidden bg-background/95 backdrop-blur">
                     {/* Header */}
-                    <div className="flex items-center justify-between px-5 pt-4 pb-3 pr-12 shrink-0">
+                    <div className="flex items-center justify-between px-5 pt-4 pb-3 pr-12 shrink-0 border-b border-border/40">
                         <div className="flex items-center gap-2">
-                            <User className="h-4 w-4 text-muted-foreground" />
+                            <User className="h-4 w-4 text-muted-foreground stroke-[1.6]" />
                             <SheetTitle className="text-sm font-semibold">Participant Details</SheetTitle>
                         </div>
                         {canManage && (
@@ -185,7 +185,7 @@ export function ParticipantDrawer({
                                 className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                                 onClick={() => setShowDeleteDialog(true)}
                             >
-                                <Trash2 className="h-3.5 w-3.5" />
+                                <Trash2 className="h-3.5 w-3.5 stroke-[1.6]" />
                             </Button>
                         )}
                     </div>
@@ -193,32 +193,30 @@ export function ParticipantDrawer({
                         Participant details for {participant?.name}
                     </SheetDescription>
 
-                    <Separator />
-
                     {/* Scrollable body */}
                     <div className="flex-1 overflow-y-auto">
                         {/* PARTICIPANT section */}
                         <div className="px-5 py-4 space-y-4">
-                            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+                            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
                                 Participant
                             </p>
                             <div className="space-y-1.5">
-                                <label className="text-xs font-medium">Name</label>
+                                <label className="text-[11px] text-muted-foreground">Name</label>
                                 <Input
                                     value={name}
                                     onChange={(e) => setName(e.target.value)}
-                                    className="h-8 text-sm"
+                                    className="h-8 text-sm bg-background border-border/60 focus-visible:ring-0 focus-visible:border-foreground/30"
                                     disabled={!canManage}
                                     onKeyDown={(e) => e.key === "Enter" && canManage && handleSave()}
                                 />
                             </div>
                         </div>
 
-                        <Separator />
+                        <Separator className="bg-border/40" />
 
                         {/* TAGS section */}
                         <div className="px-5 py-4 space-y-3">
-                            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+                            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
                                 Tags
                             </p>
                             <TagPicker
@@ -231,11 +229,11 @@ export function ParticipantDrawer({
                             />
                         </div>
 
-                        <Separator />
+                        <Separator className="bg-border/40" />
 
                         {/* DETAILS section */}
                         <div className="px-5 py-4 space-y-3">
-                            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+                            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
                                 Details
                             </p>
                             {participant && (
@@ -254,11 +252,11 @@ export function ParticipantDrawer({
                             )}
                         </div>
 
-                        <Separator />
+                        <Separator className="bg-border/40" />
 
                         {/* ASSIGNMENT HISTORY section */}
                         <div className="px-5 py-4 space-y-3">
-                            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+                            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
                                 Assignment History
                             </p>
 
@@ -285,7 +283,7 @@ export function ParticipantDrawer({
                                             </div>
                                             {item.meeting && (
                                                 <div className="flex items-center gap-1.5">
-                                                    <Calendar className="h-3 w-3 text-muted-foreground/60 shrink-0" />
+                                                    <Calendar className="h-3 w-3 text-muted-foreground/60 shrink-0 stroke-[1.6]" />
                                                     <span className="text-[11px] text-muted-foreground">
                                                         {format(new Date(item.meeting.scheduled_date), "MMM d, yyyy")}
                                                     </span>
@@ -310,14 +308,14 @@ export function ParticipantDrawer({
                     {/* Footer */}
                     {canManage && (
                         <>
-                            <Separator />
+                            <Separator className="bg-border/40" />
                             <div className="px-5 py-4 shrink-0">
                                 <Button
                                     onClick={handleSave}
                                     disabled={isSaving || !name.trim()}
-                                    className="w-full h-8 text-xs"
+                                    className="w-full h-8 text-xs bg-[hsl(var(--accent-warm))] text-foreground hover:bg-[hsl(var(--accent-warm-hover))]"
                                 >
-                                    {isSaving ? "Saving..." : "Save Changes"}
+                                    {isSaving ? "Saving..." : "Save"}
                                 </Button>
                             </div>
                         </>
