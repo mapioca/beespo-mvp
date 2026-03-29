@@ -339,7 +339,7 @@ export function MeetingsClient({
             />
 
             {/* Action Bar + Tabs */}
-            <div className="flex items-center justify-between w-full px-6 pt-5 pb-4 shrink-0 flex-wrap gap-4">
+            <div className="flex items-center justify-between w-full px-6 pt-4 pb-3 shrink-0 flex-wrap gap-3">
                 <div className="flex items-center gap-1.5 flex-wrap">
                     {/* Built-in tabs */}
                     {(
@@ -357,8 +357,8 @@ export function MeetingsClient({
                         }}
                         className={
                             activeViewId === null && activeCategory === value
-                                ? "rounded-full border px-3.5 py-1 text-xs font-medium bg-stone-200 text-foreground border-stone-200 transition-all shadow-sm"
-                                : "rounded-full border px-3.5 py-1 text-xs font-medium text-muted-foreground border-border hover:text-foreground hover:bg-stone-100/50 hover:border-foreground/20 transition-all"
+                                ? "rounded-full border px-3.5 py-1 text-xs font-medium bg-[hsl(var(--accent-warm))] text-foreground border-border/60 transition-all shadow-[0_1px_0_rgba(15,23,42,0.08)]"
+                                : "rounded-full border px-3.5 py-1 text-xs font-medium text-muted-foreground border-border/60 hover:text-foreground hover:bg-[hsl(var(--accent-warm)/0.5)] hover:border-border/60 transition-all"
                         }
                     >
                         {label}
@@ -378,8 +378,8 @@ export function MeetingsClient({
                             className={cn(
                                 "rounded-full border pl-3.5 pr-7 py-1 text-xs font-medium transition-all shadow-sm",
                                 activeViewId === view.id
-                                    ? "bg-stone-200 text-foreground border-stone-200"
-                                    : "text-muted-foreground border-border hover:text-foreground hover:bg-stone-100/50 hover:border-foreground/20"
+                                    ? "bg-[hsl(var(--accent-warm))] text-foreground border-border/60"
+                                    : "text-muted-foreground border-border/60 hover:text-foreground hover:bg-[hsl(var(--accent-warm)/0.5)] hover:border-border/60"
                             )}
                         >
                             {view.name}
@@ -400,7 +400,7 @@ export function MeetingsClient({
                                     : "text-muted-foreground hover:text-foreground"
                             )}
                         >
-                            <X className="h-2.5 w-2.5" />
+                            <X className="h-2.5 w-2.5 stroke-[1.6]" />
                         </button>
                     </span>
                 ))}
@@ -412,9 +412,9 @@ export function MeetingsClient({
                 </div>
 
                 {isLeader && (
-                    <Button asChild variant="ghost" className="rounded-full border px-3.5 py-1 text-xs font-medium text-muted-foreground border-border hover:bg-muted/60 hover:text-foreground hover:border-border transition-all">
+                    <Button asChild variant="ghost" className="rounded-full border px-3.5 py-1 text-xs font-medium text-foreground border-border/60 bg-[hsl(var(--accent-warm))] hover:bg-[hsl(var(--accent-warm-hover))] transition-all shadow-[0_1px_0_rgba(15,23,42,0.08)]">
                         <Link href="/meetings/new" className="flex items-center gap-1.5">
-                            <Plus className="h-3.5 w-3.5" />
+                            <Plus className="h-3.5 w-3.5 stroke-[1.6]" />
                             New
                         </Link>
                     </Button>
@@ -425,30 +425,30 @@ export function MeetingsClient({
             {activeView && (
                 <div className="flex items-center gap-2 px-6 pb-3 flex-wrap text-[11px] text-muted-foreground">
                     <span className="font-medium text-foreground">Filters:</span>
-                    <span className="rounded-md bg-[hsl(var(--accent-warm))] px-2 py-0.5 capitalize text-slate-800">
+                    <span className="rounded-md bg-[hsl(var(--accent-warm))] border border-border/50 px-2 py-0.5 capitalize text-slate-800">
                         {activeView.filters.category ?? "all"} meetings
                     </span>
                     {activeView.filters.statuses?.map((s) => (
-                        <span key={s} className="rounded-md bg-[hsl(var(--accent-warm))] px-2 py-0.5 text-slate-800">
+                        <span key={s} className="rounded-md bg-[hsl(var(--accent-warm))] border border-border/50 px-2 py-0.5 text-slate-800">
                             {formatStatusLabel(s)}
                         </span>
                     ))}
                     {activeView.filters.templateIds?.map((id) => (
-                        <span key={id} className="rounded-md bg-[hsl(var(--accent-warm))] px-2 py-0.5 text-slate-800">
+                        <span key={id} className="rounded-md bg-[hsl(var(--accent-warm))] border border-border/50 px-2 py-0.5 text-slate-800">
                             {getTemplateName(id)}
                         </span>
                     ))}
                     {activeView.filters.hasZoom && (
-                        <span className="rounded-md bg-[hsl(var(--accent-warm))] px-2 py-0.5 text-slate-800">🎥 Has Zoom</span>
+                        <span className="rounded-md bg-[hsl(var(--accent-warm))] border border-border/50 px-2 py-0.5 text-slate-800">🎥 Has Zoom</span>
                     )}
                     {search && (
-                        <span className="rounded-md bg-[hsl(var(--accent-warm))] px-2 py-0.5 text-slate-800">
+                        <span className="rounded-md bg-[hsl(var(--accent-warm))] border border-border/50 px-2 py-0.5 text-slate-800">
                             Search: &quot;{search}&quot;
                             <button
                                 onClick={() => setSearch("")}
                                 className="ml-1 text-muted-foreground hover:text-foreground"
                             >
-                                <X className="h-3 w-3 inline" />
+                                <X className="h-3 w-3 inline stroke-[1.6]" />
                             </button>
                         </span>
                     )}
@@ -458,7 +458,7 @@ export function MeetingsClient({
             {/* Selection action bar */}
             {selectedRows.size > 0 && (
                 <div className="flex items-center gap-3 px-6 pb-3 shrink-0">
-                    <span className="text-xs font-medium tabular-nums">
+                    <span className="inline-flex items-center rounded-full bg-[hsl(var(--accent-warm))] px-2.5 py-1 text-[11px] font-medium text-slate-800 border border-border/50 tabular-nums">
                         {selectedRows.size} selected
                     </span>
                     <Button
@@ -467,7 +467,7 @@ export function MeetingsClient({
                         className="h-7 px-2.5 text-xs text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30"
                         onClick={() => setShowBulkDeleteDialog(true)}
                     >
-                        <Trash2 className="mr-1.5 h-3 w-3" />
+                        <Trash2 className="mr-1.5 h-3 w-3 stroke-[1.6]" />
                         Delete
                     </Button>
                     <button
@@ -483,41 +483,41 @@ export function MeetingsClient({
             {hasActiveFilters && selectedRows.size === 0 && (
                 <div className="flex items-center gap-2 px-6 pb-3 flex-wrap">
                     {search && (
-                        <span className="inline-flex items-center gap-1.5 rounded-md bg-[hsl(var(--accent-warm))] px-2.5 py-1 text-xs font-medium text-slate-800">
+                        <span className="inline-flex items-center gap-1.5 rounded-md bg-[hsl(var(--accent-warm))] border border-border/50 px-2.5 py-1 text-xs font-medium text-slate-800">
                             Search: &quot;{search}&quot;
                             <button
                                 onClick={() => setSearch("")}
                                 className="text-muted-foreground hover:text-foreground"
                             >
-                                <X className="h-3 w-3" />
+                                <X className="h-3 w-3 stroke-[1.6]" />
                             </button>
                         </span>
                     )}
                     {selectedStatuses.map((s) => (
                         <span
                             key={s}
-                            className="inline-flex items-center gap-1.5 rounded-md bg-[hsl(var(--accent-warm))] px-2.5 py-1 text-xs font-medium text-slate-800"
+                            className="inline-flex items-center gap-1.5 rounded-md bg-[hsl(var(--accent-warm))] border border-border/50 px-2.5 py-1 text-xs font-medium text-slate-800"
                         >
                             {formatStatusLabel(s)}
                             <button
                                 onClick={() => handleStatusToggle(s)}
                                 className="text-muted-foreground hover:text-foreground"
                             >
-                                <X className="h-3 w-3" />
+                                <X className="h-3 w-3 stroke-[1.6]" />
                             </button>
                         </span>
                     ))}
                     {selectedTemplates.map((id) => (
                         <span
                             key={id}
-                            className="inline-flex items-center gap-1.5 rounded-md bg-[hsl(var(--accent-warm))] px-2.5 py-1 text-xs font-medium text-slate-800"
+                            className="inline-flex items-center gap-1.5 rounded-md bg-[hsl(var(--accent-warm))] border border-border/50 px-2.5 py-1 text-xs font-medium text-slate-800"
                         >
                             {getTemplateName(id)}
                             <button
                                 onClick={() => handleTemplateToggle(id)}
                                 className="text-muted-foreground hover:text-foreground"
                             >
-                                <X className="h-3 w-3" />
+                                <X className="h-3 w-3 stroke-[1.6]" />
                             </button>
                         </span>
                     ))}
@@ -544,7 +544,7 @@ export function MeetingsClient({
             )}
 
             {/* Table */}
-            <div className="flex-1 overflow-auto px-6">
+            <div className="flex-1 overflow-auto px-6 pb-6">
                 {activeCategory === "shared" && !activeView && sharedMeetings.length === 0 && !search ? (
                     <div className="flex flex-col items-center justify-center h-48 text-center">
                         <p className="text-muted-foreground text-sm">

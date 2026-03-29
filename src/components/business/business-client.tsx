@@ -241,24 +241,25 @@ export function BusinessClient({ items }: BusinessClientProps) {
     // ── Render ──────────────────────────────────────────────────────────────
 
     return (
-        <div className="flex flex-col h-full bg-muted/30">
+        <div className="flex flex-col h-full bg-muted/20">
             {/* Breadcrumb */}
             <Breadcrumbs
                 items={[
-                    { label: "Meetings", href: "/meetings/agendas", icon: <CalendarDays className="h-3.5 w-3.5" /> },
-                    { label: "Business", icon: <Briefcase className="h-3.5 w-3.5" /> },
+                    { label: "Meetings", href: "/meetings/agendas", icon: <CalendarDays className="h-4 w-4 stroke-[1.6]" /> },
+                    { label: "Business", icon: <Briefcase className="h-4 w-4 stroke-[1.6]" /> },
                 ]}
+                className="bg-transparent ring-0 border-b border-border/60 rounded-none px-4 py-1.5"
             />
 
             {/* Action Bar */}
-            <div className="flex items-center justify-between w-full px-6 pt-5 pb-4 shrink-0 flex-wrap gap-4">
+            <div className="flex items-center justify-between w-full px-6 pt-4 pb-3 shrink-0 flex-wrap gap-3">
                 <div className="flex items-center gap-1.5 flex-wrap">
                     {/* Placeholder for future tabs */}
                 </div>
 
-                <Button asChild variant="ghost" className="rounded-full border px-3.5 py-1 text-xs font-medium text-muted-foreground border-border hover:bg-stone-200 hover:text-foreground hover:border-stone-200 transition-all shadow-sm">
+                <Button asChild variant="ghost" className="rounded-full border px-3.5 py-1 text-xs font-medium text-foreground border-border/60 bg-[hsl(var(--accent-warm))] hover:bg-[hsl(var(--accent-warm-hover))] transition-all shadow-[0_1px_0_rgba(15,23,42,0.08)]">
                     <Link href="/meetings/business/new" className="flex items-center gap-1.5">
-                        <Plus className="h-3.5 w-3.5" />
+                        <Plus className="h-3.5 w-3.5 stroke-[1.6]" />
                         New
                     </Link>
                 </Button>
@@ -267,7 +268,7 @@ export function BusinessClient({ items }: BusinessClientProps) {
             {/* Selection action bar — replaces filter chips when rows are selected */}
             {selectedRows.size > 0 && (
                 <div className="flex items-center gap-3 px-6 pb-3 shrink-0">
-                    <span className="text-xs font-medium tabular-nums">
+                    <span className="inline-flex items-center rounded-full bg-[hsl(var(--accent-warm))] px-2.5 py-1 text-[11px] font-medium text-slate-800 border border-border/50 tabular-nums">
                         {selectedRows.size} selected
                     </span>
                     <Button
@@ -276,7 +277,7 @@ export function BusinessClient({ items }: BusinessClientProps) {
                         className="h-7 px-2.5 text-xs text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30"
                         onClick={() => setShowBulkDeleteDialog(true)}
                     >
-                        <Trash2 className="mr-1.5 h-3 w-3" />
+                        <Trash2 className="mr-1.5 h-3 w-3 stroke-[1.6]" />
                         Delete
                     </Button>
                     <button
@@ -292,41 +293,41 @@ export function BusinessClient({ items }: BusinessClientProps) {
             {hasActiveFilters && selectedRows.size === 0 && (
                 <div className="flex items-center gap-2 px-6 pb-3 flex-wrap">
                     {search && (
-                        <span className="inline-flex items-center gap-1.5 rounded-md bg-muted px-2.5 py-1 text-xs font-medium">
+                        <span className="inline-flex items-center gap-1.5 rounded-md bg-[hsl(var(--accent-warm))] px-2.5 py-1 text-xs font-medium text-slate-800 border border-border/50">
                             Search: &quot;{search}&quot;
                             <button
                                 onClick={() => setSearch("")}
                                 className="text-muted-foreground hover:text-foreground"
                             >
-                                <X className="h-3 w-3" />
+                                <X className="h-3 w-3 stroke-[1.6]" />
                             </button>
                         </span>
                     )}
                     {selectedStatuses.map((s) => (
                         <span
                             key={s}
-                            className="inline-flex items-center gap-1.5 rounded-md bg-muted px-2.5 py-1 text-xs font-medium capitalize"
+                            className="inline-flex items-center gap-1.5 rounded-md bg-[hsl(var(--accent-warm))] px-2.5 py-1 text-xs font-medium text-slate-800 border border-border/50 capitalize"
                         >
                             {s}
                             <button
                                 onClick={() => handleStatusToggle(s)}
                                 className="text-muted-foreground hover:text-foreground"
                             >
-                                <X className="h-3 w-3" />
+                                <X className="h-3 w-3 stroke-[1.6]" />
                             </button>
                         </span>
                     ))}
                     {selectedCategories.map((c) => (
                         <span
                             key={c}
-                            className="inline-flex items-center gap-1.5 rounded-md bg-muted px-2.5 py-1 text-xs font-medium"
+                            className="inline-flex items-center gap-1.5 rounded-md bg-[hsl(var(--accent-warm))] px-2.5 py-1 text-xs font-medium text-slate-800 border border-border/50"
                         >
                             {formatCategoryLabel(c)}
                             <button
                                 onClick={() => handleCategoryToggle(c)}
                                 className="text-muted-foreground hover:text-foreground"
                             >
-                                <X className="h-3 w-3" />
+                                <X className="h-3 w-3 stroke-[1.6]" />
                             </button>
                         </span>
                     ))}
@@ -353,7 +354,7 @@ export function BusinessClient({ items }: BusinessClientProps) {
             )}
 
             {/* Table */}
-            <div className="flex-1 overflow-auto px-6">
+            <div className="flex-1 overflow-auto px-6 pb-6">
                 <BusinessTable
                     items={filteredItems}
                     sortConfig={sortConfig}

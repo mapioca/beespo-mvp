@@ -193,11 +193,12 @@ export function ParticipantsTable({
 
     return (
         <>
-            <Table>
+            <div className="rounded-xl border-y border-border/60 bg-background/80 shadow-[0_1px_0_rgba(15,23,42,0.04)] overflow-hidden">
+            <Table className="text-[13px]">
                 <TableHeader>
-                    <TableRow className="bg-muted/40 hover:bg-muted/40 border-b">
+                    <TableRow className="bg-muted/30 hover:bg-muted/30 border-b">
                         {/* Checkbox */}
-                        <TableHead className="w-10 px-3">
+                        <TableHead className="w-10 px-3 py-2.5">
                             <Checkbox
                                 checked={allSelected}
                                 onCheckedChange={() => onToggleAllRows?.()}
@@ -235,7 +236,7 @@ export function ParticipantsTable({
                                 className="h-32 text-center"
                             >
                                 <div className="flex flex-col items-center justify-center py-4">
-                                    <Users className="h-8 w-8 text-muted-foreground mb-2" />
+                                    <Users className="h-8 w-8 text-muted-foreground mb-2 stroke-[1.6]" />
                                     <p className="text-muted-foreground">
                                         No participants found.
                                     </p>
@@ -252,8 +253,8 @@ export function ParticipantsTable({
                                 <Fragment key={participant.id}>
                                     <TableRow
                                         className={cn(
-                                            "group cursor-pointer",
-                                            isExpanded && "bg-muted/30"
+                                            "group cursor-pointer hover:bg-[hsl(var(--accent-warm)/0.35)]",
+                                            isExpanded && "bg-[hsl(var(--accent-warm)/0.35)]"
                                         )}
                                         onClick={() =>
                                             toggleExpand(participant)
@@ -261,7 +262,7 @@ export function ParticipantsTable({
                                     >
                                         {/* Checkbox */}
                                         <TableCell
-                                            className="px-3"
+                                            className="px-3 py-3"
                                             onClick={(e) => e.stopPropagation()}
                                         >
                                             <Checkbox
@@ -278,16 +279,16 @@ export function ParticipantsTable({
 
                                         {/* Name + Tags */}
                                         {!hiddenColumns.has("name") && (
-                                            <TableCell className="font-medium px-3">
-                                                <div className="flex items-center gap-2 flex-wrap">
-                                                    <div className="flex items-center gap-2 shrink-0">
-                                                        <ChevronRight
-                                                            className={cn(
-                                                                "h-3.5 w-3.5 text-muted-foreground transition-transform shrink-0",
-                                                                isExpanded && "rotate-90"
-                                                            )}
-                                                        />
-                                                        <span>{participant.name}</span>
+                                        <TableCell className="font-medium px-3 py-3 text-[13px]">
+                                            <div className="flex items-center gap-2 flex-wrap">
+                                                <div className="flex items-center gap-2 shrink-0">
+                                                    <ChevronRight
+                                                        className={cn(
+                                                            "h-3.5 w-3.5 text-muted-foreground transition-transform shrink-0 stroke-[1.6]",
+                                                            isExpanded && "rotate-90"
+                                                        )}
+                                                    />
+                                                    <span>{participant.name}</span>
                                                     </div>
                                                     {participant.tags && participant.tags.length > 0 && (
                                                         <div className="flex flex-wrap gap-1">
@@ -302,7 +303,7 @@ export function ParticipantsTable({
 
                                         {/* Actions */}
                                         <TableCell
-                                            className="px-3 text-right"
+                                            className="px-3 py-3 text-right"
                                             onClick={(e) => e.stopPropagation()}
                                         >
                                             <DropdownMenu>
@@ -312,7 +313,7 @@ export function ParticipantsTable({
                                                         size="sm"
                                                         className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
                                                     >
-                                                        <MoreHorizontal className="h-4 w-4" />
+                                                        <MoreHorizontal className="h-4 w-4 stroke-[1.6]" />
                                                     </Button>
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end">
@@ -321,7 +322,7 @@ export function ParticipantsTable({
                                                             onViewParticipant?.(participant)
                                                         }
                                                     >
-                                                        <Eye className="mr-2 h-4 w-4" />
+                                                        <Eye className="mr-2 h-4 w-4 stroke-[1.6]" />
                                                         View
                                                     </DropdownMenuItem>
                                                     <DropdownMenuItem
@@ -329,7 +330,7 @@ export function ParticipantsTable({
                                                             onAddSpeakingAssignment?.(participant)
                                                         }
                                                     >
-                                                        <Speech className="mr-2 h-4 w-4" />
+                                                        <Speech className="mr-2 h-4 w-4 stroke-[1.6]" />
                                                         Add Speaking Assignment
                                                     </DropdownMenuItem>
                                                     {onDelete && (
@@ -341,7 +342,7 @@ export function ParticipantsTable({
                                                                     setDeleteTarget(participant)
                                                                 }
                                                             >
-                                                                <Trash2 className="mr-2 h-4 w-4" />
+                                                                <Trash2 className="mr-2 h-4 w-4 stroke-[1.6]" />
                                                                 Delete
                                                             </DropdownMenuItem>
                                                         </>
@@ -401,7 +402,7 @@ export function ParticipantsTable({
                                                                                 </div>
                                                                                 {item.meeting && (
                                                                                     <div className="flex items-center gap-1.5">
-                                                                                        <Calendar className="h-3 w-3 text-muted-foreground/60 shrink-0" />
+                                                                                        <Calendar className="h-3 w-3 text-muted-foreground/60 shrink-0 stroke-[1.6]" />
                                                                                         <span className="text-[11px] text-muted-foreground">
                                                                                             {format(new Date(item.meeting.scheduled_date), "MMM d, yyyy")}
                                                                                         </span>
@@ -450,7 +451,7 @@ export function ParticipantsTable({
                                                                                 </div>
                                                                                 {item.meeting && (
                                                                                     <div className="flex items-center gap-1.5">
-                                                                                        <Calendar className="h-3 w-3 text-muted-foreground/60 shrink-0" />
+                                                                                        <Calendar className="h-3 w-3 text-muted-foreground/60 shrink-0 stroke-[1.6]" />
                                                                                         <span className="text-[11px] text-muted-foreground">
                                                                                             {format(new Date(item.meeting.scheduled_date), "MMM d, yyyy")}
                                                                                         </span>
@@ -482,6 +483,7 @@ export function ParticipantsTable({
                     )}
                 </TableBody>
             </Table>
+            </div>
 
             {/* Delete confirmation dialog */}
             <AlertDialog

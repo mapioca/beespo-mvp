@@ -154,11 +154,12 @@ export function BusinessTable({
 
     return (
         <>
-            <Table>
+            <div className="rounded-xl border-y border-border/60 bg-background/80 shadow-[0_1px_0_rgba(15,23,42,0.04)] overflow-hidden">
+            <Table className="text-[13px]">
                 <TableHeader>
-                    <TableRow className="bg-muted/40 hover:bg-muted/40 border-b">
+                    <TableRow className="bg-muted/30 hover:bg-muted/30 border-b">
                         {/* Checkbox */}
-                        <TableHead className="w-10 px-3">
+                        <TableHead className="w-10 px-3 py-2.5">
                             <Checkbox
                                 checked={allSelected}
                                 onCheckedChange={() => onToggleAllRows?.()}
@@ -288,7 +289,7 @@ export function BusinessTable({
                                 className="h-32 text-center"
                             >
                                 <div className="flex flex-col items-center justify-center py-4">
-                                    <Briefcase className="h-8 w-8 text-muted-foreground mb-2" />
+                                    <Briefcase className="h-8 w-8 text-muted-foreground mb-2 stroke-[1.6]" />
                                     <p className="text-muted-foreground">
                                         No business items found.
                                     </p>
@@ -297,9 +298,9 @@ export function BusinessTable({
                         </TableRow>
                     ) : (
                         items.map((item) => (
-                            <TableRow key={item.id} className="group">
+                            <TableRow key={item.id} className="group hover:bg-[hsl(var(--accent-warm)/0.35)]">
                                 {/* Checkbox */}
-                                <TableCell className="px-3">
+                                <TableCell className="px-3 py-3">
                                     <Checkbox
                                         checked={selectedRows.has(item.id)}
                                         onCheckedChange={() =>
@@ -310,7 +311,7 @@ export function BusinessTable({
 
                                 {/* Person Name */}
                                 {!hiddenColumns.has("person_name") && (
-                                    <TableCell className="font-medium px-3">
+                                    <TableCell className="font-medium px-3 py-3 text-[13px]">
                                         <button
                                             onClick={() =>
                                                 onViewItem?.(item)
@@ -324,21 +325,21 @@ export function BusinessTable({
 
                                 {/* Position/Calling */}
                                 {!hiddenColumns.has("position_calling") && (
-                                    <TableCell className="px-3">
+                                    <TableCell className="px-3 py-3 text-[12px] text-muted-foreground">
                                         {item.position_calling || "—"}
                                     </TableCell>
                                 )}
 
                                 {/* Category */}
                                 {!hiddenColumns.has("category") && (
-                                    <TableCell className="px-3 text-muted-foreground capitalize">
+                                    <TableCell className="px-3 py-3 text-[12px] text-muted-foreground capitalize">
                                         {formatCategory(item.category)}
                                     </TableCell>
                                 )}
 
                                 {/* Status */}
                                 {!hiddenColumns.has("status") && (
-                                    <TableCell className="px-3 text-muted-foreground capitalize">
+                                    <TableCell className="px-3 py-3 text-[12px] text-muted-foreground capitalize">
                                         {item.status === "pending"
                                             ? "Pending"
                                             : "Completed"}
@@ -347,7 +348,7 @@ export function BusinessTable({
 
                                 {/* Action Date */}
                                 {!hiddenColumns.has("action_date") && (
-                                    <TableCell className="px-3 text-muted-foreground">
+                                    <TableCell className="px-3 py-3 text-[12px] text-muted-foreground">
                                         {item.action_date
                                             ? format(
                                                   new Date(item.action_date),
@@ -358,7 +359,7 @@ export function BusinessTable({
                                 )}
 
                                 {/* Actions */}
-                                <TableCell className="px-3 text-right">
+                                <TableCell className="px-3 py-3 text-right">
                                     <DropdownMenu>
                                         <DropdownMenuTrigger asChild>
                                             <Button
@@ -366,7 +367,7 @@ export function BusinessTable({
                                                 size="sm"
                                                 className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
                                             >
-                                                <MoreHorizontal className="h-4 w-4" />
+                                                <MoreHorizontal className="h-4 w-4 stroke-[1.6]" />
                                             </Button>
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent align="end">
@@ -375,7 +376,7 @@ export function BusinessTable({
                                                     onViewItem?.(item)
                                                 }
                                             >
-                                                <Eye className="mr-2 h-4 w-4" />
+                                                <Eye className="mr-2 h-4 w-4 stroke-[1.6]" />
                                                 View
                                             </DropdownMenuItem>
                                             {onDeleteItem && (
@@ -389,7 +390,7 @@ export function BusinessTable({
                                                             )
                                                         }
                                                     >
-                                                        <Trash2 className="mr-2 h-4 w-4" />
+                                                        <Trash2 className="mr-2 h-4 w-4 stroke-[1.6]" />
                                                         Delete
                                                     </DropdownMenuItem>
                                                 </>
@@ -402,6 +403,7 @@ export function BusinessTable({
                     )}
                 </TableBody>
             </Table>
+            </div>
 
             {/* Delete confirmation dialog */}
             <AlertDialog

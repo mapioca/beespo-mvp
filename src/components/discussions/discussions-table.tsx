@@ -167,8 +167,8 @@ export function DiscussionsTable({
 
     return (
         <>
-            <div className="rounded-xl border border-border/60 bg-background/80 shadow-[0_1px_0_rgba(15,23,42,0.04)] overflow-hidden">
-            <Table>
+            <div className="rounded-xl border-y border-border/60 bg-background/80 shadow-[0_1px_0_rgba(15,23,42,0.04)] overflow-hidden">
+            <Table className="text-[13px]">
                 <TableHeader>
                     <TableRow className="bg-muted/30 hover:bg-muted/30 border-b">
                         {/* Checkbox */}
@@ -306,7 +306,7 @@ export function DiscussionsTable({
 
                                 {/* Title */}
                                 {!hiddenColumns.has("title") && (
-                                    <TableCell className="font-medium px-3 py-3">
+                                    <TableCell className="font-medium px-3 py-3 text-[13px]">
                                         <Link
                                             href={`/meetings/discussions/${discussion.id}`}
                                             className="hover:underline text-left"
@@ -316,7 +316,7 @@ export function DiscussionsTable({
                                                     {discussion.title}
                                                 </span>
                                                 {discussion.description && (
-                                                    <span className="text-xs text-muted-foreground line-clamp-1">
+                                                    <span className="text-[12px] text-muted-foreground/80 line-clamp-1">
                                                         {discussion.description}
                                                     </span>
                                                 )}
@@ -327,28 +327,28 @@ export function DiscussionsTable({
 
                                 {/* Category */}
                                 {!hiddenColumns.has("category") && (
-                                    <TableCell className="px-3 py-3 text-muted-foreground capitalize whitespace-nowrap">
+                                    <TableCell className="px-3 py-3 text-[12px] text-muted-foreground capitalize whitespace-nowrap">
                                         {formatLabel(discussion.category)}
                                     </TableCell>
                                 )}
 
                                 {/* Status */}
                                 {!hiddenColumns.has("status") && (
-                                    <TableCell className="px-3 py-3 text-muted-foreground capitalize">
+                                    <TableCell className="px-3 py-3 text-[12px] text-muted-foreground capitalize">
                                         {formatLabel(discussion.status)}
                                     </TableCell>
                                 )}
 
                                 {/* Priority */}
                                 {!hiddenColumns.has("priority") && (
-                                    <TableCell className="px-3 py-3 text-muted-foreground capitalize">
+                                    <TableCell className="px-3 py-3 text-[12px] text-muted-foreground capitalize">
                                         {formatLabel(discussion.priority)}
                                     </TableCell>
                                 )}
 
                                 {/* Due Date */}
                                 {!hiddenColumns.has("due_date") && (
-                                    <TableCell className="px-3 py-3 text-muted-foreground">
+                                    <TableCell className="px-3 py-3 text-[12px] text-muted-foreground">
                                         {discussion.due_date
                                             ? format(
                                                   new Date(discussion.due_date),

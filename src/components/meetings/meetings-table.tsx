@@ -134,11 +134,12 @@ export function MeetingsTable({
 
     return (
         <>
-        <Table>
+        <div className="rounded-xl border-y border-border/60 bg-background/80 shadow-[0_1px_0_rgba(15,23,42,0.04)] overflow-hidden">
+        <Table className="text-[13px]">
             <TableHeader>
-                <TableRow className="bg-transparent border-b border-border/60">
+                <TableRow className="bg-muted/30 hover:bg-muted/30 border-b border-border/60">
                     {/* Checkbox */}
-                    <TableHead className="w-10 px-3">
+                    <TableHead className="w-10 px-3 py-2.5">
                         <Checkbox
                             checked={allSelected}
                             onCheckedChange={() => onToggleAllRows?.()}
@@ -225,7 +226,7 @@ export function MeetingsTable({
                             className="h-32 text-center"
                         >
                             <div className="flex flex-col items-center justify-center py-4">
-                                <CalendarDays className="h-8 w-8 text-muted-foreground mb-2" />
+                                <CalendarDays className="h-8 w-8 text-muted-foreground mb-2 stroke-[1.6]" />
                                 <p className="text-muted-foreground">
                                     No agendas found.
                                 </p>
@@ -234,9 +235,9 @@ export function MeetingsTable({
                     </TableRow>
                 ) : (
                     meetings.map((meeting) => (
-                        <TableRow key={meeting.id} className="group hover:bg-muted/30 transition-colors">
+                        <TableRow key={meeting.id} className="group hover:bg-[hsl(var(--accent-warm)/0.35)] transition-colors">
                             {/* Checkbox */}
-                            <TableCell className="px-3">
+                            <TableCell className="px-3 py-3">
                                 <Checkbox
                                     checked={selectedRows.has(meeting.id)}
                                     onCheckedChange={() =>
@@ -247,7 +248,7 @@ export function MeetingsTable({
 
                             {/* Title */}
                             {!hiddenColumns.has("title") && (
-                        <TableCell className="font-medium px-3">
+                        <TableCell className="font-medium px-3 py-3 text-[13px]">
                             <div className="flex items-center gap-1.5">
                                 <Link
                                     href={`/meetings/${meeting.id}`}
@@ -283,7 +284,7 @@ export function MeetingsTable({
 
                             {/* Template */}
                             {!hiddenColumns.has("template") && (
-                        <TableCell className="px-3 text-[13px] text-muted-foreground">
+                        <TableCell className="px-3 py-3 text-[12px] text-muted-foreground">
                             {meeting.templates?.name || (
                                 <span className="italic">
                                     No Template
@@ -294,14 +295,14 @@ export function MeetingsTable({
 
                             {/* Status */}
                             {!hiddenColumns.has("status") && (
-                        <TableCell className="px-3 text-[13px] text-muted-foreground capitalize">
+                        <TableCell className="px-3 py-3 text-[12px] text-muted-foreground capitalize">
                             {formatLabel(meeting.status)}
                         </TableCell>
                             )}
 
                             {/* Scheduled Date */}
                             {!hiddenColumns.has("scheduled_date") && (
-                        <TableCell className="px-3 text-[13px] text-muted-foreground">
+                        <TableCell className="px-3 py-3 text-[12px] text-muted-foreground">
                             {meeting.scheduled_date
                                 ? format(
                                       new Date(meeting.scheduled_date),
@@ -312,7 +313,7 @@ export function MeetingsTable({
                             )}
 
                             {/* Actions */}
-                            <TableCell className="px-3 text-right">
+                            <TableCell className="px-3 py-3 text-right">
                                 <MeetingRowActions
                                     meeting={meeting}
                                     workspaceSlug={workspaceSlug}
@@ -324,6 +325,7 @@ export function MeetingsTable({
                 )}
             </TableBody>
         </Table>
+        </div>
 
         {/* Share dialog — opened by clicking the shared_outward badge */}
         {shareDialogMeeting && (

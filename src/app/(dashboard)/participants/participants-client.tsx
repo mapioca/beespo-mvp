@@ -578,25 +578,26 @@ export function ParticipantsClient({
     // ── Render ────────────────────────────────────────────────────────────────
 
     return (
-        <div className="flex flex-col h-full bg-muted/30">
+        <div className="flex flex-col h-full bg-muted/20">
             {/* Breadcrumb */}
             <Breadcrumbs
                 items={[
-                    { label: "Directory", href: "/directory", icon: <Users className="h-3.5 w-3.5" /> },
-                    { label: "Members", icon: <BookUser className="h-3.5 w-3.5" /> },
+                    { label: "Directory", href: "/directory", icon: <Users className="h-4 w-4 stroke-[1.6]" /> },
+                    { label: "Members", icon: <BookUser className="h-4 w-4 stroke-[1.6]" /> },
                 ]}
+                className="bg-transparent ring-0 border-b border-border/60 rounded-none px-4 py-1.5"
             />
 
             {/* Action Bar + Tabs */}
-            <div className="flex items-center justify-between w-full px-6 pt-5 pb-3 shrink-0 flex-wrap gap-4">
+            <div className="flex items-center justify-between w-full px-6 pt-4 pb-3 shrink-0 flex-wrap gap-3">
                 <div className="flex items-center gap-1.5 flex-wrap">
                     {/* All tab */}
                 <button
                     onClick={() => setActiveViewId(null)}
                     className={
                         activeViewId === null
-                            ? "rounded-full border px-3.5 py-1 text-xs font-medium bg-stone-200 text-foreground border-stone-200 transition-all shadow-sm"
-                            : "rounded-full border px-3.5 py-1 text-xs font-medium text-muted-foreground border-border hover:text-foreground hover:bg-stone-100/50 hover:border-foreground/20 transition-all"
+                            ? "rounded-full border px-3.5 py-1 text-xs font-medium bg-[hsl(var(--accent-warm))] text-foreground border-border/60 transition-all shadow-[0_1px_0_rgba(15,23,42,0.08)]"
+                            : "rounded-full border px-3.5 py-1 text-xs font-medium text-muted-foreground border-border/60 hover:text-foreground hover:bg-[hsl(var(--accent-warm)/0.5)] hover:border-border/60 transition-all"
                     }
                 >
                     All Members
@@ -615,8 +616,8 @@ export function ParticipantsClient({
                             className={cn(
                                 "rounded-full border pl-3.5 pr-7 py-1 text-xs font-medium transition-all shadow-sm",
                                 activeViewId === view.id
-                                    ? "bg-stone-200 text-foreground border-stone-200"
-                                    : "text-muted-foreground border-border hover:text-foreground hover:bg-stone-100/50 hover:border-foreground/20"
+                                    ? "bg-[hsl(var(--accent-warm))] text-foreground border-border/60"
+                                    : "text-muted-foreground border-border/60 hover:text-foreground hover:bg-[hsl(var(--accent-warm)/0.5)] hover:border-border/60"
                             )}
                         >
                             {view.name}
@@ -637,7 +638,7 @@ export function ParticipantsClient({
                                     : "text-muted-foreground hover:text-foreground"
                             )}
                         >
-                            <X className="h-2.5 w-2.5" />
+                            <X className="h-2.5 w-2.5 stroke-[1.6]" />
                         </button>
                     </span>
                 ))}
@@ -669,10 +670,10 @@ export function ParticipantsClient({
                     {canManage && (
                         <Button
                             variant="ghost"
-                            className="rounded-full border px-3.5 py-1 text-xs font-medium text-muted-foreground border-border hover:bg-stone-200 hover:text-foreground hover:border-stone-200 transition-all shadow-sm"
+                            className="rounded-full border px-3.5 py-1 text-xs font-medium text-foreground border-border/60 bg-[hsl(var(--accent-warm))] hover:bg-[hsl(var(--accent-warm-hover))] transition-all shadow-[0_1px_0_rgba(15,23,42,0.08)]"
                             onClick={() => setCreateDialogOpen(true)}
                         >
-                            <Plus className="h-3.5 w-3.5 mr-1.5" />
+                            <Plus className="h-3.5 w-3.5 mr-1.5 stroke-[1.6]" />
                             New
                         </Button>
                     )}
@@ -684,18 +685,18 @@ export function ParticipantsClient({
                 <div className="flex items-center gap-2 px-6 pb-3 flex-wrap text-xs text-muted-foreground">
                     <span className="font-medium text-foreground">Filters:</span>
                     {describeViewFilters(activeView.filters).map((desc, i) => (
-                        <span key={i} className="rounded-md bg-muted px-2 py-0.5">
+                        <span key={i} className="rounded-md bg-[hsl(var(--accent-warm))] border border-border/50 px-2 py-0.5 text-slate-800">
                             {desc}
                         </span>
                     ))}
                     {search && (
-                        <span className="rounded-md bg-muted px-2 py-0.5">
+                        <span className="rounded-md bg-[hsl(var(--accent-warm))] border border-border/50 px-2 py-0.5 text-slate-800">
                             Search: &quot;{search}&quot;
                             <button
                                 onClick={() => setSearch("")}
                                 className="ml-1 text-muted-foreground hover:text-foreground"
                             >
-                                <X className="h-3 w-3 inline" />
+                                <X className="h-3 w-3 inline stroke-[1.6]" />
                             </button>
                         </span>
                     )}
@@ -705,7 +706,7 @@ export function ParticipantsClient({
             {/* Selection action bar */}
             {selectedRows.size > 0 && (
                 <div className="flex items-center gap-3 px-6 pb-3 shrink-0">
-                    <span className="text-xs font-medium tabular-nums">
+                    <span className="inline-flex items-center rounded-full bg-[hsl(var(--accent-warm))] px-2.5 py-1 text-[11px] font-medium text-slate-800 border border-border/50 tabular-nums">
                         {selectedRows.size} selected
                     </span>
                     <Button
@@ -714,7 +715,7 @@ export function ParticipantsClient({
                         className="h-7 px-2.5 text-xs text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30"
                         onClick={() => setShowBulkDeleteDialog(true)}
                     >
-                        <Trash2 className="mr-1.5 h-3 w-3" />
+                        <Trash2 className="mr-1.5 h-3 w-3 stroke-[1.6]" />
                         Delete
                     </Button>
                     <button
@@ -730,13 +731,13 @@ export function ParticipantsClient({
             {hasActiveFilters && selectedRows.size === 0 && (
                 <div className="flex items-center gap-2 px-6 pb-3 flex-wrap">
                     {search && (
-                        <span className="inline-flex items-center gap-1.5 rounded-md bg-muted px-2.5 py-1 text-xs font-medium">
+                        <span className="inline-flex items-center gap-1.5 rounded-md bg-[hsl(var(--accent-warm))] px-2.5 py-1 text-xs font-medium text-slate-800 border border-border/50">
                             Search: &quot;{search}&quot;
                             <button
                                 onClick={() => setSearch("")}
                                 className="text-muted-foreground hover:text-foreground"
                             >
-                                <X className="h-3 w-3" />
+                                <X className="h-3 w-3 stroke-[1.6]" />
                             </button>
                         </span>
                     )}
@@ -745,7 +746,7 @@ export function ParticipantsClient({
                         return tag ? (
                             <span
                                 key={tagId}
-                                className="inline-flex items-center gap-1.5 rounded-md bg-muted px-2.5 py-1 text-xs font-medium"
+                                className="inline-flex items-center gap-1.5 rounded-md bg-[hsl(var(--accent-warm))] px-2.5 py-1 text-xs font-medium text-slate-800 border border-border/50"
                             >
                                 Tag: {tag.name}
                                 <button
@@ -756,7 +757,7 @@ export function ParticipantsClient({
                                     }
                                     className="text-muted-foreground hover:text-foreground"
                                 >
-                                    <X className="h-3 w-3" />
+                                    <X className="h-3 w-3 stroke-[1.6]" />
                                 </button>
                             </span>
                         ) : null
@@ -783,7 +784,7 @@ export function ParticipantsClient({
             )}
 
             {/* Table */}
-            <div className="flex-1 overflow-auto px-6">
+            <div className="flex-1 overflow-auto px-6 pb-6">
                 <ParticipantsTable
                     participants={filteredParticipants}
                     sortConfig={sortConfig}
