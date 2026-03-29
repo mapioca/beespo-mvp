@@ -412,7 +412,7 @@ export function MeetingsClient({
                 </div>
 
                 {isLeader && (
-                    <Button asChild variant="ghost" className="rounded-full border px-3.5 py-1 text-xs font-medium text-muted-foreground border-border hover:bg-stone-200 hover:text-foreground hover:border-stone-200 transition-all shadow-sm">
+                    <Button asChild variant="ghost" className="rounded-full border px-3.5 py-1 text-xs font-medium text-muted-foreground border-border hover:bg-muted/60 hover:text-foreground hover:border-border transition-all">
                         <Link href="/meetings/new" className="flex items-center gap-1.5">
                             <Plus className="h-3.5 w-3.5" />
                             New
@@ -423,26 +423,26 @@ export function MeetingsClient({
 
             {/* View filter summary bar (shown when a custom view is active) */}
             {activeView && (
-                <div className="flex items-center gap-2 px-6 pb-3 flex-wrap text-xs text-muted-foreground">
+                <div className="flex items-center gap-2 px-6 pb-3 flex-wrap text-[11px] text-muted-foreground">
                     <span className="font-medium text-foreground">Filters:</span>
-                    <span className="rounded-md bg-muted px-2 py-0.5 capitalize">
+                    <span className="rounded-md bg-[#EFE7E1] px-2 py-0.5 capitalize text-slate-800">
                         {activeView.filters.category ?? "all"} meetings
                     </span>
                     {activeView.filters.statuses?.map((s) => (
-                        <span key={s} className="rounded-md bg-muted px-2 py-0.5">
+                        <span key={s} className="rounded-md bg-[#EFE7E1] px-2 py-0.5 text-slate-800">
                             {formatStatusLabel(s)}
                         </span>
                     ))}
                     {activeView.filters.templateIds?.map((id) => (
-                        <span key={id} className="rounded-md bg-muted px-2 py-0.5">
+                        <span key={id} className="rounded-md bg-[#EFE7E1] px-2 py-0.5 text-slate-800">
                             {getTemplateName(id)}
                         </span>
                     ))}
                     {activeView.filters.hasZoom && (
-                        <span className="rounded-md bg-muted px-2 py-0.5">🎥 Has Zoom</span>
+                        <span className="rounded-md bg-[#EFE7E1] px-2 py-0.5 text-slate-800">🎥 Has Zoom</span>
                     )}
                     {search && (
-                        <span className="rounded-md bg-muted px-2 py-0.5">
+                        <span className="rounded-md bg-[#EFE7E1] px-2 py-0.5 text-slate-800">
                             Search: &quot;{search}&quot;
                             <button
                                 onClick={() => setSearch("")}
@@ -483,7 +483,7 @@ export function MeetingsClient({
             {hasActiveFilters && selectedRows.size === 0 && (
                 <div className="flex items-center gap-2 px-6 pb-3 flex-wrap">
                     {search && (
-                        <span className="inline-flex items-center gap-1.5 rounded-md bg-muted px-2.5 py-1 text-xs font-medium">
+                        <span className="inline-flex items-center gap-1.5 rounded-md bg-[#EFE7E1] px-2.5 py-1 text-xs font-medium text-slate-800">
                             Search: &quot;{search}&quot;
                             <button
                                 onClick={() => setSearch("")}
@@ -496,7 +496,7 @@ export function MeetingsClient({
                     {selectedStatuses.map((s) => (
                         <span
                             key={s}
-                            className="inline-flex items-center gap-1.5 rounded-md bg-muted px-2.5 py-1 text-xs font-medium"
+                            className="inline-flex items-center gap-1.5 rounded-md bg-[#EFE7E1] px-2.5 py-1 text-xs font-medium text-slate-800"
                         >
                             {formatStatusLabel(s)}
                             <button
@@ -510,7 +510,7 @@ export function MeetingsClient({
                     {selectedTemplates.map((id) => (
                         <span
                             key={id}
-                            className="inline-flex items-center gap-1.5 rounded-md bg-muted px-2.5 py-1 text-xs font-medium"
+                            className="inline-flex items-center gap-1.5 rounded-md bg-[#EFE7E1] px-2.5 py-1 text-xs font-medium text-slate-800"
                         >
                             {getTemplateName(id)}
                             <button

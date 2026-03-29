@@ -251,7 +251,7 @@ export function MeetingsTable({
                             <div className="flex items-center gap-1.5">
                                 <Link
                                     href={`/meetings/${meeting.id}`}
-                                    className="hover:underline"
+                                    className="hover:underline text-[13px]"
                                 >
                                     {meeting.title}
                                 </Link>

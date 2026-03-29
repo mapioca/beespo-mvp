@@ -115,7 +115,7 @@ export function SidebarNavCollapsible({
                   className={cn(
                     "flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors",
                     isActive
-                      ? "bg-blue-50 text-foreground font-medium"
+                      ? "bg-[#EFE7E1] text-foreground font-medium"
                       : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
                   )}
                 >

@@ -30,7 +30,7 @@ export function SidebarNavItem({
       className={cn(
         "flex items-center gap-3 rounded-lg px-3 py-1.5 text-sm transition-colors",
         isActive
-          ? "bg-blue-50 text-foreground"
+          ? "bg-[#EFE7E1] text-foreground"
           : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
         isCollapsed && "justify-center px-2",
         isNested && !isCollapsed && "pl-7"

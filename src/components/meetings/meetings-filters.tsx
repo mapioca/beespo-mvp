@@ -125,7 +125,7 @@ export function MeetingsFilters({
                         setTimeout(() => handleSearchChange(value), 300);
 // No return here
                     }}
-                    className="max-w-xs"
+                    className="max-w-xs bg-transparent border-border/60 focus-visible:ring-0 focus-visible:border-foreground/30"
                 />
                 {isPending && (
                     <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
@@ -135,11 +135,11 @@ export function MeetingsFilters({
             {/* Status Filter */}
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm" className="h-9">
+                    <Button variant="outline" size="sm" className="h-9 border-0 bg-[#EFE7E1] text-slate-800 hover:bg-[#E6DDD6]">
                         <PlusCircle className="mr-2 h-4 w-4" />
                         Status
                         {currentFilters.status.length > 0 && (
-                            <span className="ml-2 rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground">
+                            <span className="ml-2 rounded-full bg-white/80 px-2 py-0.5 text-xs text-slate-700">
                                 {currentFilters.status.length}
                             </span>
                         )}
@@ -180,17 +180,17 @@ export function MeetingsFilters({
             {/* Template Filter */}
             {templates.length > 0 && (
                 <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="outline" size="sm" className="h-9">
-                            <FileText className="mr-2 h-4 w-4" />
-                            Template
-                            {currentFilters.templateIds.length > 0 && (
-                                <span className="ml-2 rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground">
-                                    {currentFilters.templateIds.length}
-                                </span>
-                            )}
-                        </Button>
-                    </DropdownMenuTrigger>
+                <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm" className="h-9 border-0 bg-[#EFE7E1] text-slate-800 hover:bg-[#E6DDD6]">
+                        <FileText className="mr-2 h-4 w-4" />
+                        Template
+                        {currentFilters.templateIds.length > 0 && (
+                            <span className="ml-2 rounded-full bg-white/80 px-2 py-0.5 text-xs text-slate-700">
+                                {currentFilters.templateIds.length}
+                            </span>
+                        )}
+                    </Button>
+                </DropdownMenuTrigger>
                     <DropdownMenuContent align="start" className="w-[260px] max-h-[300px] overflow-y-auto">
                         <div className="p-2">
                             <div className="space-y-1">
@@ -248,11 +248,11 @@ export function MeetingsFilters({
             {currentFilters.status.map((status) => {
                 const option = STATUS_OPTIONS.find((o) => o.value === status);
                 return (
-                    <Button key={status} variant="secondary" size="sm" className="h-9" onClick={() => toggleStatus(status as MeetingStatus)}>
-                        {option?.label}
-                        <X className="ml-2 h-3 w-3" />
-                    </Button>
-                );
+                <Button key={status} variant="secondary" size="sm" className="h-9 bg-[#EFE7E1] text-slate-800 hover:bg-[#E6DDD6]" onClick={() => toggleStatus(status as MeetingStatus)}>
+                    {option?.label}
+                    <X className="ml-2 h-3 w-3" />
+                </Button>
+            );
             })}
 
             {/* Active Filter Badges - Templates */}
@@ -261,7 +261,7 @@ export function MeetingsFilters({
                     key={templateId}
                     variant="secondary"
                     size="sm"
-                    className="h-9"
+                    className="h-9 bg-[#EFE7E1] text-slate-800 hover:bg-[#E6DDD6]"
                     onClick={() => toggleTemplate(templateId)}
                 >
                     {getTemplateName(templateId)}
@@ -270,7 +270,7 @@ export function MeetingsFilters({
             ))}
 
             {hasActiveFilters && (
-                <Button variant="ghost" size="sm" className="h-9" onClick={clearFilters}>
+                <Button variant="ghost" size="sm" className="h-9 text-slate-600 hover:text-slate-900" onClick={clearFilters}>
                     Reset
                     <X className="ml-2 h-4 w-4" />
                 </Button>
