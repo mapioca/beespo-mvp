@@ -135,7 +135,7 @@ export function MeetingsFilters({
             {/* Status Filter */}
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm" className="h-9 border-0 bg-[#EFE7E1] text-slate-800 hover:bg-[#E6DDD6]">
+                    <Button variant="outline" size="sm" className="h-9 border-0 bg-[hsl(var(--accent-warm))] text-slate-800 hover:bg-[hsl(var(--accent-warm-hover))]">
                         <PlusCircle className="mr-2 h-4 w-4" />
                         Status
                         {currentFilters.status.length > 0 && (
@@ -181,7 +181,7 @@ export function MeetingsFilters({
             {templates.length > 0 && (
                 <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm" className="h-9 border-0 bg-[#EFE7E1] text-slate-800 hover:bg-[#E6DDD6]">
+                    <Button variant="outline" size="sm" className="h-9 border-0 bg-[hsl(var(--accent-warm))] text-slate-800 hover:bg-[hsl(var(--accent-warm-hover))]">
                         <FileText className="mr-2 h-4 w-4" />
                         Template
                         {currentFilters.templateIds.length > 0 && (
@@ -248,7 +248,7 @@ export function MeetingsFilters({
             {currentFilters.status.map((status) => {
                 const option = STATUS_OPTIONS.find((o) => o.value === status);
                 return (
-                <Button key={status} variant="secondary" size="sm" className="h-9 bg-[#EFE7E1] text-slate-800 hover:bg-[#E6DDD6]" onClick={() => toggleStatus(status as MeetingStatus)}>
+                <Button key={status} variant="secondary" size="sm" className="h-9 bg-[hsl(var(--accent-warm))] text-slate-800 hover:bg-[hsl(var(--accent-warm-hover))]" onClick={() => toggleStatus(status as MeetingStatus)}>
                     {option?.label}
                     <X className="ml-2 h-3 w-3" />
                 </Button>
@@ -261,7 +261,7 @@ export function MeetingsFilters({
                     key={templateId}
                     variant="secondary"
                     size="sm"
-                    className="h-9 bg-[#EFE7E1] text-slate-800 hover:bg-[#E6DDD6]"
+                    className="h-9 bg-[hsl(var(--accent-warm))] text-slate-800 hover:bg-[hsl(var(--accent-warm-hover))]"
                     onClick={() => toggleTemplate(templateId)}
                 >
                     {getTemplateName(templateId)}

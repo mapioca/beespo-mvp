@@ -20,6 +20,8 @@
     --muted-foreground: 0 0% 40%;
     --accent: 0 0% 96%;
     --accent-foreground: 0 0% 0%;
+    --accent-warm: 24 38% 91%; /* Warm peach-gray (#EFE7E1) */
+    --accent-warm-hover: 24 27% 88%; /* Slightly deeper warm hover (#E6DDD6) */
     --destructive: 0 84% 60%; /* Error red - minimal color */
     --destructive-foreground: 0 0% 100%;
     --border: 0 0% 90%; /* Light gray for borders */
@@ -49,6 +51,8 @@
     --muted-foreground: 0 0% 60%;
     --accent: 0 0% 10%;
     --accent-foreground: 0 0% 100%;
+    --accent-warm: 24 18% 22%;
+    --accent-warm-hover: 24 20% 26%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 0%;
     --border: 0 0% 15%;

@@ -65,7 +65,7 @@ function FavoriteItemRow({
     <div
       className={cn(
         "group flex items-center rounded-lg transition-colors",
-        isActive ? "bg-[#EFE7E1]" : "hover:bg-muted/60"
+        isActive ? "bg-[hsl(var(--accent-warm))]" : "hover:bg-muted/60"
       )}
     >
       <Link

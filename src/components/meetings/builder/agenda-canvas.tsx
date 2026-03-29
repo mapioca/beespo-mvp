@@ -100,7 +100,7 @@ function SortableAgendaRow({
                         )}
                     >
                         {/* Container Header */}
-                        <div className="flex items-center gap-2 px-2.5 py-2.5">
+                        <div className="flex items-center gap-2 px-3 py-2.5">
                             <button
                                 type="button"
                                 onClick={(e) => { e.stopPropagation(); onToggleExpand?.(); }}
@@ -117,11 +117,11 @@ function SortableAgendaRow({
                                 {item.title}
                             </span>
 
-                            <span className="text-[11px] text-muted-foreground">
+                            <span className="text-[11px] text-muted-foreground tabular-nums">
                                 {childCount} item{childCount !== 1 ? "s" : ""}
                             </span>
 
-                            <span className="text-[11px] text-muted-foreground ml-2">
+                            <span className="text-[11px] text-muted-foreground ml-2 tabular-nums">
                                 {item.duration_minutes}m
                             </span>
 
@@ -143,18 +143,18 @@ function SortableAgendaRow({
                                     {item.childItems.map((child) => (
                                         <div
                                             key={child.id}
-                                            className="flex flex-col gap-1 p-2 bg-background rounded border border-border/60"
+                                            className="flex flex-col gap-1 p-2 bg-background/70 rounded-md border border-border/40"
                                         >
                                             <div className="flex items-center gap-2">
                                                 <span className="text-sm font-medium flex-1 truncate">{child.title}</span>
                                                 {child.status && (
-                                                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted/50 capitalize font-medium">
+                                                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted/60 capitalize font-medium">
                                                         {child.status.replace("_", " ")}
                                                     </span>
                                                 )}
                                             </div>
                                             {child.description && (
-                                                <p className="text-xs text-muted-foreground italic line-clamp-2">
+                                                <p className="text-[11px] text-muted-foreground italic line-clamp-2">
                                                     {child.description}
                                                 </p>
                                             )}
@@ -198,7 +198,7 @@ function SortableAgendaRow({
                         {...attributes}
                         {...listeners}
                     >
-                        <div className="flex items-center gap-2 p-1.5">
+                        <div className="flex items-center gap-2 px-3 py-2.5">
                             <div className="w-7 shrink-0" />
                             <span className="font-medium text-[12px] tracking-[0.2em] uppercase flex-1 truncate text-muted-foreground pl-1">
                                 {item.title || "Untitled section"}
@@ -293,13 +293,13 @@ function SortableAgendaRow({
                     {...listeners}
                 >
                     {/* Header row */}
-                    <div className="flex items-center gap-2 px-2.5 py-2.5">
+                    <div className="flex items-center gap-2 px-3 py-2.5">
                         <div className="w-7 shrink-0" />
                         <span className="font-medium text-[13px] flex-1 truncate text-foreground pl-1">
                             {item.title}
                         </span>
 
-                        <span className="text-[11px] text-muted-foreground shrink-0">
+                        <span className="text-[11px] text-muted-foreground shrink-0 tabular-nums">
                             {item.duration_minutes}m
                         </span>
 
