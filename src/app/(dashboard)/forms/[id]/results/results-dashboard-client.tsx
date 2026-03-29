@@ -122,10 +122,12 @@ export function ResultsDashboardClient({
                         </Button>
                         <div>
                             <h1 className="text-2xl font-bold">{form.title}</h1>
-                            <p className="text-muted-foreground">Response Analytics</p>
+                            <p className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+                                Response Analytics
+                            </p>
                         </div>
                     </div>
-                    <Button variant="outline" onClick={handleExportCSV} className="border-border/60 hover:bg-[hsl(var(--accent-warm)/0.6)]">
+                    <Button variant="outline" onClick={handleExportCSV} className="border-border/60 hover:bg-[hsl(var(--accent-warm)/0.6)] shadow-none">
                         <Download className="h-4 w-4 mr-2 stroke-[1.6]" />
                         Export CSV
                     </Button>
@@ -133,9 +135,11 @@ export function ResultsDashboardClient({
 
                 {/* Summary Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <Card>
+                    <Card className="border-border/50 bg-background/80">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Total Views</CardTitle>
+                            <CardTitle className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+                                Total Views
+                            </CardTitle>
                             <Eye className="h-4 w-4 text-muted-foreground stroke-[1.6]" />
                         </CardHeader>
                         <CardContent>
@@ -143,9 +147,9 @@ export function ResultsDashboardClient({
                         </CardContent>
                     </Card>
 
-                    <Card>
+                    <Card className="border-border/50 bg-background/80">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">
+                            <CardTitle className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
                                 Total Submissions
                             </CardTitle>
                             <FileText className="h-4 w-4 text-muted-foreground stroke-[1.6]" />
@@ -155,9 +159,9 @@ export function ResultsDashboardClient({
                         </CardContent>
                     </Card>
 
-                    <Card>
+                    <Card className="border-border/50 bg-background/80">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">
+                            <CardTitle className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
                                 Completion Rate
                             </CardTitle>
                             <TrendingUp className="h-4 w-4 text-muted-foreground stroke-[1.6]" />
@@ -176,18 +180,20 @@ export function ResultsDashboardClient({
 
                 {/* Raw Responses Table */}
                 <Collapsible open={isTableExpanded} onOpenChange={setIsTableExpanded}>
-                    <Card>
-                        <CardHeader>
+                    <Card className="border-border/50 bg-background/80">
+                        <CardHeader className="pb-2">
                             <CollapsibleTrigger asChild>
                                 <div className="flex items-center justify-between cursor-pointer">
                                     <div>
-                                        <CardTitle>All Responses</CardTitle>
+                                        <CardTitle className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+                                            All Responses
+                                        </CardTitle>
                                         <CardDescription>
                                             {submissions.length} total response
                                             {submissions.length !== 1 ? "s" : ""}
                                         </CardDescription>
                                     </div>
-                                    <Button variant="ghost" size="icon">
+                                    <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
                                         {isTableExpanded ? (
                                             <ChevronUp className="h-4 w-4 stroke-[1.6]" />
                                         ) : (
@@ -205,19 +211,23 @@ export function ResultsDashboardClient({
                                     </div>
                                 ) : (
                                     <div className="overflow-x-auto">
-                                        <Table>
+                                        <Table className="border-border/50 border-y">
                                             <TableHeader>
-                                                <TableRow>
-                                                    <TableHead className="w-[150px]">Submitted</TableHead>
+                                                <TableRow className="border-border/50">
+                                                    <TableHead className="w-[150px] text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+                                                        Submitted
+                                                    </TableHead>
                                                     {form.schema.fields.map((field) => (
-                                                        <TableHead key={field.id}>{field.label}</TableHead>
+                                                        <TableHead key={field.id} className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+                                                            {field.label}
+                                                        </TableHead>
                                                     ))}
                                                 </TableRow>
                                             </TableHeader>
                                             <TableBody>
                                                 {submissions.slice(0, 50).map((submission) => (
-                                                    <TableRow key={submission.id}>
-                                                        <TableCell className="text-muted-foreground">
+                                                    <TableRow key={submission.id} className="border-border/30 hover:bg-[hsl(var(--accent-warm)/0.35)]">
+                                                        <TableCell className="text-muted-foreground text-sm">
                                                             {format(
                                                                 new Date(submission.submitted_at),
                                                                 "MMM d, h:mm a"
@@ -234,7 +244,7 @@ export function ResultsDashboardClient({
                                                             }
 
                                                             return (
-                                                                <TableCell key={field.id} className="max-w-[200px] truncate">
+                                                                <TableCell key={field.id} className="max-w-[200px] truncate text-sm">
                                                                     {displayValue}
                                                                 </TableCell>
                                                             );

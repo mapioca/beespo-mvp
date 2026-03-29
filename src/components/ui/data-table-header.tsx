@@ -75,8 +75,8 @@ export function DataTableColumnHeader({
                     <button
                         className={cn(
                             "inline-flex items-center gap-1.5 -mx-1.5 px-1.5 py-1 rounded transition-colors",
-                            "hover:bg-accent hover:text-accent-foreground",
-                            open && "bg-accent text-accent-foreground",
+                            "hover:bg-[hsl(var(--accent-warm)/0.6)] hover:text-foreground",
+                            open && "bg-[hsl(var(--accent-warm)/0.6)] text-foreground",
                             hasActiveFilter && "text-foreground"
                         )}
                     >
@@ -99,22 +99,22 @@ export function DataTableColumnHeader({
                     <div className="flex flex-col">
                         {/* Search */}
                         {searchable && onSearchChange && (
-                            <div className="p-2 border-b">
-                                <Input
-                                    placeholder={
-                                        searchPlaceholder || "Search..."
-                                    }
-                                    value={searchValue || ""}
-                                    onChange={(e) =>
-                                        onSearchChange(e.target.value)
-                                    }
-                                    className="h-8 text-sm"
-                                />
-                            </div>
-                        )}
+                        <div className="p-2 border-b border-border/60">
+                            <Input
+                                placeholder={
+                                    searchPlaceholder || "Search..."
+                                }
+                                value={searchValue || ""}
+                                onChange={(e) =>
+                                    onSearchChange(e.target.value)
+                                }
+                                className="h-8 text-sm bg-background border-border/60 focus-visible:ring-0 focus-visible:border-foreground/30"
+                            />
+                        </div>
+                    )}
 
-                        {/* Sort Options */}
-                        <div className="p-1">
+                    {/* Sort Options */}
+                    <div className="p-1">
                             {onSortAsc && (
                                 <button
                                     onClick={() => {
@@ -122,13 +122,13 @@ export function DataTableColumnHeader({
                                         setOpen(false)
                                     }}
                                     className={cn(
-                                        "flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent",
+                                        "flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-[hsl(var(--accent-warm)/0.6)]",
                                         sortActive &&
                                             sortDirection === "asc" &&
-                                            "bg-accent"
+                                            "bg-[hsl(var(--accent-warm)/0.6)]"
                                     )}
                                 >
-                                    <ArrowUp className="h-4 w-4" />
+                                    <ArrowUp className="h-4 w-4 stroke-[1.6]" />
                                     Sort ascending
                                 </button>
                             )}
@@ -139,13 +139,13 @@ export function DataTableColumnHeader({
                                         setOpen(false)
                                     }}
                                     className={cn(
-                                        "flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent",
+                                        "flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-[hsl(var(--accent-warm)/0.6)]",
                                         sortActive &&
                                             sortDirection === "desc" &&
-                                            "bg-accent"
+                                            "bg-[hsl(var(--accent-warm)/0.6)]"
                                     )}
                                 >
-                                    <ArrowDown className="h-4 w-4" />
+                                    <ArrowDown className="h-4 w-4 stroke-[1.6]" />
                                     Sort descending
                                 </button>
                             )}
@@ -156,7 +156,7 @@ export function DataTableColumnHeader({
                             filterOptions.length > 0 &&
                             onFilterToggle && (
                                 <>
-                                    <div className="border-t" />
+                                    <div className="border-t border-border/60" />
                                     <div className="p-1">
                                         <div className="px-2 py-1.5 text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">
                                             Filter
@@ -175,19 +175,19 @@ export function DataTableColumnHeader({
                                                                 option.value
                                                             )
                                                         }
-                                                        className="flex w-full items-center justify-between rounded-sm px-2 py-1.5 text-sm hover:bg-accent"
+                                                        className="flex w-full items-center justify-between rounded-sm px-2 py-1.5 text-sm hover:bg-[hsl(var(--accent-warm)/0.6)]"
                                                     >
                                                         <div className="flex items-center gap-2">
                                                             <div
                                                                 className={cn(
                                                                     "h-4 w-4 rounded-sm border flex items-center justify-center",
                                                                     isSelected
-                                                                        ? "bg-primary border-primary"
-                                                                        : "border-input"
+                                                                        ? "bg-[hsl(var(--accent-warm))] border-[hsl(var(--accent-warm-hover))]"
+                                                                        : "border-border/60"
                                                                 )}
                                                             >
                                                                 {isSelected && (
-                                                                    <Check className="h-3 w-3 text-primary-foreground" />
+                                                                    <Check className="h-3 w-3 text-foreground" />
                                                                 )}
                                                             </div>
                                                             <span>
@@ -211,16 +211,16 @@ export function DataTableColumnHeader({
                         {/* Hide Column */}
                         {onHide && (
                             <>
-                                <div className="border-t" />
+                                <div className="border-t border-border/60" />
                                 <div className="p-1">
                                     <button
                                         onClick={() => {
                                             onHide()
                                             setOpen(false)
                                         }}
-                                        className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent"
+                                        className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-[hsl(var(--accent-warm)/0.6)]"
                                     >
-                                        <EyeOff className="h-4 w-4" />
+                                        <EyeOff className="h-4 w-4 stroke-[1.6]" />
                                         Hide column
                                     </button>
                                 </div>

@@ -40,16 +40,18 @@ export function ResultsCharts({
   return (
     <>
       {/* Submissions Over Time */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Submissions Over Time</CardTitle>
+      <Card className="border-border/50 bg-background/80">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+            Submissions Over Time
+          </CardTitle>
           <CardDescription>Last 30 days</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={submissionsOverTime}>
-                <CartesianGrid strokeDasharray="3 3" />
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                 <XAxis
                   dataKey="date"
                   tickFormatter={(value) => format(new Date(value), "MMM d")}
@@ -65,7 +67,7 @@ export function ResultsCharts({
                 <Line
                   type="monotone"
                   dataKey="count"
-                  stroke="hsl(var(--primary))"
+                  stroke="hsl(var(--accent-warm-hover))"
                   strokeWidth={2}
                   dot={false}
                 />
@@ -87,16 +89,18 @@ export function ResultsCharts({
               );
 
               return (
-                <Card key={field.id}>
-                  <CardHeader>
-                    <CardTitle className="text-base">{field.label}</CardTitle>
+                <Card key={field.id} className="border-border/50 bg-background/80">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+                      {field.label}
+                    </CardTitle>
                     <CardDescription>Response distribution</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="h-[200px]">
                       <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={chartData} layout="vertical">
-                          <CartesianGrid strokeDasharray="3 3" />
+                          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                           <XAxis type="number" allowDecimals={false} />
                           <YAxis
                             type="category"
@@ -107,7 +111,7 @@ export function ResultsCharts({
                           <Tooltip />
                           <Bar
                             dataKey="count"
-                            fill="hsl(var(--primary))"
+                            fill="hsl(var(--accent-warm))"
                             radius={[0, 4, 4, 0]}
                           />
                         </BarChart>

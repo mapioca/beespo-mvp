@@ -31,7 +31,7 @@ export function SidebarNavItem({
         "flex items-center gap-2.5 rounded-lg px-3 py-1.5 text-sm transition-colors",
         isActive
           ? "bg-[hsl(var(--accent-warm))] text-foreground"
-          : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+          : "text-muted-foreground hover:bg-[hsl(var(--accent-warm)/0.6)] hover:text-foreground",
         isCollapsed && "justify-center px-2",
         isNested && !isCollapsed && "pl-6"
       )}

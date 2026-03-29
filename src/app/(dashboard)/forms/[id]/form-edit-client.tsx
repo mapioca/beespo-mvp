@@ -98,7 +98,7 @@ export function FormEditClient({
     return (
         <div className="h-full flex flex-col overflow-hidden bg-muted/20">
             {/* Header */}
-            <div className="border-b border-border/60 bg-background/90 px-6 py-3 flex items-center justify-between">
+            <div className="border-b border-border/60 bg-transparent px-6 py-3 flex items-center justify-between">
                 <div className="flex items-center gap-4">
                     <Button variant="ghost" size="icon" asChild>
                         <Link href="/forms">
@@ -120,7 +120,7 @@ export function FormEditClient({
                                 {currentForm.is_published ? "Published" : "Draft"}
                             </Badge>
                         </div>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
                             {submissionCount} response{submissionCount !== 1 ? "s" : ""}
                         </p>
                     </div>
@@ -131,7 +131,7 @@ export function FormEditClient({
                         variant="outline"
                         onClick={handlePublishToggle}
                         disabled={isPublishing}
-                        className="border-border/60 hover:bg-[hsl(var(--accent-warm)/0.6)]"
+                        className="border-border/60 hover:bg-[hsl(var(--accent-warm)/0.6)] shadow-none"
                     >
                         {currentForm.is_published ? (
                             <>
@@ -146,12 +146,12 @@ export function FormEditClient({
                         )}
                     </Button>
                     {currentForm.is_published && (
-                        <Button variant="outline" onClick={() => setShowShareModal(true)} className="border-border/60 hover:bg-[hsl(var(--accent-warm)/0.6)]">
+                        <Button variant="outline" onClick={() => setShowShareModal(true)} className="border-border/60 hover:bg-[hsl(var(--accent-warm)/0.6)] shadow-none">
                             <Share2 className="h-4 w-4 mr-2 stroke-[1.6]" />
                             Share
                         </Button>
                     )}
-                    <Button variant="outline" asChild className="border-border/60 hover:bg-[hsl(var(--accent-warm)/0.6)]">
+                    <Button variant="outline" asChild className="border-border/60 hover:bg-[hsl(var(--accent-warm)/0.6)] shadow-none">
                         <Link href={`/forms/${form.id}/results`}>
                             <BarChart2 className="h-4 w-4 mr-2 stroke-[1.6]" />
                             Results
