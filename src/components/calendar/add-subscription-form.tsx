@@ -132,10 +132,10 @@ export function AddSubscriptionForm({ onCreated }: AddSubscriptionFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="flex items-center gap-3 p-4 bg-muted/50 rounded-lg">
-        <Calendar className="h-8 w-8 text-muted-foreground" />
+      <div className="flex items-center gap-3 p-4 bg-[hsl(var(--accent-warm)/0.35)] rounded-lg border border-border/50">
+        <Calendar className="h-8 w-8 text-muted-foreground stroke-[1.6]" />
         <div>
-          <p className="font-medium">Add External Calendar</p>
+          <p className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">Add External Calendar</p>
           <p className="text-sm text-muted-foreground">
             Subscribe to an iCal feed to display events on your calendar
           </p>
@@ -143,7 +143,9 @@ export function AddSubscriptionForm({ onCreated }: AddSubscriptionFormProps) {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="name">Calendar Name</Label>
+        <Label htmlFor="name" className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+          Calendar Name
+        </Label>
         <Input
           id="name"
           value={name}
@@ -151,11 +153,14 @@ export function AddSubscriptionForm({ onCreated }: AddSubscriptionFormProps) {
           placeholder="e.g., Team Holidays"
           disabled={isLoading}
           required
+          className="bg-background border-border/60 focus-visible:ring-0 focus-visible:border-foreground/30"
         />
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="url">iCal URL</Label>
+        <Label htmlFor="url" className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+          iCal URL
+        </Label>
         <Input
           id="url"
           type="url"
@@ -167,10 +172,11 @@ export function AddSubscriptionForm({ onCreated }: AddSubscriptionFormProps) {
           placeholder="https://example.com/calendar.ics"
           disabled={isLoading}
           required
+          className="bg-background border-border/60 focus-visible:ring-0 focus-visible:border-foreground/30"
         />
         {urlError && (
           <div className="flex items-center gap-1 text-sm text-destructive">
-            <AlertCircle className="h-4 w-4" />
+            <AlertCircle className="h-4 w-4 stroke-[1.6]" />
             {urlError}
           </div>
         )}
@@ -180,7 +186,9 @@ export function AddSubscriptionForm({ onCreated }: AddSubscriptionFormProps) {
       </div>
 
       <div className="space-y-2">
-        <Label>Color</Label>
+        <Label className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+          Color
+        </Label>
         <div className="flex gap-2 flex-wrap">
           {PRESET_COLORS.map((c) => (
             <button
@@ -199,10 +207,10 @@ export function AddSubscriptionForm({ onCreated }: AddSubscriptionFormProps) {
         </div>
       </div>
 
-      <Button type="submit" disabled={isLoading || !name || !url || !!urlError}>
+      <Button type="submit" disabled={isLoading || !name || !url || !!urlError} className="bg-[hsl(var(--accent-warm))] text-foreground hover:bg-[hsl(var(--accent-warm-hover))] shadow-none">
         {isLoading ? (
           <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            <Loader2 className="mr-2 h-4 w-4 animate-spin stroke-[1.6]" />
             Adding Calendar...
           </>
         ) : (

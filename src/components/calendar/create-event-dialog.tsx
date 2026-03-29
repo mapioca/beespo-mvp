@@ -255,8 +255,8 @@ export function CreateEventDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <CalendarDays className="h-5 w-5" />
+          <DialogTitle className="flex items-center gap-2 text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+            <CalendarDays className="h-4 w-4 stroke-[1.6]" />
             {isImporting ? "Import to Beespo" : "Create Event"}
           </DialogTitle>
           <DialogDescription>
@@ -269,7 +269,9 @@ export function CreateEventDialog({
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Title */}
           <div className="space-y-2">
-            <Label htmlFor="title">Title *</Label>
+            <Label htmlFor="title" className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+              Title
+            </Label>
             <Input
               id="title"
               value={title}
@@ -278,12 +280,15 @@ export function CreateEventDialog({
               maxLength={200}
               required
               disabled={isLoading}
+              className="bg-background border-border/60 focus-visible:ring-0 focus-visible:border-foreground/30"
             />
           </div>
 
           {/* All Day Toggle */}
           <div className="flex items-center justify-between">
-            <Label htmlFor="isAllDay" className="cursor-pointer">All-day event</Label>
+            <Label htmlFor="isAllDay" className="cursor-pointer text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+              All-day event
+            </Label>
             <Switch
               id="isAllDay"
               checked={isAllDay}
@@ -295,7 +300,9 @@ export function CreateEventDialog({
           {/* Start Date/Time */}
           <div className={`grid gap-4 ${isAllDay ? "grid-cols-1" : "grid-cols-2"}`}>
             <div className="space-y-2">
-              <Label htmlFor="startDate">Start Date *</Label>
+              <Label htmlFor="startDate" className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+                Start date
+              </Label>
               <Input
                 id="startDate"
                 type="date"
@@ -303,11 +310,14 @@ export function CreateEventDialog({
                 onChange={(e) => setStartDate(e.target.value)}
                 required
                 disabled={isLoading}
+                className="bg-background border-border/60 focus-visible:ring-0 focus-visible:border-foreground/30"
               />
             </div>
             {!isAllDay && (
               <div className="space-y-2">
-                <Label htmlFor="startTime">Start Time *</Label>
+                <Label htmlFor="startTime" className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+                  Start time
+                </Label>
                 <Input
                   id="startTime"
                   type="time"
@@ -315,6 +325,7 @@ export function CreateEventDialog({
                   onChange={(e) => setStartTime(e.target.value)}
                   required
                   disabled={isLoading}
+                  className="bg-background border-border/60 focus-visible:ring-0 focus-visible:border-foreground/30"
                 />
               </div>
             )}
@@ -323,7 +334,9 @@ export function CreateEventDialog({
           {/* End Date/Time */}
           <div className={`grid gap-4 ${isAllDay ? "grid-cols-1" : "grid-cols-2"}`}>
             <div className="space-y-2">
-              <Label htmlFor="endDate">End Date *</Label>
+              <Label htmlFor="endDate" className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+                End date
+              </Label>
               <Input
                 id="endDate"
                 type="date"
@@ -331,11 +344,14 @@ export function CreateEventDialog({
                 onChange={(e) => setEndDate(e.target.value)}
                 required
                 disabled={isLoading}
+                className="bg-background border-border/60 focus-visible:ring-0 focus-visible:border-foreground/30"
               />
             </div>
             {!isAllDay && (
               <div className="space-y-2">
-                <Label htmlFor="endTime">End Time *</Label>
+                <Label htmlFor="endTime" className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+                  End time
+                </Label>
                 <Input
                   id="endTime"
                   type="time"
@@ -343,6 +359,7 @@ export function CreateEventDialog({
                   onChange={(e) => setEndTime(e.target.value)}
                   required
                   disabled={isLoading}
+                  className="bg-background border-border/60 focus-visible:ring-0 focus-visible:border-foreground/30"
                 />
               </div>
             )}
@@ -350,8 +367,8 @@ export function CreateEventDialog({
 
           {/* Location */}
           <div className="space-y-2">
-            <Label htmlFor="location" className="flex items-center gap-1.5">
-              <MapPin className="h-3.5 w-3.5" />
+            <Label htmlFor="location" className="flex items-center gap-1.5 text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+              <MapPin className="h-3.5 w-3.5 stroke-[1.6]" />
               Location
             </Label>
             <Input
@@ -360,12 +377,15 @@ export function CreateEventDialog({
               onChange={(e) => setLocation(e.target.value)}
               placeholder="Event location"
               disabled={isLoading}
+              className="bg-background border-border/60 focus-visible:ring-0 focus-visible:border-foreground/30"
             />
           </div>
 
           {/* Description */}
           <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
+            <Label htmlFor="description" className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+              Description
+            </Label>
             <Textarea
               id="description"
               value={description}
@@ -373,17 +393,18 @@ export function CreateEventDialog({
               placeholder="Event details..."
               rows={3}
               disabled={isLoading}
+              className="bg-background border-border/60 focus-visible:ring-0 focus-visible:border-foreground/30"
             />
           </div>
 
-          <Separator />
+          <Separator className="bg-border/60" />
 
           {/* Announce in Meetings Section */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Megaphone className="h-4 w-4 text-amber-500" />
-                <Label htmlFor="promoteToAnnouncement" className="cursor-pointer font-medium">
+                <Megaphone className="h-4 w-4 text-amber-500 stroke-[1.6]" />
+                <Label htmlFor="promoteToAnnouncement" className="cursor-pointer text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
                   Announce in Meetings
                 </Label>
               </div>
@@ -396,14 +417,16 @@ export function CreateEventDialog({
             </div>
 
             {promoteToAnnouncement && (
-              <div className="space-y-3 pl-6 border-l-2 border-amber-200">
+              <div className="space-y-3 pl-6 border-l-2 border-amber-200/80">
                 <p className="text-sm text-muted-foreground">
                   An announcement will be created and displayed until the event starts.
                 </p>
 
                 {/* Template Selection */}
                 <div className="space-y-2">
-                  <Label className="text-sm">Applies to Templates</Label>
+                  <Label className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+                    Applies to templates
+                  </Label>
                   <p className="text-xs text-muted-foreground">
                     Select which meeting types should include this announcement.
                   </p>
@@ -423,11 +446,11 @@ export function CreateEventDialog({
                               <Badge
                                 key={id}
                                 variant="secondary"
-                                className="cursor-pointer"
+                                className="cursor-pointer bg-[hsl(var(--accent-warm)/0.6)] text-slate-800 border border-border/50"
                                 onClick={() => toggleTemplate(id)}
                               >
                                 {template.name}
-                                <X className="h-3 w-3 ml-1" />
+                                <X className="h-3 w-3 ml-1 stroke-[1.6]" />
                               </Badge>
                             ) : null;
                           })}
@@ -435,7 +458,7 @@ export function CreateEventDialog({
                       )}
 
                       {/* Template checkboxes */}
-                      <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto p-2 border rounded-md">
+                      <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto p-2 border border-border/50 rounded-md bg-muted/20">
                         {templates.map((template) => (
                           <div key={template.id} className="flex items-center space-x-2">
                             <Checkbox
@@ -466,12 +489,14 @@ export function CreateEventDialog({
               variant="outline"
               onClick={() => onOpenChange(false)}
               disabled={isLoading}
+              className="border-border/60 hover:bg-[hsl(var(--accent-warm)/0.6)] shadow-none"
             >
               Cancel
             </Button>
             <Button
               type="submit"
               disabled={isLoading || !title || !startDate || !endDate}
+              className="bg-[hsl(var(--accent-warm))] text-foreground hover:bg-[hsl(var(--accent-warm-hover))] shadow-none"
             >
               {isLoading
                 ? "Creating..."

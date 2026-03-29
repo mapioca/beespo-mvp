@@ -78,16 +78,22 @@ export function CalendarSettingsDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Calendar Settings</DialogTitle>
+          <DialogTitle className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+            Calendar Settings
+          </DialogTitle>
           <DialogDescription>
             Manage external calendar subscriptions and sync settings.
           </DialogDescription>
         </DialogHeader>
 
         <Tabs defaultValue="subscriptions" className="mt-4">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="subscriptions">Subscriptions</TabsTrigger>
-            <TabsTrigger value="add">Add Calendar</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-2 border border-border/60 bg-background/80 rounded-full p-1">
+            <TabsTrigger value="subscriptions" className="rounded-full data-[state=active]:bg-[hsl(var(--accent-warm))] data-[state=active]:text-foreground">
+              Subscriptions
+            </TabsTrigger>
+            <TabsTrigger value="add" className="rounded-full data-[state=active]:bg-[hsl(var(--accent-warm))] data-[state=active]:text-foreground">
+              Add Calendar
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="subscriptions" className="mt-4">

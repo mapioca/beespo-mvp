@@ -48,13 +48,13 @@ export function MonthView({
   const numWeeks = weeks.length;
 
   return (
-    <div className="flex flex-col h-full rounded-lg border border-border/50 overflow-hidden">
+    <div className="flex flex-col h-full rounded-lg border border-border/50 overflow-hidden bg-background/60">
       {/* Weekday header - Notion style */}
-      <div className="grid grid-cols-7 border-b border-border/50 bg-muted/30">
+      <div className="grid grid-cols-7 border-b border-border/50 bg-muted/20">
         {WEEKDAY_NAMES.map((name) => (
           <div
             key={name}
-            className="px-2 py-3 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wide"
+            className="px-2 py-3 text-center text-[11px] font-semibold text-muted-foreground uppercase tracking-[0.2em]"
           >
             {name}
           </div>
@@ -87,7 +87,7 @@ export function MonthView({
                   key={dateKey}
                   className={cn(
                     "p-2 cursor-pointer transition-colors overflow-hidden",
-                    "hover:bg-muted/40",
+                    "hover:bg-[hsl(var(--accent-warm)/0.35)]",
                     !isCurrentMonth && "bg-muted/10",
                     dayIndex !== 6 && "border-r border-border/30"
                   )}
@@ -99,9 +99,9 @@ export function MonthView({
                       className={cn(
                         "inline-flex items-center justify-center w-7 h-7 text-sm rounded-full transition-colors",
                         isCurrentDay
-                          ? "bg-primary text-primary-foreground font-bold"
+                          ? "bg-[hsl(var(--accent-warm))] text-foreground font-bold"
                           : isCurrentMonth
-                            ? "font-medium text-foreground hover:bg-muted"
+                            ? "font-medium text-foreground hover:bg-[hsl(var(--accent-warm)/0.5)]"
                             : "text-muted-foreground/60"
                       )}
                     >

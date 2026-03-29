@@ -48,7 +48,7 @@ export function CalendarToolbar({
   };
 
   return (
-    <div className="flex items-center justify-between px-4 py-3 border-b bg-background">
+    <div className="flex items-center justify-between px-4 py-3 border-b border-border/60 bg-transparent">
       {/* Left section: sidebar toggle, navigation */}
       <div className="flex items-center gap-2">
         <Button
@@ -57,19 +57,19 @@ export function CalendarToolbar({
           onClick={onToggleSidebar}
           className="lg:hidden"
         >
-          <Menu className="h-5 w-5" />
+          <Menu className="h-5 w-5 stroke-[1.6]" />
         </Button>
 
-        <Button variant="outline" size="sm" onClick={onToday}>
+        <Button variant="outline" size="sm" onClick={onToday} className="border-border/60 hover:bg-[hsl(var(--accent-warm)/0.6)] shadow-none">
           Today
         </Button>
 
         <div className="flex items-center">
-          <Button variant="ghost" size="icon" onClick={onPrevious}>
-            <ChevronLeft className="h-5 w-5" />
+          <Button variant="ghost" size="icon" onClick={onPrevious} className="hover:bg-[hsl(var(--accent-warm)/0.6)]">
+            <ChevronLeft className="h-5 w-5 stroke-[1.6]" />
           </Button>
-          <Button variant="ghost" size="icon" onClick={onNext}>
-            <ChevronRight className="h-5 w-5" />
+          <Button variant="ghost" size="icon" onClick={onNext} className="hover:bg-[hsl(var(--accent-warm)/0.6)]">
+            <ChevronRight className="h-5 w-5 stroke-[1.6]" />
           </Button>
         </div>
 
@@ -79,7 +79,7 @@ export function CalendarToolbar({
       {/* Right section: view switcher, create button */}
       <div className="flex items-center gap-2">
         {/* View switcher */}
-        <div className="hidden sm:flex items-center border rounded-md">
+        <div className="hidden sm:flex items-center border border-border/60 bg-background/80 rounded-full">
           {(["month", "week", "day", "agenda"] as CalendarViewType[]).map(
             (viewType) => (
               <Button
@@ -88,8 +88,10 @@ export function CalendarToolbar({
                 size="sm"
                 onClick={() => onViewChange(viewType)}
                 className={cn(
-                  "rounded-none first:rounded-l-md last:rounded-r-md capitalize",
-                  view === viewType && "bg-muted"
+                  "rounded-none first:rounded-l-full last:rounded-r-full capitalize px-3",
+                  view === viewType
+                    ? "bg-[hsl(var(--accent-warm))] text-foreground"
+                    : "text-muted-foreground hover:bg-[hsl(var(--accent-warm)/0.6)] hover:text-foreground"
                 )}
               >
                 {viewType}
@@ -102,7 +104,7 @@ export function CalendarToolbar({
         <select
           value={view}
           onChange={(e) => onViewChange(e.target.value as CalendarViewType)}
-          className="sm:hidden h-9 px-3 border rounded-md text-sm bg-background"
+          className="sm:hidden h-9 px-3 border border-border/60 rounded-md text-sm bg-background/80"
         >
           <option value="month">Month</option>
           <option value="week">Week</option>
@@ -112,8 +114,8 @@ export function CalendarToolbar({
 
         {/* Create event button */}
         {canCreateEvents && (
-          <Button onClick={onCreateEvent} size="sm">
-            <Plus className="h-4 w-4 mr-1" />
+          <Button onClick={onCreateEvent} size="sm" className="bg-[hsl(var(--accent-warm))] text-foreground hover:bg-[hsl(var(--accent-warm-hover))] shadow-none">
+            <Plus className="h-4 w-4 mr-1 stroke-[1.6]" />
             <span className="hidden sm:inline">New Event</span>
           </Button>
         )}

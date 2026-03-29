@@ -60,13 +60,15 @@ export function RecurrencePicker({
     <div className="space-y-4">
       {/* Recurrence Type */}
       <div className="space-y-2">
-        <Label htmlFor="recurrence">Repeat</Label>
+        <Label htmlFor="recurrence" className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+          Repeat
+        </Label>
         <Select
           value={recurrenceType}
           onValueChange={(v) => onRecurrenceTypeChange(v as RecurrenceType)}
           disabled={disabled}
         >
-          <SelectTrigger id="recurrence">
+          <SelectTrigger id="recurrence" className="bg-background border-border/60 focus:ring-0 focus:border-foreground/30">
             <SelectValue placeholder="Does not repeat" />
           </SelectTrigger>
           <SelectContent>
@@ -83,7 +85,7 @@ export function RecurrencePicker({
 
       {/* Custom recurrence options */}
       {recurrenceType === "custom" && (
-        <div className="space-y-4 p-4 border rounded-md bg-muted/30">
+        <div className="space-y-4 p-4 border border-border/50 rounded-md bg-muted/20">
           <p className="text-sm text-muted-foreground">
             Select which days of the week this event repeats:
           </p>
@@ -99,8 +101,8 @@ export function RecurrencePicker({
                   className={cn(
                     "px-3 py-1.5 text-sm rounded-md border transition-colors",
                     isSelected
-                      ? "bg-primary text-primary-foreground border-primary"
-                      : "bg-background hover:bg-muted"
+                      ? "bg-[hsl(var(--accent-warm))] text-foreground border-[hsl(var(--accent-warm-hover))]"
+                      : "bg-background hover:bg-[hsl(var(--accent-warm)/0.6)] border-border/60"
                   )}
                 >
                   {day.label}
@@ -114,7 +116,9 @@ export function RecurrencePicker({
       {/* Interval (for daily, weekly, monthly) */}
       {recurrenceType !== "none" && recurrenceType !== "biweekly" && recurrenceType !== "custom" && (
         <div className="space-y-2">
-          <Label htmlFor="interval">Repeat every</Label>
+          <Label htmlFor="interval" className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+            Repeat every
+          </Label>
           <div className="flex items-center gap-2">
             <Input
               id="interval"
@@ -124,7 +128,7 @@ export function RecurrencePicker({
               value={recurrenceConfig.interval || 1}
               onChange={(e) => handleIntervalChange(e.target.value)}
               disabled={disabled}
-              className="w-20"
+              className="w-20 bg-background border-border/60 focus-visible:ring-0 focus-visible:border-foreground/30"
             />
             <span className="text-sm text-muted-foreground">
               {recurrenceType === "daily" && "day(s)"}
@@ -139,13 +143,16 @@ export function RecurrencePicker({
       {/* Recurrence End Date */}
       {recurrenceType !== "none" && (
         <div className="space-y-2">
-          <Label htmlFor="recurrenceEnd">End recurrence</Label>
+          <Label htmlFor="recurrenceEnd" className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+            End recurrence
+          </Label>
           <Input
             id="recurrenceEnd"
             type="date"
             value={recurrenceEndDate}
             onChange={(e) => onRecurrenceEndDateChange(e.target.value)}
             disabled={disabled}
+            className="bg-background border-border/60 focus-visible:ring-0 focus-visible:border-foreground/30"
           />
           <p className="text-xs text-muted-foreground">
             Leave blank to continue until the deadline (if set) or indefinitely

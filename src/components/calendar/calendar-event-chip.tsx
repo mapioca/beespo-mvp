@@ -81,7 +81,7 @@ export function CalendarEventChip({
       }}
       className={cn(
         "w-full text-left rounded-md border-l-[3px] transition-all duration-150",
-        "shadow-sm hover:shadow",
+        "shadow-none hover:shadow-sm",
         colors.border,
         colors.bg,
         colors.text,

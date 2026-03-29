@@ -122,22 +122,22 @@ export function CalendarSidebar({
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-50 w-64 bg-background border-r transform transition-transform duration-200 lg:relative lg:translate-x-0",
+          "fixed inset-y-0 left-0 z-50 w-64 bg-background/80 border-r border-border/60 transform transition-transform duration-200 lg:relative lg:translate-x-0",
           isOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
         <div className="flex flex-col h-full p-4">
           {/* Header with close button (mobile) */}
           <div className="flex items-center justify-between mb-4 lg:hidden">
-            <h2 className="font-semibold">Calendars</h2>
+            <h2 className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">Calendars</h2>
             <Button variant="ghost" size="icon" onClick={onToggle}>
-              <X className="h-5 w-5" />
+              <X className="h-5 w-5 stroke-[1.6]" />
             </Button>
           </div>
 
           {/* Beespo Calendar section */}
           <div className="space-y-3">
-            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+            <h3 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-[0.2em]">
               Beespo Calendar
             </h3>
             <div className="space-y-2">
@@ -149,7 +149,7 @@ export function CalendarSidebar({
                 />
                 <Label
                   htmlFor="events"
-                  className="flex items-center gap-2 cursor-pointer"
+                  className="flex items-center gap-2 cursor-pointer text-sm"
                 >
                   <span className="w-3 h-3 rounded-sm bg-indigo-400" />
                   Events
@@ -163,7 +163,7 @@ export function CalendarSidebar({
                 />
                 <Label
                   htmlFor="announcements"
-                  className="flex items-center gap-2 cursor-pointer"
+                  className="flex items-center gap-2 cursor-pointer text-sm"
                 >
                   <span className="w-3 h-3 rounded-sm bg-amber-400" />
                   Announcements
@@ -177,7 +177,7 @@ export function CalendarSidebar({
                 />
                 <Label
                   htmlFor="meetings"
-                  className="flex items-center gap-2 cursor-pointer"
+                  className="flex items-center gap-2 cursor-pointer text-sm"
                 >
                   <span className="w-3 h-3 rounded-sm bg-blue-400" />
                   Meetings
@@ -191,7 +191,7 @@ export function CalendarSidebar({
                 />
                 <Label
                   htmlFor="tasks"
-                  className="flex items-center gap-2 cursor-pointer"
+                  className="flex items-center gap-2 cursor-pointer text-sm"
                 >
                   <span className="w-3 h-3 rounded-sm bg-green-400" />
                   Tasks
@@ -205,19 +205,19 @@ export function CalendarSidebar({
           {/* External Calendars section */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+              <h3 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-[0.2em]">
                 External Calendars
               </h3>
               {isAdmin && enabledSubscriptions.length > 0 && (
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-6 w-6 text-muted-foreground hover:text-foreground"
+                  className="h-6 w-6 text-muted-foreground hover:text-foreground hover:bg-[hsl(var(--accent-warm)/0.6)]"
                   onClick={handleSyncAll}
                   disabled={isSyncingAll}
                   title="Sync All External Calendars"
                 >
-                  <RefreshCw className={cn("h-3 w-3", isSyncingAll && "animate-spin")} />
+                  <RefreshCw className={cn("h-3 w-3 stroke-[1.6]", isSyncingAll && "animate-spin")} />
                 </Button>
               )}
             </div>
@@ -238,7 +238,7 @@ export function CalendarSidebar({
                   />
                   <Label
                     htmlFor="external"
-                    className="flex items-center gap-2 cursor-pointer"
+                    className="flex items-center gap-2 cursor-pointer text-sm"
                   >
                     <span className="w-3 h-3 rounded-sm bg-purple-400" />
                     All External
@@ -286,10 +286,10 @@ export function CalendarSidebar({
           {isAdmin && (
             <Button
               variant="outline"
-              className="w-full"
+              className="w-full border-border/60 hover:bg-[hsl(var(--accent-warm)/0.6)] shadow-none"
               onClick={() => setSettingsOpen(true)}
             >
-              <Settings className="h-4 w-4 mr-2" />
+              <Settings className="h-4 w-4 mr-2 stroke-[1.6]" />
               Manage Calendars
             </Button>
           )}

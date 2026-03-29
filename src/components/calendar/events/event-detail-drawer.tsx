@@ -79,8 +79,8 @@ export function EventDetailDrawer({
                             variant="outline"
                             className={
                                 isMeeting
-                                    ? "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950 dark:text-blue-300"
-                                    : "bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950 dark:text-indigo-300"
+                                    ? "bg-[hsl(var(--accent-warm)/0.6)] text-slate-800 border border-border/50"
+                                    : "bg-[hsl(var(--accent-warm)/0.6)] text-slate-800 border border-border/50"
                             }
                         >
                             {isMeeting ? "Meeting" : "Event"}
@@ -95,8 +95,8 @@ export function EventDetailDrawer({
                     {/* Date and Time */}
                     <div className="space-y-3">
                         <div className="flex items-center gap-3">
-                            <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-muted">
-                                <Calendar className="h-5 w-5 text-muted-foreground" />
+                            <div className="flex items-center justify-center w-10 h-10 rounded-lg border border-border/50 bg-[hsl(var(--accent-warm)/0.35)]">
+                                <Calendar className="h-5 w-5 text-muted-foreground stroke-[1.6]" />
                             </div>
                             <div>
                                 <p className="font-medium">
@@ -114,8 +114,8 @@ export function EventDetailDrawer({
 
                         {event.location && (
                             <div className="flex items-center gap-3">
-                                <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-muted">
-                                    <MapPin className="h-5 w-5 text-muted-foreground" />
+                                <div className="flex items-center justify-center w-10 h-10 rounded-lg border border-border/50 bg-[hsl(var(--accent-warm)/0.35)]">
+                                    <MapPin className="h-5 w-5 text-muted-foreground stroke-[1.6]" />
                                 </div>
                                 <div>
                                     <p className="font-medium">Location</p>
@@ -130,7 +130,7 @@ export function EventDetailDrawer({
                         <>
                             <Separator />
                             <div className="space-y-2">
-                                <h4 className="text-sm font-medium text-muted-foreground">
+                                <h4 className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
                                     Description
                                 </h4>
                                 <p className="text-sm leading-relaxed whitespace-pre-wrap">
@@ -145,14 +145,14 @@ export function EventDetailDrawer({
                         <>
                             <Separator />
                             <div className="space-y-3">
-                                <h4 className="text-sm font-medium text-muted-foreground">
+                                <h4 className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
                                     Meeting Hub
                                 </h4>
-                                <Button asChild variant="outline" className="w-full gap-2">
+                                <Button asChild variant="outline" className="w-full gap-2 border-border/60 hover:bg-[hsl(var(--accent-warm)/0.6)] shadow-none">
                                     <Link href={`/meetings/${event.source_id}`}>
-                                        <CalendarDays className="h-4 w-4" />
+                                        <CalendarDays className="h-4 w-4 stroke-[1.6]" />
                                         Open in Meeting Hub
-                                        <ExternalLink className="h-4 w-4 ml-auto" />
+                                        <ExternalLink className="h-4 w-4 ml-auto stroke-[1.6]" />
                                     </Link>
                                 </Button>
                                 <p className="text-xs text-muted-foreground text-center">
@@ -167,17 +167,17 @@ export function EventDetailDrawer({
                         <>
                             <Separator />
                             <div className="space-y-3">
-                                <h4 className="text-sm font-medium text-muted-foreground">
+                                <h4 className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
                                     Design Tools
                                 </h4>
                                 <TooltipProvider>
                                     {isCanvaConnected ? (
                                         <Button
                                             variant="outline"
-                                            className="w-full gap-2"
+                                            className="w-full gap-2 border-border/60 hover:bg-[hsl(var(--accent-warm)/0.6)] shadow-none"
                                             onClick={() => setShowDesignModal(true)}
                                         >
-                                            <Palette className="h-4 w-4" />
+                                            <Palette className="h-4 w-4 stroke-[1.6]" />
                                             Create Invitation
                                         </Button>
                                     ) : (
@@ -186,10 +186,10 @@ export function EventDetailDrawer({
                                                 <span className="block w-full">
                                                     <Button
                                                         variant="outline"
-                                                        className="w-full gap-2"
+                                                        className="w-full gap-2 border-border/60 shadow-none"
                                                         disabled
                                                     >
-                                                        <Palette className="h-4 w-4" />
+                                                        <Palette className="h-4 w-4 stroke-[1.6]" />
                                                         Create Invitation
                                                     </Button>
                                                 </span>
@@ -213,7 +213,7 @@ export function EventDetailDrawer({
                     <Separator />
                     <Button
                         variant="secondary"
-                        className="w-full"
+                        className="w-full bg-[hsl(var(--accent-warm))] text-foreground hover:bg-[hsl(var(--accent-warm-hover))] shadow-none"
                         onClick={() => onOpenChange(false)}
                     >
                         Close

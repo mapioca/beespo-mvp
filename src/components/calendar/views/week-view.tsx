@@ -63,11 +63,11 @@ export function WeekView({
     : 0;
 
   return (
-    <div className="flex flex-col h-full rounded-lg border border-border/50 overflow-hidden">
+    <div className="flex flex-col h-full rounded-lg border border-border/50 overflow-hidden bg-background/60">
       {/* Header with day names and dates */}
-      <div className="grid grid-cols-8 border-b border-border/50 bg-muted/30">
+      <div className="grid grid-cols-8 border-b border-border/50 bg-muted/20">
         {/* Time column header */}
-        <div className="p-3 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wide border-r border-border/50">
+        <div className="p-3 text-center text-[11px] font-semibold text-muted-foreground uppercase tracking-[0.2em] border-r border-border/50">
 
         </div>
         {/* Day headers */}
@@ -77,19 +77,19 @@ export function WeekView({
             <div
               key={format(day, "yyyy-MM-dd")}
               className={cn(
-                "p-2 text-center border-r border-border/50 last:border-r-0 cursor-pointer hover:bg-muted/50",
-                isCurrentDay && "bg-primary/5"
+                "p-2 text-center border-r border-border/50 last:border-r-0 cursor-pointer hover:bg-[hsl(var(--accent-warm)/0.35)]",
+                isCurrentDay && "bg-[hsl(var(--accent-warm)/0.25)]"
               )}
               onClick={() => onDateClick(day)}
             >
-              <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+              <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-[0.2em]">
                 {format(day, "EEE")}
               </div>
               <div
                 className={cn(
                   "text-xl font-bold mt-0.5",
                   isCurrentDay
-                    ? "w-8 h-8 mx-auto rounded-full bg-primary text-primary-foreground flex items-center justify-center"
+                    ? "w-8 h-8 mx-auto rounded-full bg-[hsl(var(--accent-warm))] text-foreground flex items-center justify-center"
                     : "text-foreground"
                 )}
               >
@@ -116,8 +116,8 @@ export function WeekView({
               <div
                 key={`allday-${format(day, "yyyy-MM-dd")}`}
                 className={cn(
-                  "p-1 border-r border-border/50 last:border-r-0 space-y-0.5 cursor-pointer hover:bg-muted/40 overflow-y-auto",
-                  isCurrentDay && "bg-primary/5"
+                  "p-1 border-r border-border/50 last:border-r-0 space-y-0.5 cursor-pointer hover:bg-[hsl(var(--accent-warm)/0.35)] overflow-y-auto",
+                  isCurrentDay && "bg-[hsl(var(--accent-warm)/0.25)]"
                 )}
                 onClick={() => onDateClick(day)}
               >
@@ -158,8 +158,8 @@ export function WeekView({
                   <div
                     key={`${format(day, "yyyy-MM-dd")}-${hour}`}
                     className={cn(
-                      "border-r border-b border-border/30 last:border-r-0 h-14 cursor-pointer hover:bg-muted/30 p-0.5 overflow-hidden",
-                      isCurrentDay && "bg-primary/5"
+                      "border-r border-b border-border/30 last:border-r-0 h-14 cursor-pointer hover:bg-[hsl(var(--accent-warm)/0.35)] p-0.5 overflow-hidden",
+                      isCurrentDay && "bg-[hsl(var(--accent-warm)/0.25)]"
                     )}
                     onClick={() => onDateClick(setHours(day, hour))}
                   >

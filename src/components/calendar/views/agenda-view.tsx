@@ -108,11 +108,11 @@ export function AgendaView({
                 className={cn(
                   "flex flex-col items-center justify-center w-16 h-16 rounded-xl transition-colors",
                   isCurrentDay
-                    ? "bg-primary text-primary-foreground shadow-md"
-                    : "bg-muted/50 group-hover:bg-muted"
+                    ? "bg-[hsl(var(--accent-warm))] text-foreground shadow-sm"
+                    : "bg-[hsl(var(--accent-warm)/0.25)] group-hover:bg-[hsl(var(--accent-warm)/0.4)]"
                 )}
               >
-                <span className="text-xs font-semibold uppercase tracking-wide opacity-80">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.2em] opacity-80">
                   {format(day, "EEE")}
                 </span>
                 <span className="text-2xl font-bold">{format(day, "d")}</span>
@@ -123,7 +123,7 @@ export function AgendaView({
                   {format(day, "MMMM yyyy")}
                 </div>
               </div>
-              <div className="text-sm text-muted-foreground bg-muted/50 px-3 py-1 rounded-full">
+              <div className="text-xs text-muted-foreground bg-[hsl(var(--accent-warm)/0.35)] px-3 py-1 rounded-full">
                 {dayEvents.length} event{dayEvents.length !== 1 ? "s" : ""}
               </div>
             </div>
@@ -137,7 +137,7 @@ export function AgendaView({
                     key={event.id}
                     className={cn(
                       "p-4 rounded-lg border-l-[3px] cursor-pointer transition-all duration-150",
-                      "hover:shadow-md hover:translate-x-1",
+                      "hover:shadow-sm hover:translate-x-0.5",
                       colors.border,
                       colors.bg
                     )}

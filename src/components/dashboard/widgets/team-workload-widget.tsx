@@ -64,7 +64,7 @@ export function TeamWorkloadWidget({
             return (
               <div
                 key={member.id}
-                className="flex items-center gap-3 py-2.5 px-2 -mx-2 rounded-md hover:bg-muted/50 transition-colors cursor-pointer"
+                className="flex items-center gap-3 py-2.5 px-2 -mx-2 rounded-md hover:bg-[hsl(var(--accent-warm)/0.35)] transition-colors cursor-pointer"
               >
                 <Avatar className="h-8 w-8">
                   <AvatarFallback className="text-xs bg-muted text-muted-foreground">

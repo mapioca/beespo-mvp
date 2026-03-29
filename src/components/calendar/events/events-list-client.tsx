@@ -213,7 +213,7 @@ export function EventsListClient({ events }: EventsListClientProps) {
                                     <TableRow
                                         key={`${event.source_type}-${event.id}`}
                                         className={cn(
-                                            "cursor-pointer hover:bg-muted/50",
+                                            "cursor-pointer hover:bg-[hsl(var(--accent-warm)/0.35)]",
                                             status === "past" && "opacity-60"
                                         )}
                                         onClick={() => handleEventClick(event)}

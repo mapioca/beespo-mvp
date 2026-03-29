@@ -140,7 +140,7 @@ export function SubscriptionList({
     return (
       <div className="space-y-3">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="flex items-center gap-3 p-3 border rounded-lg">
+          <div key={i} className="flex items-center gap-3 p-3 border border-border/50 rounded-lg bg-background/80">
             <Skeleton className="h-8 w-8 rounded-full" />
             <div className="flex-1 space-y-2">
               <Skeleton className="h-4 w-32" />
@@ -174,7 +174,7 @@ export function SubscriptionList({
           return (
             <div
               key={subscription.id}
-              className="flex items-center gap-3 p-3 border rounded-lg"
+              className="flex items-center gap-3 p-3 border border-border/50 rounded-lg bg-background/80"
             >
               {/* Color indicator */}
               <div
@@ -214,20 +214,20 @@ export function SubscriptionList({
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                  className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-[hsl(var(--accent-warm)/0.6)]"
                   onClick={() => handleSync(subscription.id)}
                   disabled={!subscription.is_enabled || isSyncing}
                   title="Sync Now"
                 >
                   <RefreshCw
-                    className={cn("h-4 w-4", isSyncing && "animate-spin")}
+                    className={cn("h-4 w-4 stroke-[1.6]", isSyncing && "animate-spin")}
                   />
                 </Button>
 
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground">
-                      <MoreVertical className="h-4 w-4" />
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-[hsl(var(--accent-warm)/0.6)]">
+                      <MoreVertical className="h-4 w-4 stroke-[1.6]" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
@@ -238,7 +238,7 @@ export function SubscriptionList({
                       }}
                       className="text-destructive"
                     >
-                      <Trash2 className="h-4 w-4 mr-2" />
+                      <Trash2 className="h-4 w-4 mr-2 stroke-[1.6]" />
                       Delete
                     </DropdownMenuItem>
                   </DropdownMenuContent>

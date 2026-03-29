@@ -71,18 +71,18 @@ export function ExternalEventPreview({
           <div className="flex items-center gap-2 mb-2">
             <Badge
               variant="secondary"
-              className="text-xs"
+              className="text-[11px] uppercase tracking-[0.2em]"
               style={{
                 backgroundColor: event.subscription_color ? `${event.subscription_color}20` : undefined,
                 color: event.subscription_color || undefined,
                 borderColor: event.subscription_color || undefined,
               }}
             >
-              <ExternalLink className="h-3 w-3 mr-1" />
+              <ExternalLink className="h-3 w-3 mr-1 stroke-[1.6]" />
               External Event
             </Badge>
             {event.subscription_name && (
-              <span className="text-xs text-muted-foreground">
+              <span className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
                 from {event.subscription_name}
               </span>
             )}
@@ -96,7 +96,7 @@ export function ExternalEventPreview({
         <div className="space-y-4 py-2">
           {/* Date & Time */}
           <div className="flex items-start gap-3">
-            <Calendar className="h-5 w-5 text-muted-foreground mt-0.5" />
+            <Calendar className="h-5 w-5 text-muted-foreground mt-0.5 stroke-[1.6]" />
             <div>
               <p className="font-medium">
                 {formatDateTime(startDate, event.is_all_day)}
@@ -113,8 +113,8 @@ export function ExternalEventPreview({
                 </p>
               )}
               {event.is_all_day && (
-                <Badge variant="outline" className="mt-1 text-xs">
-                  <Clock className="h-3 w-3 mr-1" />
+                <Badge variant="outline" className="mt-1 text-[11px] uppercase tracking-[0.2em] border-border/60">
+                  <Clock className="h-3 w-3 mr-1 stroke-[1.6]" />
                   All Day
                 </Badge>
               )}
@@ -124,7 +124,7 @@ export function ExternalEventPreview({
           {/* Location */}
           {event.location && (
             <div className="flex items-start gap-3">
-              <MapPin className="h-5 w-5 text-muted-foreground mt-0.5" />
+              <MapPin className="h-5 w-5 text-muted-foreground mt-0.5 stroke-[1.6]" />
               <p className="text-sm">{event.location}</p>
             </div>
           )}
@@ -132,9 +132,9 @@ export function ExternalEventPreview({
           {/* Description */}
           {event.description && (
             <>
-              <Separator />
+              <Separator className="bg-border/60" />
               <div className="flex items-start gap-3">
-                <FileText className="h-5 w-5 text-muted-foreground mt-0.5" />
+                <FileText className="h-5 w-5 text-muted-foreground mt-0.5 stroke-[1.6]" />
                 <div className="text-sm whitespace-pre-wrap max-h-32 overflow-y-auto">
                   {event.description}
                 </div>
@@ -143,10 +143,12 @@ export function ExternalEventPreview({
           )}
         </div>
 
-        <Separator />
+        <Separator className="bg-border/60" />
 
-        <div className="bg-muted/50 rounded-lg p-3 text-sm">
-          <p className="font-medium mb-1">Want to enrich this event?</p>
+        <div className="bg-[hsl(var(--accent-warm)/0.35)] rounded-lg p-3 text-sm border border-border/50">
+          <p className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground mb-1">
+            Want to enrich this event?
+          </p>
           <p className="text-muted-foreground text-xs">
             Import it to Beespo to add announcements, link to meetings, and track it alongside your other events.
           </p>
@@ -157,11 +159,12 @@ export function ExternalEventPreview({
             type="button"
             variant="outline"
             onClick={() => onOpenChange(false)}
+            className="border-border/60 hover:bg-[hsl(var(--accent-warm)/0.6)] shadow-none"
           >
             Close
           </Button>
-          <Button onClick={handleImport}>
-            <Import className="h-4 w-4 mr-2" />
+          <Button onClick={handleImport} className="bg-[hsl(var(--accent-warm))] text-foreground hover:bg-[hsl(var(--accent-warm-hover))] shadow-none">
+            <Import className="h-4 w-4 mr-2 stroke-[1.6]" />
             Import to Beespo
           </Button>
         </DialogFooter>
