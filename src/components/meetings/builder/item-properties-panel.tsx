@@ -67,9 +67,9 @@ export function ItemPropertiesPanel({
 
     return (
         <div className="w-[360px] max-h-[70vh] overflow-y-auto">
-            <div className="px-4 py-3 border-b">
-                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Item Properties</p>
-                <p className="text-sm font-medium truncate text-foreground">
+            <div className="px-4 pt-4 pb-2 border-b border-border/40">
+                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.2em]">Item Properties</p>
+                <p className="text-[13px] font-medium truncate text-foreground mt-1">
                     {item.structural_type === "section_header" ? (item.title || "Untitled section") : (item.title || "Untitled item")}
                 </p>
             </div>

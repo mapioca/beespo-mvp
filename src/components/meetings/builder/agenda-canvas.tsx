@@ -93,9 +93,9 @@ function SortableAgendaRow({
                         {...attributes}
                         {...listeners}
                         className={cn(
-                            "rounded-xl border border-border/50 bg-background/80 transition-all group cursor-grab active:cursor-grabbing touch-none",
-                            "hover:bg-background hover:border-border/70",
-                            isSelected && "ring-2 ring-primary/40 border-primary/40",
+                            "rounded-xl border border-border/40 bg-background/70 shadow-[0_1px_0_rgba(15,23,42,0.04)] transition-all group cursor-grab active:cursor-grabbing touch-none",
+                            "hover:bg-background hover:border-border/60",
+                            isSelected && "ring-2 ring-primary/30 border-primary/30",
                             isDragging && "opacity-60 shadow-lg ring-2 ring-primary/30"
                         )}
                     >
@@ -190,9 +190,9 @@ function SortableAgendaRow({
                         style={style}
                         onClick={(e) => { e.stopPropagation(); onSelect?.(); }}
                         className={cn(
-                            "flex flex-col border rounded-xl bg-background/80 transition-all group cursor-grab active:cursor-grabbing touch-none",
-                            "hover:bg-background hover:border-border/70",
-                            isSelected && "ring-2 ring-primary/40 border-primary/40",
+                            "flex flex-col border rounded-xl bg-background/70 shadow-[0_1px_0_rgba(15,23,42,0.04)] transition-all group cursor-grab active:cursor-grabbing touch-none",
+                            "hover:bg-background hover:border-border/60",
+                            isSelected && "ring-2 ring-primary/30 border-primary/30",
                             isDragging && "opacity-60 shadow-lg ring-2 ring-primary/30"
                         )}
                         {...attributes}
@@ -284,9 +284,9 @@ function SortableAgendaRow({
                     style={style}
                     onClick={(e) => { e.stopPropagation(); onSelect?.(); }}
                     className={cn(
-                        "flex flex-col border rounded-xl bg-background/80 transition-all group cursor-grab active:cursor-grabbing touch-none",
-                        "hover:bg-background hover:border-border/70",
-                        isSelected && "ring-2 ring-primary/40 border-primary/40",
+                        "flex flex-col border rounded-xl bg-background/70 shadow-[0_1px_0_rgba(15,23,42,0.04)] transition-all group cursor-grab active:cursor-grabbing touch-none",
+                        "hover:bg-background hover:border-border/60",
+                        isSelected && "ring-2 ring-primary/30 border-primary/30",
                         isDragging && "opacity-60 shadow-lg ring-2 ring-primary/30"
                     )}
                     {...attributes}
