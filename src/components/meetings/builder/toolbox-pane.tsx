@@ -9,6 +9,7 @@ import { createClient } from "@/lib/supabase/client";
 import { DraggableToolboxItem } from "./draggable-toolbox-item";
 import { ToolboxItem, ProceduralItemType, ItemConfig, CategoryType } from "./types";
 import { CreateItemTypeDialog } from "./create-item-type-dialog";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 interface ToolboxPaneProps {
     onItemsLoaded?: (items: ToolboxItem[]) => void;
@@ -296,6 +297,7 @@ export function ToolboxPane({ onItemsLoaded, onAddItem }: ToolboxPaneProps) {
     }, [reloadCustomTypes]);
 
     return (
+        <TooltipProvider delayDuration={400}>
         <div className="flex flex-col h-full overflow-hidden p-3">
             {/* Card container */}
             <div className="bg-card rounded-lg ring-1 ring-border flex flex-col flex-1 overflow-hidden">
@@ -373,7 +375,7 @@ export function ToolboxPane({ onItemsLoaded, onAddItem }: ToolboxPaneProps) {
                 {/* Hint */}
                 <div className="p-3 border-t border-border/50 shrink-0">
                     <p className="text-xs text-muted-foreground text-center">
-                        Drag items onto the agenda canvas
+                        Click an item to add it to the end, or drag onto the canvas to place it
                     </p>
                 </div>
             </div>
@@ -390,5 +392,6 @@ export function ToolboxPane({ onItemsLoaded, onAddItem }: ToolboxPaneProps) {
                 initialData={itemToEdit}
             />
         </div>
+        </TooltipProvider>
     );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Share2, ChevronDown, Link, Loader2, FileText, FileCode, FileType, CalendarDays, ClipboardList, Clock, Star, MoreHorizontal, Trash2 } from "lucide-react";
+import { ChevronDown, Link, Loader2, FileText, FileCode, FileType, CalendarDays, ClipboardList, Clock, Star, MoreHorizontal, Trash2 } from "lucide-react";
 import { useFavoritesStore } from "@/stores/favorites-store";
 import { ZoomIcon, ZoomLogo } from "@/components/ui/zoom-icon";
 import {
@@ -17,14 +17,11 @@ import {
 import { Breadcrumbs } from "@/components/dashboard/breadcrumbs";
 import { Button } from "@/components/ui/button";
 import {
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
-} from "@/components/ui/popover";
-import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -108,7 +105,6 @@ export function BuilderTopBar({
     onAddZoom,
     onDelete,
 }: BuilderTopBarProps) {
-    const [shareOpen, setShareOpen] = useState(false);
     const [saveAsNewOpen, setSaveAsNewOpen] = useState(false);
     const [newTitle, setNewTitle] = useState("");
     const [isSavingAsNew, setIsSavingAsNew] = useState(false);
@@ -150,7 +146,6 @@ export function BuilderTopBar({
             : window.location.href;
         await navigator.clipboard.writeText(url);
         toast.success("Link copied to clipboard");
-        setShareOpen(false);
     };
 
     const handleExport = async (format: "pdf" | "docx" | "md" | "txt") => {
@@ -181,7 +176,6 @@ export function BuilderTopBar({
                     break;
             }
             toast.success(`${format.toUpperCase()} downloaded successfully`);
-            setShareOpen(false);
         } catch (error) {
             console.error(`Export to ${format} failed:`, error);
             toast.error(`Failed to generate ${format.toUpperCase()}`);
@@ -228,56 +222,113 @@ export function BuilderTopBar({
                     { label: "Agendas", href: "/meetings/agendas", icon: <ClipboardList className="h-3.5 w-3.5" /> },
                     { label: title || "Untitled Agenda", icon: <FileText className="h-3.5 w-3.5" /> },
                 ]}
-                inlineAction={initialMeetingId ? (
+                inlineAction={(
                     <>
-                        {/* Star / Favorite */}
-                        <button
-                            type="button"
-                            title={favorited ? "Remove from favorites" : "Add to favorites"}
-                            onClick={handleToggleFavorite}
-                            className={cn(
-                                "inline-flex items-center justify-center h-6 w-6 rounded",
-                                "text-muted-foreground hover:text-foreground hover:bg-accent",
-                                "transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                            )}
-                        >
-                            <Star
+                        {initialMeetingId && (
+                            <button
+                                type="button"
+                                title={favorited ? "Remove from favorites" : "Add to favorites"}
+                                onClick={handleToggleFavorite}
                                 className={cn(
-                                    "h-3.5 w-3.5 transition-colors",
-                                    favorited ? "fill-amber-400 text-amber-400" : ""
+                                    "inline-flex items-center justify-center h-6 w-6 rounded",
+                                    "text-muted-foreground hover:text-foreground hover:bg-accent",
+                                    "transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                                 )}
-                            />
-                        </button>
-
-                        {/* More options */}
-                        {isLeader && (
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <button
-                                        type="button"
-                                        title="More options"
-                                        className={cn(
-                                            "inline-flex items-center justify-center h-6 w-6 rounded",
-                                            "text-muted-foreground hover:text-foreground hover:bg-accent",
-                                            "transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                                        )}
-                                    >
-                                        <MoreHorizontal className="h-3.5 w-3.5" />
-                                    </button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="start" className="w-48">
-                                    <DropdownMenuItem
-                                        onClick={() => setIsDeleteDialogOpen(true)}
-                                        className="text-destructive focus:text-destructive"
-                                    >
-                                        <Trash2 className="h-4 w-4" />
-                                        Delete agenda
-                                    </DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
+                            >
+                                <Star
+                                    className={cn(
+                                        "h-3.5 w-3.5 transition-colors",
+                                        favorited ? "fill-amber-400 text-amber-400" : ""
+                                    )}
+                                />
+                            </button>
                         )}
+
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <button
+                                    type="button"
+                                    title="More options"
+                                    className={cn(
+                                        "inline-flex items-center justify-center h-6 w-6 rounded",
+                                        "text-muted-foreground hover:text-foreground hover:bg-accent",
+                                        "transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                    )}
+                                >
+                                    <MoreHorizontal className="h-3.5 w-3.5" />
+                                </button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="start" className="w-60">
+                                <DropdownMenuLabel className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                                    Share Link
+                                </DropdownMenuLabel>
+                                <DropdownMenuItem onSelect={() => void handleCopyLink()}>
+                                    <Link className="h-3.5 w-3.5 text-muted-foreground" />
+                                    Copy public link
+                                </DropdownMenuItem>
+
+                                <DropdownMenuSeparator />
+
+                                <DropdownMenuLabel className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                                    Download As
+                                </DropdownMenuLabel>
+                                <DropdownMenuItem
+                                    disabled={!!exportingFormat}
+                                    onSelect={() => void handleExport("pdf")}
+                                >
+                                    <FileText className="h-3.5 w-3.5 text-red-500/80" />
+                                    <span className="flex-1">PDF Document (.pdf)</span>
+                                    {exportingFormat === "pdf" && (
+                                        <Loader2 className="h-3 w-3 shrink-0 animate-spin text-muted-foreground" />
+                                    )}
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                    disabled={!!exportingFormat}
+                                    onSelect={() => void handleExport("docx")}
+                                >
+                                    <FileType className="h-3.5 w-3.5 text-blue-500/80" />
+                                    <span className="flex-1">Word Document (.docx)</span>
+                                    {exportingFormat === "docx" && (
+                                        <Loader2 className="h-3 w-3 shrink-0 animate-spin text-muted-foreground" />
+                                    )}
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                    disabled={!!exportingFormat}
+                                    onSelect={() => void handleExport("md")}
+                                >
+                                    <FileCode className="h-3.5 w-3.5 text-orange-500/80" />
+                                    <span className="flex-1">Markdown (.md)</span>
+                                    {exportingFormat === "md" && (
+                                        <Loader2 className="h-3 w-3 shrink-0 animate-spin text-muted-foreground" />
+                                    )}
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                    disabled={!!exportingFormat}
+                                    onSelect={() => void handleExport("txt")}
+                                >
+                                    <FileText className="h-3.5 w-3.5 text-slate-500/80" />
+                                    <span className="flex-1">Plain Text (.txt)</span>
+                                    {exportingFormat === "txt" && (
+                                        <Loader2 className="h-3 w-3 shrink-0 animate-spin text-muted-foreground" />
+                                    )}
+                                </DropdownMenuItem>
+
+                                {isLeader && initialMeetingId && (
+                                    <>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem
+                                            onSelect={() => setIsDeleteDialogOpen(true)}
+                                            className="focus:text-destructive"
+                                        >
+                                            <Trash2 className="h-4 w-4" />
+                                            Delete agenda
+                                        </DropdownMenuItem>
+                                    </>
+                                )}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
                     </>
-                ) : undefined}
+                )}
                 action={
                     <div className="flex items-center gap-2">
                         {/* Duration */}
@@ -323,90 +374,6 @@ export function BuilderTopBar({
 
                         {/* Mode Switcher */}
                         <ModeSwitcher mode={mode} onModeChange={onModeChange} isLeader={isLeader} />
-
-                        {/* Share popover */}
-                        <Popover open={shareOpen} onOpenChange={setShareOpen}>
-                            <PopoverTrigger asChild>
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="sm"
-                                    className="h-8 gap-1.5 border-border/60 text-xs"
-                                >
-                                    <Share2 className="h-3.5 w-3.5" />
-                                    <span className="hidden sm:inline">Share</span>
-                                </Button>
-                            </PopoverTrigger>
-                            <PopoverContent align="end" className="w-60 p-1.5">
-                                <div className="px-2 py-1.5 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-                                    Share Link
-                                </div>
-                                <button
-                                    type="button"
-                                    onClick={handleCopyLink}
-                                    className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-sm hover:bg-muted transition-colors"
-                                >
-                                    <Link className="h-3.5 w-3.5 text-muted-foreground" />
-                                    Copy public link
-                                </button>
-
-                                <div className="h-px bg-border/40 my-1.5 mx-1" />
-
-                                <div className="px-2 py-1.5 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-                                    Download As
-                                </div>
-                                <div className="space-y-0.5">
-                                    <button
-                                        type="button"
-                                        disabled={!!exportingFormat}
-                                        onClick={() => handleExport("pdf")}
-                                        className="w-full flex items-center justify-between gap-2.5 px-2.5 py-2 rounded-md text-sm hover:bg-muted transition-colors disabled:opacity-50"
-                                    >
-                                        <div className="flex items-center gap-2.5">
-                                            <FileText className="h-3.5 w-3.5 text-red-500/80" />
-                                            <span>PDF Document (.pdf)</span>
-                                        </div>
-                                        {exportingFormat === "pdf" && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
-                                    </button>
-                                    <button
-                                        type="button"
-                                        disabled={!!exportingFormat}
-                                        onClick={() => handleExport("docx")}
-                                        className="w-full flex items-center justify-between gap-2.5 px-2.5 py-2 rounded-md text-sm hover:bg-muted transition-colors disabled:opacity-50"
-                                    >
-                                        <div className="flex items-center gap-2.5">
-                                            <FileType className="h-3.5 w-3.5 text-blue-500/80" />
-                                            <span>Word Document (.docx)</span>
-                                        </div>
-                                        {exportingFormat === "docx" && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
-                                    </button>
-                                    <button
-                                        type="button"
-                                        disabled={!!exportingFormat}
-                                        onClick={() => handleExport("md")}
-                                        className="w-full flex items-center justify-between gap-2.5 px-2.5 py-2 rounded-md text-sm hover:bg-muted transition-colors disabled:opacity-50"
-                                    >
-                                        <div className="flex items-center gap-2.5">
-                                            <FileCode className="h-3.5 w-3.5 text-orange-500/80" />
-                                            <span>Markdown (.md)</span>
-                                        </div>
-                                        {exportingFormat === "md" && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
-                                    </button>
-                                    <button
-                                        type="button"
-                                        disabled={!!exportingFormat}
-                                        onClick={() => handleExport("txt")}
-                                        className="w-full flex items-center justify-between gap-2.5 px-2.5 py-2 rounded-md text-sm hover:bg-muted transition-colors disabled:opacity-50"
-                                    >
-                                        <div className="flex items-center gap-2.5">
-                                            <FileText className="h-3.5 w-3.5 text-slate-500/80" />
-                                            <span>Plain Text (.txt)</span>
-                                        </div>
-                                        {exportingFormat === "txt" && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
-                                    </button>
-                                </div>
-                            </PopoverContent>
-                        </Popover>
 
                         {/* Save split button — only for leaders */}
                         {isLeader && <div className="flex items-center">

@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo, useRef } from "react";
 import { useDraggable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import {
@@ -10,7 +11,6 @@ import {
     User,
     Layers,
     Puzzle,
-    Plus,
     Heading1,
     Minus,
     Hand,
@@ -20,8 +20,16 @@ import {
 } from "lucide-react";
 import * as LucideIcons from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { ToolboxItem } from "./types";
 import { CategoryType } from "../add-meeting-item-dialog";
+
+/** Match `PointerSensor` activation distance in meeting-builder so clicks don’t add after a drag gesture */
+const ADD_ITEM_CLICK_MAX_MOVE_PX = 8;
 
 interface DraggableToolboxItemProps {
     item: ToolboxItem;
@@ -82,6 +90,8 @@ const getCategoryIcon = (item: ToolboxItem) => {
 };
 
 export function DraggableToolboxItem({ item, disabled, onAddItem, onEditItem }: DraggableToolboxItemProps) {
+    const pointerStartRef = useRef<{ x: number; y: number } | null>(null);
+
     const {
         attributes,
         listeners,
@@ -97,20 +107,43 @@ export function DraggableToolboxItem({ item, disabled, onAddItem, onEditItem }: 
         disabled,
     });
 
+    const mergedListeners = useMemo(() => {
+        if (!listeners) return listeners;
+        return {
+            ...listeners,
+            onPointerDown: (e: React.PointerEvent) => {
+                listeners.onPointerDown?.(e);
+                if (disabled || e.button !== 0) return;
+                pointerStartRef.current = { x: e.clientX, y: e.clientY };
+            },
+        };
+    }, [listeners, disabled]);
+
     const style = transform
         ? {
             transform: CSS.Translate.toString(transform),
         }
         : undefined;
 
-    return (
+    const row = (
         <div
             ref={setNodeRef}
             style={style}
             {...attributes}
-            {...listeners}
+            {...mergedListeners}
+            onPointerUp={(e) => {
+                if (e.button !== 0 || disabled || !onAddItem) return;
+                if ((e.target as HTMLElement).closest("button")) return;
+                const start = pointerStartRef.current;
+                pointerStartRef.current = null;
+                if (!start) return;
+                const dx = e.clientX - start.x;
+                const dy = e.clientY - start.y;
+                if (Math.hypot(dx, dy) >= ADD_ITEM_CLICK_MAX_MOVE_PX) return;
+                onAddItem(item);
+            }}
             className={cn(
-                "group flex items-start gap-3 p-2 bg-card border border-border rounded-md",
+                "group flex items-center gap-3 p-2 bg-card border border-border rounded-md",
                 "hover:border-primary/50 hover:bg-accent/50 transition-all cursor-grab active:cursor-grabbing relative",
                 isDragging && "opacity-50 shadow-lg ring-2 ring-primary/40 z-50",
                 disabled && "opacity-50 cursor-not-allowed"
@@ -120,22 +153,12 @@ export function DraggableToolboxItem({ item, disabled, onAddItem, onEditItem }: 
                 {getCategoryIcon(item)}
             </div>
 
-            <div className={cn(
-                "flex-1 min-w-0",
-                (onEditItem && onAddItem) ? "pr-[72px]" : (onEditItem || onAddItem) ? "pr-10" : "pr-2"
-            )}>
-                <div className="flex items-start gap-2">
-                    <span className="text-sm font-medium text-foreground leading-tight break-words">{item.title}</span>
-                </div>
-                {item.description && (
-                    <p className="text-xs text-muted-foreground line-clamp-2 mt-1 leading-snug">
-                        {item.description}
-                    </p>
-                )}
+            <div className={cn("flex-1 min-w-0", onEditItem ? "pr-10" : "pr-2")}>
+                <span className="text-sm font-medium text-foreground leading-tight break-words">{item.title}</span>
             </div>
 
-            <div className="absolute right-2 top-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
-                {onEditItem && (
+            {onEditItem && (
+                <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
                     <button
                         type="button"
                         onClick={(e) => {
@@ -144,49 +167,40 @@ export function DraggableToolboxItem({ item, disabled, onAddItem, onEditItem }: 
                             onEditItem();
                         }}
                         onPointerDown={(e) => e.stopPropagation()}
+                        onPointerUp={(e) => e.stopPropagation()}
                         className="p-1.5 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-md transition-all"
                         title="Edit Item Type"
                     >
                         <Pencil className="h-4 w-4" />
                     </button>
-                )}
-                {onAddItem && (
-                    <button
-                        type="button"
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            // Prevent the click from starting a drag
-                            e.preventDefault();
-                            onAddItem(item);
-                        }}
-                        onPointerDown={(e) => e.stopPropagation()}
-                        className="p-1.5 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-md transition-all"
-                        title="Quick Insert"
-                    >
-                        <Plus className="h-4 w-4" />
-                    </button>
-                )}
-            </div>
+                </div>
+            )}
         </div>
     );
+
+    if (item.description) {
+        return (
+            <Tooltip>
+                <TooltipTrigger asChild>{row}</TooltipTrigger>
+                <TooltipContent side="right" className="max-w-xs text-left">
+                    <p className="text-xs leading-snug whitespace-pre-wrap">{item.description}</p>
+                </TooltipContent>
+            </Tooltip>
+        );
+    }
+
+    return row;
 }
 
 // Overlay component for drag preview
 export function ToolboxItemDragOverlay({ item }: { item: ToolboxItem }) {
     return (
-        <div className="flex items-start gap-3 p-2 bg-card border rounded-md shadow-lg text-foreground w-[300px]">
+        <div className="flex items-center gap-3 p-2 bg-card border rounded-md shadow-lg text-foreground w-[300px]">
             <div className="flex items-center justify-center shrink-0 w-8 h-8 rounded-md bg-muted text-foreground border border-border/50">
                 {getCategoryIcon(item)}
             </div>
             <div className="flex-1 min-w-0 pr-2">
-                <div className="flex items-start gap-2 mt-0.5">
-                    <span className="text-sm font-medium leading-tight break-words">{item.title}</span>
-                </div>
-                {item.description && (
-                    <p className="text-xs text-muted-foreground line-clamp-2 mt-1 leading-snug">
-                        {item.description}
-                    </p>
-                )}
+                <span className="text-sm font-medium leading-tight break-words">{item.title}</span>
             </div>
         </div>
     );
