@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { sendInviteEmail } from '@/lib/email/send-invite-email';
+import { getAppUrlFromRequest } from '@/lib/url/app-url';
 import { z } from 'zod';
 
 // GET /api/invitations - List pending invitations for workspace
@@ -143,7 +144,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Send email
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const baseUrl = getAppUrlFromRequest(request);
     const inviteLink = `${baseUrl}/accept-invite?token=${invitation.token}`;
 
     const emailResult = await sendInviteEmail({

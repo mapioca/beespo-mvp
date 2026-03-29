@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 import type { SharePermission } from "@/types/share";
 import { sendMeetingShareInviteEmail } from "@/lib/email/send-meeting-share-email";
+import { getAppUrlFromRequest } from "@/lib/url/app-url";
 import type { UserRole } from "@/types/database";
 import { z } from "zod";
 
@@ -244,7 +245,7 @@ export async function POST(request: NextRequest) {
   }
 
   // Send email notification via Resend
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const appUrl = getAppUrlFromRequest(request);
   const workspaceData = (meeting as unknown as MeetingResult)?.workspaces;
   const inviteLink = invitation?.token ? `${appUrl}/api/share/invite/${invitation.token}` : "";
 

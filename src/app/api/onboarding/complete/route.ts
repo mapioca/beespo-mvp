@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { sendInviteEmail } from '@/lib/email/send-invite-email';
+import { getAppUrlFromRequest } from '@/lib/url/app-url';
 import { onboardingFormSchema } from '@/lib/onboarding/validation';
 import {
   getFeatureTier,
@@ -12,6 +13,8 @@ import type { OrganizationKey, RoleKey } from '@/types/onboarding';
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
+  const baseUrl = getAppUrlFromRequest(request);
+
 
   // Verify authentication
   const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -47,7 +50,7 @@ export async function POST(request: NextRequest) {
   }
 
   // Regular workspace creation flow
-  return handleWorkspaceCreation(supabase, user, body);
+  return handleWorkspaceCreation(supabase, user, body, baseUrl);
 }
 
 // Handle invited user onboarding (abbreviated flow)
@@ -143,7 +146,8 @@ async function handleInvitedUserOnboarding(
 async function handleWorkspaceCreation(
   supabase: Awaited<ReturnType<typeof createClient>>,
   user: { id: string; email?: string; user_metadata?: { full_name?: string } },
-  body: unknown
+  body: unknown,
+  baseUrl: string
 ) {
   const validation = onboardingFormSchema.safeParse(body);
   if (!validation.success) {
@@ -280,7 +284,6 @@ async function handleWorkspaceCreation(
     }
 
     // Send invitation email
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const inviteLink = `${baseUrl}/accept-invite?token=${(invitation as any).token}`;
 
