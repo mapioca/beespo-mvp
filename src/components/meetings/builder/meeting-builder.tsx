@@ -18,6 +18,7 @@ import { arrayMove, sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { format } from "date-fns";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "@/lib/toast";
+import { cn } from "@/lib/utils";
 import { PropertiesPane } from "./properties-pane";
 import { ToolboxPane } from "./toolbox-pane";
 import { AgendaCanvas } from "./agenda-canvas";
@@ -1607,37 +1608,39 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                 >
                     <div className="flex-1 flex flex-col overflow-hidden">
                         {/* Global Top Bar (all screen sizes) */}
-                        <BuilderTopBar
-                            title={title}
-                            initialMeetingId={initialMeetingId}
-                            isCreating={isCreating}
-                            isValid={isValid}
-                            onSave={handleValidate}
-                            onSaveAsNew={handleSaveAsNew}
-                            markdownForDownload={() => generateMeetingMarkdown({
-                                title: form.getValues("title"),
-                                date: form.getValues("date") ?? new Date(),
-                                time: form.getValues("time") ?? "07:00",
-                                unitName: workspaceName,
-                                presiding: form.getValues("presiding"),
-                                conducting: form.getValues("conducting"),
-                                chorister: form.getValues("chorister"),
-                                pianistOrganist: form.getValues("pianistOrganist"),
-                                canvasItems,
-                            })}
-                            onSaveAsTemplate={openSaveTemplateDialog}
-                            mode={builderMode}
-                            onModeChange={setBuilderMode}
-                            isLeader={isLeader}
-                            totalDuration={totalDuration}
-                            workspaceSlug={workspaceSlug}
-                            zoomJoinUrl={zoomJoinUrl}
-                            isZoomConnected={isZoomConnected}
-                            isCreatingZoom={isCreatingZoom}
-                            onOpenZoomSheet={() => setZoomSheetOpen(true)}
-                            onAddZoom={handleCreateZoom}
-                            onDelete={handleDeleteMeeting}
-                        />
+                        <div className={cn("relative z-10", builderMode === "print-preview" && "bg-muted")}>
+                            <BuilderTopBar
+                                title={title}
+                                initialMeetingId={initialMeetingId}
+                                isCreating={isCreating}
+                                isValid={isValid}
+                                onSave={handleValidate}
+                                onSaveAsNew={handleSaveAsNew}
+                                markdownForDownload={() => generateMeetingMarkdown({
+                                    title: form.getValues("title"),
+                                    date: form.getValues("date") ?? new Date(),
+                                    time: form.getValues("time") ?? "07:00",
+                                    unitName: workspaceName,
+                                    presiding: form.getValues("presiding"),
+                                    conducting: form.getValues("conducting"),
+                                    chorister: form.getValues("chorister"),
+                                    pianistOrganist: form.getValues("pianistOrganist"),
+                                    canvasItems,
+                                })}
+                                onSaveAsTemplate={openSaveTemplateDialog}
+                                mode={builderMode}
+                                onModeChange={setBuilderMode}
+                                isLeader={isLeader}
+                                totalDuration={totalDuration}
+                                workspaceSlug={workspaceSlug}
+                                zoomJoinUrl={zoomJoinUrl}
+                                isZoomConnected={isZoomConnected}
+                                isCreatingZoom={isCreatingZoom}
+                                onOpenZoomSheet={() => setZoomSheetOpen(true)}
+                                onAddZoom={handleCreateZoom}
+                                onDelete={handleDeleteMeeting}
+                            />
+                        </div>
 
                         {builderMode === "planning" && (
                             <>

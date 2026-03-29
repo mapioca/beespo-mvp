@@ -49,7 +49,7 @@ export function PrintPreviewPane({
     );
 
     return (
-        <ScrollArea className="flex-1 bg-muted">
+        <ScrollArea className="flex-1 bg-muted relative z-0">
             <div className="flex justify-center p-6 md:p-12">
                 <div className="bg-background shadow-2xl w-full max-w-[850px] min-h-[1056px] p-12 sm:p-16 relative rounded-sm">
                     <MarkdownRenderer markdown={markdown} unitName={unitName} />

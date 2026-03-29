@@ -45,7 +45,7 @@ export function ProgramModePane({
     );
 
     return (
-        <div className="flex-1 flex flex-col items-center bg-muted overflow-y-auto py-8">
+        <div className="flex-1 flex flex-col items-center bg-background overflow-y-auto py-8">
             {/* Device label */}
             <div className="flex items-center gap-1.5 mb-4">
                 <Smartphone className="h-3.5 w-3.5 text-muted-foreground" />
