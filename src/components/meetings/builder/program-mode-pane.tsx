@@ -141,7 +141,7 @@ export function ProgramModePane({
 
                 <div className="flex items-center gap-3">
                     {totalDuration > 0 && (
-                        <div className="text-xs text-blue-700 bg-blue-50 rounded-full px-3 py-1 border border-blue-200/60">
+                        <div className="text-xs text-slate-800 bg-[hsl(var(--accent-warm))] rounded-full px-3 py-1 border border-border/50">
                             {canvasItems.length} {canvasItems.length === 1 ? "item" : "items"} &bull; {totalDuration} min
                         </div>
                     )}

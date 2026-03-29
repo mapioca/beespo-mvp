@@ -53,7 +53,7 @@ export function PrintPreviewPane({
         <ScrollArea className="flex-1 bg-muted relative z-0">
             <div className="relative flex justify-center p-6 md:p-12">
                 {totalDuration > 0 && (
-                    <div className="absolute top-4 right-6 bg-card/90 backdrop-blur-sm rounded-full px-3 py-1 ring-1 ring-border shadow-sm text-xs text-muted-foreground">
+                    <div className="absolute top-4 right-6 bg-[hsl(var(--accent-warm))] backdrop-blur-sm rounded-full px-3 py-1 border border-border/50 text-xs text-slate-800">
                         {canvasItems.length} {canvasItems.length === 1 ? "item" : "items"} &bull; {totalDuration} min
                     </div>
                 )}

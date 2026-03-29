@@ -23,6 +23,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Template } from "./types";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 interface PropertiesPaneProps {
     templates: Template[];
@@ -72,9 +73,11 @@ export function PropertiesPane({
             <div className="flex-1 px-2 py-1 space-y-6">
                 {/* General Settings */}
                 <div className="space-y-3">
-                    <h3 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.2em]">
-                        Basics
-                    </h3>
+                    <div className="sticky top-0 z-10 -mx-2 px-2 py-1 bg-background/95 backdrop-blur border-b border-border/40">
+                        <h3 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.2em]">
+                            Basics
+                        </h3>
+                    </div>
 
                     <div className="space-y-1.5">
                         <Label htmlFor="title" className="text-[11px] text-muted-foreground">Name</Label>
@@ -162,19 +165,22 @@ export function PropertiesPane({
                 </div>
 
                 {/* Roles */}
-                <div className="space-y-2">
-                    <button
-                        type="button"
-                        onClick={() => setShowRolesSection((v) => !v)}
-                        className="w-full flex items-center justify-between text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.2em]"
-                    >
-                        <span>Roles</span>
-                        <span className="text-[10px] normal-case tracking-normal">
-                            {showRolesSection ? "Hide" : "Show"}
-                        </span>
-                    </button>
-                    {showRolesSection && (
-                        <div className="grid grid-cols-1 divide-y divide-border/40">
+                <Collapsible open={showRolesSection} onOpenChange={setShowRolesSection} className="space-y-2">
+                    <div className="sticky top-0 z-10 -mx-2 px-2 py-1 bg-background/95 backdrop-blur border-b border-border/40">
+                        <CollapsibleTrigger asChild>
+                            <button
+                                type="button"
+                                className="w-full flex items-center justify-between text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.2em] rounded-md px-1 py-1 transition-colors hover:bg-[hsl(var(--accent-warm)/0.6)] hover:text-foreground data-[state=open]:bg-[hsl(var(--accent-warm)/0.55)] data-[state=open]:text-foreground"
+                            >
+                                <span>Roles</span>
+                                <span className="text-[10px] normal-case tracking-normal">
+                                    {showRolesSection ? "Hide" : "Show"}
+                                </span>
+                            </button>
+                        </CollapsibleTrigger>
+                    </div>
+                    <CollapsibleContent className="overflow-hidden text-sm transition-all data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
+                        <div className="grid grid-cols-1 divide-y divide-border/40 pt-1">
                         {/* Presiding */}
                         <div className="py-2.5">
                             {presiding || showPresiding ? (
@@ -327,22 +333,25 @@ export function PropertiesPane({
                             )}
                         </div>
                         </div>
-                    )}
-                </div>
+                    </CollapsibleContent>
+                </Collapsible>
 
                 {/* Notes */}
-                <div className="space-y-2 pt-2 border-t border-border/40">
-                    <button
-                        type="button"
-                        onClick={() => setShowNotesSection((v) => !v)}
-                        className="w-full flex items-center justify-between text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.2em]"
-                    >
-                        <span>Notes</span>
-                        <span className="text-[10px] normal-case tracking-normal">
-                            {showNotesSection ? "Hide" : "Show"}
-                        </span>
-                    </button>
-                    {showNotesSection && (
+                <Collapsible open={showNotesSection} onOpenChange={setShowNotesSection} className="space-y-2 pt-2 border-t border-border/40">
+                    <div className="sticky top-0 z-10 -mx-2 px-2 py-1 bg-background/95 backdrop-blur border-b border-border/40">
+                        <CollapsibleTrigger asChild>
+                            <button
+                                type="button"
+                                className="w-full flex items-center justify-between text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.2em] rounded-md px-1 py-1 transition-colors hover:bg-[hsl(var(--accent-warm)/0.6)] hover:text-foreground data-[state=open]:bg-[hsl(var(--accent-warm)/0.55)] data-[state=open]:text-foreground"
+                            >
+                                <span>Notes</span>
+                                <span className="text-[10px] normal-case tracking-normal">
+                                    {showNotesSection ? "Hide" : "Show"}
+                                </span>
+                            </button>
+                        </CollapsibleTrigger>
+                    </div>
+                    <CollapsibleContent className="overflow-hidden text-sm transition-all data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
                         <div className="py-2">
                             {meetingNotes || showMeetingNotes ? (
                                 <div className="space-y-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
@@ -375,8 +384,8 @@ export function PropertiesPane({
                                 </div>
                             )}
                         </div>
-                    )}
-                </div>
+                    </CollapsibleContent>
+                </Collapsible>
             </div>
         </div>
     );

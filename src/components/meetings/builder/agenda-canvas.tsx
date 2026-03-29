@@ -395,8 +395,8 @@ export function AgendaCanvas({
             >
                 {/* Stats badge */}
                 {items.length > 0 && (
-                    <div className="absolute top-3 right-3 z-10 bg-blue-50/80 backdrop-blur-sm rounded-full px-3 py-1 border border-blue-200/60">
-                        <span className="text-[11px] text-blue-700 whitespace-nowrap">
+                    <div className="absolute top-3 right-3 z-10 bg-[hsl(var(--accent-warm))] backdrop-blur-sm rounded-full px-3 py-1 border border-border/50">
+                        <span className="text-[11px] text-slate-800 whitespace-nowrap">
                             {items.length} {items.length === 1 ? "item" : "items"} &bull; {totalDuration} min
                         </span>
                     </div>
