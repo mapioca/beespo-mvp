@@ -127,6 +127,8 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
     const [workspaceName, setWorkspaceName] = useState("");
     const [workspaceSlug, setWorkspaceSlug] = useState<string | null>(null);
     const [isLeader, setIsLeader] = useState(true); // assume leader until proven otherwise
+    const [isLive, setIsLive] = useState(false);
+    const [isTogglingLive, setIsTogglingLive] = useState(false);
 
     // Save as Template state
     const [isSavingTemplate, setIsSavingTemplate] = useState(false);
@@ -282,6 +284,7 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
             if (meeting.notes && typeof meeting.notes === "string") {
                 setMeetingNotes(meeting.notes);
             }
+            setIsLive(!!meeting.is_publicly_shared);
 
             // Load agenda items with joined speaker and hymn data
             const { data: agendaItems, error: itemsError } = await supabase
@@ -364,6 +367,57 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
 
         loadExistingMeeting();
     }, [initialMeetingId, form]);
+
+    const getLiveUrl = useCallback(() => {
+        if (!initialMeetingId || !workspaceSlug) return null;
+        return `${window.location.origin}/${workspaceSlug}/program/${initialMeetingId}`;
+    }, [initialMeetingId, workspaceSlug]);
+
+    const handleCopyLiveLink = useCallback(async () => {
+        const liveUrl = getLiveUrl();
+        if (!liveUrl) {
+            toast.error("Live link unavailable", { description: "Missing workspace slug or meeting ID." });
+            return;
+        }
+        await navigator.clipboard.writeText(liveUrl);
+        toast.success("Live link copied");
+    }, [getLiveUrl]);
+
+    const handleGoLive = useCallback(async () => {
+        if (!initialMeetingId) {
+            toast.error("Save the agenda before going live.");
+            return;
+        }
+        if (!workspaceSlug) {
+            toast.error("Workspace not found", { description: "Reload and try again." });
+            return;
+        }
+
+        setIsTogglingLive(true);
+        const supabase = createClient();
+        try {
+            const { error } = await supabase
+                .from("meetings")
+                .update({ is_publicly_shared: true })
+                .eq("id", initialMeetingId);
+
+            if (error) {
+                toast.error("Failed to go live", { description: error.message });
+                return;
+            }
+
+            setIsLive(true);
+            const liveUrl = getLiveUrl();
+            if (liveUrl) {
+                await navigator.clipboard.writeText(liveUrl);
+                toast.success("Live link copied", { description: "Share it with your audience." });
+            } else {
+                toast.success("Live is on");
+            }
+        } finally {
+            setIsTogglingLive(false);
+        }
+    }, [initialMeetingId, workspaceSlug, getLiveUrl]);
 
     // Update title when template or date changes — use meeting date, not today
     const DEFAULT_TITLE = "Untitled Meeting Agenda";
@@ -1639,6 +1693,10 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                                 onOpenZoomSheet={() => setZoomSheetOpen(true)}
                                 onAddZoom={handleCreateZoom}
                                 onDelete={handleDeleteMeeting}
+                                isLive={isLive}
+                                isTogglingLive={isTogglingLive}
+                                onGoLive={handleGoLive}
+                                onCopyLiveLink={handleCopyLiveLink}
                             />
                         </div>
 

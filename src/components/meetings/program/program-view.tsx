@@ -9,13 +9,11 @@ import { ProgramAgendaItem } from "./program-agenda-item";
 import { ProgramFooter } from "./program-footer";
 
 export function ProgramView({ data, variant = "embedded", className }: ProgramViewProps) {
-    const isStandalone = variant === "standalone";
-
     return (
         <div
             className={cn(
                 "w-full max-w-md mx-auto text-slate-900",
-                isStandalone ? "px-7 py-10" : "px-6 py-8",
+                "px-6 py-8",
                 className
             )}
         >
@@ -50,7 +48,7 @@ export function ProgramView({ data, variant = "embedded", className }: ProgramVi
                 ))}
             </div>
 
-            {isStandalone && <ProgramFooter />}
+            <ProgramFooter />
         </div>
     );
 }

@@ -101,8 +101,8 @@ export default async function ProgramPage({ params }: ProgramPageProps) {
     };
 
     return (
-        <div className="flex-1 flex justify-center bg-background">
-            <ProgramView data={programData} variant="standalone" />
+        <div className="flex-1 flex justify-center bg-slate-50">
+            <ProgramView data={programData} variant="embedded" />
         </div>
     );
 }

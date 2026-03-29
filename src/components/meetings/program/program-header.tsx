@@ -17,11 +17,9 @@ function formatTime12h(time24: string): string {
     return `${displayHours}:${minutes.toString().padStart(2, "0")} ${period}`;
 }
 
-export function ProgramHeader({ title, date, time, unitName, variant = "embedded" }: ProgramHeaderProps) {
+export function ProgramHeader({ title, date, time, unitName}: ProgramHeaderProps) {
     const dateStr = format(date, "EEEE, MMMM d, yyyy");
     const timeStr = formatTime12h(time);
-    const isStandalone = variant === "standalone";
-
     return (
         <div className="text-center space-y-3 pb-6">
             {unitName && (
@@ -29,7 +27,7 @@ export function ProgramHeader({ title, date, time, unitName, variant = "embedded
                     {unitName}
                 </p>
             )}
-            <h1 className={isStandalone ? "text-[26px] font-semibold tracking-tight" : "text-[22px] font-semibold tracking-tight"}>
+            <h1 className="text-[22px] font-semibold tracking-tight">
                 {title}
             </h1>
             <div className="flex items-center justify-center">

@@ -83,6 +83,14 @@ interface BuilderTopBarProps {
     onAddZoom: () => void;
     /** Delete the meeting — resolves when done */
     onDelete?: () => Promise<void>;
+    /** Whether the meeting is live */
+    isLive?: boolean;
+    /** Whether a live toggle is in progress */
+    isTogglingLive?: boolean;
+    /** Trigger go live / copy live link */
+    onGoLive?: () => void;
+    /** Copy live link (when already live) */
+    onCopyLiveLink?: () => void;
 }
 
 export function BuilderTopBar({
@@ -104,6 +112,10 @@ export function BuilderTopBar({
     onOpenZoomSheet,
     onAddZoom,
     onDelete,
+    isLive = false,
+    isTogglingLive = false,
+    onGoLive,
+    onCopyLiveLink,
 }: BuilderTopBarProps) {
     const [saveAsNewOpen, setSaveAsNewOpen] = useState(false);
     const [newTitle, setNewTitle] = useState("");
@@ -339,6 +351,14 @@ export function BuilderTopBar({
                             </span>
                         )}
 
+                        {/* Live status */}
+                        {isLive && (
+                            <span className="hidden sm:inline-flex items-center gap-1.5 text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">
+                                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                                Live
+                            </span>
+                        )}
+
                         {/* Zoom */}
                         {isLeader && initialMeetingId && (
                             zoomJoinUrl ? (
@@ -370,6 +390,26 @@ export function BuilderTopBar({
                                     <span className="hidden sm:inline">Zoom</span>
                                 </Button>
                             ) : null
+                        )}
+
+                        {/* Go Live / Copy link */}
+                        {isLeader && initialMeetingId && (
+                            <Button
+                                type="button"
+                                size="sm"
+                                variant={isLive ? "outline" : "default"}
+                                className={cn(
+                                    "h-8 text-xs font-medium",
+                                    isLive
+                                        ? "border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+                                        : "bg-emerald-600 hover:bg-emerald-500 text-white"
+                                )}
+                                onClick={isLive ? onCopyLiveLink : onGoLive}
+                                disabled={isTogglingLive}
+                            >
+                                {isTogglingLive && <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />}
+                                {isLive ? "Copy Live Link" : "Go Live"}
+                            </Button>
                         )}
 
                         {/* Mode Switcher */}

@@ -55,10 +55,10 @@ export function ProgramModePane({
             {/* Phone frame */}
             <div className="relative shrink-0">
                 {/* Device shell */}
-                <div className="w-[390px] h-[848px] rounded-[2.6rem] border-[6px] border-zinc-900 dark:border-zinc-700 bg-background shadow-2xl overflow-hidden flex flex-col">
+                <div className="w-[360px] h-[782px] rounded-[2.4rem] border-[6px] border-zinc-900 dark:border-zinc-700 bg-background shadow-2xl overflow-hidden flex flex-col">
                     {/* Status bar / notch area */}
-                    <div className="h-9 bg-background flex items-center justify-center shrink-0">
-                        <div className="w-[112px] h-[24px] bg-zinc-900 dark:bg-zinc-700 rounded-full" />
+                    <div className="h-8 bg-background flex items-center justify-center shrink-0">
+                        <div className="w-[104px] h-[22px] bg-zinc-900 dark:bg-zinc-700 rounded-full" />
                     </div>
 
                     {/* Scrollable content area */}
