@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import { BusinessClient } from "@/components/business/business-client"
 import { Metadata } from "next"
+import { BusinessView } from "@/lib/table-views"
 
 export const metadata: Metadata = {
   title: "Business | Beespo",
@@ -52,5 +53,15 @@ export default async function BusinessPage() {
     console.error("Business items query error:", error)
   }
 
-  return <BusinessClient items={businessItems || []} />
+  // Fetch workspace-scoped business views
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: businessViewsData } = await (supabase.from("agenda_views") as any)
+    .select("*")
+    .eq("workspace_id", profile.workspace_id)
+    .eq("view_type", "business")
+    .order("created_at", { ascending: true })
+
+  const initialViews: BusinessView[] = businessViewsData ?? []
+
+  return <BusinessClient items={businessItems || []} initialViews={initialViews} />
 }
