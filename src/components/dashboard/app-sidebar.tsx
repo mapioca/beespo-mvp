@@ -104,13 +104,13 @@ export function AppSidebar({
     <TooltipProvider delayDuration={0}>
       <aside
         className={cn(
-          "shrink-0 flex flex-col h-full border-r border-border/50 bg-background/80 backdrop-blur",
+          "shrink-0 flex flex-col h-full bg-panel backdrop-blur",
           "transition-[width] duration-300 ease-in-out",
           isCollapsed ? "w-16" : "w-60"
         )}
       >
         {/* Header with Logo and Toggle */}
-        <div className="border-b border-border/50">
+        <div className="border-b-0">
           <div
             className={cn(
               "flex transition-all duration-300 ease-in-out",

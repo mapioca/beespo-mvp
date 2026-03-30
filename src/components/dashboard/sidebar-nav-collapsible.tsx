@@ -78,13 +78,13 @@ export function SidebarNavCollapsible({
             onMouseEnter={openFlyout}
             onMouseLeave={scheduleFlyoutClose}
             className={cn(
-              "flex items-center justify-center rounded-lg px-2 py-1.5 text-sm transition-colors w-full",
+              "flex items-center justify-center rounded-lg px-2 py-1.5 text-[13px] transition-colors w-full",
               hasActiveChild
                 ? "text-foreground"
-                : "text-muted-foreground hover:bg-[hsl(var(--accent-warm)/0.6)] hover:text-foreground"
+                : "text-muted-foreground hover:bg-nav-hover hover:text-foreground"
             )}
           >
-            <Icon className="h-4 w-4 shrink-0 stroke-[1.6]" />
+            <Icon className="h-4 w-4 shrink-0 stroke-[1.4]" />
           </button>
         </PopoverAnchor>
 
@@ -113,13 +113,13 @@ export function SidebarNavCollapsible({
                   href={child.href}
                   onClick={() => setFlyoutOpen(false)}
                   className={cn(
-                    "flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors",
+                    "flex items-center gap-2 rounded-md px-2 py-1.5 text-[13px] transition-colors",
                     isActive
-                      ? "bg-[hsl(var(--accent-warm))] text-foreground font-medium"
-                      : "text-muted-foreground hover:bg-[hsl(var(--accent-warm)/0.6)] hover:text-foreground"
+                      ? "bg-nav-selected text-foreground font-normal"
+                      : "text-muted-foreground hover:bg-nav-hover hover:text-foreground"
                   )}
                 >
-                  <ChildIcon className="h-4 w-4 shrink-0 stroke-[1.6]" />
+                  <ChildIcon className="h-4 w-4 shrink-0 stroke-[1.4]" />
                   {child.label}
                 </Link>
               )
@@ -138,17 +138,17 @@ export function SidebarNavCollapsible({
         <PopoverAnchor asChild>
           <CollapsibleTrigger
             className={cn(
-              "flex items-center gap-2.5 rounded-lg px-3 py-1.5 text-sm transition-colors w-full",
+              "flex items-center gap-2.5 rounded-lg px-3 py-1.5 text-[13px] transition-colors w-full",
               hasActiveChild
                 ? "text-foreground"
-                : "text-muted-foreground hover:bg-[hsl(var(--accent-warm)/0.6)] hover:text-foreground"
+                : "text-muted-foreground hover:bg-nav-hover hover:text-foreground"
             )}
             aria-expanded={isExpanded}
             aria-controls={groupId}
             onMouseEnter={openFlyout}
             onMouseLeave={scheduleFlyoutClose}
           >
-            <Icon className="h-4 w-4 shrink-0 stroke-[1.6]" />
+            <Icon className="h-4 w-4 shrink-0 stroke-[1.4]" />
             <span className="flex-1 text-left">{item.label}</span>
             <ChevronRight
               className={cn(
@@ -184,13 +184,13 @@ export function SidebarNavCollapsible({
                   href={child.href}
                   onClick={() => setFlyoutOpen(false)}
                   className={cn(
-                    "flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors",
+                    "flex items-center gap-2 rounded-md px-2 py-1.5 text-[13px] transition-colors",
                     isActive
-                      ? "bg-[hsl(var(--accent-warm))] text-foreground font-medium"
-                      : "text-muted-foreground hover:bg-[hsl(var(--accent-warm)/0.6)] hover:text-foreground"
+                      ? "bg-nav-selected text-foreground font-normal"
+                      : "text-muted-foreground hover:bg-nav-hover hover:text-foreground"
                   )}
                 >
-                  <ChildIcon className="h-4 w-4 shrink-0 stroke-[1.6]" />
+                  <ChildIcon className="h-4 w-4 shrink-0 stroke-[1.4]" />
                   {child.label}
                 </Link>
               )

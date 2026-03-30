@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { ChevronDown, Link, Loader2, FileText, FileCode, FileType, CalendarDays, ClipboardList, Star, MoreHorizontal, Trash2 } from "lucide-react";
-import { useFavoritesStore } from "@/stores/favorites-store";
-import { ZoomIcon, ZoomLogo } from "@/components/ui/zoom-icon";
+import { useState } from "react";
+import { ArrowLeftRight, ChevronDown, Link, Loader2, FileText, FileCode, FileType, CalendarDays, ClipboardList, MoreHorizontal, Save, Trash2 } from "lucide-react";
+import { ZoomIcon } from "@/components/ui/zoom-icon";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -41,7 +40,6 @@ import {
     generateMeetingTxt,
     downloadBlob
 } from "@/lib/agenda-export-utils";
-import { ModeSwitcher } from "./mode-switcher";
 import { BuilderMode } from "./types";
 
 interface BuilderTopBarProps {
@@ -69,6 +67,8 @@ interface BuilderTopBarProps {
     isLeader: boolean;
     /** Total agenda duration in minutes */
     totalDuration: number;
+    /** Total agenda items */
+    itemCount: number;
     /** Workspace slug for program URL */
     workspaceSlug: string | null;
     /** Zoom join URL (null if no zoom meeting linked) */
@@ -99,6 +99,8 @@ export function BuilderTopBar({
     mode,
     onModeChange,
     isLeader,
+    totalDuration,
+    itemCount,
     zoomJoinUrl,
     isZoomConnected,
     isCreatingZoom,
@@ -115,20 +117,6 @@ export function BuilderTopBar({
     const [isDeleting, setIsDeleting] = useState(false);
 
     // Star / Favorite
-    const [mounted, setMounted] = useState(false);
-    useEffect(() => setMounted(true), []);
-    const { isFavorite, toggleFavorite } = useFavoritesStore();
-    const favorited = mounted && initialMeetingId ? isFavorite(initialMeetingId, "meeting") : false;
-
-    const handleToggleFavorite = () => {
-        if (!initialMeetingId) return;
-        toggleFavorite({
-            id: initialMeetingId,
-            type: "meeting",
-            title,
-            href: `/meetings/${initialMeetingId}`,
-        });
-    };
 
     const handleDelete = async () => {
         if (!onDelete) return;
@@ -224,201 +212,201 @@ export function BuilderTopBar({
                     { label: "Agendas", href: "/meetings/agendas", icon: <ClipboardList className="h-4 w-4 stroke-[1.6]" /> },
                     { label: title || "Untitled Agenda", icon: <FileText className="h-4 w-4 stroke-[1.6]" /> },
                 ]}
-                className="bg-transparent ring-0 border-b border-border/60 rounded-none px-4 py-1.5"
-                inlineAction={(
-                    <>
-                        {initialMeetingId && (
+                className="bg-chrome backdrop-blur ring-0 border-b-0 rounded-none px-4 py-1.5"
+                inlineAction={
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
                             <button
                                 type="button"
-                                title={favorited ? "Remove from favorites" : "Add to favorites"}
-                                onClick={handleToggleFavorite}
+                                title="More options"
                                 className={cn(
                                     "inline-flex items-center justify-center h-6 w-6 rounded",
                                     "text-muted-foreground hover:text-foreground hover:bg-accent",
+                                    "data-[state=open]:bg-accent data-[state=open]:text-foreground",
                                     "transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                                 )}
                             >
-                                <Star
-                                    className={cn(
-                                        "h-4 w-4 stroke-[1.6] transition-colors",
-                                        favorited ? "fill-amber-400 text-amber-400" : ""
-                                    )}
-                                />
+                                <MoreHorizontal className="h-4 w-4 stroke-[2.2]" />
                             </button>
-                        )}
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start" className="w-60 rounded-xl border-border/60 shadow-lg">
+                            <DropdownMenuItem onSelect={() => void handleCopyLink()}>
+                                <Link className="h-4 w-4 stroke-[1.6]" />
+                                Copy public link
+                            </DropdownMenuItem>
 
+                            <DropdownMenuSeparator />
+
+                            <DropdownMenuItem
+                                disabled={!!exportingFormat}
+                                onSelect={() => void handleExport("pdf")}
+                            >
+                                <FileText className="h-4 w-4 stroke-[1.6]" />
+                                <span className="flex-1">PDF Document (.pdf)</span>
+                                {exportingFormat === "pdf" && (
+                                    <Loader2 className="h-3 w-3 shrink-0 animate-spin text-muted-foreground" />
+                                )}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                                disabled={!!exportingFormat}
+                                onSelect={() => void handleExport("docx")}
+                            >
+                                <FileType className="h-4 w-4 stroke-[1.6]" />
+                                <span className="flex-1">Word Document (.docx)</span>
+                                {exportingFormat === "docx" && (
+                                    <Loader2 className="h-3 w-3 shrink-0 animate-spin text-muted-foreground" />
+                                )}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                                disabled={!!exportingFormat}
+                                onSelect={() => void handleExport("md")}
+                            >
+                                <FileCode className="h-4 w-4 stroke-[1.6]" />
+                                <span className="flex-1">Markdown (.md)</span>
+                                {exportingFormat === "md" && (
+                                    <Loader2 className="h-3 w-3 shrink-0 animate-spin text-muted-foreground" />
+                                )}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                                disabled={!!exportingFormat}
+                                onSelect={() => void handleExport("txt")}
+                            >
+                                <FileText className="h-4 w-4 stroke-[1.6]" />
+                                <span className="flex-1">Plain Text (.txt)</span>
+                                {exportingFormat === "txt" && (
+                                    <Loader2 className="h-3 w-3 shrink-0 animate-spin text-muted-foreground" />
+                                )}
+                            </DropdownMenuItem>
+
+                            <DropdownMenuSeparator />
+
+                            {isLeader && initialMeetingId ? (
+                                zoomJoinUrl ? (
+                                    <DropdownMenuItem onSelect={onOpenZoomSheet}>
+                                        <ZoomIcon className="h-4 w-4" />
+                                        Open Zoom
+                                    </DropdownMenuItem>
+                                ) : isZoomConnected ? (
+                                    <DropdownMenuItem
+                                        onSelect={onAddZoom}
+                                        disabled={isCreatingZoom}
+                                    >
+                                        {isCreatingZoom ? (
+                                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                        ) : (
+                                            <ZoomIcon className="h-4 w-4" />
+                                        )}
+                                        Add Zoom meeting
+                                    </DropdownMenuItem>
+                                ) : (
+                                    <DropdownMenuItem disabled>
+                                        <ZoomIcon className="h-4 w-4" />
+                                        Connect Zoom in Settings
+                                    </DropdownMenuItem>
+                                )
+                            ) : (
+                                <DropdownMenuItem disabled>
+                                    <ZoomIcon className="h-4 w-4" />
+                                    Zoom unavailable
+                                </DropdownMenuItem>
+                            )}
+
+                            {isLeader && initialMeetingId && (
+                                <>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem
+                                        onSelect={() => setIsDeleteDialogOpen(true)}
+                                        className="focus:text-destructive"
+                                    >
+                                        <Trash2 className="h-4 w-4 stroke-[1.6]" />
+                                        Delete agenda
+                                    </DropdownMenuItem>
+                                </>
+                            )}
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                }
+                action={
+                    <div className="flex items-center gap-2">
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <button
                                     type="button"
-                                    title="More options"
+                                    title="Switch mode"
                                     className={cn(
-                                    "inline-flex items-center justify-center h-6 w-6 rounded",
-                                    "text-muted-foreground hover:text-foreground hover:bg-accent",
-                                    "transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                                )}
-                            >
-                                <MoreHorizontal className="h-4 w-4 stroke-[1.6]" />
-                            </button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="start" className="w-60 rounded-xl border-border/60 shadow-lg">
-                                <DropdownMenuLabel className="text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.2em]">
-                                    Share Link
-                                </DropdownMenuLabel>
-                                <DropdownMenuItem onSelect={() => void handleCopyLink()}>
-                                    <Link className="h-4 w-4 stroke-[1.6] text-muted-foreground" />
-                                    Copy public link
-                                </DropdownMenuItem>
-
-                                <DropdownMenuSeparator />
-
-                                <DropdownMenuLabel className="text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.2em]">
-                                    Download As
-                                </DropdownMenuLabel>
-                                <DropdownMenuItem
-                                    disabled={!!exportingFormat}
-                                    onSelect={() => void handleExport("pdf")}
-                                >
-                                    <FileText className="h-4 w-4 stroke-[1.6] text-red-500/80" />
-                                    <span className="flex-1">PDF Document (.pdf)</span>
-                                    {exportingFormat === "pdf" && (
-                                        <Loader2 className="h-3 w-3 shrink-0 animate-spin text-muted-foreground" />
+                                        "inline-flex items-center gap-2 h-8 px-3.5 rounded-full",
+                                        "bg-control text-foreground hover:bg-control-hover",
+                                        "border border-control",
+                                        "transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                                     )}
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                    disabled={!!exportingFormat}
-                                    onSelect={() => void handleExport("docx")}
                                 >
-                                    <FileType className="h-4 w-4 stroke-[1.6] text-blue-500/80" />
-                                    <span className="flex-1">Word Document (.docx)</span>
-                                    {exportingFormat === "docx" && (
-                                        <Loader2 className="h-3 w-3 shrink-0 animate-spin text-muted-foreground" />
-                                    )}
+                                    <ArrowLeftRight className="h-4 w-4 stroke-[1.6]" />
+                                    <span className="text-[12px]">Switch mode</span>
+                                </button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-44">
+                                <DropdownMenuItem onSelect={() => onModeChange("planning")} className={cn(mode === "planning" && "font-medium")}>
+                                    Planning
                                 </DropdownMenuItem>
-                                <DropdownMenuItem
-                                    disabled={!!exportingFormat}
-                                    onSelect={() => void handleExport("md")}
-                                >
-                                    <FileCode className="h-4 w-4 stroke-[1.6] text-orange-500/80" />
-                                    <span className="flex-1">Markdown (.md)</span>
-                                    {exportingFormat === "md" && (
-                                        <Loader2 className="h-3 w-3 shrink-0 animate-spin text-muted-foreground" />
-                                    )}
+                                <DropdownMenuItem onSelect={() => onModeChange("print-preview")} className={cn(mode === "print-preview" && "font-medium")}>
+                                    Print Preview
                                 </DropdownMenuItem>
-                                <DropdownMenuItem
-                                    disabled={!!exportingFormat}
-                                    onSelect={() => void handleExport("txt")}
-                                >
-                                    <FileText className="h-4 w-4 stroke-[1.6] text-slate-500/80" />
-                                    <span className="flex-1">Plain Text (.txt)</span>
-                                    {exportingFormat === "txt" && (
-                                        <Loader2 className="h-3 w-3 shrink-0 animate-spin text-muted-foreground" />
-                                    )}
+                                <DropdownMenuItem onSelect={() => onModeChange("program")} className={cn(mode === "program" && "font-medium")}>
+                                    Program
                                 </DropdownMenuItem>
-
-                                {isLeader && initialMeetingId && (
-                                    <>
-                                        <DropdownMenuSeparator />
-                                        <DropdownMenuItem
-                                            onSelect={() => setIsDeleteDialogOpen(true)}
-                                            className="focus:text-destructive"
-                                        >
-                                        <Trash2 className="h-4 w-4 stroke-[1.6]" />
-                                        Delete agenda
-                                    </DropdownMenuItem>
-                                    </>
-                                )}
                             </DropdownMenuContent>
                         </DropdownMenu>
-                    </>
-                )}
-                action={
-                    <div className="flex items-center gap-1.5">
-                        {/* Live status */}
-                        {isLive && (
-                            <span className="hidden sm:inline-flex items-center gap-1 text-[11px] font-medium text-emerald-600">
-                                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                                Live
-                            </span>
-                        )}
 
-                        {/* Zoom */}
-                        {isLeader && initialMeetingId && (
-                            zoomJoinUrl ? (
-                                <Button
+                        {isLeader && (
+                            <div className="inline-flex items-center h-8 border border-control bg-control text-foreground rounded-full">
+                                <button
                                     type="button"
-                                    variant="ghost"
-                                    size="sm"
-                                    title="Zoom Meeting"
-                                    className="h-8 w-8 p-0 hover:bg-blue-500/10"
-                                    onClick={onOpenZoomSheet}
-                                >
-                                    <ZoomLogo iconClassName="h-4 w-4" wordmarkClassName="hidden" />
-                                </Button>
-                            ) : isZoomConnected ? (
-                                <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="sm"
-                                    title="Add Zoom Meeting"
-                                    className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
-                                    onClick={onAddZoom}
-                                    disabled={isCreatingZoom}
-                                >
-                                    {isCreatingZoom ? (
-                                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                    ) : (
-                                        <ZoomIcon className="h-4 w-4" />
+                                    onClick={onSave}
+                                    title="Save"
+                                    className={cn(
+                                        "inline-flex items-center gap-2 h-8 pl-3.5 pr-2 rounded-l-full rounded-r-none",
+                                        "hover:bg-control-hover",
+                                        "transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                                     )}
-                                </Button>
-                            ) : null
+                                >
+                                    <Save className="h-4 w-4 stroke-[1.6]" />
+                                    <span className="text-[12px]">Save</span>
+                                </button>
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <button
+                                            type="button"
+                                            title="Save options"
+                                            className={cn(
+                                                "inline-flex items-center justify-center h-8 w-9 rounded-r-full rounded-l-none",
+                                                "hover:bg-control-hover",
+                                                "transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                                                "data-[state=open]:bg-control-hover data-[state=open]:text-foreground"
+                                            )}
+                                        >
+                                            <ChevronDown className="h-4 w-4 stroke-[1.6]" />
+                                        </button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end" className="w-52">
+                                        <DropdownMenuItem onSelect={onSave} disabled={isCreating || !isValid}>
+                                            {isCreating && <Loader2 className="h-3.5 w-3.5 mr-2 animate-spin" />}
+                                            {saveLabel}
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onSelect={onSaveAsTemplate}>
+                                            Save as Template
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onSelect={openSaveAsNew}>
+                                            Save as New Meeting
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            </div>
                         )}
 
-                        {/* Mode Switcher */}
-                        <ModeSwitcher mode={mode} onModeChange={onModeChange} isLeader={isLeader} />
-
-                        {/* Save split button — only for leaders */}
-                        {isLeader && <div className="flex items-center">
-                            <Button
-                                type="button"
-                                size="sm"
-                                className={cn(
-                                    "h-8 text-xs font-medium rounded-r-none border-r-0",
-                                    "bg-[hsl(var(--accent-warm))] text-foreground hover:bg-[hsl(var(--accent-warm-hover))]",
-                                    "shadow-[0_1px_0_rgba(15,23,42,0.08)]"
-                                )}
-                                onClick={onSave}
-                                disabled={isCreating || !isValid}
-                            >
-                                {isCreating && <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />}
-                                {saveLabel}
-                            </Button>
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button
-                                        type="button"
-                                        size="sm"
-                                        className={cn(
-                                            "h-8 w-8 rounded-l-none px-0",
-                                            "bg-[hsl(var(--accent-warm))] text-foreground hover:bg-[hsl(var(--accent-warm-hover))]",
-                                            "border-l border-foreground/10",
-                                            "shadow-[0_1px_0_rgba(15,23,42,0.08)]"
-                                        )}
-                                        disabled={isCreating}
-                                    >
-                                        <ChevronDown className="h-4 w-4 stroke-[1.6]" />
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="w-48">
-                                    <DropdownMenuItem onSelect={onSaveAsTemplate}>
-                                        Save as Template
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onSelect={openSaveAsNew}>
-                                        Save as New Meeting
-                                    </DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                        </div>}
+                        <div className="h-4 w-px bg-border/50" />
+                        <span className="text-[12px] text-muted-foreground whitespace-nowrap">
+                            {itemCount} {itemCount === 1 ? "item" : "items"} &bull; {totalDuration} min
+                        </span>
                     </div>
                 }
             />

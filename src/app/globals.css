@@ -5,7 +5,9 @@
 @layer base {
   :root {
     /* Black & White Elegance Theme */
-    --canvas: 45 29% 97%; /* Base layer behind the app shell (#FAF9F6) */
+    --canvas: 0 0% 96%; /* Back-compat */
+    --panel: 0 0% 96%; /* Base app surface (sidebar + shell canvas) */
+    --paper: 0 0% 99%; /* Document surface */
     --background: 0 0% 100%; /* Pure white */
     --foreground: 0 0% 0%; /* Pure black */
     --card: 0 0% 100%;
@@ -22,6 +24,28 @@
     --accent-foreground: 0 0% 0%;
     --accent-warm: 24 38% 91%; /* Warm peach-gray (#EFE7E1) */
     --accent-warm-hover: 24 27% 88%; /* Slightly deeper warm hover (#E6DDD6) */
+    --chrome: 0 0% 100%; /* App chrome surface (top bars, toolbars) */
+    --chrome-border: 0 0% 85%; /* Subtle chrome dividers */
+    --nav-hover: 0 0% 92%;
+    --nav-hover-alpha: 1;
+    --nav-selected: 0 0% 90%;
+    --nav-selected-alpha: 1;
+    --button-primary: 0 0% 0%;
+    --button-primary-hover: 0 0% 12%;
+    --button-primary-foreground: 0 0% 100%;
+    --pill: 0 0% 92%;
+    --pill-foreground: 0 0% 20%;
+    --control: 0 0% 100%;
+    --control-foreground: 0 0% 35%;
+    --control-border: 0 0% 88%;
+    --control-hover: 0 0% 96%;
+    --menu: 0 0% 100%;
+    --menu-border: 0 0% 86%;
+    --menu-text: 0 0% 18%;
+    --menu-muted: 0 0% 45%;
+    --menu-icon: 0 0% 40%;
+    --menu-hover: 0 0% 96%;
+    --menu-separator: 0 0% 92%;
     --destructive: 0 84% 60%; /* Error red - minimal color */
     --destructive-foreground: 0 0% 100%;
     --border: 0 0% 90%; /* Light gray for borders */
@@ -36,7 +60,9 @@
   }
 
   .dark {
-    --canvas: 0 0% 0%; /* Pure black canvas in dark mode — content surface sits above it */
+    --canvas: 24 18% 22%; /* Back-compat */
+    --panel: 0 0% 8%;
+    --paper: 0 0% 5%;
     --background: 0 0% 0%;
     --foreground: 0 0% 100%;
     --card: 0 0% 5%;
@@ -53,6 +79,28 @@
     --accent-foreground: 0 0% 100%;
     --accent-warm: 24 18% 22%;
     --accent-warm-hover: 24 20% 26%;
+    --chrome: 0 0% 8%;
+    --chrome-border: 0 0% 18%;
+    --nav-hover: 0 0% 18%;
+    --nav-hover-alpha: 1;
+    --nav-selected: 0 0% 20%;
+    --nav-selected-alpha: 1;
+    --button-primary: 0 0% 100%;
+    --button-primary-hover: 0 0% 88%;
+    --button-primary-foreground: 0 0% 100%;
+    --pill: 0 0% 18%;
+    --pill-foreground: 0 0% 90%;
+    --control: 0 0% 10%;
+    --control-foreground: 0 0% 75%;
+    --control-border: 0 0% 20%;
+    --control-hover: 0 0% 14%;
+    --menu: 0 0% 10%;
+    --menu-border: 0 0% 22%;
+    --menu-text: 0 0% 92%;
+    --menu-muted: 0 0% 60%;
+    --menu-icon: 0 0% 65%;
+    --menu-hover: 0 0% 16%;
+    --menu-separator: 0 0% 22%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 0%;
     --border: 0 0% 15%;
@@ -88,7 +136,95 @@
 ============================================ */
 @layer utilities {
   .bg-canvas {
-    background-color: hsl(var(--canvas));
+    background-color: hsl(var(--panel));
+  }
+
+  .bg-panel {
+    background-color: hsl(var(--panel));
+  }
+
+  .bg-paper {
+    background-color: hsl(var(--paper));
+  }
+
+  .bg-chrome {
+    background-color: hsl(var(--chrome) / 0.7);
+  }
+
+  .border-chrome {
+    border-color: hsl(var(--chrome-border) / 0.6);
+  }
+
+  .bg-nav-hover {
+    background-color: hsl(var(--nav-hover) / var(--nav-hover-alpha));
+  }
+
+  .bg-nav-selected {
+    background-color: hsl(var(--nav-selected) / var(--nav-selected-alpha));
+  }
+
+  .bg-button-primary {
+    background-color: hsl(var(--button-primary));
+  }
+
+  .bg-button-primary-hover {
+    background-color: hsl(var(--button-primary-hover));
+  }
+
+  .text-button-primary {
+    color: hsl(var(--button-primary-foreground));
+  }
+
+  .bg-pill {
+    background-color: hsl(var(--pill));
+  }
+
+  .text-pill {
+    color: hsl(var(--pill-foreground));
+  }
+
+  .bg-control {
+    background-color: hsl(var(--control));
+  }
+
+  .text-control {
+    color: hsl(var(--control-foreground));
+  }
+
+  .border-control {
+    border-color: hsl(var(--control-border));
+  }
+
+  .bg-control-hover {
+    background-color: hsl(var(--control-hover));
+  }
+
+  .bg-menu {
+    background-color: hsl(var(--menu));
+  }
+
+  .border-menu {
+    border-color: hsl(var(--menu-border));
+  }
+
+  .text-menu {
+    color: hsl(var(--menu-text));
+  }
+
+  .text-menu-muted {
+    color: hsl(var(--menu-muted));
+  }
+
+  .text-menu-icon {
+    color: hsl(var(--menu-icon));
+  }
+
+  .bg-menu-hover {
+    background-color: hsl(var(--menu-hover));
+  }
+
+  .border-menu-separator {
+    border-color: hsl(var(--menu-separator));
   }
 
   .h-screen-dynamic {

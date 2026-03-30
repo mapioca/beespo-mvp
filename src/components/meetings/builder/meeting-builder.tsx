@@ -1649,6 +1649,18 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
     const selectedSpeakerIds = canvasItems
         .filter((i) => i.speaker_id)
         .map((i) => i.speaker_id as string);
+    const markdownForDownload = () =>
+        generateMeetingMarkdown({
+            title: form.getValues("title"),
+            date: form.getValues("date") ?? new Date(),
+            time: form.getValues("time") ?? "07:00",
+            unitName: workspaceName,
+            presiding: form.getValues("presiding"),
+            conducting: form.getValues("conducting"),
+            chorister: form.getValues("chorister"),
+            pianistOrganist: form.getValues("pianistOrganist"),
+            canvasItems,
+        });
 
     return (
         <Form {...form}>
@@ -1662,7 +1674,7 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                 >
                     <div className="flex-1 flex flex-col overflow-hidden">
                         {/* Global Top Bar (all screen sizes) */}
-                        <div className={cn("relative z-10", builderMode === "print-preview" && "bg-muted")}>
+                        <div className={cn("relative z-10 bg-chrome backdrop-blur", builderMode === "print-preview" && "bg-chrome")}>
                             <BuilderTopBar
                                 title={title}
                                 initialMeetingId={initialMeetingId}
@@ -1670,22 +1682,13 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                                 isValid={isValid}
                                 onSave={handleValidate}
                                 onSaveAsNew={handleSaveAsNew}
-                                markdownForDownload={() => generateMeetingMarkdown({
-                                    title: form.getValues("title"),
-                                    date: form.getValues("date") ?? new Date(),
-                                    time: form.getValues("time") ?? "07:00",
-                                    unitName: workspaceName,
-                                    presiding: form.getValues("presiding"),
-                                    conducting: form.getValues("conducting"),
-                                    chorister: form.getValues("chorister"),
-                                    pianistOrganist: form.getValues("pianistOrganist"),
-                                    canvasItems,
-                                })}
+                                markdownForDownload={markdownForDownload}
                                 onSaveAsTemplate={openSaveTemplateDialog}
                                 mode={builderMode}
                                 onModeChange={setBuilderMode}
                                 isLeader={isLeader}
                                 totalDuration={totalDuration}
+                                itemCount={canvasItems.length}
                                 workspaceSlug={workspaceSlug}
                                 zoomJoinUrl={zoomJoinUrl}
                                 isZoomConnected={isZoomConnected}
@@ -1792,6 +1795,12 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                                 pianistOrganist={form.getValues("pianistOrganist")}
                                 meetingNotes={meetingNotes}
                                 canvasItems={canvasItems}
+                                onSave={handleValidate}
+                                onSaveAsNew={handleSaveAsNew}
+                                onSaveAsTemplate={openSaveTemplateDialog}
+                                isCreating={isCreating}
+                                isValid={isValid}
+                                isLeader={isLeader}
                             />
                         )}
 

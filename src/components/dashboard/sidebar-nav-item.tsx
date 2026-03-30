@@ -28,16 +28,16 @@ export function SidebarNavItem({
     <Link
       href={item.href}
       className={cn(
-        "flex items-center gap-2.5 rounded-lg px-3 py-1.5 text-sm transition-colors",
+        "flex items-center gap-2.5 rounded-lg px-3 py-1.5 text-[13px] transition-colors",
         isActive
-          ? "bg-[hsl(var(--accent-warm))] text-foreground"
-          : "text-muted-foreground hover:bg-[hsl(var(--accent-warm)/0.6)] hover:text-foreground",
+          ? "bg-nav-selected text-foreground"
+          : "text-muted-foreground hover:bg-nav-hover hover:text-foreground",
         isCollapsed && "justify-center px-2",
         isNested && !isCollapsed && "pl-6"
       )}
     >
-      <Icon className="h-4 w-4 shrink-0 stroke-[1.6]" />
-      {!isCollapsed && <span className="font-medium">{item.label}</span>}
+      <Icon className="h-4 w-4 shrink-0 stroke-[1.4]" />
+      {!isCollapsed && <span className="font-normal">{item.label}</span>}
     </Link>
   )
 
