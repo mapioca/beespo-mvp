@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CanvasItem } from "./types";
@@ -50,14 +50,14 @@ const DENSITY = {
     comfortable: {
         sectionGap: "20px",
         itemGap: "8px",
-        cardPaddingX: "14px",
-        cardPaddingY: "12px",
+        cardPaddingX: "12px",
+        cardPaddingY: "10px",
     },
     compact: {
         sectionGap: "18px",
         itemGap: "6px",
-        cardPaddingX: "12px",
-        cardPaddingY: "10px",
+        cardPaddingX: "10px",
+        cardPaddingY: "8px",
     },
 } as const;
 
@@ -140,6 +140,9 @@ export function ProgramModePane({
     const [showIcons, setShowIcons] = useState(true);
     const [showSubtitles, setShowSubtitles] = useState(true);
     const [viewStyle, setViewStyle] = useState<ViewStyle>("cards");
+    const [zoom, setZoom] = useState(1);
+    const [hasUserZoomed, setHasUserZoomed] = useState(false);
+    const stageRef = useRef<HTMLDivElement | null>(null);
 
     const programData: ProgramViewData = useMemo(
         () => ({
@@ -162,6 +165,8 @@ export function ProgramModePane({
                   radius: "rounded-[28px]",
                   border: "border-[2px]",
                   contentRadius: "rounded-[24px]",
+                  w: 760,
+                  h: 960,
               }
             : previewDevice === "desktop"
               ? {
@@ -170,6 +175,8 @@ export function ProgramModePane({
                     radius: "rounded-[18px]",
                     border: "border-[1px]",
                     contentRadius: "rounded-[14px]",
+                    w: 960,
+                    h: 700,
                 }
               : {
                     width: "w-[390px]",
@@ -177,7 +184,45 @@ export function ProgramModePane({
                     radius: "rounded-[32px]",
                     border: "border-[1.5px]",
                     contentRadius: "rounded-[28px]",
+                    w: 390,
+                    h: 844,
                 };
+
+    const clampZoom = (value: number) => Math.min(1.6, Math.max(0.6, value));
+
+    const calculateFitZoom = () => {
+        if (!stageRef.current) return 1;
+        const rect = stageRef.current.getBoundingClientRect();
+        const pad = 24;
+        const width = Math.max(0, rect.width - pad);
+        const height = Math.max(0, rect.height - pad);
+        const fit = Math.min(width / deviceConfig.w, height / deviceConfig.h);
+        return clampZoom(fit);
+    };
+
+    const getDefaultZoom = () => {
+        const target =
+            previewDevice === "phone" ? 1.6 : previewDevice === "tablet" ? 1.14 : 0.99;
+        return clampZoom(target);
+    };
+
+    useEffect(() => {
+        setHasUserZoomed(false);
+        const next = getDefaultZoom();
+        setZoom(next);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [previewDevice]);
+
+    useEffect(() => {
+        if (!stageRef.current) return;
+        const observer = new ResizeObserver(() => {
+            if (!hasUserZoomed) {
+                setZoom(getDefaultZoom());
+            }
+        });
+        observer.observe(stageRef.current);
+        return () => observer.disconnect();
+    }, [hasUserZoomed]);
 
     const vars = {
         "--program-text": "hsl(var(--program-preview-text))",
@@ -210,8 +255,8 @@ export function ProgramModePane({
         "--program-pill-border": "hsl(var(--program-preview-pill-border))",
         "--program-card-padding-x": DENSITY[density].cardPaddingX,
         "--program-card-padding-y": DENSITY[density].cardPaddingY,
-        "--program-icon-size": "0.95rem",
-        "--program-icon-box": "1.75rem",
+        "--program-icon-size": "0.9rem",
+        "--program-icon-box": "1.625rem",
         "--program-border-width": "1px",
         "--program-line-height": "1.4",
         "--program-section-case": "uppercase",
@@ -323,11 +368,69 @@ export function ProgramModePane({
                                 <ToggleRow label="Show icons" enabled={showIcons} onToggle={() => setShowIcons((v) => !v)} />
                             </TabsContent>
                         </Tabs>
+
+                        <div className="mt-auto pt-4">
+                            <div className="border-t border-border/60 pt-3 text-[11px] text-muted-foreground">
+                                Preview settings — more options coming soon.
+                            </div>
+                        </div>
                     </div>
                 </aside>
 
-                <section className="min-h-0 overflow-hidden rounded-[14px] bg-[color:hsl(var(--program-preview-panel-bg))] p-4">
-                    <div className="flex h-full items-start justify-center overflow-auto rounded-[16px] bg-[color:hsl(var(--program-preview-stage-bg))] p-4" style={vars}>
+                <section className="min-h-0 overflow-hidden rounded-[14px] bg-[color:hsl(var(--program-preview-panel-bg))] p-3">
+                    <div
+                        ref={stageRef}
+                        className="relative flex h-full items-start justify-center overflow-auto rounded-[16px] bg-[color:hsl(var(--program-preview-stage-bg))] p-3"
+                        style={vars}
+                        onWheel={(event) => {
+                            if (!event.ctrlKey && !event.metaKey) return;
+                            event.preventDefault();
+                            const next = clampZoom(zoom - event.deltaY * 0.0015);
+                            setZoom(next);
+                            setHasUserZoomed(true);
+                        }}
+                    >
+                        <div className="absolute right-3 top-3 z-10 flex items-center gap-1 rounded-full border border-border/60 bg-background/90 px-2 py-1 text-[11px] text-muted-foreground shadow-sm">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setZoom((prev) => {
+                                        const next = clampZoom(prev - 0.1);
+                                        return next;
+                                    });
+                                    setHasUserZoomed(true);
+                                }}
+                                className="rounded-full px-2 py-0.5 text-[12px] text-foreground hover:bg-muted"
+                                aria-label="Zoom out"
+                            >
+                                −
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    const next = getDefaultZoom();
+                                    setZoom(next);
+                                    setHasUserZoomed(false);
+                                }}
+                                className="rounded-full px-2 py-0.5 text-[11px] text-muted-foreground hover:bg-muted"
+                            >
+                                {Math.round(zoom * 100)}%
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setZoom((prev) => {
+                                        const next = clampZoom(prev + 0.1);
+                                        return next;
+                                    });
+                                    setHasUserZoomed(true);
+                                }}
+                                className="rounded-full px-2 py-0.5 text-[12px] text-foreground hover:bg-muted"
+                                aria-label="Zoom in"
+                            >
+                                +
+                            </button>
+                        </div>
                         <div
                             className={cn(
                                 deviceConfig.width,
@@ -336,6 +439,7 @@ export function ProgramModePane({
                                 deviceConfig.border,
                                 "border-[color:var(--program-frame-border)] bg-[color:var(--program-frame-shell)] shadow-[var(--program-preview-frame-shadow)]"
                             )}
+                            style={{ transform: `scale(${zoom})`, transformOrigin: "top center" }}
                         >
                             <div className="h-full p-1.5">
                                 <div
