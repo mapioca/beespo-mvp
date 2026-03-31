@@ -29,6 +29,7 @@ interface ProgramModePaneProps {
 type FontScale = "sm" | "md" | "lg";
 type LayoutDensity = "comfortable" | "compact";
 type HeaderAlign = "left" | "center";
+type ViewStyle = "cards" | "list";
 
 const FONT_SCALE = {
     sm: {
@@ -47,18 +48,16 @@ const FONT_SCALE = {
 
 const DENSITY = {
     comfortable: {
-        sectionGap: "24px",
-        itemGap: "12px",
-        cardPaddingX: "16px",
-        cardPaddingY: "14px",
-        rootPadding: "px-7 py-9",
-    },
-    compact: {
         sectionGap: "20px",
-        itemGap: "10px",
+        itemGap: "8px",
         cardPaddingX: "14px",
         cardPaddingY: "12px",
-        rootPadding: "px-6 py-8",
+    },
+    compact: {
+        sectionGap: "18px",
+        itemGap: "6px",
+        cardPaddingX: "12px",
+        cardPaddingY: "10px",
     },
 } as const;
 
@@ -81,8 +80,8 @@ function SegmentedControl<T extends string>({
                     className={cn(
                         "h-8 flex-1 rounded-full text-[12px] font-medium transition-colors",
                         value === option.value
-                            ? "bg-[#111317] text-white shadow-[inset_0_0_0_1px_rgba(0,0,0,0.16)]"
-                            : "text-[#6d727a] hover:text-[#111317]"
+                            ? "bg-[color:hsl(var(--program-control-emphasis))] text-[color:hsl(var(--program-control-emphasis-foreground))] shadow-[inset_0_0_0_1px_hsl(var(--program-control-emphasis-ring)/0.24)]"
+                            : "text-[color:hsl(var(--program-control-text))] hover:text-[color:hsl(var(--program-control-emphasis))]"
                     )}
                 >
                     {option.label}
@@ -108,8 +107,8 @@ function ToggleRow({
             className={cn(
                 "inline-flex h-9 w-full items-center justify-between rounded-xl border px-3 text-[12px] font-medium transition-colors",
                 enabled
-                    ? "border-[#111317]/20 bg-[#111317]/5 text-[#111317]"
-                    : "border-border/80 bg-background text-[#6d727a] hover:text-[#111317]"
+                    ? "border-[color:hsl(var(--program-control-emphasis)/0.2)] bg-[color:hsl(var(--program-control-emphasis)/0.05)] text-[color:hsl(var(--program-control-emphasis))]"
+                    : "border-border/80 bg-background text-[color:hsl(var(--program-control-text))] hover:text-[color:hsl(var(--program-control-emphasis))]"
             )}
         >
             <span>{label}</span>
@@ -140,6 +139,7 @@ export function ProgramModePane({
     const [headerAlign, setHeaderAlign] = useState<HeaderAlign>("center");
     const [showIcons, setShowIcons] = useState(true);
     const [showSubtitles, setShowSubtitles] = useState(true);
+    const [viewStyle, setViewStyle] = useState<ViewStyle>("cards");
 
     const programData: ProgramViewData = useMemo(
         () => ({
@@ -159,47 +159,55 @@ export function ProgramModePane({
             ? {
                   width: "w-[760px]",
                   height: "h-[960px]",
-                  radius: "rounded-[30px]",
-                  border: "border-[8px]",
+                  radius: "rounded-[28px]",
+                  border: "border-[2px]",
+                  contentRadius: "rounded-[24px]",
               }
             : previewDevice === "desktop"
               ? {
                     width: "w-[960px]",
                     height: "h-[700px]",
-                    radius: "rounded-[20px]",
-                    border: "border-[6px]",
+                    radius: "rounded-[18px]",
+                    border: "border-[1px]",
+                    contentRadius: "rounded-[14px]",
                 }
               : {
                     width: "w-[390px]",
                     height: "h-[844px]",
-                    radius: "rounded-[36px]",
-                    border: "border-[6px]",
+                    radius: "rounded-[32px]",
+                    border: "border-[1.5px]",
+                    contentRadius: "rounded-[28px]",
                 };
 
     const vars = {
-        "--program-text": "hsl(0 0% 8%)",
-        "--program-muted": "hsl(0 0% 30%)",
-        "--program-subtle": "hsl(0 0% 44%)",
-        "--program-border": "hsl(0 0% 86%)",
-        "--program-card": "hsl(0 0% 100%)",
-        "--program-soft": "hsl(0 0% 96%)",
-        "--program-pill": "hsl(0 0% 97%)",
-        "--program-pill-text": "hsl(0 0% 22%)",
-        "--program-surface": "hsl(0 0% 99%)",
+        "--program-text": "hsl(var(--program-preview-text))",
+        "--program-muted": "hsl(var(--program-preview-muted))",
+        "--program-subtle": "hsl(var(--program-preview-subtle))",
+        "--program-border":
+            viewStyle === "list"
+                ? "hsl(var(--program-preview-list-divider))"
+                : "hsl(var(--program-preview-card-border))",
+        "--program-card": "hsl(var(--program-preview-card-bg))",
+        "--program-soft": "hsl(var(--program-control-soft))",
+        "--program-pill": "hsl(var(--program-preview-pill-bg))",
+        "--program-pill-text": "hsl(var(--program-preview-pill-text))",
+        "--program-surface": "hsl(var(--program-preview-surface))",
+        "--program-frame-shell": "hsl(var(--program-preview-frame-shell))",
+        "--program-frame-border": "hsl(var(--program-preview-frame-border))",
         "--program-radius": "12px",
-        "--program-card-border": "hsl(0 0% 86%)",
-        "--program-card-shadow": "none",
+        "--program-card-border": "hsl(var(--program-preview-card-border))",
+        "--program-card-shadow": "var(--program-preview-card-shadow)",
         "--program-section-gap": DENSITY[density].sectionGap,
         "--program-item-gap": DENSITY[density].itemGap,
         "--program-header-align": headerAlign,
         "--program-header-justify": headerAlign === "left" ? "flex-start" : "center",
-        "--program-icon-bg": "hsl(0 0% 95%)",
-        "--program-icon-border": "hsl(0 0% 84%)",
+        "--program-icon-bg": "hsl(var(--program-preview-icon-bg))",
+        "--program-icon-border": "hsl(var(--program-preview-icon-border))",
         "--program-title-weight": "600",
         "--program-title-size": FONT_SCALE[fontScale].title,
         "--program-title-margin-inline": headerAlign === "left" ? "0" : "auto",
-        "--program-pill-bg": "hsl(0 0% 97%)",
-        "--program-pill-border": "hsl(0 0% 84%)",
+        "--program-pill-bg": "hsl(var(--program-preview-pill-bg))",
+        "--program-pill-border": "hsl(var(--program-preview-pill-border))",
         "--program-card-padding-x": DENSITY[density].cardPaddingX,
         "--program-card-padding-y": DENSITY[density].cardPaddingY,
         "--program-icon-size": "0.95rem",
@@ -207,18 +215,22 @@ export function ProgramModePane({
         "--program-border-width": "1px",
         "--program-line-height": "1.4",
         "--program-section-case": "uppercase",
-        "--program-section-title-size": "0.78em",
+        "--program-section-title-size": "0.74em",
         "--program-section-radius": "10px",
         "--program-subtitle-display": showSubtitles ? "block" : "none",
         "--program-card-border-style": "solid",
         "--program-divider-style": "solid",
         "--program-divider-weight": "1px",
         "--program-icons-display": showIcons ? "flex" : "none",
+        "--program-list-divider": "hsl(var(--program-preview-list-divider))",
+        "--program-header-tracking": "var(--program-preview-header-tracking)",
+        "--program-title-max-width": "var(--program-preview-title-max-width)",
+        "--program-pill-padding": "var(--program-preview-pill-padding)",
         fontSize: FONT_SCALE[fontScale].base,
     } as CSSProperties;
 
     return (
-        <div className="flex-1 overflow-hidden bg-[#f0f1f3] px-6 py-6">
+        <div className="flex-1 overflow-hidden bg-builder-canvas px-6 py-6">
             {isLeader && !isLive && (
                 <div className="mx-auto mb-5 flex w-full max-w-[1280px] justify-end">
                     <button
@@ -239,14 +251,14 @@ export function ProgramModePane({
 
             <div className="mx-auto grid h-full min-h-0 w-full max-w-[1280px] grid-cols-1 gap-6 xl:grid-cols-[320px_minmax(0,1fr)]">
                 <aside className="h-full min-h-0">
-                    <div className="flex h-full flex-col rounded-[14px] border border-[#e4e5e7] bg-white p-5 shadow-[0_1px_2px_rgba(16,24,40,0.04),0_8px_24px_rgba(16,24,40,0.05)]">
+                    <div className="flex h-full flex-col rounded-[14px] border border-[color:hsl(var(--program-control-panel-border))] bg-[color:hsl(var(--program-control-panel-bg))] p-5 shadow-[var(--shadow-program-panel)]">
                         <div className="text-[13px] font-semibold text-foreground">Program Styles</div>
                         <p className="mt-1 text-[12px] text-muted-foreground">
                             Keep this minimal. Focus on readability first.
                         </p>
 
                         <Tabs defaultValue="type" className="mt-4 flex min-h-0 flex-1 flex-col">
-                            <TabsList className="grid h-9 grid-cols-3 rounded-full border border-[#e3e4e7] bg-[#f8f8f8] p-1">
+                            <TabsList className="grid h-9 grid-cols-3 rounded-full border border-[color:hsl(var(--program-control-tabs-border))] bg-[color:hsl(var(--program-control-tabs-bg))] p-1">
                                 <TabsTrigger value="type" className="rounded-full text-[12px]">Type</TabsTrigger>
                                 <TabsTrigger value="layout" className="rounded-full text-[12px]">Layout</TabsTrigger>
                                 <TabsTrigger value="details" className="rounded-full text-[12px]">Details</TabsTrigger>
@@ -254,7 +266,7 @@ export function ProgramModePane({
 
                             <TabsContent value="type" className="mt-4 space-y-4 overflow-y-auto pr-1">
                                 <div className="space-y-2">
-                                    <div className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#7a7f87]">Font size</div>
+                                    <div className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[color:hsl(var(--program-control-label))]">Font size</div>
                                     <SegmentedControl
                                         value={fontScale}
                                         onChange={setFontScale}
@@ -266,7 +278,7 @@ export function ProgramModePane({
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <div className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#7a7f87]">Header align</div>
+                                    <div className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[color:hsl(var(--program-control-label))]">Header align</div>
                                     <SegmentedControl
                                         value={headerAlign}
                                         onChange={setHeaderAlign}
@@ -280,7 +292,7 @@ export function ProgramModePane({
 
                             <TabsContent value="layout" className="mt-4 space-y-4 overflow-y-auto pr-1">
                                 <div className="space-y-2">
-                                    <div className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#7a7f87]">Density</div>
+                                    <div className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[color:hsl(var(--program-control-label))]">Density</div>
                                     <SegmentedControl
                                         value={density}
                                         onChange={setDensity}
@@ -290,7 +302,18 @@ export function ProgramModePane({
                                         ]}
                                     />
                                 </div>
-                                <div className="rounded-xl border border-[#e4e5e7] bg-[#f8f8f8] p-3 text-[12px] text-[#6d727a]">
+                                <div className="space-y-2">
+                                    <div className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[color:hsl(var(--program-control-label))]">Item style</div>
+                                    <SegmentedControl
+                                        value={viewStyle}
+                                        onChange={setViewStyle}
+                                        options={[
+                                            { value: "cards", label: "Soft cards" },
+                                            { value: "list", label: "Text list" },
+                                        ]}
+                                    />
+                                </div>
+                                <div className="rounded-xl border border-[color:hsl(var(--program-control-tabs-border))] bg-[color:hsl(var(--program-control-tabs-bg))] p-3 text-[12px] text-[color:hsl(var(--program-control-text))]">
                                     Uses an 8pt spacing system and consistent 1px borders for a cleaner hierarchy.
                                 </div>
                             </TabsContent>
@@ -303,25 +326,35 @@ export function ProgramModePane({
                     </div>
                 </aside>
 
-                <section className="min-h-0 overflow-hidden rounded-[14px] border border-[#e4e5e7] bg-white p-6 shadow-[0_1px_2px_rgba(16,24,40,0.04),0_8px_24px_rgba(16,24,40,0.06)]">
-                    <div className="flex h-full items-start justify-center overflow-auto rounded-[16px] bg-[#f7f7f8] p-6" style={vars}>
+                <section className="min-h-0 overflow-hidden rounded-[14px] bg-[color:hsl(var(--program-preview-panel-bg))] p-4">
+                    <div className="flex h-full items-start justify-center overflow-auto rounded-[16px] bg-[color:hsl(var(--program-preview-stage-bg))] p-4" style={vars}>
                         <div
                             className={cn(
                                 deviceConfig.width,
                                 deviceConfig.height,
                                 deviceConfig.radius,
                                 deviceConfig.border,
-                                "border-[color:var(--program-border)] bg-[color:var(--program-surface)] shadow-[0_1px_1px_rgba(16,24,40,0.06)]"
+                                "border-[color:var(--program-frame-border)] bg-[color:var(--program-frame-shell)] shadow-[var(--program-preview-frame-shadow)]"
                             )}
                         >
-                            <div className={cn("h-full overflow-y-auto", DENSITY[density].rootPadding)}>
-                                <ProgramView
-                                    data={programData}
-                                    variant="embedded"
-                                    density={density}
-                                    showDivider
-                                    className="max-w-[640px]"
-                                />
+                            <div className="h-full p-1.5">
+                                <div
+                                    className={cn("h-full overflow-y-auto", deviceConfig.contentRadius)}
+                                    style={{
+                                        background: "var(--program-surface)",
+                                        boxShadow: "var(--shadow-program-content-inset)",
+                                        padding: "var(--program-preview-content-padding)",
+                                    }}
+                                >
+                                    <ProgramView
+                                        data={programData}
+                                        variant="embedded"
+                                        density={density}
+                                        viewStyle={viewStyle}
+                                        showDivider
+                                        className="max-w-[640px]"
+                                    />
+                                </div>
                             </div>
                         </div>
                     </div>

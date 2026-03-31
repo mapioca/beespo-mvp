@@ -34,7 +34,7 @@ export function ProgramRolesGrid({ roles }: ProgramRolesGridProps) {
         >
             {filledRoles.map(({ key, label }) => (
                 <div key={key} className="min-w-0 space-y-1">
-                    <p className="text-[0.72em] font-semibold uppercase tracking-[0.14em] text-[color:var(--program-subtle)]">{label}</p>
+                    <p className="text-[0.72em] font-semibold uppercase tracking-[0.12em] text-[color:var(--program-subtle)]">{label}</p>
                     <p className="truncate text-[1em] font-medium text-[color:var(--program-text)]">{roles[key]}</p>
                 </div>
             ))}

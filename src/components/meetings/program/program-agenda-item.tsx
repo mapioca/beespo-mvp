@@ -7,6 +7,8 @@ import { ProgramStructuralItem } from "./program-structural-item";
 
 interface ProgramAgendaItemProps {
     item: ProgramItem;
+    viewStyle?: "cards" | "list";
+    isLast?: boolean;
 }
 
 const cardBase =
@@ -22,25 +24,35 @@ const cardStyle = {
 const iconWrapClass = "rounded-full bg-[color:var(--program-icon-bg)] border border-[color:var(--program-icon-border)] shrink-0";
 const iconClass = "text-[color:var(--program-muted)]";
 
-export function ProgramAgendaItem({ item }: ProgramAgendaItemProps) {
+export function ProgramAgendaItem({ item, viewStyle = "cards", isLast = false }: ProgramAgendaItemProps) {
+    const isList = viewStyle === "list";
+    const listRowClass = "flex items-start gap-3 border-b border-[color:var(--program-list-divider)] pb-3";
+    const listBaseClass = "border-b border-[color:var(--program-list-divider)] pb-3";
+    const rowClass = isList ? listRowClass : `flex items-start gap-3 ${cardBase}`;
+    const rowStyle = isList ? undefined : cardStyle;
+    const rowTrimClass = isList && isLast ? "border-b-0 pb-0" : "";
+    const iconShellClass = isList
+        ? "mt-0.5 flex h-[var(--program-icon-box)] w-[var(--program-icon-box)] items-center justify-center text-[color:var(--program-muted)]"
+        : iconWrapClass;
+
     if (item.category === "structural") {
         return <ProgramStructuralItem item={item} />;
     }
 
     if (item.isContainer) {
-        return <ProgramContainerSection item={item} />;
+        return <ProgramContainerSection item={item} viewStyle={viewStyle} />;
     }
 
     if (item.is_hymn) {
         return (
-            <div className={`flex items-start gap-3 ${cardBase}`} style={cardStyle}>
-                <span className={iconWrapClass} style={{ width: "var(--program-icon-box)", height: "var(--program-icon-box)" }}>
+            <div className={`${rowClass} ${rowTrimClass}`} style={rowStyle}>
+                <span className={iconShellClass} style={!isList ? { width: "var(--program-icon-box)", height: "var(--program-icon-box)" } : undefined}>
                     <span className="flex h-full w-full items-center justify-center" style={{ display: "var(--program-icons-display)" }}>
                         <Music className={iconClass} strokeWidth={1.75} style={{ width: "var(--program-icon-size)", height: "var(--program-icon-size)" }} />
                     </span>
                 </span>
                 <div className="min-w-0 flex-1">
-                    <p className="text-[1em] font-semibold text-[color:var(--program-text)]">{item.title}</p>
+                    <p className="text-[1em] font-semibold leading-tight text-[color:var(--program-text)]">{item.title}</p>
                     <p className="mt-0.5 text-[0.88em] text-[color:var(--program-muted)]" style={{ display: "var(--program-subtitle-display)" }}>
                         {item.hymn_number && item.hymn_title ? `#${item.hymn_number} — ${item.hymn_title}` : "TBD"}
                     </p>
@@ -51,15 +63,15 @@ export function ProgramAgendaItem({ item }: ProgramAgendaItemProps) {
 
     if (item.category === "speaker") {
         return (
-            <div className={`flex items-start gap-3 ${cardBase}`} style={cardStyle}>
-                <span className={iconWrapClass} style={{ width: "var(--program-icon-box)", height: "var(--program-icon-box)" }}>
+            <div className={`${rowClass} ${rowTrimClass}`} style={rowStyle}>
+                <span className={iconShellClass} style={!isList ? { width: "var(--program-icon-box)", height: "var(--program-icon-box)" } : undefined}>
                     <span className="flex h-full w-full items-center justify-center" style={{ display: "var(--program-icons-display)" }}>
                         <User className={iconClass} strokeWidth={1.75} style={{ width: "var(--program-icon-size)", height: "var(--program-icon-size)" }} />
                     </span>
                 </span>
                 <div className="min-w-0 flex-1 space-y-0.5">
                     <div className="flex items-baseline justify-between gap-2">
-                        <p className="text-[1em] font-semibold text-[color:var(--program-text)]">{item.speaker_name || "TBD"}</p>
+                        <p className="text-[1em] font-semibold leading-tight text-[color:var(--program-text)]">{item.speaker_name || "TBD"}</p>
                         {item.duration_minutes > 0 && (
                             <span className="shrink-0 rounded-full border border-[color:var(--program-border)] bg-[color:var(--program-soft)] px-2 py-0.5 text-[0.72em] text-[color:var(--program-muted)] tabular-nums">
                                 {item.duration_minutes} min
@@ -84,14 +96,14 @@ export function ProgramAgendaItem({ item }: ProgramAgendaItemProps) {
 
     if (item.requires_participant) {
         return (
-            <div className={`flex items-start gap-3 ${cardBase}`} style={cardStyle}>
-                <span className={iconWrapClass} style={{ width: "var(--program-icon-box)", height: "var(--program-icon-box)" }}>
+            <div className={`${rowClass} ${rowTrimClass}`} style={rowStyle}>
+                <span className={iconShellClass} style={!isList ? { width: "var(--program-icon-box)", height: "var(--program-icon-box)" } : undefined}>
                     <span className="flex h-full w-full items-center justify-center" style={{ display: "var(--program-icons-display)" }}>
                         <Hand className={iconClass} strokeWidth={1.75} style={{ width: "var(--program-icon-size)", height: "var(--program-icon-size)" }} />
                     </span>
                 </span>
                 <div className="min-w-0 flex-1">
-                    <p className="text-[1em] font-semibold text-[color:var(--program-text)]">{item.title}</p>
+                    <p className="text-[1em] font-semibold leading-tight text-[color:var(--program-text)]">{item.title}</p>
                     <p className="mt-0.5 text-[0.88em] text-[color:var(--program-muted)]" style={{ display: "var(--program-subtitle-display)" }}>
                         {item.participant_name || "TBD"}
                     </p>
@@ -101,8 +113,8 @@ export function ProgramAgendaItem({ item }: ProgramAgendaItemProps) {
     }
 
     return (
-        <div className={cardBase} style={cardStyle}>
-            <p className="text-[1em] font-semibold text-[color:var(--program-text)]">{item.title}</p>
+        <div className={`${isList ? listBaseClass : cardBase} ${rowTrimClass}`} style={rowStyle}>
+            <p className="text-[1em] font-semibold leading-tight text-[color:var(--program-text)]">{item.title}</p>
             {item.description?.trim() && (
                 <p className="mt-0.5 text-[0.88em] text-[color:var(--program-muted)]" style={{ display: "var(--program-subtitle-display)" }}>
                     {item.description}

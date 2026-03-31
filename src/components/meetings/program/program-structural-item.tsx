@@ -23,9 +23,9 @@ export function ProgramStructuralItem({ item }: ProgramStructuralItemProps) {
 
     // Section header
     return (
-        <div className="pt-4 pb-1">
+        <div className="pt-3 pb-1">
             <h2
-                className="font-semibold tracking-[0.28em] text-[color:var(--program-subtle)]"
+                className="font-semibold tracking-[0.14em] text-[color:var(--program-subtle)]"
                 style={{ textTransform: "var(--program-section-case)", fontSize: "var(--program-section-title-size)" }}
             >
                 {item.title}

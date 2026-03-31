@@ -56,6 +56,7 @@ export interface ProgramViewProps {
     data: ProgramViewData;
     variant?: "standalone" | "embedded";
     density?: "comfortable" | "compact";
+    viewStyle?: "cards" | "list";
     showDivider?: boolean;
     className?: string;
 }

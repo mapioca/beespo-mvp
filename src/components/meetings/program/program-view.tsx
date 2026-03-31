@@ -13,6 +13,7 @@ export function ProgramView({
     data,
     variant = "embedded",
     density = "comfortable",
+    viewStyle = "cards",
     showDivider = true,
     className,
 }: ProgramViewProps) {
@@ -40,7 +41,7 @@ export function ProgramView({
 
                 {showDivider && (
                     <div
-                        className="my-1"
+                        className="my-0.5"
                         style={{
                             borderTopWidth: "var(--program-divider-weight)",
                             borderTopStyle: "var(--program-divider-style)" as CSSProperties["borderTopStyle"],
@@ -56,12 +57,12 @@ export function ProgramView({
                             initial={{ opacity: 0, y: 6 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{
-                                duration: 0.18,
-                                delay: index * 0.02,
+                                duration: 0.16,
+                                delay: index * 0.015,
                                 ease: "easeOut",
                             }}
                         >
-                            <ProgramAgendaItem item={item} />
+                            <ProgramAgendaItem item={item} viewStyle={viewStyle} isLast={index === data.items.length - 1} />
                         </motion.div>
                     ))}
                 </div>

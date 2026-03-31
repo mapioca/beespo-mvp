@@ -37,6 +37,45 @@
     --nav-text-strong: 24 14% 10%;
     --nav-text-muted: 24 8% 44%;
     --nav-active-border: 24 28% 84%;
+    --program-stage-bg: 220 14% 95.6%;
+    --program-control-panel-bg: 0 0% 100%;
+    --program-control-panel-border: 220 10% 90.5%;
+    --program-control-tabs-bg: 220 14% 97%;
+    --program-control-tabs-border: 220 10% 89.8%;
+    --program-control-label: 220 7% 52%;
+    --program-control-text: 220 7% 45%;
+    --program-control-emphasis: 220 12% 8%;
+    --program-control-emphasis-foreground: 0 0% 100%;
+    --program-control-emphasis-ring: 220 18% 8%;
+    --program-control-soft: 220 11% 97.2%;
+    --program-preview-panel-bg: 0 0% 100%;
+    --program-preview-panel-border: 220 11% 91.5%;
+    --program-preview-stage-bg: 220 14% 95.2%;
+    --program-preview-frame-shell: 220 8% 97.5%;
+    --program-preview-frame-border: 220 8% 91.8%;
+    --program-preview-surface: 0 0% 100%;
+    --program-preview-text: 0 0% 7%;
+    --program-preview-muted: 0 0% 34%;
+    --program-preview-subtle: 0 0% 45%;
+    --program-preview-card-bg: 0 0% 99.9%;
+    --program-preview-card-border: 0 0% 89%;
+    --program-preview-pill-bg: 0 0% 99.4%;
+    --program-preview-pill-border: 0 0% 89%;
+    --program-preview-pill-text: 0 0% 30%;
+    --program-preview-icon-bg: 0 0% 95%;
+    --program-preview-icon-border: 0 0% 84%;
+    --program-preview-frame-shadow: 0 4px 12px rgba(16,24,40,0.06);
+    --program-preview-card-shadow: 0 1px 1px rgba(15,23,42,0.02);
+    --program-preview-list-divider: 0 0% 90%;
+    --program-preview-content-padding: 12px;
+    --program-preview-header-tracking: 0.12em;
+    --program-preview-title-max-width: 28ch;
+    --program-preview-pill-padding: 0.25rem 0.75rem;
+    --shadow-program-panel: 0 1px 2px rgba(16,24,40,0.04), 0 8px 24px rgba(16,24,40,0.05);
+    --shadow-program-frame: 0 6px 16px rgba(16,24,40,0.06);
+    --shadow-program-content-inset: inset 0 0 0 1px rgba(17,24,39,0.035);
+    --shadow-program-card: 0 1px 1px rgba(17,24,39,0.03);
+    --builder-canvas: 0 0% 99.4%;
     --button-primary: 0 0% 0%;
     --button-primary-hover: 0 0% 12%;
     --button-primary-foreground: 0 0% 100%;
@@ -99,6 +138,45 @@
     --nav-text-strong: 220 12% 94%;
     --nav-text-muted: 220 8% 66%;
     --nav-active-border: 220 12% 24%;
+    --program-stage-bg: 220 10% 10%;
+    --program-control-panel-bg: 220 8% 8%;
+    --program-control-panel-border: 220 9% 18%;
+    --program-control-tabs-bg: 220 8% 12%;
+    --program-control-tabs-border: 220 9% 20%;
+    --program-control-label: 220 8% 66%;
+    --program-control-text: 220 8% 74%;
+    --program-control-emphasis: 220 12% 94%;
+    --program-control-emphasis-foreground: 220 18% 8%;
+    --program-control-emphasis-ring: 220 15% 90%;
+    --program-control-soft: 220 8% 14%;
+    --program-preview-panel-bg: 220 8% 8%;
+    --program-preview-panel-border: 220 9% 18%;
+    --program-preview-stage-bg: 220 8% 10%;
+    --program-preview-frame-shell: 220 9% 12%;
+    --program-preview-frame-border: 220 9% 22%;
+    --program-preview-surface: 220 10% 7%;
+    --program-preview-text: 0 0% 96%;
+    --program-preview-muted: 220 8% 72%;
+    --program-preview-subtle: 220 7% 62%;
+    --program-preview-card-bg: 220 9% 9%;
+    --program-preview-card-border: 220 9% 22%;
+    --program-preview-pill-bg: 220 8% 12%;
+    --program-preview-pill-border: 220 9% 24%;
+    --program-preview-pill-text: 220 8% 78%;
+    --program-preview-icon-bg: 220 8% 14%;
+    --program-preview-icon-border: 220 9% 24%;
+    --program-preview-frame-shadow: 0 8px 18px rgba(0,0,0,0.38);
+    --program-preview-card-shadow: none;
+    --program-preview-list-divider: 220 9% 22%;
+    --program-preview-content-padding: 12px;
+    --program-preview-header-tracking: 0.12em;
+    --program-preview-title-max-width: 28ch;
+    --program-preview-pill-padding: 0.25rem 0.75rem;
+    --shadow-program-panel: 0 1px 2px rgba(0,0,0,0.38), 0 10px 24px rgba(0,0,0,0.35);
+    --shadow-program-frame: 0 8px 20px rgba(0,0,0,0.4);
+    --shadow-program-content-inset: inset 0 0 0 1px rgba(255,255,255,0.05);
+    --shadow-program-card: none;
+    --builder-canvas: 0 0% 8%;
     --button-primary: 0 0% 100%;
     --button-primary-hover: 0 0% 88%;
     --button-primary-foreground: 0 0% 100%;
@@ -163,6 +241,10 @@
 
   .bg-app-island {
     background-color: hsl(var(--app-island));
+  }
+
+  .bg-builder-canvas {
+    background-color: hsl(var(--builder-canvas));
   }
 
   .border-app-island {

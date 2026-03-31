@@ -96,7 +96,7 @@ export function PrintPreviewPane({
     };
 
     return (
-        <ScrollArea className="flex-1 bg-chrome backdrop-blur relative z-0">
+        <ScrollArea className="relative z-0 flex-1 bg-builder-canvas">
             <div className="relative flex justify-center p-8 md:p-12">
                 <div className="bg-paper border border-border/40 shadow-[0_20px_60px_rgba(15,23,42,0.08)] w-full max-w-[850px] min-h-[1056px] p-12 sm:p-16 relative rounded-md">
                     <MarkdownRenderer markdown={markdown} unitName={unitName} />
