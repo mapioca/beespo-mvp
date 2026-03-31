@@ -22,7 +22,6 @@ interface PrintPreviewPaneProps {
     title: string;
     date: Date;
     time: string;
-    unitName?: string;
     presiding?: string;
     conducting?: string;
     chorister?: string;
@@ -47,7 +46,6 @@ export function PrintPreviewPane({
     title,
     date,
     time,
-    unitName,
     presiding,
     conducting,
     chorister,
@@ -66,7 +64,6 @@ export function PrintPreviewPane({
                 title,
                 date,
                 time,
-                unitName,
                 presiding,
                 conducting,
                 chorister,
@@ -74,7 +71,7 @@ export function PrintPreviewPane({
                 meetingNotes,
                 canvasItems,
             }),
-        [title, date, time, unitName, presiding, conducting, chorister, pianistOrganist, meetingNotes, canvasItems]
+        [title, date, time, presiding, conducting, chorister, pianistOrganist, meetingNotes, canvasItems]
     );
 
     const handleSaveAsNew = async () => {
@@ -97,9 +94,9 @@ export function PrintPreviewPane({
 
     return (
         <ScrollArea className="relative z-0 flex-1 bg-builder-canvas">
-            <div className="relative flex justify-center p-8 md:p-12">
-                <div className="bg-paper border border-border/40 shadow-[0_20px_60px_rgba(15,23,42,0.08)] w-full max-w-[850px] min-h-[1056px] p-12 sm:p-16 relative rounded-md">
-                    <MarkdownRenderer markdown={markdown} unitName={unitName} />
+            <div className="relative flex justify-center p-0 sm:p-8 md:p-12">
+                <div className="bg-paper w-full max-w-[850px] min-h-[1056px] p-6 sm:p-16 relative rounded-none border-0 shadow-none sm:rounded-md sm:border sm:border-border/40 sm:shadow-[0_20px_60px_rgba(15,23,42,0.08)]">
+                    <MarkdownRenderer markdown={markdown} />
                 </div>
             </div>
 

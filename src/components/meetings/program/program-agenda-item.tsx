@@ -9,6 +9,9 @@ interface ProgramAgendaItemProps {
     item: ProgramItem;
     viewStyle?: "cards" | "list";
     isLast?: boolean;
+    showSpeakerNames?: boolean;
+    showDurations?: boolean;
+    showIcons?: boolean;
 }
 
 const cardBase =
@@ -24,11 +27,18 @@ const cardStyle = {
 const iconWrapClass = "rounded-full bg-[color:var(--program-icon-bg)] border border-[color:var(--program-icon-border)] shrink-0";
 const iconClass = "text-[color:var(--program-muted)]";
 
-export function ProgramAgendaItem({ item, viewStyle = "cards", isLast = false }: ProgramAgendaItemProps) {
+export function ProgramAgendaItem({
+    item,
+    viewStyle = "cards",
+    isLast = false,
+    showSpeakerNames = true,
+    showDurations = true,
+    showIcons = true,
+}: ProgramAgendaItemProps) {
     const isList = viewStyle === "list";
-    const listRowClass = "flex items-start gap-3 border-b border-[color:var(--program-list-divider)] pb-3";
+    const listRowClass = `flex items-start ${showIcons ? "gap-3" : "gap-0"} border-b border-[color:var(--program-list-divider)] pb-3`;
     const listBaseClass = "border-b border-[color:var(--program-list-divider)] pb-3";
-    const rowClass = isList ? listRowClass : `flex items-start gap-3 ${cardBase}`;
+    const rowClass = isList ? listRowClass : `flex items-start ${showIcons ? "gap-3" : "gap-0"} ${cardBase}`;
     const rowStyle = isList ? undefined : cardStyle;
     const rowTrimClass = isList && isLast ? "border-b-0 pb-0" : "";
     const iconShellClass = isList
@@ -40,19 +50,30 @@ export function ProgramAgendaItem({ item, viewStyle = "cards", isLast = false }:
     }
 
     if (item.isContainer) {
-        return <ProgramContainerSection item={item} viewStyle={viewStyle} />;
+        return (
+            <ProgramContainerSection
+                item={item}
+                viewStyle={viewStyle}
+                showSpeakerNames={showSpeakerNames}
+                showIcons={showIcons}
+            />
+        );
     }
 
     if (item.is_hymn) {
         return (
             <div className={`${rowClass} ${rowTrimClass}`} style={rowStyle}>
-                <span className={iconShellClass} style={!isList ? { width: "var(--program-icon-box)", height: "var(--program-icon-box)" } : undefined}>
-                    <span className="flex h-full w-full items-center justify-center" style={{ display: "var(--program-icons-display)" }}>
-                        <Music className={iconClass} strokeWidth={1.75} style={{ width: "var(--program-icon-size)", height: "var(--program-icon-size)" }} />
+                {showIcons && (
+                    <span className={iconShellClass} style={!isList ? { width: "var(--program-icon-box)", height: "var(--program-icon-box)" } : undefined}>
+                        <span className="flex h-full w-full items-center justify-center" style={{ display: "var(--program-icons-display)" }}>
+                            <Music className={iconClass} strokeWidth={1.75} style={{ width: "var(--program-icon-size)", height: "var(--program-icon-size)" }} />
+                        </span>
                     </span>
-                </span>
+                )}
                 <div className="min-w-0 flex-1">
-                    <p className="text-[1em] font-semibold leading-tight text-[color:var(--program-text)]">{item.title}</p>
+                    <p className="text-[1em] leading-tight text-[color:var(--program-text)]" style={{ fontWeight: "var(--program-item-weight)" }}>
+                        {item.title}
+                    </p>
                     <p className="mt-0.5 text-[0.88em] text-[color:var(--program-muted)]" style={{ display: "var(--program-subtitle-display)" }}>
                         {item.hymn_number && item.hymn_title ? `#${item.hymn_number} — ${item.hymn_title}` : "TBD"}
                     </p>
@@ -64,15 +85,21 @@ export function ProgramAgendaItem({ item, viewStyle = "cards", isLast = false }:
     if (item.category === "speaker") {
         return (
             <div className={`${rowClass} ${rowTrimClass}`} style={rowStyle}>
-                <span className={iconShellClass} style={!isList ? { width: "var(--program-icon-box)", height: "var(--program-icon-box)" } : undefined}>
-                    <span className="flex h-full w-full items-center justify-center" style={{ display: "var(--program-icons-display)" }}>
-                        <User className={iconClass} strokeWidth={1.75} style={{ width: "var(--program-icon-size)", height: "var(--program-icon-size)" }} />
+                {showIcons && (
+                    <span className={iconShellClass} style={!isList ? { width: "var(--program-icon-box)", height: "var(--program-icon-box)" } : undefined}>
+                        <span className="flex h-full w-full items-center justify-center" style={{ display: "var(--program-icons-display)" }}>
+                            <User className={iconClass} strokeWidth={1.75} style={{ width: "var(--program-icon-size)", height: "var(--program-icon-size)" }} />
+                        </span>
                     </span>
-                </span>
+                )}
                 <div className="min-w-0 flex-1 space-y-0.5">
                     <div className="flex items-baseline justify-between gap-2">
-                        <p className="text-[1em] font-semibold leading-tight text-[color:var(--program-text)]">{item.speaker_name || "TBD"}</p>
-                        {item.duration_minutes > 0 && (
+                        {showSpeakerNames && (
+                            <p className="text-[1em] leading-tight text-[color:var(--program-text)]" style={{ fontWeight: "var(--program-item-weight)" }}>
+                                {item.speaker_name || "TBD"}
+                            </p>
+                        )}
+                        {showDurations && item.duration_minutes > 0 && (
                             <span className="shrink-0 rounded-full border border-[color:var(--program-border)] bg-[color:var(--program-soft)] px-2 py-0.5 text-[0.72em] text-[color:var(--program-muted)] tabular-nums">
                                 {item.duration_minutes} min
                             </span>
@@ -97,16 +124,22 @@ export function ProgramAgendaItem({ item, viewStyle = "cards", isLast = false }:
     if (item.requires_participant) {
         return (
             <div className={`${rowClass} ${rowTrimClass}`} style={rowStyle}>
-                <span className={iconShellClass} style={!isList ? { width: "var(--program-icon-box)", height: "var(--program-icon-box)" } : undefined}>
-                    <span className="flex h-full w-full items-center justify-center" style={{ display: "var(--program-icons-display)" }}>
-                        <Hand className={iconClass} strokeWidth={1.75} style={{ width: "var(--program-icon-size)", height: "var(--program-icon-size)" }} />
+                {showIcons && (
+                    <span className={iconShellClass} style={!isList ? { width: "var(--program-icon-box)", height: "var(--program-icon-box)" } : undefined}>
+                        <span className="flex h-full w-full items-center justify-center" style={{ display: "var(--program-icons-display)" }}>
+                            <Hand className={iconClass} strokeWidth={1.75} style={{ width: "var(--program-icon-size)", height: "var(--program-icon-size)" }} />
+                        </span>
                     </span>
-                </span>
+                )}
                 <div className="min-w-0 flex-1">
-                    <p className="text-[1em] font-semibold leading-tight text-[color:var(--program-text)]">{item.title}</p>
-                    <p className="mt-0.5 text-[0.88em] text-[color:var(--program-muted)]" style={{ display: "var(--program-subtitle-display)" }}>
-                        {item.participant_name || "TBD"}
+                    <p className="text-[1em] leading-tight text-[color:var(--program-text)]" style={{ fontWeight: "var(--program-item-weight)" }}>
+                        {item.title}
                     </p>
+                    {showSpeakerNames && (
+                        <p className="mt-0.5 text-[0.88em] text-[color:var(--program-muted)]" style={{ display: "var(--program-subtitle-display)" }}>
+                            {item.participant_name || "TBD"}
+                        </p>
+                    )}
                 </div>
             </div>
         );
@@ -114,7 +147,9 @@ export function ProgramAgendaItem({ item, viewStyle = "cards", isLast = false }:
 
     return (
         <div className={`${isList ? listBaseClass : cardBase} ${rowTrimClass}`} style={rowStyle}>
-            <p className="text-[1em] font-semibold leading-tight text-[color:var(--program-text)]">{item.title}</p>
+            <p className="text-[1em] leading-tight text-[color:var(--program-text)]" style={{ fontWeight: "var(--program-item-weight)" }}>
+                {item.title}
+            </p>
             {item.description?.trim() && (
                 <p className="mt-0.5 text-[0.88em] text-[color:var(--program-muted)]" style={{ display: "var(--program-subtitle-display)" }}>
                     {item.description}

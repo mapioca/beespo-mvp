@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { AppSidebar } from "@/components/dashboard/app-sidebar";
+import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { getProfile } from "@/lib/supabase/cached-queries";
 import { checkTrustedDevice, checkWorkspaceMfaRequired } from "@/lib/mfa";
 
@@ -50,22 +50,14 @@ export default async function DashboardLayout({
   }
 
   return (
-    <div className="flex h-screen-dynamic overflow-hidden overscroll-none bg-app-shell">
-      {/* Sidebar — transparent, sits on the canvas base layer */}
-      <AppSidebar
-        workspaceName={profile?.workspaces?.name || "Workspace"}
-        userName={profile?.full_name || ""}
-        userEmail={user?.email || ""}
-        userId={user.id}
-        userRoleTitle={profile?.role_title || ""}
-      />
-
-      {/* Main content area (Linear-style island inset) */}
-      <div className="flex-1 min-w-0 min-h-0 bg-app-shell p-2.5 xl:p-3 2xl:p-4">
-        <main className="h-full min-h-0 overflow-hidden rounded-[16px] border border-app-island bg-app-island shadow-[0_1px_2px_rgba(16,24,40,0.04),0_8px_24px_rgba(16,24,40,0.06)]">
-          {children}
-        </main>
-      </div>
-    </div>
+    <DashboardShell
+      workspaceName={profile?.workspaces?.name || "Workspace"}
+      userName={profile?.full_name || ""}
+      userEmail={user?.email || ""}
+      userId={user.id}
+      userRoleTitle={profile?.role_title || ""}
+    >
+      {children}
+    </DashboardShell>
   );
 }

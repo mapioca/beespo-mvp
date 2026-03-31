@@ -554,6 +554,8 @@ export type Database = {
           zoom_join_url: string | null;
           zoom_start_url: string | null;
           zoom_passcode: string | null;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          program_style: any | null;
         };
         Insert: {
           id?: string;
@@ -581,6 +583,8 @@ export type Database = {
           zoom_join_url?: string | null;
           zoom_start_url?: string | null;
           zoom_passcode?: string | null;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          program_style?: any | null;
         };
         Update: {
           id?: string;
@@ -608,6 +612,8 @@ export type Database = {
           zoom_join_url?: string | null;
           zoom_start_url?: string | null;
           zoom_passcode?: string | null;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          program_style?: any | null;
         };
       };
       agenda_items: {

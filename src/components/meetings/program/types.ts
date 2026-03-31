@@ -58,6 +58,14 @@ export interface ProgramViewProps {
     density?: "comfortable" | "compact";
     viewStyle?: "cards" | "list";
     showDivider?: boolean;
+    showRoles?: boolean;
+    showFooter?: boolean;
+    showMeetingNotes?: boolean;
+    showSpeakerNames?: boolean;
+    showDurations?: boolean;
+    showIcons?: boolean;
+    dateFormat?: "long" | "medium" | "short";
+    titleCase?: "title" | "sentence" | "uppercase";
     className?: string;
 }
 

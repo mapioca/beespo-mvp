@@ -5,10 +5,9 @@ import type { Components } from "react-markdown";
 
 interface MarkdownRendererProps {
     markdown: string;
-    unitName?: string;
 }
 
-export function MarkdownRenderer({ markdown, unitName }: MarkdownRendererProps) {
+export function MarkdownRenderer({ markdown }: MarkdownRendererProps) {
     // Custom logic to handle the custom markdown blocks
     const renderContent = () => {
         // Find all custom blocks (grids)
@@ -49,18 +48,7 @@ export function MarkdownRenderer({ markdown, unitName }: MarkdownRendererProps) 
         });
     };
 
-    return (
-        <div className="relative">
-            {unitName && (
-                <div className="absolute top-0 right-0 text-right">
-                    <p className="text-sm font-medium text-foreground leading-none">
-                        {unitName}
-                    </p>
-                </div>
-            )}
-            {renderContent()}
-        </div>
-    );
+    return <div className="relative">{renderContent()}</div>;
 }
 
 const markdownComponents: Components = {

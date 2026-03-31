@@ -81,6 +81,9 @@ interface AppSidebarProps {
   userId: string
   userAvatarUrl?: string
   userRoleTitle?: string
+  className?: string
+  forceCollapsed?: boolean
+  hideCollapseToggle?: boolean
 }
 
 export function AppSidebar({
@@ -90,15 +93,19 @@ export function AppSidebar({
   userId,
   userAvatarUrl,
   userRoleTitle,
+  className,
+  forceCollapsed,
+  hideCollapseToggle,
 }: AppSidebarProps) {
   const pathname = usePathname()
 
   const {
-    isCollapsed,
+    isCollapsed: storedCollapsed,
     toggleCollapsed,
     isGroupExpanded,
     toggleGroup,
   } = useSidebarState(defaultExpandedGroups)
+  const isCollapsed = forceCollapsed ?? storedCollapsed
 
   return (
     <TooltipProvider delayDuration={0}>
@@ -106,7 +113,8 @@ export function AppSidebar({
         className={cn(
           "shrink-0 flex flex-col h-full bg-app-shell",
           "transition-[width] duration-300 ease-in-out",
-          isCollapsed ? "w-16" : "w-60"
+          isCollapsed ? "w-16" : "w-60",
+          className
         )}
       >
         {/* Header with Logo and Toggle */}
@@ -136,28 +144,31 @@ export function AppSidebar({
             </Link>
 
             {/* Toggle Button */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={toggleCollapsed}
-                  className="text-nav h-8 w-8 shrink-0 hover:text-nav-strong"
-                >
-                  {isCollapsed ? (
-                    <PanelLeft className="h-4 w-4 stroke-[1.6]" />
-                  ) : (
-                    <PanelLeftClose className="h-4 w-4 stroke-[1.6]" />
-                  )}
-                  <span className="sr-only">
-                    {isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-                  </span>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="right">
-                {isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-              </TooltipContent>
-            </Tooltip>
+            {!hideCollapseToggle && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={toggleCollapsed}
+                    className="text-nav h-8 w-8 shrink-0 hover:text-nav-strong"
+                    disabled={forceCollapsed !== undefined}
+                  >
+                    {isCollapsed ? (
+                      <PanelLeft className="h-4 w-4 stroke-[1.6]" />
+                    ) : (
+                      <PanelLeftClose className="h-4 w-4 stroke-[1.6]" />
+                    )}
+                    <span className="sr-only">
+                      {isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+                    </span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="right">
+                  {isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+                </TooltipContent>
+              </Tooltip>
+            )}
           </div>
 
           {/* Workspace Name - Below Logo */}

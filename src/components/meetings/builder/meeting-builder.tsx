@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import {useState, useEffect, useCallback, useRef} from "react";
 import { useRouter } from "next/navigation";
 import {
     DndContext,
@@ -33,6 +33,7 @@ import {
 import { ValidationModal, ValidationItem, ValidationState } from "../validation-modal";
 import { PrintPreviewPane } from "./print-preview-pane";
 import { ProgramModePane } from "./program-mode-pane";
+import type { ProgramStyleSettings } from "../program/program-style";
 import { ZoomMeetingSheet } from "@/components/meetings/zoom-meeting-sheet";
 import { ZoomIcon } from "@/components/ui/zoom-icon";
 import { generateMeetingMarkdown } from "@/lib/generate-meeting-markdown";
@@ -130,6 +131,8 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
     const [isLeader, setIsLeader] = useState(true); // assume leader until proven otherwise
     const [isLive, setIsLive] = useState(false);
     const [isTogglingLive, setIsTogglingLive] = useState(false);
+    const [programStyle, setProgramStyle] = useState<ProgramStyleSettings | null>(null);
+    const programStyleSkipSaveRef = useRef(true);
 
     // Save as Template state
     const [isSavingTemplate, setIsSavingTemplate] = useState(false);
@@ -286,6 +289,10 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                 setMeetingNotes(meeting.notes);
             }
             setIsLive(!!meeting.is_publicly_shared);
+            if (meeting.program_style) {
+                setProgramStyle(meeting.program_style as ProgramStyleSettings);
+                programStyleSkipSaveRef.current = true;
+            }
 
             // Load agenda items with joined speaker and hymn data
             const { data: agendaItems, error: itemsError } = await supabase
@@ -409,6 +416,28 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
             setIsTogglingLive(false);
         }
     }, [initialMeetingId, workspaceSlug, getLiveUrl]);
+
+    useEffect(() => {
+        if (!initialMeetingId || !programStyle) return;
+        if (programStyleSkipSaveRef.current) {
+            programStyleSkipSaveRef.current = false;
+            return;
+        }
+
+        const supabase = createClient();
+        const handle = window.setTimeout(async () => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const { error } = await (supabase.from("meetings") as any)
+                .update({ program_style: programStyle })
+                .eq("id", initialMeetingId);
+
+            if (error) {
+                toast.error("Failed to save layout settings", { description: error.message });
+            }
+        }, 500);
+
+        return () => window.clearTimeout(handle);
+    }, [initialMeetingId, programStyle]);
 
     // Update title when template or date changes — use meeting date, not today
     const DEFAULT_TITLE = "Untitled Meeting Agenda";
@@ -1781,7 +1810,6 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                                 title={form.getValues("title")}
                                 date={form.getValues("date")}
                                 time={form.getValues("time")}
-                                unitName={workspaceName}
                                 presiding={form.getValues("presiding")}
                                 conducting={form.getValues("conducting")}
                                 chorister={form.getValues("chorister")}
@@ -1814,6 +1842,8 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                                 isTogglingLive={isTogglingLive}
                                 onGoLive={handleGoLive}
                                 previewDevice={programPreviewDevice}
+                                programStyle={programStyle}
+                                onProgramStyleChange={(style) => setProgramStyle(style)}
                             />
                         )}
                     </div>

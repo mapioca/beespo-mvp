@@ -15,6 +15,14 @@ export function ProgramView({
     density = "comfortable",
     viewStyle = "cards",
     showDivider = true,
+    showRoles = true,
+    showFooter = true,
+    showMeetingNotes = false,
+    showSpeakerNames = true,
+    showDurations = true,
+    showIcons = true,
+    dateFormat = "long",
+    titleCase = "title",
     className,
 }: ProgramViewProps) {
     const paddingClass = density === "compact" ? "px-5 py-6" : "px-6 py-7";
@@ -33,11 +41,12 @@ export function ProgramView({
                     title={data.title}
                     date={data.date}
                     time={data.time}
-                    unitName={data.unitName}
                     variant={variant}
+                    dateFormat={dateFormat}
+                    titleCase={titleCase}
                 />
 
-                <ProgramRolesGrid roles={data.roles} />
+                {showRoles && <ProgramRolesGrid roles={data.roles} />}
 
                 {showDivider && (
                     <div
@@ -62,12 +71,33 @@ export function ProgramView({
                                 ease: "easeOut",
                             }}
                         >
-                            <ProgramAgendaItem item={item} viewStyle={viewStyle} isLast={index === data.items.length - 1} />
+                            <ProgramAgendaItem
+                                item={item}
+                                viewStyle={viewStyle}
+                                isLast={index === data.items.length - 1}
+                                showSpeakerNames={showSpeakerNames}
+                                showDurations={showDurations}
+                                showIcons={showIcons}
+                            />
                         </motion.div>
                     ))}
                 </div>
 
-                <ProgramFooter />
+                {showMeetingNotes && data.meetingNotes?.trim() && (
+                    <div
+                        className="rounded-[var(--program-radius)] border bg-[color:var(--program-card)] px-[var(--program-card-padding-x)] py-[var(--program-card-padding-y)] text-[0.9em] text-[color:var(--program-muted)]"
+                        style={{
+                            boxShadow: "var(--program-card-shadow)",
+                            borderColor: "var(--program-card-border)",
+                            borderWidth: "var(--program-border-width)",
+                            borderStyle: "var(--program-card-border-style)",
+                        }}
+                    >
+                        {data.meetingNotes}
+                    </div>
+                )}
+
+                {showFooter && <ProgramFooter />}
             </div>
         </div>
     );

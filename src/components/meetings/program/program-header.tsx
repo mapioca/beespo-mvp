@@ -7,8 +7,9 @@ interface ProgramHeaderProps {
     title: string;
     date: Date;
     time: string;
-    unitName?: string;
     variant?: "standalone" | "embedded";
+    dateFormat?: "long" | "medium" | "short";
+    titleCase?: "title" | "sentence" | "uppercase";
 }
 
 function formatTime12h(time24: string): string {
@@ -18,23 +19,25 @@ function formatTime12h(time24: string): string {
     return `${displayHours}:${minutes.toString().padStart(2, "0")} ${period}`;
 }
 
-export function ProgramHeader({ title, date, time, unitName }: ProgramHeaderProps) {
-    const dateStr = format(date, "EEEE, MMMM d, yyyy");
+export function ProgramHeader({ title, date, time, dateFormat = "long", titleCase = "title" }: ProgramHeaderProps) {
+    const dateStr = format(
+        date,
+        dateFormat === "short" ? "M/d/yy" : dateFormat === "medium" ? "MMM d, yyyy" : "EEEE, MMMM d, yyyy"
+    );
     const timeStr = formatTime12h(time);
+    const displayTitle =
+        titleCase === "sentence"
+            ? title.charAt(0).toUpperCase() + title.slice(1)
+            : title
+                  .split(" ")
+                  .map((word) => (word.length === 0 ? word : `${word.charAt(0).toUpperCase()}${word.slice(1)}`))
+                  .join(" ");
 
     return (
         <div
             className="space-y-3 pb-1.5"
             style={{ textAlign: "var(--program-header-align)" as CSSProperties["textAlign"] }}
         >
-            {unitName && (
-                <p
-                    className="text-[0.7em] font-semibold uppercase text-[color:var(--program-subtle)]"
-                    style={{ letterSpacing: "var(--program-header-tracking)" }}
-                >
-                    {unitName}
-                </p>
-            )}
             <h1
                 className="tracking-[-0.02em] leading-tight text-[color:var(--program-text)]"
                 style={{
@@ -42,9 +45,10 @@ export function ProgramHeader({ title, date, time, unitName }: ProgramHeaderProp
                     fontSize: "var(--program-title-size)",
                     marginInline: "var(--program-title-margin-inline)",
                     maxWidth: "var(--program-title-max-width)",
+                    textTransform: "var(--program-title-case)" as CSSProperties["textTransform"],
                 }}
             >
-                {title}
+                {displayTitle}
             </h1>
             <div className="flex items-center" style={{ justifyContent: "var(--program-header-justify)" }}>
                 <span
