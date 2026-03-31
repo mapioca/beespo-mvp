@@ -26,17 +26,18 @@
     --accent-warm-hover: 24 27% 88%; /* Slightly deeper warm hover (#E6DDD6) */
     --chrome: 0 0% 99.4%; /* App chrome surface (top bars, toolbars) */
     --chrome-border: 0 0% 89%; /* Subtle chrome dividers */
-    --app-shell: 36 34% 97.2%;
+    --overlay: 0 0% 0% / 0.28; /* Modal overlay tint */
+    --app-shell: 0 0% 96.5%;
     --app-island: 0 0% 100%;
     --app-island-border: 0 0% 89%;
-    --nav-hover: 26 40% 94.8%;
+    --nav-hover: 0 0% 94%;
     --nav-hover-alpha: 1;
-    --nav-selected: 24 42% 92.2%;
+    --nav-selected: 0 0% 90%;
     --nav-selected-alpha: 1;
-    --nav-text: 24 8% 41%;
-    --nav-text-strong: 24 14% 10%;
-    --nav-text-muted: 24 8% 44%;
-    --nav-active-border: 24 28% 84%;
+    --nav-text: 0 0% 38%;
+    --nav-text-strong: 0 0% 10%;
+    --nav-text-muted: 0 0% 46%;
+    --nav-active-border: 0 0% 82%;
     --program-stage-bg: 220 14% 95.6%;
     --program-control-panel-bg: 0 0% 100%;
     --program-control-panel-border: 220 10% 90.5%;
@@ -144,6 +145,7 @@
     --accent-warm-hover: 24 20% 26%;
     --chrome: 0 0% 8%;
     --chrome-border: 0 0% 18%;
+    --overlay: 0 0% 0% / 0.6; /* Modal overlay tint */
     --app-shell: 0 0% 8%;
     --app-island: 0 0% 6%;
     --app-island-border: 0 0% 20%;
