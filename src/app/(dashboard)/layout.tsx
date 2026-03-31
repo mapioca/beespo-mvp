@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
+import { CommandPalette } from "@/components/command-palette";
 import { getProfile } from "@/lib/supabase/cached-queries";
 import { checkTrustedDevice, checkWorkspaceMfaRequired } from "@/lib/mfa";
 
@@ -50,14 +51,17 @@ export default async function DashboardLayout({
   }
 
   return (
-    <DashboardShell
-      workspaceName={profile?.workspaces?.name || "Workspace"}
-      userName={profile?.full_name || ""}
-      userEmail={user?.email || ""}
-      userId={user.id}
-      userRoleTitle={profile?.role_title || ""}
-    >
-      {children}
-    </DashboardShell>
+    <>
+      <DashboardShell
+        workspaceName={profile?.workspaces?.name || "Workspace"}
+        userName={profile?.full_name || ""}
+        userEmail={user?.email || ""}
+        userId={user.id}
+        userRoleTitle={profile?.role_title || ""}
+      >
+        {children}
+      </DashboardShell>
+      <CommandPalette />
+    </>
   );
 }

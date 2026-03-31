@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useCallback } from "react"
+import { useState, useMemo, useCallback, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Plus, X, Trash2, ListTodo } from "lucide-react"
@@ -26,22 +26,68 @@ import {
 } from "@/components/tasks/tasks-table"
 import { TaskDetailsSheet } from "@/components/tasks/task-details-sheet"
 import { CreateTaskDialog } from "@/components/tasks/create-task-dialog"
+import { CreateViewDialog } from "@/components/common/create-view-dialog"
+import {
+    TaskView,
+    TaskViewFilters,
+    createTaskView,
+    deleteTaskView,
+} from "@/lib/table-views"
+import { cn } from "@/lib/utils"
+import { TableView } from "@/lib/table-views"
+
+// ── Filter sections config ────────────────────────────────────────────────────
+
+const TASK_FILTER_SECTIONS = [
+    {
+        sectionLabel: "Status",
+        key: "statuses",
+        optional: true,
+        options: [
+            { value: "pending", label: "Pending" },
+            { value: "in_progress", label: "In Progress" },
+            { value: "completed", label: "Completed" },
+            { value: "cancelled", label: "Cancelled" },
+        ],
+    },
+    {
+        sectionLabel: "Priority",
+        key: "priorities",
+        optional: true,
+        options: [
+            { value: "high", label: "High" },
+            { value: "medium", label: "Medium" },
+            { value: "low", label: "Low" },
+        ],
+    },
+]
+
+// ── Props ─────────────────────────────────────────────────────────────────────
 
 interface TasksClientProps {
     tasks: Task[]
     totalCount: number
     statusCounts: Record<string, number>
     priorityCounts: Record<string, number>
+    initialViews?: TaskView[]
 }
 
 export function TasksClient({
     tasks,
     statusCounts,
     priorityCounts,
+    initialViews = [],
 }: TasksClientProps) {
     const router = useRouter()
+    const [, startDeleteTransition] = useTransition()
+
     const [selectedTask, setSelectedTask] = useState<Task | null>(null)
     const [drawerOpen, setDrawerOpen] = useState(false)
+
+    // ── Views state ──────────────────────────────────────────────────────────
+    const [views, setViews] = useState<TaskView[]>(initialViews)
+    const [activeViewId, setActiveViewId] = useState<string | null>(null)
+    const [deletingViewId, setDeletingViewId] = useState<string | null>(null)
 
     // Search
     const [search, setSearch] = useState("")
@@ -70,6 +116,11 @@ export function TasksClient({
 
     // ── Derived data ────────────────────────────────────────────────────────
 
+    const activeView = useMemo(
+        () => views.find((v) => v.id === activeViewId) ?? null,
+        [views, activeViewId]
+    )
+
     const filteredTasks = useMemo(() => {
         let result = tasks
 
@@ -84,17 +135,25 @@ export function TasksClient({
             )
         }
 
-        // Status filter
-        if (selectedStatuses.length > 0) {
+        // Status filter — view overrides manual selection
+        const effectiveStatuses =
+            activeView?.filters.statuses && activeView.filters.statuses.length > 0
+                ? activeView.filters.statuses
+                : selectedStatuses
+        if (effectiveStatuses.length > 0) {
             result = result.filter((t) =>
-                selectedStatuses.includes(t.status as TaskStatus)
+                effectiveStatuses.includes(t.status as TaskStatus)
             )
         }
 
-        // Priority filter
-        if (selectedPriorities.length > 0) {
+        // Priority filter — view overrides manual selection
+        const effectivePriorities =
+            activeView?.filters.priorities && activeView.filters.priorities.length > 0
+                ? activeView.filters.priorities
+                : selectedPriorities
+        if (effectivePriorities.length > 0) {
             result = result.filter((t) =>
-                selectedPriorities.includes(t.priority as TaskPriority)
+                effectivePriorities.includes(t.priority as TaskPriority)
             )
         }
 
@@ -129,7 +188,7 @@ export function TasksClient({
         }
 
         return result
-    }, [tasks, search, selectedStatuses, selectedPriorities, sortConfig])
+    }, [tasks, search, selectedStatuses, selectedPriorities, activeView, sortConfig])
 
     // ── Handlers ────────────────────────────────────────────────────────────
 
@@ -225,15 +284,46 @@ export function TasksClient({
         setDrawerOpen(true)
     }
 
+    function handleViewCreated(view: TableView) {
+        setViews((prev) => [...prev, view as TaskView])
+        setActiveViewId(view.id)
+    }
+
+    async function handleSaveView(name: string, filters: Record<string, string[]>) {
+        return createTaskView(name, filters as TaskViewFilters)
+    }
+
+    function handleDeleteView(viewId: string) {
+        setDeletingViewId(viewId)
+    }
+
+    async function confirmDeleteView() {
+        if (!deletingViewId) return
+        const id = deletingViewId
+        setDeletingViewId(null)
+
+        startDeleteTransition(async () => {
+            const result = await deleteTaskView(id)
+            if (result.error) {
+                toast.error(result.error)
+                return
+            }
+            setViews((prev) => prev.filter((v) => v.id !== id))
+            if (activeViewId === id) setActiveViewId(null)
+            toast.success("View deleted")
+        })
+    }
+
     // ── Active filter chips ─────────────────────────────────────────────────
 
     const hasActiveFilters =
-        search.length > 0 ||
-        selectedStatuses.length > 0 ||
-        selectedPriorities.length > 0 ||
-        hiddenColumns.size > 0
+        !activeView &&
+        (search.length > 0 ||
+            selectedStatuses.length > 0 ||
+            selectedPriorities.length > 0 ||
+            hiddenColumns.size > 0)
 
-    function formatStatusLabel(s: string) {
+    function formatLabel(s: string) {
         return s.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())
     }
 
@@ -248,10 +338,58 @@ export function TasksClient({
                 ]}
             />
 
-            {/* Action Bar */}
+            {/* Action Bar + View Tabs */}
             <div className="flex items-center justify-between w-full px-6 pt-5 pb-4 shrink-0 flex-wrap gap-4">
                 <div className="flex items-center gap-1.5 flex-wrap">
-                    {/* Placeholder for future tabs */}
+                    {/* Custom view tabs */}
+                    {views.map((view) => (
+                        <span key={view.id} className="relative group/view inline-flex items-center">
+                            <button
+                                onClick={() => setActiveViewId(view.id)}
+                                className={cn(
+                                    "rounded-full border pl-3.5 pr-7 py-1 text-xs font-medium transition-all shadow-sm",
+                                    activeViewId === view.id
+                                        ? "bg-[hsl(var(--accent-warm))] text-foreground border-border/60"
+                                        : "text-muted-foreground border-border/60 hover:text-foreground hover:bg-[hsl(var(--accent-warm)/0.5)] hover:border-border/60"
+                                )}
+                            >
+                                {view.name}
+                            </button>
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation()
+                                    handleDeleteView(view.id)
+                                }}
+                                title="Delete view"
+                                className={cn(
+                                    "absolute right-2 top-1/2 -translate-y-1/2",
+                                    "flex items-center justify-center h-3.5 w-3.5 rounded-full",
+                                    "opacity-0 group-hover/view:opacity-100 transition-opacity",
+                                    activeViewId === view.id
+                                        ? "text-muted-foreground/70 hover:text-foreground"
+                                        : "text-muted-foreground hover:text-foreground"
+                                )}
+                            >
+                                <X className="h-2.5 w-2.5 stroke-[1.6]" />
+                            </button>
+                        </span>
+                    ))}
+
+                    {/* Clear active view button */}
+                    {activeViewId && (
+                        <button
+                            onClick={() => setActiveViewId(null)}
+                            className="text-xs text-muted-foreground hover:text-foreground"
+                        >
+                            Clear view
+                        </button>
+                    )}
+
+                    <CreateViewDialog
+                        filterSections={TASK_FILTER_SECTIONS}
+                        onSave={handleSaveView}
+                        onCreated={handleViewCreated}
+                    />
                 </div>
 
                 <CreateTaskDialog>
@@ -261,6 +399,34 @@ export function TasksClient({
                     </Button>
                 </CreateTaskDialog>
             </div>
+
+            {/* View filter summary bar */}
+            {activeView && (
+                <div className="flex items-center gap-2 px-6 pb-3 flex-wrap text-[11px] text-muted-foreground">
+                    <span className="font-medium text-foreground">Filters:</span>
+                    {activeView.filters.statuses?.map((s) => (
+                        <span key={s} className="rounded-md bg-[hsl(var(--accent-warm))] border border-border/50 px-2 py-0.5 text-slate-800">
+                            {formatLabel(s)}
+                        </span>
+                    ))}
+                    {activeView.filters.priorities?.map((p) => (
+                        <span key={p} className="rounded-md bg-[hsl(var(--accent-warm))] border border-border/50 px-2 py-0.5 text-slate-800 capitalize">
+                            {p}
+                        </span>
+                    ))}
+                    {search && (
+                        <span className="rounded-md bg-[hsl(var(--accent-warm))] border border-border/50 px-2 py-0.5 text-slate-800">
+                            Search: &quot;{search}&quot;
+                            <button
+                                onClick={() => setSearch("")}
+                                className="ml-1 text-muted-foreground hover:text-foreground"
+                            >
+                                <X className="h-3 w-3 inline stroke-[1.6]" />
+                            </button>
+                        </span>
+                    )}
+                </div>
+            )}
 
             {/* Selection action bar */}
             {selectedRows.size > 0 && (
@@ -286,7 +452,7 @@ export function TasksClient({
                 </div>
             )}
 
-            {/* Active filter chips (hidden when selection bar is showing) */}
+            {/* Active filter chips (hidden when selection bar or view is showing) */}
             {hasActiveFilters && selectedRows.size === 0 && (
                 <div className="flex items-center gap-2 px-6 pb-3 flex-wrap">
                     {search && (
@@ -305,7 +471,7 @@ export function TasksClient({
                             key={s}
                             className="inline-flex items-center gap-1.5 rounded-md bg-muted px-2.5 py-1 text-xs font-medium"
                         >
-                            {formatStatusLabel(s)}
+                            {formatLabel(s)}
                             <button
                                 onClick={() => handleStatusToggle(s)}
                                 className="text-muted-foreground hover:text-foreground"
@@ -358,12 +524,12 @@ export function TasksClient({
                     onSort={handleSort}
                     searchValue={search}
                     onSearchChange={setSearch}
-                    selectedStatuses={selectedStatuses}
+                    selectedStatuses={activeView?.filters.statuses as TaskStatus[] ?? selectedStatuses}
                     statusCounts={statusCounts}
-                    onStatusToggle={handleStatusToggle}
-                    selectedPriorities={selectedPriorities}
+                    onStatusToggle={activeView ? undefined : handleStatusToggle}
+                    selectedPriorities={activeView?.filters.priorities as TaskPriority[] ?? selectedPriorities}
                     priorityCounts={priorityCounts}
-                    onPriorityToggle={handlePriorityToggle}
+                    onPriorityToggle={activeView ? undefined : handlePriorityToggle}
                     hiddenColumns={hiddenColumns}
                     onHideColumn={handleHideColumn}
                     selectedRows={selectedRows}
@@ -409,6 +575,33 @@ export function TasksClient({
                             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                         >
                             {isBulkDeleting ? "Deleting..." : "Delete"}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            {/* Delete view confirmation */}
+            <AlertDialog
+                open={!!deletingViewId}
+                onOpenChange={(o) => { if (!o) setDeletingViewId(null) }}
+            >
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Delete this view?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This view will be removed for everyone in your workspace.
+                            This action cannot be undone.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel onClick={() => setDeletingViewId(null)}>
+                            Cancel
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={confirmDeleteView}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                            Delete view
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

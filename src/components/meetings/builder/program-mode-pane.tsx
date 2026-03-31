@@ -68,14 +68,14 @@ function ControlSelect<T extends string>({
                     type="button"
                     className={cn(
                         "inline-flex h-8 w-full items-center justify-between gap-2",
-                        "rounded-[10px] bg-[color:hsl(var(--program-control-field-bg))] px-3",
-                        "text-[12px] font-medium text-[color:hsl(var(--program-control-field-text))]",
-                        "transition-colors hover:text-[color:hsl(var(--program-control-field-text))]",
+                        "rounded-full border border-control bg-control px-3",
+                        "text-[12px] font-medium text-foreground",
+                        "transition-colors hover:bg-control-hover",
                         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     )}
                 >
                     <span className="truncate">{current?.label}</span>
-                    <ChevronDown className="h-3.5 w-3.5 text-[color:hsl(var(--program-control-field-icon))]" />
+                    <ChevronDown className="h-3.5 w-3.5 text-control" />
                 </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
@@ -105,8 +105,8 @@ function ControlToggle<T extends string>({
     return (
         <div
             className={cn(
-                "grid h-8 w-full grid-cols-2 gap-1 rounded-[var(--program-control-inner-radius)]",
-                "bg-[color:hsl(var(--program-control-field-bg))] p-1"
+                "grid h-8 w-full grid-cols-2 gap-1 rounded-full",
+                "border border-control bg-control p-0.5"
             )}
         >
             {options.map((option) => {
@@ -117,10 +117,10 @@ function ControlToggle<T extends string>({
                         type="button"
                         onClick={() => onChange(option.value)}
                         className={cn(
-                            "flex items-center justify-center rounded-[calc(var(--program-control-inner-radius)-4px)] text-[12px] font-medium",
+                            "flex items-center justify-center rounded-full text-[11px] font-medium",
                             isActive
-                                ? "bg-[color:hsl(var(--program-control-selected-bg))] text-[color:hsl(var(--program-control-selected-fg))]"
-                                : "text-[color:hsl(var(--program-control-field-text))]"
+                                ? "border border-border/40 bg-foreground/90 text-background"
+                                : "text-control"
                         )}
                     >
                         {option.label}
@@ -144,15 +144,21 @@ function SectionHeader({
         <button
             type="button"
             onClick={onToggle}
-            className="flex w-full items-center justify-between text-[12px] font-semibold text-[color:hsl(var(--program-control-section-title))]"
+            className={cn(
+                "flex w-full items-center justify-between",
+                "text-[11px] font-medium uppercase tracking-[0.1em] text-foreground/60",
+                !onToggle && "cursor-default"
+            )}
         >
             <span>{label}</span>
-            <ChevronDown
-                className={cn(
-                    "h-3.5 w-3.5 transition-transform",
-                    collapsed ? "-rotate-90" : "rotate-0"
-                )}
-            />
+            {onToggle && (
+                <ChevronDown
+                    className={cn(
+                        "h-3.5 w-3.5 transition-transform",
+                        collapsed ? "-rotate-90" : "rotate-0"
+                    )}
+                />
+            )}
         </button>
     );
 }
@@ -165,11 +171,11 @@ function ControlRow({
     children: React.ReactNode;
 }) {
     return (
-        <div className="flex items-center justify-between gap-4">
-            <span className="min-w-[var(--program-control-label-width)] whitespace-nowrap text-[12px] font-medium text-[color:hsl(var(--program-control-text))]">
+        <div className="flex h-8 items-center justify-between gap-4">
+            <span className="w-[120px] whitespace-nowrap text-[11px] font-medium leading-none text-muted-foreground">
                 {label}
             </span>
-            <div className="w-[var(--program-control-option-width)]">{children}</div>
+            <div className="w-[220px]">{children}</div>
         </div>
     );
 }
@@ -213,10 +219,10 @@ export function ProgramModePane({
     const [showSpeakerNames, setShowSpeakerNames] = useState(initialStyle.showSpeakerNames);
     const [showDurations, setShowDurations] = useState(initialStyle.showDurations);
     const [showAnnouncements, setShowAnnouncements] = useState(initialStyle.showAnnouncements);
+    const [showBusiness, setShowBusiness] = useState(initialStyle.showBusiness);
+    const [showDiscussions, setShowDiscussions] = useState(initialStyle.showDiscussions);
     const [showMeetingNotes, setShowMeetingNotes] = useState(initialStyle.showMeetingNotes);
     const [showFooter, setShowFooter] = useState(initialStyle.showFooter);
-    const [showPageNumbers, setShowPageNumbers] = useState(initialStyle.showPageNumbers);
-    const [showQrCode, setShowQrCode] = useState(initialStyle.showQrCode);
     const [presetKey, setPresetKey] = useState<PresetKey>(initialStyle.presetKey ?? "classic");
     const [collapsedSections, setCollapsedSections] = useState<Record<"type" | "layout" | "details" | "extras", boolean>>({
         type: false,
@@ -252,10 +258,10 @@ export function ProgramModePane({
             showSpeakerNames,
             showDurations,
             showAnnouncements,
+            showBusiness,
+            showDiscussions,
             showMeetingNotes,
             showFooter,
-            showPageNumbers,
-            showQrCode,
         }),
         [
             presetKey,
@@ -277,10 +283,10 @@ export function ProgramModePane({
             showSpeakerNames,
             showDurations,
             showAnnouncements,
+            showBusiness,
+            showDiscussions,
             showMeetingNotes,
             showFooter,
-            showPageNumbers,
-            showQrCode,
         ]
     );
 
@@ -330,9 +336,9 @@ export function ProgramModePane({
               ? {
                     width: "w-[960px]",
                     height: "h-[700px]",
-                    radius: "rounded-[18px]",
-                    border: "border-[1px]",
-                    contentRadius: "rounded-[14px]",
+                    radius: "rounded-md",
+                    border: "border",
+                    contentRadius: "rounded-md",
                     w: 960,
                     h: 700,
                 }
@@ -349,9 +355,10 @@ export function ProgramModePane({
     const clampZoom = (value: number) => Math.min(1.6, Math.max(0.6, value));
 
     const getDefaultZoom = useCallback(() => {
+        if (previewDevice === "phone") return clampZoom(0.9);
         const target = isSmallScreen ? 0.6 : 1.6;
         return clampZoom(target);
-    }, [isSmallScreen]);
+    }, [isSmallScreen, previewDevice]);
 
     useEffect(() => {
         if (!programStyle || didInitializeFromProps.current) return;
@@ -376,10 +383,10 @@ export function ProgramModePane({
         setShowSpeakerNames(normalized.showSpeakerNames);
         setShowDurations(normalized.showDurations);
         setShowAnnouncements(normalized.showAnnouncements);
+        setShowBusiness(normalized.showBusiness);
+        setShowDiscussions(normalized.showDiscussions);
         setShowMeetingNotes(normalized.showMeetingNotes);
         setShowFooter(normalized.showFooter);
-        setShowPageNumbers(normalized.showPageNumbers);
-        setShowQrCode(normalized.showQrCode);
         isApplyingPreset.current = false;
         didInitializeFromProps.current = true;
     }, [programStyle]);
@@ -414,10 +421,10 @@ export function ProgramModePane({
         setShowSpeakerNames(preset.showSpeakerNames);
         setShowDurations(preset.showDurations);
         setShowAnnouncements(preset.showAnnouncements);
+        setShowBusiness(preset.showBusiness);
+        setShowDiscussions(preset.showDiscussions);
         setShowMeetingNotes(preset.showMeetingNotes);
         setShowFooter(preset.showFooter);
-        setShowPageNumbers(preset.showPageNumbers);
-        setShowQrCode(preset.showQrCode);
         isApplyingPreset.current = false;
     };
 
@@ -451,7 +458,7 @@ export function ProgramModePane({
     const vars = buildProgramStyleVars(normalizedStyle);
 
     return (
-        <div className="flex-1 overflow-hidden bg-builder-canvas px-6 py-6">
+        <div className="flex-1 overflow-hidden bg-builder-canvas px-8 py-6">
             {isLeader && !isLive && (
                 <div className="mx-auto mb-5 flex w-full max-w-[1280px] justify-end">
                     <button
@@ -470,37 +477,40 @@ export function ProgramModePane({
                 </div>
             )}
 
-            <div className="mx-auto grid h-full min-h-0 w-full max-w-[1280px] grid-cols-1 gap-6 xl:grid-cols-[var(--program-control-panel-width)_minmax(0,1fr)]">
+            <div className="mx-auto grid h-full min-h-0 w-full max-w-[1280px] grid-cols-1 gap-8 xl:grid-cols-[var(--program-control-panel-width)_minmax(0,1fr)]">
                 <aside className="h-full min-h-0">
-                    <div className="flex h-full flex-col rounded-[14px] border border-[color:hsl(var(--program-control-panel-border))] bg-[color:hsl(var(--program-control-panel-bg))] p-5 shadow-[var(--shadow-program-panel)]">
+                    <div className="flex h-full flex-col rounded-[14px] border border-[color:hsl(var(--program-control-panel-border))] bg-[color:hsl(var(--program-control-panel-bg))] p-6 shadow-[0_12px_30px_rgba(15,23,42,0.06)]">
                         <div className="text-[13px] font-semibold text-foreground">Layout & Style</div>
-                        <div className="h-1" />
+                        <div className="mt-3 h-px w-full bg-border/40" />
 
                         <div className="mt-4 flex min-h-0 flex-1 flex-col">
-                            <div className="flex-1 space-y-4 overflow-y-auto pr-1">
-                                <div className="space-y-3 rounded-[14px] bg-background/60 p-3">
-                                    <ControlRow label="Preset">
-                                        <ControlSelect
-                                            value={presetKey}
-                                            onChange={(value) => {
-                                                const next = value as PresetKey;
-                                                if (next !== "custom") {
-                                                    applyPreset(next);
-                                                } else {
-                                                    setPresetKey("custom");
-                                                }
-                                            }}
-                                            options={[
-                                                { value: "classic", label: "Classic" },
-                                                { value: "minimal", label: "Minimal" },
-                                                { value: "bold", label: "Bold" },
-                                                { value: "custom", label: "Custom" },
-                                            ]}
-                                        />
-                                    </ControlRow>
+                            <div className="flex-1 divide-y divide-border/40 overflow-y-auto pr-1">
+                                <div className="py-5">
+                                    <SectionHeader label="Preset" />
+                                    <div className="mt-3 space-y-3">
+                                        <ControlRow label="Preset">
+                                            <ControlSelect
+                                                value={presetKey}
+                                                onChange={(value) => {
+                                                    const next = value as PresetKey;
+                                                    if (next !== "custom") {
+                                                        applyPreset(next);
+                                                    } else {
+                                                        setPresetKey("custom");
+                                                    }
+                                                }}
+                                                options={[
+                                                    { value: "classic", label: "Classic" },
+                                                    { value: "minimal", label: "Minimal" },
+                                                    { value: "bold", label: "Bold" },
+                                                    { value: "custom", label: "Custom" },
+                                                ]}
+                                            />
+                                        </ControlRow>
+                                    </div>
                                 </div>
 
-                                <div className="space-y-3 rounded-[14px] bg-background/60 p-3">
+                                <div className="py-5">
                                     <SectionHeader
                                         label="Type"
                                         collapsed={collapsedSections.type}
@@ -509,90 +519,87 @@ export function ProgramModePane({
                                         }
                                     />
                                     {!collapsedSections.type && (
-                                        <>
-                                    <ControlRow label="Font size">
-                                        <ControlSelect
-                                            value={fontScale}
-                                            onChange={setWithPresetGuard(setFontScale)}
-                                            options={[
-                                                { value: "sm", label: "Small" },
-                                                { value: "md", label: "Default" },
-                                                { value: "lg", label: "Large" },
-                                            ]}
-                                        />
-                                    </ControlRow>
-                                    <ControlRow label="Body size">
-                                        <ControlSelect
-                                            value={bodyScale}
-                                            onChange={setWithPresetGuard(setBodyScale)}
-                                            options={[
-                                                { value: "sm", label: "Small" },
-                                                { value: "md", label: "Default" },
-                                                { value: "lg", label: "Large" },
-                                            ]}
-                                        />
-                                    </ControlRow>
-                                    <ControlRow label="Title weight">
-                                        <ControlSelect
-                                            value={titleWeight}
-                                            onChange={setWithPresetGuard(setTitleWeight)}
-                                            options={[
-                                                { value: "regular", label: "Regular" },
-                                                { value: "medium", label: "Medium" },
-                                                { value: "semibold", label: "Semibold" },
-                                                { value: "bold", label: "Bold" },
-                                            ]}
-                                        />
-                                    </ControlRow>
-                                    <ControlRow label="Title case">
-                                        <ControlSelect
-                                            value={titleCase}
-                                            onChange={setWithPresetGuard(setTitleCase)}
-                                            options={[
-                                                { value: "title", label: "Title case" },
-                                                { value: "sentence", label: "Sentence case" },
-                                                { value: "uppercase", label: "Uppercase" },
-                                            ]}
-                                        />
-                                    </ControlRow>
-                                    <ControlRow label="Date format">
-                                        <ControlSelect
-                                            value={dateFormat}
-                                            onChange={setWithPresetGuard(setDateFormat)}
-                                            options={[
-                                                { value: "long", label: "Long" },
-                                                { value: "medium", label: "Medium" },
-                                                { value: "short", label: "Short" },
-                                            ]}
-                                        />
-                                    </ControlRow>
-                                    <ControlRow label="Section weight">
-                                        <ControlToggle
-                                            value={sectionWeight}
-                                            onChange={setWithPresetGuard(setSectionWeight)}
-                                            options={[
-                                                { value: "regular", label: "Regular" },
-                                                { value: "semibold", label: "Semibold" },
-                                            ]}
-                                        />
-                                    </ControlRow>
-                                    <ControlRow label="Header align">
-                                        <ControlToggle
-                                            value={headerAlign}
-                                            onChange={setWithPresetGuard(setHeaderAlign)}
-                                            options={[
-                                                { value: "left", label: "Left" },
-                                                { value: "center", label: "Center" },
-                                            ]}
-                                        />
-                                    </ControlRow>
-                                        </>
+                                        <div className="mt-3 space-y-3">
+                                            <ControlRow label="Font size">
+                                                <ControlSelect
+                                                    value={fontScale}
+                                                    onChange={setWithPresetGuard(setFontScale)}
+                                                    options={[
+                                                        { value: "sm", label: "Small" },
+                                                        { value: "md", label: "Default" },
+                                                        { value: "lg", label: "Large" },
+                                                    ]}
+                                                />
+                                            </ControlRow>
+                                            <ControlRow label="Body size">
+                                                <ControlSelect
+                                                    value={bodyScale}
+                                                    onChange={setWithPresetGuard(setBodyScale)}
+                                                    options={[
+                                                        { value: "sm", label: "Small" },
+                                                        { value: "md", label: "Default" },
+                                                        { value: "lg", label: "Large" },
+                                                    ]}
+                                                />
+                                            </ControlRow>
+                                            <ControlRow label="Title weight">
+                                                <ControlSelect
+                                                    value={titleWeight}
+                                                    onChange={setWithPresetGuard(setTitleWeight)}
+                                                    options={[
+                                                        { value: "regular", label: "Regular" },
+                                                        { value: "medium", label: "Medium" },
+                                                        { value: "semibold", label: "Semibold" },
+                                                        { value: "bold", label: "Bold" },
+                                                    ]}
+                                                />
+                                            </ControlRow>
+                                            <ControlRow label="Title case">
+                                                <ControlSelect
+                                                    value={titleCase}
+                                                    onChange={setWithPresetGuard(setTitleCase)}
+                                                    options={[
+                                                        { value: "title", label: "Title case" },
+                                                        { value: "uppercase", label: "Uppercase" },
+                                                    ]}
+                                                />
+                                            </ControlRow>
+                                            <ControlRow label="Date format">
+                                                <ControlSelect
+                                                    value={dateFormat}
+                                                    onChange={setWithPresetGuard(setDateFormat)}
+                                                    options={[
+                                                        { value: "long", label: "Long" },
+                                                        { value: "medium", label: "Medium" },
+                                                        { value: "short", label: "Short" },
+                                                    ]}
+                                                />
+                                            </ControlRow>
+                                            <ControlRow label="Section weight">
+                                                <ControlToggle
+                                                    value={sectionWeight}
+                                                    onChange={setWithPresetGuard(setSectionWeight)}
+                                                    options={[
+                                                        { value: "regular", label: "Regular" },
+                                                        { value: "semibold", label: "Semibold" },
+                                                    ]}
+                                                />
+                                            </ControlRow>
+                                            <ControlRow label="Header align">
+                                                <ControlToggle
+                                                    value={headerAlign}
+                                                    onChange={setWithPresetGuard(setHeaderAlign)}
+                                                    options={[
+                                                        { value: "left", label: "Left" },
+                                                        { value: "center", label: "Center" },
+                                                    ]}
+                                                />
+                                            </ControlRow>
+                                        </div>
                                     )}
                                 </div>
 
-                                <div className="border-t border-[color:hsl(var(--program-control-divider))]" />
-
-                                <div className="space-y-3 rounded-[14px] bg-background/60 p-3">
+                                <div className="py-5">
                                     <SectionHeader
                                         label="Layout"
                                         collapsed={collapsedSections.layout}
@@ -601,78 +608,76 @@ export function ProgramModePane({
                                         }
                                     />
                                     {!collapsedSections.layout && (
-                                        <>
-                                    <ControlRow label="Density">
-                                        <ControlToggle
-                                            value={density}
-                                            onChange={setWithPresetGuard(setDensity)}
-                                            options={[
-                                                { value: "comfortable", label: "Comfortable" },
-                                                { value: "compact", label: "Compact" },
-                                            ]}
-                                        />
-                                    </ControlRow>
-                                    <ControlRow label="Item style">
-                                        <ControlToggle
-                                            value={viewStyle}
-                                            onChange={setWithPresetGuard(setViewStyle)}
-                                            options={[
-                                                { value: "cards", label: "Soft cards" },
-                                                { value: "list", label: "Text list" },
-                                            ]}
-                                        />
-                                    </ControlRow>
-                                    <ControlRow label="Section spacing">
-                                        <ControlSelect
-                                            value={sectionSpacing}
-                                            onChange={setWithPresetGuard(setSectionSpacing)}
-                                            options={[
-                                                { value: "tight", label: "Tight" },
-                                                { value: "default", label: "Default" },
-                                                { value: "relaxed", label: "Relaxed" },
-                                            ]}
-                                        />
-                                    </ControlRow>
-                                    <ControlRow label="Card radius">
-                                        <ControlSelect
-                                            value={cardRadius}
-                                            onChange={setWithPresetGuard(setCardRadius)}
-                                            options={[
-                                                { value: "soft", label: "Soft" },
-                                                { value: "medium", label: "Medium" },
-                                                { value: "square", label: "Square" },
-                                            ]}
-                                        />
-                                    </ControlRow>
-                                    <ControlRow label="Divider style">
-                                        <ControlSelect
-                                            value={dividerStyle}
-                                            onChange={setWithPresetGuard(setDividerStyle)}
-                                            options={[
-                                                { value: "none", label: "None" },
-                                                { value: "subtle", label: "Subtle" },
-                                                { value: "strong", label: "Strong" },
-                                            ]}
-                                        />
-                                    </ControlRow>
-                                    <ControlRow label="Content width">
-                                        <ControlSelect
-                                            value={contentWidth}
-                                            onChange={setWithPresetGuard(setContentWidth)}
-                                            options={[
-                                                { value: "narrow", label: "Narrow" },
-                                                { value: "default", label: "Default" },
-                                                { value: "wide", label: "Wide" },
-                                            ]}
-                                        />
-                                    </ControlRow>
-                                        </>
+                                        <div className="mt-3 space-y-3">
+                                            <ControlRow label="Density">
+                                                <ControlToggle
+                                                    value={density}
+                                                    onChange={setWithPresetGuard(setDensity)}
+                                                    options={[
+                                                        { value: "comfortable", label: "Comfortable" },
+                                                        { value: "compact", label: "Compact" },
+                                                    ]}
+                                                />
+                                            </ControlRow>
+                                            <ControlRow label="Item style">
+                                                <ControlToggle
+                                                    value={viewStyle}
+                                                    onChange={setWithPresetGuard(setViewStyle)}
+                                                    options={[
+                                                        { value: "cards", label: "Soft cards" },
+                                                        { value: "list", label: "Text list" },
+                                                    ]}
+                                                />
+                                            </ControlRow>
+                                            <ControlRow label="Section spacing">
+                                                <ControlSelect
+                                                    value={sectionSpacing}
+                                                    onChange={setWithPresetGuard(setSectionSpacing)}
+                                                    options={[
+                                                        { value: "tight", label: "Tight" },
+                                                        { value: "default", label: "Default" },
+                                                        { value: "relaxed", label: "Relaxed" },
+                                                    ]}
+                                                />
+                                            </ControlRow>
+                                            <ControlRow label="Card radius">
+                                                <ControlSelect
+                                                    value={cardRadius}
+                                                    onChange={setWithPresetGuard(setCardRadius)}
+                                                    options={[
+                                                        { value: "soft", label: "Soft" },
+                                                        { value: "medium", label: "Medium" },
+                                                        { value: "square", label: "Square" },
+                                                    ]}
+                                                />
+                                            </ControlRow>
+                                            <ControlRow label="Divider style">
+                                                <ControlSelect
+                                                    value={dividerStyle}
+                                                    onChange={setWithPresetGuard(setDividerStyle)}
+                                                    options={[
+                                                        { value: "none", label: "None" },
+                                                        { value: "subtle", label: "Subtle" },
+                                                        { value: "strong", label: "Strong" },
+                                                    ]}
+                                                />
+                                            </ControlRow>
+                                            <ControlRow label="Content width">
+                                                <ControlSelect
+                                                    value={contentWidth}
+                                                    onChange={setWithPresetGuard(setContentWidth)}
+                                                    options={[
+                                                        { value: "narrow", label: "Narrow" },
+                                                        { value: "default", label: "Default" },
+                                                        { value: "wide", label: "Wide" },
+                                                    ]}
+                                                />
+                                            </ControlRow>
+                                        </div>
                                     )}
                                 </div>
 
-                                <div className="border-t border-[color:hsl(var(--program-control-divider))]" />
-
-                                <div className="space-y-3 rounded-[14px] bg-background/60 p-3">
+                                <div className="py-5">
                                     <SectionHeader
                                         label="Details"
                                         collapsed={collapsedSections.details}
@@ -681,92 +686,92 @@ export function ProgramModePane({
                                         }
                                     />
                                     {!collapsedSections.details && (
-                                        <>
-                                    <div className="flex items-center justify-between gap-4">
-                                        <span className="text-[12px] font-medium text-[color:hsl(var(--program-control-text))]">Subtitles</span>
-                                        <div className="w-[var(--program-control-option-width)] flex items-center justify-end">
-                                            <Switch
-                                                checked={showSubtitles}
-                                                onCheckedChange={(v) => {
-                                                    setShowSubtitles(v);
-                                                    if (!isApplyingPreset.current) setPresetKey("custom");
-                                                }}
-                                                className="data-[state=unchecked]:bg-[color:hsl(var(--program-control-switch-bg))]"
-                                            />
+                                        <div className="mt-3 space-y-3">
+                                            <ControlRow label="Subtitles">
+                                                <Switch
+                                                    checked={showSubtitles}
+                                                    onCheckedChange={(v) => {
+                                                        setShowSubtitles(v);
+                                                        if (!isApplyingPreset.current) setPresetKey("custom");
+                                                    }}
+                                                    className="border border-control data-[state=checked]:bg-foreground data-[state=unchecked]:bg-control"
+                                                />
+                                            </ControlRow>
+                                            <ControlRow label="Icons">
+                                                <Switch
+                                                    checked={showIcons}
+                                                    onCheckedChange={(v) => {
+                                                        setShowIcons(v);
+                                                        if (!isApplyingPreset.current) setPresetKey("custom");
+                                                    }}
+                                                    className="border border-control data-[state=checked]:bg-foreground data-[state=unchecked]:bg-control"
+                                                />
+                                            </ControlRow>
+                                            <ControlRow label="Roles">
+                                                <Switch
+                                                    checked={showRoles}
+                                                    onCheckedChange={(v) => {
+                                                        setShowRoles(v);
+                                                        if (!isApplyingPreset.current) setPresetKey("custom");
+                                                    }}
+                                                    className="border border-control data-[state=checked]:bg-foreground data-[state=unchecked]:bg-control"
+                                                />
+                                            </ControlRow>
+                                            <ControlRow label="Speaker names">
+                                                <Switch
+                                                    checked={showSpeakerNames}
+                                                    onCheckedChange={(v) => {
+                                                        setShowSpeakerNames(v);
+                                                        if (!isApplyingPreset.current) setPresetKey("custom");
+                                                    }}
+                                                    className="border border-control data-[state=checked]:bg-foreground data-[state=unchecked]:bg-control"
+                                                />
+                                            </ControlRow>
+                                            <ControlRow label="Durations">
+                                                <Switch
+                                                    checked={showDurations}
+                                                    onCheckedChange={(v) => {
+                                                        setShowDurations(v);
+                                                        if (!isApplyingPreset.current) setPresetKey("custom");
+                                                    }}
+                                                    className="border border-control data-[state=checked]:bg-foreground data-[state=unchecked]:bg-control"
+                                                />
+                                            </ControlRow>
+                                            <ControlRow label="Announcements">
+                                                <Switch
+                                                    checked={showAnnouncements}
+                                                    onCheckedChange={(v) => {
+                                                        setShowAnnouncements(v);
+                                                        if (!isApplyingPreset.current) setPresetKey("custom");
+                                                    }}
+                                                    className="border border-control data-[state=checked]:bg-foreground data-[state=unchecked]:bg-control"
+                                                />
+                                            </ControlRow>
+                                            <ControlRow label="Business items">
+                                                <Switch
+                                                    checked={showBusiness}
+                                                    onCheckedChange={(v) => {
+                                                        setShowBusiness(v);
+                                                        if (!isApplyingPreset.current) setPresetKey("custom");
+                                                    }}
+                                                    className="border border-control data-[state=checked]:bg-foreground data-[state=unchecked]:bg-control"
+                                                />
+                                            </ControlRow>
+                                            <ControlRow label="Discussions">
+                                                <Switch
+                                                    checked={showDiscussions}
+                                                    onCheckedChange={(v) => {
+                                                        setShowDiscussions(v);
+                                                        if (!isApplyingPreset.current) setPresetKey("custom");
+                                                    }}
+                                                    className="border border-control data-[state=checked]:bg-foreground data-[state=unchecked]:bg-control"
+                                                />
+                                            </ControlRow>
                                         </div>
-                                    </div>
-                                    <div className="flex items-center justify-between gap-4">
-                                        <span className="text-[12px] font-medium text-[color:hsl(var(--program-control-text))]">Icons</span>
-                                        <div className="w-[var(--program-control-option-width)] flex items-center justify-end">
-                                            <Switch
-                                                checked={showIcons}
-                                                onCheckedChange={(v) => {
-                                                    setShowIcons(v);
-                                                    if (!isApplyingPreset.current) setPresetKey("custom");
-                                                }}
-                                                className="data-[state=unchecked]:bg-[color:hsl(var(--program-control-switch-bg))]"
-                                            />
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center justify-between gap-4">
-                                        <span className="text-[12px] font-medium text-[color:hsl(var(--program-control-text))]">Roles</span>
-                                        <div className="w-[var(--program-control-option-width)] flex items-center justify-end">
-                                            <Switch
-                                                checked={showRoles}
-                                                onCheckedChange={(v) => {
-                                                    setShowRoles(v);
-                                                    if (!isApplyingPreset.current) setPresetKey("custom");
-                                                }}
-                                                className="data-[state=unchecked]:bg-[color:hsl(var(--program-control-switch-bg))]"
-                                            />
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center justify-between gap-4">
-                                        <span className="text-[12px] font-medium text-[color:hsl(var(--program-control-text))]">Speaker names</span>
-                                        <div className="w-[var(--program-control-option-width)] flex items-center justify-end">
-                                            <Switch
-                                                checked={showSpeakerNames}
-                                                onCheckedChange={(v) => {
-                                                    setShowSpeakerNames(v);
-                                                    if (!isApplyingPreset.current) setPresetKey("custom");
-                                                }}
-                                                className="data-[state=unchecked]:bg-[color:hsl(var(--program-control-switch-bg))]"
-                                            />
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center justify-between gap-4">
-                                        <span className="text-[12px] font-medium text-[color:hsl(var(--program-control-text))]">Durations</span>
-                                        <div className="w-[var(--program-control-option-width)] flex items-center justify-end">
-                                            <Switch
-                                                checked={showDurations}
-                                                onCheckedChange={(v) => {
-                                                    setShowDurations(v);
-                                                    if (!isApplyingPreset.current) setPresetKey("custom");
-                                                }}
-                                                className="data-[state=unchecked]:bg-[color:hsl(var(--program-control-switch-bg))]"
-                                            />
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center justify-between gap-4">
-                                        <span className="text-[12px] font-medium text-[color:hsl(var(--program-control-text))]">Announcements</span>
-                                        <div className="w-[var(--program-control-option-width)] flex items-center justify-end">
-                                            <Switch
-                                                checked={showAnnouncements}
-                                                onCheckedChange={(v) => {
-                                                    setShowAnnouncements(v);
-                                                    if (!isApplyingPreset.current) setPresetKey("custom");
-                                                }}
-                                                className="data-[state=unchecked]:bg-[color:hsl(var(--program-control-switch-bg))]"
-                                            />
-                                        </div>
-                                    </div>
-                                        </>
                                     )}
                                 </div>
 
-                                <div className="border-t border-[color:hsl(var(--program-control-divider))]" />
-
-                                <div className="space-y-3 rounded-[14px] bg-background/60 p-3">
+                                <div className="py-5">
                                     <SectionHeader
                                         label="Extras"
                                         collapsed={collapsedSections.extras}
@@ -775,60 +780,28 @@ export function ProgramModePane({
                                         }
                                     />
                                     {!collapsedSections.extras && (
-                                        <>
-                                    <div className="flex items-center justify-between gap-4">
-                                        <span className="text-[12px] font-medium text-[color:hsl(var(--program-control-text))]">Meeting notes</span>
-                                        <div className="w-[var(--program-control-option-width)] flex items-center justify-end">
-                                            <Switch
-                                                checked={showMeetingNotes}
-                                                onCheckedChange={(v) => {
-                                                    setShowMeetingNotes(v);
-                                                    if (!isApplyingPreset.current) setPresetKey("custom");
-                                                }}
-                                                className="data-[state=unchecked]:bg-[color:hsl(var(--program-control-switch-bg))]"
-                                            />
+                                        <div className="mt-3 space-y-3">
+                                            <ControlRow label="Meeting notes">
+                                                <Switch
+                                                    checked={showMeetingNotes}
+                                                    onCheckedChange={(v) => {
+                                                        setShowMeetingNotes(v);
+                                                        if (!isApplyingPreset.current) setPresetKey("custom");
+                                                    }}
+                                                    className="border border-control data-[state=checked]:bg-foreground data-[state=unchecked]:bg-control"
+                                                />
+                                            </ControlRow>
+                                            <ControlRow label="Footer note">
+                                                <Switch
+                                                    checked={showFooter}
+                                                    onCheckedChange={(v) => {
+                                                        setShowFooter(v);
+                                                        if (!isApplyingPreset.current) setPresetKey("custom");
+                                                    }}
+                                                    className="border border-control data-[state=checked]:bg-foreground data-[state=unchecked]:bg-control"
+                                                />
+                                            </ControlRow>
                                         </div>
-                                    </div>
-                                    <div className="flex items-center justify-between gap-4">
-                                        <span className="text-[12px] font-medium text-[color:hsl(var(--program-control-text))]">Footer note</span>
-                                        <div className="w-[var(--program-control-option-width)] flex items-center justify-end">
-                                            <Switch
-                                                checked={showFooter}
-                                                onCheckedChange={(v) => {
-                                                    setShowFooter(v);
-                                                    if (!isApplyingPreset.current) setPresetKey("custom");
-                                                }}
-                                                className="data-[state=unchecked]:bg-[color:hsl(var(--program-control-switch-bg))]"
-                                            />
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center justify-between gap-4">
-                                        <span className="text-[12px] font-medium text-[color:hsl(var(--program-control-text))]">Page numbers</span>
-                                        <div className="w-[var(--program-control-option-width)] flex items-center justify-end">
-                                            <Switch
-                                                checked={showPageNumbers}
-                                                onCheckedChange={(v) => {
-                                                    setShowPageNumbers(v);
-                                                    if (!isApplyingPreset.current) setPresetKey("custom");
-                                                }}
-                                                className="data-[state=unchecked]:bg-[color:hsl(var(--program-control-switch-bg))]"
-                                            />
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center justify-between gap-4">
-                                        <span className="text-[12px] font-medium text-[color:hsl(var(--program-control-text))]">QR code</span>
-                                        <div className="w-[var(--program-control-option-width)] flex items-center justify-end">
-                                            <Switch
-                                                checked={showQrCode}
-                                                onCheckedChange={(v) => {
-                                                    setShowQrCode(v);
-                                                    if (!isApplyingPreset.current) setPresetKey("custom");
-                                                }}
-                                                className="data-[state=unchecked]:bg-[color:hsl(var(--program-control-switch-bg))]"
-                                            />
-                                        </div>
-                                    </div>
-                                        </>
                                     )}
                                 </div>
                             </div>
@@ -842,10 +815,10 @@ export function ProgramModePane({
                     </div>
                 </aside>
 
-                <section className="min-h-0 overflow-hidden rounded-none bg-transparent p-0 sm:rounded-[14px] sm:bg-[color:hsl(var(--program-preview-panel-bg))] sm:p-3">
+                <section className="min-h-0 overflow-hidden rounded-none bg-transparent p-0 sm:rounded-[14px] sm:bg-panel sm:p-3">
                     <div
                         ref={stageRef}
-                        className="relative flex h-full items-start justify-center overflow-auto rounded-none bg-transparent p-0 sm:rounded-[16px] sm:bg-[color:hsl(var(--program-preview-stage-bg))] sm:p-3"
+                        className="relative flex h-full items-start justify-center overflow-auto rounded-none bg-transparent p-0 sm:rounded-[16px] sm:bg-panel sm:p-3"
                         style={vars}
                         onWheel={(event) => {
                             if (!event.ctrlKey && !event.metaKey) return;
@@ -855,7 +828,7 @@ export function ProgramModePane({
                             setHasUserZoomed(true);
                         }}
                     >
-                        <div className="absolute right-3 top-3 z-10 flex items-center gap-1 rounded-full border border-border/60 bg-background/90 px-2 py-1 text-[11px] text-muted-foreground shadow-sm">
+                        <div className="absolute right-3 top-3 z-10 flex items-center gap-1 rounded-full border border-control bg-control px-2 py-1 text-[11px] text-control shadow-sm">
                             <button
                                 type="button"
                                 onClick={() => {
@@ -864,7 +837,7 @@ export function ProgramModePane({
                                     });
                                     setHasUserZoomed(true);
                                 }}
-                                className="rounded-full px-2 py-0.5 text-[12px] text-foreground hover:bg-muted"
+                                className="rounded-full px-2 py-0.5 text-[12px] text-foreground hover:bg-control-hover"
                                 aria-label="Zoom out"
                             >
                                 −
@@ -876,7 +849,7 @@ export function ProgramModePane({
                                     setZoom(next);
                                     setHasUserZoomed(false);
                                 }}
-                                className="rounded-full px-2 py-0.5 text-[11px] text-muted-foreground hover:bg-muted"
+                                className="rounded-full px-2 py-0.5 text-[11px] text-control hover:bg-control-hover"
                             >
                                 {Math.round(zoom * 100)}%
                             </button>
@@ -888,7 +861,7 @@ export function ProgramModePane({
                                     });
                                     setHasUserZoomed(true);
                                 }}
-                                className="rounded-full px-2 py-0.5 text-[12px] text-foreground hover:bg-muted"
+                                className="rounded-full px-2 py-0.5 text-[12px] text-foreground hover:bg-control-hover"
                                 aria-label="Zoom in"
                             >
                                 +
@@ -900,19 +873,14 @@ export function ProgramModePane({
                                 deviceConfig.height,
                                 deviceConfig.radius,
                                 deviceConfig.border,
-                                "border-[color:var(--program-frame-border)] bg-[color:var(--program-frame-shell)] shadow-[var(--program-preview-frame-shadow)]"
+                                previewDevice === "desktop"
+                                    ? "border-border/40 bg-paper shadow-[0_20px_60px_rgba(15,23,42,0.08)]"
+                                    : "border-[color:var(--program-frame-border)] bg-[color:var(--program-frame-shell)] shadow-[var(--program-preview-frame-shadow)]"
                             )}
                             style={{ transform: `scale(${zoom})`, transformOrigin: "top center" }}
                         >
-                            <div className="h-full p-1.5">
-                                <div
-                                    className={cn("h-full overflow-y-auto", deviceConfig.contentRadius)}
-                                    style={{
-                                        background: "var(--program-surface)",
-                                        boxShadow: "var(--shadow-program-content-inset)",
-                                        padding: "var(--program-preview-content-padding)",
-                                    }}
-                                >
+                            {previewDevice === "desktop" ? (
+                                <div className={cn("h-full overflow-y-auto bg-paper p-12 sm:p-16", deviceConfig.contentRadius)}>
                                     <ProgramView
                                         data={programData}
                                         variant="embedded"
@@ -930,7 +898,35 @@ export function ProgramModePane({
                                         className={contentWidthClass}
                                     />
                                 </div>
-                            </div>
+                            ) : (
+                                <div className="h-full p-1.5">
+                                    <div
+                                        className={cn("h-full overflow-y-auto", deviceConfig.contentRadius)}
+                                        style={{
+                                            background: "var(--program-surface)",
+                                            boxShadow: "var(--shadow-program-content-inset)",
+                                            padding: "var(--program-preview-content-padding)",
+                                        }}
+                                    >
+                                        <ProgramView
+                                            data={programData}
+                                            variant="embedded"
+                                            density={density}
+                                            viewStyle={viewStyle}
+                                            showDivider
+                                            showRoles={showRoles}
+                                            showFooter={showFooter}
+                                            showMeetingNotes={showMeetingNotes}
+                                            showSpeakerNames={showSpeakerNames}
+                                            showDurations={showDurations}
+                                            showIcons={showIcons}
+                                            dateFormat={dateFormat}
+                                            titleCase={titleCase}
+                                            className={contentWidthClass}
+                                        />
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </section>

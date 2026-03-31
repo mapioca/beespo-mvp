@@ -1,8 +1,8 @@
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import { DiscussionsClient } from "@/components/discussions/discussions-client"
-
 import { Metadata } from "next"
+import { DiscussionView } from "@/lib/table-views"
 
 export const metadata: Metadata = {
   title: "Discussions | Beespo",
@@ -143,6 +143,16 @@ export default async function DiscussionsPage({
     status: statusFilters,
   }
 
+  // Fetch workspace-scoped discussion views
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: discussionViewsData } = await (supabase.from("agenda_views") as any)
+    .select("*")
+    .eq("workspace_id", profile.workspace_id)
+    .eq("view_type", "discussions")
+    .order("created_at", { ascending: true })
+
+  const initialViews: DiscussionView[] = discussionViewsData ?? []
+
   return (
     <DiscussionsClient
       key={`${currentPage}-${searchQuery}-${statusFilters.join()}`}
@@ -152,6 +162,7 @@ export default async function DiscussionsPage({
       priorityCounts={priorityCounts}
       categoryCounts={categoryCounts}
       currentFilters={currentFilters}
+      initialViews={initialViews}
     />
   )
 }

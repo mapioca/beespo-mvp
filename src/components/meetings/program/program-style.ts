@@ -7,7 +7,7 @@ export type LayoutDensity = "comfortable" | "compact";
 export type HeaderAlign = "left" | "center";
 export type ViewStyle = "cards" | "list";
 export type TitleWeight = "regular" | "medium" | "semibold" | "bold";
-export type TitleCase = "title" | "sentence" | "uppercase";
+export type TitleCase = "title" | "uppercase";
 export type DateFormat = "long" | "medium" | "short";
 export type SectionWeight = "regular" | "semibold";
 export type SectionSpacing = "tight" | "default" | "relaxed";
@@ -37,10 +37,10 @@ export interface ProgramStyleSettings {
     showSpeakerNames?: boolean;
     showDurations?: boolean;
     showAnnouncements?: boolean;
+    showBusiness?: boolean;
+    showDiscussions?: boolean;
     showMeetingNotes?: boolean;
     showFooter?: boolean;
-    showPageNumbers?: boolean;
-    showQrCode?: boolean;
 }
 
 export const FONT_SCALE = {
@@ -137,17 +137,17 @@ export const PROGRAM_STYLE_PRESETS: Record<PresetKey, Required<ProgramStyleSetti
         showSpeakerNames: true,
         showDurations: true,
         showAnnouncements: true,
+        showBusiness: true,
+        showDiscussions: true,
         showMeetingNotes: false,
         showFooter: true,
-        showPageNumbers: false,
-        showQrCode: false,
     },
     minimal: {
         presetKey: "minimal",
         fontScale: "md",
         bodyScale: "sm",
         titleWeight: "medium",
-        titleCase: "sentence",
+        titleCase: "title",
         dateFormat: "medium",
         headerAlign: "left",
         density: "compact",
@@ -163,10 +163,10 @@ export const PROGRAM_STYLE_PRESETS: Record<PresetKey, Required<ProgramStyleSetti
         showSpeakerNames: false,
         showDurations: false,
         showAnnouncements: true,
+        showBusiness: true,
+        showDiscussions: true,
         showMeetingNotes: false,
         showFooter: true,
-        showPageNumbers: false,
-        showQrCode: false,
     },
     bold: {
         presetKey: "bold",
@@ -189,10 +189,10 @@ export const PROGRAM_STYLE_PRESETS: Record<PresetKey, Required<ProgramStyleSetti
         showSpeakerNames: true,
         showDurations: true,
         showAnnouncements: true,
+        showBusiness: true,
+        showDiscussions: true,
         showMeetingNotes: false,
         showFooter: true,
-        showPageNumbers: false,
-        showQrCode: false,
     },
     custom: {
         presetKey: "custom",
@@ -215,21 +215,22 @@ export const PROGRAM_STYLE_PRESETS: Record<PresetKey, Required<ProgramStyleSetti
         showSpeakerNames: true,
         showDurations: true,
         showAnnouncements: true,
+        showBusiness: true,
+        showDiscussions: true,
         showMeetingNotes: false,
         showFooter: true,
-        showPageNumbers: false,
-        showQrCode: false,
     },
 };
 
 export function normalizeProgramStyleSettings(raw?: ProgramStyleSettings | null): Required<ProgramStyleSettings> {
     const base = PROGRAM_STYLE_PRESETS.classic;
+    const titleCase = raw?.titleCase === "uppercase" ? "uppercase" : "title";
     return {
         presetKey: raw?.presetKey ?? base.presetKey,
         fontScale: raw?.fontScale ?? base.fontScale,
         bodyScale: raw?.bodyScale ?? base.bodyScale,
         titleWeight: raw?.titleWeight ?? base.titleWeight,
-        titleCase: raw?.titleCase ?? base.titleCase,
+        titleCase,
         dateFormat: raw?.dateFormat ?? base.dateFormat,
         headerAlign: raw?.headerAlign ?? base.headerAlign,
         density: raw?.density ?? base.density,
@@ -245,10 +246,10 @@ export function normalizeProgramStyleSettings(raw?: ProgramStyleSettings | null)
         showSpeakerNames: typeof raw?.showSpeakerNames === "boolean" ? raw.showSpeakerNames : base.showSpeakerNames,
         showDurations: typeof raw?.showDurations === "boolean" ? raw.showDurations : base.showDurations,
         showAnnouncements: typeof raw?.showAnnouncements === "boolean" ? raw.showAnnouncements : base.showAnnouncements,
+        showBusiness: typeof raw?.showBusiness === "boolean" ? raw.showBusiness : base.showBusiness,
+        showDiscussions: typeof raw?.showDiscussions === "boolean" ? raw.showDiscussions : base.showDiscussions,
         showMeetingNotes: typeof raw?.showMeetingNotes === "boolean" ? raw.showMeetingNotes : base.showMeetingNotes,
         showFooter: typeof raw?.showFooter === "boolean" ? raw.showFooter : base.showFooter,
-        showPageNumbers: typeof raw?.showPageNumbers === "boolean" ? raw.showPageNumbers : base.showPageNumbers,
-        showQrCode: typeof raw?.showQrCode === "boolean" ? raw.showQrCode : base.showQrCode,
     };
 }
 
@@ -304,7 +305,7 @@ export function buildProgramStyleVars(settings: Required<ProgramStyleSettings>):
         "--program-divider-style": dividerConfig.style,
         "--program-divider-weight": dividerConfig.weight,
         "--program-icons-display": settings.showIcons ? "flex" : "none",
-        "--program-list-divider": "hsl(var(--program-preview-list-divider))",
+        "--program-list-divider": "hsl(var(--border) / 0.4)",
         "--program-header-tracking": "var(--program-preview-header-tracking)",
         "--program-title-max-width": "var(--program-preview-title-max-width)",
         "--program-pill-padding": "var(--program-preview-pill-padding)",
@@ -318,6 +319,16 @@ export function getProgramContentWidthClass(settings: Required<ProgramStyleSetti
 }
 
 export function filterProgramItems(items: ProgramItem[], settings: Required<ProgramStyleSettings>): ProgramItem[] {
-    if (settings.showAnnouncements) return items;
-    return items.filter((item) => item.category !== "announcement" && item.containerType !== "announcement");
+    return items.filter((item) => {
+        if (!settings.showAnnouncements && (item.category === "announcement" || item.containerType === "announcement")) {
+            return false;
+        }
+        if (!settings.showBusiness && (item.category === "business" || item.containerType === "business")) {
+            return false;
+        }
+        if (!settings.showDiscussions && (item.category === "discussion" || item.containerType === "discussion")) {
+            return false;
+        }
+        return true;
+    });
 }

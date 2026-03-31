@@ -368,7 +368,7 @@ export function MeetingContextBar({
                     { label: "Agendas", href: "/meetings/agendas", icon: <ClipboardList className="h-4 w-4 stroke-[1.6]" /> },
                     { label: title || "Untitled Agenda", icon: <FileText className="h-4 w-4 stroke-[1.6]" /> },
                 ]}
-                className="rounded-none border-b border-border/80 bg-chrome px-4 py-0"
+                className="rounded-none bg-chrome px-4 py-0"
                 inlineAction={<div className="hidden sm:flex">{moreMenu}</div>}
                 action={
                     <div className="flex flex-wrap items-center gap-1.5 sm:flex-nowrap">
@@ -380,10 +380,10 @@ export function MeetingContextBar({
                                         title="Preview device"
                                         className={cn(
                                             "inline-flex h-8 w-8 items-center justify-center rounded-full sm:w-auto",
-                                            "text-muted-foreground hover:text-foreground hover:bg-accent",
-                                            "px-0 sm:px-3.5",
+                                            "border border-control bg-control text-foreground hover:bg-control-hover",
+                                            "px-0 sm:px-3.5 gap-2",
                                             "transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                                            "data-[state=open]:bg-accent data-[state=open]:text-foreground"
+                                            "data-[state=open]:bg-control-hover data-[state=open]:text-foreground"
                                         )}
                                     >
                                         <CurrentDeviceIcon className="h-4 w-4 stroke-[1.6]" />
@@ -426,8 +426,8 @@ export function MeetingContextBar({
                                     title="Switch mode"
                                     className={cn(
                                         "inline-flex h-8 w-8 items-center justify-center rounded-full sm:w-auto",
-                                        "text-muted-foreground hover:text-foreground hover:bg-accent",
-                                        "px-0 sm:px-3.5",
+                                        "border border-control bg-control text-foreground hover:bg-control-hover",
+                                        "px-0 sm:px-3.5 gap-2",
                                         "transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                                     )}
                                 >
@@ -457,8 +457,8 @@ export function MeetingContextBar({
                                         title="Save options"
                                         className={cn(
                                             "inline-flex h-8 w-8 items-center justify-center rounded-full sm:w-auto",
-                                            "text-muted-foreground hover:text-foreground hover:bg-accent",
-                                            "px-0 sm:px-3.5",
+                                            "border border-control bg-control text-foreground hover:bg-control-hover",
+                                            "px-0 sm:px-3.5 gap-2",
                                             "transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                                             "disabled:pointer-events-none disabled:opacity-60"
                                         )}
@@ -489,7 +489,7 @@ export function MeetingContextBar({
                         </div>
 
                         <div className="hidden sm:block h-4 w-px bg-border/60" />
-                        <span className="hidden sm:block whitespace-nowrap text-[11px] font-medium text-[#7a7f87]">
+                        <span className="hidden sm:block whitespace-nowrap text-[11px] font-medium text-control">
                             {itemCount} {itemCount === 1 ? "item" : "items"} &bull; {totalDuration} min
                         </span>
                     </div>

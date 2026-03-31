@@ -9,7 +9,7 @@ interface ProgramHeaderProps {
     time: string;
     variant?: "standalone" | "embedded";
     dateFormat?: "long" | "medium" | "short";
-    titleCase?: "title" | "sentence" | "uppercase";
+    titleCase?: "title" | "uppercase";
 }
 
 function formatTime12h(time24: string): string {
@@ -26,12 +26,10 @@ export function ProgramHeader({ title, date, time, dateFormat = "long", titleCas
     );
     const timeStr = formatTime12h(time);
     const displayTitle =
-        titleCase === "sentence"
-            ? title.charAt(0).toUpperCase() + title.slice(1)
-            : title
-                  .split(" ")
-                  .map((word) => (word.length === 0 ? word : `${word.charAt(0).toUpperCase()}${word.slice(1)}`))
-                  .join(" ");
+        title
+            .split(" ")
+            .map((word) => (word.length === 0 ? word : `${word.charAt(0).toUpperCase()}${word.slice(1)}`))
+            .join(" ");
 
     return (
         <div
@@ -52,12 +50,7 @@ export function ProgramHeader({ title, date, time, dateFormat = "long", titleCas
             </h1>
             <div className="flex items-center" style={{ justifyContent: "var(--program-header-justify)" }}>
                 <span
-                    className="inline-flex items-center gap-2 rounded-full text-[0.72em] font-medium text-[color:var(--program-pill-text)]"
-                    style={{
-                        backgroundColor: "var(--program-pill-bg)",
-                        border: "1px solid var(--program-pill-border)",
-                        padding: "var(--program-pill-padding)",
-                    }}
+                    className="inline-flex items-center gap-2 rounded-full bg-pill px-3 py-1 text-[12px] font-medium text-pill"
                 >
                     {dateStr}
                     <span className="h-1 w-1 rounded-full bg-[color:var(--program-muted)]" />

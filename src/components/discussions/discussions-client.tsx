@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useCallback } from "react"
+import { useState, useMemo, useCallback, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -25,6 +25,60 @@ import {
     DiscussionPriority,
     DiscussionCategory,
 } from "./discussions-table"
+import { CreateViewDialog } from "@/components/common/create-view-dialog"
+import {
+    DiscussionView,
+    DiscussionViewFilters,
+    createDiscussionView,
+    deleteDiscussionView,
+    TableView,
+} from "@/lib/table-views"
+import { cn } from "@/lib/utils"
+
+// ── Filter sections config ────────────────────────────────────────────────────
+
+const DISCUSSION_FILTER_SECTIONS = [
+    {
+        sectionLabel: "Status",
+        key: "statuses",
+        optional: true,
+        options: [
+            { value: "new", label: "New" },
+            { value: "active", label: "Active" },
+            { value: "decision_required", label: "Decision Required" },
+            { value: "monitoring", label: "Monitoring" },
+            { value: "resolved", label: "Resolved" },
+            { value: "deferred", label: "Deferred" },
+        ],
+    },
+    {
+        sectionLabel: "Priority",
+        key: "priorities",
+        optional: true,
+        options: [
+            { value: "high", label: "High" },
+            { value: "medium", label: "Medium" },
+            { value: "low", label: "Low" },
+        ],
+    },
+    {
+        sectionLabel: "Category",
+        key: "categories",
+        optional: true,
+        options: [
+            { value: "general", label: "General" },
+            { value: "budget", label: "Budget" },
+            { value: "personnel", label: "Personnel" },
+            { value: "programs", label: "Programs" },
+            { value: "facilities", label: "Facilities" },
+            { value: "welfare", label: "Welfare" },
+            { value: "youth", label: "Youth" },
+            { value: "activities", label: "Activities" },
+        ],
+    },
+]
+
+// ── Props ─────────────────────────────────────────────────────────────────────
 
 interface DiscussionsClientProps {
     discussions: Discussion[]
@@ -36,6 +90,7 @@ interface DiscussionsClientProps {
         search: string
         status: string[]
     }
+    initialViews?: DiscussionView[]
 }
 
 export function DiscussionsClient({
@@ -43,21 +98,23 @@ export function DiscussionsClient({
     statusCounts,
     priorityCounts,
     categoryCounts,
+    initialViews = [],
 }: DiscussionsClientProps) {
     const router = useRouter()
+    const [, startDeleteTransition] = useTransition()
+
+    // ── Views state ──────────────────────────────────────────────────────────
+    const [views, setViews] = useState<DiscussionView[]>(initialViews)
+    const [activeViewId, setActiveViewId] = useState<string | null>(null)
+    const [deletingViewId, setDeletingViewId] = useState<string | null>(null)
+
     // Search
     const [search, setSearch] = useState("")
 
     // Filters
-    const [selectedStatuses, setSelectedStatuses] = useState<
-        DiscussionStatus[]
-    >([])
-    const [selectedPriorities, setSelectedPriorities] = useState<
-        DiscussionPriority[]
-    >([])
-    const [selectedCategories, setSelectedCategories] = useState<
-        DiscussionCategory[]
-    >([])
+    const [selectedStatuses, setSelectedStatuses] = useState<DiscussionStatus[]>([])
+    const [selectedPriorities, setSelectedPriorities] = useState<DiscussionPriority[]>([])
+    const [selectedCategories, setSelectedCategories] = useState<DiscussionCategory[]>([])
 
     // Sort
     const [sortConfig, setSortConfig] = useState<{
@@ -77,10 +134,15 @@ export function DiscussionsClient({
 
     // ── Derived data ────────────────────────────────────────────────────────
 
+    const activeView = useMemo(
+        () => views.find((v) => v.id === activeViewId) ?? null,
+        [views, activeViewId]
+    )
+
     const filteredDiscussions = useMemo(() => {
         let result = discussions
 
-        // Search (client-side on title, description, workspace id)
+        // Search
         if (search) {
             const q = search.toLowerCase()
             result = result.filter(
@@ -91,28 +153,36 @@ export function DiscussionsClient({
             )
         }
 
-        // Status filter
-        if (selectedStatuses.length > 0) {
+        // Status filter — view overrides manual selection
+        const effectiveStatuses =
+            activeView?.filters.statuses && activeView.filters.statuses.length > 0
+                ? activeView.filters.statuses
+                : selectedStatuses
+        if (effectiveStatuses.length > 0) {
             result = result.filter((d) =>
-                selectedStatuses.includes(d.status as DiscussionStatus)
+                effectiveStatuses.includes(d.status as DiscussionStatus)
             )
         }
 
-        // Priority filter
-        if (selectedPriorities.length > 0) {
+        // Priority filter — view overrides manual selection
+        const effectivePriorities =
+            activeView?.filters.priorities && activeView.filters.priorities.length > 0
+                ? activeView.filters.priorities
+                : selectedPriorities
+        if (effectivePriorities.length > 0) {
             result = result.filter((d) =>
-                selectedPriorities.includes(
-                    d.priority as DiscussionPriority
-                )
+                effectivePriorities.includes(d.priority as DiscussionPriority)
             )
         }
 
-        // Category filter
-        if (selectedCategories.length > 0) {
+        // Category filter — view overrides manual selection
+        const effectiveCategories =
+            activeView?.filters.categories && activeView.filters.categories.length > 0
+                ? activeView.filters.categories
+                : selectedCategories
+        if (effectiveCategories.length > 0) {
             result = result.filter((d) =>
-                selectedCategories.includes(
-                    d.category as DiscussionCategory
-                )
+                effectiveCategories.includes(d.category as DiscussionCategory)
             )
         }
 
@@ -130,10 +200,8 @@ export function DiscussionsClient({
 
                 if (key === "priority") {
                     const order = { high: 1, medium: 2, low: 3 }
-                    aValue =
-                        order[aValue as keyof typeof order] || 99
-                    bValue =
-                        order[bValue as keyof typeof order] || 99
+                    aValue = order[aValue as keyof typeof order] || 99
+                    bValue = order[bValue as keyof typeof order] || 99
                 }
 
                 if (aValue < bValue) return direction === "asc" ? -1 : 1
@@ -149,6 +217,7 @@ export function DiscussionsClient({
         selectedStatuses,
         selectedPriorities,
         selectedCategories,
+        activeView,
         sortConfig,
     ])
 
@@ -157,10 +226,7 @@ export function DiscussionsClient({
     const handleSort = useCallback(
         (key: string, direction: "asc" | "desc") => {
             setSortConfig((current) => {
-                if (
-                    current?.key === key &&
-                    current.direction === direction
-                )
+                if (current?.key === key && current.direction === direction)
                     return null
                 return { key, direction }
             })
@@ -258,14 +324,45 @@ export function DiscussionsClient({
         router.push(`/meetings/discussions/${discussion.id}`)
     }
 
+    function handleViewCreated(view: TableView) {
+        setViews((prev) => [...prev, view as DiscussionView])
+        setActiveViewId(view.id)
+    }
+
+    async function handleSaveView(name: string, filters: Record<string, string[]>) {
+        return createDiscussionView(name, filters as DiscussionViewFilters)
+    }
+
+    function handleDeleteView(viewId: string) {
+        setDeletingViewId(viewId)
+    }
+
+    async function confirmDeleteView() {
+        if (!deletingViewId) return
+        const id = deletingViewId
+        setDeletingViewId(null)
+
+        startDeleteTransition(async () => {
+            const result = await deleteDiscussionView(id)
+            if (result.error) {
+                toast.error(result.error)
+                return
+            }
+            setViews((prev) => prev.filter((v) => v.id !== id))
+            if (activeViewId === id) setActiveViewId(null)
+            toast.success("View deleted")
+        })
+    }
+
     // ── Active filter chips ─────────────────────────────────────────────────
 
     const hasActiveFilters =
-        search.length > 0 ||
-        selectedStatuses.length > 0 ||
-        selectedPriorities.length > 0 ||
-        selectedCategories.length > 0 ||
-        hiddenColumns.size > 0
+        !activeView &&
+        (search.length > 0 ||
+            selectedStatuses.length > 0 ||
+            selectedPriorities.length > 0 ||
+            selectedCategories.length > 0 ||
+            hiddenColumns.size > 0)
 
     function formatCategoryLabel(c: string) {
         return c.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())
@@ -288,10 +385,57 @@ export function DiscussionsClient({
                 className="bg-transparent ring-0 border-b border-border/60 rounded-none px-4 py-1.5"
             />
 
-            {/* Action Bar */}
+            {/* Action Bar + View Tabs */}
             <div className="flex items-center justify-between w-full px-6 pt-4 pb-3 shrink-0 flex-wrap gap-3">
                 <div className="flex items-center gap-1.5 flex-wrap">
-                    {/* Placeholder for future tabs */}
+                    {/* Custom view tabs */}
+                    {views.map((view) => (
+                        <span key={view.id} className="relative group/view inline-flex items-center">
+                            <button
+                                onClick={() => setActiveViewId(view.id)}
+                                className={cn(
+                                    "rounded-full border pl-3.5 pr-7 py-1 text-xs font-medium transition-all shadow-sm",
+                                    activeViewId === view.id
+                                        ? "bg-[hsl(var(--accent-warm))] text-foreground border-border/60"
+                                        : "text-muted-foreground border-border/60 hover:text-foreground hover:bg-[hsl(var(--accent-warm)/0.5)] hover:border-border/60"
+                                )}
+                            >
+                                {view.name}
+                            </button>
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation()
+                                    handleDeleteView(view.id)
+                                }}
+                                title="Delete view"
+                                className={cn(
+                                    "absolute right-2 top-1/2 -translate-y-1/2",
+                                    "flex items-center justify-center h-3.5 w-3.5 rounded-full",
+                                    "opacity-0 group-hover/view:opacity-100 transition-opacity",
+                                    activeViewId === view.id
+                                        ? "text-muted-foreground/70 hover:text-foreground"
+                                        : "text-muted-foreground hover:text-foreground"
+                                )}
+                            >
+                                <X className="h-2.5 w-2.5 stroke-[1.6]" />
+                            </button>
+                        </span>
+                    ))}
+
+                    {activeViewId && (
+                        <button
+                            onClick={() => setActiveViewId(null)}
+                            className="text-xs text-muted-foreground hover:text-foreground"
+                        >
+                            Clear view
+                        </button>
+                    )}
+
+                    <CreateViewDialog
+                        filterSections={DISCUSSION_FILTER_SECTIONS}
+                        onSave={handleSaveView}
+                        onCreated={handleViewCreated}
+                    />
                 </div>
 
                 <Button asChild variant="ghost" className="rounded-full border px-3.5 py-1 text-xs font-medium text-foreground border-border/60 bg-[hsl(var(--accent-warm))] hover:bg-[hsl(var(--accent-warm-hover))] transition-all shadow-[0_1px_0_rgba(15,23,42,0.08)]">
@@ -301,6 +445,36 @@ export function DiscussionsClient({
                     </Link>
                 </Button>
             </div>
+
+            {/* View filter summary bar */}
+            {activeView && (
+                <div className="flex items-center gap-2 px-6 pb-3 flex-wrap text-[11px] text-muted-foreground">
+                    <span className="font-medium text-foreground">Filters:</span>
+                    {activeView.filters.statuses?.map((s) => (
+                        <span key={s} className="rounded-md bg-[hsl(var(--accent-warm))] border border-border/50 px-2 py-0.5 text-slate-800">
+                            {formatStatusLabel(s)}
+                        </span>
+                    ))}
+                    {activeView.filters.priorities?.map((p) => (
+                        <span key={p} className="rounded-md bg-[hsl(var(--accent-warm))] border border-border/50 px-2 py-0.5 text-slate-800 capitalize">
+                            {p}
+                        </span>
+                    ))}
+                    {activeView.filters.categories?.map((c) => (
+                        <span key={c} className="rounded-md bg-[hsl(var(--accent-warm))] border border-border/50 px-2 py-0.5 text-slate-800">
+                            {formatCategoryLabel(c)}
+                        </span>
+                    ))}
+                    {search && (
+                        <span className="rounded-md bg-[hsl(var(--accent-warm))] border border-border/50 px-2 py-0.5 text-slate-800">
+                            Search: &quot;{search}&quot;
+                            <button onClick={() => setSearch("")} className="ml-1 text-muted-foreground hover:text-foreground">
+                                <X className="h-3 w-3 inline stroke-[1.6]" />
+                            </button>
+                        </span>
+                    )}
+                </div>
+            )}
 
             {/* Selection action bar */}
             {selectedRows.size > 0 && (
@@ -326,67 +500,43 @@ export function DiscussionsClient({
                 </div>
             )}
 
-            {/* Active filter chips (hidden when selection bar is showing) */}
+            {/* Active filter chips */}
             {hasActiveFilters && selectedRows.size === 0 && (
                 <div className="flex items-center gap-2 px-6 pb-3 flex-wrap">
                     {search && (
                         <span className="inline-flex items-center gap-1.5 rounded-md bg-[hsl(var(--accent-warm))] px-2.5 py-1 text-xs font-medium text-slate-800 border border-border/50">
                             Search: &quot;{search}&quot;
-                            <button
-                                onClick={() => setSearch("")}
-                                className="text-muted-foreground hover:text-foreground"
-                            >
+                            <button onClick={() => setSearch("")} className="text-muted-foreground hover:text-foreground">
                                 <X className="h-3 w-3 stroke-[1.6]" />
                             </button>
                         </span>
                     )}
                     {selectedStatuses.map((s) => (
-                        <span
-                            key={s}
-                            className="inline-flex items-center gap-1.5 rounded-md bg-[hsl(var(--accent-warm))] px-2.5 py-1 text-xs font-medium text-slate-800 border border-border/50"
-                        >
+                        <span key={s} className="inline-flex items-center gap-1.5 rounded-md bg-[hsl(var(--accent-warm))] px-2.5 py-1 text-xs font-medium text-slate-800 border border-border/50">
                             {formatStatusLabel(s)}
-                            <button
-                                onClick={() => handleStatusToggle(s)}
-                                className="text-muted-foreground hover:text-foreground"
-                            >
+                            <button onClick={() => handleStatusToggle(s)} className="text-muted-foreground hover:text-foreground">
                                 <X className="h-3 w-3 stroke-[1.6]" />
                             </button>
                         </span>
                     ))}
                     {selectedPriorities.map((p) => (
-                        <span
-                            key={p}
-                            className="inline-flex items-center gap-1.5 rounded-md bg-[hsl(var(--accent-warm))] px-2.5 py-1 text-xs font-medium text-slate-800 border border-border/50 capitalize"
-                        >
+                        <span key={p} className="inline-flex items-center gap-1.5 rounded-md bg-[hsl(var(--accent-warm))] px-2.5 py-1 text-xs font-medium text-slate-800 border border-border/50 capitalize">
                             {p}
-                            <button
-                                onClick={() => handlePriorityToggle(p)}
-                                className="text-muted-foreground hover:text-foreground"
-                            >
+                            <button onClick={() => handlePriorityToggle(p)} className="text-muted-foreground hover:text-foreground">
                                 <X className="h-3 w-3 stroke-[1.6]" />
                             </button>
                         </span>
                     ))}
                     {selectedCategories.map((c) => (
-                        <span
-                            key={c}
-                            className="inline-flex items-center gap-1.5 rounded-md bg-[hsl(var(--accent-warm))] px-2.5 py-1 text-xs font-medium text-slate-800 border border-border/50"
-                        >
+                        <span key={c} className="inline-flex items-center gap-1.5 rounded-md bg-[hsl(var(--accent-warm))] px-2.5 py-1 text-xs font-medium text-slate-800 border border-border/50">
                             {formatCategoryLabel(c)}
-                            <button
-                                onClick={() => handleCategoryToggle(c)}
-                                className="text-muted-foreground hover:text-foreground"
-                            >
+                            <button onClick={() => handleCategoryToggle(c)} className="text-muted-foreground hover:text-foreground">
                                 <X className="h-3 w-3 stroke-[1.6]" />
                             </button>
                         </span>
                     ))}
                     {hiddenColumns.size > 0 && (
-                        <button
-                            onClick={() => setHiddenColumns(new Set())}
-                            className="text-xs text-muted-foreground hover:text-foreground underline"
-                        >
+                        <button onClick={() => setHiddenColumns(new Set())} className="text-xs text-muted-foreground hover:text-foreground underline">
                             Show all columns
                         </button>
                     )}
@@ -413,15 +563,15 @@ export function DiscussionsClient({
                     onSort={handleSort}
                     searchValue={search}
                     onSearchChange={setSearch}
-                    selectedStatuses={selectedStatuses}
+                    selectedStatuses={activeView?.filters.statuses as DiscussionStatus[] ?? selectedStatuses}
                     statusCounts={statusCounts}
-                    onStatusToggle={handleStatusToggle}
-                    selectedPriorities={selectedPriorities}
+                    onStatusToggle={activeView ? undefined : handleStatusToggle}
+                    selectedPriorities={activeView?.filters.priorities as DiscussionPriority[] ?? selectedPriorities}
                     priorityCounts={priorityCounts}
-                    onPriorityToggle={handlePriorityToggle}
-                    selectedCategories={selectedCategories}
+                    onPriorityToggle={activeView ? undefined : handlePriorityToggle}
+                    selectedCategories={activeView?.filters.categories as DiscussionCategory[] ?? selectedCategories}
                     categoryCounts={categoryCounts}
-                    onCategoryToggle={handleCategoryToggle}
+                    onCategoryToggle={activeView ? undefined : handleCategoryToggle}
                     hiddenColumns={hiddenColumns}
                     onHideColumn={handleHideColumn}
                     selectedRows={selectedRows}
@@ -433,33 +583,45 @@ export function DiscussionsClient({
             </div>
 
             {/* Bulk delete confirmation */}
-            <AlertDialog
-                open={showBulkDeleteDialog}
-                onOpenChange={setShowBulkDeleteDialog}
-            >
+            <AlertDialog open={showBulkDeleteDialog} onOpenChange={setShowBulkDeleteDialog}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle>
-                            Delete {selectedRows.size} discussion
-                            {selectedRows.size > 1 ? "s" : ""}
+                            Delete {selectedRows.size} discussion{selectedRows.size > 1 ? "s" : ""}
                         </AlertDialogTitle>
                         <AlertDialogDescription>
-                            This will permanently delete the selected
-                            discussion
-                            {selectedRows.size > 1 ? "s" : ""}. This action
-                            cannot be undone.
+                            This will permanently delete the selected discussion{selectedRows.size > 1 ? "s" : ""}. This action cannot be undone.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel disabled={isBulkDeleting}>
-                            Cancel
-                        </AlertDialogCancel>
+                        <AlertDialogCancel disabled={isBulkDeleting}>Cancel</AlertDialogCancel>
                         <AlertDialogAction
                             onClick={handleBulkDelete}
                             disabled={isBulkDeleting}
                             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                         >
                             {isBulkDeleting ? "Deleting..." : "Delete"}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            {/* Delete view confirmation */}
+            <AlertDialog open={!!deletingViewId} onOpenChange={(o) => { if (!o) setDeletingViewId(null) }}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Delete this view?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This view will be removed for everyone in your workspace. This action cannot be undone.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel onClick={() => setDeletingViewId(null)}>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={confirmDeleteView}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                            Delete view
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

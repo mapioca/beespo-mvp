@@ -3,6 +3,7 @@ import { redirect } from "next/navigation"
 import { FormsClient } from "./forms-client"
 import { Metadata } from "next"
 import type { Form } from "@/types/form-types"
+import { FormView } from "@/lib/table-views"
 
 export const metadata: Metadata = {
     title: "Forms | Beespo",
@@ -71,5 +72,15 @@ export default async function FormsPage() {
         else statusCounts.draft++
     })
 
-    return <FormsClient forms={formsWithCounts} statusCounts={statusCounts} />
+    // Fetch workspace-scoped form views
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: formViewsData } = await (supabase.from("agenda_views") as any)
+        .select("*")
+        .eq("workspace_id", profile.workspace_id)
+        .eq("view_type", "forms")
+        .order("created_at", { ascending: true })
+
+    const initialViews: FormView[] = formViewsData ?? []
+
+    return <FormsClient forms={formsWithCounts} statusCounts={statusCounts} initialViews={initialViews} />
 }

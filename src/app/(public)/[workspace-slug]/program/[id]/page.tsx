@@ -105,6 +105,7 @@ export default async function ProgramPage({ params }: ProgramPageProps) {
             pianistOrganist: meeting.organist_name || undefined,
         },
         items: mapAgendaToProgramItems(agendaItems),
+        meetingNotes: typeof meeting.notes === "string" ? meeting.notes : undefined,
     };
     const normalizedStyle = normalizeProgramStyleSettings(meeting.program_style as ProgramStyleSettings | null);
     const programStyle = buildProgramStyleVars(normalizedStyle);
@@ -119,9 +120,9 @@ export default async function ProgramPage({ params }: ProgramPageProps) {
                 density={normalizedStyle.density}
                 viewStyle={normalizedStyle.viewStyle}
                 showDivider
-                showRoles={normalizedStyle.showRoles}
-                showFooter={false}
-                showMeetingNotes={normalizedStyle.showMeetingNotes}
+            showRoles={normalizedStyle.showRoles}
+            showFooter={normalizedStyle.showFooter}
+            showMeetingNotes={normalizedStyle.showMeetingNotes}
                 showSpeakerNames={normalizedStyle.showSpeakerNames}
                 showDurations={normalizedStyle.showDurations}
                 showIcons={normalizedStyle.showIcons}

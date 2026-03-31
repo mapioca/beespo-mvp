@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import { AnnouncementsClient } from "@/components/announcements/announcements-client"
 import { Metadata } from "next"
+import { AnnouncementView } from "@/lib/table-views"
 
 export const metadata: Metadata = {
   title: "Announcements | Beespo",
@@ -71,6 +72,16 @@ export default async function AnnouncementsPage() {
     }
   )
 
+  // Fetch workspace-scoped announcement views
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: announcementViewsData } = await (supabase.from("agenda_views") as any)
+    .select("*")
+    .eq("workspace_id", profile.workspace_id)
+    .eq("view_type", "announcements")
+    .order("created_at", { ascending: true })
+
+  const initialViews: AnnouncementView[] = announcementViewsData ?? []
+
   return (
     <AnnouncementsClient
       announcements={announcements || []}
@@ -78,6 +89,7 @@ export default async function AnnouncementsPage() {
       statusCounts={statusCounts}
       priorityCounts={priorityCounts}
       currentFilters={{ search: "", status: [] }}
+      initialViews={initialViews}
     />
   )
 }

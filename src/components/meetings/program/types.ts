@@ -65,7 +65,7 @@ export interface ProgramViewProps {
     showDurations?: boolean;
     showIcons?: boolean;
     dateFormat?: "long" | "medium" | "short";
-    titleCase?: "title" | "sentence" | "uppercase";
+    titleCase?: "title" | "uppercase";
     className?: string;
 }
 
