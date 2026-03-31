@@ -249,7 +249,7 @@ export function MeetingContextBar({
                     { label: "Agendas", href: "/meetings/agendas", icon: <ClipboardList className="h-4 w-4 stroke-[1.6]" /> },
                     { label: title || "Untitled Agenda", icon: <FileText className="h-4 w-4 stroke-[1.6]" /> },
                 ]}
-                className="bg-chrome backdrop-blur ring-0 border-b-0 rounded-none px-5 py-2"
+                className="rounded-none border-b border-border/80 bg-chrome px-4 py-0"
                 inlineAction={
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -371,14 +371,14 @@ export function MeetingContextBar({
                     </DropdownMenu>
                 }
                 action={
-                    <div className="flex items-center gap-2.5">
+                    <div className="flex items-center gap-2">
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <button
                                     type="button"
                                     title="Switch mode"
                                     className={cn(
-                                        "inline-flex items-center gap-2 h-8 px-3.5 rounded-full",
+                                        "inline-flex h-8 items-center gap-2 rounded-full px-3.5",
                                         "bg-background text-foreground hover:bg-accent",
                                         "border border-border/80",
                                         "transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -403,7 +403,7 @@ export function MeetingContextBar({
 
                         {mode === "program" && (
                             <DropdownMenu open={deviceMenuOpen} onOpenChange={setDeviceMenuOpen}>
-                                <div className="inline-flex items-center h-8 border border-border/80 bg-background text-foreground rounded-full">
+                                <div className="inline-flex h-8 items-center rounded-full border border-border/80 bg-background text-foreground">
                                     <button
                                         type="button"
                                         onClick={() => setDeviceMenuOpen(true)}
@@ -481,7 +481,7 @@ export function MeetingContextBar({
                                             type="button"
                                             title="Save options"
                                             className={cn(
-                                                "inline-flex items-center justify-center h-8 w-9 rounded-r-full rounded-l-none border border-l-0 border-foreground/20 bg-foreground text-background",
+                                                "inline-flex h-8 w-9 items-center justify-center rounded-r-full rounded-l-none border border-l-0 border-foreground/25 bg-foreground text-background",
                                                 "hover:bg-foreground/90",
                                                 "transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                                                 "data-[state=open]:bg-foreground/90"
@@ -507,7 +507,7 @@ export function MeetingContextBar({
                         )}
 
                         <div className="h-4 w-px bg-border/60" />
-                        <span className="whitespace-nowrap text-[11px] text-muted-foreground">
+                        <span className="whitespace-nowrap text-[11px] font-medium text-[#7a7f87]">
                             {itemCount} {itemCount === 1 ? "item" : "items"} &bull; {totalDuration} min
                         </span>
                     </div>

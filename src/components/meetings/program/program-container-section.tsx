@@ -27,10 +27,14 @@ export function ProgramContainerSection({ item }: ProgramContainerSectionProps) 
                     style={{ width: "var(--program-icon-box)", height: "var(--program-icon-box)" }}
                 >
                     <span className="flex h-full w-full items-center justify-center" style={{ display: "var(--program-icons-display)" }}>
-                        <Icon className="text-[color:var(--program-muted)]" style={{ width: "var(--program-icon-size)", height: "var(--program-icon-size)" }} />
+                        <Icon
+                            className="text-[color:var(--program-muted)]"
+                            strokeWidth={1.75}
+                            style={{ width: "var(--program-icon-size)", height: "var(--program-icon-size)" }}
+                        />
                     </span>
                 </span>
-                <h3 className="text-[1em] font-semibold text-[color:var(--program-text)]">{headerLabel}</h3>
+                <h3 className="mt-[2px] text-[1em] font-semibold text-[color:var(--program-text)]">{headerLabel}</h3>
             </div>
 
             {children.length === 0 ? (

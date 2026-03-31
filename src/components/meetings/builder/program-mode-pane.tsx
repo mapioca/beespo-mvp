@@ -33,15 +33,15 @@ type HeaderAlign = "left" | "center";
 const FONT_SCALE = {
     sm: {
         base: "14px",
-        title: "1.95rem",
+        title: "1.78rem",
     },
     md: {
         base: "15px",
-        title: "2.05rem",
+        title: "1.9rem",
     },
     lg: {
         base: "16px",
-        title: "2.2rem",
+        title: "2.04rem",
     },
 } as const;
 
@@ -81,8 +81,8 @@ function SegmentedControl<T extends string>({
                     className={cn(
                         "h-8 flex-1 rounded-full text-[12px] font-medium transition-colors",
                         value === option.value
-                            ? "bg-foreground text-background"
-                            : "text-muted-foreground hover:text-foreground"
+                            ? "bg-[#111317] text-white shadow-[inset_0_0_0_1px_rgba(0,0,0,0.16)]"
+                            : "text-[#6d727a] hover:text-[#111317]"
                     )}
                 >
                     {option.label}
@@ -108,8 +108,8 @@ function ToggleRow({
             className={cn(
                 "inline-flex h-9 w-full items-center justify-between rounded-xl border px-3 text-[12px] font-medium transition-colors",
                 enabled
-                    ? "border-foreground/20 bg-foreground/5 text-foreground"
-                    : "border-border/80 bg-background text-muted-foreground hover:text-foreground"
+                    ? "border-[#111317]/20 bg-[#111317]/5 text-[#111317]"
+                    : "border-border/80 bg-background text-[#6d727a] hover:text-[#111317]"
             )}
         >
             <span>{label}</span>
@@ -159,21 +159,21 @@ export function ProgramModePane({
             ? {
                   width: "w-[760px]",
                   height: "h-[960px]",
-                  radius: "rounded-[34px]",
-                  border: "border-[10px]",
+                  radius: "rounded-[30px]",
+                  border: "border-[8px]",
               }
             : previewDevice === "desktop"
               ? {
                     width: "w-[960px]",
                     height: "h-[700px]",
-                    radius: "rounded-[22px]",
-                    border: "border-[8px]",
+                    radius: "rounded-[20px]",
+                    border: "border-[6px]",
                 }
               : {
                     width: "w-[390px]",
                     height: "h-[844px]",
-                    radius: "rounded-[42px]",
-                    border: "border-[7px]",
+                    radius: "rounded-[36px]",
+                    border: "border-[6px]",
                 };
 
     const vars = {
@@ -197,6 +197,7 @@ export function ProgramModePane({
         "--program-icon-border": "hsl(0 0% 84%)",
         "--program-title-weight": "600",
         "--program-title-size": FONT_SCALE[fontScale].title,
+        "--program-title-margin-inline": headerAlign === "left" ? "0" : "auto",
         "--program-pill-bg": "hsl(0 0% 97%)",
         "--program-pill-border": "hsl(0 0% 84%)",
         "--program-card-padding-x": DENSITY[density].cardPaddingX,
@@ -217,7 +218,7 @@ export function ProgramModePane({
     } as CSSProperties;
 
     return (
-        <div className="flex-1 overflow-hidden bg-[#f4f4f5] px-8 py-8">
+        <div className="flex-1 overflow-hidden bg-[#f0f1f3] px-6 py-6">
             {isLeader && !isLive && (
                 <div className="mx-auto mb-5 flex w-full max-w-[1280px] justify-end">
                     <button
@@ -236,16 +237,16 @@ export function ProgramModePane({
                 </div>
             )}
 
-            <div className="mx-auto grid h-[calc(100dvh-176px)] w-full max-w-[1280px] grid-cols-1 gap-6 xl:grid-cols-[320px_minmax(0,1fr)]">
+            <div className="mx-auto grid h-full min-h-0 w-full max-w-[1280px] grid-cols-1 gap-6 xl:grid-cols-[320px_minmax(0,1fr)]">
                 <aside className="h-full min-h-0">
-                    <div className="flex h-full flex-col rounded-2xl border border-border/80 bg-background p-5 shadow-[0_1px_2px_rgba(15,23,42,0.06)]">
+                    <div className="flex h-full flex-col rounded-[14px] border border-[#e4e5e7] bg-white p-5 shadow-[0_1px_2px_rgba(16,24,40,0.04),0_8px_24px_rgba(16,24,40,0.05)]">
                         <div className="text-[13px] font-semibold text-foreground">Program Styles</div>
                         <p className="mt-1 text-[12px] text-muted-foreground">
                             Keep this minimal. Focus on readability first.
                         </p>
 
                         <Tabs defaultValue="type" className="mt-4 flex min-h-0 flex-1 flex-col">
-                            <TabsList className="grid h-9 grid-cols-3 rounded-full border border-border/80 bg-muted/60 p-1">
+                            <TabsList className="grid h-9 grid-cols-3 rounded-full border border-[#e3e4e7] bg-[#f8f8f8] p-1">
                                 <TabsTrigger value="type" className="rounded-full text-[12px]">Type</TabsTrigger>
                                 <TabsTrigger value="layout" className="rounded-full text-[12px]">Layout</TabsTrigger>
                                 <TabsTrigger value="details" className="rounded-full text-[12px]">Details</TabsTrigger>
@@ -253,7 +254,7 @@ export function ProgramModePane({
 
                             <TabsContent value="type" className="mt-4 space-y-4 overflow-y-auto pr-1">
                                 <div className="space-y-2">
-                                    <div className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">Font size</div>
+                                    <div className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#7a7f87]">Font size</div>
                                     <SegmentedControl
                                         value={fontScale}
                                         onChange={setFontScale}
@@ -265,7 +266,7 @@ export function ProgramModePane({
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <div className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">Header align</div>
+                                    <div className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#7a7f87]">Header align</div>
                                     <SegmentedControl
                                         value={headerAlign}
                                         onChange={setHeaderAlign}
@@ -279,7 +280,7 @@ export function ProgramModePane({
 
                             <TabsContent value="layout" className="mt-4 space-y-4 overflow-y-auto pr-1">
                                 <div className="space-y-2">
-                                    <div className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">Density</div>
+                                    <div className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#7a7f87]">Density</div>
                                     <SegmentedControl
                                         value={density}
                                         onChange={setDensity}
@@ -289,7 +290,7 @@ export function ProgramModePane({
                                         ]}
                                     />
                                 </div>
-                                <div className="rounded-xl border border-border/80 bg-muted/30 p-3 text-[12px] text-muted-foreground">
+                                <div className="rounded-xl border border-[#e4e5e7] bg-[#f8f8f8] p-3 text-[12px] text-[#6d727a]">
                                     Uses an 8pt spacing system and consistent 1px borders for a cleaner hierarchy.
                                 </div>
                             </TabsContent>
@@ -302,15 +303,15 @@ export function ProgramModePane({
                     </div>
                 </aside>
 
-                <section className="min-h-0 overflow-hidden rounded-2xl border border-border/80 bg-background p-6">
-                    <div className="flex h-full items-start justify-center overflow-auto rounded-[18px] bg-[#f7f7f7] p-6" style={vars}>
+                <section className="min-h-0 overflow-hidden rounded-[14px] border border-[#e4e5e7] bg-white p-6 shadow-[0_1px_2px_rgba(16,24,40,0.04),0_8px_24px_rgba(16,24,40,0.06)]">
+                    <div className="flex h-full items-start justify-center overflow-auto rounded-[16px] bg-[#f7f7f8] p-6" style={vars}>
                         <div
                             className={cn(
                                 deviceConfig.width,
                                 deviceConfig.height,
                                 deviceConfig.radius,
                                 deviceConfig.border,
-                                "border-[color:var(--program-border)] bg-[color:var(--program-surface)]"
+                                "border-[color:var(--program-border)] bg-[color:var(--program-surface)] shadow-[0_1px_1px_rgba(16,24,40,0.06)]"
                             )}
                         >
                             <div className={cn("h-full overflow-y-auto", DENSITY[density].rootPadding)}>

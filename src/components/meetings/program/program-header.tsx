@@ -37,7 +37,7 @@ export function ProgramHeader({ title, date, time, unitName }: ProgramHeaderProp
                 style={{
                     fontWeight: "var(--program-title-weight)",
                     fontSize: "var(--program-title-size)",
-                    marginInline: "auto",
+                    marginInline: "var(--program-title-margin-inline)",
                 }}
             >
                 {title}

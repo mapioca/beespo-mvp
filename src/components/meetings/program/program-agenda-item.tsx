@@ -36,7 +36,7 @@ export function ProgramAgendaItem({ item }: ProgramAgendaItemProps) {
             <div className={`flex items-start gap-3 ${cardBase}`} style={cardStyle}>
                 <span className={iconWrapClass} style={{ width: "var(--program-icon-box)", height: "var(--program-icon-box)" }}>
                     <span className="flex h-full w-full items-center justify-center" style={{ display: "var(--program-icons-display)" }}>
-                        <Music className={iconClass} style={{ width: "var(--program-icon-size)", height: "var(--program-icon-size)" }} />
+                        <Music className={iconClass} strokeWidth={1.75} style={{ width: "var(--program-icon-size)", height: "var(--program-icon-size)" }} />
                     </span>
                 </span>
                 <div className="min-w-0 flex-1">
@@ -54,7 +54,7 @@ export function ProgramAgendaItem({ item }: ProgramAgendaItemProps) {
             <div className={`flex items-start gap-3 ${cardBase}`} style={cardStyle}>
                 <span className={iconWrapClass} style={{ width: "var(--program-icon-box)", height: "var(--program-icon-box)" }}>
                     <span className="flex h-full w-full items-center justify-center" style={{ display: "var(--program-icons-display)" }}>
-                        <User className={iconClass} style={{ width: "var(--program-icon-size)", height: "var(--program-icon-size)" }} />
+                        <User className={iconClass} strokeWidth={1.75} style={{ width: "var(--program-icon-size)", height: "var(--program-icon-size)" }} />
                     </span>
                 </span>
                 <div className="min-w-0 flex-1 space-y-0.5">
@@ -87,7 +87,7 @@ export function ProgramAgendaItem({ item }: ProgramAgendaItemProps) {
             <div className={`flex items-start gap-3 ${cardBase}`} style={cardStyle}>
                 <span className={iconWrapClass} style={{ width: "var(--program-icon-box)", height: "var(--program-icon-box)" }}>
                     <span className="flex h-full w-full items-center justify-center" style={{ display: "var(--program-icons-display)" }}>
-                        <Hand className={iconClass} style={{ width: "var(--program-icon-size)", height: "var(--program-icon-size)" }} />
+                        <Hand className={iconClass} strokeWidth={1.75} style={{ width: "var(--program-icon-size)", height: "var(--program-icon-size)" }} />
                     </span>
                 </span>
                 <div className="min-w-0 flex-1">

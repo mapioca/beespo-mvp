@@ -78,13 +78,13 @@ export function SidebarNavCollapsible({
             onMouseEnter={openFlyout}
             onMouseLeave={scheduleFlyoutClose}
             className={cn(
-              "flex items-center justify-center rounded-lg px-2 py-1.5 text-[13px] transition-colors w-full",
+              "flex w-full items-center justify-center rounded-lg px-2 py-1.5 text-[13px] transition-colors",
               hasActiveChild
-                ? "text-foreground"
-                : "text-muted-foreground hover:bg-nav-hover hover:text-foreground"
+                ? "bg-[#eceef0] text-[#111317]"
+                : "text-[#6b6f76] hover:bg-[#f0f1f3] hover:text-[#111317]"
             )}
           >
-            <Icon className="h-4 w-4 shrink-0 stroke-[1.4]" />
+            <Icon className="h-4 w-4 shrink-0 stroke-[1.75]" />
           </button>
         </PopoverAnchor>
 
@@ -98,7 +98,7 @@ export function SidebarNavCollapsible({
           onOpenAutoFocus={(e) => e.preventDefault()}
           onInteractOutside={(e) => e.preventDefault()}
         >
-          <p className="px-2 py-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.2em]">
+          <p className="px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#7a7f87]">
             {item.label}
           </p>
           <div className="mt-0.5 space-y-0.5">
@@ -115,11 +115,11 @@ export function SidebarNavCollapsible({
                   className={cn(
                     "flex items-center gap-2 rounded-md px-2 py-1.5 text-[13px] transition-colors",
                     isActive
-                      ? "bg-nav-selected text-foreground font-normal"
-                      : "text-muted-foreground hover:bg-nav-hover hover:text-foreground"
+                      ? "bg-[#eceef0] font-semibold text-[#111317]"
+                      : "text-[#6b6f76] hover:bg-[#f0f1f3] hover:text-[#111317]"
                   )}
                 >
-                  <ChildIcon className="h-4 w-4 shrink-0 stroke-[1.4]" />
+                  <ChildIcon className="h-4 w-4 shrink-0 stroke-[1.75]" />
                   {child.label}
                 </Link>
               )
@@ -138,18 +138,18 @@ export function SidebarNavCollapsible({
         <PopoverAnchor asChild>
           <CollapsibleTrigger
             className={cn(
-              "flex items-center gap-2.5 rounded-lg px-3 py-1.5 text-[13px] transition-colors w-full",
+              "flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-[13px] transition-colors",
               hasActiveChild
-                ? "text-foreground"
-                : "text-muted-foreground hover:bg-nav-hover hover:text-foreground"
+                ? "bg-[#eceef0] text-[#111317]"
+                : "text-[#6b6f76] hover:bg-[#f0f1f3] hover:text-[#111317]"
             )}
             aria-expanded={isExpanded}
             aria-controls={groupId}
             onMouseEnter={openFlyout}
             onMouseLeave={scheduleFlyoutClose}
           >
-            <Icon className="h-4 w-4 shrink-0 stroke-[1.4]" />
-            <span className="flex-1 text-left">{item.label}</span>
+            <Icon className="h-4 w-4 shrink-0 stroke-[1.75]" />
+            <span className={cn("flex-1 text-left", hasActiveChild ? "font-semibold" : "font-medium")}>{item.label}</span>
             <ChevronRight
               className={cn(
                 "h-4 w-4 shrink-0 transition-transform duration-200 stroke-[1.6]",
@@ -169,7 +169,7 @@ export function SidebarNavCollapsible({
           onOpenAutoFocus={(e) => e.preventDefault()}
           onInteractOutside={(e) => e.preventDefault()}
         >
-          <p className="px-2 py-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.2em]">
+          <p className="px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#7a7f87]">
             {item.label}
           </p>
           <div className="mt-0.5 space-y-0.5">
@@ -186,11 +186,11 @@ export function SidebarNavCollapsible({
                   className={cn(
                     "flex items-center gap-2 rounded-md px-2 py-1.5 text-[13px] transition-colors",
                     isActive
-                      ? "bg-nav-selected text-foreground font-normal"
-                      : "text-muted-foreground hover:bg-nav-hover hover:text-foreground"
+                      ? "bg-[#eceef0] font-semibold text-[#111317]"
+                      : "text-[#6b6f76] hover:bg-[#f0f1f3] hover:text-[#111317]"
                   )}
                 >
-                  <ChildIcon className="h-4 w-4 shrink-0 stroke-[1.4]" />
+                  <ChildIcon className="h-4 w-4 shrink-0 stroke-[1.75]" />
                   {child.label}
                 </Link>
               )

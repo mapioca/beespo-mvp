@@ -44,10 +44,10 @@ export function Breadcrumbs({ items, className, inlineAction, action }: Breadcru
   }
 
   return (
-    <div className="flex-shrink-0 px-3 pt-3">
-      <div className={cn("px-6 py-3 flex items-center gap-3 rounded-lg bg-card ring-1 ring-border", className)}>
+    <div className="flex-shrink-0">
+      <div className={cn("flex h-12 items-center gap-3 border-b border-border/80 bg-card px-4", className)}>
         <nav aria-label="Breadcrumb" className="flex-1">
-          <ol className="flex items-center gap-1 text-[13px] text-muted-foreground">
+          <ol className="flex items-center gap-1 text-[12px] font-medium text-[#8a8f98]">
             {trail.map((item, index) => {
               const isLast = index === trail.length - 1
 
@@ -56,19 +56,19 @@ export function Breadcrumbs({ items, className, inlineAction, action }: Breadcru
               return (
                 <li key={index} className="flex items-center gap-1">
                   {index > 0 && (
-                    <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/40" />
+                    <ChevronRight className="h-3.5 w-3.5 text-[#b0b4bc]" />
                   )}
                   {item.href && !isLast ? (
                     <Link
                       href={item.href}
-                      className="flex items-center gap-1 hover:text-foreground transition-colors"
+                      className="flex items-center gap-1 transition-colors hover:text-[#23262b]"
                     >
-                      {icon}
+                      <span className="opacity-70">{icon}</span>
                       {item.label}
                     </Link>
                   ) : (
-                    <span className={cn("flex items-center gap-1", isLast && "text-foreground font-medium")}>
-                      {icon}
+                    <span className={cn("flex items-center gap-1", isLast && "font-semibold text-[#23262b]")}>
+                      <span className={cn(!isLast && "opacity-70")}>{icon}</span>
                       {item.label}
                     </span>
                   )}

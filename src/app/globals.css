@@ -5,9 +5,9 @@
 @layer base {
   :root {
     /* Black & White Elegance Theme */
-    --canvas: 0 0% 96%; /* Back-compat */
-    --panel: 0 0% 96%; /* Base app surface (sidebar + shell canvas) */
-    --paper: 0 0% 99%; /* Document surface */
+    --canvas: 0 0% 96.5%; /* Back-compat */
+    --panel: 0 0% 96.5%; /* Base app surface (sidebar + shell canvas) */
+    --paper: 0 0% 99.2%; /* Document surface */
     --background: 0 0% 100%; /* Pure white */
     --foreground: 0 0% 0%; /* Pure black */
     --card: 0 0% 100%;
@@ -24,11 +24,11 @@
     --accent-foreground: 0 0% 0%;
     --accent-warm: 24 38% 91%; /* Warm peach-gray (#EFE7E1) */
     --accent-warm-hover: 24 27% 88%; /* Slightly deeper warm hover (#E6DDD6) */
-    --chrome: 0 0% 100%; /* App chrome surface (top bars, toolbars) */
-    --chrome-border: 0 0% 85%; /* Subtle chrome dividers */
-    --nav-hover: 0 0% 92%;
+    --chrome: 0 0% 99.4%; /* App chrome surface (top bars, toolbars) */
+    --chrome-border: 0 0% 89%; /* Subtle chrome dividers */
+    --nav-hover: 0 0% 94%;
     --nav-hover-alpha: 1;
-    --nav-selected: 0 0% 90%;
+    --nav-selected: 0 0% 93%;
     --nav-selected-alpha: 1;
     --button-primary: 0 0% 0%;
     --button-primary-hover: 0 0% 12%;
@@ -37,8 +37,8 @@
     --pill-foreground: 0 0% 20%;
     --control: 0 0% 100%;
     --control-foreground: 0 0% 35%;
-    --control-border: 0 0% 88%;
-    --control-hover: 0 0% 96%;
+    --control-border: 0 0% 87%;
+    --control-hover: 0 0% 95%;
     --menu: 0 0% 100%;
     --menu-border: 0 0% 86%;
     --menu-text: 0 0% 18%;
@@ -48,10 +48,10 @@
     --menu-separator: 0 0% 92%;
     --destructive: 0 84% 60%; /* Error red - minimal color */
     --destructive-foreground: 0 0% 100%;
-    --border: 0 0% 90%; /* Light gray for borders */
-    --input: 0 0% 90%;
+    --border: 0 0% 89%; /* Light gray for borders */
+    --input: 0 0% 89%;
     --ring: 0 0% 0%;
-    --radius: 0.5rem;
+    --radius: 0.875rem;
     --chart-1: 0 0% 60%;
     --chart-2: 0 0% 40%;
     --chart-3: 0 0% 20%;
@@ -123,7 +123,7 @@
     inset: 0;
     z-index: 9999;
     pointer-events: none;
-    opacity: 0.02;
+    opacity: 0.012;
     background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
     background-repeat: repeat;
     background-size: 256px 256px;
@@ -148,11 +148,11 @@
   }
 
   .bg-chrome {
-    background-color: hsl(var(--chrome) / 0.7);
+    background-color: hsl(var(--chrome));
   }
 
   .border-chrome {
-    border-color: hsl(var(--chrome-border) / 0.6);
+    border-color: hsl(var(--chrome-border));
   }
 
   .bg-nav-hover {
