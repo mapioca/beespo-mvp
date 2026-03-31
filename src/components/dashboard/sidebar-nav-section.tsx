@@ -26,7 +26,7 @@ export function SidebarNavSection({
     <div className={cn(!isFirst && "mt-3")}>
       {/* Section Header - Hidden when collapsed */}
       {!isCollapsed && section.title && (
-        <h3 className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#7a7f87]">
+        <h3 className="text-nav-muted mb-2 px-3 text-[11px] font-semibold uppercase tracking-[0.06em]">
           {section.title}
         </h3>
       )}

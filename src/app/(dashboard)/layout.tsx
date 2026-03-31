@@ -50,7 +50,7 @@ export default async function DashboardLayout({
   }
 
   return (
-    <div className="flex h-screen-dynamic overflow-hidden bg-panel">
+    <div className="flex h-screen-dynamic overflow-hidden overscroll-none bg-app-shell">
       {/* Sidebar — transparent, sits on the canvas base layer */}
       <AppSidebar
         workspaceName={profile?.workspaces?.name || "Workspace"}
@@ -61,8 +61,8 @@ export default async function DashboardLayout({
       />
 
       {/* Main content area (Linear-style island inset) */}
-      <div className="flex-1 min-w-0 bg-[#f0f1f3] p-4">
-        <main className="h-full overflow-hidden rounded-[16px] border border-[#e2e3e6] bg-card shadow-[0_1px_2px_rgba(16,24,40,0.04),0_8px_24px_rgba(16,24,40,0.06)]">
+      <div className="flex-1 min-w-0 min-h-0 bg-app-shell p-2.5 xl:p-3 2xl:p-4">
+        <main className="h-full min-h-0 overflow-hidden rounded-[16px] border border-app-island bg-app-island shadow-[0_1px_2px_rgba(16,24,40,0.04),0_8px_24px_rgba(16,24,40,0.06)]">
           {children}
         </main>
       </div>

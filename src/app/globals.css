@@ -26,10 +26,17 @@
     --accent-warm-hover: 24 27% 88%; /* Slightly deeper warm hover (#E6DDD6) */
     --chrome: 0 0% 99.4%; /* App chrome surface (top bars, toolbars) */
     --chrome-border: 0 0% 89%; /* Subtle chrome dividers */
-    --nav-hover: 0 0% 94%;
+    --app-shell: 36 34% 97.2%;
+    --app-island: 0 0% 100%;
+    --app-island-border: 0 0% 89%;
+    --nav-hover: 26 40% 94.8%;
     --nav-hover-alpha: 1;
-    --nav-selected: 0 0% 93%;
+    --nav-selected: 24 42% 92.2%;
     --nav-selected-alpha: 1;
+    --nav-text: 24 8% 41%;
+    --nav-text-strong: 24 14% 10%;
+    --nav-text-muted: 24 8% 44%;
+    --nav-active-border: 24 28% 84%;
     --button-primary: 0 0% 0%;
     --button-primary-hover: 0 0% 12%;
     --button-primary-foreground: 0 0% 100%;
@@ -81,10 +88,17 @@
     --accent-warm-hover: 24 20% 26%;
     --chrome: 0 0% 8%;
     --chrome-border: 0 0% 18%;
-    --nav-hover: 0 0% 18%;
+    --app-shell: 0 0% 8%;
+    --app-island: 0 0% 6%;
+    --app-island-border: 0 0% 20%;
+    --nav-hover: 220 10% 14%;
     --nav-hover-alpha: 1;
-    --nav-selected: 0 0% 20%;
+    --nav-selected: 220 11% 17%;
     --nav-selected-alpha: 1;
+    --nav-text: 220 8% 72%;
+    --nav-text-strong: 220 12% 94%;
+    --nav-text-muted: 220 8% 66%;
+    --nav-active-border: 220 12% 24%;
     --button-primary: 0 0% 100%;
     --button-primary-hover: 0 0% 88%;
     --button-primary-foreground: 0 0% 100%;
@@ -143,6 +157,18 @@
     background-color: hsl(var(--panel));
   }
 
+  .bg-app-shell {
+    background-color: hsl(var(--app-shell));
+  }
+
+  .bg-app-island {
+    background-color: hsl(var(--app-island));
+  }
+
+  .border-app-island {
+    border-color: hsl(var(--app-island-border));
+  }
+
   .bg-paper {
     background-color: hsl(var(--paper));
   }
@@ -161,6 +187,22 @@
 
   .bg-nav-selected {
     background-color: hsl(var(--nav-selected) / var(--nav-selected-alpha));
+  }
+
+  .text-nav {
+    color: hsl(var(--nav-text));
+  }
+
+  .text-nav-strong {
+    color: hsl(var(--nav-text-strong));
+  }
+
+  .text-nav-muted {
+    color: hsl(var(--nav-text-muted));
+  }
+
+  .border-nav-active {
+    border-color: hsl(var(--nav-active-border));
   }
 
   .bg-button-primary {

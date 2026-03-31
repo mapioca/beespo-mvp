@@ -28,10 +28,10 @@ export function SidebarNavItem({
     <Link
       href={item.href}
       className={cn(
-        "flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-[13px] transition-colors",
+        "flex h-8 items-center gap-2.5 rounded-lg border px-2.5 text-[13px] transition-colors duration-150 ease-out",
         isActive
-          ? "bg-[#eceef0] text-[#111317]"
-          : "text-[#6b6f76] hover:bg-[#f0f1f3] hover:text-[#111317]",
+          ? "border-nav-active bg-nav-selected text-nav-strong"
+          : "border-transparent text-nav hover:bg-nav-hover hover:text-nav-strong",
         isCollapsed && "justify-center px-2",
         isNested && !isCollapsed && "pl-6"
       )}

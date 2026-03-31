@@ -104,7 +104,7 @@ export function AppSidebar({
     <TooltipProvider delayDuration={0}>
       <aside
         className={cn(
-          "shrink-0 flex flex-col h-full border-r border-[#e2e3e6] bg-[#f5f5f6]",
+          "shrink-0 flex flex-col h-full bg-app-shell",
           "transition-[width] duration-300 ease-in-out",
           isCollapsed ? "w-16" : "w-60"
         )}
@@ -129,7 +129,7 @@ export function AppSidebar({
                   B
                 </span>
               ) : (
-                <span className="text-[15px] font-semibold leading-none tracking-tight text-[#111317]">
+                <span className="text-nav-strong text-[15px] font-semibold leading-none tracking-tight">
                   Beespo
                 </span>
               )}
@@ -142,7 +142,7 @@ export function AppSidebar({
                   variant="ghost"
                   size="icon"
                   onClick={toggleCollapsed}
-                  className="h-8 w-8 text-muted-foreground hover:text-foreground shrink-0"
+                  className="text-nav h-8 w-8 shrink-0 hover:text-nav-strong"
                 >
                   {isCollapsed ? (
                     <PanelLeft className="h-4 w-4 stroke-[1.6]" />
@@ -163,7 +163,7 @@ export function AppSidebar({
           {/* Workspace Name - Below Logo */}
           {!isCollapsed && (
             <div className="px-4 pb-3">
-              <p className="truncate text-[11px] font-medium text-[#7a7f87]">
+              <p className="text-nav-muted truncate text-[11px] font-medium">
                 {workspaceName}
               </p>
             </div>
