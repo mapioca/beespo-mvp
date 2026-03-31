@@ -1,7 +1,23 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowLeftRight, ChevronDown, Link, Loader2, FileText, FileCode, FileType, CalendarDays, ClipboardList, MoreHorizontal, Save, Trash2 } from "lucide-react";
+import {
+    ArrowLeftRight,
+    ChevronDown,
+    Link,
+    Loader2,
+    FileText,
+    FileCode,
+    FileType,
+    CalendarDays,
+    ClipboardList,
+    MoreHorizontal,
+    Monitor,
+    Save,
+    Smartphone,
+    Tablet,
+    Trash2,
+} from "lucide-react";
 import { ZoomIcon } from "@/components/ui/zoom-icon";
 import {
     AlertDialog,
@@ -19,7 +35,6 @@ import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
-    DropdownMenuLabel,
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -38,11 +53,11 @@ import {
     generateMeetingPdf,
     generateMeetingDocx,
     generateMeetingTxt,
-    downloadBlob
+    downloadBlob,
 } from "@/lib/agenda-export-utils";
 import { BuilderMode } from "./types";
 
-interface BuilderTopBarProps {
+interface MeetingContextBarProps {
     /** Current meeting title from form */
     title: string;
     /** Whether we are editing an existing meeting (truthy = update mode) */
@@ -69,6 +84,10 @@ interface BuilderTopBarProps {
     totalDuration: number;
     /** Total agenda items */
     itemCount: number;
+    /** Current preview device for program mode */
+    programPreviewDevice: "phone" | "tablet" | "desktop";
+    /** Update the preview device in program mode */
+    onProgramPreviewDeviceChange: (device: "phone" | "tablet" | "desktop") => void;
     /** Workspace slug for program URL */
     workspaceSlug: string | null;
     /** Zoom join URL (null if no zoom meeting linked) */
@@ -87,7 +106,7 @@ interface BuilderTopBarProps {
     isLive?: boolean;
 }
 
-export function BuilderTopBar({
+export function MeetingContextBar({
     title,
     initialMeetingId,
     isCreating,
@@ -101,41 +120,42 @@ export function BuilderTopBar({
     isLeader,
     totalDuration,
     itemCount,
+    programPreviewDevice,
+    onProgramPreviewDeviceChange,
+    workspaceSlug,
     zoomJoinUrl,
     isZoomConnected,
     isCreatingZoom,
     onOpenZoomSheet,
     onAddZoom,
     onDelete,
-    isLive = false,
-}: BuilderTopBarProps) {
+}: MeetingContextBarProps) {
     const [saveAsNewOpen, setSaveAsNewOpen] = useState(false);
     const [newTitle, setNewTitle] = useState("");
     const [isSavingAsNew, setIsSavingAsNew] = useState(false);
     const [exportingFormat, setExportingFormat] = useState<string | null>(null);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
+    const [deviceMenuOpen, setDeviceMenuOpen] = useState(false);
 
-    // Star / Favorite
-
-    const handleDelete = async () => {
-        if (!onDelete) return;
-        setIsDeleting(true);
-        try {
-            await onDelete();
-        } finally {
-            setIsDeleting(false);
-            setIsDeleteDialogOpen(false);
-        }
-    };
-
-    // ─── Share actions ─────────────────────────────────────────
     const handleCopyLink = async () => {
         const url = initialMeetingId
             ? `${window.location.origin}/meetings/${initialMeetingId}`
             : window.location.href;
         await navigator.clipboard.writeText(url);
         toast.success("Link copied to clipboard");
+    };
+
+    const handleCopyProgramLink = async () => {
+        if (!initialMeetingId || !workspaceSlug) {
+            toast.error("Program link unavailable", {
+                description: "Save the agenda and reload to generate the program link.",
+            });
+            return;
+        }
+        const url = `${window.location.origin}/${workspaceSlug}/program/${initialMeetingId}`;
+        await navigator.clipboard.writeText(url);
+        toast.success("Program link copied");
     };
 
     const handleExport = async (format: "pdf" | "docx" | "md" | "txt") => {
@@ -174,7 +194,6 @@ export function BuilderTopBar({
         }
     };
 
-    // ─── Save as New Meeting ───────────────────────────────────
     const openSaveAsNew = () => {
         setNewTitle(title ? `${title} (Copy)` : "");
         setSaveAsNewOpen(true);
@@ -198,11 +217,29 @@ export function BuilderTopBar({
         }
     };
 
+    const handleDelete = async () => {
+        if (!onDelete) return;
+        setIsDeleting(true);
+        try {
+            await onDelete();
+        } finally {
+            setIsDeleting(false);
+            setIsDeleteDialogOpen(false);
+        }
+    };
+
     const saveLabel = isCreating
         ? "Saving..."
         : initialMeetingId
             ? "Save"
             : "Create Agenda";
+
+    const deviceOptions = {
+        phone: { label: "Phone", icon: Smartphone },
+        tablet: { label: "Tablet", icon: Tablet },
+        desktop: { label: "Desktop", icon: Monitor },
+    } as const;
+    const CurrentDeviceIcon = deviceOptions[programPreviewDevice].icon;
 
     return (
         <>
@@ -212,7 +249,7 @@ export function BuilderTopBar({
                     { label: "Agendas", href: "/meetings/agendas", icon: <ClipboardList className="h-4 w-4 stroke-[1.6]" /> },
                     { label: title || "Untitled Agenda", icon: <FileText className="h-4 w-4 stroke-[1.6]" /> },
                 ]}
-                className="bg-chrome backdrop-blur ring-0 border-b-0 rounded-none px-4 py-1.5"
+                className="bg-chrome backdrop-blur ring-0 border-b-0 rounded-none px-5 py-2"
                 inlineAction={
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -233,6 +270,13 @@ export function BuilderTopBar({
                             <DropdownMenuItem onSelect={() => void handleCopyLink()}>
                                 <Link className="h-4 w-4 stroke-[1.6]" />
                                 Copy public link
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                                onSelect={() => void handleCopyProgramLink()}
+                                disabled={!workspaceSlug || !initialMeetingId}
+                            >
+                                <Link className="h-4 w-4 stroke-[1.6]" />
+                                Copy program link
                             </DropdownMenuItem>
 
                             <DropdownMenuSeparator />
@@ -327,7 +371,7 @@ export function BuilderTopBar({
                     </DropdownMenu>
                 }
                 action={
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2.5">
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <button
@@ -335,8 +379,8 @@ export function BuilderTopBar({
                                     title="Switch mode"
                                     className={cn(
                                         "inline-flex items-center gap-2 h-8 px-3.5 rounded-full",
-                                        "bg-control text-foreground hover:bg-control-hover",
-                                        "border border-control",
+                                        "bg-background text-foreground hover:bg-accent",
+                                        "border border-border/80",
                                         "transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                                     )}
                                 >
@@ -357,16 +401,75 @@ export function BuilderTopBar({
                             </DropdownMenuContent>
                         </DropdownMenu>
 
+                        {mode === "program" && (
+                            <DropdownMenu open={deviceMenuOpen} onOpenChange={setDeviceMenuOpen}>
+                                <div className="inline-flex items-center h-8 border border-border/80 bg-background text-foreground rounded-full">
+                                    <button
+                                        type="button"
+                                        onClick={() => setDeviceMenuOpen(true)}
+                                        title="Preview device"
+                                        className={cn(
+                                            "inline-flex items-center gap-2 h-8 pl-3.5 pr-2 rounded-l-full rounded-r-none",
+                                            "hover:bg-accent",
+                                            "transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                        )}
+                                    >
+                                        <CurrentDeviceIcon className="h-4 w-4 stroke-[1.6]" />
+                                        <span className="text-[12px]">{deviceOptions[programPreviewDevice].label}</span>
+                                    </button>
+                                    <DropdownMenuTrigger asChild>
+                                        <button
+                                            type="button"
+                                            title="Device options"
+                                            className={cn(
+                                                "inline-flex items-center justify-center h-8 w-9 rounded-r-full rounded-l-none",
+                                                "hover:bg-accent",
+                                                "transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                                                "data-[state=open]:bg-accent data-[state=open]:text-foreground"
+                                            )}
+                                        >
+                                            <ChevronDown className="h-4 w-4 stroke-[1.6]" />
+                                        </button>
+                                    </DropdownMenuTrigger>
+                                </div>
+                                <DropdownMenuContent align="end" className="w-44">
+                                    <DropdownMenuItem
+                                        onSelect={() => onProgramPreviewDeviceChange("phone")}
+                                        className={cn(programPreviewDevice === "phone" && "font-medium")}
+                                    >
+                                        <Smartphone className="h-4 w-4 stroke-[1.6]" />
+                                        Phone
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                        onSelect={() => onProgramPreviewDeviceChange("tablet")}
+                                        className={cn(programPreviewDevice === "tablet" && "font-medium")}
+                                    >
+                                        <Tablet className="h-4 w-4 stroke-[1.6]" />
+                                        Tablet
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                        onSelect={() => onProgramPreviewDeviceChange("desktop")}
+                                        className={cn(programPreviewDevice === "desktop" && "font-medium")}
+                                    >
+                                        <Monitor className="h-4 w-4 stroke-[1.6]" />
+                                        Desktop
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        )}
+
                         {isLeader && (
-                            <div className="inline-flex items-center h-8 border border-control bg-control text-foreground rounded-full">
+                            <div className="inline-flex items-center h-8 rounded-full">
                                 <button
                                     type="button"
                                     onClick={onSave}
+                                    disabled={isCreating || !isValid}
                                     title="Save"
                                     className={cn(
                                         "inline-flex items-center gap-2 h-8 pl-3.5 pr-2 rounded-l-full rounded-r-none",
-                                        "hover:bg-control-hover",
-                                        "transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                        "bg-foreground text-background hover:bg-foreground/90",
+                                        "transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                                        "disabled:pointer-events-none disabled:opacity-60"
                                     )}
                                 >
                                     <Save className="h-4 w-4 stroke-[1.6]" />
@@ -378,10 +481,10 @@ export function BuilderTopBar({
                                             type="button"
                                             title="Save options"
                                             className={cn(
-                                                "inline-flex items-center justify-center h-8 w-9 rounded-r-full rounded-l-none",
-                                                "hover:bg-control-hover",
+                                                "inline-flex items-center justify-center h-8 w-9 rounded-r-full rounded-l-none border border-l-0 border-foreground/20 bg-foreground text-background",
+                                                "hover:bg-foreground/90",
                                                 "transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                                                "data-[state=open]:bg-control-hover data-[state=open]:text-foreground"
+                                                "data-[state=open]:bg-foreground/90"
                                             )}
                                         >
                                             <ChevronDown className="h-4 w-4 stroke-[1.6]" />
@@ -403,8 +506,8 @@ export function BuilderTopBar({
                             </div>
                         )}
 
-                        <div className="h-4 w-px bg-border/50" />
-                        <span className="text-[12px] text-muted-foreground whitespace-nowrap">
+                        <div className="h-4 w-px bg-border/60" />
+                        <span className="whitespace-nowrap text-[11px] text-muted-foreground">
                             {itemCount} {itemCount === 1 ? "item" : "items"} &bull; {totalDuration} min
                         </span>
                     </div>

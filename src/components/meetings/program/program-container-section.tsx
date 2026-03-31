@@ -20,32 +20,48 @@ export function ProgramContainerSection({ item }: ProgramContainerSectionProps) 
     const children = item.children || [];
 
     return (
-        <div className="space-y-3 py-2">
+        <div className="space-y-3 py-1">
             <div className="flex items-center gap-2">
-                <span className="h-6 w-6 rounded-full bg-slate-100 flex items-center justify-center">
-                    <Icon className="h-3.5 w-3.5 text-slate-500" />
+                <span
+                    className="rounded-full bg-[color:var(--program-icon-bg)] border border-[color:var(--program-icon-border)]"
+                    style={{ width: "var(--program-icon-box)", height: "var(--program-icon-box)" }}
+                >
+                    <span className="flex h-full w-full items-center justify-center" style={{ display: "var(--program-icons-display)" }}>
+                        <Icon className="text-[color:var(--program-muted)]" style={{ width: "var(--program-icon-size)", height: "var(--program-icon-size)" }} />
+                    </span>
                 </span>
-                <h3 className="text-sm font-semibold text-slate-900">{headerLabel}</h3>
+                <h3 className="text-[1em] font-semibold text-[color:var(--program-text)]">{headerLabel}</h3>
             </div>
+
             {children.length === 0 ? (
-                <p className="text-xs text-slate-400 italic pl-8">No items</p>
+                <p className="pl-8 text-[0.86em] italic text-[color:var(--program-subtle)]" style={{ display: "var(--program-subtitle-display)" }}>
+                    No items
+                </p>
             ) : (
                 <div className="space-y-2 pl-8">
                     {children.map((child) => (
                         <div
                             key={child.id}
-                            className="rounded-xl border border-slate-200/70 bg-white px-3 py-2.5 shadow-[0_1px_0_rgba(15,23,42,0.04)]"
+                            className="rounded-[var(--program-section-radius)] border bg-[color:var(--program-card)] px-[var(--program-card-padding-x)] py-[var(--program-card-padding-y)]"
+                            style={{
+                                boxShadow: "var(--program-card-shadow)",
+                                borderColor: "var(--program-card-border)",
+                                borderWidth: "var(--program-border-width)",
+                                borderStyle: "var(--program-card-border-style)",
+                            }}
                         >
                             <div className="flex items-start justify-between gap-2">
-                                <p className="text-sm font-medium leading-snug text-slate-900">{child.title}</p>
+                                <p className="text-[1em] font-medium leading-snug text-[color:var(--program-text)]">{child.title}</p>
                                 {child.priority && child.priority !== "normal" && (
-                                    <span className="shrink-0 text-[10px] uppercase tracking-[0.2em] text-slate-400 font-semibold">
+                                    <span className="shrink-0 text-[0.72em] font-semibold uppercase tracking-[0.12em] text-[color:var(--program-subtle)]">
                                         {child.priority}
                                     </span>
                                 )}
                             </div>
                             {child.person_name && (
-                                <p className="text-xs text-slate-500 mt-0.5">{child.person_name}</p>
+                                <p className="mt-0.5 text-[0.88em] text-[color:var(--program-muted)]" style={{ display: "var(--program-subtitle-display)" }}>
+                                    {child.person_name}
+                                </p>
                             )}
                         </div>
                     ))}

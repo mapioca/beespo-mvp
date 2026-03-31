@@ -5,6 +5,7 @@ import { ProgramView } from "@/components/meetings/program/program-view";
 import { mapAgendaToProgramItems } from "@/lib/map-agenda-to-program-items";
 import type { ProgramViewData } from "@/components/meetings/program/types";
 import type { Database } from "@/types/database";
+import type { CSSProperties } from "react";
 
 export const dynamic = "force-dynamic";
 
@@ -100,9 +101,56 @@ export default async function ProgramPage({ params }: ProgramPageProps) {
         items: mapAgendaToProgramItems(agendaItems),
     };
 
+    const programStyle = {
+        "--program-text": "hsl(var(--foreground))",
+        "--program-muted": "hsl(var(--muted-foreground))",
+        "--program-subtle": "hsl(var(--muted-foreground))",
+        "--program-border": "hsl(var(--border) / 0.6)",
+        "--program-card": "hsl(var(--background))",
+        "--program-soft": "hsl(var(--accent))",
+        "--program-pill": "hsl(var(--pill))",
+        "--program-pill-text": "hsl(var(--pill-foreground))",
+        "--program-pill-bg": "hsl(var(--pill))",
+        "--program-pill-border": "transparent",
+        "--program-surface": "hsl(var(--paper))",
+        "--program-radius": "14px",
+        "--program-card-border": "hsl(var(--border) / 0.6)",
+        "--program-card-shadow": "0 1px 0 rgba(15,23,42,0.04)",
+        "--program-section-gap": "1.5rem",
+        "--program-item-gap": "0.75rem",
+        "--program-header-align": "center",
+        "--program-header-justify": "center",
+        "--program-icon-bg": "hsl(var(--accent))",
+        "--program-icon-border": "transparent",
+        "--program-title-weight": "600",
+        "--program-card-padding-x": "0.75rem",
+        "--program-card-padding-y": "0.6rem",
+        "--program-icon-size": "1rem",
+        "--program-icon-box": "1.75rem",
+        "--program-border-width": "1.5px",
+        "--program-line-height": "1.35",
+        "--program-section-case": "uppercase",
+        "--program-section-title-size": "0.78em",
+        "--program-section-radius": "14px",
+        "--program-subtitle-display": "block",
+        "--program-card-border-style": "solid",
+        "--program-divider-style": "solid",
+        "--program-divider-weight": "1px",
+        "--program-icons-display": "flex",
+        "--program-title-size": "1.55em",
+        fontSize: "14px",
+    } as CSSProperties;
+
     return (
-        <div className="flex-1 flex justify-center bg-slate-50">
-            <ProgramView data={programData} variant="embedded" />
+        <div className="flex-1 flex justify-center bg-panel py-10">
+            <div
+                className="bg-[color:var(--program-surface)] rounded-[32px] p-6"
+                style={programStyle}
+            >
+                <div className="border border-[color:var(--program-border)] bg-[color:var(--program-surface)] rounded-[28px] p-4">
+                    <ProgramView data={programData} variant="embedded" />
+                </div>
+            </div>
         </div>
     );
 }

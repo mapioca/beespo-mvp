@@ -9,73 +9,90 @@ interface ProgramAgendaItemProps {
     item: ProgramItem;
 }
 
+const cardBase =
+    "rounded-[var(--program-radius)] border bg-[color:var(--program-card)] px-[var(--program-card-padding-x)] py-[var(--program-card-padding-y)]";
+
+const cardStyle = {
+    boxShadow: "var(--program-card-shadow)",
+    borderColor: "var(--program-card-border)",
+    borderWidth: "var(--program-border-width)",
+    borderStyle: "var(--program-card-border-style)",
+} as const;
+
+const iconWrapClass = "rounded-full bg-[color:var(--program-icon-bg)] border border-[color:var(--program-icon-border)] shrink-0";
+const iconClass = "text-[color:var(--program-muted)]";
+
 export function ProgramAgendaItem({ item }: ProgramAgendaItemProps) {
-    // Structural items (section headers, dividers)
     if (item.category === "structural") {
         return <ProgramStructuralItem item={item} />;
     }
 
-    // Container items (discussions, business, announcements)
     if (item.isContainer) {
         return <ProgramContainerSection item={item} />;
     }
 
-    // Hymn items
     if (item.is_hymn) {
         return (
-            <div className="flex items-start gap-3 rounded-xl border border-slate-200/70 bg-white px-3 py-2.5 shadow-[0_1px_0_rgba(15,23,42,0.04)]">
-                <span className="h-7 w-7 rounded-full bg-slate-100 flex items-center justify-center shrink-0">
-                    <Music className="h-3.5 w-3.5 text-slate-500" />
+            <div className={`flex items-start gap-3 ${cardBase}`} style={cardStyle}>
+                <span className={iconWrapClass} style={{ width: "var(--program-icon-box)", height: "var(--program-icon-box)" }}>
+                    <span className="flex h-full w-full items-center justify-center" style={{ display: "var(--program-icons-display)" }}>
+                        <Music className={iconClass} style={{ width: "var(--program-icon-size)", height: "var(--program-icon-size)" }} />
+                    </span>
                 </span>
                 <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-slate-900">{item.title}</p>
-                    <p className="text-xs text-slate-500">
-                        {item.hymn_number && item.hymn_title
-                            ? `#${item.hymn_number} — ${item.hymn_title}`
-                            : "TBD"}
+                    <p className="text-[1em] font-semibold text-[color:var(--program-text)]">{item.title}</p>
+                    <p className="mt-0.5 text-[0.88em] text-[color:var(--program-muted)]" style={{ display: "var(--program-subtitle-display)" }}>
+                        {item.hymn_number && item.hymn_title ? `#${item.hymn_number} — ${item.hymn_title}` : "TBD"}
                     </p>
                 </div>
             </div>
         );
     }
 
-    // Speaker items
     if (item.category === "speaker") {
         return (
-            <div className="flex items-start gap-3 rounded-xl border border-slate-200/70 bg-white px-3 py-2.5 shadow-[0_1px_0_rgba(15,23,42,0.04)]">
-                <span className="h-7 w-7 rounded-full bg-slate-100 flex items-center justify-center shrink-0">
-                    <User className="h-3.5 w-3.5 text-slate-500" />
+            <div className={`flex items-start gap-3 ${cardBase}`} style={cardStyle}>
+                <span className={iconWrapClass} style={{ width: "var(--program-icon-box)", height: "var(--program-icon-box)" }}>
+                    <span className="flex h-full w-full items-center justify-center" style={{ display: "var(--program-icons-display)" }}>
+                        <User className={iconClass} style={{ width: "var(--program-icon-size)", height: "var(--program-icon-size)" }} />
+                    </span>
                 </span>
                 <div className="min-w-0 flex-1 space-y-0.5">
                     <div className="flex items-baseline justify-between gap-2">
-                        <p className="text-sm font-medium text-slate-900">
-                            {item.speaker_name || "TBD"}
-                        </p>
+                        <p className="text-[1em] font-semibold text-[color:var(--program-text)]">{item.speaker_name || "TBD"}</p>
                         {item.duration_minutes > 0 && (
-                            <span className="shrink-0 text-[10px] text-slate-500 tabular-nums bg-slate-100 px-2 py-0.5 rounded-full">
+                            <span className="shrink-0 rounded-full border border-[color:var(--program-border)] bg-[color:var(--program-soft)] px-2 py-0.5 text-[0.72em] text-[color:var(--program-muted)] tabular-nums">
                                 {item.duration_minutes} min
                             </span>
                         )}
                     </div>
                     {item.speaker_topic && (
-                        <p className="text-xs text-slate-500">{item.speaker_topic}</p>
+                        <p className="text-[0.88em] text-[color:var(--program-muted)]" style={{ display: "var(--program-subtitle-display)" }}>
+                            {item.speaker_topic}
+                        </p>
                     )}
-                    <p className="text-[10px] uppercase tracking-[0.22em] text-slate-400 mt-1">{item.title}</p>
+                    <p
+                        className="mt-1 text-[0.72em] tracking-[0.14em] text-[color:var(--program-subtle)]"
+                        style={{ textTransform: "var(--program-section-case)", display: "var(--program-subtitle-display)" }}
+                    >
+                        {item.title}
+                    </p>
                 </div>
             </div>
         );
     }
 
-    // Participant items (prayers, etc.)
     if (item.requires_participant) {
         return (
-            <div className="flex items-start gap-3 rounded-xl border border-slate-200/70 bg-white px-3 py-2.5 shadow-[0_1px_0_rgba(15,23,42,0.04)]">
-                <span className="h-7 w-7 rounded-full bg-slate-100 flex items-center justify-center shrink-0">
-                    <Hand className="h-3.5 w-3.5 text-slate-500" />
+            <div className={`flex items-start gap-3 ${cardBase}`} style={cardStyle}>
+                <span className={iconWrapClass} style={{ width: "var(--program-icon-box)", height: "var(--program-icon-box)" }}>
+                    <span className="flex h-full w-full items-center justify-center" style={{ display: "var(--program-icons-display)" }}>
+                        <Hand className={iconClass} style={{ width: "var(--program-icon-size)", height: "var(--program-icon-size)" }} />
+                    </span>
                 </span>
                 <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-slate-900">{item.title}</p>
-                    <p className="text-xs text-slate-500">
+                    <p className="text-[1em] font-semibold text-[color:var(--program-text)]">{item.title}</p>
+                    <p className="mt-0.5 text-[0.88em] text-[color:var(--program-muted)]" style={{ display: "var(--program-subtitle-display)" }}>
                         {item.participant_name || "TBD"}
                     </p>
                 </div>
@@ -83,12 +100,13 @@ export function ProgramAgendaItem({ item }: ProgramAgendaItemProps) {
         );
     }
 
-    // Generic procedural item
     return (
-        <div className="rounded-xl border border-slate-200/70 bg-white px-3 py-2.5 shadow-[0_1px_0_rgba(15,23,42,0.04)]">
-            <p className="text-sm font-medium text-slate-900">{item.title}</p>
+        <div className={cardBase} style={cardStyle}>
+            <p className="text-[1em] font-semibold text-[color:var(--program-text)]">{item.title}</p>
             {item.description?.trim() && (
-                <p className="text-xs text-slate-500 mt-0.5">{item.description}</p>
+                <p className="mt-0.5 text-[0.88em] text-[color:var(--program-muted)]" style={{ display: "var(--program-subtitle-display)" }}>
+                    {item.description}
+                </p>
             )}
         </div>
     );

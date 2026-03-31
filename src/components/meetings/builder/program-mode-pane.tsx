@@ -1,12 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Copy, Link as LinkIcon, Monitor, Smartphone, Tablet } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { useMemo, useState, type CSSProperties } from "react";
+import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CanvasItem } from "./types";
 import { ProgramView } from "../program/program-view";
 import { canvasItemsToProgramItems, ProgramViewData } from "../program/types";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface ProgramModePaneProps {
     title: string;
@@ -22,9 +22,100 @@ interface ProgramModePaneProps {
     isLeader?: boolean;
     isLive?: boolean;
     isTogglingLive?: boolean;
-    liveUrl?: string | null;
+    previewDevice: "phone" | "tablet" | "desktop";
     onGoLive?: () => void;
-    onCopyLiveLink?: () => void;
+}
+
+type FontScale = "sm" | "md" | "lg";
+type LayoutDensity = "comfortable" | "compact";
+type HeaderAlign = "left" | "center";
+
+const FONT_SCALE = {
+    sm: {
+        base: "14px",
+        title: "1.95rem",
+    },
+    md: {
+        base: "15px",
+        title: "2.05rem",
+    },
+    lg: {
+        base: "16px",
+        title: "2.2rem",
+    },
+} as const;
+
+const DENSITY = {
+    comfortable: {
+        sectionGap: "24px",
+        itemGap: "12px",
+        cardPaddingX: "16px",
+        cardPaddingY: "14px",
+        rootPadding: "px-7 py-9",
+    },
+    compact: {
+        sectionGap: "20px",
+        itemGap: "10px",
+        cardPaddingX: "14px",
+        cardPaddingY: "12px",
+        rootPadding: "px-6 py-8",
+    },
+} as const;
+
+function SegmentedControl<T extends string>({
+    value,
+    onChange,
+    options,
+}: {
+    value: T;
+    onChange: (value: T) => void;
+    options: Array<{ value: T; label: string }>;
+}) {
+    return (
+        <div className="inline-flex w-full rounded-full border border-border/80 bg-background p-1">
+            {options.map((option) => (
+                <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => onChange(option.value)}
+                    className={cn(
+                        "h-8 flex-1 rounded-full text-[12px] font-medium transition-colors",
+                        value === option.value
+                            ? "bg-foreground text-background"
+                            : "text-muted-foreground hover:text-foreground"
+                    )}
+                >
+                    {option.label}
+                </button>
+            ))}
+        </div>
+    );
+}
+
+function ToggleRow({
+    label,
+    enabled,
+    onToggle,
+}: {
+    label: string;
+    enabled: boolean;
+    onToggle: () => void;
+}) {
+    return (
+        <button
+            type="button"
+            onClick={onToggle}
+            className={cn(
+                "inline-flex h-9 w-full items-center justify-between rounded-xl border px-3 text-[12px] font-medium transition-colors",
+                enabled
+                    ? "border-foreground/20 bg-foreground/5 text-foreground"
+                    : "border-border/80 bg-background text-muted-foreground hover:text-foreground"
+            )}
+        >
+            <span>{label}</span>
+            <span className="text-[11px]">{enabled ? "On" : "Off"}</span>
+        </button>
+    );
 }
 
 export function ProgramModePane({
@@ -41,11 +132,14 @@ export function ProgramModePane({
     isLeader = false,
     isLive = false,
     isTogglingLive = false,
-    liveUrl,
+    previewDevice,
     onGoLive,
-    onCopyLiveLink,
 }: ProgramModePaneProps) {
-    const [previewDevice, setPreviewDevice] = useState<"phone" | "tablet" | "desktop">("phone");
+    const [fontScale, setFontScale] = useState<FontScale>("md");
+    const [density, setDensity] = useState<LayoutDensity>("comfortable");
+    const [headerAlign, setHeaderAlign] = useState<HeaderAlign>("center");
+    const [showIcons, setShowIcons] = useState(true);
+    const [showSubtitles, setShowSubtitles] = useState(true);
 
     const programData: ProgramViewData = useMemo(
         () => ({
@@ -60,172 +154,177 @@ export function ProgramModePane({
         [title, date, time, unitName, presiding, conducting, chorister, pianistOrganist, meetingNotes, canvasItems]
     );
 
-    const totalDuration = canvasItems.reduce((sum, item) => sum + item.duration_minutes, 0);
-    const displayLiveUrl = liveUrl ? liveUrl.replace(/^https?:\/\//, "") : "";
+    const deviceConfig =
+        previewDevice === "tablet"
+            ? {
+                  width: "w-[760px]",
+                  height: "h-[960px]",
+                  radius: "rounded-[34px]",
+                  border: "border-[10px]",
+              }
+            : previewDevice === "desktop"
+              ? {
+                    width: "w-[960px]",
+                    height: "h-[700px]",
+                    radius: "rounded-[22px]",
+                    border: "border-[8px]",
+                }
+              : {
+                    width: "w-[390px]",
+                    height: "h-[844px]",
+                    radius: "rounded-[42px]",
+                    border: "border-[7px]",
+                };
 
-    const deviceConfig = previewDevice === "tablet"
-        ? {
-            label: "Tablet",
-            width: "w-[600px]",
-            height: "h-[870px]",
-            radius: "rounded-[2rem]",
-            border: "border-[10px]",
-            notchHeight: "h-0",
-            notchWidth: "w-[56px]",
-            notchRadius: "rounded-full",
-        }
-        : previewDevice === "desktop"
-          ? {
-              label: "Desktop",
-              width: "w-[900px]",
-              height: "h-[585px]",
-              radius: "rounded-[1.2rem]",
-              border: "border-[6px]",
-              notchHeight: "h-0",
-              notchWidth: "w-0",
-              notchRadius: "rounded-full",
-          }
-          : {
-              label: "Phone",
-              width: "w-[360px]",
-              height: "h-[782px]",
-              radius: "rounded-[2.4rem]",
-              border: "border-[6px]",
-              notchHeight: "h-8",
-              notchWidth: "w-[104px]",
-              notchRadius: "rounded-full",
-          };
+    const vars = {
+        "--program-text": "hsl(0 0% 8%)",
+        "--program-muted": "hsl(0 0% 30%)",
+        "--program-subtle": "hsl(0 0% 44%)",
+        "--program-border": "hsl(0 0% 86%)",
+        "--program-card": "hsl(0 0% 100%)",
+        "--program-soft": "hsl(0 0% 96%)",
+        "--program-pill": "hsl(0 0% 97%)",
+        "--program-pill-text": "hsl(0 0% 22%)",
+        "--program-surface": "hsl(0 0% 99%)",
+        "--program-radius": "12px",
+        "--program-card-border": "hsl(0 0% 86%)",
+        "--program-card-shadow": "none",
+        "--program-section-gap": DENSITY[density].sectionGap,
+        "--program-item-gap": DENSITY[density].itemGap,
+        "--program-header-align": headerAlign,
+        "--program-header-justify": headerAlign === "left" ? "flex-start" : "center",
+        "--program-icon-bg": "hsl(0 0% 95%)",
+        "--program-icon-border": "hsl(0 0% 84%)",
+        "--program-title-weight": "600",
+        "--program-title-size": FONT_SCALE[fontScale].title,
+        "--program-pill-bg": "hsl(0 0% 97%)",
+        "--program-pill-border": "hsl(0 0% 84%)",
+        "--program-card-padding-x": DENSITY[density].cardPaddingX,
+        "--program-card-padding-y": DENSITY[density].cardPaddingY,
+        "--program-icon-size": "0.95rem",
+        "--program-icon-box": "1.75rem",
+        "--program-border-width": "1px",
+        "--program-line-height": "1.4",
+        "--program-section-case": "uppercase",
+        "--program-section-title-size": "0.78em",
+        "--program-section-radius": "10px",
+        "--program-subtitle-display": showSubtitles ? "block" : "none",
+        "--program-card-border-style": "solid",
+        "--program-divider-style": "solid",
+        "--program-divider-weight": "1px",
+        "--program-icons-display": showIcons ? "flex" : "none",
+        fontSize: FONT_SCALE[fontScale].base,
+    } as CSSProperties;
 
     return (
-        <div className="flex-1 flex flex-col items-center bg-background overflow-y-auto py-10">
-            {/* Toolbar */}
-            <div className="w-full max-w-5xl flex flex-wrap items-center justify-between gap-3 mb-4 px-6">
-                <div className="flex items-center gap-2 rounded-full bg-muted/60 p-1">
-                <button
-                    type="button"
-                    onClick={() => setPreviewDevice("phone")}
-                    className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                        previewDevice === "phone"
-                            ? "bg-background text-foreground shadow-sm"
-                            : "text-muted-foreground hover:text-foreground"
-                    }`}
-                >
-                    <Smartphone className="h-3.5 w-3.5" />
-                    Phone
-                </button>
-                <button
-                    type="button"
-                    onClick={() => setPreviewDevice("tablet")}
-                    className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                        previewDevice === "tablet"
-                            ? "bg-background text-foreground shadow-sm"
-                            : "text-muted-foreground hover:text-foreground"
-                    }`}
-                >
-                    <Tablet className="h-3.5 w-3.5" />
-                    Tablet
-                </button>
-                <button
-                    type="button"
-                    onClick={() => setPreviewDevice("desktop")}
-                    className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                        previewDevice === "desktop"
-                            ? "bg-background text-foreground shadow-sm"
-                            : "text-muted-foreground hover:text-foreground"
-                    }`}
-                >
-                    <Monitor className="h-3.5 w-3.5" />
-                    Desktop
-                </button>
-            </div>
-
-                <div className="flex items-center gap-3">
-                    {totalDuration > 0 && (
-                        <div className="text-xs text-slate-800 bg-[hsl(var(--accent-warm))] rounded-full px-3 py-1 border border-border/50">
-                            {canvasItems.length} {canvasItems.length === 1 ? "item" : "items"} &bull; {totalDuration} min
-                        </div>
-                    )}
-
-                    {isLeader && (
-                        isLive ? (
-                            liveUrl ? (
-                                <div className="flex items-center gap-2 rounded-full border border-emerald-200 bg-white px-3 py-1.5 text-xs text-emerald-700 shadow-sm">
-                                    <LinkIcon className="h-3.5 w-3.5" />
-                                    <span className="max-w-[220px] truncate">{displayLiveUrl}</span>
-                                    <button
-                                        type="button"
-                                        onClick={onCopyLiveLink}
-                                        className="h-6 w-6 rounded-full bg-emerald-50 text-emerald-700 hover:bg-emerald-100 inline-flex items-center justify-center"
-                                        title="Copy live link"
-                                    >
-                                        <Copy className="h-3.5 w-3.5" />
-                                    </button>
-                                </div>
-                            ) : null
-                        ) : (
-                            <Button
-                                type="button"
-                                size="sm"
-                                className={cn(
-                                    "h-8 text-xs font-medium",
-                                    "bg-emerald-600 hover:bg-emerald-500 text-white"
-                                )}
-                                onClick={onGoLive}
-                                disabled={isTogglingLive}
-                            >
-                                {isTogglingLive && <span className="mr-1.5 h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/60 border-t-transparent" />}
-                                Go Live
-                            </Button>
-                        )
-                    )}
-                </div>
-            </div>
-
-            {/* Device frame */}
-            <div className="relative shrink-0">
-                {previewDevice === "desktop" ? (
-                    <div className="flex flex-col items-center">
-                        {/* Screen */}
-                        <div
-                            className={`${deviceConfig.width} ${deviceConfig.height} ${deviceConfig.radius} ${deviceConfig.border} border-zinc-900 dark:border-zinc-700 bg-background shadow-2xl overflow-hidden flex flex-col`}
-                        >
-                            {/* Top bezel with camera */}
-                            <div className="h-8 bg-zinc-900 dark:bg-zinc-800 flex items-center justify-center shrink-0">
-                                <div className="h-1.5 w-1.5 rounded-full bg-zinc-500" />
-                            </div>
-
-                            {/* Scrollable content area */}
-                            <div className="flex-1 overflow-y-auto bg-slate-50">
-                                <ProgramView data={programData} variant="embedded" />
-                            </div>
-                        </div>
-
-                        {/* Base */}
-                        <div className="w-[980px] h-4 bg-zinc-900/90 rounded-b-[18px] shadow-xl mt-1" />
-                        <div className="w-[220px] h-2 bg-zinc-800 rounded-b-[10px] -mt-1" />
-                    </div>
-                ) : (
-                    <div
-                        className={`${deviceConfig.width} ${deviceConfig.height} ${deviceConfig.radius} ${deviceConfig.border} border-zinc-900 dark:border-zinc-700 bg-background shadow-2xl overflow-hidden flex flex-col`}
+        <div className="flex-1 overflow-hidden bg-[#f4f4f5] px-8 py-8">
+            {isLeader && !isLive && (
+                <div className="mx-auto mb-5 flex w-full max-w-[1280px] justify-end">
+                    <button
+                        type="button"
+                        onClick={onGoLive}
+                        disabled={isTogglingLive}
+                        className={cn(
+                            "inline-flex h-9 items-center gap-2 rounded-full border border-foreground/15 bg-foreground px-4 text-[12px] font-medium text-background",
+                            "transition-colors hover:bg-foreground/90",
+                            "disabled:pointer-events-none disabled:opacity-70"
+                        )}
                     >
-                        {/* Status bar / notch area */}
-                        <div className={`${deviceConfig.notchHeight} bg-background flex items-center justify-center shrink-0`}>
-                            {previewDevice !== "tablet" && (
-                                <div className={`${deviceConfig.notchWidth} h-[22px] bg-zinc-900 dark:bg-zinc-700 ${deviceConfig.notchRadius}`} />
+                        {isTogglingLive && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                        Go Live
+                    </button>
+                </div>
+            )}
+
+            <div className="mx-auto grid h-[calc(100dvh-176px)] w-full max-w-[1280px] grid-cols-1 gap-6 xl:grid-cols-[320px_minmax(0,1fr)]">
+                <aside className="h-full min-h-0">
+                    <div className="flex h-full flex-col rounded-2xl border border-border/80 bg-background p-5 shadow-[0_1px_2px_rgba(15,23,42,0.06)]">
+                        <div className="text-[13px] font-semibold text-foreground">Program Styles</div>
+                        <p className="mt-1 text-[12px] text-muted-foreground">
+                            Keep this minimal. Focus on readability first.
+                        </p>
+
+                        <Tabs defaultValue="type" className="mt-4 flex min-h-0 flex-1 flex-col">
+                            <TabsList className="grid h-9 grid-cols-3 rounded-full border border-border/80 bg-muted/60 p-1">
+                                <TabsTrigger value="type" className="rounded-full text-[12px]">Type</TabsTrigger>
+                                <TabsTrigger value="layout" className="rounded-full text-[12px]">Layout</TabsTrigger>
+                                <TabsTrigger value="details" className="rounded-full text-[12px]">Details</TabsTrigger>
+                            </TabsList>
+
+                            <TabsContent value="type" className="mt-4 space-y-4 overflow-y-auto pr-1">
+                                <div className="space-y-2">
+                                    <div className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">Font size</div>
+                                    <SegmentedControl
+                                        value={fontScale}
+                                        onChange={setFontScale}
+                                        options={[
+                                            { value: "sm", label: "Small" },
+                                            { value: "md", label: "Default" },
+                                            { value: "lg", label: "Large" },
+                                        ]}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <div className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">Header align</div>
+                                    <SegmentedControl
+                                        value={headerAlign}
+                                        onChange={setHeaderAlign}
+                                        options={[
+                                            { value: "left", label: "Left" },
+                                            { value: "center", label: "Center" },
+                                        ]}
+                                    />
+                                </div>
+                            </TabsContent>
+
+                            <TabsContent value="layout" className="mt-4 space-y-4 overflow-y-auto pr-1">
+                                <div className="space-y-2">
+                                    <div className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">Density</div>
+                                    <SegmentedControl
+                                        value={density}
+                                        onChange={setDensity}
+                                        options={[
+                                            { value: "comfortable", label: "Comfortable" },
+                                            { value: "compact", label: "Compact" },
+                                        ]}
+                                    />
+                                </div>
+                                <div className="rounded-xl border border-border/80 bg-muted/30 p-3 text-[12px] text-muted-foreground">
+                                    Uses an 8pt spacing system and consistent 1px borders for a cleaner hierarchy.
+                                </div>
+                            </TabsContent>
+
+                            <TabsContent value="details" className="mt-4 space-y-3 overflow-y-auto pr-1">
+                                <ToggleRow label="Show subtitles" enabled={showSubtitles} onToggle={() => setShowSubtitles((v) => !v)} />
+                                <ToggleRow label="Show icons" enabled={showIcons} onToggle={() => setShowIcons((v) => !v)} />
+                            </TabsContent>
+                        </Tabs>
+                    </div>
+                </aside>
+
+                <section className="min-h-0 overflow-hidden rounded-2xl border border-border/80 bg-background p-6">
+                    <div className="flex h-full items-start justify-center overflow-auto rounded-[18px] bg-[#f7f7f7] p-6" style={vars}>
+                        <div
+                            className={cn(
+                                deviceConfig.width,
+                                deviceConfig.height,
+                                deviceConfig.radius,
+                                deviceConfig.border,
+                                "border-[color:var(--program-border)] bg-[color:var(--program-surface)]"
                             )}
-                        </div>
-
-                        {/* Scrollable content area */}
-                        <div className="flex-1 overflow-y-auto bg-slate-50">
-                            <ProgramView data={programData} variant="embedded" />
-                        </div>
-
-                        {/* Home indicator */}
-                        <div className="h-6 bg-background flex items-center justify-center shrink-0">
-                            <div className="w-[120px] h-[4px] bg-zinc-300 dark:bg-zinc-600 rounded-full" />
+                        >
+                            <div className={cn("h-full overflow-y-auto", DENSITY[density].rootPadding)}>
+                                <ProgramView
+                                    data={programData}
+                                    variant="embedded"
+                                    density={density}
+                                    showDivider
+                                    className="max-w-[640px]"
+                                />
+                            </div>
                         </div>
                     </div>
-                )}
+                </section>
             </div>
         </div>
     );

@@ -8,6 +8,7 @@ import { CanvasItem } from "./types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { toast } from "@/lib/toast";
 import {
     Dialog,
     DialogContent,
@@ -53,12 +54,7 @@ export function PrintPreviewPane({
     pianistOrganist,
     meetingNotes,
     canvasItems,
-    onSave,
     onSaveAsNew,
-    onSaveAsTemplate,
-    isCreating,
-    isValid,
-    isLeader,
 }: PrintPreviewPaneProps) {
     const [saveAsNewOpen, setSaveAsNewOpen] = useState(false);
     const [newTitle, setNewTitle] = useState("");
@@ -80,12 +76,6 @@ export function PrintPreviewPane({
             }),
         [title, date, time, unitName, presiding, conducting, chorister, pianistOrganist, meetingNotes, canvasItems]
     );
-    const totalDuration = canvasItems.reduce((sum, item) => sum + item.duration_minutes, 0);
-
-    const openSaveAsNew = () => {
-        setNewTitle(title ? `${title} (Copy)` : "");
-        setSaveAsNewOpen(true);
-    };
 
     const handleSaveAsNew = async () => {
         const trimmed = newTitle.trim();
@@ -108,7 +98,6 @@ export function PrintPreviewPane({
     return (
         <ScrollArea className="flex-1 bg-chrome backdrop-blur relative z-0">
             <div className="relative flex justify-center p-8 md:p-12">
-                <div className="absolute top-4 right-6 flex items-center gap-2" />
                 <div className="bg-paper border border-border/40 shadow-[0_20px_60px_rgba(15,23,42,0.08)] w-full max-w-[850px] min-h-[1056px] p-12 sm:p-16 relative rounded-md">
                     <MarkdownRenderer markdown={markdown} unitName={unitName} />
                 </div>

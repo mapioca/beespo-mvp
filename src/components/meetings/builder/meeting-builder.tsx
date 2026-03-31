@@ -44,7 +44,7 @@ import { Form } from "@/components/ui/form";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { List, Loader2, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { BuilderTopBar } from "./builder-top-bar";
+import { MeetingContextBar } from "./meeting-context-bar";
 import {
     Dialog,
     DialogContent,
@@ -124,6 +124,7 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
 
     // Builder mode state — default to print-preview when editing existing, planning when creating new
     const [builderMode, setBuilderMode] = useState<BuilderMode>(initialMeetingId ? "print-preview" : "planning");
+    const [programPreviewDevice, setProgramPreviewDevice] = useState<"phone" | "tablet" | "desktop">("phone");
     const [workspaceName, setWorkspaceName] = useState("");
     const [workspaceSlug, setWorkspaceSlug] = useState<string | null>(null);
     const [isLeader, setIsLeader] = useState(true); // assume leader until proven otherwise
@@ -372,16 +373,6 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
         if (!initialMeetingId || !workspaceSlug) return null;
         return `${window.location.origin}/${workspaceSlug}/program/${initialMeetingId}`;
     }, [initialMeetingId, workspaceSlug]);
-
-    const handleCopyLiveLink = useCallback(async () => {
-        const liveUrl = getLiveUrl();
-        if (!liveUrl) {
-            toast.error("Live link unavailable", { description: "Missing workspace slug or meeting ID." });
-            return;
-        }
-        await navigator.clipboard.writeText(liveUrl);
-        toast.success("Live link copied");
-    }, [getLiveUrl]);
 
     const handleGoLive = useCallback(async () => {
         if (!initialMeetingId) {
@@ -1675,7 +1666,7 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                     <div className="flex-1 flex flex-col overflow-hidden">
                         {/* Global Top Bar (all screen sizes) */}
                         <div className={cn("relative z-10 bg-chrome backdrop-blur", builderMode === "print-preview" && "bg-chrome")}>
-                            <BuilderTopBar
+                            <MeetingContextBar
                                 title={title}
                                 initialMeetingId={initialMeetingId}
                                 isCreating={isCreating}
@@ -1689,6 +1680,8 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                                 isLeader={isLeader}
                                 totalDuration={totalDuration}
                                 itemCount={canvasItems.length}
+                                programPreviewDevice={programPreviewDevice}
+                                onProgramPreviewDeviceChange={setProgramPreviewDevice}
                                 workspaceSlug={workspaceSlug}
                                 zoomJoinUrl={zoomJoinUrl}
                                 isZoomConnected={isZoomConnected}
@@ -1819,9 +1812,8 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                                 isLeader={isLeader}
                                 isLive={isLive}
                                 isTogglingLive={isTogglingLive}
-                                liveUrl={getLiveUrl()}
                                 onGoLive={handleGoLive}
-                                onCopyLiveLink={handleCopyLiveLink}
+                                previewDevice={programPreviewDevice}
                             />
                         )}
                     </div>
