@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { AppSidebar } from "@/components/dashboard/app-sidebar";
+import { CommandPalette } from "@/components/command-palette";
 import { getProfile } from "@/lib/supabase/cached-queries";
 import { checkTrustedDevice, checkWorkspaceMfaRequired } from "@/lib/mfa";
 
@@ -65,6 +66,8 @@ export default async function DashboardLayout({
         {/* Main content — elevated surface card on top of the canvas */}
         <main className="h-full overflow-hidden bg-card rounded-xl ring-1 ring-border">{children}</main>
       </div>
+
+      <CommandPalette />
     </div>
   );
 }
