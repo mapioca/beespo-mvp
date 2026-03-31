@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import { TasksClient } from "./tasks-client"
 import { Metadata } from "next"
+import { TaskView } from "@/lib/table-views"
 
 export const metadata: Metadata = {
     title: "Tasks | Beespo",
@@ -94,12 +95,23 @@ export default async function TasksPage() {
             priorityCounts[t.priority as keyof typeof priorityCounts]++
     })
 
+    // Fetch workspace-scoped task views
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: taskViewsData } = await (supabase.from("agenda_views") as any)
+        .select("*")
+        .eq("workspace_id", profile.workspace_id)
+        .eq("view_type", "tasks")
+        .order("created_at", { ascending: true })
+
+    const initialViews: TaskView[] = taskViewsData ?? []
+
     return (
         <TasksClient
             tasks={tasks}
             totalCount={tasks.length}
             statusCounts={statusCounts}
             priorityCounts={priorityCounts}
+            initialViews={initialViews}
         />
     )
 }
