@@ -75,8 +75,8 @@ export function DataTableColumnHeader({
                     <button
                         className={cn(
                             "inline-flex items-center gap-1.5 -mx-1.5 px-1.5 py-1 rounded transition-colors",
-                            "hover:bg-[hsl(var(--accent-warm)/0.6)] hover:text-foreground",
-                            open && "bg-[hsl(var(--accent-warm)/0.6)] text-foreground",
+                            "hover:bg-[hsl(var(--table-filter-hover))] hover:text-foreground",
+                            open && "bg-[hsl(var(--table-filter-active))] text-foreground",
                             hasActiveFilter && "text-foreground"
                         )}
                     >
@@ -122,10 +122,10 @@ export function DataTableColumnHeader({
                                         setOpen(false)
                                     }}
                                     className={cn(
-                                        "flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-[hsl(var(--accent-warm)/0.6)]",
+                                        "flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-[hsl(var(--table-filter-hover))]",
                                         sortActive &&
                                             sortDirection === "asc" &&
-                                            "bg-[hsl(var(--accent-warm)/0.6)]"
+                                            "bg-[hsl(var(--table-filter-active))]"
                                     )}
                                 >
                                     <ArrowUp className="h-4 w-4 stroke-[1.6]" />
@@ -139,10 +139,10 @@ export function DataTableColumnHeader({
                                         setOpen(false)
                                     }}
                                     className={cn(
-                                        "flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-[hsl(var(--accent-warm)/0.6)]",
+                                        "flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-[hsl(var(--table-filter-hover))]",
                                         sortActive &&
                                             sortDirection === "desc" &&
-                                            "bg-[hsl(var(--accent-warm)/0.6)]"
+                                            "bg-[hsl(var(--table-filter-active))]"
                                     )}
                                 >
                                     <ArrowDown className="h-4 w-4 stroke-[1.6]" />
@@ -175,14 +175,14 @@ export function DataTableColumnHeader({
                                                                 option.value
                                                             )
                                                         }
-                                                        className="flex w-full items-center justify-between rounded-sm px-2 py-1.5 text-sm hover:bg-[hsl(var(--accent-warm)/0.6)]"
+                                                        className="flex w-full items-center justify-between rounded-sm px-2 py-1.5 text-sm hover:bg-[hsl(var(--table-filter-hover))]"
                                                     >
                                                         <div className="flex items-center gap-2">
                                                             <div
                                                                 className={cn(
                                                                     "h-4 w-4 rounded-sm border flex items-center justify-center",
                                                                     isSelected
-                                                                        ? "bg-[hsl(var(--accent-warm))] border-[hsl(var(--accent-warm-hover))]"
+                                                                        ? "bg-[hsl(var(--table-filter-active))] border-border/70"
                                                                         : "border-border/60"
                                                                 )}
                                                             >
@@ -218,7 +218,7 @@ export function DataTableColumnHeader({
                                             onHide()
                                             setOpen(false)
                                         }}
-                                        className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-[hsl(var(--accent-warm)/0.6)]"
+                                        className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-[hsl(var(--table-filter-hover))]"
                                     >
                                         <EyeOff className="h-4 w-4 stroke-[1.6]" />
                                         Hide column

@@ -358,8 +358,8 @@ export function MeetingsClient({
                         }}
                         className={
                             activeViewId === null && activeCategory === value
-                                ? "rounded-full border px-3.5 py-1 text-xs font-medium bg-[hsl(var(--accent-warm))] text-foreground border-border/60 transition-all shadow-[0_1px_0_rgba(15,23,42,0.08)]"
-                                : "rounded-full border px-3.5 py-1 text-xs font-medium text-muted-foreground border-border/60 hover:text-foreground hover:bg-[hsl(var(--accent-warm)/0.5)] hover:border-border/60 transition-all"
+                                ? "rounded-full border px-3.5 py-1 text-xs font-medium bg-[hsl(var(--chip-active-bg))] text-[hsl(var(--chip-active-text))] border-[hsl(var(--chip-border))] transition-all shadow-[0_1px_0_rgba(15,23,42,0.08)]"
+                                : "rounded-full border px-3.5 py-1 text-xs font-medium bg-[hsl(var(--chip-bg))] text-[hsl(var(--chip-text))] border-[hsl(var(--chip-border))] hover:bg-[hsl(var(--chip-active-bg))] hover:text-[hsl(var(--chip-active-text))] transition-all"
                         }
                     >
                         {label}
@@ -379,8 +379,8 @@ export function MeetingsClient({
                             className={cn(
                                 "rounded-full border pl-3.5 pr-7 py-1 text-xs font-medium transition-all shadow-sm",
                                 activeViewId === view.id
-                                    ? "bg-[hsl(var(--accent-warm))] text-foreground border-border/60"
-                                    : "text-muted-foreground border-border/60 hover:text-foreground hover:bg-[hsl(var(--accent-warm)/0.5)] hover:border-border/60"
+                                    ? "bg-[hsl(var(--chip-active-bg))] text-[hsl(var(--chip-active-text))] border-[hsl(var(--chip-border))]"
+                                    : "bg-[hsl(var(--chip-bg))] text-[hsl(var(--chip-text))] border-[hsl(var(--chip-border))] hover:bg-[hsl(var(--chip-active-bg))] hover:text-[hsl(var(--chip-active-text))]"
                             )}
                         >
                             {view.name}
@@ -413,7 +413,7 @@ export function MeetingsClient({
                 </div>
 
                 {isLeader && (
-                    <Button asChild variant="ghost" className="rounded-full border px-3.5 py-1 text-xs font-medium text-foreground border-border/60 bg-[hsl(var(--accent-warm))] hover:bg-[hsl(var(--accent-warm-hover))] transition-all shadow-[0_1px_0_rgba(15,23,42,0.08)]">
+                    <Button asChild size="sm" className="rounded-full px-3.5 py-1 text-xs">
                         <Link href="/meetings/new" className="flex items-center gap-1.5">
                             <Plus className="h-3.5 w-3.5 stroke-[1.6]" />
                             New
@@ -426,24 +426,24 @@ export function MeetingsClient({
             {activeView && (
                 <div className="flex items-center gap-2 px-6 pb-3 flex-wrap text-[11px] text-muted-foreground">
                     <span className="font-medium text-foreground">Filters:</span>
-                    <span className="rounded-md bg-[hsl(var(--accent-warm))] border border-border/50 px-2 py-0.5 capitalize text-slate-800">
+                    <span className="rounded-md bg-[hsl(var(--chip-bg))] border border-[hsl(var(--chip-border))] px-2 py-0.5 capitalize text-[hsl(var(--chip-text))]">
                         {activeView.filters.category ?? "all"} meetings
                     </span>
                     {activeView.filters.statuses?.map((s) => (
-                        <span key={s} className="rounded-md bg-[hsl(var(--accent-warm))] border border-border/50 px-2 py-0.5 text-slate-800">
+                        <span key={s} className="rounded-md bg-[hsl(var(--chip-bg))] border border-[hsl(var(--chip-border))] px-2 py-0.5 text-[hsl(var(--chip-text))]">
                             {formatStatusLabel(s)}
                         </span>
                     ))}
                     {activeView.filters.templateIds?.map((id) => (
-                        <span key={id} className="rounded-md bg-[hsl(var(--accent-warm))] border border-border/50 px-2 py-0.5 text-slate-800">
+                        <span key={id} className="rounded-md bg-[hsl(var(--chip-bg))] border border-[hsl(var(--chip-border))] px-2 py-0.5 text-[hsl(var(--chip-text))]">
                             {getTemplateName(id)}
                         </span>
                     ))}
                     {activeView.filters.hasZoom && (
-                        <span className="rounded-md bg-[hsl(var(--accent-warm))] border border-border/50 px-2 py-0.5 text-slate-800">🎥 Has Zoom</span>
+                        <span className="rounded-md bg-[hsl(var(--chip-bg))] border border-[hsl(var(--chip-border))] px-2 py-0.5 text-[hsl(var(--chip-text))]">🎥 Has Zoom</span>
                     )}
                     {search && (
-                        <span className="rounded-md bg-[hsl(var(--accent-warm))] border border-border/50 px-2 py-0.5 text-slate-800">
+                        <span className="rounded-md bg-[hsl(var(--chip-bg))] border border-[hsl(var(--chip-border))] px-2 py-0.5 text-[hsl(var(--chip-text))]">
                             Search: &quot;{search}&quot;
                             <button
                                 onClick={() => setSearch("")}
@@ -459,7 +459,7 @@ export function MeetingsClient({
             {/* Selection action bar */}
             {selectedRows.size > 0 && (
                 <div className="flex items-center gap-3 px-6 pb-3 shrink-0">
-                    <span className="inline-flex items-center rounded-full bg-[hsl(var(--accent-warm))] px-2.5 py-1 text-[11px] font-medium text-slate-800 border border-border/50 tabular-nums">
+                    <span className="inline-flex items-center rounded-full bg-[hsl(var(--chip-bg))] px-2.5 py-1 text-[11px] font-medium text-[hsl(var(--chip-text))] border border-[hsl(var(--chip-border))] tabular-nums">
                         {selectedRows.size} selected
                     </span>
                     <Button
@@ -484,7 +484,7 @@ export function MeetingsClient({
             {hasActiveFilters && selectedRows.size === 0 && (
                 <div className="flex items-center gap-2 px-6 pb-3 flex-wrap">
                     {search && (
-                        <span className="inline-flex items-center gap-1.5 rounded-md bg-[hsl(var(--accent-warm))] border border-border/50 px-2.5 py-1 text-xs font-medium text-slate-800">
+                        <span className="inline-flex items-center gap-1.5 rounded-md bg-[hsl(var(--chip-bg))] border border-[hsl(var(--chip-border))] px-2.5 py-1 text-xs font-medium text-[hsl(var(--chip-text))]">
                             Search: &quot;{search}&quot;
                             <button
                                 onClick={() => setSearch("")}
@@ -497,7 +497,7 @@ export function MeetingsClient({
                     {selectedStatuses.map((s) => (
                         <span
                             key={s}
-                            className="inline-flex items-center gap-1.5 rounded-md bg-[hsl(var(--accent-warm))] border border-border/50 px-2.5 py-1 text-xs font-medium text-slate-800"
+                            className="inline-flex items-center gap-1.5 rounded-md bg-[hsl(var(--chip-bg))] border border-[hsl(var(--chip-border))] px-2.5 py-1 text-xs font-medium text-[hsl(var(--chip-text))]"
                         >
                             {formatStatusLabel(s)}
                             <button
@@ -511,7 +511,7 @@ export function MeetingsClient({
                     {selectedTemplates.map((id) => (
                         <span
                             key={id}
-                            className="inline-flex items-center gap-1.5 rounded-md bg-[hsl(var(--accent-warm))] border border-border/50 px-2.5 py-1 text-xs font-medium text-slate-800"
+                            className="inline-flex items-center gap-1.5 rounded-md bg-[hsl(var(--chip-bg))] border border-[hsl(var(--chip-border))] px-2.5 py-1 text-xs font-medium text-[hsl(var(--chip-text))]"
                         >
                             {getTemplateName(id)}
                             <button

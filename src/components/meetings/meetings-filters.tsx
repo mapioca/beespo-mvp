@@ -135,11 +135,15 @@ export function MeetingsFilters({
             {/* Status Filter */}
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm" className="h-9 border border-border/50 bg-[hsl(var(--accent-warm))] text-slate-800 hover:bg-[hsl(var(--accent-warm-hover))]">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-9 border-[hsl(var(--chip-border))] bg-[hsl(var(--chip-bg))] text-[hsl(var(--chip-text))] hover:bg-[hsl(var(--chip-active-bg))] hover:text-[hsl(var(--chip-active-text))]"
+                    >
                         <PlusCircle className="mr-2 h-4 w-4 stroke-[1.6]" />
                         Status
                         {currentFilters.status.length > 0 && (
-                            <span className="ml-2 rounded-full bg-white/80 px-2 py-0.5 text-xs text-slate-700 border border-white/60">
+                            <span className="ml-2 rounded-full bg-[hsl(var(--chip-active-bg))] px-2 py-0.5 text-xs text-[hsl(var(--chip-active-text))] border border-[hsl(var(--chip-border))]">
                                 {currentFilters.status.length}
                             </span>
                         )}
@@ -181,11 +185,15 @@ export function MeetingsFilters({
             {templates.length > 0 && (
                 <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm" className="h-9 border border-border/50 bg-[hsl(var(--accent-warm))] text-slate-800 hover:bg-[hsl(var(--accent-warm-hover))]">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-9 border-[hsl(var(--chip-border))] bg-[hsl(var(--chip-bg))] text-[hsl(var(--chip-text))] hover:bg-[hsl(var(--chip-active-bg))] hover:text-[hsl(var(--chip-active-text))]"
+                    >
                         <FileText className="mr-2 h-4 w-4 stroke-[1.6]" />
                         Template
                         {currentFilters.templateIds.length > 0 && (
-                            <span className="ml-2 rounded-full bg-white/80 px-2 py-0.5 text-xs text-slate-700 border border-white/60">
+                            <span className="ml-2 rounded-full bg-[hsl(var(--chip-active-bg))] px-2 py-0.5 text-xs text-[hsl(var(--chip-active-text))] border border-[hsl(var(--chip-border))]">
                                 {currentFilters.templateIds.length}
                             </span>
                         )}
@@ -248,7 +256,13 @@ export function MeetingsFilters({
             {currentFilters.status.map((status) => {
                 const option = STATUS_OPTIONS.find((o) => o.value === status);
                 return (
-                <Button key={status} variant="secondary" size="sm" className="h-9 bg-[hsl(var(--accent-warm))] text-slate-800 hover:bg-[hsl(var(--accent-warm-hover))] border border-border/50" onClick={() => toggleStatus(status as MeetingStatus)}>
+                <Button
+                    key={status}
+                    variant="secondary"
+                    size="sm"
+                    className="h-9 bg-[hsl(var(--chip-bg))] text-[hsl(var(--chip-text))] hover:bg-[hsl(var(--chip-active-bg))] hover:text-[hsl(var(--chip-active-text))] border border-[hsl(var(--chip-border))]"
+                    onClick={() => toggleStatus(status as MeetingStatus)}
+                >
                     {option?.label}
                     <X className="ml-2 h-3 w-3 stroke-[1.6]" />
                 </Button>
@@ -261,7 +275,7 @@ export function MeetingsFilters({
                     key={templateId}
                     variant="secondary"
                     size="sm"
-                    className="h-9 bg-[hsl(var(--accent-warm))] text-slate-800 hover:bg-[hsl(var(--accent-warm-hover))] border border-border/50"
+                    className="h-9 bg-[hsl(var(--chip-bg))] text-[hsl(var(--chip-text))] hover:bg-[hsl(var(--chip-active-bg))] hover:text-[hsl(var(--chip-active-text))] border border-[hsl(var(--chip-border))]"
                     onClick={() => toggleTemplate(templateId)}
                 >
                     {getTemplateName(templateId)}

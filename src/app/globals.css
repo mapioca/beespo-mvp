@@ -110,6 +110,15 @@
     --menu-icon: 0 0% 40%;
     --menu-hover: 0 0% 96%;
     --menu-separator: 0 0% 92%;
+    --table-row-hover: 0 0% 95%;
+    --table-row-selected: 0 0% 92%;
+    --table-filter-hover: 0 0% 94%;
+    --table-filter-active: 0 0% 92%;
+    --chip-bg: 0 0% 100%;
+    --chip-border: 0 0% 86%;
+    --chip-text: 0 0% 22%;
+    --chip-active-bg: 0 0% 88%;
+    --chip-active-text: 0 0% 10%;
     --destructive: 0 84% 60%; /* Error red - minimal color */
     --destructive-foreground: 0 0% 100%;
     --border: 0 0% 89%; /* Light gray for borders */
@@ -229,6 +238,15 @@
     --menu-icon: 0 0% 65%;
     --menu-hover: 0 0% 16%;
     --menu-separator: 0 0% 22%;
+    --table-row-hover: 220 10% 14%;
+    --table-row-selected: 220 10% 18%;
+    --table-filter-hover: 220 10% 14%;
+    --table-filter-active: 220 10% 18%;
+    --chip-bg: 220 10% 14%;
+    --chip-border: 220 10% 24%;
+    --chip-text: 220 12% 88%;
+    --chip-active-bg: 220 12% 20%;
+    --chip-active-text: 0 0% 98%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 0%;
     --border: 0 0% 15%;

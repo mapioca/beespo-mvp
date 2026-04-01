@@ -378,7 +378,6 @@ export function AgendaCanvas({
         id: "canvas-drop-zone",
     });
 
-    const totalDuration = items.reduce((sum, item) => sum + item.duration_minutes, 0);
     const itemIds = items.map((item) => item.id);
 
     return (
@@ -393,15 +392,6 @@ export function AgendaCanvas({
                     items.length === 0 && "bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] [background-size:16px_16px]"
                 )}
             >
-                {/* Stats badge */}
-                {items.length > 0 && (
-                    <div className="absolute top-3 right-3 z-10 bg-[hsl(var(--accent-warm))] backdrop-blur-sm rounded-full px-3 py-1 border border-border/50">
-                        <span className="text-[11px] text-slate-800 whitespace-nowrap">
-                            {items.length} {items.length === 1 ? "item" : "items"} &bull; {totalDuration} min
-                        </span>
-                    </div>
-                )}
-
                 {/* Canvas */}
                 <ScrollArea className="flex-1">
                     <div
