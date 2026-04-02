@@ -146,12 +146,12 @@ export function AnnouncementsTable({
 
     return (
         <>
-            <div className="rounded-xl border-y border-border/60 bg-background/80 shadow-[0_1px_0_rgba(15,23,42,0.04)] overflow-hidden">
+            <div className="table-shell-standard">
             <Table className="text-[13px]">
                 <TableHeader>
-                    <TableRow className="bg-muted/30 hover:bg-muted/30 border-b">
+                    <TableRow className="table-header-row-standard">
                         {/* Checkbox */}
-                        <TableHead className="w-10 px-3 py-2.5">
+                        <TableHead className="w-10 table-cell-check">
                             <Checkbox
                                 checked={allSelected}
                                 onCheckedChange={() => onToggleAllRows?.()}
@@ -259,11 +259,12 @@ export function AnnouncementsTable({
                                 className="group transition-colors hover:bg-[hsl(var(--table-row-hover))]"
                             >
                                 {/* Checkbox */}
-                                <TableCell className="px-3 py-3">
+                                <TableCell className="table-cell-check">
                                     <Checkbox
                                         checked={selectedRows.has(
                                             announcement.id
                                         )}
+                                        className="opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100 data-[state=checked]:opacity-100"
                                         onCheckedChange={() =>
                                             onToggleRow?.(announcement.id)
                                         }
@@ -272,7 +273,7 @@ export function AnnouncementsTable({
 
                                 {/* Title */}
                                 {!hiddenColumns.has("title") && (
-                                    <TableCell className="font-medium px-3 py-3 text-[13px]">
+                                    <TableCell className="table-cell-title">
                                         <button
                                             onClick={() =>
                                                 onViewAnnouncement?.(
@@ -297,14 +298,14 @@ export function AnnouncementsTable({
 
                                 {/* Priority */}
                                 {!hiddenColumns.has("priority") && (
-                                    <TableCell className="px-3 py-3 text-[12px] text-muted-foreground capitalize">
+                                    <TableCell className="table-cell-meta capitalize">
                                         {announcement.priority}
                                     </TableCell>
                                 )}
 
                                 {/* Status */}
                                 {!hiddenColumns.has("status") && (
-                                    <TableCell className="px-3 py-3 text-[12px] text-muted-foreground capitalize">
+                                    <TableCell className="table-cell-meta capitalize">
                                         {formatStatus(
                                             announcement.status
                                         )}
@@ -313,7 +314,7 @@ export function AnnouncementsTable({
 
                                 {/* Deadline */}
                                 {!hiddenColumns.has("deadline") && (
-                                    <TableCell className="px-3 py-3 text-[12px] text-muted-foreground">
+                                    <TableCell className="table-cell-meta">
                                         {announcement.deadline
                                             ? format(
                                                   new Date(
@@ -326,7 +327,7 @@ export function AnnouncementsTable({
                                 )}
 
                                 {/* Actions */}
-                                <TableCell className="px-3 py-3 text-right">
+                                <TableCell className="table-cell-actions">
                                     <DropdownMenu>
                                         <DropdownMenuTrigger asChild>
                                             <Button

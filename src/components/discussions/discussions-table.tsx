@@ -167,12 +167,12 @@ export function DiscussionsTable({
 
     return (
         <>
-            <div className="rounded-xl border-y border-border/60 bg-background/80 shadow-[0_1px_0_rgba(15,23,42,0.04)] overflow-hidden">
+            <div className="table-shell-standard">
             <Table className="text-[13px]">
                 <TableHeader>
-                    <TableRow className="bg-muted/30 hover:bg-muted/30 border-b">
+                    <TableRow className="table-header-row-standard">
                         {/* Checkbox */}
-                        <TableHead className="w-10 px-3 py-2.5">
+                        <TableHead className="w-10 table-cell-check">
                             <Checkbox
                                 checked={allSelected}
                                 onCheckedChange={() => onToggleAllRows?.()}
@@ -295,9 +295,10 @@ export function DiscussionsTable({
                                 className="group transition-colors hover:bg-[hsl(var(--table-row-hover))]"
                             >
                                 {/* Checkbox */}
-                                <TableCell className="px-3 py-3">
+                                <TableCell className="table-cell-check">
                                     <Checkbox
                                         checked={selectedRows.has(discussion.id)}
+                                        className="opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100 data-[state=checked]:opacity-100"
                                         onCheckedChange={() =>
                                             onToggleRow?.(discussion.id)
                                         }
@@ -306,7 +307,7 @@ export function DiscussionsTable({
 
                                 {/* Title */}
                                 {!hiddenColumns.has("title") && (
-                                    <TableCell className="font-medium px-3 py-3 text-[13px]">
+                                    <TableCell className="table-cell-title">
                                         <Link
                                             href={`/meetings/discussions/${discussion.id}`}
                                             className="hover:underline text-left"
@@ -327,28 +328,28 @@ export function DiscussionsTable({
 
                                 {/* Category */}
                                 {!hiddenColumns.has("category") && (
-                                    <TableCell className="px-3 py-3 text-[12px] text-muted-foreground capitalize whitespace-nowrap">
+                                    <TableCell className="table-cell-meta capitalize whitespace-nowrap">
                                         {formatLabel(discussion.category)}
                                     </TableCell>
                                 )}
 
                                 {/* Status */}
                                 {!hiddenColumns.has("status") && (
-                                    <TableCell className="px-3 py-3 text-[12px] text-muted-foreground capitalize">
+                                    <TableCell className="table-cell-meta capitalize">
                                         {formatLabel(discussion.status)}
                                     </TableCell>
                                 )}
 
                                 {/* Priority */}
                                 {!hiddenColumns.has("priority") && (
-                                    <TableCell className="px-3 py-3 text-[12px] text-muted-foreground capitalize">
+                                    <TableCell className="table-cell-meta capitalize">
                                         {formatLabel(discussion.priority)}
                                     </TableCell>
                                 )}
 
                                 {/* Due Date */}
                                 {!hiddenColumns.has("due_date") && (
-                                    <TableCell className="px-3 py-3 text-[12px] text-muted-foreground">
+                                    <TableCell className="table-cell-meta">
                                         {discussion.due_date
                                             ? format(
                                                   new Date(discussion.due_date),
@@ -359,7 +360,7 @@ export function DiscussionsTable({
                                 )}
 
                                 {/* Actions */}
-                                <TableCell className="px-3 py-3 text-right">
+                                <TableCell className="table-cell-actions">
                                     <DropdownMenu>
                                         <DropdownMenuTrigger asChild>
                                             <Button

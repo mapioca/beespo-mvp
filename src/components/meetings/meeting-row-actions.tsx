@@ -135,8 +135,12 @@ export function MeetingRowActions({
         <>
             <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
                 <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                        <MoreHorizontal className="h-4 w-4" />
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 rounded-full border border-border/50 bg-background/70 text-muted-foreground hover:text-foreground hover:bg-control-hover hover:border-border focus-visible:ring-2 focus-visible:ring-ring/40"
+                    >
+                        <MoreHorizontal className="h-3.5 w-3.5" />
                         <span className="sr-only">Open menu</span>
                     </Button>
                 </DropdownMenuTrigger>

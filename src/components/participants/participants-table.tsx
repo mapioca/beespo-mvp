@@ -193,12 +193,12 @@ export function ParticipantsTable({
 
     return (
         <>
-            <div className="rounded-xl border-y border-border/60 bg-background/80 shadow-[0_1px_0_rgba(15,23,42,0.04)] overflow-hidden">
+            <div className="table-shell-standard">
             <Table className="text-[13px]">
                 <TableHeader>
-                    <TableRow className="bg-muted/30 hover:bg-muted/30 border-b">
+                    <TableRow className="table-header-row-standard">
                         {/* Checkbox */}
-                        <TableHead className="w-10 px-3 py-2.5">
+                        <TableHead className="w-10 table-cell-check">
                             <Checkbox
                                 checked={allSelected}
                                 onCheckedChange={() => onToggleAllRows?.()}
@@ -262,13 +262,14 @@ export function ParticipantsTable({
                                     >
                                         {/* Checkbox */}
                                         <TableCell
-                                            className="px-3 py-3"
+                                            className="table-cell-check"
                                             onClick={(e) => e.stopPropagation()}
                                         >
                                             <Checkbox
                                                 checked={selectedRows.has(
                                                     participant.id
                                                 )}
+                                                className="opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100 data-[state=checked]:opacity-100"
                                                 onCheckedChange={() =>
                                                     onToggleRow?.(
                                                         participant.id
@@ -279,7 +280,7 @@ export function ParticipantsTable({
 
                                         {/* Name + Tags */}
                                         {!hiddenColumns.has("name") && (
-                                        <TableCell className="font-medium px-3 py-3 text-[13px]">
+                                        <TableCell className="table-cell-title">
                                             <div className="flex items-center gap-2 flex-wrap">
                                                 <div className="flex items-center gap-2 shrink-0">
                                                     <ChevronRight
@@ -303,7 +304,7 @@ export function ParticipantsTable({
 
                                         {/* Actions */}
                                         <TableCell
-                                            className="px-3 py-3 text-right"
+                                            className="table-cell-actions"
                                             onClick={(e) => e.stopPropagation()}
                                         >
                                             <DropdownMenu>

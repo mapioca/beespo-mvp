@@ -109,12 +109,12 @@ export function FormsTable({
 
     return (
         <>
-            <div className="rounded-xl border-y border-border/60 bg-background/80 shadow-[0_1px_0_rgba(15,23,42,0.04)] overflow-hidden">
+            <div className="table-shell-standard">
             <Table className="text-[13px]">
                 <TableHeader>
-                    <TableRow className="bg-muted/30 hover:bg-muted/30 border-b">
+                    <TableRow className="table-header-row-standard">
                         {/* Checkbox */}
-                        <TableHead className="w-10 px-3 py-2.5">
+                        <TableHead className="w-10 table-cell-check">
                             <Checkbox
                                 checked={allSelected}
                                 onCheckedChange={() => onToggleAllRows?.()}
@@ -217,16 +217,17 @@ export function FormsTable({
                         forms.map((form) => (
                                 <TableRow key={form.id} className="group transition-colors hover:bg-[hsl(var(--table-row-hover))]">
                                     {/* Checkbox */}
-                                    <TableCell className="px-3 py-3">
+                                    <TableCell className="table-cell-check">
                                         <Checkbox
                                             checked={selectedRows.has(form.id)}
+                                            className="opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100 data-[state=checked]:opacity-100"
                                             onCheckedChange={() => onToggleRow?.(form.id)}
                                         />
                                     </TableCell>
 
                                     {/* Title */}
                                     {!hiddenColumns.has("title") && (
-                                        <TableCell className="font-medium px-3 py-3 text-[13px]">
+                                        <TableCell className="table-cell-title">
                                             <div className="flex flex-col">
                                                 <Link
                                                     href={`/forms/${form.id}`}
@@ -245,34 +246,34 @@ export function FormsTable({
 
                                     {/* Status */}
                                     {!hiddenColumns.has("status") && (
-                                        <TableCell className="px-3 py-3 text-[12px] text-muted-foreground capitalize">
+                                        <TableCell className="table-cell-meta capitalize">
                                             {form.is_published ? "Published" : "Draft"}
                                         </TableCell>
                                     )}
 
                                     {/* Views */}
                                     {!hiddenColumns.has("views") && (
-                                        <TableCell className="px-3 py-3 text-[12px] text-muted-foreground tabular-nums">
+                                        <TableCell className="table-cell-meta tabular-nums">
                                             {form.views_count}
                                         </TableCell>
                                     )}
 
                                     {/* Responses */}
                                     {!hiddenColumns.has("responses") && (
-                                        <TableCell className="px-3 py-3 text-[12px] text-muted-foreground tabular-nums">
+                                        <TableCell className="table-cell-meta tabular-nums">
                                             {form.submissions_count}
                                         </TableCell>
                                     )}
 
                                     {/* Created */}
                                     {!hiddenColumns.has("created_at") && (
-                                        <TableCell className="px-3 py-3 text-[12px] text-muted-foreground">
+                                        <TableCell className="table-cell-meta">
                                             {format(new Date(form.created_at), "MMM d, yyyy")}
                                         </TableCell>
                                     )}
 
                                     {/* Actions */}
-                                    <TableCell className="px-3 py-3 text-right">
+                                    <TableCell className="table-cell-actions">
                                         <DropdownMenu>
                                             <DropdownMenuTrigger asChild>
                                                 <Button

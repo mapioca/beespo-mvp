@@ -122,10 +122,22 @@
     --menu-icon: 0 0% 40%;
     --menu-hover: 0 0% 96%;
     --menu-separator: 0 0% 92%;
-    --table-row-hover: 0 0% 95%;
+    --table-row-hover: 0 0% 97.2%;
     --table-row-selected: 0 0% 92%;
     --table-filter-hover: 0 0% 94%;
     --table-filter-active: 0 0% 92%;
+    --table-shell-bg: 0 0% 100%;
+    --table-shell-border: 0 0% 89%;
+    --table-shell-shadow: 0 1px 0 rgba(15,23,42,0.04);
+    --table-row-divider: 0 0% 89%;
+    --table-header-bg: 0 0% 95%;
+    --table-header-border: 0 0% 89%;
+    --table-head-height: 2.5rem;
+    --table-cell-px: 0.75rem;
+    --table-row-py: 0.625rem;
+    --table-header-font-size: 11px;
+    --table-body-font-size: 13px;
+    --table-meta-font-size: 12px;
     --chip-bg: 0 0% 100%;
     --chip-border: 0 0% 86%;
     --chip-text: 0 0% 22%;
@@ -250,10 +262,22 @@
     --menu-icon: 0 0% 65%;
     --menu-hover: 0 0% 16%;
     --menu-separator: 0 0% 22%;
-    --table-row-hover: 220 10% 14%;
+    --table-row-hover: 220 10% 12%;
     --table-row-selected: 220 10% 18%;
     --table-filter-hover: 220 10% 14%;
     --table-filter-active: 220 10% 18%;
+    --table-shell-bg: 220 12% 10%;
+    --table-shell-border: 220 10% 20%;
+    --table-shell-shadow: 0 1px 0 rgba(0,0,0,0.35);
+    --table-row-divider: 220 10% 20%;
+    --table-header-bg: 220 10% 13%;
+    --table-header-border: 220 10% 20%;
+    --table-head-height: 2.5rem;
+    --table-cell-px: 0.75rem;
+    --table-row-py: 0.625rem;
+    --table-header-font-size: 11px;
+    --table-body-font-size: 13px;
+    --table-meta-font-size: 12px;
     --chip-bg: 220 10% 14%;
     --chip-border: 220 10% 24%;
     --chip-text: 220 12% 88%;
@@ -459,6 +483,78 @@
 
   .bg-menu-hover {
     background-color: hsl(var(--menu-hover));
+  }
+
+  .table-shell-standard {
+    border-radius: 0.75rem;
+    border-top: 1px solid hsl(var(--table-shell-border) / 0.6);
+    border-bottom: 1px solid hsl(var(--table-shell-border) / 0.6);
+    background-color: hsl(var(--table-shell-bg) / 0.8);
+    box-shadow: var(--table-shell-shadow);
+    overflow: hidden;
+  }
+
+  .table-shell-minimal {
+    border-radius: 0.75rem;
+    border-top: 1px solid hsl(var(--table-shell-border) / 0.25);
+    border-bottom: 1px solid hsl(var(--table-shell-border) / 0.25);
+    background-color: hsl(var(--table-shell-bg) / 0.45);
+    box-shadow: none;
+    overflow: hidden;
+  }
+
+  .table-mode-minimal {
+    --table-row-divider: 0 0% 0% / 0;
+    --table-header-bg: 0 0% 0% / 0;
+    --table-header-border: 0 0% 0% / 0;
+  }
+
+  .dark .table-mode-minimal {
+    --table-row-divider: 0 0% 100% / 0;
+    --table-header-bg: 0 0% 100% / 0;
+    --table-header-border: 0 0% 100% / 0;
+  }
+
+  .table-header-row-standard {
+    background-color: hsl(var(--table-header-bg) / 0.25);
+    border-bottom: 1px solid hsl(var(--table-header-border) / 0.6);
+  }
+
+  .table-header-row-standard:hover {
+    background-color: hsl(var(--table-header-bg) / 0.25);
+  }
+
+  .table-cell-check {
+    padding-left: var(--table-cell-px);
+    padding-right: var(--table-cell-px);
+    padding-top: var(--table-row-py);
+    padding-bottom: var(--table-row-py);
+  }
+
+  .table-cell-title {
+    padding-left: var(--table-cell-px);
+    padding-right: var(--table-cell-px);
+    padding-top: var(--table-row-py);
+    padding-bottom: var(--table-row-py);
+    font-size: var(--table-body-font-size);
+    font-weight: 500;
+  }
+
+  .table-cell-meta {
+    padding-left: var(--table-cell-px);
+    padding-right: var(--table-cell-px);
+    padding-top: var(--table-row-py);
+    padding-bottom: var(--table-row-py);
+    font-size: var(--table-meta-font-size);
+    color: hsl(var(--muted-foreground));
+  }
+
+  .table-cell-actions {
+    padding-left: var(--table-cell-px);
+    padding-right: var(--table-cell-px);
+    padding-top: var(--table-row-py);
+    padding-bottom: var(--table-row-py);
+    text-align: right;
   }
 
   .border-menu-separator {

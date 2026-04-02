@@ -358,8 +358,8 @@ export function MeetingsClient({
                         }}
                         className={
                             activeViewId === null && activeCategory === value
-                                ? "rounded-full border px-3.5 py-1 text-xs font-medium bg-[hsl(var(--chip-active-bg))] text-[hsl(var(--chip-active-text))] border-[hsl(var(--chip-border))] transition-all shadow-[0_1px_0_rgba(15,23,42,0.08)]"
-                                : "rounded-full border px-3.5 py-1 text-xs font-medium bg-[hsl(var(--chip-bg))] text-[hsl(var(--chip-text))] border-[hsl(var(--chip-border))] hover:bg-[hsl(var(--chip-active-bg))] hover:text-[hsl(var(--chip-active-text))] transition-all"
+                                ? "rounded-full border px-3.5 py-1 text-[11px] font-semibold leading-none bg-[hsl(var(--chip-active-bg))] text-[hsl(var(--chip-active-text))] border-[hsl(var(--chip-border))] transition-all shadow-[0_1px_0_rgba(15,23,42,0.08)]"
+                                : "rounded-full border px-3.5 py-1 text-[11px] font-medium leading-none bg-[hsl(var(--chip-bg))] text-[hsl(var(--chip-text))] border-[hsl(var(--chip-border))] hover:bg-[hsl(var(--chip-active-bg))] hover:text-[hsl(var(--chip-active-text))] transition-all"
                         }
                     >
                         {label}
@@ -377,10 +377,10 @@ export function MeetingsClient({
                         <button
                             onClick={() => setActiveViewId(view.id)}
                             className={cn(
-                                "rounded-full border pl-3.5 pr-7 py-1 text-xs font-medium transition-all shadow-sm",
+                                "rounded-full border pl-3.5 pr-7 py-1 text-[11px] leading-none transition-all shadow-sm",
                                 activeViewId === view.id
-                                    ? "bg-[hsl(var(--chip-active-bg))] text-[hsl(var(--chip-active-text))] border-[hsl(var(--chip-border))]"
-                                    : "bg-[hsl(var(--chip-bg))] text-[hsl(var(--chip-text))] border-[hsl(var(--chip-border))] hover:bg-[hsl(var(--chip-active-bg))] hover:text-[hsl(var(--chip-active-text))]"
+                                    ? "bg-[hsl(var(--chip-active-bg))] text-[hsl(var(--chip-active-text))] border-[hsl(var(--chip-border))] font-semibold"
+                                    : "bg-[hsl(var(--chip-bg))] text-[hsl(var(--chip-text))] border-[hsl(var(--chip-border))] hover:bg-[hsl(var(--chip-active-bg))] hover:text-[hsl(var(--chip-active-text))] font-medium"
                             )}
                         >
                             {view.name}
@@ -392,13 +392,13 @@ export function MeetingsClient({
                                 handleDeleteView(view.id)
                             }}
                             title="Delete view"
-                            className={cn(
-                                "absolute right-2 top-1/2 -translate-y-1/2",
-                                "flex items-center justify-center h-3.5 w-3.5 rounded-full",
-                                "opacity-0 group-hover/view:opacity-100 transition-opacity",
-                                activeViewId === view.id
-                                    ? "text-muted-foreground/70 hover:text-foreground"
-                                    : "text-muted-foreground hover:text-foreground"
+                                className={cn(
+                                    "absolute right-2 top-1/2 -translate-y-1/2",
+                                    "flex items-center justify-center h-3.5 w-3.5 rounded-full",
+                                    "opacity-0 group-hover/view:opacity-100 group-focus-within/view:opacity-100 transition-opacity",
+                                    activeViewId === view.id
+                                        ? "text-muted-foreground/70 hover:text-foreground"
+                                        : "text-muted-foreground hover:text-foreground"
                             )}
                         >
                             <X className="h-2.5 w-2.5 stroke-[1.6]" />
@@ -426,24 +426,24 @@ export function MeetingsClient({
             {activeView && (
                 <div className="flex items-center gap-2 px-6 pb-3 flex-wrap text-[11px] text-muted-foreground">
                     <span className="font-medium text-foreground">Filters:</span>
-                    <span className="rounded-md bg-[hsl(var(--chip-bg))] border border-[hsl(var(--chip-border))] px-2 py-0.5 capitalize text-[hsl(var(--chip-text))]">
+                    <span className="rounded-full bg-[hsl(var(--chip-bg))] border border-[hsl(var(--chip-border))] px-2.5 py-1 capitalize text-[hsl(var(--chip-text))] leading-none">
                         {activeView.filters.category ?? "all"} meetings
                     </span>
                     {activeView.filters.statuses?.map((s) => (
-                        <span key={s} className="rounded-md bg-[hsl(var(--chip-bg))] border border-[hsl(var(--chip-border))] px-2 py-0.5 text-[hsl(var(--chip-text))]">
+                        <span key={s} className="rounded-full bg-[hsl(var(--chip-bg))] border border-[hsl(var(--chip-border))] px-2.5 py-1 text-[hsl(var(--chip-text))] leading-none">
                             {formatStatusLabel(s)}
                         </span>
                     ))}
                     {activeView.filters.templateIds?.map((id) => (
-                        <span key={id} className="rounded-md bg-[hsl(var(--chip-bg))] border border-[hsl(var(--chip-border))] px-2 py-0.5 text-[hsl(var(--chip-text))]">
+                        <span key={id} className="rounded-full bg-[hsl(var(--chip-bg))] border border-[hsl(var(--chip-border))] px-2.5 py-1 text-[hsl(var(--chip-text))] leading-none">
                             {getTemplateName(id)}
                         </span>
                     ))}
                     {activeView.filters.hasZoom && (
-                        <span className="rounded-md bg-[hsl(var(--chip-bg))] border border-[hsl(var(--chip-border))] px-2 py-0.5 text-[hsl(var(--chip-text))]">🎥 Has Zoom</span>
+                        <span className="rounded-full bg-[hsl(var(--chip-bg))] border border-[hsl(var(--chip-border))] px-2.5 py-1 text-[hsl(var(--chip-text))] leading-none">🎥 Has Zoom</span>
                     )}
                     {search && (
-                        <span className="rounded-md bg-[hsl(var(--chip-bg))] border border-[hsl(var(--chip-border))] px-2 py-0.5 text-[hsl(var(--chip-text))]">
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-[hsl(var(--chip-bg))] border border-[hsl(var(--chip-border))] px-2.5 py-1 text-[hsl(var(--chip-text))] leading-none">
                             Search: &quot;{search}&quot;
                             <button
                                 onClick={() => setSearch("")}
@@ -473,7 +473,7 @@ export function MeetingsClient({
                     </Button>
                     <button
                         onClick={() => setSelectedRows(new Set())}
-                        className="text-xs text-muted-foreground hover:text-foreground ml-auto"
+                        className="text-[11px] text-muted-foreground hover:text-foreground ml-auto"
                     >
                         Deselect all
                     </button>
@@ -484,7 +484,7 @@ export function MeetingsClient({
             {hasActiveFilters && selectedRows.size === 0 && (
                 <div className="flex items-center gap-2 px-6 pb-3 flex-wrap">
                     {search && (
-                        <span className="inline-flex items-center gap-1.5 rounded-md bg-[hsl(var(--chip-bg))] border border-[hsl(var(--chip-border))] px-2.5 py-1 text-xs font-medium text-[hsl(var(--chip-text))]">
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-[hsl(var(--chip-bg))] border border-[hsl(var(--chip-border))] px-2.5 py-1 text-[11px] font-medium leading-none text-[hsl(var(--chip-text))]">
                             Search: &quot;{search}&quot;
                             <button
                                 onClick={() => setSearch("")}
@@ -497,7 +497,7 @@ export function MeetingsClient({
                     {selectedStatuses.map((s) => (
                         <span
                             key={s}
-                            className="inline-flex items-center gap-1.5 rounded-md bg-[hsl(var(--chip-bg))] border border-[hsl(var(--chip-border))] px-2.5 py-1 text-xs font-medium text-[hsl(var(--chip-text))]"
+                            className="inline-flex items-center gap-1.5 rounded-full bg-[hsl(var(--chip-bg))] border border-[hsl(var(--chip-border))] px-2.5 py-1 text-[11px] font-medium leading-none text-[hsl(var(--chip-text))]"
                         >
                             {formatStatusLabel(s)}
                             <button
@@ -511,7 +511,7 @@ export function MeetingsClient({
                     {selectedTemplates.map((id) => (
                         <span
                             key={id}
-                            className="inline-flex items-center gap-1.5 rounded-md bg-[hsl(var(--chip-bg))] border border-[hsl(var(--chip-border))] px-2.5 py-1 text-xs font-medium text-[hsl(var(--chip-text))]"
+                            className="inline-flex items-center gap-1.5 rounded-full bg-[hsl(var(--chip-bg))] border border-[hsl(var(--chip-border))] px-2.5 py-1 text-[11px] font-medium leading-none text-[hsl(var(--chip-text))]"
                         >
                             {getTemplateName(id)}
                             <button
@@ -525,7 +525,7 @@ export function MeetingsClient({
                     {hiddenColumns.size > 0 && (
                         <button
                             onClick={() => setHiddenColumns(new Set())}
-                            className="text-xs text-muted-foreground hover:text-foreground underline"
+                            className="text-[11px] text-muted-foreground hover:text-foreground underline"
                         >
                             Show all columns
                         </button>
@@ -537,7 +537,7 @@ export function MeetingsClient({
                             setSelectedTemplates([])
                             setHiddenColumns(new Set())
                         }}
-                        className="text-xs text-muted-foreground hover:text-foreground"
+                        className="text-[11px] text-muted-foreground hover:text-foreground"
                     >
                         Clear all
                     </button>

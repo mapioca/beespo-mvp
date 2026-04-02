@@ -64,8 +64,8 @@ export function DataTableColumnHeader({
     return (
         <th
             className={cn(
-                "h-10 px-3 text-left align-middle",
-                "text-[11px] uppercase tracking-wider font-semibold text-muted-foreground",
+                "h-[var(--table-head-height)] px-[var(--table-cell-px)] text-left align-middle",
+                "text-[length:var(--table-header-font-size)] uppercase tracking-wider font-semibold text-muted-foreground",
                 "[&:has([role=checkbox])]:pr-0",
                 className
             )}

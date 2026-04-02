@@ -57,6 +57,13 @@ function formatLabel(value: string): string {
     return value.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())
 }
 
+const STATUS_DOT_STYLES: Record<string, string> = {
+    scheduled: "bg-blue-500/70",
+    in_progress: "bg-emerald-500/80",
+    completed: "bg-zinc-500/70",
+    cancelled: "bg-rose-500/80",
+}
+
 // ── Props ───────────────────────────────────────────────────────────────────
 
 interface MeetingsTableProps {
@@ -137,9 +144,9 @@ export function MeetingsTable({
         <div className="rounded-xl border-y border-border/60 bg-background/80 shadow-[0_1px_0_rgba(15,23,42,0.04)] overflow-hidden">
         <Table className="text-[13px]">
             <TableHeader>
-                <TableRow className="bg-muted/30 hover:bg-muted/30 border-b border-border/60">
+                <TableRow className="bg-muted/25 hover:bg-muted/25 border-b border-border/60">
                     {/* Checkbox */}
-                    <TableHead className="w-10 px-3 py-2.5">
+                    <TableHead className="w-10 px-3 py-2">
                         <Checkbox
                             checked={allSelected}
                             onCheckedChange={() => onToggleAllRows?.()}
@@ -240,9 +247,10 @@ export function MeetingsTable({
                             className="group transition-colors hover:bg-[hsl(var(--table-row-hover))]"
                         >
                             {/* Checkbox */}
-                            <TableCell className="px-3 py-3">
+                            <TableCell className="px-3 py-2.5">
                                 <Checkbox
                                     checked={selectedRows.has(meeting.id)}
+                                    className="opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100 data-[state=checked]:opacity-100"
                                     onCheckedChange={() =>
                                         onToggleRow?.(meeting.id)
                                     }
@@ -251,11 +259,11 @@ export function MeetingsTable({
 
                             {/* Title */}
                             {!hiddenColumns.has("title") && (
-                        <TableCell className="font-medium px-3 py-3 text-[13px]">
+                        <TableCell className="font-medium px-3 py-2.5 text-[13px]">
                             <div className="flex items-center gap-1.5">
                                 <Link
                                     href={`/meetings/${meeting.id}`}
-                                    className="hover:underline text-[13px]"
+                                    className="text-[13px] font-semibold text-foreground hover:underline underline-offset-2"
                                 >
                                     {meeting.title}
                                 </Link>
@@ -287,7 +295,7 @@ export function MeetingsTable({
 
                             {/* Template */}
                             {!hiddenColumns.has("template") && (
-                        <TableCell className="px-3 py-3 text-[12px] text-muted-foreground">
+                        <TableCell className="px-3 py-2.5 text-[12px] text-muted-foreground">
                             {meeting.templates?.name || (
                                 <span className="italic">
                                     No Template
@@ -298,14 +306,20 @@ export function MeetingsTable({
 
                             {/* Status */}
                             {!hiddenColumns.has("status") && (
-                        <TableCell className="px-3 py-3 text-[12px] text-muted-foreground capitalize">
-                            {formatLabel(meeting.status)}
+                        <TableCell className="px-3 py-2.5 text-[12px] text-muted-foreground capitalize">
+                            <span className="inline-flex items-center gap-2">
+                                <span
+                                    className={`h-1.5 w-1.5 rounded-full ${STATUS_DOT_STYLES[meeting.status] || "bg-muted-foreground/50"}`}
+                                    aria-hidden
+                                />
+                                <span>{formatLabel(meeting.status)}</span>
+                            </span>
                         </TableCell>
                             )}
 
                             {/* Scheduled Date */}
                             {!hiddenColumns.has("scheduled_date") && (
-                        <TableCell className="px-3 py-3 text-[12px] text-muted-foreground">
+                        <TableCell className="px-3 py-2.5 text-[12px] text-muted-foreground">
                             {meeting.scheduled_date
                                 ? format(
                                       new Date(meeting.scheduled_date),
@@ -316,7 +330,7 @@ export function MeetingsTable({
                             )}
 
                             {/* Actions */}
-                            <TableCell className="px-3 py-3 text-right">
+                            <TableCell className="px-3 py-2.5 text-right">
                                 <MeetingRowActions
                                     meeting={meeting}
                                     workspaceSlug={workspaceSlug}

@@ -145,11 +145,12 @@ export function TasksTable({
 
     return (
         <>
+            <div className="table-shell-standard">
             <Table>
                 <TableHeader>
-                    <TableRow className="bg-muted/40 hover:bg-muted/40 border-b">
+                    <TableRow className="table-header-row-standard">
                         {/* Checkbox */}
-                        <TableHead className="w-10 px-3">
+                        <TableHead className="w-10 table-cell-check">
                             <Checkbox
                                 checked={allSelected}
                                 onCheckedChange={() => onToggleAllRows?.()}
@@ -263,9 +264,10 @@ export function TasksTable({
                         tasks.map((task) => (
                             <TableRow key={task.id} className="group">
                                 {/* Checkbox */}
-                                <TableCell className="px-3">
+                                <TableCell className="table-cell-check">
                                     <Checkbox
                                         checked={selectedRows.has(task.id)}
+                                        className="opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100 data-[state=checked]:opacity-100"
                                         onCheckedChange={() =>
                                             onToggleRow?.(task.id)
                                         }
@@ -274,7 +276,7 @@ export function TasksTable({
 
                                 {/* Title */}
                                 {!hiddenColumns.has("title") && (
-                                    <TableCell className="font-medium px-3">
+                                    <TableCell className="table-cell-title">
                                         <button
                                             onClick={() => onViewTask?.(task)}
                                             className="hover:underline text-left"
@@ -293,28 +295,28 @@ export function TasksTable({
 
                                 {/* Status */}
                                 {!hiddenColumns.has("status") && (
-                                    <TableCell className="px-3 text-sm text-muted-foreground">
+                                    <TableCell className="table-cell-meta">
                                         {formatLabel(task.status)}
                                     </TableCell>
                                 )}
 
                                 {/* Priority */}
                                 {!hiddenColumns.has("priority") && (
-                                    <TableCell className="px-3 text-sm text-muted-foreground">
+                                    <TableCell className="table-cell-meta">
                                         {task.priority ? formatLabel(task.priority) : "—"}
                                     </TableCell>
                                 )}
 
                                 {/* Assignee */}
                                 {!hiddenColumns.has("assignee") && (
-                                    <TableCell className="px-3 text-sm text-muted-foreground">
+                                    <TableCell className="table-cell-meta">
                                         {task.assignee?.full_name || "—"}
                                     </TableCell>
                                 )}
 
                                 {/* Due Date */}
                                 {!hiddenColumns.has("due_date") && (
-                                    <TableCell className="px-3 text-muted-foreground">
+                                    <TableCell className="table-cell-meta">
                                         {task.due_date
                                             ? format(
                                                   new Date(task.due_date),
@@ -325,7 +327,7 @@ export function TasksTable({
                                 )}
 
                                 {/* Actions */}
-                                <TableCell className="px-3 text-right">
+                                <TableCell className="table-cell-actions">
                                     <DropdownMenu>
                                         <DropdownMenuTrigger asChild>
                                             <Button
@@ -367,6 +369,7 @@ export function TasksTable({
                     )}
                 </TableBody>
             </Table>
+            </div>
 
             {/* Delete confirmation dialog */}
             <AlertDialog
