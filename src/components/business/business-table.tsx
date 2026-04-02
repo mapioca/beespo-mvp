@@ -9,7 +9,6 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
-import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
     DropdownMenu,
@@ -28,10 +27,12 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { MoreHorizontal, Eye, Trash2, Briefcase } from "lucide-react"
+import { Eye, Trash2, Briefcase } from "lucide-react"
 import { format } from "date-fns"
 import { DataTableColumnHeader } from "@/components/ui/data-table-header"
 import type { BusinessItemDetails } from "@/lib/business-script-generator"
+import { TableRowActionTrigger } from "@/components/ui/table-row-action-trigger"
+import { StatusIndicator } from "@/components/ui/status-indicator"
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -79,6 +80,11 @@ const CATEGORY_OPTIONS = [
 
 function formatCategory(category: string): string {
     return category.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())
+}
+
+const STATUS_TONES: Record<string, "neutral" | "info" | "success" | "warning" | "danger"> = {
+    pending: "warning",
+    completed: "neutral",
 }
 
 // ── Props ───────────────────────────────────────────────────────────────────
@@ -344,9 +350,10 @@ export function BusinessTable({
                                 {/* Status */}
                                 {!hiddenColumns.has("status") && (
                                     <TableCell className="table-cell-meta capitalize">
-                                        {item.status === "pending"
-                                            ? "Pending"
-                                            : "Completed"}
+                                        <StatusIndicator
+                                            label={item.status === "pending" ? "Pending" : "Completed"}
+                                            tone={STATUS_TONES[item.status] || "neutral"}
+                                        />
                                     </TableCell>
                                 )}
 
@@ -366,13 +373,7 @@ export function BusinessTable({
                                 <TableCell className="table-cell-actions">
                                     <DropdownMenu>
                                         <DropdownMenuTrigger asChild>
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                                            >
-                                                <MoreHorizontal className="h-4 w-4 stroke-[1.6]" />
-                                            </Button>
+                                            <TableRowActionTrigger />
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent align="end">
                                             <DropdownMenuItem

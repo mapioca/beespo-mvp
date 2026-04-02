@@ -18,6 +18,7 @@ import { MeetingRowActions } from "./meeting-row-actions"
 import { MeetingShareBadge } from "./meeting-share-badge"
 import { ShareDialog } from "@/components/conduct/share-dialog"
 import { ZoomIcon } from "@/components/ui/zoom-icon"
+import { StatusIndicator } from "@/components/ui/status-indicator"
 import { Database } from "@/types/database"
 
 // ── Types ───────────────────────────────────────────────────────────────────
@@ -57,11 +58,11 @@ function formatLabel(value: string): string {
     return value.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())
 }
 
-const STATUS_DOT_STYLES: Record<string, string> = {
-    scheduled: "bg-blue-500/70",
-    in_progress: "bg-emerald-500/80",
-    completed: "bg-zinc-500/70",
-    cancelled: "bg-rose-500/80",
+const STATUS_TONES: Record<string, "neutral" | "info" | "success" | "warning" | "danger"> = {
+    scheduled: "info",
+    in_progress: "success",
+    completed: "neutral",
+    cancelled: "danger",
 }
 
 // ── Props ───────────────────────────────────────────────────────────────────
@@ -141,10 +142,10 @@ export function MeetingsTable({
 
     return (
         <>
-        <div className="rounded-xl border-y border-border/60 bg-background/80 shadow-[0_1px_0_rgba(15,23,42,0.04)] overflow-hidden">
+        <div className="table-shell-standard">
         <Table className="text-[13px]">
             <TableHeader>
-                <TableRow className="bg-muted/25 hover:bg-muted/25 border-b border-border/60">
+                <TableRow className="table-header-row-standard">
                     {/* Checkbox */}
                     <TableHead className="w-10 px-3 py-2">
                         <Checkbox
@@ -201,7 +202,7 @@ export function MeetingsTable({
                             selectedFilters={selectedStatuses}
                             onFilterToggle={onStatusToggle}
                             onHide={() => onHideColumn?.("status")}
-                            className="w-[160px]"
+                            className="w-[148px]"
                         />
                     )}
 
@@ -214,7 +215,7 @@ export function MeetingsTable({
                             onSortAsc={() => onSort?.("scheduled_date", "asc")}
                             onSortDesc={() => onSort?.("scheduled_date", "desc")}
                             onHide={() => onHideColumn?.("scheduled_date")}
-                            className="w-[180px]"
+                            className="w-[168px]"
                         />
                     )}
 
@@ -244,7 +245,8 @@ export function MeetingsTable({
                     meetings.map((meeting) => (
                         <TableRow
                             key={meeting.id}
-                            className="group transition-colors hover:bg-[hsl(var(--table-row-hover))]"
+                            data-state={selectedRows.has(meeting.id) ? "selected" : undefined}
+                            className="group transition-[background-color,box-shadow] duration-150 ease-out hover:bg-[hsl(var(--table-row-hover))] hover:shadow-[inset_0_0_0_1px_hsl(var(--table-shell-border)/0.28)] data-[state=selected]:bg-[hsl(var(--table-row-selected))] data-[state=selected]:shadow-[inset_0_0_0_1px_hsl(var(--table-shell-border)/0.4)]"
                         >
                             {/* Checkbox */}
                             <TableCell className="px-3 py-2.5">
@@ -259,11 +261,11 @@ export function MeetingsTable({
 
                             {/* Title */}
                             {!hiddenColumns.has("title") && (
-                        <TableCell className="font-medium px-3 py-2.5 text-[13px]">
+                        <TableCell className="table-cell-title">
                             <div className="flex items-center gap-1.5">
                                 <Link
                                     href={`/meetings/${meeting.id}`}
-                                    className="text-[13px] font-semibold text-foreground hover:underline underline-offset-2"
+                                    className="text-[13px] font-semibold text-foreground hover:text-foreground/90 hover:underline underline-offset-2 transition-colors"
                                 >
                                     {meeting.title}
                                 </Link>
@@ -295,7 +297,7 @@ export function MeetingsTable({
 
                             {/* Template */}
                             {!hiddenColumns.has("template") && (
-                        <TableCell className="px-3 py-2.5 text-[12px] text-muted-foreground">
+                        <TableCell className="table-cell-meta text-[11.5px] text-foreground/56">
                             {meeting.templates?.name || (
                                 <span className="italic">
                                     No Template
@@ -306,20 +308,18 @@ export function MeetingsTable({
 
                             {/* Status */}
                             {!hiddenColumns.has("status") && (
-                        <TableCell className="px-3 py-2.5 text-[12px] text-muted-foreground capitalize">
-                            <span className="inline-flex items-center gap-2">
-                                <span
-                                    className={`h-1.5 w-1.5 rounded-full ${STATUS_DOT_STYLES[meeting.status] || "bg-muted-foreground/50"}`}
-                                    aria-hidden
-                                />
-                                <span>{formatLabel(meeting.status)}</span>
-                            </span>
+                        <TableCell className="table-cell-meta !px-2 capitalize">
+                            <StatusIndicator
+                                label={formatLabel(meeting.status)}
+                                tone={STATUS_TONES[meeting.status] || "neutral"}
+                                className="text-[11.5px] text-foreground/66"
+                            />
                         </TableCell>
                             )}
 
                             {/* Scheduled Date */}
                             {!hiddenColumns.has("scheduled_date") && (
-                        <TableCell className="px-3 py-2.5 text-[12px] text-muted-foreground">
+                        <TableCell className="table-cell-meta !px-2 text-[11.5px] text-foreground/56">
                             {meeting.scheduled_date
                                 ? format(
                                       new Date(meeting.scheduled_date),
@@ -330,7 +330,7 @@ export function MeetingsTable({
                             )}
 
                             {/* Actions */}
-                            <TableCell className="px-3 py-2.5 text-right">
+                            <TableCell className="table-cell-actions">
                                 <MeetingRowActions
                                     meeting={meeting}
                                     workspaceSlug={workspaceSlug}

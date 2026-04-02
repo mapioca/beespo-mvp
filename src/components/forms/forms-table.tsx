@@ -9,7 +9,6 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
-import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
     DropdownMenu,
@@ -28,11 +27,13 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { FileText, MoreHorizontal, BarChart2, ExternalLink, Trash2 } from "lucide-react"
+import { FileText, BarChart2, ExternalLink, Trash2 } from "lucide-react"
 import { format } from "date-fns"
 import { DataTableColumnHeader } from "@/components/ui/data-table-header"
 import { useState } from "react"
 import type { Form } from "@/types/form-types"
+import { TableRowActionTrigger } from "@/components/ui/table-row-action-trigger"
+import { StatusIndicator } from "@/components/ui/status-indicator"
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -45,6 +46,11 @@ const STATUS_OPTIONS = [
     { value: "published", label: "Published" },
     { value: "draft", label: "Draft" },
 ]
+
+const STATUS_TONES: Record<string, "neutral" | "info" | "success" | "warning" | "danger"> = {
+    published: "success",
+    draft: "neutral",
+}
 
 // ── Props ─────────────────────────────────────────────────────────────────────
 
@@ -247,7 +253,10 @@ export function FormsTable({
                                     {/* Status */}
                                     {!hiddenColumns.has("status") && (
                                         <TableCell className="table-cell-meta capitalize">
-                                            {form.is_published ? "Published" : "Draft"}
+                                            <StatusIndicator
+                                                label={form.is_published ? "Published" : "Draft"}
+                                                tone={form.is_published ? STATUS_TONES.published : STATUS_TONES.draft}
+                                            />
                                         </TableCell>
                                     )}
 
@@ -276,13 +285,7 @@ export function FormsTable({
                                     <TableCell className="table-cell-actions">
                                         <DropdownMenu>
                                             <DropdownMenuTrigger asChild>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                                                >
-                                                    <MoreHorizontal className="h-4 w-4 stroke-[1.6]" />
-                                                </Button>
+                                                <TableRowActionTrigger />
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end">
                                                 <DropdownMenuItem asChild>

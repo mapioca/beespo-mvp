@@ -9,7 +9,6 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
-import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
     DropdownMenu,
@@ -28,9 +27,11 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { MoreHorizontal, Eye, Trash2, CheckSquare } from "lucide-react"
+import { Eye, Trash2, CheckSquare } from "lucide-react"
 import { format } from "date-fns"
 import { DataTableColumnHeader } from "@/components/ui/data-table-header"
+import { TableRowActionTrigger } from "@/components/ui/table-row-action-trigger"
+import { StatusIndicator } from "@/components/ui/status-indicator"
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -71,6 +72,13 @@ const PRIORITY_OPTIONS = [
 
 function formatLabel(value: string): string {
     return value.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())
+}
+
+const STATUS_TONES: Record<string, "neutral" | "info" | "success" | "warning" | "danger"> = {
+    pending: "warning",
+    in_progress: "info",
+    completed: "neutral",
+    cancelled: "danger",
 }
 
 // ── Props ───────────────────────────────────────────────────────────────────
@@ -296,7 +304,10 @@ export function TasksTable({
                                 {/* Status */}
                                 {!hiddenColumns.has("status") && (
                                     <TableCell className="table-cell-meta">
-                                        {formatLabel(task.status)}
+                                        <StatusIndicator
+                                            label={formatLabel(task.status)}
+                                            tone={STATUS_TONES[task.status] || "neutral"}
+                                        />
                                     </TableCell>
                                 )}
 
@@ -330,13 +341,7 @@ export function TasksTable({
                                 <TableCell className="table-cell-actions">
                                     <DropdownMenu>
                                         <DropdownMenuTrigger asChild>
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                                            >
-                                                <MoreHorizontal className="h-4 w-4" />
-                                            </Button>
+                                            <TableRowActionTrigger />
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent align="end">
                                             <DropdownMenuItem

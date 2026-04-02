@@ -9,7 +9,6 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
-import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
     DropdownMenu,
@@ -29,7 +28,6 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import {
-    MoreHorizontal,
     Eye,
     Trash2,
     Users,
@@ -41,6 +39,7 @@ import {
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
 import { DataTableColumnHeader } from "@/components/ui/data-table-header"
+import { TableRowActionTrigger } from "@/components/ui/table-row-action-trigger"
 import {
     getParticipantHistory,
     getSpeakingAssignments,
@@ -309,13 +308,7 @@ export function ParticipantsTable({
                                         >
                                             <DropdownMenu>
                                                 <DropdownMenuTrigger asChild>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                                                    >
-                                                        <MoreHorizontal className="h-4 w-4 stroke-[1.6]" />
-                                                    </Button>
+                                                    <TableRowActionTrigger />
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end">
                                                     <DropdownMenuItem

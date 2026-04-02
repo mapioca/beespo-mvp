@@ -9,7 +9,6 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
-import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
     DropdownMenu,
@@ -28,9 +27,11 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { Megaphone, MoreHorizontal, Eye, Trash2 } from "lucide-react"
+import { Megaphone, Eye, Trash2 } from "lucide-react"
 import { format } from "date-fns"
 import { DataTableColumnHeader } from "@/components/ui/data-table-header"
+import { TableRowActionTrigger } from "@/components/ui/table-row-action-trigger"
+import { StatusIndicator } from "@/components/ui/status-indicator"
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -70,6 +71,12 @@ const PRIORITY_OPTIONS = [
 
 function formatStatus(status: string): string {
     return status.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())
+}
+
+const STATUS_TONES: Record<string, "neutral" | "info" | "success" | "warning" | "danger"> = {
+    draft: "neutral",
+    active: "success",
+    stopped: "danger",
 }
 
 // ── Props ───────────────────────────────────────────────────────────────────
@@ -306,9 +313,10 @@ export function AnnouncementsTable({
                                 {/* Status */}
                                 {!hiddenColumns.has("status") && (
                                     <TableCell className="table-cell-meta capitalize">
-                                        {formatStatus(
-                                            announcement.status
-                                        )}
+                                        <StatusIndicator
+                                            label={formatStatus(announcement.status)}
+                                            tone={STATUS_TONES[announcement.status] || "neutral"}
+                                        />
                                     </TableCell>
                                 )}
 
@@ -330,13 +338,7 @@ export function AnnouncementsTable({
                                 <TableCell className="table-cell-actions">
                                     <DropdownMenu>
                                         <DropdownMenuTrigger asChild>
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                                            >
-                                                <MoreHorizontal className="h-4 w-4 stroke-[1.6]" />
-                                            </Button>
+                                            <TableRowActionTrigger />
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent align="end">
                                             <DropdownMenuItem

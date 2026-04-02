@@ -122,14 +122,14 @@
     --menu-icon: 0 0% 40%;
     --menu-hover: 0 0% 96%;
     --menu-separator: 0 0% 92%;
-    --table-row-hover: 0 0% 97.2%;
-    --table-row-selected: 0 0% 92%;
+    --table-row-hover: 0 0% 97.8%;
+    --table-row-selected: 0 0% 97.3%;
     --table-filter-hover: 0 0% 94%;
     --table-filter-active: 0 0% 92%;
     --table-shell-bg: 0 0% 100%;
     --table-shell-border: 0 0% 89%;
     --table-shell-shadow: 0 1px 0 rgba(15,23,42,0.04);
-    --table-row-divider: 0 0% 89%;
+    --table-row-divider: 0 0% 91%;
     --table-header-bg: 0 0% 95%;
     --table-header-border: 0 0% 89%;
     --table-head-height: 2.5rem;
@@ -138,10 +138,12 @@
     --table-header-font-size: 11px;
     --table-body-font-size: 13px;
     --table-meta-font-size: 12px;
-    --chip-bg: 0 0% 100%;
-    --chip-border: 0 0% 86%;
+    --chip-bg: 0 0% 98.8%;
+    --chip-border: 0 0% 90%;
     --chip-text: 0 0% 22%;
-    --chip-active-bg: 0 0% 88%;
+    --chip-hover-bg: 0 0% 97%;
+    --chip-active-bg: 0 0% 92%;
+    --chip-active-border: 0 0% 82%;
     --chip-active-text: 0 0% 10%;
     --destructive: 0 84% 60%; /* Error red - minimal color */
     --destructive-foreground: 0 0% 100%;
@@ -262,8 +264,8 @@
     --menu-icon: 0 0% 65%;
     --menu-hover: 0 0% 16%;
     --menu-separator: 0 0% 22%;
-    --table-row-hover: 220 10% 12%;
-    --table-row-selected: 220 10% 18%;
+    --table-row-hover: 220 10% 12.5%;
+    --table-row-selected: 220 10% 20%;
     --table-filter-hover: 220 10% 14%;
     --table-filter-active: 220 10% 18%;
     --table-shell-bg: 220 12% 10%;
@@ -281,7 +283,9 @@
     --chip-bg: 220 10% 14%;
     --chip-border: 220 10% 24%;
     --chip-text: 220 12% 88%;
-    --chip-active-bg: 220 12% 20%;
+    --chip-hover-bg: 220 11% 18%;
+    --chip-active-bg: 220 12% 22%;
+    --chip-active-border: 220 10% 34%;
     --chip-active-text: 0 0% 98%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 0%;
