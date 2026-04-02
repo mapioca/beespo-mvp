@@ -9,7 +9,6 @@ interface ProgramHeaderProps {
     time: string;
     variant?: "standalone" | "embedded";
     dateFormat?: "long" | "medium" | "short";
-    titleCase?: "title" | "uppercase";
 }
 
 function formatTime12h(time24: string): string {
@@ -19,7 +18,7 @@ function formatTime12h(time24: string): string {
     return `${displayHours}:${minutes.toString().padStart(2, "0")} ${period}`;
 }
 
-export function ProgramHeader({ title, date, time, dateFormat = "long", titleCase = "title" }: ProgramHeaderProps) {
+export function ProgramHeader({ title, date, time, dateFormat = "long" }: ProgramHeaderProps) {
     const dateStr = format(
         date,
         dateFormat === "short" ? "M/d/yy" : dateFormat === "medium" ? "MMM d, yyyy" : "EEEE, MMMM d, yyyy"

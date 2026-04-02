@@ -134,7 +134,7 @@ export function NotebookLibrary() {
         toast.success("Notebook renamed");
     };
 
-    const handleDeleteNotebook = async (id: string, _title: string) => {
+    const handleDeleteNotebook = async (id: string) => {
         const notebook = notebooks.find((item) => item.id === id);
         if (!notebook) return;
         setDeleteNotebook(notebook);

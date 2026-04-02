@@ -35,7 +35,7 @@ export function TemplatePreviewDialog({ template, open, onOpenChange, workspaceI
   const isCreatorOwnedOfficial = isBeespo && template.created_by === currentUserId;
   const authorName = isBeespo ? "Beespo Team" : (template.author?.full_name ?? "Community Member");
   const tags = (template.tags as string[] | null) ?? [];
-  const totalDuration = (template.items ?? []).reduce((acc, item) => acc + (item.duration_minutes ?? 0), 0);
+
   const itemCount = template.items?.length ?? 0;
   const ownerLabel = isBeespo ? "Beespo" : authorName;
 

@@ -235,7 +235,7 @@ export function CommandPalette() {
       toast.error("Not authenticated. Please log in again.");
       return null;
     }
-    const { data: profile } = await (supabase.from("profiles") as any)
+    const { data: profile } = await (supabase.from("profiles") as ReturnType<typeof supabase.from>)
       .select("workspace_id, role")
       .eq("id", user.id)
       .single();
@@ -262,16 +262,15 @@ export function CommandPalette() {
         const scheduledDate = new Date(meetingDate);
         scheduledDate.setHours(hours, minutes);
         const { supabase } = ctx;
-        const agendaJson: any[] = [];
-        const { error } = await (supabase as any).rpc("create_meeting_with_agenda", {
+        const agendaJson: Record<string, unknown>[] = [];
+        const { error } = await (supabase.rpc as unknown as (name: string, args: Record<string, unknown>) => Promise<{ error: { code?: string; message?: string } | null }>)("create_meeting_with_agenda", {
           p_template_id: null,
           p_title: meetingTitle.trim(),
           p_scheduled_date: scheduledDate.toISOString(),
           p_agenda_items: agendaJson,
         });
         if (error && error.code === "PGRST202") {
-          const { error: fallbackError } = await (supabase as any).rpc(
-            "create_meeting_from_template",
+          const { error: fallbackError } = await (supabase.rpc as unknown as (name: string, args: Record<string, unknown>) => Promise<{ error: { code?: string; message?: string } | null }>)("create_meeting_from_template",
             {
               p_template_id: null,
               p_title: meetingTitle.trim(),
@@ -307,8 +306,7 @@ export function CommandPalette() {
           toast.error("Only leaders and admins can create discussions.");
           return;
         }
-        const { error } = await (supabase as any)
-          .from("discussions")
+        const { error } = await (supabase.from("discussions") as ReturnType<typeof supabase.from>)
           .insert({
             title: discussionTitle.trim(),
             description: discussionDescription.trim(),
@@ -339,8 +337,7 @@ export function CommandPalette() {
           toast.error("Only leaders and admins can create business items.");
           return;
         }
-        const { error } = await (supabase as any)
-          .from("business_items")
+        const { error } = await (supabase.from("business_items") as ReturnType<typeof supabase.from>)
           .insert({
             person_name: businessPerson.trim(),
             position_calling: businessCalling.trim() || null,
@@ -370,8 +367,7 @@ export function CommandPalette() {
           toast.error("Only leaders and admins can create announcements.");
           return;
         }
-        const { error } = await (supabase as any)
-          .from("announcements")
+        const { error } = await (supabase.from("announcements") as ReturnType<typeof supabase.from>)
           .insert({
             title: announcementTitle.trim(),
             content: announcementContent.trim(),
@@ -481,8 +477,7 @@ export function CommandPalette() {
         if (!ctx) return;
         const { supabase, user, profile } = ctx;
         const coverStyle = NOTEBOOK_COVERS[0]?.id ?? "classic";
-        const { error } = await (supabase as any)
-          .from("notebooks")
+        const { error } = await (supabase.from("notebooks") as ReturnType<typeof supabase.from>)
           .insert({
             title: notebookTitle.trim(),
             cover_style: coverStyle,

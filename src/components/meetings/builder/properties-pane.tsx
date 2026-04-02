@@ -213,7 +213,7 @@ export function PropertiesPane({
     const [showChorister, setShowChorister] = useState(false);
     const [showPianist, setShowPianist] = useState(false);
     const [showMeetingNotes, setShowMeetingNotes] = useState(false);
-    const hasNotes = !!meetingNotes;
+
     const sectionHeaderClass =
         "flex items-center gap-1 text-builder-xs font-medium text-muted-foreground px-1.5 py-0.5 rounded-md leading-none hover:text-foreground hover:bg-control-hover focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-foreground/15 w-full justify-start text-left";
     const propertyValueClass =

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import {
     ArrowLeftRight,
     Link,
@@ -138,6 +138,11 @@ export function MeetingContextBar({
     const [deviceMenuOpen, setDeviceMenuOpen] = useState(false);
     const [isMac, setIsMac] = useState(false);
 
+    const openSaveAsNew = useCallback(() => {
+        setNewTitle(title ? `${title} (Copy)` : "");
+        setSaveAsNewOpen(true);
+    }, [title]);
+
     useEffect(() => {
         if (typeof navigator === "undefined") return;
         const platform = navigator.platform || "";
@@ -199,7 +204,7 @@ export function MeetingContextBar({
 
         window.addEventListener("keydown", handleKeyDown);
         return () => window.removeEventListener("keydown", handleKeyDown);
-    }, [isCreating, isValid, onSave, onSaveAsTemplate]);
+    }, [isCreating, isValid, onSave, onSaveAsTemplate, openSaveAsNew]);
 
     const handleCopyLink = async () => {
         const url = initialMeetingId
@@ -257,10 +262,7 @@ export function MeetingContextBar({
         }
     };
 
-    const openSaveAsNew = () => {
-        setNewTitle(title ? `${title} (Copy)` : "");
-        setSaveAsNewOpen(true);
-    };
+
 
     const handleSaveAsNew = async () => {
         const trimmed = newTitle.trim();

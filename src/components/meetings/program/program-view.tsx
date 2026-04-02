@@ -22,7 +22,6 @@ export function ProgramView({
     showDurations = true,
     showIcons = true,
     dateFormat = "long",
-    titleCase = "title",
     className,
 }: ProgramViewProps) {
     const paddingClass = density === "compact" ? "px-5 py-6" : "px-6 py-7";
@@ -43,7 +42,6 @@ export function ProgramView({
                     time={data.time}
                     variant={variant}
                     dateFormat={dateFormat}
-                    titleCase={titleCase}
                 />
 
                 {showRoles && <ProgramRolesGrid roles={data.roles} />}
