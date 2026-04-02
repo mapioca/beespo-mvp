@@ -51,7 +51,7 @@ const navSections: NavSection[] = [
           { href: "/meetings/announcements", icon: Megaphone, label: "Announcements" },
           { href: "/meetings/discussions", icon: MessagesSquare, label: "Discussions" },
           { href: "/meetings/directory", icon: BookUser, label: "Directory" },
-          { href: "/templates/library", icon: Library, label: "Library" },
+          { href: "/templates/library", icon: Library, label: "Templates" },
         ]
       },
       { href: "/callings", icon: HandHeart, label: "Callings" },

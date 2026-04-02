@@ -5,11 +5,14 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { getCoverById } from "@/lib/notebooks/notebook-covers";
+import { Breadcrumbs } from "@/components/dashboard/breadcrumbs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-    ChevronRight,
-    Library,
+    ArrowRight,
+    Book,
+    FilePlusCorner,
+    FileText,
     Plus,
     MoreHorizontal,
     Edit2,
@@ -174,126 +177,168 @@ export default function NotebookViewPage({ params }: NotebookViewPageProps) {
     }
 
     return (
-        <div className="flex flex-col h-full bg-muted/20">
-            {/* Header with cover accent */}
+        <div className="flex h-full flex-col bg-white">
+            <Breadcrumbs
+                className="rounded-none border-b border-border/60 bg-white px-4 py-1.5 ring-0"
+                items={[
+                    { label: "Data", iconType: "database" },
+                    { label: "Notebooks", href: "/notebooks", iconType: "notebook" },
+                    { label: notebook.title, iconType: "notebook" },
+                ]}
+            />
+
             <div
-                className="flex-shrink-0 p-6 border-b border-border/60 bg-background/90"
+                className="sticky top-0 z-10 border-b border-border/55 bg-white/95 backdrop-blur-xl"
                 style={{
-                    background: `linear-gradient(to bottom, ${cover.gradient.match(/\#[0-9a-fA-F]{6}/)?.[0]}12, transparent)`,
+                    backgroundImage: `linear-gradient(180deg, ${cover.gradient.match(/\#[0-9a-fA-F]{6}/)?.[0] ?? "#f5efe7"}18 0%, rgba(255,255,255,0.96) 58%, rgba(255,255,255,0.95) 100%)`,
                 }}
             >
-                {/* Breadcrumb */}
-                <nav className="flex items-center gap-1 text-sm text-muted-foreground mb-4">
-                    <Link
-                        href="/notebooks"
-                        className="flex items-center gap-1 hover:text-foreground transition-colors"
-                    >
-                        <Library className="w-4 h-4 stroke-[1.6]" />
-                        <span>Library</span>
-                    </Link>
-                    <ChevronRight className="w-4 h-4 stroke-[1.6]" />
-                    <span className="text-foreground font-medium">{notebook.title}</span>
-                </nav>
+                <div className="mx-auto flex w-full max-w-[1500px] flex-col gap-5 px-5 py-5 sm:px-6 lg:px-8">
+                    <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+                        <div className="max-w-3xl">
+                            <div className="mb-3 flex items-center gap-2">
+                                <span className="inline-flex items-center rounded-full border border-border/60 bg-control px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                                    Notebook
+                                </span>
+                                <span className="inline-flex items-center rounded-full border border-border/60 bg-white px-2.5 py-1 text-[12px] font-medium text-foreground/72">
+                                    {notes.length} note{notes.length !== 1 ? "s" : ""}
+                                </span>
+                            </div>
 
-                {/* Title & Actions */}
-                <div className="flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-3">
-                        {/* Mini cover indicator */}
-                        <div
-                            className="w-8 h-10 rounded shadow-sm flex-shrink-0"
-                            style={{ background: cover.gradient }}
-                        />
+                                <div className="min-w-0">
+                                    {isEditing ? (
+                                        <div className="flex items-center gap-3">
+                                            <Book className="h-8 w-8 text-muted-foreground shrink-0" />
+                                            <Input
+                                                value={editTitle}
+                                                onChange={(e) => setEditTitle(e.target.value)}
+                                                onBlur={handleSaveTitle}
+                                                onKeyDown={(e) => e.key === "Enter" && handleSaveTitle()}
+                                                className="h-auto max-w-xl rounded-2xl border-border/60 bg-white/90 px-4 py-3 text-[28px] font-semibold tracking-[-0.04em] shadow-[0_1px_0_rgba(15,23,42,0.04)] focus-visible:border-foreground/30 focus-visible:ring-0 sm:text-[34px]"
+                                                autoFocus
+                                            />
+                                        </div>
+                                    ) : (
+                                        <div className="flex items-center gap-3">
+                                            <Book className="h-8 w-8 text-foreground/80 shrink-0" />
+                                            <h1 className="text-[30px] font-semibold tracking-[-0.04em] text-foreground sm:text-[36px]">
+                                                {notebook.title}
+                                            </h1>
+                                        </div>
+                                    )}
 
-                        {isEditing ? (
-                            <Input
-                                value={editTitle}
-                                onChange={(e) => setEditTitle(e.target.value)}
-                                onBlur={handleSaveTitle}
-                                onKeyDown={(e) => e.key === "Enter" && handleSaveTitle()}
-                                className="text-2xl font-bold h-auto py-1 max-w-md bg-transparent border-border/60 focus-visible:ring-0 focus-visible:border-foreground/30"
-                                autoFocus
-                            />
-                        ) : (
-                            <h1 className="text-2xl font-bold tracking-tight">
-                                {notebook.title}
-                            </h1>
-                        )}
-                    </div>
+                                    <p className="mt-3 max-w-2xl text-[15px] leading-7 text-muted-foreground">
+                                        {notes.length === 0
+                                            ? "Capture drafts, meeting follow-ups, and shared context in one focused notebook."
+                                            : "Open a note to keep refining your thinking, references, and working documents in one place."}
+                                    </p>
+                                </div>
+                        </div>
 
-                    <div className="flex items-center gap-2">
-                        <Button onClick={handleCreateNote} className="bg-[hsl(var(--accent-warm))] text-foreground hover:bg-[hsl(var(--accent-warm-hover))]">
-                            <Plus className="w-4 h-4 mr-2 stroke-[1.6]" />
-                            New Note
-                        </Button>
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                            <Button
+                                onClick={handleCreateNote}
+                                className="h-11 rounded-full px-5 text-[13px] font-semibold shadow-[0_12px_28px_rgba(15,23,42,0.14)]"
+                            >
+                                <Plus className="mr-1.5 h-4 w-4 stroke-[1.8]" />
+                                New note
+                            </Button>
 
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon">
-                                    <MoreHorizontal className="w-4 h-4 stroke-[1.6]" />
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => setIsEditing(true)}>
-                                    <Edit2 className="w-4 h-4 mr-2 stroke-[1.6]" />
-                                    Rename
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                    className="text-destructive"
-                                    onClick={() => setShowDeleteDialog(true)}
-                                >
-                                    <Trash2 className="w-4 h-4 mr-2 stroke-[1.6]" />
-                                    Delete
-                                </DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-11 w-11 rounded-full border border-border/60 bg-white text-muted-foreground shadow-[0_1px_0_rgba(15,23,42,0.04)] hover:bg-control hover:text-foreground"
+                                    >
+                                        <MoreHorizontal className="h-4 w-4 stroke-[1.8]" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-44">
+                                    <DropdownMenuItem onClick={() => setIsEditing(true)}>
+                                        <Edit2 className="mr-2 h-4 w-4 stroke-[1.6]" />
+                                        Rename
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                        className="text-destructive"
+                                        onClick={() => setShowDeleteDialog(true)}
+                                    >
+                                        <Trash2 className="mr-2 h-4 w-4 stroke-[1.6]" />
+                                        Delete
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        </div>
                     </div>
                 </div>
-
-                <p className="text-sm text-muted-foreground mt-2">
-                    {notes.length} note{notes.length !== 1 ? "s" : ""}
-                </p>
             </div>
 
-            {/* Notes List */}
-            <div className="flex-1 overflow-y-auto">
-                {notes.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center h-full text-center p-8">
-                        <div className="w-16 h-16 rounded-full bg-[hsl(var(--accent-warm))] border border-border/50 flex items-center justify-center mb-4">
-                            <Plus className="w-8 h-8 text-muted-foreground stroke-[1.6]" />
-                        </div>
-                        <h3 className="text-lg font-medium mb-2">No notes yet</h3>
-                        <p className="text-sm text-muted-foreground mb-4 max-w-sm">
-                            Start writing in this notebook by creating your first note.
-                        </p>
-                        <Button onClick={handleCreateNote} className="bg-[hsl(var(--accent-warm))] text-foreground hover:bg-[hsl(var(--accent-warm-hover))]">
-                            <Plus className="w-4 h-4 mr-2 stroke-[1.6]" />
-                            Create First Note
-                        </Button>
-                    </div>
-                ) : (
-                    <div className="p-4 space-y-2">
-                        {notes.map((note) => (
-                            <Link
-                                key={note.id}
-                                href={`/notebooks/${notebook.id}/notes/${note.id}`}
-                                className={cn(
-                                    "block p-4 rounded-lg border border-border/60 bg-background/80 hover:bg-[hsl(var(--accent-warm)/0.5)] transition-colors"
-                                )}
-                            >
-                                <h3 className="font-medium truncate">
-                                    {note.title || "Untitled Note"}
+            <div className="flex min-h-0 flex-1 overflow-visible bg-white px-5 pb-8 pt-6 sm:px-6 lg:px-8">
+                <div className="mx-auto flex min-h-0 w-full max-w-[1500px]">
+                    <div className="min-h-0 flex-1">
+                        {notes.length === 0 ? (
+                            <div className="flex h-full min-h-[460px] flex-col items-center justify-center rounded-[28px] bg-control/18 px-8 py-12 text-center">
+                                <FilePlusCorner className="mb-5 h-14 w-14 text-muted-foreground/50 stroke-[1.5]" />
+                                <h3 className="text-[24px] font-semibold tracking-[-0.03em] text-foreground">
+                                    This notebook is ready for its first note
                                 </h3>
-                                <p className="text-xs text-muted-foreground mt-1">
-                                    Updated{" "}
-                                    {new Date(note.updated_at).toLocaleDateString(undefined, {
-                                        month: "short",
-                                        day: "numeric",
-                                    })}
+                                <p className="mt-3 max-w-xl text-[14px] leading-7 text-muted-foreground">
+                                    Start with a draft, outline, or research note. Everything you add here will stay grouped together in a calmer, easier-to-scan workspace.
                                 </p>
-                            </Link>
-                        ))}
+                                <Button
+                                    onClick={handleCreateNote}
+                                    className="mt-6 h-10 rounded-full px-5 text-[13px] font-semibold shadow-[0_10px_24px_rgba(15,23,42,0.12)]"
+                                >
+                                    <Plus className="mr-1.5 h-4 w-4 stroke-[1.8]" />
+                                    Create first note
+                                </Button>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+                                {notes.map((note) => (
+                                    <Link
+                                        key={note.id}
+                                        href={`/notebooks/${notebook.id}/notes/${note.id}`}
+                                        className={cn(
+                                            "group flex min-h-[148px] flex-col rounded-[24px] border border-border/65 bg-white p-5 shadow-[0_12px_24px_rgba(15,23,42,0.05)] transition-all duration-300 ease-out hover:-translate-y-0.5 hover:border-border/80 hover:shadow-[0_18px_34px_rgba(15,23,42,0.08)]"
+                                        )}
+                                    >
+                                        <div className="flex items-start justify-between gap-4">
+                                            <div className="flex min-w-0 items-start gap-3">
+                                                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[16px] border border-border/55 bg-control/55 text-foreground/66">
+                                                    <FileText className="h-4.5 w-4.5 stroke-[1.7]" />
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-foreground/46">
+                                                        Note
+                                                    </p>
+                                                    <h3 className="mt-1 line-clamp-2 text-[20px] font-semibold leading-[1.08] tracking-[-0.03em] text-foreground">
+                                                        {note.title || "Untitled Note"}
+                                                    </h3>
+                                                </div>
+                                            </div>
+                                            <div className="shrink-0 rounded-full bg-control/75 px-2.5 py-1 text-[10px] font-semibold tracking-[0.02em] text-foreground/62">
+                                                Updated{" "}
+                                                {new Date(note.updated_at).toLocaleDateString(undefined, {
+                                                    month: "short",
+                                                    day: "numeric",
+                                                })}
+                                            </div>
+                                        </div>
+
+                                        <div className="mt-5 flex items-center justify-between border-t border-border/55 pt-4 text-[12px] text-foreground/54">
+                                            <span>Open note</span>
+                                            <span className="inline-flex items-center gap-1 font-medium text-foreground/68 transition-colors group-hover:text-foreground">
+                                                Continue
+                                                <ArrowRight className="h-3.5 w-3.5 stroke-[1.8]" />
+                                            </span>
+                                        </div>
+                                    </Link>
+                                ))}
+                            </div>
+                        )}
                     </div>
-                )}
+                </div>
             </div>
 
             {/* Delete Confirmation */}

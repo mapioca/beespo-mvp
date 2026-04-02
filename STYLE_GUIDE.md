@@ -211,6 +211,31 @@ Use the notebooks page as the canonical reference for premium object collections
 - No gray-tinted wrapper when the pattern is intended to feel editorial and premium; use white.
 - No heavy divider between the sticky top bar and the shelf wrapper when spacing can do the job better.
 
+### Collection Variant: Template Folios
+Use the Template Library as the canonical variant when the object is not a cover like a notebook, but a structured reusable artifact with internal content.
+
+- Keep the same white editorial shell, quiet chrome, black primary CTA, and ghost overflow menu from the Editorial Shelf pattern.
+- Template cards should feel like refined folios, not dashboard tiles:
+  - `rounded-[24px] border border-border/65 bg-white`
+  - restrained shadow at rest, slightly stronger on hover
+- Card internals should be grouped into calm zones:
+  - object identity row
+  - short description
+  - structure preview panel
+  - quiet metadata line
+  - single-line tag row
+  - action row
+- The structure preview panel should use a light inset surface rather than a loud sub-card:
+  - `rounded-[20px] border border-border/55 bg-control/35`
+  - sentence-case section title
+  - compact numbered rows
+  - a faint alignment rail is allowed when it helps sequential reading
+- Empty structure states should be integrated into the panel, not wrapped in an additional nested card.
+- Overflow affordances such as `+ N more agenda items` should be subtle, dashed, and link-like rather than button-heavy.
+- Filters for collection pages should read as a compact segmented control family:
+  - active: black fill with white text
+  - inactive: white fill with subtle border
+
 ## Drawer Pattern
 Use the Business Item Details drawer as the canonical drawer reference for editable side panels.
 

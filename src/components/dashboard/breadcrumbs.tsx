@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { ChevronRight, Database, Table2, BookOpen, PanelLeft } from "lucide-react"
+import { ChevronRight, Database, Table2, BookOpen, PanelLeft, Library } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { getBreadcrumbTrail, BreadcrumbItem } from "@/lib/navigation/breadcrumb-config"
 import type { ReactNode } from "react"
@@ -14,7 +14,7 @@ export interface BreadcrumbItemWithIcon extends BreadcrumbItem {
   icon?: ReactNode
 }
 
-function getIconForType(iconType?: "database" | "table" | "notebook"): ReactNode {
+function getIconForType(iconType?: "database" | "table" | "notebook" | "template"): ReactNode {
   switch (iconType) {
     case "database":
       return <Database className="h-3.5 w-3.5" />
@@ -22,6 +22,8 @@ function getIconForType(iconType?: "database" | "table" | "notebook"): ReactNode
       return <Table2 className="h-3.5 w-3.5" />
     case "notebook":
       return <BookOpen className="h-3.5 w-3.5" />
+    case "template":
+      return <Library className="h-3.5 w-3.5" />
     default:
       return null
   }

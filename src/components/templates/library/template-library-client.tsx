@@ -7,6 +7,7 @@ import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Breadcrumbs } from "@/components/dashboard/breadcrumbs";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { TemplateLibraryCard } from "./template-library-card";
@@ -35,10 +36,10 @@ import {
 } from "@/components/ui/alert-dialog";
 
 const SOURCES = [
-  { value: "all", label: "All Sources" },
+  { value: "mine", label: "My Templates" },
   { value: "beespo", label: "Beespo Official" },
   { value: "community", label: "Community" },
-  { value: "mine", label: "My Templates" },
+  { value: "all", label: "All Sources" },
 ];
 
 const COMMUNITY_LIBRARY_URL = "https://www.beespo.com/templates";
@@ -46,14 +47,15 @@ const COMMUNITY_LIBRARY_URL = "https://www.beespo.com/templates";
 interface TemplateLibraryClientProps {
   templates: LibraryTemplate[];
   workspaceId: string | null;
+  currentUserId: string;
 }
 
-export function TemplateLibraryClient({ templates, workspaceId }: TemplateLibraryClientProps) {
+export function TemplateLibraryClient({ templates, workspaceId, currentUserId }: TemplateLibraryClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const supabase = createClient();
   const [search, setSearch] = useState("");
-  const [source, setSource] = useState(() => searchParams.get("tab") === "mine" ? "mine" : "all");
+  const [source, setSource] = useState(() => searchParams.get("tab") ?? "mine");
 
   // Sync source tab when URL param changes (e.g. after clone redirect)
   useEffect(() => {
@@ -220,30 +222,37 @@ export function TemplateLibraryClient({ templates, workspaceId }: TemplateLibrar
     router.push(`/meetings/new?templateId=${template.id}`);
   };
 
+  const canUseTemplateDirectly = (template: LibraryTemplate) => {
+    const isWorkspaceOwned = workspaceId ? template.workspace_id === workspaceId : false;
+    const isCreatorOwnedOfficial = template.workspace_id === null && template.created_by === currentUserId;
+    return isWorkspaceOwned || isCreatorOwnedOfficial;
+  };
+
   const isMyTemplatesView = source === "mine";
   const isCommunityView = source === "community";
 
   return (
     <div className="flex h-full flex-col bg-white">
-      <div className="sticky top-0 z-10 bg-white backdrop-blur-xl">
-        <div className="mx-auto flex w-full max-w-[1500px] flex-col gap-5 px-5 py-5 sm:px-6 lg:px-8">
+      <Breadcrumbs className="rounded-none border-b border-border/60 bg-white px-4 py-1.5 ring-0" />
+      <div className="sticky top-0 z-10 bg-white/96 backdrop-blur-xl">
+        <div className="mx-auto flex w-full max-w-[1500px] flex-col gap-4 px-5 py-5 sm:px-6 lg:px-8">
           <div className="max-w-2xl">
-            <div className="mb-3 flex items-center gap-2">
-              <span className="inline-flex items-center rounded-full border border-border/60 bg-control px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
-                Template library
-              </span>
-              <span className="inline-flex items-center rounded-full border border-border/60 bg-white px-2.5 py-1 text-[12px] font-medium text-foreground/72">
-                {filtered.length} template{filtered.length !== 1 ? "s" : ""}
-              </span>
-            </div>
-            <h1 className="text-[30px] font-semibold tracking-[-0.04em] text-foreground sm:text-[36px]">
-              Templates that feel curated, not crowded.
-            </h1>
-            <p className="mt-3 max-w-xl text-[15px] leading-7 text-muted-foreground">
-            {isMyTemplatesView
-              ? "Your workspace templates."
-              : "Browse and import meeting templates for your organization."}
-            </p>
+              <div className="mb-3 flex items-center gap-2">
+                <span className="inline-flex items-center rounded-full border border-border/60 bg-control px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                  Template library
+                </span>
+                <span className="inline-flex items-center rounded-full border border-border/60 bg-white px-2.5 py-1 text-[12px] font-medium text-foreground/72">
+                  {filtered.length} template{filtered.length !== 1 ? "s" : ""}
+                </span>
+              </div>
+              <h1 className="text-[30px] font-semibold tracking-[-0.04em] text-foreground sm:text-[36px]">
+                Templates that feel curated, not crowded.
+              </h1>
+              <p className="mt-3 max-w-xl text-[15px] leading-7 text-muted-foreground">
+                {isMyTemplatesView
+                  ? "Your workspace templates."
+                  : "Browse and import meeting templates for your organization."}
+              </p>
           </div>
 
           <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
@@ -256,8 +265,8 @@ export function TemplateLibraryClient({ templates, workspaceId }: TemplateLibrar
                   onClick={() => setSource(s.value)}
                   className={
                     source === s.value
-                      ? "h-8 rounded-full bg-button-primary px-3.5 text-[12px] font-medium text-button-primary hover:bg-button-primary-hover"
-                      : "h-8 rounded-full px-3.5 text-[12px] font-medium text-foreground/68 hover:bg-control hover:text-foreground"
+                      ? "h-8 rounded-full bg-button-primary px-3.5 text-[12px] font-medium text-button-primary hover:bg-button-primary-hover hover:text-button-primary"
+                      : "h-8 rounded-full border border-border/60 bg-white px-3.5 text-[12px] font-medium text-foreground/68 hover:bg-control hover:text-foreground"
                   }
                 >
                   {s.label}
@@ -265,14 +274,17 @@ export function TemplateLibraryClient({ templates, workspaceId }: TemplateLibrar
               ))}
             </div>
 
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center xl:justify-end">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center xl:min-w-[520px] xl:max-w-[640px] xl:justify-end">
               {isMyTemplatesView && (
-                <Link href="/templates/new">
-                  <Button className="h-11 rounded-full px-5 text-[13px] font-semibold shadow-[0_12px_28px_rgba(15,23,42,0.14)]">
+                <Button
+                  asChild
+                  className="h-10 shrink-0 whitespace-nowrap rounded-full px-[18px] text-[13px] font-semibold shadow-[0_10px_24px_rgba(15,23,42,0.12)]"
+                >
+                  <Link href="/templates/new">
                     <Plus className="mr-1.5 h-4 w-4 stroke-[1.8]" />
                     New template
-                  </Button>
-                </Link>
+                  </Link>
+                </Button>
               )}
 
               <div className="relative min-w-[280px] flex-1 sm:min-w-[340px]">
@@ -281,7 +293,7 @@ export function TemplateLibraryClient({ templates, workspaceId }: TemplateLibrar
                   placeholder="Search templates..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="h-11 rounded-full border-border/60 bg-white pl-10 text-[14px] shadow-[0_1px_0_rgba(15,23,42,0.04)] focus-visible:ring-0 focus-visible:border-foreground/30"
+                  className="h-10 rounded-full border-border/60 bg-white pl-10 text-[14px] shadow-[0_1px_0_rgba(15,23,42,0.04)] focus-visible:ring-0 focus-visible:border-foreground/30"
                 />
               </div>
             </div>
@@ -291,69 +303,70 @@ export function TemplateLibraryClient({ templates, workspaceId }: TemplateLibrar
 
       <div className="flex min-h-0 flex-1 overflow-visible bg-white px-5 pb-8 pt-6 sm:px-6 lg:px-8">
         <div className="mx-auto flex min-h-0 w-full max-w-[1500px]">
-        <ScrollArea className="min-h-0 flex-1">
-          <div className="pt-3 pb-2">
-            {isCommunityView ? (
-              <div className="flex min-h-[420px] flex-col items-start justify-center rounded-[28px] border border-border/60 bg-control/25 px-8 py-12 shadow-[0_20px_50px_rgba(15,23,42,0.04)]">
-                <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl border border-border/60 bg-white">
-                  <Library className="h-7 w-7 text-muted-foreground stroke-[1.6]" />
+          <ScrollArea className="min-h-0 flex-1">
+            <div className="pt-4 pb-2">
+              {isCommunityView ? (
+                <div className="flex min-h-[420px] flex-col items-start justify-center rounded-[28px] border border-border/60 bg-control/25 px-8 py-12 shadow-[0_20px_50px_rgba(15,23,42,0.04)]">
+                  <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl border border-border/60 bg-white">
+                    <Library className="h-7 w-7 text-muted-foreground stroke-[1.6]" />
+                  </div>
+                  <h3 className="text-[24px] font-semibold tracking-[-0.03em] text-foreground">
+                    Explore the community template library
+                  </h3>
+                  <p className="mt-3 max-w-xl text-[14px] leading-7 text-muted-foreground">
+                    Community templates are available in our public library. Open it in a new tab to browse shared templates and bring back the ones you want to use.
+                  </p>
+                  <a
+                    href={COMMUNITY_LIBRARY_URL}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-6 inline-flex items-center gap-2 rounded-full bg-button-primary px-4 py-2 text-[13px] font-semibold text-button-primary hover:bg-button-primary-hover"
+                  >
+                    Open community library
+                    <ArrowUpRight className="h-4 w-4 stroke-[1.8]" />
+                  </a>
                 </div>
-                <h3 className="text-[24px] font-semibold tracking-[-0.03em] text-foreground">
-                  Explore the community template library
-                </h3>
-                <p className="mt-3 max-w-xl text-[14px] leading-7 text-muted-foreground">
-                  Community templates are available in our public library. Open it in a new tab to browse shared templates and bring back the ones you want to use.
-                </p>
-                <a
-                  href={COMMUNITY_LIBRARY_URL}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="mt-6 inline-flex items-center gap-2 rounded-full bg-button-primary px-4 py-2 text-[13px] font-semibold text-button-primary hover:bg-button-primary-hover"
-                >
-                  Open community library
-                  <ArrowUpRight className="h-4 w-4 stroke-[1.8]" />
-                </a>
-              </div>
-            ) : filtered.length > 0 ? (
-              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
-                {filtered.map((template) => {
-                  const isOwned = workspaceId ? template.workspace_id === workspaceId : false;
-                  return (
-                    <TemplateLibraryCard
-                      key={template.id}
-                      template={template}
-                      isOwned={isOwned}
-                      onPreview={setPreviewTemplate}
-                      onClone={handleOpenClone}
-                      onRename={isOwned ? handleOpenRename : undefined}
-                      onDelete={isOwned ? handleOpenDelete : undefined}
-                      onEdit={isOwned ? handleEditTemplate : undefined}
-                      onUse={isOwned
-                        ? () => router.push(`/meetings/new?templateId=${template.id}`)
-                        : handleClone
-                      }
-                      isCloning={cloningId === template.id}
-                    />
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center px-6 py-24 text-center">
-                <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl border border-border/60 bg-control">
-                  <FormInput className="h-7 w-7 text-muted-foreground stroke-[1.6]" />
+              ) : filtered.length > 0 ? (
+                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
+                  {filtered.map((template) => {
+                    const isOwned = workspaceId ? template.workspace_id === workspaceId : false;
+                    const shouldUseDirectly = canUseTemplateDirectly(template);
+                    return (
+                      <TemplateLibraryCard
+                        key={template.id}
+                        template={template}
+                        isOwned={isOwned}
+                        onPreview={setPreviewTemplate}
+                        onClone={handleOpenClone}
+                        onRename={isOwned ? handleOpenRename : undefined}
+                        onDelete={isOwned ? handleOpenDelete : undefined}
+                        onEdit={isOwned ? handleEditTemplate : undefined}
+                        onUse={shouldUseDirectly
+                          ? () => router.push(`/meetings/new?templateId=${template.id}`)
+                          : handleClone
+                        }
+                        isCloning={cloningId === template.id}
+                      />
+                    );
+                  })}
                 </div>
-                <h3 className="mb-2 text-[22px] font-semibold tracking-[-0.02em] text-foreground">No templates found</h3>
-                <p className="max-w-md text-[14px] leading-6 text-muted-foreground">
-                  {search
-                    ? "No templates match your search. Try a different keyword."
-                    : isMyTemplatesView
-                    ? "You haven't created any templates yet. Go to Templates to create your first one."
-                    : "No templates in this category yet. Check back later or explore other categories."}
-                </p>
-              </div>
-            )}
-          </div>
-        </ScrollArea>
+              ) : (
+                <div className="flex flex-col items-center justify-center px-6 py-24 text-center">
+                  <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl border border-border/60 bg-control">
+                    <FormInput className="h-7 w-7 text-muted-foreground stroke-[1.6]" />
+                  </div>
+                  <h3 className="mb-2 text-[22px] font-semibold tracking-[-0.02em] text-foreground">No templates found</h3>
+                  <p className="max-w-md text-[14px] leading-6 text-muted-foreground">
+                    {search
+                      ? "No templates match your search. Try a different keyword."
+                      : isMyTemplatesView
+                      ? "You haven't created any templates yet. Go to Templates to create your first one."
+                      : "No templates in this category yet. Check back later or explore other categories."}
+                  </p>
+                </div>
+              )}
+            </div>
+          </ScrollArea>
         </div>
       </div>
 
@@ -362,6 +375,7 @@ export function TemplateLibraryClient({ templates, workspaceId }: TemplateLibrar
         open={previewTemplate !== null}
         onOpenChange={(open) => { if (!open) setPreviewTemplate(null); }}
         workspaceId={workspaceId}
+        currentUserId={currentUserId}
       />
 
       <Dialog

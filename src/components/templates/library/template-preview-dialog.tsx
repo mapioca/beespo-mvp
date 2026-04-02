@@ -21,9 +21,10 @@ interface TemplatePreviewDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   workspaceId?: string | null;
+  currentUserId: string;
 }
 
-export function TemplatePreviewDialog({ template, open, onOpenChange, workspaceId }: TemplatePreviewDialogProps) {
+export function TemplatePreviewDialog({ template, open, onOpenChange, workspaceId, currentUserId }: TemplatePreviewDialogProps) {
   const router = useRouter();
   const [isCloning, setIsCloning] = useState(false);
 
@@ -31,6 +32,7 @@ export function TemplatePreviewDialog({ template, open, onOpenChange, workspaceI
 
   const isBeespo = template.workspace_id === null;
   const isOwned = workspaceId ? template.workspace_id === workspaceId : false;
+  const isCreatorOwnedOfficial = isBeespo && template.created_by === currentUserId;
   const authorName = isBeespo ? "Beespo Team" : (template.author?.full_name ?? "Community Member");
   const tags = (template.tags as string[] | null) ?? [];
   const totalDuration = (template.items ?? []).reduce((acc, item) => acc + (item.duration_minutes ?? 0), 0);
@@ -38,7 +40,7 @@ export function TemplatePreviewDialog({ template, open, onOpenChange, workspaceI
   const ownerLabel = isBeespo ? "Beespo" : authorName;
 
   const handleUse = async () => {
-    if (isOwned) {
+    if (isOwned || isCreatorOwnedOfficial) {
       onOpenChange(false);
       router.push(`/meetings/new?templateId=${template.id}`);
       return;
