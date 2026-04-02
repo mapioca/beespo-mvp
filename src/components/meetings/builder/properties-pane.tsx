@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useFormContext } from "react-hook-form";
 import { format } from "date-fns";
-import { CalendarDays, Clock, Minus, Plus } from "lucide-react";
+import { CalendarDays, Clock, Minus, Plus, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { Input } from "@/components/ui/input";
@@ -55,98 +55,113 @@ export function PropertiesPane({
     const [showPianist, setShowPianist] = useState(false);
     const [showMeetingNotes, setShowMeetingNotes] = useState(false);
     const hasNotes = !!meetingNotes;
+    const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({
+        overview: false,
+        roles: false,
+        notes: false,
+    });
 
     return (
-        <div className="h-full flex flex-col overflow-y-auto p-3 bg-background">
+        <div className="h-full flex flex-col overflow-y-auto p-3 pr-5 bg-background">
             <div className="flex-1 px-2 py-1 space-y-6">
                 {/* General Settings */}
                 <div className="space-y-2">
                     <div className="-mx-2 px-2 py-1">
-                        <h3 className="text-[12px] font-medium text-muted-foreground">
-                            Overview
-                        </h3>
-                    </div>
-
-                    <div className="space-y-1.5">
-                        <Label htmlFor="title" className="text-[11px] text-muted-foreground">Name</Label>
-                        <Input
-                            id="title"
-                            value={title}
-                            onChange={(e) => setValue("title", e.target.value, { shouldValidate: true })}
-                            onFocus={(e) => e.target.select()}
-                            placeholder="e.g. Ward Conference"
-                            className="bg-control h-8 text-sm border-control focus-visible:ring-0 focus-visible:border-foreground/30"
-                        />
-                    </div>
-
-                    <div className="space-y-1.5">
-                        <Label htmlFor="template" className="text-[11px] text-muted-foreground">Template</Label>
-                        <Select
-                            value={selectedTemplateId}
-                            onValueChange={(val) => setValue("templateId", val === "none" ? null : val, { shouldValidate: true })}
+                        <button
+                            type="button"
+                            aria-expanded={!collapsedSections.overview}
+                            onClick={() => setCollapsedSections((prev) => ({ ...prev, overview: !prev.overview }))}
+                            className="flex items-center gap-1 text-[12px] font-medium text-muted-foreground px-1.5 py-0.5 rounded-md hover:text-foreground hover:bg-control-hover focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-foreground/15 w-full justify-start text-left"
                         >
-                            <SelectTrigger id="template" className="bg-control h-8 text-sm border-control focus:ring-0 focus:border-foreground/30">
-                                <SelectValue placeholder="Select template" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="none">
-                                    <span className="text-muted-foreground">No Template</span>
-                                </SelectItem>
-                                {templates.map((t) => (
-                                    <SelectItem key={t.id} value={t.id}>
-                                        {t.name}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                            <ChevronDown className={cn("h-3.5 w-3.5 text-muted-foreground transition-transform", collapsedSections.overview ? "-rotate-90" : "rotate-0")} />
+                            Overview
+                        </button>
                     </div>
 
-                    <div className="space-y-1.5">
-                        <Label className="text-[11px] text-muted-foreground">Date</Label>
-                        <Popover>
-                            <PopoverTrigger asChild>
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    className={cn(
-                                        "w-full justify-start text-left font-normal bg-control h-8 text-sm border-control focus:ring-0 focus:border-foreground/30",
-                                        !date && "text-muted-foreground"
-                                    )}
-                                >
-                                    <CalendarDays className="mr-2 h-4 w-4" />
-                                    {date ? format(date, "MMM d, yyyy") : "Date"}
-                                </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
-                                <Calendar
-                                    mode="single"
-                                    selected={date}
-                                    onSelect={(d) => setValue("date", d, { shouldValidate: true })}
+                    {!collapsedSections.overview && (
+                        <>
+                            <div className="space-y-1.5">
+                                <Label htmlFor="title" className="text-[11px] text-muted-foreground">Name</Label>
+                                <Input
+                                    id="title"
+                                    value={title}
+                                    onChange={(e) => setValue("title", e.target.value, { shouldValidate: true })}
+                                    onFocus={(e) => e.target.select()}
+                                    placeholder="e.g. Ward Conference"
+                                    className="bg-control h-8 text-sm border-control focus-visible:ring-0 focus-visible:border-foreground/30"
                                 />
-                            </PopoverContent>
-                        </Popover>
-                    </div>
-                    <div className="space-y-1.5">
-                        <Label htmlFor="time" className="text-[11px] text-muted-foreground">Time</Label>
-                        <div className="relative">
-                            <div
-                                className="absolute left-0 top-0 bottom-0 flex items-center justify-center w-9 cursor-pointer z-10"
-                                onClick={() => {
-                                    const timeInput = document.getElementById("time") as HTMLInputElement;
-                                    timeInput?.showPicker?.();
-                                }}
-                            >
-                                <Clock className="h-4 w-4 text-muted-foreground" />
                             </div>
-                            <Input
-                                id="time"
-                                type="time"
-                                value={time}
-                                onChange={(e) => setValue("time", e.target.value, { shouldValidate: true })}
-                                className="pl-9 bg-control h-8 text-sm border-control focus-visible:ring-0 focus-visible:border-foreground/30 [&::-webkit-calendar-picker-indicator]:hidden relative z-0"
-                            />
-                        </div>
-                    </div>
+
+                            <div className="space-y-1.5">
+                                <Label htmlFor="template" className="text-[11px] text-muted-foreground">Template</Label>
+                                <Select
+                                    value={selectedTemplateId}
+                                    onValueChange={(val) => setValue("templateId", val === "none" ? null : val, { shouldValidate: true })}
+                                >
+                                    <SelectTrigger id="template" className="bg-control h-8 text-sm border-control focus:ring-0 focus:border-foreground/30">
+                                        <SelectValue placeholder="Select template" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="none">
+                                        <span className="text-muted-foreground">No Template</span>
+                                        </SelectItem>
+                                        {templates.map((t) => (
+                                            <SelectItem key={t.id} value={t.id}>
+                                                {t.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <Label className="text-[11px] text-muted-foreground">Date</Label>
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            className={cn(
+                                                "w-full justify-start text-left font-normal bg-control h-8 text-sm border-control focus:ring-0 focus:border-foreground/30",
+                                                !date && "text-muted-foreground"
+                                            )}
+                                        >
+                                            <CalendarDays className="mr-2 h-4 w-4" />
+                                            {date ? format(date, "MMM d, yyyy") : "Date"}
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0" align="start">
+                                        <Calendar
+                                            mode="single"
+                                            selected={date}
+                                            onSelect={(d) => setValue("date", d, { shouldValidate: true })}
+                                        />
+                                    </PopoverContent>
+                                </Popover>
+                            </div>
+                            <div className="space-y-1.5">
+                                <Label htmlFor="time" className="text-[11px] text-muted-foreground">Time</Label>
+                                <div className="relative">
+                                    <div
+                                        className="absolute left-0 top-0 bottom-0 flex items-center justify-center w-9 cursor-pointer z-10"
+                                        onClick={() => {
+                                            const timeInput = document.getElementById("time") as HTMLInputElement;
+                                            timeInput?.showPicker?.();
+                                        }}
+                                    >
+                                        <Clock className="h-4 w-4 text-muted-foreground" />
+                                    </div>
+                                    <Input
+                                        id="time"
+                                        type="time"
+                                        value={time}
+                                        onChange={(e) => setValue("time", e.target.value, { shouldValidate: true })}
+                                        className="pl-9 bg-control h-8 text-sm border-control focus-visible:ring-0 focus-visible:border-foreground/30 [&::-webkit-calendar-picker-indicator]:hidden relative z-0"
+                                    />
+                                </div>
+                            </div>
+                        </>
+                    )}
 
 
 
@@ -155,11 +170,18 @@ export function PropertiesPane({
                 {/* Roles */}
                 <div className="space-y-2">
                     <div className="-mx-2 px-2 py-1">
-                        <h3 className="text-[12px] font-medium text-muted-foreground">
+                        <button
+                            type="button"
+                            aria-expanded={!collapsedSections.roles}
+                            onClick={() => setCollapsedSections((prev) => ({ ...prev, roles: !prev.roles }))}
+                            className="flex items-center gap-1 text-[12px] font-medium text-muted-foreground px-1.5 py-0.5 rounded-md hover:text-foreground hover:bg-control-hover focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-foreground/15 w-full justify-start text-left"
+                        >
+                            <ChevronDown className={cn("h-3.5 w-3.5 text-muted-foreground transition-transform", collapsedSections.roles ? "-rotate-90" : "rotate-0")} />
                             Roles
-                        </h3>
+                        </button>
                     </div>
-                    <div className="grid grid-cols-1 divide-y divide-border/40 pt-1">
+                    {!collapsedSections.roles && (
+                        <div className="grid grid-cols-1 divide-y divide-border/40 pt-1">
                         {/* Presiding */}
                         <div className="py-2.5">
                             {presiding || showPresiding ? (
@@ -364,60 +386,69 @@ export function PropertiesPane({
                             )}
                         </div>
                         </div>
+                    )}
                 </div>
 
                 {/* Notes */}
                 <div className="space-y-2 pt-2 border-t border-border/40">
                     <div className="-mx-2 px-2 py-1">
-                        <h3 className="text-[12px] font-medium text-muted-foreground">
+                        <button
+                            type="button"
+                            aria-expanded={!collapsedSections.notes}
+                            onClick={() => setCollapsedSections((prev) => ({ ...prev, notes: !prev.notes }))}
+                            className="flex items-center gap-1 text-[12px] font-medium text-muted-foreground px-1.5 py-0.5 rounded-md hover:text-foreground hover:bg-control-hover focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-foreground/15 w-full justify-start text-left"
+                        >
+                            <ChevronDown className={cn("h-3.5 w-3.5 text-muted-foreground transition-transform", collapsedSections.notes ? "-rotate-90" : "rotate-0")} />
                             Notes
-                        </h3>
+                        </button>
                     </div>
-                    <div className="py-2">
-                        {meetingNotes || showMeetingNotes ? (
-                            <div className="space-y-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
-                                <div className="flex items-center justify-between">
-                                    <Label className="text-[11px] text-muted-foreground">Notes</Label>
+                    {!collapsedSections.notes && (
+                        <div className="py-2">
+                            {meetingNotes || showMeetingNotes ? (
+                                <div className="space-y-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
+                                    <div className="flex items-center justify-between">
+                                        <Label className="text-[11px] text-muted-foreground">Notes</Label>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                onUpdateMeetingNotes?.("");
+                                                setShowMeetingNotes(false);
+                                            }}
+                                            className="text-muted-foreground hover:text-destructive transition-colors"
+                                        >
+                                            <Minus className="h-3 w-3" />
+                                        </button>
+                                    </div>
+                                    <RichTextEditor
+                                        content={meetingNotes || ""}
+                                        onSave={async (content) => onUpdateMeetingNotes?.(content)}
+                                        placeholder="Add notes for the overall meeting..."
+                                    />
+                                </div>
+                            ) : (
+                                <div className="flex items-center justify-between h-7">
+                                    <span className="text-[12px] text-muted-foreground">Notes</span>
                                     <button
                                         type="button"
-                                        onClick={() => {
-                                            onUpdateMeetingNotes?.("");
-                                            setShowMeetingNotes(false);
-                                        }}
-                                        className="text-muted-foreground hover:text-destructive transition-colors"
+                                        onClick={() => setShowMeetingNotes(true)}
+                                        className="p-1 rounded-md text-muted-foreground/70 hover:text-foreground hover:bg-control-hover transition-colors"
+                                        aria-label="Add notes"
                                     >
-                                        <Minus className="h-3 w-3" />
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <span className="inline-flex">
+                                                    <Plus className="h-4 w-4" />
+                                                </span>
+                                            </TooltipTrigger>
+                                            <TooltipContent side="bottom" align="end" sideOffset={8} arrowAlign="end">
+                                                Add notes
+                                            </TooltipContent>
+                                        </Tooltip>
                                     </button>
                                 </div>
-                                <RichTextEditor
-                                    content={meetingNotes || ""}
-                                    onSave={async (content) => onUpdateMeetingNotes?.(content)}
-                                    placeholder="Add notes for the overall meeting..."
-                                />
-                            </div>
-                        ) : (
-                            <div className="flex items-center justify-between h-7">
-                                <span className="text-[12px] text-muted-foreground">Notes</span>
-                                <button
-                                    type="button"
-                                    onClick={() => setShowMeetingNotes(true)}
-                                    className="p-1 rounded-md text-muted-foreground/70 hover:text-foreground hover:bg-control-hover transition-colors"
-                                    aria-label="Add notes"
-                                >
-                                    <Tooltip>
-                                        <TooltipTrigger asChild>
-                                            <span className="inline-flex">
-                                                <Plus className="h-4 w-4" />
-                                            </span>
-                                        </TooltipTrigger>
-                                        <TooltipContent side="bottom" align="end" sideOffset={8} arrowAlign="end">
-                                            Add notes
-                                        </TooltipContent>
-                                    </Tooltip>
-                                </button>
-                            </div>
-                        )}
-                    </div>
+                            )}
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

@@ -108,9 +108,9 @@ function SortableAgendaRow({
                         {...attributes}
                         {...listeners}
                         className={cn(
-                            "rounded-xl border border-border/50 bg-background shadow-[0_1px_0_rgba(15,23,42,0.04)] transition-colors group cursor-grab active:cursor-grabbing touch-none",
-                            "hover:bg-background hover:border-border/70 hover:shadow-[0_6px_16px_rgba(15,23,42,0.06)]",
-                            isSelected && "ring-2 ring-primary/20 border-primary/40",
+                            "rounded-xl border border-transparent bg-background shadow-[0_1px_0_rgba(15,23,42,0.03)] transition-all duration-200 group cursor-grab active:cursor-grabbing touch-none",
+                            "hover:bg-background hover:shadow-[0_8px_18px_rgba(15,23,42,0.06)] hover:-translate-y-[1px]",
+                            isSelected && "ring-2 ring-primary/25 border-primary/40 shadow-[0_10px_24px_rgba(15,23,42,0.08)]",
                             isDragging && "opacity-60 ring-2 ring-primary/30"
                         )}
                     >
@@ -118,13 +118,13 @@ function SortableAgendaRow({
                         <div className="flex items-center gap-2 px-3 py-2.5">
                             <div className="flex items-center gap-2">
                                 <div className={cn(
-                                    "w-0.5 h-6 rounded-full transition-colors",
-                                    isSelected ? "bg-primary/40" : "bg-border/40 group-hover:bg-border/70"
+                                    "w-[2px] h-6 rounded-full transition-colors",
+                                    isSelected ? "bg-primary/60" : "bg-border/60 group-hover:bg-border/90"
                                 )} />
                                 <button
                                     type="button"
                                     onClick={(e) => { e.stopPropagation(); onToggleExpand?.(); }}
-                                    className="p-1 hover:bg-muted rounded-md transition-colors"
+                                    className="p-1 hover:bg-control-hover rounded-md transition-colors"
                                 >
                                     {isExpanded ? (
                                         <ChevronDown className="h-4 w-4 text-muted-foreground" />
@@ -132,8 +132,8 @@ function SortableAgendaRow({
                                         <ChevronRight className="h-4 w-4 text-muted-foreground" />
                                     )}
                                 </button>
-                                <span className="font-semibold text-[13px] flex-1 text-foreground pl-1">
-                                {item.title}
+                                <span className="font-semibold text-[12.5px] flex-1 text-foreground pl-1">
+                                    {item.title}
                                 </span>
                             </div>
 
@@ -141,7 +141,7 @@ function SortableAgendaRow({
                                 {childCount} item{childCount !== 1 ? "s" : ""}
                             </span>
 
-                            <span className="text-[11px] text-muted-foreground ml-2 tabular-nums">
+                            <span className="text-[11px] text-muted-foreground ml-3 tabular-nums">
                                 {item.duration_minutes}m
                             </span>
 
@@ -150,7 +150,10 @@ function SortableAgendaRow({
                                     type="button"
                                     variant="ghost"
                                     size="icon"
-                                    className="h-7 w-7 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-foreground hover:bg-control-hover"
+                                    className={cn(
+                                        "h-7 w-7 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground/90 hover:text-foreground hover:bg-control-hover",
+                                        isSelected && "opacity-100"
+                                    )}
                                     onClick={(e) => { e.stopPropagation(); onDuplicate(); }}
                                 >
                                     <Copy className="h-4 w-4" />
@@ -161,7 +164,10 @@ function SortableAgendaRow({
                                 type="button"
                                 variant="ghost"
                                 size="icon"
-                                className="h-7 w-7 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive hover:bg-destructive/10"
+                                className={cn(
+                                    "h-7 w-7 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-foreground/90 hover:text-destructive hover:bg-destructive/10 ml-0.5",
+                                    isSelected && "opacity-100"
+                                )}
                                 onClick={(e) => { e.stopPropagation(); onRemove(); }}
                             >
                                 <Trash2 className="h-4 w-4" />
@@ -171,14 +177,14 @@ function SortableAgendaRow({
                         {/* Container Body — read-only child list */}
                         {isExpanded && item.childItems && item.childItems.length > 0 && (
                             <div className="px-3 pb-2 pt-0">
-                                <div className="pl-6 space-y-1">
+                            <div className="pl-6 space-y-2">
                                     {item.childItems.map((child) => (
                                         <div
                                             key={child.id}
-                                            className="flex flex-col gap-1 p-2 bg-background/80 rounded-md border border-border/40"
-                                        >
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-sm font-medium flex-1 truncate">{child.title}</span>
+                                        className="flex flex-col gap-1.5 p-2.5 bg-background/80 rounded-lg border border-border/40"
+                                    >
+                                        <div className="flex items-center gap-2">
+                                                <span className="text-[12.5px] font-medium flex-1 truncate">{child.title}</span>
                                                 {child.status && (
                                                     <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted/60 capitalize font-medium">
                                                         {child.status.replace("_", " ")}
@@ -222,9 +228,9 @@ function SortableAgendaRow({
                         style={style}
                         onClick={(e) => { e.stopPropagation(); onSelect?.(); }}
                         className={cn(
-                            "flex flex-col border rounded-xl bg-background shadow-[0_1px_0_rgba(15,23,42,0.04)] transition-colors group cursor-grab active:cursor-grabbing touch-none",
-                            "hover:bg-background hover:border-border/70 hover:shadow-[0_6px_16px_rgba(15,23,42,0.06)]",
-                            isSelected && "ring-2 ring-primary/20 border-primary/40",
+                            "flex flex-col border border-transparent rounded-xl bg-background shadow-[0_1px_0_rgba(15,23,42,0.03)] transition-all duration-200 group cursor-grab active:cursor-grabbing touch-none",
+                            "hover:bg-background hover:shadow-[0_8px_18px_rgba(15,23,42,0.06)] hover:-translate-y-[1px]",
+                            isSelected && "ring-2 ring-primary/25 border-primary/40 shadow-[0_10px_24px_rgba(15,23,42,0.08)]",
                             isDragging && "opacity-60 ring-2 ring-primary/30"
                         )}
                         {...attributes}
@@ -232,8 +238,8 @@ function SortableAgendaRow({
                     >
                         <div className="flex items-center gap-2 px-3 py-2.5">
                             <div className={cn(
-                                "w-0.5 h-5 rounded-full transition-colors",
-                                isSelected ? "bg-primary/40" : "bg-border/40 group-hover:bg-border/70"
+                                "w-[2px] h-5 rounded-full transition-colors",
+                                isSelected ? "bg-primary/60" : "bg-border/60 group-hover:bg-border/90"
                             )} />
                             <span className="font-semibold text-[11px] tracking-[0.18em] uppercase flex-1 truncate text-muted-foreground pl-2">
                                 {item.title || "Untitled section"}
@@ -246,7 +252,10 @@ function SortableAgendaRow({
                                     type="button"
                                     variant="ghost"
                                     size="icon"
-                                    className="h-7 w-7 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-foreground hover:bg-control-hover"
+                                    className={cn(
+                                        "h-7 w-7 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground/90 hover:text-foreground hover:bg-control-hover",
+                                        isSelected && "opacity-100"
+                                    )}
                                     onClick={(e) => {
                                         e.stopPropagation();
                                         onDuplicate();
@@ -259,7 +268,10 @@ function SortableAgendaRow({
                                 type="button"
                                 variant="ghost"
                                 size="icon"
-                                className="h-7 w-7 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive hover:bg-destructive/10"
+                                className={cn(
+                                    "h-7 w-7 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-foreground/90 hover:text-destructive hover:bg-destructive/10",
+                                    isSelected && "opacity-100"
+                                )}
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     onRemove();
@@ -332,22 +344,22 @@ function SortableAgendaRow({
                     ref={setNodeRef}
                     style={style}
                     onClick={(e) => { e.stopPropagation(); onSelect?.(); }}
-                    className={cn(
-                        "flex flex-col border rounded-xl bg-background shadow-[0_1px_0_rgba(15,23,42,0.04)] transition-colors group cursor-grab active:cursor-grabbing touch-none",
-                        "hover:bg-background hover:border-border/70 hover:shadow-[0_6px_16px_rgba(15,23,42,0.06)]",
-                        isSelected && "ring-2 ring-primary/20 border-primary/40",
-                        isDragging && "opacity-60 ring-2 ring-primary/30"
-                    )}
+                        className={cn(
+                            "flex flex-col border border-transparent rounded-xl bg-background shadow-[0_1px_0_rgba(15,23,42,0.03)] transition-all duration-200 group cursor-grab active:cursor-grabbing touch-none",
+                            "hover:bg-background hover:shadow-[0_8px_18px_rgba(15,23,42,0.06)] hover:-translate-y-[1px]",
+                            isSelected && "ring-2 ring-primary/25 border-primary/40 shadow-[0_10px_24px_rgba(15,23,42,0.08)]",
+                            isDragging && "opacity-60 ring-2 ring-primary/30"
+                        )}
                     {...attributes}
                     {...listeners}
                 >
                     {/* Header row */}
                     <div className="flex items-center gap-2 px-3 py-2.5">
                         <div className={cn(
-                            "w-0.5 h-6 rounded-full transition-colors",
-                            isSelected ? "bg-primary/40" : "bg-border/40 group-hover:bg-border/70"
+                            "w-[2px] h-6 rounded-full transition-colors",
+                            isSelected ? "bg-primary/60" : "bg-border/60 group-hover:bg-border/90"
                         )} />
-                        <span className="font-semibold text-[13px] flex-1 truncate text-foreground pl-2">
+                        <span className="font-semibold text-[12.5px] flex-1 truncate text-foreground pl-2">
                             {item.title}
                         </span>
 
@@ -360,7 +372,10 @@ function SortableAgendaRow({
                                 type="button"
                                 variant="ghost"
                                 size="icon"
-                                className="h-7 w-7 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-foreground hover:bg-control-hover"
+                                className={cn(
+                                    "h-7 w-7 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground/90 hover:text-foreground hover:bg-control-hover",
+                                    isSelected && "opacity-100"
+                                )}
                                 onClick={(e) => { e.stopPropagation(); onDuplicate(); }}
                             >
                                 <Copy className="h-4 w-4" />
@@ -371,7 +386,10 @@ function SortableAgendaRow({
                             type="button"
                             variant="ghost"
                             size="icon"
-                            className="h-7 w-7 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive hover:bg-destructive/10"
+                            className={cn(
+                                "h-7 w-7 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-foreground/90 hover:text-destructive hover:bg-destructive/10 ml-0.5",
+                                isSelected && "opacity-100"
+                            )}
                             onClick={(e) => { e.stopPropagation(); onRemove(); }}
                         >
                             <Trash2 className="h-4 w-4" />
@@ -380,7 +398,7 @@ function SortableAgendaRow({
 
                     {/* Secondary text — assigned data displayed read-only */}
                     {secondaryText && (
-                        <div className="px-3 pb-2 pt-0">
+                        <div className="px-3 pb-2.5 pt-0">
                             <div className="pl-7">
                                 <span className="text-[11px] text-muted-foreground truncate block">
                                     {secondaryText}
@@ -391,7 +409,7 @@ function SortableAgendaRow({
 
                     {/* Description — only shown as a placeholder hint when no value is assigned yet */}
                     {item.description && !secondaryText && (
-                        <div className="px-3 pb-2 pt-0">
+                        <div className="px-3 pb-2.5 pt-0">
                             <div className="pl-7">
                                 <span className="text-[11px] text-muted-foreground/80 line-clamp-2 italic">
                                     {item.description}
@@ -445,7 +463,7 @@ function InsertRow({
                                 <button
                                     type="button"
                                     className={cn(
-                                        "flex items-center justify-center h-6 w-6 rounded-full border border-border/40 bg-background text-muted-foreground",
+                                        "flex items-center justify-center h-6 w-6 rounded-full border border-border/40 bg-background text-muted-foreground shadow-sm",
                                         "opacity-0 group-hover:opacity-100 transition-opacity",
                                         isOpen && "opacity-100"
                                     )}
@@ -465,12 +483,12 @@ function InsertRow({
                                 value={searchValue}
                                 onChange={(e) => onSearchChange(e.target.value)}
                                 placeholder="Insert item..."
-                                className="h-8 pl-8 text-[12px]"
+                                className="h-8 pl-8 text-[12px] bg-background border-border/60 focus-visible:border-foreground/30"
                                 autoFocus
                             />
                         </div>
 
-                        <div className="mt-2 max-h-64 overflow-y-auto space-y-3">
+                        <div className="mt-2 max-h-64 overflow-y-auto space-y-3 pr-1">
                             {pinnedItems.length > 0 && (
                                 <InsertSection
                                     title="Pinned"
@@ -496,7 +514,7 @@ function InsertRow({
                     </PopoverContent>
                 </Popover>
             </div>
-            <div className="absolute left-0 right-0 top-1/2 h-px bg-border/40 opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="absolute left-0 right-0 top-1/2 h-px bg-border/50 opacity-0 group-hover:opacity-100 transition-opacity" />
         </div>
     );
 }
@@ -515,7 +533,7 @@ function InsertSection({
     if (items.length === 0) return null;
     return (
         <div className="space-y-1">
-            <div className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground px-1">
+            <div className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground px-1.5">
                 {icon && <span className="text-muted-foreground/80">{icon}</span>}
                 <span>{title}</span>
             </div>
@@ -525,7 +543,7 @@ function InsertSection({
                         key={item.id}
                         type="button"
                         onClick={() => onSelectItem(item)}
-                        className="w-full text-left px-2 py-1.5 rounded-md text-[12px] hover:bg-control-hover"
+                        className="w-full text-left px-2.5 py-1.5 rounded-md text-[12px] hover:bg-control-hover"
                     >
                         {item.title}
                     </button>
@@ -611,7 +629,7 @@ export function AgendaCanvas({
             {/* Card container */}
             <div
                 className={cn(
-                    "rounded-2xl border border-border/50 bg-paper shadow-[0_30px_80px_rgba(15,23,42,0.08)] ring-1 ring-border/20 flex flex-col flex-1 overflow-hidden relative"
+                    "rounded-2xl border border-border/50 bg-paper shadow-[0_28px_70px_rgba(15,23,42,0.07)] ring-1 ring-border/20 flex flex-col flex-1 overflow-hidden relative"
                 )}
             >
                 {/* Canvas */}
@@ -634,25 +652,25 @@ export function AgendaCanvas({
                             >
                                 <div className="text-center max-w-sm">
                                     <p className="text-[15px] font-semibold text-foreground">Start your agenda</p>
-                                    <p className="text-sm mt-1">
+                                    <p className="text-[12px] mt-1 text-muted-foreground">
                                         Drag items from the library, or press <span className="font-medium">I</span> to insert.
                                     </p>
-                                    <p className="text-xs mt-2 text-muted-foreground">
+                                    <p className="text-[11px] mt-2 text-muted-foreground">
                                         Tip: Pin your most common items for one‑click access.
                                     </p>
                                 </div>
                             </div>
                         ) : (
                             <div className="w-full max-w-[850px]">
-                                <div className="mb-6 rounded-2xl border border-border/40 bg-background/70 px-6 py-5">
-                                    <div className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
+                                <div className="mb-6 rounded-2xl border border-border/30 bg-background/70 px-6 py-5 shadow-[0_8px_20px_rgba(15,23,42,0.04)]">
+                                    <div className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
                                         Agenda
                                     </div>
-                                    <div className="mt-1 text-[18px] font-semibold text-foreground">
+                                    <div className="mt-1 text-[16.5px] font-semibold text-foreground">
                                         {title || "Untitled Meeting"}
                                     </div>
                                     {(dateLabel || timeLabel) && (
-                                        <div className="mt-1 text-[12px] text-muted-foreground">
+                                        <div className="mt-1 text-[11px] text-muted-foreground">
                                             {dateLabel}{dateLabel && timeLabel ? " · " : ""}{timeLabel}
                                         </div>
                                     )}

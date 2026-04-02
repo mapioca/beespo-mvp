@@ -155,8 +155,8 @@ export function DraggableToolboxItem({
             }}
             className={cn(
                 "group flex items-center gap-3 px-2.5 py-2 rounded-lg border border-transparent",
-                "text-[13px] font-normal",
-                "hover:bg-control-hover hover:border-border/40 transition-colors cursor-grab active:cursor-grabbing relative",
+                "text-[12.5px] font-normal",
+                "hover:bg-control-hover hover:border-border/30 transition-colors cursor-grab active:cursor-grabbing relative",
                 isDragging && "opacity-60 shadow-lg ring-2 ring-primary/20 z-50",
                 disabled && "opacity-50 cursor-not-allowed"
             )}
@@ -166,7 +166,7 @@ export function DraggableToolboxItem({
             </div>
 
             <div className={cn("flex-1 min-w-0", (onEditItem || onTogglePin) ? "pr-16" : "pr-2")}>
-                <span className="text-[13px] font-normal text-foreground leading-tight break-words">{item.title}</span>
+                <span className="text-[12.5px] font-normal text-foreground leading-tight break-words">{item.title}</span>
             </div>
 
             {onEditItem && (
