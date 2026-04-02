@@ -155,7 +155,7 @@ export function DraggableToolboxItem({
             }}
             className={cn(
                 "group flex items-center gap-3 px-2.5 py-2 rounded-lg border border-transparent",
-                "text-[12.5px] font-normal",
+                "text-builder-md font-normal",
                 "hover:bg-control-hover hover:border-border/30 transition-colors cursor-grab active:cursor-grabbing relative",
                 isDragging && "opacity-60 shadow-lg ring-2 ring-primary/20 z-50",
                 disabled && "opacity-50 cursor-not-allowed"
@@ -166,7 +166,7 @@ export function DraggableToolboxItem({
             </div>
 
             <div className={cn("flex-1 min-w-0", (onEditItem || onTogglePin) ? "pr-16" : "pr-2")}>
-                <span className="text-[12.5px] font-normal text-foreground leading-tight break-words">{item.title}</span>
+                <span className="text-builder-md font-normal text-foreground leading-tight break-words">{item.title}</span>
             </div>
 
             {onEditItem && (
@@ -234,7 +234,7 @@ export function DraggableToolboxItem({
                     showArrow={false}
                 >
                     <span className="pointer-events-none absolute -top-1.5 left-4 h-0 w-0 border-x-[6px] border-x-transparent border-b-[6px] border-b-foreground" />
-                    <p className="text-xs leading-snug whitespace-pre-wrap">{item.description}</p>
+                    <p className="text-builder-sm leading-snug whitespace-pre-wrap">{item.description}</p>
                 </TooltipContent>
             </Tooltip>
         );
@@ -251,7 +251,7 @@ export function ToolboxItemDragOverlay({ item }: { item: ToolboxItem }) {
                 {getCategoryIcon(item)}
             </div>
             <div className="flex-1 min-w-0 pr-2">
-                <span className="text-sm font-medium leading-tight break-words">{item.title}</span>
+                <span className="text-builder-sm font-medium leading-tight break-words">{item.title}</span>
             </div>
         </div>
     );

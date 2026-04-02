@@ -9,7 +9,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Button } from "@/components/ui/button";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverAnchor, PopoverTrigger } from "@/components/ui/popover";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Trash2, ChevronDown, ChevronRight, GripVertical, Copy, Plus, Search, Pin, Clock } from "lucide-react";
@@ -108,9 +108,9 @@ function SortableAgendaRow({
                         {...attributes}
                         {...listeners}
                         className={cn(
-                            "rounded-xl border border-transparent bg-background shadow-[0_1px_0_rgba(15,23,42,0.03)] transition-all duration-200 group cursor-grab active:cursor-grabbing touch-none",
-                            "hover:bg-background hover:shadow-[0_8px_18px_rgba(15,23,42,0.06)] hover:-translate-y-[1px]",
-                            isSelected && "ring-2 ring-primary/25 border-primary/40 shadow-[0_10px_24px_rgba(15,23,42,0.08)]",
+                            "rounded-xl border border-border/40 bg-background shadow-builder-card transition-all duration-200 group cursor-grab active:cursor-grabbing touch-none",
+                            "hover:bg-background hover:border-border/60",
+                            isSelected && "ring-2 ring-primary/25 border-primary/50 shadow-builder-card-selected",
                             isDragging && "opacity-60 ring-2 ring-primary/30"
                         )}
                     >
@@ -132,16 +132,16 @@ function SortableAgendaRow({
                                         <ChevronRight className="h-4 w-4 text-muted-foreground" />
                                     )}
                                 </button>
-                                <span className="font-semibold text-[12.5px] flex-1 text-foreground pl-1">
+                                <span className="font-semibold text-builder-md flex-1 text-foreground pl-1">
                                     {item.title}
                                 </span>
                             </div>
 
-                            <span className="text-[11px] text-muted-foreground tabular-nums">
+                            <span className="text-builder-xs text-muted-foreground tabular-nums">
                                 {childCount} item{childCount !== 1 ? "s" : ""}
                             </span>
 
-                            <span className="text-[11px] text-muted-foreground ml-3 tabular-nums">
+                            <span className="text-builder-xs text-muted-foreground ml-3 tabular-nums">
                                 {item.duration_minutes}m
                             </span>
 
@@ -152,7 +152,7 @@ function SortableAgendaRow({
                                     size="icon"
                                     className={cn(
                                         "h-7 w-7 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground/90 hover:text-foreground hover:bg-control-hover",
-                                        isSelected && "opacity-100"
+                                        isSelected && "opacity-100 text-foreground bg-control-hover"
                                     )}
                                     onClick={(e) => { e.stopPropagation(); onDuplicate(); }}
                                 >
@@ -166,7 +166,7 @@ function SortableAgendaRow({
                                 size="icon"
                                 className={cn(
                                     "h-7 w-7 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-foreground/90 hover:text-destructive hover:bg-destructive/10 ml-0.5",
-                                    isSelected && "opacity-100"
+                                    isSelected && "opacity-100 text-foreground bg-control-hover"
                                 )}
                                 onClick={(e) => { e.stopPropagation(); onRemove(); }}
                             >
@@ -184,15 +184,15 @@ function SortableAgendaRow({
                                         className="flex flex-col gap-1.5 p-2.5 bg-background/80 rounded-lg border border-border/40"
                                     >
                                         <div className="flex items-center gap-2">
-                                                <span className="text-[12.5px] font-medium flex-1 truncate">{child.title}</span>
+                                                <span className="text-builder-md font-medium flex-1 truncate">{child.title}</span>
                                                 {child.status && (
-                                                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted/60 capitalize font-medium">
-                                                        {child.status.replace("_", " ")}
-                                                    </span>
+                                    <span className="text-builder-2xs px-1.5 py-0.5 rounded bg-muted/60 capitalize font-medium">
+                                        {child.status.replace("_", " ")}
+                                    </span>
                                                 )}
                                             </div>
                                             {child.description && (
-                                                <p className="text-[11px] text-muted-foreground italic line-clamp-2">
+                                                <p className="text-builder-xs text-muted-foreground italic line-clamp-2">
                                                     {child.description}
                                                 </p>
                                             )}
@@ -228,9 +228,9 @@ function SortableAgendaRow({
                         style={style}
                         onClick={(e) => { e.stopPropagation(); onSelect?.(); }}
                         className={cn(
-                            "flex flex-col border border-transparent rounded-xl bg-background shadow-[0_1px_0_rgba(15,23,42,0.03)] transition-all duration-200 group cursor-grab active:cursor-grabbing touch-none",
-                            "hover:bg-background hover:shadow-[0_8px_18px_rgba(15,23,42,0.06)] hover:-translate-y-[1px]",
-                            isSelected && "ring-2 ring-primary/25 border-primary/40 shadow-[0_10px_24px_rgba(15,23,42,0.08)]",
+                            "flex flex-col border border-border/40 rounded-xl bg-background shadow-builder-card transition-all duration-200 group cursor-grab active:cursor-grabbing touch-none",
+                            "hover:bg-background hover:border-border/60",
+                            isSelected && "ring-2 ring-primary/25 border-primary/50 shadow-builder-card-selected",
                             isDragging && "opacity-60 ring-2 ring-primary/30"
                         )}
                         {...attributes}
@@ -241,10 +241,10 @@ function SortableAgendaRow({
                                 "w-[2px] h-5 rounded-full transition-colors",
                                 isSelected ? "bg-primary/60" : "bg-border/60 group-hover:bg-border/90"
                             )} />
-                            <span className="font-semibold text-[11px] tracking-[0.18em] uppercase flex-1 truncate text-muted-foreground pl-2">
+                            <span className="font-semibold text-builder-xs tracking-[0.18em] uppercase flex-1 truncate text-muted-foreground pl-2">
                                 {item.title || "Untitled section"}
                             </span>
-                            <span className="text-[10px] text-muted-foreground shrink-0">
+                            <span className="text-builder-2xs text-muted-foreground shrink-0">
                                 Section
                             </span>
                             {onDuplicate && (
@@ -254,7 +254,7 @@ function SortableAgendaRow({
                                     size="icon"
                                     className={cn(
                                         "h-7 w-7 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground/90 hover:text-foreground hover:bg-control-hover",
-                                        isSelected && "opacity-100"
+                                        isSelected && "opacity-100 text-foreground bg-control-hover"
                                     )}
                                     onClick={(e) => {
                                         e.stopPropagation();
@@ -270,7 +270,7 @@ function SortableAgendaRow({
                                 size="icon"
                                 className={cn(
                                     "h-7 w-7 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-foreground/90 hover:text-destructive hover:bg-destructive/10",
-                                    isSelected && "opacity-100"
+                                    isSelected && "opacity-100 text-foreground bg-control-hover"
                                 )}
                                 onClick={(e) => {
                                     e.stopPropagation();
@@ -313,14 +313,14 @@ function SortableAgendaRow({
                     {...listeners}
                     className="p-1 cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity"
                 >
-                    <GripVertical className="h-4 w-4 text-muted-foreground" />
+                    <GripVertical className="h-3.5 w-3.5 text-muted-foreground" />
                 </div>
                 <div className="flex-1 h-px bg-border/60" />
                 <Button
                     type="button"
                     variant="ghost"
                     size="icon"
-                    className="h-7 w-7 opacity-0 group-hover:opacity-100 text-destructive ml-2"
+                    className="h-7 w-7 opacity-0 group-hover:opacity-100 text-destructive ml-2 hover:bg-destructive/10"
                     onClick={onRemove}
                 >
                     <Trash2 className="h-4 w-4" />
@@ -345,9 +345,9 @@ function SortableAgendaRow({
                     style={style}
                     onClick={(e) => { e.stopPropagation(); onSelect?.(); }}
                         className={cn(
-                            "flex flex-col border border-transparent rounded-xl bg-background shadow-[0_1px_0_rgba(15,23,42,0.03)] transition-all duration-200 group cursor-grab active:cursor-grabbing touch-none",
-                            "hover:bg-background hover:shadow-[0_8px_18px_rgba(15,23,42,0.06)] hover:-translate-y-[1px]",
-                            isSelected && "ring-2 ring-primary/25 border-primary/40 shadow-[0_10px_24px_rgba(15,23,42,0.08)]",
+                            "flex flex-col border border-border/40 rounded-xl bg-background shadow-builder-card transition-all duration-200 group cursor-grab active:cursor-grabbing touch-none",
+                            "hover:bg-background hover:border-border/60",
+                            isSelected && "ring-2 ring-primary/25 border-primary/50 shadow-builder-card-selected",
                             isDragging && "opacity-60 ring-2 ring-primary/30"
                         )}
                     {...attributes}
@@ -359,11 +359,11 @@ function SortableAgendaRow({
                             "w-[2px] h-6 rounded-full transition-colors",
                             isSelected ? "bg-primary/60" : "bg-border/60 group-hover:bg-border/90"
                         )} />
-                        <span className="font-semibold text-[12.5px] flex-1 truncate text-foreground pl-2">
+                        <span className="font-semibold text-builder-md flex-1 truncate text-foreground pl-2">
                             {item.title}
                         </span>
 
-                        <span className="text-[11px] text-muted-foreground shrink-0 tabular-nums">
+                        <span className="text-builder-xs text-muted-foreground shrink-0 tabular-nums">
                             {item.duration_minutes}m
                         </span>
 
@@ -374,7 +374,7 @@ function SortableAgendaRow({
                                 size="icon"
                                 className={cn(
                                     "h-7 w-7 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground/90 hover:text-foreground hover:bg-control-hover",
-                                    isSelected && "opacity-100"
+                                    isSelected && "opacity-100 text-foreground bg-control-hover"
                                 )}
                                 onClick={(e) => { e.stopPropagation(); onDuplicate(); }}
                             >
@@ -388,7 +388,7 @@ function SortableAgendaRow({
                             size="icon"
                             className={cn(
                                 "h-7 w-7 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-foreground/90 hover:text-destructive hover:bg-destructive/10 ml-0.5",
-                                isSelected && "opacity-100"
+                                isSelected && "opacity-100 text-foreground bg-control-hover"
                             )}
                             onClick={(e) => { e.stopPropagation(); onRemove(); }}
                         >
@@ -400,7 +400,7 @@ function SortableAgendaRow({
                     {secondaryText && (
                         <div className="px-3 pb-2.5 pt-0">
                             <div className="pl-7">
-                                <span className="text-[11px] text-muted-foreground truncate block">
+                                <span className="text-builder-xs text-muted-foreground truncate block">
                                     {secondaryText}
                                 </span>
                             </div>
@@ -411,7 +411,7 @@ function SortableAgendaRow({
                     {item.description && !secondaryText && (
                         <div className="px-3 pb-2.5 pt-0">
                             <div className="pl-7">
-                                <span className="text-[11px] text-muted-foreground/80 line-clamp-2 italic">
+                                <span className="text-builder-xs text-muted-foreground/80 line-clamp-2 italic">
                                     {item.description}
                                 </span>
                             </div>
@@ -455,27 +455,32 @@ function InsertRow({
 }) {
     return (
         <div className="relative group">
-            <div className="flex items-center justify-center">
+            <div className="flex items-center justify-center z-10 relative">
                 <Popover open={isOpen} onOpenChange={onOpenChange}>
-                    <PopoverTrigger asChild>
-                        <Tooltip>
-                            <TooltipTrigger asChild>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <PopoverAnchor asChild>
                                 <button
                                     type="button"
+                                    onPointerDown={(e) => e.stopPropagation()}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        onOpenChange(!isOpen);
+                                    }}
                                     className={cn(
                                         "flex items-center justify-center h-6 w-6 rounded-full border border-border/40 bg-background text-muted-foreground shadow-sm",
-                                        "opacity-0 group-hover:opacity-100 transition-opacity",
+                                        "opacity-0 group-hover:opacity-100 transition-opacity focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-foreground/20",
                                         isOpen && "opacity-100"
                                     )}
                                 >
                                     <Plus className="h-3.5 w-3.5" />
                                 </button>
-                            </TooltipTrigger>
-                            <TooltipContent side="bottom" align="center" sideOffset={8}>
-                                Insert item
-                            </TooltipContent>
-                        </Tooltip>
-                    </PopoverTrigger>
+                            </PopoverAnchor>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom" align="center" sideOffset={8}>
+                            Insert item
+                        </TooltipContent>
+                    </Tooltip>
                     <PopoverContent align="center" className="w-72 p-2">
                         <div className="relative">
                             <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
@@ -483,7 +488,7 @@ function InsertRow({
                                 value={searchValue}
                                 onChange={(e) => onSearchChange(e.target.value)}
                                 placeholder="Insert item..."
-                                className="h-8 pl-8 text-[12px] bg-background border-border/60 focus-visible:border-foreground/30"
+                                className="h-8 pl-8 text-builder-sm bg-background border-border/60 focus-visible:border-foreground/30"
                                 autoFocus
                             />
                         </div>
@@ -514,7 +519,7 @@ function InsertRow({
                     </PopoverContent>
                 </Popover>
             </div>
-            <div className="absolute left-0 right-0 top-1/2 h-px bg-border/50 opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="absolute left-0 right-0 top-1/2 h-px bg-border/50 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
         </div>
     );
 }
@@ -533,7 +538,7 @@ function InsertSection({
     if (items.length === 0) return null;
     return (
         <div className="space-y-1">
-            <div className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground px-1.5">
+            <div className="flex items-center gap-1.5 text-builder-xs font-medium text-muted-foreground px-1.5">
                 {icon && <span className="text-muted-foreground/80">{icon}</span>}
                 <span>{title}</span>
             </div>
@@ -543,7 +548,7 @@ function InsertSection({
                         key={item.id}
                         type="button"
                         onClick={() => onSelectItem(item)}
-                        className="w-full text-left px-2.5 py-1.5 rounded-md text-[12px] hover:bg-control-hover"
+                        className="w-full text-left px-2.5 py-1.5 rounded-md text-builder-sm hover:bg-control-hover"
                     >
                         {item.title}
                     </button>
@@ -629,7 +634,7 @@ export function AgendaCanvas({
             {/* Card container */}
             <div
                 className={cn(
-                    "rounded-2xl border border-border/50 bg-paper shadow-[0_28px_70px_rgba(15,23,42,0.07)] ring-1 ring-border/20 flex flex-col flex-1 overflow-hidden relative"
+                    "rounded-2xl border border-border/50 bg-paper shadow-builder-canvas ring-1 ring-border/20 flex flex-col flex-1 overflow-hidden relative"
                 )}
             >
                 {/* Canvas */}
@@ -651,26 +656,26 @@ export function AgendaCanvas({
                                 )}
                             >
                                 <div className="text-center max-w-sm">
-                                    <p className="text-[15px] font-semibold text-foreground">Start your agenda</p>
-                                    <p className="text-[12px] mt-1 text-muted-foreground">
+                                    <p className="text-builder-xl font-semibold text-foreground">Start your agenda</p>
+                                    <p className="text-builder-sm mt-1 text-muted-foreground">
                                         Drag items from the library, or press <span className="font-medium">I</span> to insert.
                                     </p>
-                                    <p className="text-[11px] mt-2 text-muted-foreground">
+                                    <p className="text-builder-xs mt-2 text-muted-foreground">
                                         Tip: Pin your most common items for one‑click access.
                                     </p>
                                 </div>
                             </div>
                         ) : (
                             <div className="w-full max-w-[850px]">
-                                <div className="mb-6 rounded-2xl border border-border/30 bg-background/70 px-6 py-5 shadow-[0_8px_20px_rgba(15,23,42,0.04)]">
-                                    <div className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                                <div className="mb-6 rounded-2xl border border-border/30 bg-background/70 px-6 py-5 shadow-builder-header">
+                                    <div className="text-builder-2xs uppercase tracking-[0.16em] text-muted-foreground">
                                         Agenda
                                     </div>
-                                    <div className="mt-1 text-[16.5px] font-semibold text-foreground">
+                                    <div className="mt-1 text-builder-title font-semibold text-foreground">
                                         {title || "Untitled Meeting"}
                                     </div>
                                     {(dateLabel || timeLabel) && (
-                                        <div className="mt-1 text-[11px] text-muted-foreground">
+                                        <div className="mt-1 text-builder-xs text-muted-foreground">
                                             {dateLabel}{dateLabel && timeLabel ? " · " : ""}{timeLabel}
                                         </div>
                                     )}

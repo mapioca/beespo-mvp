@@ -55,6 +55,8 @@ export function PropertiesPane({
     const [showPianist, setShowPianist] = useState(false);
     const [showMeetingNotes, setShowMeetingNotes] = useState(false);
     const hasNotes = !!meetingNotes;
+    const sectionHeaderClass =
+        "flex items-center gap-1 text-builder-xs font-medium text-muted-foreground px-1.5 py-0.5 rounded-md leading-none hover:text-foreground hover:bg-control-hover focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-foreground/15 w-full justify-start text-left";
     const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({
         overview: false,
         roles: false,
@@ -71,9 +73,9 @@ export function PropertiesPane({
                             type="button"
                             aria-expanded={!collapsedSections.overview}
                             onClick={() => setCollapsedSections((prev) => ({ ...prev, overview: !prev.overview }))}
-                            className="flex items-center gap-1 text-[12px] font-medium text-muted-foreground px-1.5 py-0.5 rounded-md hover:text-foreground hover:bg-control-hover focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-foreground/15 w-full justify-start text-left"
+                            className={sectionHeaderClass}
                         >
-                            <ChevronDown className={cn("h-3.5 w-3.5 text-muted-foreground transition-transform", collapsedSections.overview ? "-rotate-90" : "rotate-0")} />
+                            <ChevronDown className={cn("h-3.5 w-3.5 -translate-y-[0.5px] text-muted-foreground transition-transform", collapsedSections.overview ? "-rotate-90" : "rotate-0")} />
                             Overview
                         </button>
                     </div>
@@ -81,24 +83,24 @@ export function PropertiesPane({
                     {!collapsedSections.overview && (
                         <>
                             <div className="space-y-1.5">
-                                <Label htmlFor="title" className="text-[11px] text-muted-foreground">Name</Label>
+                                <Label htmlFor="title" className="text-builder-xs text-muted-foreground">Name</Label>
                                 <Input
                                     id="title"
                                     value={title}
                                     onChange={(e) => setValue("title", e.target.value, { shouldValidate: true })}
                                     onFocus={(e) => e.target.select()}
                                     placeholder="e.g. Ward Conference"
-                                    className="bg-control h-8 text-sm border-control focus-visible:ring-0 focus-visible:border-foreground/30"
+                                    className="bg-control h-8 text-builder-sm font-medium border-control focus-visible:ring-0 focus-visible:border-foreground/30"
                                 />
                             </div>
 
                             <div className="space-y-1.5">
-                                <Label htmlFor="template" className="text-[11px] text-muted-foreground">Template</Label>
+                                <Label htmlFor="template" className="text-builder-xs text-muted-foreground">Template</Label>
                                 <Select
                                     value={selectedTemplateId}
                                     onValueChange={(val) => setValue("templateId", val === "none" ? null : val, { shouldValidate: true })}
                                 >
-                                    <SelectTrigger id="template" className="bg-control h-8 text-sm border-control focus:ring-0 focus:border-foreground/30">
+                                    <SelectTrigger id="template" className="bg-control h-8 text-builder-sm font-medium border-control focus:ring-0 focus:border-foreground/30">
                                         <SelectValue placeholder="Select template" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -115,14 +117,14 @@ export function PropertiesPane({
                             </div>
 
                             <div className="space-y-1.5">
-                                <Label className="text-[11px] text-muted-foreground">Date</Label>
+                                <Label className="text-builder-xs text-muted-foreground">Date</Label>
                                 <Popover>
                                     <PopoverTrigger asChild>
                                         <Button
                                             type="button"
                                             variant="outline"
                                             className={cn(
-                                                "w-full justify-start text-left font-normal bg-control h-8 text-sm border-control focus:ring-0 focus:border-foreground/30",
+                                                "w-full justify-start text-left font-normal bg-control h-8 text-builder-sm font-medium border-control focus:ring-0 focus:border-foreground/30",
                                                 !date && "text-muted-foreground"
                                             )}
                                         >
@@ -140,7 +142,7 @@ export function PropertiesPane({
                                 </Popover>
                             </div>
                             <div className="space-y-1.5">
-                                <Label htmlFor="time" className="text-[11px] text-muted-foreground">Time</Label>
+                                <Label htmlFor="time" className="text-builder-xs text-muted-foreground">Time</Label>
                                 <div className="relative">
                                     <div
                                         className="absolute left-0 top-0 bottom-0 flex items-center justify-center w-9 cursor-pointer z-10"
@@ -156,7 +158,7 @@ export function PropertiesPane({
                                         type="time"
                                         value={time}
                                         onChange={(e) => setValue("time", e.target.value, { shouldValidate: true })}
-                                        className="pl-9 bg-control h-8 text-sm border-control focus-visible:ring-0 focus-visible:border-foreground/30 [&::-webkit-calendar-picker-indicator]:hidden relative z-0"
+                                        className="pl-9 bg-control h-8 text-builder-sm font-medium border-control focus-visible:ring-0 focus-visible:border-foreground/30 [&::-webkit-calendar-picker-indicator]:hidden relative z-0"
                                     />
                                 </div>
                             </div>
@@ -174,9 +176,9 @@ export function PropertiesPane({
                             type="button"
                             aria-expanded={!collapsedSections.roles}
                             onClick={() => setCollapsedSections((prev) => ({ ...prev, roles: !prev.roles }))}
-                            className="flex items-center gap-1 text-[12px] font-medium text-muted-foreground px-1.5 py-0.5 rounded-md hover:text-foreground hover:bg-control-hover focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-foreground/15 w-full justify-start text-left"
+                            className={sectionHeaderClass}
                         >
-                            <ChevronDown className={cn("h-3.5 w-3.5 text-muted-foreground transition-transform", collapsedSections.roles ? "-rotate-90" : "rotate-0")} />
+                            <ChevronDown className={cn("h-3.5 w-3.5 -translate-y-[0.5px] text-muted-foreground transition-transform", collapsedSections.roles ? "-rotate-90" : "rotate-0")} />
                             Roles
                         </button>
                     </div>
@@ -187,7 +189,7 @@ export function PropertiesPane({
                             {presiding || showPresiding ? (
                                 <div className="space-y-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
                                     <div className="flex items-center justify-between">
-                                        <Label htmlFor="presiding" className="text-[11px] text-muted-foreground">Presiding</Label>
+                                        <Label htmlFor="presiding" className="text-builder-xs text-muted-foreground">Presiding</Label>
                                         <button
                                             type="button"
                                             onClick={() => {
@@ -205,13 +207,13 @@ export function PropertiesPane({
                                         onChange={(e) => setValue("presiding", e.target.value)}
                                         onFocus={(e) => e.target.select()}
                                         placeholder="e.g. Bishop Smith"
-                                        className="bg-control h-8 text-sm border-control focus-visible:ring-0 focus-visible:border-foreground/30"
+                                        className="bg-control h-8 text-builder-sm font-medium border-control focus-visible:ring-0 focus-visible:border-foreground/30"
                                         autoFocus={!presiding}
                                     />
                                 </div>
                             ) : (
                                 <div className="flex items-center justify-between h-7">
-                                    <span className="text-[12px] text-muted-foreground">Presiding</span>
+                                    <span className="text-builder-sm text-muted-foreground">Presiding</span>
                                     <button
                                         type="button"
                                         onClick={() => setShowPresiding(true)}
@@ -238,7 +240,7 @@ export function PropertiesPane({
                             {conducting || showConducting ? (
                                 <div className="space-y-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
                                     <div className="flex items-center justify-between">
-                                        <Label htmlFor="conducting" className="text-[11px] text-muted-foreground">Conducting</Label>
+                                        <Label htmlFor="conducting" className="text-builder-xs text-muted-foreground">Conducting</Label>
                                         <button
                                             type="button"
                                             onClick={() => {
@@ -256,13 +258,13 @@ export function PropertiesPane({
                                         onChange={(e) => setValue("conducting", e.target.value)}
                                         onFocus={(e) => e.target.select()}
                                         placeholder="e.g. Brother Jones"
-                                        className="bg-control h-8 text-sm border-control focus-visible:ring-0 focus-visible:border-foreground/30"
+                                        className="bg-control h-8 text-builder-sm font-medium border-control focus-visible:ring-0 focus-visible:border-foreground/30"
                                         autoFocus={!conducting}
                                     />
                                 </div>
                             ) : (
                                 <div className="flex items-center justify-between h-7">
-                                    <span className="text-[12px] text-muted-foreground">Conducting</span>
+                                    <span className="text-builder-sm text-muted-foreground">Conducting</span>
                                     <button
                                         type="button"
                                         onClick={() => setShowConducting(true)}
@@ -289,7 +291,7 @@ export function PropertiesPane({
                             {chorister || showChorister ? (
                                 <div className="space-y-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
                                     <div className="flex items-center justify-between">
-                                        <Label htmlFor="chorister" className="text-[11px] text-muted-foreground">Chorister</Label>
+                                        <Label htmlFor="chorister" className="text-builder-xs text-muted-foreground">Chorister</Label>
                                         <button
                                             type="button"
                                             onClick={() => {
@@ -307,13 +309,13 @@ export function PropertiesPane({
                                         onChange={(e) => setValue("chorister", e.target.value)}
                                         onFocus={(e) => e.target.select()}
                                         placeholder="Name"
-                                        className="bg-control h-8 text-sm border-control focus-visible:ring-0 focus-visible:border-foreground/30"
+                                        className="bg-control h-8 text-builder-sm font-medium border-control focus-visible:ring-0 focus-visible:border-foreground/30"
                                         autoFocus={!chorister}
                                     />
                                 </div>
                             ) : (
                                 <div className="flex items-center justify-between h-7">
-                                    <span className="text-[12px] text-muted-foreground">Chorister</span>
+                                    <span className="text-builder-sm text-muted-foreground">Chorister</span>
                                     <button
                                         type="button"
                                         onClick={() => setShowChorister(true)}
@@ -340,7 +342,7 @@ export function PropertiesPane({
                             {pianistOrganist || showPianist ? (
                                 <div className="space-y-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
                                     <div className="flex items-center justify-between">
-                                        <Label htmlFor="pianistOrganist" className="text-[11px] text-muted-foreground">Pianist / Organist</Label>
+                                        <Label htmlFor="pianistOrganist" className="text-builder-xs text-muted-foreground">Pianist / Organist</Label>
                                         <button
                                             type="button"
                                             onClick={() => {
@@ -358,13 +360,13 @@ export function PropertiesPane({
                                         onChange={(e) => setValue("pianistOrganist", e.target.value)}
                                         onFocus={(e) => e.target.select()}
                                         placeholder="Name"
-                                        className="bg-control h-8 text-sm border-control focus-visible:ring-0 focus-visible:border-foreground/30"
+                                        className="bg-control h-8 text-builder-sm font-medium border-control focus-visible:ring-0 focus-visible:border-foreground/30"
                                         autoFocus={!pianistOrganist}
                                     />
                                 </div>
                             ) : (
                                 <div className="flex items-center justify-between h-7">
-                                    <span className="text-[12px] text-muted-foreground">Pianist / Organist</span>
+                                    <span className="text-builder-sm text-muted-foreground">Pianist / Organist</span>
                                     <button
                                         type="button"
                                         onClick={() => setShowPianist(true)}
@@ -396,9 +398,9 @@ export function PropertiesPane({
                             type="button"
                             aria-expanded={!collapsedSections.notes}
                             onClick={() => setCollapsedSections((prev) => ({ ...prev, notes: !prev.notes }))}
-                            className="flex items-center gap-1 text-[12px] font-medium text-muted-foreground px-1.5 py-0.5 rounded-md hover:text-foreground hover:bg-control-hover focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-foreground/15 w-full justify-start text-left"
+                            className={sectionHeaderClass}
                         >
-                            <ChevronDown className={cn("h-3.5 w-3.5 text-muted-foreground transition-transform", collapsedSections.notes ? "-rotate-90" : "rotate-0")} />
+                            <ChevronDown className={cn("h-3.5 w-3.5 -translate-y-[0.5px] text-muted-foreground transition-transform", collapsedSections.notes ? "-rotate-90" : "rotate-0")} />
                             Notes
                         </button>
                     </div>
@@ -407,7 +409,7 @@ export function PropertiesPane({
                             {meetingNotes || showMeetingNotes ? (
                                 <div className="space-y-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
                                     <div className="flex items-center justify-between">
-                                        <Label className="text-[11px] text-muted-foreground">Notes</Label>
+                                        <Label className="text-builder-xs text-muted-foreground">Notes</Label>
                                         <button
                                             type="button"
                                             onClick={() => {
@@ -427,7 +429,7 @@ export function PropertiesPane({
                                 </div>
                             ) : (
                                 <div className="flex items-center justify-between h-7">
-                                    <span className="text-[12px] text-muted-foreground">Notes</span>
+                                    <span className="text-builder-sm text-muted-foreground">Notes</span>
                                     <button
                                         type="button"
                                         onClick={() => setShowMeetingNotes(true)}

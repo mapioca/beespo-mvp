@@ -102,6 +102,8 @@ export function ToolboxPane({
     const [workspaceId, setWorkspaceId] = useState<string | null>(null);
     const [paneMode, setPaneMode] = useState<"library" | "outline">("library");
     const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
+    const sectionHeaderClass =
+        "flex items-center gap-1 text-builder-xs font-medium text-muted-foreground px-1.5 py-0.5 rounded-md leading-none hover:text-foreground hover:bg-control-hover focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-foreground/15 w-full justify-start text-left";
 
     // Load item types
     useEffect(() => {
@@ -354,7 +356,7 @@ export function ToolboxPane({
                             type="button"
                             onClick={() => setPaneMode("library")}
                             className={cn(
-                                "flex items-center justify-center rounded-full text-[11px] font-medium h-7",
+                                "flex items-center justify-center rounded-full text-builder-xs font-medium h-7",
                                 paneMode === "library"
                                     ? "border border-border/40 bg-foreground text-background"
                                     : "text-muted-foreground"
@@ -366,7 +368,7 @@ export function ToolboxPane({
                             type="button"
                             onClick={() => setPaneMode("outline")}
                             className={cn(
-                                "flex items-center justify-center rounded-full text-[11px] font-medium h-7",
+                                "flex items-center justify-center rounded-full text-builder-xs font-medium h-7",
                                 paneMode === "outline"
                                     ? "border border-border/40 bg-foreground text-background"
                                     : "text-muted-foreground"
@@ -384,11 +386,14 @@ export function ToolboxPane({
                                 placeholder="Search items..."
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
-                                className="pl-9 h-8 bg-control border-control text-foreground focus-visible:ring-0 focus-visible:border-foreground/30"
+                                className="pl-9 h-8 bg-control border-control text-builder-sm text-foreground focus-visible:ring-0 focus-visible:border-foreground/30"
                             />
                         </div>
                     )}
                 </div>
+                {paneMode === "library" && (
+                    <div className="mx-3 border-b border-border/40" />
+                )}
 
                 {/* Library */}
                 {paneMode === "library" && (
@@ -396,11 +401,11 @@ export function ToolboxPane({
                         <ScrollArea className="flex-1">
                             <div className="px-3 pr-6 pb-4">
                             {isLoading ? (
-                                <div className="p-4 text-center text-sm text-muted-foreground">
+                                <div className="p-4 text-center text-builder-sm text-muted-foreground">
                                     Loading items...
                                 </div>
                             ) : filteredGroups.length === 0 && filteredPinned.length === 0 && filteredRecent.length === 0 ? (
-                                <div className="p-4 text-center text-sm text-muted-foreground">
+                                <div className="p-4 text-center text-builder-sm text-muted-foreground">
                                     No items found
                                 </div>
                             ) : (
@@ -413,9 +418,9 @@ export function ToolboxPane({
                                                 onClick={() =>
                                                     setCollapsedSections((prev) => ({ ...prev, pinned: !prev.pinned }))
                                                 }
-                                                className="flex items-center gap-1 text-[11px] font-medium text-muted-foreground px-1.5 py-0.5 rounded-md hover:text-foreground hover:bg-control-hover focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-foreground/15 w-full justify-start text-left"
+                                                className={sectionHeaderClass}
                                             >
-                                                <ChevronDown className={cn("h-3 w-3 transition-transform", collapsedSections.pinned ? "-rotate-90" : "rotate-0")} />
+                                                <ChevronDown className={cn("h-3.5 w-3.5 -translate-y-[0.5px] transition-transform", collapsedSections.pinned ? "-rotate-90" : "rotate-0")} />
                                                 Pinned
                                             </button>
                                             {!collapsedSections.pinned && (
@@ -442,9 +447,9 @@ export function ToolboxPane({
                                                 onClick={() =>
                                                     setCollapsedSections((prev) => ({ ...prev, recent: !prev.recent }))
                                                 }
-                                                className="flex items-center gap-1 text-[11px] font-medium text-muted-foreground px-1.5 py-0.5 rounded-md hover:text-foreground hover:bg-control-hover focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-foreground/15 w-full justify-start text-left"
+                                                className={sectionHeaderClass}
                                             >
-                                                <ChevronDown className={cn("h-3 w-3 transition-transform", collapsedSections.recent ? "-rotate-90" : "rotate-0")} />
+                                                <ChevronDown className={cn("h-3.5 w-3.5 -translate-y-[0.5px] transition-transform", collapsedSections.recent ? "-rotate-90" : "rotate-0")} />
                                                 Recent
                                             </button>
                                             {!collapsedSections.recent && (
@@ -474,9 +479,9 @@ export function ToolboxPane({
                                                         [group.id]: !prev[group.id],
                                                     }))
                                                 }
-                                                className="flex items-center gap-1 text-[11px] font-medium text-muted-foreground px-1.5 py-0.5 rounded-md hover:text-foreground hover:bg-control-hover focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-foreground/15 w-full justify-start text-left"
+                                                className={sectionHeaderClass}
                                             >
-                                                <ChevronDown className={cn("h-3 w-3 transition-transform", collapsedSections[group.id] ? "-rotate-90" : "rotate-0")} />
+                                                <ChevronDown className={cn("h-3.5 w-3.5 -translate-y-[0.5px] transition-transform", collapsedSections[group.id] ? "-rotate-90" : "rotate-0")} />
                                                 {group.label}
                                             </button>
                                             {!collapsedSections[group.id] && (
@@ -499,7 +504,7 @@ export function ToolboxPane({
                                                         variant="outline"
                                                         size="sm"
                                                         type="button"
-                                                        className="w-full mt-2 h-8 text-[12px] bg-foreground text-background border-foreground hover:bg-foreground/90 hover:text-background shadow-sm"
+                                                        className="w-full mt-2 h-8 text-builder-sm bg-foreground text-background border-foreground hover:bg-foreground/90 hover:text-background shadow-sm"
                                                         onClick={() => {
                                                             setItemToEdit(null);
                                                             setIsCreateDialogOpen(true);
@@ -510,7 +515,7 @@ export function ToolboxPane({
                                                     </Button>
                                                 )}
                                                     {group.items.length === 0 && !group.showAddButton && (
-                                                        <div className="text-xs text-muted-foreground text-center py-2">
+                                                        <div className="text-builder-sm text-muted-foreground text-center py-2">
                                                             No items in this category
                                                         </div>
                                                     )}
@@ -525,7 +530,7 @@ export function ToolboxPane({
 
                         {/* Hint */}
                         <div className="p-3 border-t border-border/40 shrink-0">
-                            <p className="text-[11px] text-muted-foreground text-center">
+                            <p className="text-builder-xs text-muted-foreground text-center">
                                 Click an item to add it to the end, or drag onto the canvas to place it
                             </p>
                         </div>
@@ -537,7 +542,7 @@ export function ToolboxPane({
                     <ScrollArea className="flex-1">
                         <div className="px-3 pr-6 pb-4">
                             {outlineItems.length === 0 ? (
-                                <div className="p-4 text-center text-sm text-muted-foreground">
+                                <div className="p-4 text-center text-builder-sm text-muted-foreground">
                                     No agenda items yet
                                 </div>
                             ) : (
@@ -606,7 +611,7 @@ function OutlineRow({
             ref={setNodeRef}
             style={style}
             className={cn(
-                "flex items-center gap-2 rounded-lg border border-transparent px-2 py-1 text-[11.5px]",
+                "flex items-center gap-2 rounded-lg border border-transparent px-2 py-1 text-builder-xs",
                 "hover:bg-control-hover hover:border-border/40",
                 isSelected && "bg-control-hover border-border/40",
                 isDragging && "opacity-60"
@@ -628,7 +633,7 @@ function OutlineRow({
                     {item.title}
                 </div>
                 {item.duration_minutes !== undefined && (
-                    <div className="text-[10px] text-muted-foreground">
+                    <div className="text-builder-2xs text-muted-foreground">
                         {item.duration_minutes}m
                     </div>
                 )}
