@@ -98,9 +98,6 @@ export function SidebarNavCollapsible({
           onOpenAutoFocus={(e) => e.preventDefault()}
           onInteractOutside={(e) => e.preventDefault()}
         >
-          <p className="text-nav-muted px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.06em]">
-            {item.label}
-          </p>
           <div className="mt-0.5 space-y-0.5">
             {item.children.map((child) => {
               const ChildIcon = child.icon
@@ -169,9 +166,6 @@ export function SidebarNavCollapsible({
           onOpenAutoFocus={(e) => e.preventDefault()}
           onInteractOutside={(e) => e.preventDefault()}
         >
-          <p className="text-nav-muted px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.06em]">
-            {item.label}
-          </p>
           <div className="mt-0.5 space-y-0.5">
             {item.children.map((child) => {
               const ChildIcon = child.icon

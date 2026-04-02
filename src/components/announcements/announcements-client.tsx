@@ -355,8 +355,8 @@ export function AnnouncementsClient({
                                 className={cn(
                                     "rounded-full border pl-3.5 pr-7 py-1 text-xs font-medium transition-all shadow-sm",
                                     activeViewId === view.id
-                                        ? "bg-[hsl(var(--accent-warm))] text-foreground border-border/60"
-                                        : "text-muted-foreground border-border/60 hover:text-foreground hover:bg-[hsl(var(--accent-warm)/0.5)] hover:border-border/60"
+                                        ? "bg-[hsl(var(--chip-active-bg))] text-[hsl(var(--chip-active-text))] border-[hsl(var(--chip-border))]"
+                                        : "bg-[hsl(var(--chip-bg))] text-[hsl(var(--chip-text))] border-[hsl(var(--chip-border))] hover:bg-[hsl(var(--chip-active-bg))] hover:text-[hsl(var(--chip-active-text))]"
                                 )}
                             >
                                 {view.name}
@@ -397,7 +397,7 @@ export function AnnouncementsClient({
                     />
                 </div>
 
-                <Button asChild variant="ghost" className="rounded-full border px-3.5 py-1 text-xs font-medium text-foreground border-border/60 bg-[hsl(var(--accent-warm))] hover:bg-[hsl(var(--accent-warm-hover))] transition-all shadow-[0_1px_0_rgba(15,23,42,0.08)]">
+                <Button asChild size="sm" className="rounded-full px-3.5 py-1 text-xs">
                     <Link href="/meetings/announcements/new" className="flex items-center gap-1.5">
                         <Plus className="h-3.5 w-3.5 stroke-[1.6]" />
                         New
@@ -410,17 +410,17 @@ export function AnnouncementsClient({
                 <div className="flex items-center gap-2 px-6 pb-3 flex-wrap text-[11px] text-muted-foreground">
                     <span className="font-medium text-foreground">Filters:</span>
                     {activeView.filters.statuses?.map((s) => (
-                        <span key={s} className="rounded-md bg-[hsl(var(--accent-warm))] border border-border/50 px-2 py-0.5 text-slate-800 capitalize">
+                        <span key={s} className="rounded-md bg-[hsl(var(--chip-bg))] border border-[hsl(var(--chip-border))] px-2 py-0.5 text-[hsl(var(--chip-text))] capitalize">
                             {s}
                         </span>
                     ))}
                     {activeView.filters.priorities?.map((p) => (
-                        <span key={p} className="rounded-md bg-[hsl(var(--accent-warm))] border border-border/50 px-2 py-0.5 text-slate-800 capitalize">
+                        <span key={p} className="rounded-md bg-[hsl(var(--chip-bg))] border border-[hsl(var(--chip-border))] px-2 py-0.5 text-[hsl(var(--chip-text))] capitalize">
                             {p}
                         </span>
                     ))}
                     {search && (
-                        <span className="rounded-md bg-[hsl(var(--accent-warm))] border border-border/50 px-2 py-0.5 text-slate-800">
+                        <span className="rounded-md bg-[hsl(var(--chip-bg))] border border-[hsl(var(--chip-border))] px-2 py-0.5 text-[hsl(var(--chip-text))]">
                             Search: &quot;{search}&quot;
                             <button onClick={() => setSearch("")} className="ml-1 text-muted-foreground hover:text-foreground">
                                 <X className="h-3 w-3 inline stroke-[1.6]" />
@@ -433,7 +433,7 @@ export function AnnouncementsClient({
             {/* Selection action bar */}
             {selectedRows.size > 0 && (
                 <div className="flex items-center gap-3 px-6 pb-3 shrink-0">
-                    <span className="inline-flex items-center rounded-full bg-[hsl(var(--accent-warm))] px-2.5 py-1 text-[11px] font-medium text-slate-800 border border-border/50 tabular-nums">
+                    <span className="inline-flex items-center rounded-full bg-[hsl(var(--chip-bg))] border border-[hsl(var(--chip-border))] px-2.5 py-1 text-[11px] font-medium text-[hsl(var(--chip-text))]  tabular-nums">
                         {selectedRows.size} selected
                     </span>
                     <Button
@@ -458,7 +458,7 @@ export function AnnouncementsClient({
             {hasActiveFilters && selectedRows.size === 0 && (
                 <div className="flex items-center gap-2 px-6 pb-3 flex-wrap">
                     {search && (
-                        <span className="inline-flex items-center gap-1.5 rounded-md bg-[hsl(var(--accent-warm))] px-2.5 py-1 text-xs font-medium text-slate-800 border border-border/50">
+                        <span className="inline-flex items-center gap-1.5 rounded-md bg-[hsl(var(--chip-bg))] border border-[hsl(var(--chip-border))] px-2.5 py-1 text-xs font-medium text-[hsl(var(--chip-text))] ">
                             Search: &quot;{search}&quot;
                             <button onClick={() => setSearch("")} className="text-muted-foreground hover:text-foreground">
                                 <X className="h-3 w-3 stroke-[1.6]" />
@@ -466,7 +466,7 @@ export function AnnouncementsClient({
                         </span>
                     )}
                     {selectedStatuses.map((s) => (
-                        <span key={s} className="inline-flex items-center gap-1.5 rounded-md bg-[hsl(var(--accent-warm))] px-2.5 py-1 text-xs font-medium text-slate-800 border border-border/50 capitalize">
+                        <span key={s} className="inline-flex items-center gap-1.5 rounded-md bg-[hsl(var(--chip-bg))] border border-[hsl(var(--chip-border))] px-2.5 py-1 text-xs font-medium text-[hsl(var(--chip-text))]  capitalize">
                             {s}
                             <button onClick={() => handleStatusToggle(s)} className="text-muted-foreground hover:text-foreground">
                                 <X className="h-3 w-3 stroke-[1.6]" />
@@ -474,7 +474,7 @@ export function AnnouncementsClient({
                         </span>
                     ))}
                     {selectedPriorities.map((p) => (
-                        <span key={p} className="inline-flex items-center gap-1.5 rounded-md bg-[hsl(var(--accent-warm))] px-2.5 py-1 text-xs font-medium text-slate-800 border border-border/50 capitalize">
+                        <span key={p} className="inline-flex items-center gap-1.5 rounded-md bg-[hsl(var(--chip-bg))] border border-[hsl(var(--chip-border))] px-2.5 py-1 text-xs font-medium text-[hsl(var(--chip-text))]  capitalize">
                             {p}
                             <button onClick={() => handlePriorityToggle(p)} className="text-muted-foreground hover:text-foreground">
                                 <X className="h-3 w-3 stroke-[1.6]" />

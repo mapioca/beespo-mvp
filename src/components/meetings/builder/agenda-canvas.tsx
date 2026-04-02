@@ -93,7 +93,7 @@ function SortableAgendaRow({
                         {...attributes}
                         {...listeners}
                         className={cn(
-                            "rounded-xl border border-border/40 bg-background/70 shadow-[0_1px_0_rgba(15,23,42,0.04)] transition-all group cursor-grab active:cursor-grabbing touch-none",
+                            "rounded-xl border border-border/40 bg-background/80 shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-all group cursor-grab active:cursor-grabbing touch-none",
                             "hover:bg-background hover:border-border/60",
                             isSelected && "ring-2 ring-primary/30 border-primary/30",
                             isDragging && "opacity-60 shadow-lg ring-2 ring-primary/30"
@@ -143,7 +143,7 @@ function SortableAgendaRow({
                                     {item.childItems.map((child) => (
                                         <div
                                             key={child.id}
-                                            className="flex flex-col gap-1 p-2 bg-background/70 rounded-md border border-border/40"
+                                            className="flex flex-col gap-1 p-2 bg-background/80 rounded-md border border-border/40"
                                         >
                                             <div className="flex items-center gap-2">
                                                 <span className="text-sm font-medium flex-1 truncate">{child.title}</span>
@@ -190,7 +190,7 @@ function SortableAgendaRow({
                         style={style}
                         onClick={(e) => { e.stopPropagation(); onSelect?.(); }}
                         className={cn(
-                            "flex flex-col border rounded-xl bg-background/70 shadow-[0_1px_0_rgba(15,23,42,0.04)] transition-all group cursor-grab active:cursor-grabbing touch-none",
+                            "flex flex-col border rounded-xl bg-background/80 shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-all group cursor-grab active:cursor-grabbing touch-none",
                             "hover:bg-background hover:border-border/60",
                             isSelected && "ring-2 ring-primary/30 border-primary/30",
                             isDragging && "opacity-60 shadow-lg ring-2 ring-primary/30"
@@ -284,7 +284,7 @@ function SortableAgendaRow({
                     style={style}
                     onClick={(e) => { e.stopPropagation(); onSelect?.(); }}
                     className={cn(
-                        "flex flex-col border rounded-xl bg-background/70 shadow-[0_1px_0_rgba(15,23,42,0.04)] transition-all group cursor-grab active:cursor-grabbing touch-none",
+                        "flex flex-col border rounded-xl bg-background/80 shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-all group cursor-grab active:cursor-grabbing touch-none",
                         "hover:bg-background hover:border-border/60",
                         isSelected && "ring-2 ring-primary/30 border-primary/30",
                         isDragging && "opacity-60 shadow-lg ring-2 ring-primary/30"

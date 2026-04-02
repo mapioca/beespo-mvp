@@ -192,7 +192,7 @@ export function EventsListClient({ events }: EventsListClientProps) {
                     </p>
                 </div>
             ) : (
-                <div className="rounded-md border border-border/50 bg-background/80">
+                <div className="rounded-md border border-[hsl(var(--chip-border))] bg-background/80">
                     <Table className="text-[13px]">
                         <TableHeader>
                             <TableRow>
@@ -213,7 +213,7 @@ export function EventsListClient({ events }: EventsListClientProps) {
                                     <TableRow
                                         key={`${event.source_type}-${event.id}`}
                                         className={cn(
-                                            "cursor-pointer hover:bg-[hsl(var(--accent-warm)/0.35)]",
+                                            "cursor-pointer transition-colors hover:bg-[hsl(var(--table-row-hover))]",
                                             status === "past" && "opacity-60"
                                         )}
                                         onClick={() => handleEventClick(event)}

@@ -157,7 +157,7 @@ export function BusinessTable({
             <div className="rounded-xl border-y border-border/60 bg-background/80 shadow-[0_1px_0_rgba(15,23,42,0.04)] overflow-hidden">
             <Table className="text-[13px]">
                 <TableHeader>
-                    <TableRow className="bg-muted/30 hover:bg-muted/30 border-b">
+                    <TableRow className="bg-muted/30 hover:bg-muted/30 border-b border-border/60">
                         {/* Checkbox */}
                         <TableHead className="w-10 px-3 py-2.5">
                             <Checkbox
@@ -298,7 +298,10 @@ export function BusinessTable({
                         </TableRow>
                     ) : (
                         items.map((item) => (
-                            <TableRow key={item.id} className="group hover:bg-[hsl(var(--accent-warm)/0.35)]">
+                            <TableRow
+                                key={item.id}
+                                className="group transition-colors hover:bg-[hsl(var(--table-row-hover))]"
+                            >
                                 {/* Checkbox */}
                                 <TableCell className="px-3 py-3">
                                     <Checkbox

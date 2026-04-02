@@ -253,8 +253,8 @@ export function ParticipantsTable({
                                 <Fragment key={participant.id}>
                                     <TableRow
                                         className={cn(
-                                            "group cursor-pointer hover:bg-[hsl(var(--accent-warm)/0.35)]",
-                                            isExpanded && "bg-[hsl(var(--accent-warm)/0.35)]"
+                                            "group cursor-pointer transition-colors hover:bg-[hsl(var(--table-row-hover))]",
+                                            isExpanded && "bg-[hsl(var(--table-row-hover))]"
                                         )}
                                         onClick={() =>
                                             toggleExpand(participant)

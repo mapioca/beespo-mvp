@@ -44,7 +44,7 @@ const getCategoryIcon = (item: ToolboxItem) => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const DynamicIcon = (LucideIcons as any)[item.icon];
         if (DynamicIcon) {
-            return <DynamicIcon className="h-4 w-4 text-black dark:text-white" />;
+            return <DynamicIcon className="h-4 w-4 text-muted-foreground" />;
         }
     }
 
@@ -144,17 +144,18 @@ export function DraggableToolboxItem({ item, disabled, onAddItem, onEditItem }: 
             }}
             className={cn(
                 "group flex items-center gap-3 px-2.5 py-2 rounded-lg border border-transparent",
-                "hover:bg-muted/60 hover:border-border/50 transition-all cursor-grab active:cursor-grabbing relative",
-                isDragging && "opacity-60 shadow-lg ring-2 ring-primary/30 z-50",
+                "text-[13px] font-normal",
+                "hover:bg-control-hover hover:border-border/40 transition-colors cursor-grab active:cursor-grabbing relative",
+                isDragging && "opacity-60 shadow-lg ring-2 ring-primary/20 z-50",
                 disabled && "opacity-50 cursor-not-allowed"
             )}
         >
-            <div className="flex items-center justify-center shrink-0 w-7 h-7 rounded-full bg-muted/60 text-foreground">
+            <div className="flex items-center justify-center shrink-0 w-7 h-7 rounded-full bg-control text-muted-foreground border border-control">
                 {getCategoryIcon(item)}
             </div>
 
             <div className={cn("flex-1 min-w-0", onEditItem ? "pr-10" : "pr-2")}>
-                <span className="text-sm font-medium text-foreground leading-tight break-words">{item.title}</span>
+                <span className="text-[13px] font-normal text-foreground leading-tight break-words">{item.title}</span>
             </div>
 
             {onEditItem && (
@@ -168,7 +169,7 @@ export function DraggableToolboxItem({ item, disabled, onAddItem, onEditItem }: 
                         }}
                         onPointerDown={(e) => e.stopPropagation()}
                         onPointerUp={(e) => e.stopPropagation()}
-                    className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted/60 rounded-md transition-all"
+                    className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-control-hover rounded-md transition-colors"
                     title="Edit Item Type"
                 >
                     <Pencil className="h-4 w-4" />

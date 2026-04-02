@@ -301,7 +301,7 @@ export function ToolboxPane({ onItemsLoaded, onAddItem }: ToolboxPaneProps) {
         <div className="flex flex-col h-full overflow-hidden p-3">
             <div className="flex flex-col flex-1 overflow-hidden">
                 <div className="px-4 pt-3 pb-2 shrink-0">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
                         Items Library
                     </p>
                     <div className="relative mt-3">
@@ -310,7 +310,7 @@ export function ToolboxPane({ onItemsLoaded, onAddItem }: ToolboxPaneProps) {
                             placeholder="Search items..."
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
-                            className="pl-9 h-8 bg-transparent border-border/60 focus-visible:ring-0 focus-visible:border-foreground/30"
+                            className="pl-9 h-8 bg-control border-control text-foreground focus-visible:ring-0 focus-visible:border-foreground/30"
                         />
                     </div>
                 </div>
@@ -330,7 +330,7 @@ export function ToolboxPane({ onItemsLoaded, onAddItem }: ToolboxPaneProps) {
                         <div className="space-y-7">
                             {filteredGroups.map((group) => (
                                 <div key={group.id} className="space-y-3 px-1">
-                                    <h4 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.2em] px-1">
+                                    <h4 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-[0.06em] px-1">
                                         {group.label}
                                     </h4>
                                     <div className="space-y-1">

@@ -215,7 +215,7 @@ export function FormsTable({
                         </TableRow>
                     ) : (
                         forms.map((form) => (
-                                <TableRow key={form.id} className="group hover:bg-[hsl(var(--accent-warm)/0.35)]">
+                                <TableRow key={form.id} className="group transition-colors hover:bg-[hsl(var(--table-row-hover))]">
                                     {/* Checkbox */}
                                     <TableCell className="px-3 py-3">
                                         <Checkbox

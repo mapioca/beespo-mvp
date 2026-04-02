@@ -292,7 +292,7 @@ export function DiscussionsTable({
                         discussions.map((discussion) => (
                             <TableRow
                                 key={discussion.id}
-                                className="group hover:bg-[hsl(var(--accent-warm)/0.35)]"
+                                className="group transition-colors hover:bg-[hsl(var(--table-row-hover))]"
                             >
                                 {/* Checkbox */}
                                 <TableCell className="px-3 py-3">

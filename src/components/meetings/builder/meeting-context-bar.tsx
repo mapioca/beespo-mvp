@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
     ArrowLeftRight,
     Link,
@@ -136,6 +136,70 @@ export function MeetingContextBar({
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
     const [deviceMenuOpen, setDeviceMenuOpen] = useState(false);
+    const [isMac, setIsMac] = useState(false);
+
+    useEffect(() => {
+        if (typeof navigator === "undefined") return;
+        const platform = navigator.platform || "";
+        const userAgent = navigator.userAgent || "";
+        setIsMac(/Mac|iPhone|iPad|iPod/i.test(platform + userAgent));
+    }, []);
+
+    const modeShortcuts = useMemo(
+        () => ({
+            planning: isMac ? "⌥⌘1" : "Ctrl+Alt+1",
+            "print-preview": isMac ? "⌥⌘2" : "Ctrl+Alt+2",
+            program: isMac ? "⌥⌘3" : "Ctrl+Alt+3",
+        }),
+        [isMac]
+    );
+
+    const saveShortcuts = useMemo(
+        () => ({
+            save: isMac ? "⌘S" : "Ctrl+S",
+            template: isMac ? "⌥⌘T" : "Ctrl+Alt+T",
+            newMeeting: isMac ? "⌥⌘N" : "Ctrl+Alt+N",
+        }),
+        [isMac]
+    );
+
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            const key = e.key.toLowerCase();
+            const hasCmdOrCtrl = e.metaKey || e.ctrlKey;
+
+            if (!hasCmdOrCtrl) return;
+
+            // Save (Cmd/Ctrl + S)
+            if (!e.altKey && !e.shiftKey && key === "s") {
+                e.preventDefault();
+                if (!isCreating && isValid) {
+                    onSave();
+                }
+                return;
+            }
+
+            // Save as Template (Cmd/Ctrl + Alt + T)
+            if (e.altKey && key === "t") {
+                e.preventDefault();
+                if (!isCreating && isValid) {
+                    onSaveAsTemplate();
+                }
+                return;
+            }
+
+            // Save as New Meeting (Cmd/Ctrl + Alt + N)
+            if (e.altKey && key === "n") {
+                e.preventDefault();
+                if (!isCreating && isValid) {
+                    openSaveAsNew();
+                }
+            }
+        };
+
+        window.addEventListener("keydown", handleKeyDown);
+        return () => window.removeEventListener("keydown", handleKeyDown);
+    }, [isCreating, isValid, onSave, onSaveAsTemplate]);
 
     const handleCopyLink = async () => {
         const url = initialMeetingId
@@ -436,15 +500,24 @@ export function MeetingContextBar({
                                     <span className="sr-only">Switch mode</span>
                                 </button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-44">
+                            <DropdownMenuContent align="end" className="w-56">
                                 <DropdownMenuItem onSelect={() => onModeChange("planning")} className={cn(mode === "planning" && "font-medium")}>
                                     Planning
+                                    <span className="ml-auto text-[11px] text-muted-foreground tabular-nums">
+                                        {modeShortcuts.planning}
+                                    </span>
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onSelect={() => onModeChange("print-preview")} className={cn(mode === "print-preview" && "font-medium")}>
                                     Print Preview
+                                    <span className="ml-auto text-[11px] text-muted-foreground tabular-nums">
+                                        {modeShortcuts["print-preview"]}
+                                    </span>
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onSelect={() => onModeChange("program")} className={cn(mode === "program" && "font-medium")}>
                                     Program
+                                    <span className="ml-auto text-[11px] text-muted-foreground tabular-nums">
+                                        {modeShortcuts.program}
+                                    </span>
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>
@@ -470,16 +543,25 @@ export function MeetingContextBar({
                                     </button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end" className="w-52">
-                                    <DropdownMenuItem onSelect={onSave} disabled={isCreating || !isValid}>
-                                        {isCreating && <Loader2 className="h-3.5 w-3.5 mr-2 animate-spin" />}
-                                        {saveLabel}
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onSelect={onSaveAsTemplate}>
-                                        Save as Template
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onSelect={openSaveAsNew}>
-                                        Save as New Meeting
-                                    </DropdownMenuItem>
+                                <DropdownMenuItem onSelect={onSave} disabled={isCreating || !isValid}>
+                                    {isCreating && <Loader2 className="h-3.5 w-3.5 mr-2 animate-spin" />}
+                                    {saveLabel}
+                                    <span className="ml-auto text-[11px] text-muted-foreground tabular-nums">
+                                        {saveShortcuts.save}
+                                    </span>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onSelect={onSaveAsTemplate} disabled={isCreating || !isValid}>
+                                    Save as Template
+                                    <span className="ml-auto text-[11px] text-muted-foreground tabular-nums">
+                                        {saveShortcuts.template}
+                                    </span>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onSelect={openSaveAsNew} disabled={isCreating || !isValid}>
+                                    Save as New Meeting
+                                    <span className="ml-auto text-[11px] text-muted-foreground tabular-nums">
+                                        {saveShortcuts.newMeeting}
+                                    </span>
+                                </DropdownMenuItem>
                                 </DropdownMenuContent>
                             </DropdownMenu>
                         )}

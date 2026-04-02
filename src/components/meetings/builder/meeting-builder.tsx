@@ -186,6 +186,44 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
         })
     );
 
+    // Keyboard shortcuts: Cmd/Ctrl + Option/Alt + 1/2/3 to switch modes
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            const target = e.target as HTMLElement;
+            const isFormField =
+                target.tagName === "INPUT" ||
+                target.tagName === "TEXTAREA" ||
+                target.isContentEditable;
+
+            // Allow shortcuts even when focus is not inside form fields
+            if (!((e.metaKey || e.ctrlKey) && e.altKey)) return;
+
+            const key = e.key;
+            const code = e.code;
+
+            const isDigit1 = key === "1" || code === "Digit1" || code === "Numpad1";
+            const isDigit2 = key === "2" || code === "Digit2" || code === "Numpad2";
+            const isDigit3 = key === "3" || code === "Digit3" || code === "Numpad3";
+
+            if (isDigit1) {
+                if (isFormField) return;
+                e.preventDefault();
+                setBuilderMode("planning");
+            } else if (isDigit2) {
+                if (isFormField) return;
+                e.preventDefault();
+                setBuilderMode("print-preview");
+            } else if (isDigit3) {
+                if (isFormField) return;
+                e.preventDefault();
+                setBuilderMode("program");
+            }
+        };
+
+        window.addEventListener("keydown", handleKeyDown);
+        return () => window.removeEventListener("keydown", handleKeyDown);
+    }, []);
+
     // Load templates & workspace name
     useEffect(() => {
         const fetchInitialData = async () => {
