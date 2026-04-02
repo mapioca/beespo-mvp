@@ -56,6 +56,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 const meetingFormSchema = z.object({
     title: z.string().min(1, "Title is required"),
@@ -105,6 +106,10 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
     // Canvas state
     const [canvasItems, setCanvasItems] = useState<CanvasItem[]>([]);
     const [expandedContainers, setExpandedContainers] = useState<Set<string>>(new Set());
+    const [toolboxItems, setToolboxItems] = useState<ToolboxItem[]>([]);
+    const [pinnedToolboxIds, setPinnedToolboxIds] = useState<string[]>([]);
+    const [recentToolboxIds, setRecentToolboxIds] = useState<string[]>([]);
+    const [insertRequestIndex, setInsertRequestIndex] = useState<number | null>(null);
 
     // DnD state
     const [activeItem, setActiveItem] = useState<ToolboxItem | CanvasItem | null>(null);
@@ -223,6 +228,32 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
         window.addEventListener("keydown", handleKeyDown);
         return () => window.removeEventListener("keydown", handleKeyDown);
     }, []);
+
+    // Planning shortcut: "I" opens insert at selected item (or end)
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            const target = e.target as HTMLElement;
+            const isFormField =
+                target.tagName === "INPUT" ||
+                target.tagName === "TEXTAREA" ||
+                target.isContentEditable;
+
+            if (builderMode !== "planning") return;
+            if (isFormField) return;
+            if (e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) return;
+            if (e.key.toLowerCase() !== "i") return;
+
+            e.preventDefault();
+            const selectedIndex = selectedItemId
+                ? canvasItems.findIndex((item) => item.id === selectedItemId)
+                : -1;
+            const insertIndex = selectedIndex === -1 ? canvasItems.length : selectedIndex + 1;
+            setInsertRequestIndex(insertIndex);
+        };
+
+        window.addEventListener("keydown", handleKeyDown);
+        return () => window.removeEventListener("keydown", handleKeyDown);
+    }, [builderMode, selectedItemId, canvasItems]);
 
     // Load templates & workspace name
     useEffect(() => {
@@ -713,6 +744,66 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
     }, [initialTemplateId, loadTemplateItems]);
 
     // DnD handlers
+    useEffect(() => {
+        if (typeof window === "undefined") return;
+        try {
+            const storedPinned = JSON.parse(localStorage.getItem("beespo:agenda:pins") || "[]");
+            const storedRecent = JSON.parse(localStorage.getItem("beespo:agenda:recent") || "[]");
+            if (Array.isArray(storedPinned)) setPinnedToolboxIds(storedPinned);
+            if (Array.isArray(storedRecent)) setRecentToolboxIds(storedRecent);
+        } catch {
+            // ignore storage errors
+        }
+    }, []);
+
+    const persistPinned = useCallback((ids: string[]) => {
+        if (typeof window === "undefined") return;
+        localStorage.setItem("beespo:agenda:pins", JSON.stringify(ids));
+    }, []);
+
+    const persistRecent = useCallback((ids: string[]) => {
+        if (typeof window === "undefined") return;
+        localStorage.setItem("beespo:agenda:recent", JSON.stringify(ids));
+    }, []);
+
+    const togglePinnedToolboxItem = useCallback((id: string) => {
+        setPinnedToolboxIds((prev) => {
+            const next = prev.includes(id) ? prev.filter((p) => p !== id) : [id, ...prev].slice(0, 8);
+            persistPinned(next);
+            return next;
+        });
+    }, [persistPinned]);
+
+    const recordRecentToolboxItem = useCallback((id: string) => {
+        setRecentToolboxIds((prev) => {
+            const next = [id, ...prev.filter((p) => p !== id)].slice(0, 8);
+            persistRecent(next);
+            return next;
+        });
+    }, [persistRecent]);
+
+    const buildCanvasItemFromToolbox = useCallback((toolboxItem: ToolboxItem, orderIndex: number): CanvasItem => {
+        return {
+            id: `canvas-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            category: toolboxItem.category,
+            title: toolboxItem.title,
+            description: toolboxItem.description,
+            duration_minutes: toolboxItem.duration_minutes,
+            order_index: orderIndex,
+            procedural_item_type_id: toolboxItem.procedural_item_type_id,
+            is_hymn: toolboxItem.is_hymn,
+            requires_participant: toolboxItem.requires_participant,
+            isContainer: toolboxItem.type === "container",
+            containerType: toolboxItem.containerType,
+            childItems: toolboxItem.type === "container" ? [] : undefined,
+            config: toolboxItem.config,
+            is_core: toolboxItem.is_core,
+            is_custom: toolboxItem.is_custom,
+            icon: toolboxItem.icon,
+            structural_type: toolboxItem.structural_type,
+        };
+    }, []);
+
     const handleDragStart = useCallback((event: DragStartEvent) => {
         const { active } = event;
         const data = active.data.current;
@@ -760,32 +851,14 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
             }
 
             // Create new canvas item
-            const newItem: CanvasItem = {
-                id: `canvas-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-                category: toolboxItem.category,
-                title: toolboxItem.title,
-                description: toolboxItem.description,
-                duration_minutes: toolboxItem.duration_minutes,
-                order_index: insertIndex,
-                procedural_item_type_id: toolboxItem.procedural_item_type_id,
-                is_hymn: toolboxItem.is_hymn,
-                requires_participant: toolboxItem.requires_participant,
-                isContainer: toolboxItem.type === "container",
-                containerType: toolboxItem.containerType,
-                childItems: toolboxItem.type === "container" ? [] : undefined,
-                // Pass through config-driven fields for proper icon/behavior rendering
-                config: toolboxItem.config,
-                is_core: toolboxItem.is_core,
-                is_custom: toolboxItem.is_custom,
-                icon: toolboxItem.icon,
-                structural_type: toolboxItem.structural_type,
-            };
+            const newItem = buildCanvasItemFromToolbox(toolboxItem, insertIndex);
 
             // Insert and reindex
             const newItems = [...canvasItems];
             newItems.splice(insertIndex, 0, newItem);
             const reindexed = newItems.map((item, idx) => ({ ...item, order_index: idx }));
             setCanvasItems(reindexed);
+            recordRecentToolboxItem(toolboxItem.id);
 
             // Expand container if added
             if (newItem.isContainer) {
@@ -808,30 +881,12 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                 setCanvasItems(reordered);
             }
         }
-    }, [canvasItems]);
+    }, [canvasItems, buildCanvasItemFromToolbox, recordRecentToolboxItem]);
 
     // Canvas item handlers
     const handleAddCanvasItem = useCallback((toolboxItem: ToolboxItem) => {
         setCanvasItems((prev) => {
-            const newItem: CanvasItem = {
-                id: `canvas-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-                category: toolboxItem.category,
-                title: toolboxItem.title,
-                description: toolboxItem.description,
-                duration_minutes: toolboxItem.duration_minutes,
-                order_index: prev.length,
-                procedural_item_type_id: toolboxItem.procedural_item_type_id,
-                is_hymn: toolboxItem.is_hymn,
-                requires_participant: toolboxItem.requires_participant,
-                isContainer: toolboxItem.type === "container",
-                containerType: toolboxItem.containerType,
-                childItems: toolboxItem.type === "container" ? [] : undefined,
-                config: toolboxItem.config,
-                is_core: toolboxItem.is_core,
-                is_custom: toolboxItem.is_custom,
-                icon: toolboxItem.icon,
-                structural_type: toolboxItem.structural_type,
-            };
+            const newItem = buildCanvasItemFromToolbox(toolboxItem, prev.length);
 
             if (newItem.isContainer) {
                 setExpandedContainers((prevExpanded) => new Set([...prevExpanded, newItem.id]));
@@ -840,7 +895,19 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
             const newItems = [...prev, newItem];
             return newItems.map((item, idx) => ({ ...item, order_index: idx }));
         });
-    }, []);
+        recordRecentToolboxItem(toolboxItem.id);
+    }, [buildCanvasItemFromToolbox, recordRecentToolboxItem]);
+
+    const handleInsertCanvasItemAt = useCallback((index: number, toolboxItem: ToolboxItem) => {
+        setCanvasItems((prev) => {
+            const insertIndex = Math.min(Math.max(index, 0), prev.length);
+            const newItem = buildCanvasItemFromToolbox(toolboxItem, insertIndex);
+            const newItems = [...prev];
+            newItems.splice(insertIndex, 0, newItem);
+            return newItems.map((item, idx) => ({ ...item, order_index: idx }));
+        });
+        recordRecentToolboxItem(toolboxItem.id);
+    }, [buildCanvasItemFromToolbox, recordRecentToolboxItem]);
 
     const handleRemoveItem = useCallback((id: string) => {
         setCanvasItems((prev) => {
@@ -851,6 +918,28 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
             setSelectedItemId(null);
         }
     }, [selectedItemId]);
+
+    const handleDuplicateItem = useCallback((id: string) => {
+        setCanvasItems((prev) => {
+            const index = prev.findIndex((i) => i.id === id);
+            if (index === -1) return prev;
+            const item = prev[index];
+            const cloned: CanvasItem = {
+                ...item,
+                id: `canvas-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                order_index: index + 1,
+                childItems: item.childItems
+                    ? item.childItems.map((child) => ({
+                        ...child,
+                        id: `child-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                    }))
+                    : undefined,
+            };
+            const next = [...prev];
+            next.splice(index + 1, 0, cloned);
+            return next.map((entry, idx) => ({ ...entry, order_index: idx }));
+        });
+    }, []);
 
     const toggleContainer = useCallback((id: string) => {
         setExpandedContainers((prev) => {
@@ -1720,9 +1809,21 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
             canvasItems,
         });
 
+    const formattedDateLabel = date ? format(date, "MMM d, yyyy") : "";
+    const formattedTimeLabel = (() => {
+        if (!time) return "";
+        const parts = time.split(":");
+        if (parts.length < 2) return time;
+        const d = new Date();
+        d.setHours(Number(parts[0]));
+        d.setMinutes(Number(parts[1]));
+        return format(d, "h:mm a");
+    })();
+
     return (
         <Form {...form}>
-            <form onSubmit={(e) => { e.preventDefault(); handleValidate(); }} className="h-full min-h-0 flex flex-col overflow-hidden bg-builder-canvas">
+            <TooltipProvider delayDuration={1200}>
+            <form onSubmit={(e) => { e.preventDefault(); handleValidate(); }} className="h-full min-h-0 flex flex-col overflow-hidden bg-panel">
                 <DndContext
                     sensors={sensors}
                     collisionDetection={closestCenter}
@@ -1773,7 +1874,17 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                                         <SheetContent side="left" className="w-[300px] sm:w-[400px] p-0 overflow-y-auto">
                                             <SheetTitle className="sr-only">Library</SheetTitle>
                                             <SheetDescription className="sr-only">Agenda items library</SheetDescription>
-                                            <ToolboxPane onAddItem={handleAddCanvasItem} />
+                                            <ToolboxPane
+                                                onAddItem={handleAddCanvasItem}
+                                                onItemsLoaded={setToolboxItems}
+                                                pinnedIds={pinnedToolboxIds}
+                                                recentIds={recentToolboxIds}
+                                                onTogglePin={togglePinnedToolboxItem}
+                                                outlineItems={canvasItems}
+                                                selectedItemId={selectedItemId}
+                                                onSelectItem={setSelectedItemId}
+                                                onDuplicateItem={handleDuplicateItem}
+                                            />
                                         </SheetContent>
                                     </Sheet>
 
@@ -1801,8 +1912,18 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                                 {/* 3-Column Workspace */}
                                 <div className="flex-1 flex overflow-hidden">
                                     {/* Left Pane - Library */}
-                                    <div className="hidden lg:block w-80 h-full overflow-hidden shrink-0">
-                                        <ToolboxPane onAddItem={handleAddCanvasItem} />
+                                    <div className="hidden lg:block w-64 h-full overflow-hidden shrink-0">
+                                        <ToolboxPane
+                                            onAddItem={handleAddCanvasItem}
+                                            onItemsLoaded={setToolboxItems}
+                                            pinnedIds={pinnedToolboxIds}
+                                            recentIds={recentToolboxIds}
+                                            onTogglePin={togglePinnedToolboxItem}
+                                            outlineItems={canvasItems}
+                                            selectedItemId={selectedItemId}
+                                            onSelectItem={setSelectedItemId}
+                                            onDuplicateItem={handleDuplicateItem}
+                                        />
                                     </div>
 
                                     {/* Center Pane - Canvas */}
@@ -1810,6 +1931,10 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                                         <AgendaCanvas
                                             items={canvasItems}
                                             onRemoveItem={handleRemoveItem}
+                                            onDuplicateItem={handleDuplicateItem}
+                                            title={title}
+                                            dateLabel={formattedDateLabel}
+                                            timeLabel={formattedTimeLabel}
                                             expandedContainers={expandedContainers}
                                             onToggleContainer={toggleContainer}
                                             selectedItemId={selectedItemId}
@@ -1828,11 +1953,17 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                                             selectedSpeakerIdsInMeeting={selectedSpeakerIds}
                                             onAddToContainer={openContainerAddForSelected}
                                             onRemoveChildItem={handleRemoveChildFromSelected}
+                                            toolboxItems={toolboxItems}
+                                            pinnedIds={pinnedToolboxIds}
+                                            recentIds={recentToolboxIds}
+                                            onInsertItemAt={handleInsertCanvasItemAt}
+                                            openInsertAt={insertRequestIndex}
+                                            onInsertOpenHandled={() => setInsertRequestIndex(null)}
                                         />
                                     </div>
 
                                     {/* Right Pane - Properties */}
-                                    <div className="hidden lg:block w-[280px] h-full overflow-hidden shrink-0">
+                                    <div className="hidden lg:block w-[260px] h-full overflow-hidden shrink-0">
                                         <PropertiesPane
                                             templates={templates}
                                             meetingNotes={meetingNotes}
@@ -2111,6 +2242,7 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                     </Dialog>
                 </DndContext>
             </form>
+            </TooltipProvider>
         </Form>
     );
 }

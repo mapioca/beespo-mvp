@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
     Popover,
     PopoverContent,
@@ -56,13 +57,13 @@ export function PropertiesPane({
     const hasNotes = !!meetingNotes;
 
     return (
-        <div className="h-full flex flex-col overflow-y-auto p-3">
+        <div className="h-full flex flex-col overflow-y-auto p-3 bg-background">
             <div className="flex-1 px-2 py-1 space-y-6">
                 {/* General Settings */}
-                <div className="space-y-3">
-                    <div className="sticky top-0 z-10 -mx-2 px-2 py-1 bg-background/95 backdrop-blur border-b border-border/40">
-                        <h3 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-[0.06em]">
-                            Basics
+                <div className="space-y-2">
+                    <div className="-mx-2 px-2 py-1">
+                        <h3 className="text-[12px] font-medium text-muted-foreground">
+                            Overview
                         </h3>
                     </div>
 
@@ -153,8 +154,8 @@ export function PropertiesPane({
 
                 {/* Roles */}
                 <div className="space-y-2">
-                    <div className="sticky top-0 z-10 -mx-2 px-2 py-1 bg-background/95 backdrop-blur border-b border-border/40">
-                        <h3 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-[0.06em]">
+                    <div className="-mx-2 px-2 py-1">
+                        <h3 className="text-[12px] font-medium text-muted-foreground">
                             Roles
                         </h3>
                     </div>
@@ -187,12 +188,25 @@ export function PropertiesPane({
                                     />
                                 </div>
                             ) : (
-                                <div
-                                    className="flex items-center justify-between group cursor-pointer hover:bg-control-hover -mx-1 px-1 rounded transition-colors h-7"
-                                    onClick={() => setShowPresiding(true)}
-                                >
+                                <div className="flex items-center justify-between h-7">
                                     <span className="text-[12px] text-muted-foreground">Presiding</span>
-                                    <Plus className="h-4 w-4 text-muted-foreground/60 group-hover:text-foreground group-hover:scale-110 transition-all" />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPresiding(true)}
+                                        className="p-1 rounded-md text-muted-foreground/70 hover:text-foreground hover:bg-control-hover transition-colors"
+                                        aria-label="Add presiding"
+                                    >
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <span className="inline-flex">
+                                                    <Plus className="h-4 w-4" />
+                                                </span>
+                                            </TooltipTrigger>
+                                            <TooltipContent side="bottom" align="end" sideOffset={8} arrowAlign="end">
+                                                Add a presiding authority
+                                            </TooltipContent>
+                                        </Tooltip>
+                                    </button>
                                 </div>
                             )}
                         </div>
@@ -225,12 +239,25 @@ export function PropertiesPane({
                                     />
                                 </div>
                             ) : (
-                                <div
-                                    className="flex items-center justify-between group cursor-pointer hover:bg-control-hover -mx-1 px-1 rounded transition-colors h-7"
-                                    onClick={() => setShowConducting(true)}
-                                >
+                                <div className="flex items-center justify-between h-7">
                                     <span className="text-[12px] text-muted-foreground">Conducting</span>
-                                    <Plus className="h-4 w-4 text-muted-foreground/60 group-hover:text-foreground group-hover:scale-110 transition-all" />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowConducting(true)}
+                                        className="p-1 rounded-md text-muted-foreground/70 hover:text-foreground hover:bg-control-hover transition-colors"
+                                        aria-label="Add conducting"
+                                    >
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <span className="inline-flex">
+                                                    <Plus className="h-4 w-4" />
+                                                </span>
+                                            </TooltipTrigger>
+                                            <TooltipContent side="bottom" align="end" sideOffset={8} arrowAlign="end">
+                                                Add a conductor
+                                            </TooltipContent>
+                                        </Tooltip>
+                                    </button>
                                 </div>
                             )}
                         </div>
@@ -263,12 +290,25 @@ export function PropertiesPane({
                                     />
                                 </div>
                             ) : (
-                                <div
-                                    className="flex items-center justify-between group cursor-pointer hover:bg-control-hover -mx-1 px-1 rounded transition-colors h-7"
-                                    onClick={() => setShowChorister(true)}
-                                >
+                                <div className="flex items-center justify-between h-7">
                                     <span className="text-[12px] text-muted-foreground">Chorister</span>
-                                    <Plus className="h-4 w-4 text-muted-foreground/60 group-hover:text-foreground group-hover:scale-110 transition-all" />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowChorister(true)}
+                                        className="p-1 rounded-md text-muted-foreground/70 hover:text-foreground hover:bg-control-hover transition-colors"
+                                        aria-label="Add chorister"
+                                    >
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <span className="inline-flex">
+                                                    <Plus className="h-4 w-4" />
+                                                </span>
+                                            </TooltipTrigger>
+                                            <TooltipContent side="bottom" align="end" sideOffset={8} arrowAlign="end">
+                                                Add a chorister
+                                            </TooltipContent>
+                                        </Tooltip>
+                                    </button>
                                 </div>
                             )}
                         </div>
@@ -301,12 +341,25 @@ export function PropertiesPane({
                                     />
                                 </div>
                             ) : (
-                                <div
-                                    className="flex items-center justify-between group cursor-pointer hover:bg-control-hover -mx-1 px-1 rounded transition-colors h-7"
-                                    onClick={() => setShowPianist(true)}
-                                >
+                                <div className="flex items-center justify-between h-7">
                                     <span className="text-[12px] text-muted-foreground">Pianist / Organist</span>
-                                    <Plus className="h-4 w-4 text-muted-foreground/60 group-hover:text-foreground group-hover:scale-110 transition-all" />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPianist(true)}
+                                        className="p-1 rounded-md text-muted-foreground/70 hover:text-foreground hover:bg-control-hover transition-colors"
+                                        aria-label="Add pianist or organist"
+                                    >
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <span className="inline-flex">
+                                                    <Plus className="h-4 w-4" />
+                                                </span>
+                                            </TooltipTrigger>
+                                            <TooltipContent side="bottom" align="end" sideOffset={8} arrowAlign="end">
+                                                Add a pianist
+                                            </TooltipContent>
+                                        </Tooltip>
+                                    </button>
                                 </div>
                             )}
                         </div>
@@ -315,8 +368,8 @@ export function PropertiesPane({
 
                 {/* Notes */}
                 <div className="space-y-2 pt-2 border-t border-border/40">
-                    <div className="sticky top-0 z-10 -mx-2 px-2 py-1 bg-background/95 backdrop-blur border-b border-border/40">
-                        <h3 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-[0.06em]">
+                    <div className="-mx-2 px-2 py-1">
+                        <h3 className="text-[12px] font-medium text-muted-foreground">
                             Notes
                         </h3>
                     </div>
@@ -343,12 +396,25 @@ export function PropertiesPane({
                                 />
                             </div>
                         ) : (
-                            <div
-                                className="flex items-center justify-between group cursor-pointer hover:bg-control-hover -mx-1 px-1 rounded transition-colors h-7"
-                                onClick={() => setShowMeetingNotes(true)}
-                            >
+                            <div className="flex items-center justify-between h-7">
                                 <span className="text-[12px] text-muted-foreground">Notes</span>
-                                <Plus className="h-4 w-4 text-muted-foreground/60 group-hover:text-foreground group-hover:scale-110 transition-all" />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowMeetingNotes(true)}
+                                    className="p-1 rounded-md text-muted-foreground/70 hover:text-foreground hover:bg-control-hover transition-colors"
+                                    aria-label="Add notes"
+                                >
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <span className="inline-flex">
+                                                <Plus className="h-4 w-4" />
+                                            </span>
+                                        </TooltipTrigger>
+                                        <TooltipContent side="bottom" align="end" sideOffset={8} arrowAlign="end">
+                                            Add notes
+                                        </TooltipContent>
+                                    </Tooltip>
+                                </button>
                             </div>
                         )}
                     </div>

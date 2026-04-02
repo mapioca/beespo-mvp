@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useDroppable } from "@dnd-kit/core";
 import {
     SortableContext,
@@ -9,20 +10,26 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Trash2, ChevronDown, ChevronRight, GripVertical } from "lucide-react";
+import { Trash2, ChevronDown, ChevronRight, GripVertical, Copy, Plus, Search, Pin, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { CanvasItem } from "./types";
+import { CanvasItem, ToolboxItem } from "./types";
 import { ItemPropertiesPanel } from "./item-properties-panel";
 import type { SpeakerSelection } from "./speaker-selector-popover";
 import type { DiscussionSelection } from "./discussion-selector-popover";
 import type { BusinessSelection } from "./business-selector-popover";
 import type { AnnouncementSelection } from "./announcement-selector-popover";
+import { Input } from "@/components/ui/input";
 
 
 interface AgendaCanvasProps {
     items: CanvasItem[];
     onRemoveItem: (id: string) => void;
+    onDuplicateItem?: (id: string) => void;
+    title?: string;
+    dateLabel?: string;
+    timeLabel?: string;
     expandedContainers: Set<string>;
     onToggleContainer: (id: string) => void;
     selectedItemId?: string | null;
@@ -41,12 +48,19 @@ interface AgendaCanvasProps {
     onSelectDiscussion?: (discussions: DiscussionSelection[]) => void;
     onSelectBusiness?: (items: BusinessSelection[]) => void;
     onSelectAnnouncement?: (announcements: AnnouncementSelection[]) => void;
+    toolboxItems?: ToolboxItem[];
+    pinnedIds?: string[];
+    recentIds?: string[];
+    onInsertItemAt?: (index: number, item: ToolboxItem) => void;
+    openInsertAt?: number | null;
+    onInsertOpenHandled?: () => void;
 }
 
 // Sortable Agenda Row — read-only card
 interface SortableAgendaRowProps {
     item: CanvasItem;
     onRemove: () => void;
+    onDuplicate?: () => void;
     isExpanded?: boolean;
     onToggleExpand?: () => void;
     isSelected?: boolean;
@@ -58,6 +72,7 @@ interface SortableAgendaRowProps {
 function SortableAgendaRow({
     item,
     onRemove,
+    onDuplicate,
     isExpanded,
     onToggleExpand,
     isSelected,
@@ -93,29 +108,34 @@ function SortableAgendaRow({
                         {...attributes}
                         {...listeners}
                         className={cn(
-                            "rounded-xl border border-border/40 bg-background/80 shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-all group cursor-grab active:cursor-grabbing touch-none",
-                            "hover:bg-background hover:border-border/60",
-                            isSelected && "ring-2 ring-primary/30 border-primary/30",
-                            isDragging && "opacity-60 shadow-lg ring-2 ring-primary/30"
+                            "rounded-xl border border-border/50 bg-background shadow-[0_1px_0_rgba(15,23,42,0.04)] transition-colors group cursor-grab active:cursor-grabbing touch-none",
+                            "hover:bg-background hover:border-border/70 hover:shadow-[0_6px_16px_rgba(15,23,42,0.06)]",
+                            isSelected && "ring-2 ring-primary/20 border-primary/40",
+                            isDragging && "opacity-60 ring-2 ring-primary/30"
                         )}
                     >
                         {/* Container Header */}
                         <div className="flex items-center gap-2 px-3 py-2.5">
-                            <button
-                                type="button"
-                                onClick={(e) => { e.stopPropagation(); onToggleExpand?.(); }}
-                                className="p-1 hover:bg-muted rounded-md transition-colors"
-                            >
-                                {isExpanded ? (
-                                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                                ) : (
-                                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                                )}
-                            </button>
-
-                            <span className="font-medium text-[13px] flex-1 text-foreground pl-1">
+                            <div className="flex items-center gap-2">
+                                <div className={cn(
+                                    "w-0.5 h-6 rounded-full transition-colors",
+                                    isSelected ? "bg-primary/40" : "bg-border/40 group-hover:bg-border/70"
+                                )} />
+                                <button
+                                    type="button"
+                                    onClick={(e) => { e.stopPropagation(); onToggleExpand?.(); }}
+                                    className="p-1 hover:bg-muted rounded-md transition-colors"
+                                >
+                                    {isExpanded ? (
+                                        <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                                    ) : (
+                                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                                    )}
+                                </button>
+                                <span className="font-semibold text-[13px] flex-1 text-foreground pl-1">
                                 {item.title}
-                            </span>
+                                </span>
+                            </div>
 
                             <span className="text-[11px] text-muted-foreground tabular-nums">
                                 {childCount} item{childCount !== 1 ? "s" : ""}
@@ -124,6 +144,18 @@ function SortableAgendaRow({
                             <span className="text-[11px] text-muted-foreground ml-2 tabular-nums">
                                 {item.duration_minutes}m
                             </span>
+
+                            {onDuplicate && (
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-foreground hover:bg-control-hover"
+                                    onClick={(e) => { e.stopPropagation(); onDuplicate(); }}
+                                >
+                                    <Copy className="h-4 w-4" />
+                                </Button>
+                            )}
 
                             <Button
                                 type="button"
@@ -190,22 +222,39 @@ function SortableAgendaRow({
                         style={style}
                         onClick={(e) => { e.stopPropagation(); onSelect?.(); }}
                         className={cn(
-                            "flex flex-col border rounded-xl bg-background/80 shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-all group cursor-grab active:cursor-grabbing touch-none",
-                            "hover:bg-background hover:border-border/60",
-                            isSelected && "ring-2 ring-primary/30 border-primary/30",
-                            isDragging && "opacity-60 shadow-lg ring-2 ring-primary/30"
+                            "flex flex-col border rounded-xl bg-background shadow-[0_1px_0_rgba(15,23,42,0.04)] transition-colors group cursor-grab active:cursor-grabbing touch-none",
+                            "hover:bg-background hover:border-border/70 hover:shadow-[0_6px_16px_rgba(15,23,42,0.06)]",
+                            isSelected && "ring-2 ring-primary/20 border-primary/40",
+                            isDragging && "opacity-60 ring-2 ring-primary/30"
                         )}
                         {...attributes}
                         {...listeners}
                     >
                         <div className="flex items-center gap-2 px-3 py-2.5">
-                            <div className="w-7 shrink-0" />
-                            <span className="font-medium text-[12px] tracking-[0.2em] uppercase flex-1 truncate text-muted-foreground pl-1">
+                            <div className={cn(
+                                "w-0.5 h-5 rounded-full transition-colors",
+                                isSelected ? "bg-primary/40" : "bg-border/40 group-hover:bg-border/70"
+                            )} />
+                            <span className="font-semibold text-[11px] tracking-[0.18em] uppercase flex-1 truncate text-muted-foreground pl-2">
                                 {item.title || "Untitled section"}
                             </span>
                             <span className="text-[10px] text-muted-foreground shrink-0">
                                 Section
                             </span>
+                            {onDuplicate && (
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-foreground hover:bg-control-hover"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        onDuplicate();
+                                    }}
+                                >
+                                    <Copy className="h-4 w-4" />
+                                </Button>
+                            )}
                             <Button
                                 type="button"
                                 variant="ghost"
@@ -284,24 +333,39 @@ function SortableAgendaRow({
                     style={style}
                     onClick={(e) => { e.stopPropagation(); onSelect?.(); }}
                     className={cn(
-                        "flex flex-col border rounded-xl bg-background/80 shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-all group cursor-grab active:cursor-grabbing touch-none",
-                        "hover:bg-background hover:border-border/60",
-                        isSelected && "ring-2 ring-primary/30 border-primary/30",
-                        isDragging && "opacity-60 shadow-lg ring-2 ring-primary/30"
+                        "flex flex-col border rounded-xl bg-background shadow-[0_1px_0_rgba(15,23,42,0.04)] transition-colors group cursor-grab active:cursor-grabbing touch-none",
+                        "hover:bg-background hover:border-border/70 hover:shadow-[0_6px_16px_rgba(15,23,42,0.06)]",
+                        isSelected && "ring-2 ring-primary/20 border-primary/40",
+                        isDragging && "opacity-60 ring-2 ring-primary/30"
                     )}
                     {...attributes}
                     {...listeners}
                 >
                     {/* Header row */}
                     <div className="flex items-center gap-2 px-3 py-2.5">
-                        <div className="w-7 shrink-0" />
-                        <span className="font-medium text-[13px] flex-1 truncate text-foreground pl-1">
+                        <div className={cn(
+                            "w-0.5 h-6 rounded-full transition-colors",
+                            isSelected ? "bg-primary/40" : "bg-border/40 group-hover:bg-border/70"
+                        )} />
+                        <span className="font-semibold text-[13px] flex-1 truncate text-foreground pl-2">
                             {item.title}
                         </span>
 
                         <span className="text-[11px] text-muted-foreground shrink-0 tabular-nums">
                             {item.duration_minutes}m
                         </span>
+
+                        {onDuplicate && (
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-foreground hover:bg-control-hover"
+                                onClick={(e) => { e.stopPropagation(); onDuplicate(); }}
+                            >
+                                <Copy className="h-4 w-4" />
+                            </Button>
+                        )}
 
                         <Button
                             type="button"
@@ -352,9 +416,132 @@ function SortableAgendaRow({
     );
 }
 
+function InsertRow({
+    isOpen,
+    onOpenChange,
+    searchValue,
+    onSearchChange,
+    pinnedItems,
+    recentItems,
+    items,
+    onSelectItem,
+}: {
+    isOpen: boolean;
+    onOpenChange: (open: boolean) => void;
+    searchValue: string;
+    onSearchChange: (value: string) => void;
+    pinnedItems: ToolboxItem[];
+    recentItems: ToolboxItem[];
+    items: ToolboxItem[];
+    onSelectItem: (item: ToolboxItem) => void;
+}) {
+    return (
+        <div className="relative group">
+            <div className="flex items-center justify-center">
+                <Popover open={isOpen} onOpenChange={onOpenChange}>
+                    <PopoverTrigger asChild>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <button
+                                    type="button"
+                                    className={cn(
+                                        "flex items-center justify-center h-6 w-6 rounded-full border border-border/40 bg-background text-muted-foreground",
+                                        "opacity-0 group-hover:opacity-100 transition-opacity",
+                                        isOpen && "opacity-100"
+                                    )}
+                                >
+                                    <Plus className="h-3.5 w-3.5" />
+                                </button>
+                            </TooltipTrigger>
+                            <TooltipContent side="bottom" align="center" sideOffset={8}>
+                                Insert item
+                            </TooltipContent>
+                        </Tooltip>
+                    </PopoverTrigger>
+                    <PopoverContent align="center" className="w-72 p-2">
+                        <div className="relative">
+                            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                            <Input
+                                value={searchValue}
+                                onChange={(e) => onSearchChange(e.target.value)}
+                                placeholder="Insert item..."
+                                className="h-8 pl-8 text-[12px]"
+                                autoFocus
+                            />
+                        </div>
+
+                        <div className="mt-2 max-h-64 overflow-y-auto space-y-3">
+                            {pinnedItems.length > 0 && (
+                                <InsertSection
+                                    title="Pinned"
+                                    icon={<Pin className="h-3 w-3" />}
+                                    items={pinnedItems}
+                                    onSelectItem={onSelectItem}
+                                />
+                            )}
+                            {recentItems.length > 0 && (
+                                <InsertSection
+                                    title="Recent"
+                                    icon={<Clock className="h-3 w-3" />}
+                                    items={recentItems}
+                                    onSelectItem={onSelectItem}
+                                />
+                            )}
+                            <InsertSection
+                                title="All items"
+                                items={items}
+                                onSelectItem={onSelectItem}
+                            />
+                        </div>
+                    </PopoverContent>
+                </Popover>
+            </div>
+            <div className="absolute left-0 right-0 top-1/2 h-px bg-border/40 opacity-0 group-hover:opacity-100 transition-opacity" />
+        </div>
+    );
+}
+
+function InsertSection({
+    title,
+    icon,
+    items,
+    onSelectItem,
+}: {
+    title: string;
+    icon?: React.ReactNode;
+    items: ToolboxItem[];
+    onSelectItem: (item: ToolboxItem) => void;
+}) {
+    if (items.length === 0) return null;
+    return (
+        <div className="space-y-1">
+            <div className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground px-1">
+                {icon && <span className="text-muted-foreground/80">{icon}</span>}
+                <span>{title}</span>
+            </div>
+            <div className="space-y-1">
+                {items.map((item) => (
+                    <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => onSelectItem(item)}
+                        className="w-full text-left px-2 py-1.5 rounded-md text-[12px] hover:bg-control-hover"
+                    >
+                        {item.title}
+                    </button>
+                ))}
+            </div>
+        </div>
+    );
+}
+
 export function AgendaCanvas({
     items,
     onRemoveItem,
+    onDuplicateItem,
+    title,
+    dateLabel,
+    timeLabel,
     expandedContainers,
     onToggleContainer,
     selectedItemId,
@@ -373,12 +560,48 @@ export function AgendaCanvas({
     onSelectDiscussion,
     onSelectBusiness,
     onSelectAnnouncement,
+    toolboxItems = [],
+    pinnedIds = [],
+    recentIds = [],
+    onInsertItemAt,
+    openInsertAt,
+    onInsertOpenHandled,
 }: AgendaCanvasProps) {
     const { setNodeRef } = useDroppable({
         id: "canvas-drop-zone",
     });
 
     const itemIds = items.map((item) => item.id);
+    const [openInsertIndex, setOpenInsertIndex] = useState<number | null>(null);
+    const [insertSearch, setInsertSearch] = useState("");
+
+    const pinnedItems = pinnedIds
+        .map((id) => toolboxItems.find((i) => i.id === id))
+        .filter(Boolean) as ToolboxItem[];
+    const recentItems = recentIds
+        .filter((id) => !pinnedIds.includes(id))
+        .map((id) => toolboxItems.find((i) => i.id === id))
+        .filter(Boolean) as ToolboxItem[];
+
+    const searchValue = insertSearch.trim().toLowerCase();
+    const filteredItems = searchValue
+        ? toolboxItems.filter((item) =>
+            item.title.toLowerCase().includes(searchValue)
+        )
+        : toolboxItems;
+    const filteredPinned = searchValue
+        ? pinnedItems.filter((item) => item.title.toLowerCase().includes(searchValue))
+        : pinnedItems;
+    const filteredRecent = searchValue
+        ? recentItems.filter((item) => item.title.toLowerCase().includes(searchValue))
+        : recentItems;
+
+    useEffect(() => {
+        if (openInsertAt === null || openInsertAt === undefined) return;
+        setOpenInsertIndex(openInsertAt);
+        setInsertSearch("");
+        onInsertOpenHandled?.();
+    }, [openInsertAt, onInsertOpenHandled]);
 
     return (
         <div
@@ -388,8 +611,7 @@ export function AgendaCanvas({
             {/* Card container */}
             <div
                 className={cn(
-                    "rounded-2xl border border-border/60 bg-background/70 flex flex-col flex-1 overflow-hidden relative",
-                    items.length === 0 && "bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] [background-size:16px_16px]"
+                    "rounded-2xl border border-border/50 bg-paper shadow-[0_30px_80px_rgba(15,23,42,0.08)] ring-1 ring-border/20 flex flex-col flex-1 overflow-hidden relative"
                 )}
             >
                 {/* Canvas */}
@@ -397,62 +619,108 @@ export function AgendaCanvas({
                     <div
                         ref={setNodeRef}
                         className={cn(
-                            "p-4 min-h-full flex flex-col items-center",
+                            "p-8 sm:p-12 min-h-full flex flex-col items-center",
                             isOver && "bg-primary/5"
                         )}
                     >
                         {items.length === 0 ? (
                             <div
                                 className={cn(
-                                    "flex flex-col items-center justify-center py-16 mt-8 w-full max-w-xl",
-                                    "border-2 border-dashed rounded-lg",
+                                    "flex flex-col items-center justify-center py-20 mt-6 w-full max-w-xl",
+                                    "rounded-2xl border border-border/40 bg-background/60",
                                     "text-muted-foreground transition-all",
-                                    isOver ? "border-primary bg-primary/5" : "border-muted-foreground/20"
+                                    isOver && "border-primary/40 bg-primary/5"
                                 )}
                             >
-                                <div className="text-center">
-                                    <p className="font-medium">Drag items here</p>
+                                <div className="text-center max-w-sm">
+                                    <p className="text-[15px] font-semibold text-foreground">Start your agenda</p>
                                     <p className="text-sm mt-1">
-                                        Or select a template to get started
+                                        Drag items from the library, or press <span className="font-medium">I</span> to insert.
+                                    </p>
+                                    <p className="text-xs mt-2 text-muted-foreground">
+                                        Tip: Pin your most common items for one‑click access.
                                     </p>
                                 </div>
                             </div>
                         ) : (
-                            <div className="w-full max-w-xl">
+                            <div className="w-full max-w-[850px]">
+                                <div className="mb-6 rounded-2xl border border-border/40 bg-background/70 px-6 py-5">
+                                    <div className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
+                                        Agenda
+                                    </div>
+                                    <div className="mt-1 text-[18px] font-semibold text-foreground">
+                                        {title || "Untitled Meeting"}
+                                    </div>
+                                    {(dateLabel || timeLabel) && (
+                                        <div className="mt-1 text-[12px] text-muted-foreground">
+                                            {dateLabel}{dateLabel && timeLabel ? " · " : ""}{timeLabel}
+                                        </div>
+                                    )}
+                                </div>
                                 <SortableContext
                                     items={itemIds}
                                     strategy={verticalListSortingStrategy}
                                 >
-                                    <div className="space-y-2">
-                                        {items.map((item) => (
-                                            <SortableAgendaRow
-                                                key={item.id}
-                                                item={item}
-                                                onRemove={() => onRemoveItem(item.id)}
-                                                isExpanded={expandedContainers.has(item.id)}
-                                                onToggleExpand={() => onToggleContainer(item.id)}
-                                                isSelected={selectedItemId === item.id}
-                                                onSelect={() => onSelectItem?.(item.id)}
-                                                onDeselect={() => onSelectItem?.(null)}
-                                                itemProperties={
-                                                    <ItemPropertiesPanel
-                                                        item={item}
-                                                        onUpdateItem={onUpdateItem}
-                                                        onUpdateDescription={onUpdateDescription}
-                                                        onUpdateItemNotes={onUpdateItemNotes}
-                                                        onUpdateDuration={onUpdateDuration}
-                                                        onSelectHymn={onSelectHymn}
-                                                        onSelectParticipant={onSelectParticipant}
-                                                        onSelectSpeaker={onSelectSpeaker}
-                                                        selectedSpeakerIdsInMeeting={selectedSpeakerIdsInMeeting}
-                                                        onAddToContainer={onAddToContainer}
-                                                        onRemoveChildItem={onRemoveChildItem}
-                                                        onSelectDiscussion={onSelectDiscussion}
-                                                        onSelectBusiness={onSelectBusiness}
-                                                        onSelectAnnouncement={onSelectAnnouncement}
-                                                    />
-                                                }
-                                            />
+                                    <div className="space-y-3">
+                                        <InsertRow
+                                            isOpen={openInsertIndex === 0}
+                                            onOpenChange={(open) => setOpenInsertIndex(open ? 0 : null)}
+                                            searchValue={insertSearch}
+                                            onSearchChange={setInsertSearch}
+                                            pinnedItems={filteredPinned}
+                                            recentItems={filteredRecent}
+                                            items={filteredItems}
+                                            onSelectItem={(toolboxItem) => {
+                                                onInsertItemAt?.(0, toolboxItem);
+                                                setOpenInsertIndex(null);
+                                                setInsertSearch("");
+                                            }}
+                                        />
+                                        {items.map((item, index) => (
+                                            <div key={item.id} className="space-y-2">
+                                                <SortableAgendaRow
+                                                    item={item}
+                                                    onRemove={() => onRemoveItem(item.id)}
+                                                    onDuplicate={onDuplicateItem ? () => onDuplicateItem(item.id) : undefined}
+                                                    isExpanded={expandedContainers.has(item.id)}
+                                                    onToggleExpand={() => onToggleContainer(item.id)}
+                                                    isSelected={selectedItemId === item.id}
+                                                    onSelect={() => onSelectItem?.(item.id)}
+                                                    onDeselect={() => onSelectItem?.(null)}
+                                                    itemProperties={
+                                                        <ItemPropertiesPanel
+                                                            item={item}
+                                                            onUpdateItem={onUpdateItem}
+                                                            onUpdateDescription={onUpdateDescription}
+                                                            onUpdateItemNotes={onUpdateItemNotes}
+                                                            onUpdateDuration={onUpdateDuration}
+                                                            onSelectHymn={onSelectHymn}
+                                                            onSelectParticipant={onSelectParticipant}
+                                                            onSelectSpeaker={onSelectSpeaker}
+                                                            selectedSpeakerIdsInMeeting={selectedSpeakerIdsInMeeting}
+                                                            onAddToContainer={onAddToContainer}
+                                                            onRemoveChildItem={onRemoveChildItem}
+                                                            onSelectDiscussion={onSelectDiscussion}
+                                                            onSelectBusiness={onSelectBusiness}
+                                                            onSelectAnnouncement={onSelectAnnouncement}
+                                                        />
+                                                    }
+                                                />
+                                                <InsertRow
+                                                    isOpen={openInsertIndex === index + 1}
+                                                    onOpenChange={(open) => setOpenInsertIndex(open ? index + 1 : null)}
+                                                    searchValue={insertSearch}
+                                                    onSearchChange={setInsertSearch}
+                                                    pinnedItems={filteredPinned}
+                                                    recentItems={filteredRecent}
+                                                    items={filteredItems}
+                                                    onSelectItem={(toolboxItem) => {
+                                                        onInsertItemAt?.(index + 1, toolboxItem);
+                                                        setOpenInsertIndex(null);
+                                                        setInsertSearch("");
+                                                    }}
+                                                />
+                                            </div>
                                         ))}
                                     </div>
                                 </SortableContext>

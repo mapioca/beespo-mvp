@@ -113,7 +113,7 @@ export function AppSidebar({
         className={cn(
           "shrink-0 flex flex-col h-full bg-app-shell",
           "transition-[width] duration-300 ease-in-out",
-          isCollapsed ? "w-16" : "w-60",
+          isCollapsed ? "w-14" : "w-52",
           className
         )}
       >

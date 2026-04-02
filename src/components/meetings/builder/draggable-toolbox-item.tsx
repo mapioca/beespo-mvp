@@ -16,7 +16,9 @@ import {
     Hand,
     MessagesSquare,
     Speech,
-    Pencil
+    Pencil,
+    Pin,
+    PinOff
 } from "lucide-react";
 import * as LucideIcons from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -36,6 +38,8 @@ interface DraggableToolboxItemProps {
     disabled?: boolean;
     onAddItem?: (item: ToolboxItem) => void;
     onEditItem?: () => void;
+    onTogglePin?: () => void;
+    isPinned?: boolean;
 }
 
 const getCategoryIcon = (item: ToolboxItem) => {
@@ -89,7 +93,14 @@ const getCategoryIcon = (item: ToolboxItem) => {
     return icons[item.category] || <Layers className="h-4 w-4" />;
 };
 
-export function DraggableToolboxItem({ item, disabled, onAddItem, onEditItem }: DraggableToolboxItemProps) {
+export function DraggableToolboxItem({
+    item,
+    disabled,
+    onAddItem,
+    onEditItem,
+    onTogglePin,
+    isPinned,
+}: DraggableToolboxItemProps) {
     const pointerStartRef = useRef<{ x: number; y: number } | null>(null);
 
     const {
@@ -154,7 +165,7 @@ export function DraggableToolboxItem({ item, disabled, onAddItem, onEditItem }: 
                 {getCategoryIcon(item)}
             </div>
 
-            <div className={cn("flex-1 min-w-0", onEditItem ? "pr-10" : "pr-2")}>
+            <div className={cn("flex-1 min-w-0", (onEditItem || onTogglePin) ? "pr-16" : "pr-2")}>
                 <span className="text-[13px] font-normal text-foreground leading-tight break-words">{item.title}</span>
             </div>
 
@@ -176,6 +187,37 @@ export function DraggableToolboxItem({ item, disabled, onAddItem, onEditItem }: 
                 </button>
                 </div>
             )}
+            {onTogglePin && (
+                <div className={cn(
+                    "absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1",
+                    onEditItem ? "right-9" : "right-2",
+                    "opacity-0 group-hover:opacity-100 transition-all"
+                )}>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <button
+                                type="button"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    e.preventDefault();
+                                    onTogglePin();
+                                }}
+                                onPointerDown={(e) => e.stopPropagation()}
+                                onPointerUp={(e) => e.stopPropagation()}
+                                className={cn(
+                                    "p-1.5 rounded-md transition-colors",
+                                    isPinned ? "text-foreground bg-control-hover" : "text-muted-foreground hover:text-foreground hover:bg-control-hover"
+                                )}
+                            >
+                                {isPinned ? <PinOff className="h-4 w-4" /> : <Pin className="h-4 w-4" />}
+                            </button>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom" align="center" sideOffset={8}>
+                            {isPinned ? "Unpin" : "Pin"}
+                        </TooltipContent>
+                    </Tooltip>
+                </div>
+            )}
         </div>
     );
 
@@ -183,7 +225,15 @@ export function DraggableToolboxItem({ item, disabled, onAddItem, onEditItem }: 
         return (
             <Tooltip>
                 <TooltipTrigger asChild>{row}</TooltipTrigger>
-                <TooltipContent side="right" className="max-w-xs text-left">
+                <TooltipContent
+                    side="bottom"
+                    align="start"
+                    sideOffset={10}
+                    className="relative max-w-xs text-left bg-foreground text-background shadow-lg"
+                    alignOffset={0}
+                    showArrow={false}
+                >
+                    <span className="pointer-events-none absolute -top-1.5 left-4 h-0 w-0 border-x-[6px] border-x-transparent border-b-[6px] border-b-foreground" />
                     <p className="text-xs leading-snug whitespace-pre-wrap">{item.description}</p>
                 </TooltipContent>
             </Tooltip>
