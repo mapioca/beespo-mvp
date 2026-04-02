@@ -4,7 +4,11 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 
 export async function cloneTemplateAction(
-  templateId: string
+  templateId: string,
+  overrides?: {
+    name?: string;
+    description?: string | null;
+  }
 ): Promise<{ success: boolean; id?: string; error?: string }> {
   const supabase = await createClient();
 
@@ -43,8 +47,10 @@ export async function cloneTemplateAction(
   )
     .insert({
       workspace_id: profile.workspace_id,
-      name: source.name,
-      description: source.description ?? null,
+      name: overrides?.name?.trim() || source.name,
+      description: overrides?.description !== undefined
+        ? (overrides.description?.trim() || null)
+        : (source.description ?? null),
       calling_type: source.calling_type ?? null,
       tags: source.tags ?? [],
       created_by: user.id,

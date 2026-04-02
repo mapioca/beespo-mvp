@@ -316,7 +316,7 @@ export async function fetchNotebooks(
       (n: any) => ({
         id: n.id,
         title: n.title,
-        cover_style: n.cover_style ?? "gradient-ocean",
+        cover_style: n.cover_style ?? "ledger-ivory",
         updated_at: n.updated_at,
       })
     ),

@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { DirectoryClient } from "@/app/(dashboard)/participants/participants-client";
+import { DirectoryClient } from "@/app/(dashboard)/participants/directory-client";
 import { Metadata } from "next";
 import { DirectoryView } from "@/lib/directory-views";
 

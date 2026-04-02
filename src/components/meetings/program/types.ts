@@ -55,6 +55,17 @@ export interface ProgramViewData {
 export interface ProgramViewProps {
     data: ProgramViewData;
     variant?: "standalone" | "embedded";
+    density?: "comfortable" | "compact";
+    viewStyle?: "cards" | "list";
+    showDivider?: boolean;
+    showRoles?: boolean;
+    showFooter?: boolean;
+    showMeetingNotes?: boolean;
+    showSpeakerNames?: boolean;
+    showDurations?: boolean;
+    showIcons?: boolean;
+    dateFormat?: "long" | "medium" | "short";
+    titleCase?: "title" | "uppercase";
     className?: string;
 }
 

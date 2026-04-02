@@ -9,7 +9,6 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
-import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
     DropdownMenu,
@@ -28,10 +27,12 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { MoreHorizontal, Eye, Trash2, Briefcase } from "lucide-react"
+import { Eye, Trash2, Briefcase } from "lucide-react"
 import { format } from "date-fns"
 import { DataTableColumnHeader } from "@/components/ui/data-table-header"
 import type { BusinessItemDetails } from "@/lib/business-script-generator"
+import { TableRowActionTrigger } from "@/components/ui/table-row-action-trigger"
+import { StatusIndicator } from "@/components/ui/status-indicator"
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -79,6 +80,11 @@ const CATEGORY_OPTIONS = [
 
 function formatCategory(category: string): string {
     return category.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())
+}
+
+const STATUS_TONES: Record<string, "neutral" | "info" | "success" | "warning" | "danger"> = {
+    pending: "warning",
+    completed: "neutral",
 }
 
 // ── Props ───────────────────────────────────────────────────────────────────
@@ -154,12 +160,12 @@ export function BusinessTable({
 
     return (
         <>
-            <div className="rounded-xl border-y border-border/60 bg-background/80 shadow-[0_1px_0_rgba(15,23,42,0.04)] overflow-hidden">
+            <div className="table-shell-standard">
             <Table className="text-[13px]">
                 <TableHeader>
-                    <TableRow className="bg-muted/30 hover:bg-muted/30 border-b">
+                    <TableRow className="table-header-row-standard">
                         {/* Checkbox */}
-                        <TableHead className="w-10 px-3 py-2.5">
+                        <TableHead className="w-10 table-cell-check">
                             <Checkbox
                                 checked={allSelected}
                                 onCheckedChange={() => onToggleAllRows?.()}
@@ -298,11 +304,16 @@ export function BusinessTable({
                         </TableRow>
                     ) : (
                         items.map((item) => (
-                            <TableRow key={item.id} className="group hover:bg-[hsl(var(--accent-warm)/0.35)]">
+                            <TableRow
+                                key={item.id}
+                                data-state={selectedRows.has(item.id) ? "selected" : undefined}
+                                className="group transition-[background-color,box-shadow] duration-150 ease-out hover:bg-[hsl(var(--table-row-hover))] hover:shadow-[inset_0_0_0_1px_hsl(var(--table-shell-border)/0.28)] data-[state=selected]:bg-[hsl(var(--table-row-selected))] data-[state=selected]:shadow-[inset_0_0_0_1px_hsl(var(--table-shell-border)/0.4)]"
+                            >
                                 {/* Checkbox */}
-                                <TableCell className="px-3 py-3">
+                                <TableCell className="table-cell-check">
                                     <Checkbox
                                         checked={selectedRows.has(item.id)}
+                                        className="opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100 data-[state=checked]:opacity-100"
                                         onCheckedChange={() =>
                                             onToggleRow?.(item.id)
                                         }
@@ -311,7 +322,7 @@ export function BusinessTable({
 
                                 {/* Person Name */}
                                 {!hiddenColumns.has("person_name") && (
-                                    <TableCell className="font-medium px-3 py-3 text-[13px]">
+                                    <TableCell className="table-cell-title">
                                         <button
                                             onClick={() =>
                                                 onViewItem?.(item)
@@ -325,30 +336,32 @@ export function BusinessTable({
 
                                 {/* Position/Calling */}
                                 {!hiddenColumns.has("position_calling") && (
-                                    <TableCell className="px-3 py-3 text-[12px] text-muted-foreground">
+                                    <TableCell className="table-cell-meta">
                                         {item.position_calling || "—"}
                                     </TableCell>
                                 )}
 
                                 {/* Category */}
                                 {!hiddenColumns.has("category") && (
-                                    <TableCell className="px-3 py-3 text-[12px] text-muted-foreground capitalize">
+                                    <TableCell className="table-cell-meta capitalize">
                                         {formatCategory(item.category)}
                                     </TableCell>
                                 )}
 
                                 {/* Status */}
                                 {!hiddenColumns.has("status") && (
-                                    <TableCell className="px-3 py-3 text-[12px] text-muted-foreground capitalize">
-                                        {item.status === "pending"
-                                            ? "Pending"
-                                            : "Completed"}
+                                    <TableCell className="table-cell-meta !px-2 capitalize">
+                                        <StatusIndicator
+                                            label={item.status === "pending" ? "Pending" : "Completed"}
+                                            tone={STATUS_TONES[item.status] || "neutral"}
+                                            className="text-[11.5px] text-foreground/66"
+                                        />
                                     </TableCell>
                                 )}
 
                                 {/* Action Date */}
                                 {!hiddenColumns.has("action_date") && (
-                                    <TableCell className="px-3 py-3 text-[12px] text-muted-foreground">
+                                    <TableCell className="table-cell-meta !px-2 text-[11.5px] text-foreground/56">
                                         {item.action_date
                                             ? format(
                                                   new Date(item.action_date),
@@ -359,16 +372,10 @@ export function BusinessTable({
                                 )}
 
                                 {/* Actions */}
-                                <TableCell className="px-3 py-3 text-right">
+                                <TableCell className="table-cell-actions">
                                     <DropdownMenu>
                                         <DropdownMenuTrigger asChild>
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                                            >
-                                                <MoreHorizontal className="h-4 w-4 stroke-[1.6]" />
-                                            </Button>
+                                            <TableRowActionTrigger />
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent align="end">
                                             <DropdownMenuItem

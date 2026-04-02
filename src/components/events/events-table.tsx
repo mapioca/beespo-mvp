@@ -114,7 +114,7 @@ export function EventsTable({ events, sortConfig, onSort, onEdit, onDelete }: Ev
                             return (
                                 <TableRow
                                     key={event.id}
-                                    className="group hover:bg-muted/50 cursor-pointer"
+                                    className="group cursor-pointer transition-colors hover:bg-[hsl(var(--table-row-hover))]"
                                     onClick={() => onEdit?.(event)}
                                 >
                                     <TableCell className="font-medium">

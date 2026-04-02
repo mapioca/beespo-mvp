@@ -2,8 +2,8 @@
 
 export function ProgramFooter() {
     return (
-        <div className="pt-8 pb-4 text-center">
-            <p className="text-[10px] text-muted-foreground/60 tracking-wider">
+        <div className="pt-6 pb-2 text-center">
+            <p className="text-[0.68em] tracking-[0.08em] text-[color:var(--program-subtle)]">
                 Powered by Beespo
             </p>
         </div>

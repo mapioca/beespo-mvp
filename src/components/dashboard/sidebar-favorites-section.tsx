@@ -65,7 +65,7 @@ function FavoriteItemRow({
     <div
       className={cn(
         "group flex items-center rounded-lg transition-colors",
-        isActive ? "bg-[hsl(var(--accent-warm))]" : "hover:bg-[hsl(var(--accent-warm)/0.6)]"
+        isActive ? "bg-nav-selected" : "hover:bg-nav-hover"
       )}
     >
       <Link
@@ -87,7 +87,7 @@ function FavoriteItemRow({
           className={cn(
             "mr-1 flex h-6 w-6 shrink-0 items-center justify-center rounded transition-opacity",
             "opacity-0 group-hover:opacity-100 data-[state=open]:opacity-100",
-            "hover:bg-[hsl(var(--accent-warm)/0.6)] focus-visible:outline-none"
+            "hover:bg-nav-hover focus-visible:outline-none"
           )}
             onClick={(e) => e.preventDefault()}
           >
@@ -159,7 +159,7 @@ export function SidebarFavoritesSection({
         <Popover open={flyoutEnabled && flyoutOpen} onOpenChange={() => {}}>
           <PopoverAnchor asChild>
       <CollapsibleTrigger
-        className="flex items-center gap-1 w-full px-3 py-1 rounded-md transition-colors hover:bg-[hsl(var(--accent-warm)/0.6)] group"
+        className="flex items-center gap-1 w-full px-3 py-1 rounded-md transition-colors hover:bg-nav-hover group"
               onMouseEnter={openFlyout}
               onMouseLeave={scheduleFlyoutClose}
             >

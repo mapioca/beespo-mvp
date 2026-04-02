@@ -20,9 +20,7 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Button } from "@/components/ui/button";
 import {
-    MoreHorizontal,
     Eye,
     Play,
     Download,
@@ -35,6 +33,7 @@ import { ShareDialog } from "@/components/conduct/share-dialog";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "@/lib/toast";
 import { Database } from "@/types/database";
+import { TableRowActionTrigger } from "@/components/ui/table-row-action-trigger";
 
 type Meeting = Database["public"]["Tables"]["meetings"]["Row"] & {
     templates?: { name: string } | null;
@@ -135,10 +134,7 @@ export function MeetingRowActions({
         <>
             <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
                 <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                        <MoreHorizontal className="h-4 w-4" />
-                        <span className="sr-only">Open menu</span>
-                    </Button>
+                    <TableRowActionTrigger label="Open meeting actions" />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-[160px]">
                     {/* View/Edit - Goes to builder (mode depends on user role) */}

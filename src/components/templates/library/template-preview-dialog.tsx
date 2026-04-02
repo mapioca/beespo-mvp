@@ -4,27 +4,27 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Dialog,
+  DialogClose,
   DialogContent,
-  DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
 import { TemplateAgendaPreview } from "@/components/templates/template-agenda-preview";
 import { cloneTemplateAction } from "@/app/(dashboard)/templates/library/actions";
 import { toast } from "@/lib/toast";
 import { LibraryTemplate } from "./types";
+import { X } from "lucide-react";
 
 interface TemplatePreviewDialogProps {
   template: LibraryTemplate | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   workspaceId?: string | null;
+  currentUserId: string;
 }
 
-export function TemplatePreviewDialog({ template, open, onOpenChange, workspaceId }: TemplatePreviewDialogProps) {
+export function TemplatePreviewDialog({ template, open, onOpenChange, workspaceId, currentUserId }: TemplatePreviewDialogProps) {
   const router = useRouter();
   const [isCloning, setIsCloning] = useState(false);
 
@@ -32,11 +32,15 @@ export function TemplatePreviewDialog({ template, open, onOpenChange, workspaceI
 
   const isBeespo = template.workspace_id === null;
   const isOwned = workspaceId ? template.workspace_id === workspaceId : false;
+  const isCreatorOwnedOfficial = isBeespo && template.created_by === currentUserId;
   const authorName = isBeespo ? "Beespo Team" : (template.author?.full_name ?? "Community Member");
   const tags = (template.tags as string[] | null) ?? [];
 
+  const itemCount = template.items?.length ?? 0;
+  const ownerLabel = isBeespo ? "Beespo" : authorName;
+
   const handleUse = async () => {
-    if (isOwned) {
+    if (isOwned || isCreatorOwnedOfficial) {
       onOpenChange(false);
       router.push(`/meetings/new?templateId=${template.id}`);
       return;
@@ -60,64 +64,60 @@ export function TemplatePreviewDialog({ template, open, onOpenChange, workspaceI
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[85vh] flex flex-col p-0 gap-0">
-        <DialogHeader className="px-6 pt-6 pb-4">
-          <div className="flex items-start justify-between gap-4">
-            <div className="space-y-1 min-w-0">
-              <DialogTitle className="text-xl leading-tight">{template.name}</DialogTitle>
-              <p className="text-sm text-muted-foreground">{authorName}</p>
-            </div>
-            <Badge variant={isBeespo ? "secondary" : "outline"} className="text-[10px] uppercase shrink-0 mt-1">
-              {isBeespo ? "Beespo" : "Community"}
-            </Badge>
-          </div>
-        </DialogHeader>
-
-        <Separator />
-
-        <div className="flex flex-1 min-h-0 overflow-hidden">
-          {/* Left: Agenda preview */}
-          <ScrollArea className="flex-1 px-6 py-4">
-            <TemplateAgendaPreview items={template.items ?? []} />
-          </ScrollArea>
-
-          <Separator orientation="vertical" />
-
-          {/* Right: Metadata + CTA */}
-          <div className="w-64 shrink-0 flex flex-col px-6 py-4 gap-4">
-            {template.description && (
-              <div>
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">Description</p>
-                <p className="text-sm text-foreground leading-relaxed">{template.description}</p>
-              </div>
-            )}
-
-            {template.calling_type && (
-              <div>
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">Organization</p>
-                <p className="text-sm">{template.calling_type}</p>
-              </div>
-            )}
-
-            {tags.length > 0 && (
-              <div>
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">Tags</p>
-                <div className="flex gap-1 flex-wrap">
-                  {tags.map((tag) => (
-                    <Badge key={tag} variant="outline" className="text-[10px] px-1.5 py-0">
-                      {tag}
-                    </Badge>
-                  ))}
+      <DialogContent className="h-[88vh] max-h-[88vh] max-w-3xl overflow-hidden rounded-[28px] border border-border/70 bg-white p-0 shadow-[0_28px_80px_rgba(15,23,42,0.16)] [&>button]:hidden">
+        <div className="flex h-full min-h-0 flex-col bg-white">
+          <div className="border-b border-border/60 bg-white px-8 py-7">
+            <div className="flex items-start justify-between gap-6">
+              <div className="min-w-0">
+                <div className="mb-3 flex items-center gap-2">
+                  <span className="inline-flex items-center rounded-full border border-border/60 bg-control px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                    Template preview
+                  </span>
                 </div>
+                <DialogTitle className="max-w-3xl text-[38px] font-semibold leading-[1.02] tracking-[-0.05em] text-foreground">
+                  {template.name}
+                </DialogTitle>
+                <p className="mt-4 max-w-2xl text-[13px] text-foreground/58">
+                  Owned by {ownerLabel} • {itemCount} items
+                </p>
+                <p className="mt-4 max-w-2xl text-[15px] leading-7 text-foreground/72">
+                  {template.description || "No description provided for this template yet."}
+                </p>
+                {tags.length > 0 && (
+                  <div className="mt-4 flex flex-wrap gap-1.5">
+                    {tags.map((tag) => (
+                      <div
+                        key={tag}
+                        className="rounded-full border border-border/60 bg-white px-2.5 py-1 text-[10px] font-medium text-foreground/62"
+                      >
+                        {tag}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
-            )}
 
-            <div className="mt-auto pt-4">
-              <Button className="w-full" onClick={handleUse} disabled={isCloning}>
-                {isCloning ? "Importing..." : "Use Template"}
-              </Button>
+              <div className="flex items-start gap-3">
+                <Button
+                  className="h-10 rounded-full px-4 text-[12px] font-semibold"
+                  onClick={handleUse}
+                  disabled={isCloning}
+                >
+                  {isCloning ? "Importing..." : "Use template"}
+                </Button>
+                <DialogClose className="inline-flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-control hover:text-foreground">
+                  <X className="h-4 w-4 stroke-[1.8]" />
+                  <span className="sr-only">Close</span>
+                </DialogClose>
+              </div>
             </div>
           </div>
+
+          <ScrollArea className="min-h-0 flex-1 px-8 py-7">
+            <div className="rounded-[26px] border border-border/65 bg-white p-6 shadow-[0_16px_34px_rgba(15,23,42,0.05)]">
+              <TemplateAgendaPreview items={template.items ?? []} />
+            </div>
+          </ScrollArea>
         </div>
       </DialogContent>
     </Dialog>

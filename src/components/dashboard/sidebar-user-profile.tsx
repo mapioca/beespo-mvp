@@ -112,7 +112,7 @@ export function SidebarUserProfile({ name, email, userId, roleTitle, avatarUrl, 
                         )}
                     </button>
                 ) : (
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground shrink-0 relative">
+                    <Button variant="ghost" size="icon" className="text-nav hover:text-nav-strong relative h-8 w-8 shrink-0">
                         <MoreHorizontal className="h-4 w-4" />
                         {unreadCount > 0 && (
                             <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-0.5 text-[10px] font-bold text-primary-foreground">
@@ -195,7 +195,7 @@ export function SidebarUserProfile({ name, email, userId, roleTitle, avatarUrl, 
     if (isCollapsed) {
         return (
             <>
-                <div className="border-t p-2 flex justify-center">
+                <div className="flex justify-center border-t border-border/70 p-2">
                     <Tooltip>
                         <TooltipTrigger asChild>
                             {dropdownMenu}
@@ -219,14 +219,14 @@ export function SidebarUserProfile({ name, email, userId, roleTitle, avatarUrl, 
 
     return (
         <>
-            <div className="border-t p-3">
+            <div className="border-t border-border/70 p-3">
                 <div className="flex items-center justify-between w-full group">
                     <div className="flex items-center gap-3 overflow-hidden">
                         {avatarElement}
                         <div className="grid gap-0.5 text-left text-sm leading-tight">
-                            <span className="font-semibold truncate w-28">{name}</span>
+                            <span className="text-nav-strong w-28 truncate font-semibold">{name}</span>
                             {roleTitle && (
-                                <span className="text-xs text-muted-foreground truncate w-28">{roleTitle}</span>
+                                <span className="text-nav-muted w-28 truncate text-xs">{roleTitle}</span>
                             )}
                         </div>
                     </div>

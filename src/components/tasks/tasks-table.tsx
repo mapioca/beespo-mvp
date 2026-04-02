@@ -9,7 +9,6 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
-import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
     DropdownMenu,
@@ -28,9 +27,11 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { MoreHorizontal, Eye, Trash2, CheckSquare } from "lucide-react"
+import { Eye, Trash2, CheckSquare } from "lucide-react"
 import { format } from "date-fns"
 import { DataTableColumnHeader } from "@/components/ui/data-table-header"
+import { TableRowActionTrigger } from "@/components/ui/table-row-action-trigger"
+import { StatusIndicator } from "@/components/ui/status-indicator"
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -71,6 +72,13 @@ const PRIORITY_OPTIONS = [
 
 function formatLabel(value: string): string {
     return value.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())
+}
+
+const STATUS_TONES: Record<string, "neutral" | "info" | "success" | "warning" | "danger"> = {
+    pending: "warning",
+    in_progress: "info",
+    completed: "neutral",
+    cancelled: "danger",
 }
 
 // ── Props ───────────────────────────────────────────────────────────────────
@@ -145,11 +153,12 @@ export function TasksTable({
 
     return (
         <>
+            <div className="table-shell-standard">
             <Table>
                 <TableHeader>
-                    <TableRow className="bg-muted/40 hover:bg-muted/40 border-b">
+                    <TableRow className="table-header-row-standard">
                         {/* Checkbox */}
-                        <TableHead className="w-10 px-3">
+                        <TableHead className="w-10 table-cell-check">
                             <Checkbox
                                 checked={allSelected}
                                 onCheckedChange={() => onToggleAllRows?.()}
@@ -261,11 +270,16 @@ export function TasksTable({
                         </TableRow>
                     ) : (
                         tasks.map((task) => (
-                            <TableRow key={task.id} className="group">
+                            <TableRow
+                                key={task.id}
+                                data-state={selectedRows.has(task.id) ? "selected" : undefined}
+                                className="group transition-[background-color,box-shadow] duration-150 ease-out hover:bg-[hsl(var(--table-row-hover))] hover:shadow-[inset_0_0_0_1px_hsl(var(--table-shell-border)/0.28)] data-[state=selected]:bg-[hsl(var(--table-row-selected))] data-[state=selected]:shadow-[inset_0_0_0_1px_hsl(var(--table-shell-border)/0.4)]"
+                            >
                                 {/* Checkbox */}
-                                <TableCell className="px-3">
+                                <TableCell className="table-cell-check">
                                     <Checkbox
                                         checked={selectedRows.has(task.id)}
+                                        className="opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100 data-[state=checked]:opacity-100"
                                         onCheckedChange={() =>
                                             onToggleRow?.(task.id)
                                         }
@@ -274,7 +288,7 @@ export function TasksTable({
 
                                 {/* Title */}
                                 {!hiddenColumns.has("title") && (
-                                    <TableCell className="font-medium px-3">
+                                    <TableCell className="table-cell-title">
                                         <button
                                             onClick={() => onViewTask?.(task)}
                                             className="hover:underline text-left"
@@ -293,28 +307,32 @@ export function TasksTable({
 
                                 {/* Status */}
                                 {!hiddenColumns.has("status") && (
-                                    <TableCell className="px-3 text-sm text-muted-foreground">
-                                        {formatLabel(task.status)}
+                                    <TableCell className="table-cell-meta !px-2">
+                                        <StatusIndicator
+                                            label={formatLabel(task.status)}
+                                            tone={STATUS_TONES[task.status] || "neutral"}
+                                            className="text-[11.5px] text-foreground/66"
+                                        />
                                     </TableCell>
                                 )}
 
                                 {/* Priority */}
                                 {!hiddenColumns.has("priority") && (
-                                    <TableCell className="px-3 text-sm text-muted-foreground">
+                                    <TableCell className="table-cell-meta text-[11.5px] text-foreground/56">
                                         {task.priority ? formatLabel(task.priority) : "—"}
                                     </TableCell>
                                 )}
 
                                 {/* Assignee */}
                                 {!hiddenColumns.has("assignee") && (
-                                    <TableCell className="px-3 text-sm text-muted-foreground">
+                                    <TableCell className="table-cell-meta text-[11.5px] text-foreground/56">
                                         {task.assignee?.full_name || "—"}
                                     </TableCell>
                                 )}
 
                                 {/* Due Date */}
                                 {!hiddenColumns.has("due_date") && (
-                                    <TableCell className="px-3 text-muted-foreground">
+                                    <TableCell className="table-cell-meta !px-2 text-[11.5px] text-foreground/56">
                                         {task.due_date
                                             ? format(
                                                   new Date(task.due_date),
@@ -325,16 +343,10 @@ export function TasksTable({
                                 )}
 
                                 {/* Actions */}
-                                <TableCell className="px-3 text-right">
+                                <TableCell className="table-cell-actions">
                                     <DropdownMenu>
                                         <DropdownMenuTrigger asChild>
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                                            >
-                                                <MoreHorizontal className="h-4 w-4" />
-                                            </Button>
+                                            <TableRowActionTrigger />
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent align="end">
                                             <DropdownMenuItem
@@ -367,6 +379,7 @@ export function TasksTable({
                     )}
                 </TableBody>
             </Table>
+            </div>
 
             {/* Delete confirmation dialog */}
             <AlertDialog

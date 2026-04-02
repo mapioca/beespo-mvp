@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { ParticipantsClient } from "./participants-client";
+import { DirectoryClient } from "./directory-client";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -69,7 +69,7 @@ export default async function ParticipantsPage({ searchParams }: ParticipantsPag
     }));
 
     return (
-        <ParticipantsClient
+        <DirectoryClient
             key={searchQuery}
             participants={participants}
             userRole={profile.role}

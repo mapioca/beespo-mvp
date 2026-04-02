@@ -83,6 +83,18 @@ export function BusinessDrawer({ item, open, onOpenChange, onDelete }: BusinessD
 
     const isCompleted = status === "completed";
     const creatorName = item?.creator?.full_name;
+    const propertyLabelClass =
+        "text-drawer-label font-medium leading-none text-muted-foreground";
+    const propertyValueClass =
+        "text-drawer-value font-medium leading-none tracking-normal";
+    const inputClass =
+        "h-8 bg-control border-control focus-visible:ring-0 focus-visible:border-foreground/30";
+    const selectTriggerClass =
+        "h-8 bg-control border-control focus:ring-0 focus:border-foreground/30";
+    const selectContentClass =
+        "rounded-xl border border-border/60 bg-[hsl(var(--menu))] p-1 text-[hsl(var(--menu-text))] shadow-lg";
+    const selectItemClass =
+        "rounded-md px-2.5 py-1.5 text-drawer-menu-item font-medium leading-none tracking-normal focus:bg-[hsl(var(--menu-hover))] focus:text-[hsl(var(--menu-text))]";
 
     // Generate conducting script from current form state + item details
     const conductingScript = useMemo(() => {
@@ -161,7 +173,7 @@ export function BusinessDrawer({ item, open, onOpenChange, onDelete }: BusinessD
                     <div className="flex items-center justify-between px-5 pt-4 pb-3 pr-12 shrink-0 border-b border-border/40">
                         <div className="flex items-center gap-2">
                             <Briefcase className="h-4 w-4 text-muted-foreground stroke-[1.6]" />
-                            <SheetTitle className="text-sm font-semibold">Business Item Details</SheetTitle>
+                            <SheetTitle className="text-drawer-title font-semibold">Business Item Details</SheetTitle>
                         </div>
                         <Button
                             variant="ghost"
@@ -180,35 +192,35 @@ export function BusinessDrawer({ item, open, onOpenChange, onDelete }: BusinessD
                     <div className="flex-1 overflow-y-auto">
                         {/* BUSINESS ITEM section */}
                         <div className="px-5 py-4 space-y-4">
-                            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-                                Business Item
+                            <p className="text-drawer-section font-semibold tracking-[0.02em] text-foreground/60">
+                                Business item
                             </p>
                             <div className="space-y-1.5">
-                                <label className="text-[11px] text-muted-foreground">Person Name</label>
+                                <label className={propertyLabelClass}>Person Name</label>
                                 <Input
                                     value={personName}
                                     onChange={(e) => setPersonName(e.target.value)}
-                                    className="h-8 text-sm bg-background border-border/60 focus-visible:ring-0 focus-visible:border-foreground/30"
+                                    className={`${inputClass} ${propertyValueClass} placeholder:text-[length:var(--drawer-text-value)] placeholder:font-normal`}
                                 />
                             </div>
                             <div className="space-y-1.5">
-                                <label className="text-[11px] text-muted-foreground">Position / Calling</label>
+                                <label className={propertyLabelClass}>Position / Calling</label>
                                 <Input
                                     value={positionCalling}
                                     onChange={(e) => setPositionCalling(e.target.value)}
                                     placeholder="e.g., Sunday School President"
-                                    className="h-8 text-sm bg-background border-border/60 focus-visible:ring-0 focus-visible:border-foreground/30"
+                                    className={`${inputClass} ${propertyValueClass} placeholder:text-[length:var(--drawer-text-value)] placeholder:font-normal`}
                                 />
                             </div>
                             <div className="space-y-1.5">
-                                <label className="text-[11px] text-muted-foreground">Category</label>
+                                <label className={propertyLabelClass}>Category</label>
                                 <Select value={category} onValueChange={setCategory}>
-                                    <SelectTrigger className="h-8 text-sm bg-background border-border/60 focus:ring-0 focus:border-foreground/30">
+                                    <SelectTrigger className={`${selectTriggerClass} ${propertyValueClass}`}>
                                         <SelectValue />
                                     </SelectTrigger>
-                                    <SelectContent>
+                                    <SelectContent className={selectContentClass}>
                                         {CATEGORY_OPTIONS.map((opt) => (
-                                            <SelectItem key={opt.value} value={opt.value}>
+                                            <SelectItem key={opt.value} value={opt.value} className={selectItemClass}>
                                                 {opt.label}
                                             </SelectItem>
                                         ))}
@@ -216,14 +228,14 @@ export function BusinessDrawer({ item, open, onOpenChange, onDelete }: BusinessD
                                 </Select>
                             </div>
                             <div className="space-y-1.5">
-                                <label className="text-[11px] text-muted-foreground">Script Language</label>
+                                <label className={propertyLabelClass}>Script Language</label>
                                 <Select value={language} onValueChange={(val) => setLanguage(val as Language)}>
-                                    <SelectTrigger className="h-8 text-sm bg-background border-border/60 focus:ring-0 focus:border-foreground/30">
+                                    <SelectTrigger className={`${selectTriggerClass} ${propertyValueClass}`}>
                                         <SelectValue />
                                     </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="ENG">English</SelectItem>
-                                        <SelectItem value="SPA">Spanish</SelectItem>
+                                    <SelectContent className={selectContentClass}>
+                                        <SelectItem value="ENG" className={selectItemClass}>English</SelectItem>
+                                        <SelectItem value="SPA" className={selectItemClass}>Spanish</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
@@ -233,41 +245,41 @@ export function BusinessDrawer({ item, open, onOpenChange, onDelete }: BusinessD
 
                         {/* DETAILS section */}
                         <div className="px-5 py-4 space-y-3">
-                            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                            <p className="text-drawer-section font-semibold tracking-[0.02em] text-foreground/60">
                                 Details
                             </p>
                             <div className="space-y-1.5">
-                                <label className="text-[11px] text-muted-foreground">Status</label>
+                                <label className={propertyLabelClass}>Status</label>
                                 <Select value={status} onValueChange={setStatus}>
-                                    <SelectTrigger className="h-8 text-sm bg-background border-border/60 focus:ring-0 focus:border-foreground/30">
+                                    <SelectTrigger className={`${selectTriggerClass} ${propertyValueClass}`}>
                                         <SelectValue />
                                     </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="pending">Pending</SelectItem>
-                                        <SelectItem value="completed">Completed</SelectItem>
+                                    <SelectContent className={selectContentClass}>
+                                        <SelectItem value="pending" className={selectItemClass}>Pending</SelectItem>
+                                        <SelectItem value="completed" className={selectItemClass}>Completed</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
                             {item?.action_date && (
                                 <div className="flex items-start justify-between gap-4">
-                                    <span className="text-xs text-muted-foreground shrink-0">Action Date</span>
-                                    <span className="text-xs text-right">
+                                    <span className="text-drawer-meta text-muted-foreground shrink-0">Action Date</span>
+                                    <span className="text-drawer-meta text-right">
                                         {format(new Date(item.action_date), "MMM d, yyyy")}
                                     </span>
                                 </div>
                             )}
                             {item && (
                                 <div className="flex items-start justify-between gap-4">
-                                    <span className="text-xs text-muted-foreground shrink-0">Created at</span>
-                                    <span className="text-xs text-right">
+                                    <span className="text-drawer-meta text-muted-foreground shrink-0">Created at</span>
+                                    <span className="text-drawer-meta text-right">
                                         {format(new Date(item.created_at), "MMM d, yyyy 'at' h:mm a")}
                                     </span>
                                 </div>
                             )}
                             {creatorName && (
                                 <div className="flex items-center justify-between">
-                                    <span className="text-xs text-muted-foreground">Created by</span>
-                                    <span className="text-xs">{creatorName}</span>
+                                    <span className="text-drawer-meta text-muted-foreground">Created by</span>
+                                    <span className="text-drawer-meta">{creatorName}</span>
                                 </div>
                             )}
                         </div>
@@ -276,17 +288,17 @@ export function BusinessDrawer({ item, open, onOpenChange, onDelete }: BusinessD
 
                         {/* CONDUCTING SCRIPT section */}
                         <div className="px-5 py-4 space-y-3">
-                            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-                                Conducting Script
+                            <p className="text-drawer-section font-semibold tracking-[0.02em] text-foreground/60">
+                                Conducting script
                             </p>
                             {conductingScript ? (
-                                <div className="rounded-md border border-blue-200/60 bg-blue-50/60 p-3">
-                                    <p className="text-xs text-blue-900 font-serif whitespace-pre-line leading-relaxed">
+                                <div className="rounded-xl border border-border/70 bg-muted/20 p-3">
+                                    <p className="text-drawer-meta text-foreground/80 whitespace-pre-line leading-relaxed">
                                         {conductingScript}
                                     </p>
                                 </div>
                             ) : (
-                                <p className="text-xs text-muted-foreground italic">
+                                <p className="text-drawer-meta text-foreground/65 italic">
                                     Fill in person name and category to generate a script.
                                 </p>
                             )}
@@ -296,13 +308,13 @@ export function BusinessDrawer({ item, open, onOpenChange, onDelete }: BusinessD
 
                         {/* QUICK ACTIONS section */}
                         <div className="px-5 py-4 space-y-2">
-                            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-                                Quick Actions
+                            <p className="text-drawer-section font-semibold tracking-[0.02em] text-foreground/60">
+                                Quick actions
                             </p>
                             <Button
                                 variant="outline"
                                 size="sm"
-                                className="w-full justify-start gap-2 h-8 text-xs font-normal border-border/60 hover:bg-[hsl(var(--accent-warm)/0.6)]"
+                                className="w-full justify-start gap-2 h-8 text-xs font-normal border-border/60 hover:bg-control-hover"
                                 onClick={() => handleSetStatus(isCompleted ? "pending" : "completed")}
                                 disabled={isUpdatingStatus}
                             >
@@ -320,7 +332,7 @@ export function BusinessDrawer({ item, open, onOpenChange, onDelete }: BusinessD
                         {/* NOTES section */}
                         <div className="px-5 py-4 space-y-3">
                             <div className="flex items-center justify-between">
-                                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                                <p className="text-drawer-section font-semibold tracking-[0.02em] text-foreground/60">
                                     Notes
                                 </p>
                                 <Button
@@ -348,7 +360,7 @@ export function BusinessDrawer({ item, open, onOpenChange, onDelete }: BusinessD
                                     value={notes}
                                     onChange={(e) => setNotes(e.target.value)}
                                     placeholder="Add a note..."
-                                    className="text-sm resize-none bg-background border-border/60 focus-visible:ring-0 focus-visible:border-foreground/30"
+                                    className={`resize-none bg-control border-control focus-visible:ring-0 focus-visible:border-foreground/30 ${propertyValueClass} placeholder:text-[length:var(--drawer-text-value)] placeholder:font-normal`}
                                     rows={3}
                                     autoFocus={!item?.notes}
                                 />
@@ -362,7 +374,7 @@ export function BusinessDrawer({ item, open, onOpenChange, onDelete }: BusinessD
                         <Button
                             onClick={handleSave}
                             disabled={isSaving || !personName.trim() || !category}
-                            className="w-full h-8 text-xs bg-[hsl(var(--accent-warm))] text-foreground hover:bg-[hsl(var(--accent-warm-hover))]"
+                            className="w-full h-9 rounded-full text-[12px] font-semibold"
                         >
                             {isSaving ? "Saving..." : "Save"}
                         </Button>

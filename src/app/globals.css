@@ -5,7 +5,9 @@
 @layer base {
   :root {
     /* Black & White Elegance Theme */
-    --canvas: 45 29% 97%; /* Base layer behind the app shell (#FAF9F6) */
+    --canvas: 0 0% 96.5%; /* Back-compat */
+    --panel: 0 0% 96.5%; /* Base app surface (sidebar + shell canvas) */
+    --paper: 0 0% 99.2%; /* Document surface */
     --background: 0 0% 100%; /* Pure white */
     --foreground: 0 0% 0%; /* Pure black */
     --card: 0 0% 100%;
@@ -22,12 +24,139 @@
     --accent-foreground: 0 0% 0%;
     --accent-warm: 24 38% 91%; /* Warm peach-gray (#EFE7E1) */
     --accent-warm-hover: 24 27% 88%; /* Slightly deeper warm hover (#E6DDD6) */
+    --chrome: 0 0% 99.4%; /* App chrome surface (top bars, toolbars) */
+    --chrome-border: 0 0% 89%; /* Subtle chrome dividers */
+    --overlay: 0 0% 0% / 0.28; /* Modal overlay tint */
+    --app-shell: 0 0% 96.5%;
+    --app-island: 0 0% 100%;
+    --app-island-border: 0 0% 89%;
+    --nav-hover: 0 0% 94%;
+    --nav-hover-alpha: 1;
+    --nav-selected: 0 0% 90%;
+    --nav-selected-alpha: 1;
+    --nav-text: 0 0% 38%;
+    --nav-text-strong: 0 0% 10%;
+    --nav-text-muted: 0 0% 46%;
+    --nav-active-border: 0 0% 82%;
+    --program-stage-bg: 220 14% 95.6%;
+    --program-control-panel-bg: 0 0% 100%;
+    --program-control-panel-border: 220 10% 90.5%;
+    --program-control-tabs-bg: 220 14% 97%;
+    --program-control-tabs-border: 220 10% 89.8%;
+    --program-control-label: 220 7% 52%;
+    --program-control-text: 220 7% 45%;
+    --program-control-emphasis: 220 12% 8%;
+    --program-control-emphasis-foreground: 0 0% 100%;
+    --program-control-emphasis-ring: 220 18% 8%;
+    --program-control-soft: 220 11% 97.2%;
+    --program-control-radius: 14px;
+    --program-control-inner-radius: 12px;
+    --program-control-selected-bg: 220 10% 18%;
+    --program-control-selected-fg: 0 0% 98%;
+    --program-control-selected-ring: 220 12% 18%;
+    --program-control-panel-width: 360px;
+    --program-control-label-width: 130px;
+    --program-control-option-width: 260px;
+    --program-control-field-bg: 0 0% 94.5%;
+    --program-control-field-text: 0 0% 8%;
+    --program-control-field-icon: 0 0% 55%;
+    --program-control-divider: 0 0% 86%;
+    --program-control-section-title: 0 0% 8%;
+    --program-control-switch-bg: 0 0% 88%;
+    --program-control-switch-thumb: 0 0% 100%;
+    --program-preview-panel-bg: 0 0% 100%;
+    --program-preview-panel-border: 220 11% 91.5%;
+    --program-preview-stage-bg: 220 14% 95.2%;
+    --program-preview-frame-shell: 220 8% 97.5%;
+    --program-preview-frame-border: 220 8% 91.8%;
+    --program-preview-surface: 0 0% 100%;
+    --program-preview-text: 0 0% 7%;
+    --program-preview-muted: 0 0% 34%;
+    --program-preview-subtle: 0 0% 45%;
+    --program-preview-card-bg: 0 0% 99.9%;
+    --program-preview-card-border: 0 0% 89%;
+    --program-preview-pill-bg: 0 0% 99.4%;
+    --program-preview-pill-border: 0 0% 89%;
+    --program-preview-pill-text: 0 0% 30%;
+    --program-preview-icon-bg: 0 0% 95%;
+    --program-preview-icon-border: 0 0% 84%;
+    --program-preview-frame-shadow: 0 4px 12px rgba(16,24,40,0.06);
+    --program-preview-card-shadow: 0 1px 1px rgba(15,23,42,0.02);
+    --program-preview-list-divider: 0 0% 90%;
+    --program-preview-content-padding: 12px;
+    --program-preview-header-tracking: 0.12em;
+    --program-preview-title-max-width: 28ch;
+    --program-preview-pill-padding: 0.25rem 0.75rem;
+    --shadow-program-panel: 0 1px 2px rgba(16,24,40,0.04), 0 8px 24px rgba(16,24,40,0.05);
+    --shadow-program-frame: 0 6px 16px rgba(16,24,40,0.06);
+    --shadow-program-content-inset: inset 0 0 0 1px rgba(17,24,39,0.035);
+    --shadow-program-card: 0 1px 1px rgba(17,24,39,0.03);
+    --shadow-app-island: 0 1px 2px rgba(16,24,40,0.04), 0 8px 24px rgba(16,24,40,0.06);
+    --shadow-floating-control: 0 2px 10px rgba(16,24,40,0.12);
+    --builder-canvas: 0 0% 99.4%;
+    --builder-text-2xs: 10px;
+    --builder-text-xs: 11px;
+    --builder-text-sm: 12px;
+    --builder-text-md: 12.5px;
+    --builder-text-lg: 13px;
+    --builder-text-xl: 15px;
+    --builder-text-title: 16.5px;
+    --drawer-text-label: 12.5px;
+    --drawer-text-value: 14px;
+    --drawer-text-meta: 13.5px;
+    --drawer-text-section: 13.5px;
+    --drawer-text-menu-item: 13.5px;
+    --drawer-text-title: 15.5px;
+    --shadow-builder-card: 0 1px 0 rgba(15,23,42,0.03);
+    --shadow-builder-card-hover: 0 8px 18px rgba(15,23,42,0.06);
+    --shadow-builder-card-selected: 0 10px 24px rgba(15,23,42,0.08);
+    --shadow-builder-header: 0 8px 20px rgba(15,23,42,0.04);
+    --shadow-builder-canvas: 0 28px 70px rgba(15,23,42,0.07);
+    --button-primary: 0 0% 0%;
+    --button-primary-hover: 0 0% 12%;
+    --button-primary-foreground: 0 0% 100%;
+    --pill: 0 0% 92%;
+    --pill-foreground: 0 0% 20%;
+    --control: 0 0% 100%;
+    --control-foreground: 0 0% 35%;
+    --control-border: 0 0% 87%;
+    --control-hover: 0 0% 95%;
+    --menu: 0 0% 100%;
+    --menu-border: 0 0% 86%;
+    --menu-text: 0 0% 18%;
+    --menu-muted: 0 0% 45%;
+    --menu-icon: 0 0% 40%;
+    --menu-hover: 0 0% 96%;
+    --menu-separator: 0 0% 92%;
+    --table-row-hover: 0 0% 97.8%;
+    --table-row-selected: 0 0% 97.3%;
+    --table-filter-hover: 0 0% 94%;
+    --table-filter-active: 0 0% 92%;
+    --table-shell-bg: 0 0% 100%;
+    --table-shell-border: 0 0% 89%;
+    --table-shell-shadow: 0 1px 0 rgba(15,23,42,0.04);
+    --table-row-divider: 0 0% 91%;
+    --table-header-bg: 0 0% 95%;
+    --table-header-border: 0 0% 89%;
+    --table-head-height: 2.5rem;
+    --table-cell-px: 0.75rem;
+    --table-row-py: 0.625rem;
+    --table-header-font-size: 11px;
+    --table-body-font-size: 13px;
+    --table-meta-font-size: 12px;
+    --chip-bg: 0 0% 98.8%;
+    --chip-border: 0 0% 90%;
+    --chip-text: 0 0% 22%;
+    --chip-hover-bg: 0 0% 97%;
+    --chip-active-bg: 0 0% 92%;
+    --chip-active-border: 0 0% 82%;
+    --chip-active-text: 0 0% 10%;
     --destructive: 0 84% 60%; /* Error red - minimal color */
     --destructive-foreground: 0 0% 100%;
-    --border: 0 0% 90%; /* Light gray for borders */
-    --input: 0 0% 90%;
+    --border: 0 0% 89%; /* Light gray for borders */
+    --input: 0 0% 89%;
     --ring: 0 0% 0%;
-    --radius: 0.5rem;
+    --radius: 0.875rem;
     --chart-1: 0 0% 60%;
     --chart-2: 0 0% 40%;
     --chart-3: 0 0% 20%;
@@ -36,7 +165,9 @@
   }
 
   .dark {
-    --canvas: 0 0% 0%; /* Pure black canvas in dark mode — content surface sits above it */
+    --canvas: 24 18% 22%; /* Back-compat */
+    --panel: 0 0% 8%;
+    --paper: 0 0% 5%;
     --background: 0 0% 0%;
     --foreground: 0 0% 100%;
     --card: 0 0% 5%;
@@ -53,6 +184,121 @@
     --accent-foreground: 0 0% 100%;
     --accent-warm: 24 18% 22%;
     --accent-warm-hover: 24 20% 26%;
+    --chrome: 0 0% 8%;
+    --chrome-border: 0 0% 18%;
+    --overlay: 0 0% 0% / 0.6; /* Modal overlay tint */
+    --app-shell: 0 0% 8%;
+    --app-island: 0 0% 6%;
+    --app-island-border: 0 0% 20%;
+    --nav-hover: 220 10% 14%;
+    --nav-hover-alpha: 1;
+    --nav-selected: 220 11% 17%;
+    --nav-selected-alpha: 1;
+    --nav-text: 220 8% 72%;
+    --nav-text-strong: 220 12% 94%;
+    --nav-text-muted: 220 8% 66%;
+    --nav-active-border: 220 12% 24%;
+    --program-stage-bg: 220 10% 10%;
+    --program-control-panel-bg: 220 8% 8%;
+    --program-control-panel-border: 220 9% 18%;
+    --program-control-tabs-bg: 220 8% 12%;
+    --program-control-tabs-border: 220 9% 20%;
+    --program-control-label: 220 8% 66%;
+    --program-control-text: 220 8% 74%;
+    --program-control-emphasis: 220 12% 94%;
+    --program-control-emphasis-foreground: 220 18% 8%;
+    --program-control-emphasis-ring: 220 15% 90%;
+    --program-control-soft: 220 8% 14%;
+    --program-control-radius: 14px;
+    --program-control-inner-radius: 12px;
+    --program-control-selected-bg: 220 10% 20%;
+    --program-control-selected-fg: 0 0% 96%;
+    --program-control-selected-ring: 220 12% 22%;
+    --program-control-panel-width: 360px;
+    --program-control-label-width: 130px;
+    --program-control-option-width: 260px;
+    --program-control-field-bg: 220 8% 18%;
+    --program-control-field-text: 0 0% 95%;
+    --program-control-field-icon: 220 8% 62%;
+    --program-control-divider: 220 8% 26%;
+    --program-control-section-title: 0 0% 94%;
+    --program-control-switch-bg: 220 8% 26%;
+    --program-control-switch-thumb: 0 0% 100%;
+    --program-preview-panel-bg: 220 8% 8%;
+    --program-preview-panel-border: 220 9% 18%;
+    --program-preview-stage-bg: 220 8% 10%;
+    --program-preview-frame-shell: 220 9% 12%;
+    --program-preview-frame-border: 220 9% 22%;
+    --program-preview-surface: 220 10% 7%;
+    --program-preview-text: 0 0% 96%;
+    --program-preview-muted: 220 8% 72%;
+    --program-preview-subtle: 220 7% 62%;
+    --program-preview-card-bg: 220 9% 9%;
+    --program-preview-card-border: 220 9% 22%;
+    --program-preview-pill-bg: 220 8% 12%;
+    --program-preview-pill-border: 220 9% 24%;
+    --program-preview-pill-text: 220 8% 78%;
+    --program-preview-icon-bg: 220 8% 14%;
+    --program-preview-icon-border: 220 9% 24%;
+    --program-preview-frame-shadow: 0 8px 18px rgba(0,0,0,0.38);
+    --program-preview-card-shadow: none;
+    --program-preview-list-divider: 220 9% 22%;
+    --program-preview-content-padding: 12px;
+    --program-preview-header-tracking: 0.12em;
+    --program-preview-title-max-width: 28ch;
+    --program-preview-pill-padding: 0.25rem 0.75rem;
+    --shadow-program-panel: 0 1px 2px rgba(0,0,0,0.38), 0 10px 24px rgba(0,0,0,0.35);
+    --shadow-program-frame: 0 8px 20px rgba(0,0,0,0.4);
+    --shadow-program-content-inset: inset 0 0 0 1px rgba(255,255,255,0.05);
+    --shadow-program-card: none;
+    --shadow-app-island: 0 1px 2px rgba(0,0,0,0.4), 0 10px 24px rgba(0,0,0,0.35);
+    --shadow-floating-control: 0 2px 12px rgba(0,0,0,0.45);
+    --builder-canvas: 0 0% 8%;
+    --drawer-text-label: 12.5px;
+    --drawer-text-value: 14px;
+    --drawer-text-meta: 13.5px;
+    --drawer-text-section: 13.5px;
+    --drawer-text-menu-item: 13.5px;
+    --drawer-text-title: 15.5px;
+    --button-primary: 0 0% 100%;
+    --button-primary-hover: 0 0% 88%;
+    --button-primary-foreground: 0 0% 100%;
+    --pill: 0 0% 18%;
+    --pill-foreground: 0 0% 90%;
+    --control: 0 0% 10%;
+    --control-foreground: 0 0% 75%;
+    --control-border: 0 0% 20%;
+    --control-hover: 0 0% 14%;
+    --menu: 0 0% 10%;
+    --menu-border: 0 0% 22%;
+    --menu-text: 0 0% 92%;
+    --menu-muted: 0 0% 60%;
+    --menu-icon: 0 0% 65%;
+    --menu-hover: 0 0% 16%;
+    --menu-separator: 0 0% 22%;
+    --table-row-hover: 220 10% 12.5%;
+    --table-row-selected: 220 10% 20%;
+    --table-filter-hover: 220 10% 14%;
+    --table-filter-active: 220 10% 18%;
+    --table-shell-bg: 220 12% 10%;
+    --table-shell-border: 220 10% 20%;
+    --table-shell-shadow: 0 1px 0 rgba(0,0,0,0.35);
+    --table-row-divider: 220 10% 20%;
+    --table-header-bg: 220 10% 13%;
+    --table-header-border: 220 10% 20%;
+    --table-head-height: 2.5rem;
+    --table-cell-px: 0.75rem;
+    --table-row-py: 0.625rem;
+    --table-header-font-size: 11px;
+    --table-body-font-size: 13px;
+    --table-meta-font-size: 12px;
+    --chip-bg: 220 10% 14%;
+    --chip-border: 220 10% 24%;
+    --chip-text: 220 12% 88%;
+    --chip-hover-bg: 220 11% 18%;
+    --chip-active-bg: 220 12% 22%;
+    --chip-active-border: 220 10% 34%;
+    --chip-active-text: 0 0% 98%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 0%;
     --border: 0 0% 15%;
@@ -75,7 +321,7 @@
     inset: 0;
     z-index: 9999;
     pointer-events: none;
-    opacity: 0.02;
+    opacity: 0.012;
     background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
     background-repeat: repeat;
     background-size: 256px 256px;
@@ -88,7 +334,271 @@
 ============================================ */
 @layer utilities {
   .bg-canvas {
-    background-color: hsl(var(--canvas));
+    background-color: hsl(var(--panel));
+  }
+
+  .bg-panel {
+    background-color: hsl(var(--panel));
+  }
+
+  .bg-app-shell {
+    background-color: hsl(var(--app-shell));
+  }
+
+  .bg-app-island {
+    background-color: hsl(var(--app-island));
+  }
+
+  .bg-builder-canvas {
+    background-color: hsl(var(--builder-canvas));
+  }
+
+  .border-app-island {
+    border-color: hsl(var(--app-island-border));
+  }
+
+  .bg-paper {
+    background-color: hsl(var(--paper));
+  }
+
+  .text-builder-2xs {
+    font-size: var(--builder-text-2xs);
+  }
+
+  .text-builder-xs {
+    font-size: var(--builder-text-xs);
+  }
+
+  .text-builder-sm {
+    font-size: var(--builder-text-sm);
+  }
+
+  .text-builder-md {
+    font-size: var(--builder-text-md);
+  }
+
+  .text-builder-lg {
+    font-size: var(--builder-text-lg);
+  }
+
+  .text-builder-xl {
+    font-size: var(--builder-text-xl);
+  }
+
+  .text-builder-title {
+    font-size: var(--builder-text-title);
+  }
+
+  .text-drawer-label {
+    font-size: var(--drawer-text-label);
+  }
+
+  .text-drawer-value {
+    font-size: var(--drawer-text-value);
+  }
+
+  .text-drawer-meta {
+    font-size: var(--drawer-text-meta);
+  }
+
+  .text-drawer-section {
+    font-size: var(--drawer-text-section);
+  }
+
+  .text-drawer-menu-item {
+    font-size: var(--drawer-text-menu-item);
+  }
+
+  .text-drawer-title {
+    font-size: var(--drawer-text-title);
+  }
+
+  .shadow-builder-card {
+    box-shadow: var(--shadow-builder-card);
+  }
+
+  .shadow-builder-card-hover {
+    box-shadow: var(--shadow-builder-card-hover);
+  }
+
+  .shadow-builder-card-selected {
+    box-shadow: var(--shadow-builder-card-selected);
+  }
+
+  .shadow-builder-header {
+    box-shadow: var(--shadow-builder-header);
+  }
+
+  .shadow-builder-canvas {
+    box-shadow: var(--shadow-builder-canvas);
+  }
+
+  .bg-chrome {
+    background-color: hsl(var(--chrome));
+  }
+
+  .border-chrome {
+    border-color: hsl(var(--chrome-border));
+  }
+
+  .bg-nav-hover {
+    background-color: hsl(var(--nav-hover) / var(--nav-hover-alpha));
+  }
+
+  .bg-nav-selected {
+    background-color: hsl(var(--nav-selected) / var(--nav-selected-alpha));
+  }
+
+  .text-nav {
+    color: hsl(var(--nav-text));
+  }
+
+  .text-nav-strong {
+    color: hsl(var(--nav-text-strong));
+  }
+
+  .text-nav-muted {
+    color: hsl(var(--nav-text-muted));
+  }
+
+  .border-nav-active {
+    border-color: hsl(var(--nav-active-border));
+  }
+
+  .bg-button-primary {
+    background-color: hsl(var(--button-primary));
+  }
+
+  .bg-button-primary-hover {
+    background-color: hsl(var(--button-primary-hover));
+  }
+
+  .text-button-primary {
+    color: hsl(var(--button-primary-foreground));
+  }
+
+  .bg-pill {
+    background-color: hsl(var(--pill));
+  }
+
+  .text-pill {
+    color: hsl(var(--pill-foreground));
+  }
+
+  .bg-control {
+    background-color: hsl(var(--control));
+  }
+
+  .text-control {
+    color: hsl(var(--control-foreground));
+  }
+
+  .border-control {
+    border-color: hsl(var(--control-border));
+  }
+
+  .bg-control-hover {
+    background-color: hsl(var(--control-hover));
+  }
+
+  .bg-menu {
+    background-color: hsl(var(--menu));
+  }
+
+  .border-menu {
+    border-color: hsl(var(--menu-border));
+  }
+
+  .text-menu {
+    color: hsl(var(--menu-text));
+  }
+
+  .text-menu-muted {
+    color: hsl(var(--menu-muted));
+  }
+
+  .text-menu-icon {
+    color: hsl(var(--menu-icon));
+  }
+
+  .bg-menu-hover {
+    background-color: hsl(var(--menu-hover));
+  }
+
+  .table-shell-standard {
+    border-radius: 0.75rem;
+    border-top: 1px solid hsl(var(--table-shell-border) / 0.6);
+    border-bottom: 1px solid hsl(var(--table-shell-border) / 0.6);
+    background-color: hsl(var(--table-shell-bg) / 0.8);
+    box-shadow: var(--table-shell-shadow);
+    overflow: hidden;
+  }
+
+  .table-shell-minimal {
+    border-radius: 0.75rem;
+    border-top: 1px solid hsl(var(--table-shell-border) / 0.25);
+    border-bottom: 1px solid hsl(var(--table-shell-border) / 0.25);
+    background-color: hsl(var(--table-shell-bg) / 0.45);
+    box-shadow: none;
+    overflow: hidden;
+  }
+
+  .table-mode-minimal {
+    --table-row-divider: 0 0% 0% / 0;
+    --table-header-bg: 0 0% 0% / 0;
+    --table-header-border: 0 0% 0% / 0;
+  }
+
+  .dark .table-mode-minimal {
+    --table-row-divider: 0 0% 100% / 0;
+    --table-header-bg: 0 0% 100% / 0;
+    --table-header-border: 0 0% 100% / 0;
+  }
+
+  .table-header-row-standard {
+    background-color: hsl(var(--table-header-bg) / 0.25);
+    border-bottom: 1px solid hsl(var(--table-header-border) / 0.6);
+  }
+
+  .table-header-row-standard:hover {
+    background-color: hsl(var(--table-header-bg) / 0.25);
+  }
+
+  .table-cell-check {
+    padding-left: var(--table-cell-px);
+    padding-right: var(--table-cell-px);
+    padding-top: var(--table-row-py);
+    padding-bottom: var(--table-row-py);
+  }
+
+  .table-cell-title {
+    padding-left: var(--table-cell-px);
+    padding-right: var(--table-cell-px);
+    padding-top: var(--table-row-py);
+    padding-bottom: var(--table-row-py);
+    font-size: var(--table-body-font-size);
+    font-weight: 500;
+  }
+
+  .table-cell-meta {
+    padding-left: var(--table-cell-px);
+    padding-right: var(--table-cell-px);
+    padding-top: var(--table-row-py);
+    padding-bottom: var(--table-row-py);
+    font-size: var(--table-meta-font-size);
+    color: hsl(var(--muted-foreground));
+  }
+
+  .table-cell-actions {
+    padding-left: var(--table-cell-px);
+    padding-right: var(--table-cell-px);
+    padding-top: var(--table-row-py);
+    padding-bottom: var(--table-row-py);
+    text-align: right;
+  }
+
+  .border-menu-separator {
+    border-color: hsl(var(--menu-separator));
   }
 
   .h-screen-dynamic {

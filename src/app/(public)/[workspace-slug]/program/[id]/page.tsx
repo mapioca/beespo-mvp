@@ -5,6 +5,13 @@ import { ProgramView } from "@/components/meetings/program/program-view";
 import { mapAgendaToProgramItems } from "@/lib/map-agenda-to-program-items";
 import type { ProgramViewData } from "@/components/meetings/program/types";
 import type { Database } from "@/types/database";
+import {
+    buildProgramStyleVars,
+    filterProgramItems,
+    getProgramContentWidthClass,
+    normalizeProgramStyleSettings,
+} from "@/components/meetings/program/program-style";
+import type { ProgramStyleSettings } from "@/components/meetings/program/program-style";
 
 export const dynamic = "force-dynamic";
 
@@ -98,11 +105,31 @@ export default async function ProgramPage({ params }: ProgramPageProps) {
             pianistOrganist: meeting.organist_name || undefined,
         },
         items: mapAgendaToProgramItems(agendaItems),
+        meetingNotes: typeof meeting.notes === "string" ? meeting.notes : undefined,
     };
+    const normalizedStyle = normalizeProgramStyleSettings(meeting.program_style as ProgramStyleSettings | null);
+    const programStyle = buildProgramStyleVars(normalizedStyle);
+    const contentWidthClass = getProgramContentWidthClass(normalizedStyle);
+    const filteredItems = filterProgramItems(programData.items, normalizedStyle);
 
     return (
-        <div className="flex-1 flex justify-center bg-slate-50">
-            <ProgramView data={programData} variant="embedded" />
+        <div className="flex-1 flex justify-center bg-transparent py-6" style={programStyle}>
+            <ProgramView
+                data={{ ...programData, items: filteredItems }}
+                variant="embedded"
+                density={normalizedStyle.density}
+                viewStyle={normalizedStyle.viewStyle}
+                showDivider
+            showRoles={normalizedStyle.showRoles}
+            showFooter={normalizedStyle.showFooter}
+            showMeetingNotes={normalizedStyle.showMeetingNotes}
+                showSpeakerNames={normalizedStyle.showSpeakerNames}
+                showDurations={normalizedStyle.showDurations}
+                showIcons={normalizedStyle.showIcons}
+                dateFormat={normalizedStyle.dateFormat}
+                titleCase={normalizedStyle.titleCase}
+                className={contentWidthClass}
+            />
         </div>
     );
 }

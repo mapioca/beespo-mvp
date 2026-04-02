@@ -39,6 +39,13 @@ interface SpeakerDrawerProps {
 
 export function SpeakerDrawer({ speaker, open, onOpenChange, onDelete }: SpeakerDrawerProps) {
     const router = useRouter();
+    const sectionHeaderClass =
+        "text-drawer-section font-semibold tracking-[0.02em] text-foreground/60";
+    const propertyLabelClass =
+        "text-drawer-label font-medium leading-none text-muted-foreground";
+    const propertyValueClass =
+        "text-drawer-value font-medium leading-none tracking-normal";
+    const metaTextClass = "text-drawer-meta";
     const [isSaving, setIsSaving] = useState(false);
     const [isConfirming, setIsConfirming] = useState(false);
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -115,7 +122,7 @@ export function SpeakerDrawer({ speaker, open, onOpenChange, onDelete }: Speaker
                     <div className="flex items-center justify-between px-5 pt-4 pb-3 pr-12 shrink-0">
                         <div className="flex items-center gap-2">
                             <Speech className="h-4 w-4 text-muted-foreground" />
-                            <SheetTitle className="text-sm font-semibold">Speaker Details</SheetTitle>
+                            <SheetTitle className="text-drawer-title font-semibold">Speaker Details</SheetTitle>
                         </div>
                         <Button
                             variant="ghost"
@@ -136,23 +143,21 @@ export function SpeakerDrawer({ speaker, open, onOpenChange, onDelete }: Speaker
                     <div className="flex-1 overflow-y-auto">
                         {/* SPEAKER section */}
                         <div className="px-5 py-4 space-y-4">
-                            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-                                Speaker
-                            </p>
+                            <p className={sectionHeaderClass}>Speaker</p>
                             <div className="space-y-1.5">
-                                <label className="text-xs font-medium">Name</label>
+                                <label className={propertyLabelClass}>Name</label>
                                 <Input
                                     value={name}
                                     onChange={(e) => setName(e.target.value)}
-                                    className="h-8 text-sm"
+                                    className={`h-8 bg-control border-control focus-visible:ring-0 focus-visible:border-foreground/30 ${propertyValueClass}`}
                                 />
                             </div>
                             <div className="space-y-1.5">
-                                <label className="text-xs font-medium">Topic</label>
+                                <label className={propertyLabelClass}>Topic</label>
                                 <Textarea
                                     value={topic}
                                     onChange={(e) => setTopic(e.target.value)}
-                                    className="text-sm resize-none"
+                                    className={`resize-none bg-control border-control focus-visible:ring-0 focus-visible:border-foreground/30 ${propertyValueClass}`}
                                     rows={3}
                                 />
                             </div>
@@ -162,30 +167,28 @@ export function SpeakerDrawer({ speaker, open, onOpenChange, onDelete }: Speaker
 
                         {/* DETAILS section */}
                         <div className="px-5 py-4 space-y-3">
-                            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-                                Details
-                            </p>
+                            <p className={sectionHeaderClass}>Details</p>
                             <div className="flex items-center justify-between">
-                                <span className="text-xs text-muted-foreground">Status</span>
+                                <span className={`${metaTextClass} text-muted-foreground`}>Status</span>
                                 <Badge
                                     variant={isConfirmed ? "default" : "secondary"}
-                                    className="text-xs"
+                                    className={metaTextClass}
                                 >
                                     {isConfirmed ? "Confirmed" : "Pending"}
                                 </Badge>
                             </div>
                             {speaker && (
                                 <div className="flex items-start justify-between gap-4">
-                                    <span className="text-xs text-muted-foreground shrink-0">Created</span>
-                                    <span className="text-xs text-right">
+                                    <span className={`${metaTextClass} text-muted-foreground shrink-0`}>Created</span>
+                                    <span className={`${metaTextClass} text-right`}>
                                         {format(new Date(speaker.created_at), "MMM d, yyyy 'at' h:mm a")}
                                     </span>
                                 </div>
                             )}
                             {creatorName && (
                                 <div className="flex items-center justify-between">
-                                    <span className="text-xs text-muted-foreground">By</span>
-                                    <span className="text-xs">{creatorName}</span>
+                                    <span className={`${metaTextClass} text-muted-foreground`}>By</span>
+                                    <span className={metaTextClass}>{creatorName}</span>
                                 </div>
                             )}
                         </div>
@@ -194,13 +197,11 @@ export function SpeakerDrawer({ speaker, open, onOpenChange, onDelete }: Speaker
 
                         {/* QUICK ACTIONS section */}
                         <div className="px-5 py-4 space-y-2">
-                            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-                                Quick Actions
-                            </p>
+                            <p className={sectionHeaderClass}>Quick actions</p>
                             <Button
                                 variant="outline"
                                 size="sm"
-                                className="w-full justify-start gap-2 h-8 text-xs font-normal"
+                                className="w-full justify-start gap-2 h-8 text-xs font-normal border-border/60 hover:bg-control-hover"
                                 onClick={handleToggleConfirmed}
                                 disabled={isConfirming}
                             >
@@ -214,7 +215,7 @@ export function SpeakerDrawer({ speaker, open, onOpenChange, onDelete }: Speaker
                             <Button
                                 variant="outline"
                                 size="sm"
-                                className="w-full justify-start gap-2 h-8 text-xs font-normal"
+                                className="w-full justify-start gap-2 h-8 text-xs font-normal border-border/60 hover:bg-control-hover"
                                 onClick={() => toast.info("Invitation letter — coming soon")}
                             >
                                 <Mail className="h-3.5 w-3.5 text-blue-600" />
@@ -227,9 +228,7 @@ export function SpeakerDrawer({ speaker, open, onOpenChange, onDelete }: Speaker
                         {/* NOTES section */}
                         <div className="px-5 py-4 space-y-3">
                             <div className="flex items-center justify-between">
-                                <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-                                    Notes
-                                </p>
+                                <p className={sectionHeaderClass}>Notes</p>
                                 <Button
                                     variant="ghost"
                                     size="icon"
@@ -255,7 +254,7 @@ export function SpeakerDrawer({ speaker, open, onOpenChange, onDelete }: Speaker
                                     value={note}
                                     onChange={(e) => setNote(e.target.value)}
                                     placeholder="Add a note..."
-                                    className="text-sm resize-none"
+                                    className={`resize-none bg-control border-control focus-visible:ring-0 focus-visible:border-foreground/30 ${propertyValueClass} placeholder:text-[length:var(--drawer-text-value)] placeholder:font-normal`}
                                     rows={3}
                                     autoFocus
                                 />
@@ -266,10 +265,8 @@ export function SpeakerDrawer({ speaker, open, onOpenChange, onDelete }: Speaker
 
                         {/* RELATED MEETING section */}
                         <div className="px-5 py-4 space-y-3">
-                            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-                                Related Meeting
-                            </p>
-                            <p className="text-xs text-muted-foreground">
+                            <p className={sectionHeaderClass}>Related meeting</p>
+                            <p className={`${metaTextClass} text-muted-foreground`}>
                                 {meeting ? "Assigned to meeting" : "Not yet assigned"}
                             </p>
                             <div className="rounded-md border p-3">
@@ -278,8 +275,8 @@ export function SpeakerDrawer({ speaker, open, onOpenChange, onDelete }: Speaker
                                         href={`/meetings/${meeting.id}`}
                                         className="block hover:bg-muted rounded-md transition-colors -m-1 p-1"
                                     >
-                                        <p className="text-sm font-medium">{meeting.title}</p>
-                                        <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                                        <p className="text-drawer-value font-medium">{meeting.title}</p>
+                                        <div className={`flex items-center gap-2 ${metaTextClass} text-muted-foreground mt-1`}>
                                             <Calendar className="h-3 w-3" />
                                             <span>
                                                 {format(new Date(meeting.scheduled_date), "MMM d, yyyy")}
@@ -287,9 +284,9 @@ export function SpeakerDrawer({ speaker, open, onOpenChange, onDelete }: Speaker
                                         </div>
                                     </Link>
                                 ) : (
-                                    <div className="text-sm text-muted-foreground">
+                                    <div className={`${metaTextClass} text-muted-foreground`}>
                                         <p>Not yet assigned to a meeting.</p>
-                                        <p className="mt-1 text-xs">
+                                        <p className={`mt-1 ${metaTextClass}`}>
                                             Assign this speaker to a meeting agenda.
                                         </p>
                                     </div>
@@ -304,9 +301,9 @@ export function SpeakerDrawer({ speaker, open, onOpenChange, onDelete }: Speaker
                         <Button
                             onClick={handleSave}
                             disabled={isSaving || !name.trim() || !topic.trim()}
-                            className="w-full h-8 text-xs"
+                            className="w-full h-9 rounded-full text-[12px] font-semibold"
                         >
-                            {isSaving ? "Saving..." : "Save Changes"}
+                            {isSaving ? "Saving..." : "Save"}
                         </Button>
                     </div>
                 </SheetContent>

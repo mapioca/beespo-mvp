@@ -13,19 +13,22 @@ interface Notebook {
 
 interface NotebookGridProps {
     notebooks: Notebook[];
+    onRename?: (id: string, title: string) => void;
+    onDelete?: (id: string, title: string) => void;
+    onShare?: (id: string, title: string) => void;
 }
 
-export function NotebookGrid({ notebooks }: NotebookGridProps) {
+export function NotebookGrid({ notebooks, onRename, onDelete, onShare }: NotebookGridProps) {
     if (notebooks.length === 0) {
         return (
-            <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
-                <div className="w-16 h-16 rounded-full bg-[hsl(var(--accent-warm))] border border-border/50 flex items-center justify-center mb-4">
-                    <BookOpen className="w-8 h-8 text-muted-foreground stroke-[1.6]" />
+            <div className="flex flex-col items-center justify-center rounded-[28px] border border-border/60 bg-white/72 px-6 py-24 text-center shadow-[0_20px_50px_rgba(15,23,42,0.05)]">
+                <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl border border-border/60 bg-control">
+                    <BookOpen className="h-7 w-7 text-muted-foreground stroke-[1.6]" />
                 </div>
-                <h3 className="text-lg font-medium text-foreground mb-2">
+                <h3 className="mb-2 text-[22px] font-semibold tracking-[-0.02em] text-foreground">
                     No notebooks yet
                 </h3>
-                <p className="text-sm text-muted-foreground max-w-sm">
+                <p className="max-w-md text-[14px] leading-6 text-muted-foreground">
                     Create your first notebook to start organizing your notes.
                 </p>
             </div>
@@ -33,7 +36,7 @@ export function NotebookGrid({ notebooks }: NotebookGridProps) {
     }
 
     return (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(152px,1fr))] gap-x-5 gap-y-8 xl:grid-cols-[repeat(auto-fill,minmax(168px,1fr))]">
             {notebooks.map((notebook) => (
                 <NotebookCard
                     key={notebook.id}
@@ -42,6 +45,9 @@ export function NotebookGrid({ notebooks }: NotebookGridProps) {
                     coverStyle={notebook.cover_style}
                     updatedAt={notebook.updated_at}
                     notesCount={notebook.notes_count}
+                    onRename={onRename}
+                    onDelete={onDelete}
+                    onShare={onShare}
                 />
             ))}
         </div>

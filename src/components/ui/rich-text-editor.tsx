@@ -24,6 +24,7 @@ interface RichTextEditorProps {
     placeholder?: string;
     disabled?: boolean;
     debounceMs?: number;
+    placeholderFontSize?: string;
 }
 
 interface BubbleButtonProps {
@@ -62,6 +63,7 @@ export function RichTextEditor({
     placeholder = "Add a note...",
     disabled = false,
     debounceMs = 1000,
+    placeholderFontSize = "0.875rem",
 }: RichTextEditorProps) {
     const [isFocused, setIsFocused] = useState(false);
     const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
@@ -185,6 +187,7 @@ export function RichTextEditor({
     return (
         <div
             ref={wrapperRef}
+            style={{ ["--rte-placeholder-size" as string]: placeholderFontSize } as React.CSSProperties}
             className={cn(
                 "relative rounded-md border transition-all duration-150 bg-background",
                 isFocused
@@ -264,7 +267,8 @@ export function RichTextEditor({
                     color: hsl(var(--muted-foreground) / 0.5);
                     pointer-events: none;
                     height: 0;
-                    font-size: 0.875rem;
+                    font-size: var(--rte-placeholder-size, 0.875rem);
+                    line-height: 1.35;
                 }
             `}</style>
         </div>

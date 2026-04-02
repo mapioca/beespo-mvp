@@ -7,7 +7,7 @@ import { BookOpen, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/lib/toast";
 import { createClient } from "@/lib/supabase/client";
-import { getCoverById } from "@/lib/notebooks/notebook-covers";
+import { getCoverById, getDefaultCover } from "@/lib/notebooks/notebook-covers";
 import type { NotebooksData, DragHandleProps } from "@/types/dashboard";
 import { WidgetCard } from "./widget-card";
 
@@ -44,7 +44,7 @@ export function NotebooksWidget({ data, dragHandleProps, isDragging }: Props) {
       )
         .insert({
           title: "Untitled Notebook",
-          cover_style: "gradient-ocean",
+          cover_style: getDefaultCover().id,
           workspace_id: profile.workspace_id,
           created_by: user.id,
         })

@@ -6,7 +6,7 @@
 export interface BreadcrumbItem {
   label: string
   href?: string
-  iconType?: "database" | "table" | "notebook"
+  iconType?: "database" | "table" | "notebook" | "template"
 }
 
 export interface BreadcrumbConfig {
@@ -62,11 +62,18 @@ export const breadcrumbConfigs: BreadcrumbConfig[] = [
   },
   {
     pattern: "/templates/library",
-    trail: [{ label: "Template Library" }],
+    trail: [
+      { label: "Templates", href: "/templates/library", iconType: "template" },
+      { label: "Library", iconType: "template" },
+    ],
   },
   {
     pattern: "/templates/new",
-    trail: [{ label: "Template Library", href: "/templates/library" }, { label: "New Template" }],
+    trail: [
+      { label: "Templates", href: "/templates/library", iconType: "template" },
+      { label: "Library", href: "/templates/library", iconType: "template" },
+      { label: "New Template", iconType: "template" },
+    ],
   },
   {
     pattern: "/meetings/new",

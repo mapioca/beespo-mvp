@@ -1,19 +1,29 @@
 "use client";
 
 import { useState, useEffect, useMemo, useCallback } from "react";
+import { SortableContext, verticalListSortingStrategy, useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import { Search, Plus } from "lucide-react";
+import { Search, Plus, GripVertical, Copy, ChevronDown } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { DraggableToolboxItem } from "./draggable-toolbox-item";
-import { ToolboxItem, ProceduralItemType, ItemConfig, CategoryType } from "./types";
+import { ToolboxItem, ProceduralItemType, ItemConfig, CategoryType, CanvasItem } from "./types";
 import { CreateItemTypeDialog } from "./create-item-type-dialog";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 
 interface ToolboxPaneProps {
     onItemsLoaded?: (items: ToolboxItem[]) => void;
     onAddItem?: (item: ToolboxItem) => void;
+    pinnedIds?: string[];
+    recentIds?: string[];
+    onTogglePin?: (id: string) => void;
+    outlineItems?: CanvasItem[];
+    selectedItemId?: string | null;
+    onSelectItem?: (id: string | null) => void;
+    onDuplicateItem?: (id: string) => void;
 }
 
 interface CategoryGroup {
@@ -72,7 +82,17 @@ function getContainerType(pt: ProceduralItemType): "discussion" | "business" | "
     return CONTAINER_NAME_MAP[pt.name];
 }
 
-export function ToolboxPane({ onItemsLoaded, onAddItem }: ToolboxPaneProps) {
+export function ToolboxPane({
+    onItemsLoaded,
+    onAddItem,
+    pinnedIds = [],
+    recentIds = [],
+    onTogglePin,
+    outlineItems = [],
+    selectedItemId,
+    onSelectItem,
+    onDuplicateItem,
+}: ToolboxPaneProps) {
     const [search, setSearch] = useState("");
     const [standardTypes, setStandardTypes] = useState<ProceduralItemType[]>([]);
     const [customTypes, setCustomTypes] = useState<ProceduralItemType[]>([]);
@@ -80,6 +100,10 @@ export function ToolboxPane({ onItemsLoaded, onAddItem }: ToolboxPaneProps) {
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
     const [itemToEdit, setItemToEdit] = useState<ToolboxItem | null>(null);
     const [workspaceId, setWorkspaceId] = useState<string | null>(null);
+    const [paneMode, setPaneMode] = useState<"library" | "outline">("library");
+    const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
+    const sectionHeaderClass =
+        "flex items-center gap-1 text-builder-xs font-medium text-muted-foreground px-1.5 py-0.5 rounded-md leading-none hover:text-foreground hover:bg-control-hover focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-foreground/15 w-full justify-start text-left";
 
     // Load item types
     useEffect(() => {
@@ -275,6 +299,19 @@ export function ToolboxPane({ onItemsLoaded, onAddItem }: ToolboxPaneProps) {
         return groups;
     }, [toolboxItems]);
 
+    const pinnedItems = useMemo(
+        () => pinnedIds.map((id) => toolboxItems.find((i) => i.id === id)).filter(Boolean) as ToolboxItem[],
+        [pinnedIds, toolboxItems]
+    );
+
+    const recentItems = useMemo(() => {
+        const pinnedSet = new Set(pinnedIds);
+        return recentIds
+            .filter((id) => !pinnedSet.has(id))
+            .map((id) => toolboxItems.find((i) => i.id === id))
+            .filter(Boolean) as ToolboxItem[];
+    }, [recentIds, pinnedIds, toolboxItems]);
+
     // Filter by search
     const filteredGroups = useMemo(() => {
         if (!search.trim()) return categoryGroups;
@@ -290,6 +327,18 @@ export function ToolboxPane({ onItemsLoaded, onAddItem }: ToolboxPaneProps) {
             .filter((group) => group.items.length > 0 || group.showAddButton);
     }, [categoryGroups, search]);
 
+    const filteredPinned = useMemo(() => {
+        if (!search.trim()) return pinnedItems;
+        const searchLower = search.toLowerCase();
+        return pinnedItems.filter((item) => item.title.toLowerCase().includes(searchLower));
+    }, [pinnedItems, search]);
+
+    const filteredRecent = useMemo(() => {
+        if (!search.trim()) return recentItems;
+        const searchLower = search.toLowerCase();
+        return recentItems.filter((item) => item.title.toLowerCase().includes(searchLower));
+    }, [recentItems, search]);
+
     // Handle custom item created
     const handleItemCreated = useCallback(() => {
         reloadCustomTypes();
@@ -297,88 +346,223 @@ export function ToolboxPane({ onItemsLoaded, onAddItem }: ToolboxPaneProps) {
     }, [reloadCustomTypes]);
 
     return (
-        <TooltipProvider delayDuration={400}>
-        <div className="flex flex-col h-full overflow-hidden p-3">
+        <TooltipProvider delayDuration={1200}>
+        <div className="flex flex-col h-full overflow-hidden p-2.5 bg-background">
             <div className="flex flex-col flex-1 overflow-hidden">
-                <div className="px-4 pt-3 pb-2 shrink-0">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-                        Items Library
-                    </p>
-                    <div className="relative mt-3">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input
-                            placeholder="Search items..."
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                            className="pl-9 h-8 bg-transparent border-border/60 focus-visible:ring-0 focus-visible:border-foreground/30"
-                        />
+                <div className="px-3 pt-2 pb-2 shrink-0">
+                    <div className="flex items-center justify-between gap-2">
+                        <div className="grid grid-cols-2 gap-1 rounded-full border border-border/40 bg-background p-0.5 flex-1">
+                        <button
+                            type="button"
+                            onClick={() => setPaneMode("library")}
+                            className={cn(
+                                "flex items-center justify-center rounded-full h-7 text-[length:var(--builder-text-xs)] md:text-[length:var(--builder-text-xs)] font-medium leading-none tracking-normal",
+                                paneMode === "library"
+                                    ? "border border-border/40 bg-foreground text-background"
+                                    : "text-muted-foreground"
+                            )}
+                        >
+                            Library
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setPaneMode("outline")}
+                            className={cn(
+                                "flex items-center justify-center rounded-full h-7 text-[length:var(--builder-text-xs)] md:text-[length:var(--builder-text-xs)] font-medium leading-none tracking-normal",
+                                paneMode === "outline"
+                                    ? "border border-border/40 bg-foreground text-background"
+                                    : "text-muted-foreground"
+                            )}
+                        >
+                            Outline
+                        </button>
+                        </div>
                     </div>
-                </div>
 
-                {/* Items */}
-                <ScrollArea className="flex-1">
-                    <div className="px-4 pb-2">
-                    {isLoading ? (
-                        <div className="p-4 text-center text-sm text-muted-foreground">
-                            Loading items...
-                        </div>
-                    ) : filteredGroups.length === 0 ? (
-                        <div className="p-4 text-center text-sm text-muted-foreground">
-                            No items found
-                        </div>
-                    ) : (
-                        <div className="space-y-7">
-                            {filteredGroups.map((group) => (
-                                <div key={group.id} className="space-y-3 px-1">
-                                    <h4 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.2em] px-1">
-                                        {group.label}
-                                    </h4>
-                                    <div className="space-y-1">
-                                        {group.items.map((item) => (
-                                            <DraggableToolboxItem
-                                                key={item.id}
-                                                item={item}
-                                                onAddItem={onAddItem}
-                                                onEditItem={item.is_custom ? () => {
-                                                    setItemToEdit(item);
-                                                    setIsCreateDialogOpen(true);
-                                                } : undefined}
-                                            />
-                                        ))}
-                                        {group.showAddButton && (
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                type="button"
-                                                className="w-full mt-2 text-muted-foreground hover:text-foreground border-border/60 hover:bg-muted/60 hover:text-foreground"
-                                                onClick={() => {
-                                                    setItemToEdit(null);
-                                                    setIsCreateDialogOpen(true);
-                                                }}
-                                            >
-                                                <Plus className="h-3.5 w-3.5 mr-1.5" />
-                                                New Item Type
-                                            </Button>
-                                        )}
-                                        {group.items.length === 0 && !group.showAddButton && (
-                                            <div className="text-xs text-muted-foreground text-center py-2">
-                                                No items in this category
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            ))}
+                    {paneMode === "library" && (
+                        <div className="relative mt-3">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input
+                                placeholder="Search items..."
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                                className="pl-9 h-8 bg-control border-control text-[length:var(--builder-text-xs)] md:text-[length:var(--builder-text-xs)] font-medium leading-none tracking-normal placeholder:text-[length:var(--builder-text-xs)] placeholder:font-normal text-foreground focus-visible:ring-0 focus-visible:border-foreground/30"
+                            />
                         </div>
                     )}
                 </div>
-                </ScrollArea>
+                {paneMode === "library" && (
+                    <div className="mx-3 border-b border-border/40" />
+                )}
 
-                {/* Hint */}
-                <div className="p-3 border-t border-border/40 shrink-0">
-                    <p className="text-[11px] text-muted-foreground text-center">
-                        Click an item to add it to the end, or drag onto the canvas to place it
-                    </p>
-                </div>
+                {/* Library */}
+                {paneMode === "library" && (
+                    <>
+                        <ScrollArea className="flex-1">
+                            <div className="px-3 pr-6 pb-4">
+                            {isLoading ? (
+                                <div className="p-4 text-center text-builder-sm text-muted-foreground">
+                                    Loading items...
+                                </div>
+                            ) : filteredGroups.length === 0 && filteredPinned.length === 0 && filteredRecent.length === 0 ? (
+                                <div className="p-4 text-center text-builder-sm text-muted-foreground">
+                                    No items found
+                                </div>
+                            ) : (
+                                <div className="space-y-6">
+                                    {filteredPinned.length > 0 && (
+                                        <div className="space-y-2 px-1">
+                                            <button
+                                                type="button"
+                                                aria-expanded={!collapsedSections.pinned}
+                                                onClick={() =>
+                                                    setCollapsedSections((prev) => ({ ...prev, pinned: !prev.pinned }))
+                                                }
+                                                className={sectionHeaderClass}
+                                            >
+                                                <ChevronDown className={cn("h-3.5 w-3.5 -translate-y-[0.5px] transition-transform", collapsedSections.pinned ? "-rotate-90" : "rotate-0")} />
+                                                Pinned
+                                            </button>
+                                            {!collapsedSections.pinned && (
+                                                <div className="space-y-1">
+                                                    {filteredPinned.map((item) => (
+                                                        <DraggableToolboxItem
+                                                            key={item.id}
+                                                            item={item}
+                                                            onAddItem={onAddItem}
+                                                            onTogglePin={onTogglePin ? () => onTogglePin(item.id) : undefined}
+                                                            isPinned
+                                                        />
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {filteredRecent.length > 0 && (
+                                        <div className="space-y-2 px-1">
+                                            <button
+                                                type="button"
+                                                aria-expanded={!collapsedSections.recent}
+                                                onClick={() =>
+                                                    setCollapsedSections((prev) => ({ ...prev, recent: !prev.recent }))
+                                                }
+                                                className={sectionHeaderClass}
+                                            >
+                                                <ChevronDown className={cn("h-3.5 w-3.5 -translate-y-[0.5px] transition-transform", collapsedSections.recent ? "-rotate-90" : "rotate-0")} />
+                                                Recent
+                                            </button>
+                                            {!collapsedSections.recent && (
+                                                <div className="space-y-1">
+                                                    {filteredRecent.map((item) => (
+                                                        <DraggableToolboxItem
+                                                            key={item.id}
+                                                            item={item}
+                                                            onAddItem={onAddItem}
+                                                            onTogglePin={onTogglePin ? () => onTogglePin(item.id) : undefined}
+                                                            isPinned={pinnedIds.includes(item.id)}
+                                                        />
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {filteredGroups.map((group) => (
+                                        <div key={group.id} className="space-y-3 px-1">
+                                            <button
+                                                type="button"
+                                                aria-expanded={!collapsedSections[group.id]}
+                                                onClick={() =>
+                                                    setCollapsedSections((prev) => ({
+                                                        ...prev,
+                                                        [group.id]: !prev[group.id],
+                                                    }))
+                                                }
+                                                className={sectionHeaderClass}
+                                            >
+                                                <ChevronDown className={cn("h-3.5 w-3.5 -translate-y-[0.5px] transition-transform", collapsedSections[group.id] ? "-rotate-90" : "rotate-0")} />
+                                                {group.label}
+                                            </button>
+                                            {!collapsedSections[group.id] && (
+                                                <div className="space-y-1">
+                                                    {group.items.map((item) => (
+                                                        <DraggableToolboxItem
+                                                            key={item.id}
+                                                            item={item}
+                                                            onAddItem={onAddItem}
+                                                            onEditItem={item.is_custom ? () => {
+                                                                setItemToEdit(item);
+                                                                setIsCreateDialogOpen(true);
+                                                            } : undefined}
+                                                            onTogglePin={onTogglePin ? () => onTogglePin(item.id) : undefined}
+                                                            isPinned={pinnedIds.includes(item.id)}
+                                                        />
+                                                    ))}
+                                                    {group.showAddButton && (
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        type="button"
+                                                        className="w-full mt-2 h-8 text-builder-sm bg-foreground text-background border-foreground hover:bg-foreground/90 hover:text-background shadow-sm"
+                                                        onClick={() => {
+                                                            setItemToEdit(null);
+                                                            setIsCreateDialogOpen(true);
+                                                        }}
+                                                    >
+                                                        <Plus className="h-3.5 w-3.5 mr-1.5" />
+                                                        New custom item
+                                                    </Button>
+                                                )}
+                                                    {group.items.length === 0 && !group.showAddButton && (
+                                                        <div className="text-builder-sm text-muted-foreground text-center py-2">
+                                                            No items in this category
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                        </ScrollArea>
+
+                        {/* Hint */}
+                        <div className="p-3 border-t border-border/40 shrink-0">
+                            <p className="text-builder-xs text-muted-foreground text-center">
+                                Click an item to add it to the end, or drag onto the canvas to place it
+                            </p>
+                        </div>
+                    </>
+                )}
+
+                {/* Outline */}
+                {paneMode === "outline" && (
+                    <ScrollArea className="flex-1">
+                        <div className="px-3 pr-6 pb-4">
+                            {outlineItems.length === 0 ? (
+                                <div className="p-4 text-center text-builder-sm text-muted-foreground">
+                                    No agenda items yet
+                                </div>
+                            ) : (
+                                <SortableContext items={outlineItems.map((i) => i.id)} strategy={verticalListSortingStrategy}>
+                                    <div className="space-y-1">
+                                        {outlineItems.map((item) => (
+                                            <OutlineRow
+                                                key={item.id}
+                                                item={item}
+                                                isSelected={selectedItemId === item.id}
+                                                onSelect={() => onSelectItem?.(item.id)}
+                                                onDuplicate={() => onDuplicateItem?.(item.id)}
+                                            />
+                                        ))}
+                                    </div>
+                                </SortableContext>
+                            )}
+                        </div>
+                    </ScrollArea>
+                )}
             </div>
 
             {/* Create/Edit Item Type Dialog */}
@@ -394,5 +578,79 @@ export function ToolboxPane({ onItemsLoaded, onAddItem }: ToolboxPaneProps) {
             />
         </div>
         </TooltipProvider>
+    );
+}
+
+function OutlineRow({
+    item,
+    isSelected,
+    onSelect,
+    onDuplicate,
+}: {
+    item: CanvasItem;
+    isSelected?: boolean;
+    onSelect?: () => void;
+    onDuplicate?: () => void;
+}) {
+    const {
+        attributes,
+        listeners,
+        setNodeRef,
+        transform,
+        transition,
+        isDragging,
+    } = useSortable({ id: item.id });
+
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+    };
+
+    return (
+        <div
+            ref={setNodeRef}
+            style={style}
+            className={cn(
+                "flex items-center gap-2 rounded-lg border border-transparent px-2 py-1 text-builder-xs",
+                "hover:bg-control-hover hover:border-border/40",
+                isSelected && "bg-control-hover border-border/40",
+                isDragging && "opacity-60"
+            )}
+            onClick={(e) => {
+                e.stopPropagation();
+                onSelect?.();
+            }}
+        >
+            <div
+                {...attributes}
+                {...listeners}
+                className="p-1 text-muted-foreground hover:text-foreground"
+            >
+                <GripVertical className="h-3.5 w-3.5" />
+            </div>
+            <div className="flex-1 min-w-0">
+                <div className="truncate text-foreground">
+                    {item.title}
+                </div>
+                {item.duration_minutes !== undefined && (
+                    <div className="text-builder-2xs text-muted-foreground">
+                        {item.duration_minutes}m
+                    </div>
+                )}
+            </div>
+            {onDuplicate && (
+                <button
+                    type="button"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        onDuplicate();
+                    }}
+                    className="p-1 text-muted-foreground hover:text-foreground hover:bg-control-hover rounded-md"
+                    title="Duplicate"
+                >
+                    <Copy className="h-3.5 w-3.5" />
+                </button>
+            )}
+        </div>
     );
 }

@@ -51,7 +51,7 @@ const navSections: NavSection[] = [
           { href: "/meetings/announcements", icon: Megaphone, label: "Announcements" },
           { href: "/meetings/discussions", icon: MessagesSquare, label: "Discussions" },
           { href: "/meetings/directory", icon: BookUser, label: "Directory" },
-          { href: "/templates/library", icon: Library, label: "Library" },
+          { href: "/templates/library", icon: Library, label: "Templates" },
         ]
       },
       { href: "/callings", icon: HandHeart, label: "Callings" },
@@ -81,6 +81,9 @@ interface AppSidebarProps {
   userId: string
   userAvatarUrl?: string
   userRoleTitle?: string
+  className?: string
+  forceCollapsed?: boolean
+  hideCollapseToggle?: boolean
 }
 
 export function AppSidebar({
@@ -90,33 +93,38 @@ export function AppSidebar({
   userId,
   userAvatarUrl,
   userRoleTitle,
+  className,
+  forceCollapsed,
+  hideCollapseToggle,
 }: AppSidebarProps) {
   const pathname = usePathname()
 
   const {
-    isCollapsed,
+    isCollapsed: storedCollapsed,
     toggleCollapsed,
     isGroupExpanded,
     toggleGroup,
   } = useSidebarState(defaultExpandedGroups)
+  const isCollapsed = forceCollapsed ?? storedCollapsed
 
   return (
     <TooltipProvider delayDuration={0}>
       <aside
         className={cn(
-          "shrink-0 flex flex-col h-full border-r border-border/50 bg-background/80 backdrop-blur",
+          "shrink-0 flex flex-col h-full bg-app-shell",
           "transition-[width] duration-300 ease-in-out",
-          isCollapsed ? "w-16" : "w-60"
+          isCollapsed ? "w-14" : "w-52",
+          className
         )}
       >
         {/* Header with Logo and Toggle */}
-        <div className="border-b border-border/50">
+        <div className="border-b-0">
           <div
             className={cn(
               "flex transition-all duration-300 ease-in-out",
               isCollapsed
                 ? "flex-col items-center justify-center gap-4 py-4"
-                : "flex-row items-center justify-between px-4 pt-2 pb-1"
+                : "flex-row items-center justify-between px-4 pt-2.5 pb-1.5"
             )}
           >
             <Link
@@ -129,41 +137,44 @@ export function AppSidebar({
                   B
                 </span>
               ) : (
-                <span className="text-sm font-semibold text-foreground leading-none tracking-tight">
+                <span className="text-nav-strong text-[15px] font-semibold leading-none tracking-tight">
                   Beespo
                 </span>
               )}
             </Link>
 
             {/* Toggle Button */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={toggleCollapsed}
-                  className="h-8 w-8 text-muted-foreground hover:text-foreground shrink-0"
-                >
-                  {isCollapsed ? (
-                    <PanelLeft className="h-4 w-4 stroke-[1.6]" />
-                  ) : (
-                    <PanelLeftClose className="h-4 w-4 stroke-[1.6]" />
-                  )}
-                  <span className="sr-only">
-                    {isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-                  </span>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="right">
-                {isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-              </TooltipContent>
-            </Tooltip>
+            {!hideCollapseToggle && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={toggleCollapsed}
+                    className="text-nav h-8 w-8 shrink-0 hover:text-nav-strong"
+                    disabled={forceCollapsed !== undefined}
+                  >
+                    {isCollapsed ? (
+                      <PanelLeft className="h-4 w-4 stroke-[1.6]" />
+                    ) : (
+                      <PanelLeftClose className="h-4 w-4 stroke-[1.6]" />
+                    )}
+                    <span className="sr-only">
+                      {isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+                    </span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="right">
+                  {isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+                </TooltipContent>
+              </Tooltip>
+            )}
           </div>
 
           {/* Workspace Name - Below Logo */}
           {!isCollapsed && (
             <div className="px-4 pb-3">
-              <p className="text-[11px] font-medium text-muted-foreground/80 truncate">
+              <p className="text-nav-muted truncate text-[11px] font-medium">
                 {workspaceName}
               </p>
             </div>

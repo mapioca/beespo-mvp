@@ -1,8 +1,9 @@
 "use client"
 
-import { useState, useMemo, useCallback, useTransition } from "react"
+import { useState, useMemo, useCallback, useTransition, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+import { createPortal } from "react-dom"
 import { Button } from "@/components/ui/button"
 import { Plus, X, Trash2, CalendarDays, MessageSquare } from "lucide-react"
 import { Breadcrumbs } from "@/components/dashboard/breadcrumbs"
@@ -102,6 +103,7 @@ export function DiscussionsClient({
 }: DiscussionsClientProps) {
     const router = useRouter()
     const [, startDeleteTransition] = useTransition()
+    const [mounted, setMounted] = useState(false)
 
     // ── Views state ──────────────────────────────────────────────────────────
     const [views, setViews] = useState<DiscussionView[]>(initialViews)
@@ -131,6 +133,10 @@ export function DiscussionsClient({
     // Bulk delete
     const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false)
     const [isBulkDeleting, setIsBulkDeleting] = useState(false)
+
+    useEffect(() => {
+        setMounted(true)
+    }, [])
 
     // ── Derived data ────────────────────────────────────────────────────────
 
@@ -375,7 +381,7 @@ export function DiscussionsClient({
     // ── Render ──────────────────────────────────────────────────────────────
 
     return (
-        <div className="flex flex-col h-full bg-muted/20">
+        <div className="flex flex-col h-full bg-muted/30">
             {/* Breadcrumb */}
             <Breadcrumbs
                 items={[
@@ -386,18 +392,18 @@ export function DiscussionsClient({
             />
 
             {/* Action Bar + View Tabs */}
-            <div className="flex items-center justify-between w-full px-6 pt-4 pb-3 shrink-0 flex-wrap gap-3">
-                <div className="flex items-center gap-1.5 flex-wrap">
+            <div className="flex items-center justify-between w-full px-6 pt-3.5 pb-3.5 shrink-0 flex-wrap gap-3 border-b border-border/45">
+                <div className="flex items-center gap-2 flex-wrap min-h-8">
                     {/* Custom view tabs */}
                     {views.map((view) => (
                         <span key={view.id} className="relative group/view inline-flex items-center">
                             <button
                                 onClick={() => setActiveViewId(view.id)}
                                 className={cn(
-                                    "rounded-full border pl-3.5 pr-7 py-1 text-xs font-medium transition-all shadow-sm",
+                                    "rounded-full border pl-3.5 pr-7 py-1.5 text-[11px] leading-none transition-all shadow-sm",
                                     activeViewId === view.id
-                                        ? "bg-[hsl(var(--accent-warm))] text-foreground border-border/60"
-                                        : "text-muted-foreground border-border/60 hover:text-foreground hover:bg-[hsl(var(--accent-warm)/0.5)] hover:border-border/60"
+                                        ? "bg-[hsl(var(--chip-active-bg))] text-[hsl(var(--chip-active-text))] border-transparent font-semibold"
+                                        : "bg-[hsl(var(--chip-bg))] text-[hsl(var(--chip-text))] border-[hsl(var(--chip-border))] hover:bg-[hsl(var(--chip-hover-bg))] hover:text-[hsl(var(--chip-active-text))] font-medium"
                                 )}
                             >
                                 {view.name}
@@ -425,7 +431,7 @@ export function DiscussionsClient({
                     {activeViewId && (
                         <button
                             onClick={() => setActiveViewId(null)}
-                            className="text-xs text-muted-foreground hover:text-foreground"
+                            className="inline-flex items-center rounded-full border border-[hsl(var(--chip-border))] px-2.5 py-1.5 text-[11px] text-muted-foreground hover:text-foreground hover:bg-[hsl(var(--chip-hover-bg))] transition-colors"
                         >
                             Clear view
                         </button>
@@ -438,7 +444,7 @@ export function DiscussionsClient({
                     />
                 </div>
 
-                <Button asChild variant="ghost" className="rounded-full border px-3.5 py-1 text-xs font-medium text-foreground border-border/60 bg-[hsl(var(--accent-warm))] hover:bg-[hsl(var(--accent-warm-hover))] transition-all shadow-[0_1px_0_rgba(15,23,42,0.08)]">
+                <Button asChild size="sm" className="h-8 rounded-full px-3.5 text-[11px] font-semibold shadow-sm">
                     <Link href="/meetings/discussions/new" className="flex items-center gap-1.5">
                         <Plus className="h-3.5 w-3.5 stroke-[1.6]" />
                         New
@@ -451,22 +457,22 @@ export function DiscussionsClient({
                 <div className="flex items-center gap-2 px-6 pb-3 flex-wrap text-[11px] text-muted-foreground">
                     <span className="font-medium text-foreground">Filters:</span>
                     {activeView.filters.statuses?.map((s) => (
-                        <span key={s} className="rounded-md bg-[hsl(var(--accent-warm))] border border-border/50 px-2 py-0.5 text-slate-800">
+                        <span key={s} className="rounded-full bg-[hsl(var(--chip-bg))] border border-[hsl(var(--chip-border))] px-2.5 py-1.5 text-[hsl(var(--chip-text))] leading-none">
                             {formatStatusLabel(s)}
                         </span>
                     ))}
                     {activeView.filters.priorities?.map((p) => (
-                        <span key={p} className="rounded-md bg-[hsl(var(--accent-warm))] border border-border/50 px-2 py-0.5 text-slate-800 capitalize">
+                        <span key={p} className="rounded-full bg-[hsl(var(--chip-bg))] border border-[hsl(var(--chip-border))] px-2.5 py-1.5 text-[hsl(var(--chip-text))] leading-none capitalize">
                             {p}
                         </span>
                     ))}
                     {activeView.filters.categories?.map((c) => (
-                        <span key={c} className="rounded-md bg-[hsl(var(--accent-warm))] border border-border/50 px-2 py-0.5 text-slate-800">
+                        <span key={c} className="rounded-full bg-[hsl(var(--chip-bg))] border border-[hsl(var(--chip-border))] px-2.5 py-1.5 text-[hsl(var(--chip-text))] leading-none">
                             {formatCategoryLabel(c)}
                         </span>
                     ))}
                     {search && (
-                        <span className="rounded-md bg-[hsl(var(--accent-warm))] border border-border/50 px-2 py-0.5 text-slate-800">
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-[hsl(var(--chip-bg))] border border-[hsl(var(--chip-border))] px-2.5 py-1.5 text-[hsl(var(--chip-text))] leading-none">
                             Search: &quot;{search}&quot;
                             <button onClick={() => setSearch("")} className="ml-1 text-muted-foreground hover:text-foreground">
                                 <X className="h-3 w-3 inline stroke-[1.6]" />
@@ -476,35 +482,11 @@ export function DiscussionsClient({
                 </div>
             )}
 
-            {/* Selection action bar */}
-            {selectedRows.size > 0 && (
-                <div className="flex items-center gap-3 px-6 pb-3 shrink-0">
-                    <span className="inline-flex items-center rounded-full bg-[hsl(var(--accent-warm))] px-2.5 py-1 text-[11px] font-medium text-slate-800 border border-border/50 tabular-nums">
-                        {selectedRows.size} selected
-                    </span>
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-7 px-2.5 text-xs text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30"
-                        onClick={() => setShowBulkDeleteDialog(true)}
-                    >
-                        <Trash2 className="mr-1.5 h-3 w-3 stroke-[1.6]" />
-                        Delete
-                    </Button>
-                    <button
-                        onClick={() => setSelectedRows(new Set())}
-                        className="text-xs text-muted-foreground hover:text-foreground ml-auto"
-                    >
-                        Deselect all
-                    </button>
-                </div>
-            )}
-
             {/* Active filter chips */}
             {hasActiveFilters && selectedRows.size === 0 && (
                 <div className="flex items-center gap-2 px-6 pb-3 flex-wrap">
                     {search && (
-                        <span className="inline-flex items-center gap-1.5 rounded-md bg-[hsl(var(--accent-warm))] px-2.5 py-1 text-xs font-medium text-slate-800 border border-border/50">
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-[hsl(var(--chip-bg))] border border-[hsl(var(--chip-border))] px-2.5 py-1.5 text-[11px] font-medium leading-none text-[hsl(var(--chip-text))]">
                             Search: &quot;{search}&quot;
                             <button onClick={() => setSearch("")} className="text-muted-foreground hover:text-foreground">
                                 <X className="h-3 w-3 stroke-[1.6]" />
@@ -512,7 +494,7 @@ export function DiscussionsClient({
                         </span>
                     )}
                     {selectedStatuses.map((s) => (
-                        <span key={s} className="inline-flex items-center gap-1.5 rounded-md bg-[hsl(var(--accent-warm))] px-2.5 py-1 text-xs font-medium text-slate-800 border border-border/50">
+                        <span key={s} className="inline-flex items-center gap-1.5 rounded-full bg-[hsl(var(--chip-bg))] border border-[hsl(var(--chip-border))] px-2.5 py-1.5 text-[11px] font-medium leading-none text-[hsl(var(--chip-text))]">
                             {formatStatusLabel(s)}
                             <button onClick={() => handleStatusToggle(s)} className="text-muted-foreground hover:text-foreground">
                                 <X className="h-3 w-3 stroke-[1.6]" />
@@ -520,7 +502,7 @@ export function DiscussionsClient({
                         </span>
                     ))}
                     {selectedPriorities.map((p) => (
-                        <span key={p} className="inline-flex items-center gap-1.5 rounded-md bg-[hsl(var(--accent-warm))] px-2.5 py-1 text-xs font-medium text-slate-800 border border-border/50 capitalize">
+                        <span key={p} className="inline-flex items-center gap-1.5 rounded-full bg-[hsl(var(--chip-bg))] border border-[hsl(var(--chip-border))] px-2.5 py-1.5 text-[11px] font-medium leading-none text-[hsl(var(--chip-text))] capitalize">
                             {p}
                             <button onClick={() => handlePriorityToggle(p)} className="text-muted-foreground hover:text-foreground">
                                 <X className="h-3 w-3 stroke-[1.6]" />
@@ -528,7 +510,7 @@ export function DiscussionsClient({
                         </span>
                     ))}
                     {selectedCategories.map((c) => (
-                        <span key={c} className="inline-flex items-center gap-1.5 rounded-md bg-[hsl(var(--accent-warm))] px-2.5 py-1 text-xs font-medium text-slate-800 border border-border/50">
+                        <span key={c} className="inline-flex items-center gap-1.5 rounded-full bg-[hsl(var(--chip-bg))] border border-[hsl(var(--chip-border))] px-2.5 py-1.5 text-[11px] font-medium leading-none text-[hsl(var(--chip-text))]">
                             {formatCategoryLabel(c)}
                             <button onClick={() => handleCategoryToggle(c)} className="text-muted-foreground hover:text-foreground">
                                 <X className="h-3 w-3 stroke-[1.6]" />
@@ -536,7 +518,7 @@ export function DiscussionsClient({
                         </span>
                     ))}
                     {hiddenColumns.size > 0 && (
-                        <button onClick={() => setHiddenColumns(new Set())} className="text-xs text-muted-foreground hover:text-foreground underline">
+                        <button onClick={() => setHiddenColumns(new Set())} className="inline-flex items-center rounded-full border border-[hsl(var(--chip-border))] px-2.5 py-1.5 text-[11px] text-muted-foreground hover:text-foreground hover:bg-[hsl(var(--chip-hover-bg))] transition-colors">
                             Show all columns
                         </button>
                     )}
@@ -548,7 +530,7 @@ export function DiscussionsClient({
                             setSelectedCategories([])
                             setHiddenColumns(new Set())
                         }}
-                        className="text-xs text-muted-foreground hover:text-foreground"
+                        className="inline-flex items-center rounded-full border border-[hsl(var(--chip-border))] px-2.5 py-1.5 text-[11px] text-muted-foreground hover:text-foreground hover:bg-[hsl(var(--chip-hover-bg))] transition-colors"
                     >
                         Clear all
                     </button>
@@ -626,6 +608,32 @@ export function DiscussionsClient({
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+
+            {/* Floating bulk selection pill */}
+            {mounted && selectedRows.size > 0 && createPortal(
+                <div className="fixed bottom-6 left-1/2 z-[95] flex -translate-x-1/2 pointer-events-none w-[90vw] sm:w-auto justify-center">
+                    <div className="pointer-events-auto inline-flex items-center gap-2 rounded-full border border-border/80 bg-background/96 px-2.5 py-2 text-foreground shadow-[0_10px_30px_rgba(15,23,42,0.12)] backdrop-blur-sm">
+                        <span className="inline-flex items-center rounded-full border border-border/70 bg-muted/55 px-2.5 py-1 text-[11px] font-semibold tabular-nums text-foreground/85">
+                            {selectedRows.size} selected
+                        </span>
+                        <span className="h-4 w-px bg-border/70" aria-hidden />
+                        <button
+                            onClick={() => setSelectedRows(new Set())}
+                            className="rounded-full px-2.5 py-1 text-[11px] font-medium text-foreground/70 hover:text-foreground hover:bg-muted/55 transition-colors"
+                        >
+                            Deselect
+                        </button>
+                        <button
+                            onClick={() => setShowBulkDeleteDialog(true)}
+                            className="inline-flex items-center gap-1.5 rounded-full border border-rose-200 bg-rose-50/70 px-2.5 py-1 text-[11px] font-semibold text-rose-700 hover:bg-rose-100/75 transition-colors"
+                        >
+                            <Trash2 className="h-3 w-3 stroke-[1.7]" />
+                            Delete
+                        </button>
+                    </div>
+                </div>,
+                document.body
+            )}
         </div>
     )
 }

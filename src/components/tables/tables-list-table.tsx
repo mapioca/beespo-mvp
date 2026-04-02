@@ -168,7 +168,7 @@ export function TablesListTable({
                         </TableRow>
                     ) : (
                         tables.map((table) => (
-                            <TableRow key={table.id} className="group hover:bg-[hsl(var(--accent-warm)/0.35)]">
+                            <TableRow key={table.id} className="group transition-colors hover:bg-[hsl(var(--table-row-hover))]">
                                 {/* Checkbox */}
                                 <TableCell className="px-3 py-3">
                                     <Checkbox

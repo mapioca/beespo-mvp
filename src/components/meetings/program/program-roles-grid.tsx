@@ -23,11 +23,26 @@ export function ProgramRolesGrid({ roles }: ProgramRolesGridProps) {
     if (filledRoles.length === 0) return null;
 
     return (
-        <div className="grid grid-cols-2 gap-x-4 gap-y-4 rounded-2xl border border-slate-200/70 bg-slate-50/70 px-4 py-3">
+        <div
+            className="grid grid-cols-2 gap-x-4 gap-y-4 rounded-[var(--program-radius)] border bg-[color:var(--program-soft)] px-[var(--program-card-padding-x)] py-[var(--program-card-padding-y)]"
+            style={{
+                boxShadow: "var(--program-card-shadow)",
+                borderColor: "var(--program-card-border)",
+                borderWidth: "var(--program-border-width)",
+                borderStyle: "var(--program-card-border-style)",
+            }}
+        >
             {filledRoles.map(({ key, label }) => (
                 <div key={key} className="min-w-0 space-y-1">
-                    <p className="text-[10px] uppercase tracking-[0.2em] text-slate-400 font-semibold">{label}</p>
-                    <p className="text-sm font-medium text-slate-900 truncate">{roles[key]}</p>
+                    <p
+                        className="text-[0.72em] uppercase tracking-[0.12em] text-[color:var(--program-subtle)]"
+                        style={{ fontWeight: "var(--program-section-weight)" }}
+                    >
+                        {label}
+                    </p>
+                    <p className="truncate text-[1em] text-[color:var(--program-text)]" style={{ fontWeight: "var(--program-item-weight)" }}>
+                        {roles[key]}
+                    </p>
                 </div>
             ))}
         </div>

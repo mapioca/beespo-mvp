@@ -79,6 +79,7 @@ export default async function TemplateLibraryPage() {
       <TemplateLibraryClient
         templates={templatesWithAuthor as unknown as LibraryTemplate[]}
         workspaceId={workspaceId}
+        currentUserId={user.id}
       />
     </div>
   );

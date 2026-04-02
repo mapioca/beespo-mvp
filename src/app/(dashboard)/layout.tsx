@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { AppSidebar } from "@/components/dashboard/app-sidebar";
+import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { CommandPalette } from "@/components/command-palette";
 import { getProfile } from "@/lib/supabase/cached-queries";
 import { checkTrustedDevice, checkWorkspaceMfaRequired } from "@/lib/mfa";
@@ -51,23 +51,17 @@ export default async function DashboardLayout({
   }
 
   return (
-    <div className="flex h-screen-dynamic bg-canvas">
-      {/* Sidebar — transparent, sits on the canvas base layer */}
-      <AppSidebar
+    <>
+      <DashboardShell
         workspaceName={profile?.workspaces?.name || "Workspace"}
         userName={profile?.full_name || ""}
         userEmail={user?.email || ""}
         userId={user.id}
         userRoleTitle={profile?.role_title || ""}
-      />
-
-      {/* Inset wrapper — canvas peeks through on top, bottom, and right */}
-      <div className="flex-1 min-w-0 py-2 pr-2">
-        {/* Main content — elevated surface card on top of the canvas */}
-        <main className="h-full overflow-hidden bg-card rounded-xl ring-1 ring-border">{children}</main>
-      </div>
-
+      >
+        {children}
+      </DashboardShell>
       <CommandPalette />
-    </div>
+    </>
   );
 }

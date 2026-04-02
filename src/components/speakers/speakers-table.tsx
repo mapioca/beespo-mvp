@@ -119,7 +119,7 @@ export function SpeakersTable({ speakers, sortConfig, onSort, onDelete, onViewSp
                         speakers.map((speaker) => {
                             const meeting = speaker.agenda_items?.[0]?.meeting;
                             return (
-                                <TableRow key={speaker.id} className="group hover:bg-muted/50">
+                                <TableRow key={speaker.id} className="group transition-colors hover:bg-[hsl(var(--table-row-hover))]">
                                     <TableCell className="font-medium">
                                         <button
                                             onClick={() => onViewSpeaker?.(speaker)}
