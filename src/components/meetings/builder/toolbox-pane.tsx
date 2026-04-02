@@ -356,7 +356,7 @@ export function ToolboxPane({
                             type="button"
                             onClick={() => setPaneMode("library")}
                             className={cn(
-                                "flex items-center justify-center rounded-full text-builder-xs font-medium h-7",
+                                "flex items-center justify-center rounded-full h-7 text-[11px] md:text-[11px] font-medium leading-none tracking-normal",
                                 paneMode === "library"
                                     ? "border border-border/40 bg-foreground text-background"
                                     : "text-muted-foreground"
@@ -368,7 +368,7 @@ export function ToolboxPane({
                             type="button"
                             onClick={() => setPaneMode("outline")}
                             className={cn(
-                                "flex items-center justify-center rounded-full text-builder-xs font-medium h-7",
+                                "flex items-center justify-center rounded-full h-7 text-[11px] md:text-[11px] font-medium leading-none tracking-normal",
                                 paneMode === "outline"
                                     ? "border border-border/40 bg-foreground text-background"
                                     : "text-muted-foreground"
@@ -386,7 +386,7 @@ export function ToolboxPane({
                                 placeholder="Search items..."
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
-                                className="pl-9 h-8 bg-control border-control text-builder-sm text-foreground focus-visible:ring-0 focus-visible:border-foreground/30"
+                                className="pl-9 h-8 bg-control border-control text-[11px] md:text-[11px] font-medium leading-none tracking-normal placeholder:text-[11px] placeholder:font-normal text-foreground focus-visible:ring-0 focus-visible:border-foreground/30"
                             />
                         </div>
                     )}
