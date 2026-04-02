@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { useFormContext } from "react-hook-form";
 import { format } from "date-fns";
 import { CalendarDays, Check, Clock, Minus, Plus, ChevronDown } from "lucide-react";
@@ -47,15 +47,17 @@ function TimePartCombobox({
 }: TimePartComboboxProps) {
     const [open, setOpen] = useState(false);
     const [draft, setDraft] = useState(value);
+    const inputId = useId();
+    const listboxId = `${inputId}-listbox`;
 
     useEffect(() => {
         setDraft(value);
     }, [value]);
 
-    const commitValue = (nextValue: string) => {
+    const commitValue = (nextValue: string, closeMenu = true) => {
         onCommit(nextValue);
         setDraft(nextValue);
-        setOpen(false);
+        if (closeMenu) setOpen(false);
     };
 
     const tryCommitDraft = () => {
@@ -69,14 +71,22 @@ function TimePartCombobox({
         commitValue(normalized);
     };
 
+    const getCurrentOptionIndex = () => {
+        const normalized = normalizeInput?.(draft) ?? draft;
+        const current = normalized && options.includes(normalized) ? normalized : value;
+        return Math.max(0, options.indexOf(current));
+    };
+
     return (
         <Popover open={open} onOpenChange={setOpen}>
             <div className="space-y-1">
-                <Label className="text-[10px] font-medium leading-none text-muted-foreground">{label}</Label>
+                <Label htmlFor={inputId} className="text-[length:var(--builder-text-2xs)] font-medium leading-none text-muted-foreground">{label}</Label>
                 <PopoverTrigger asChild>
                     <div className="relative">
                         <Input
+                            id={inputId}
                             value={draft}
+                            autoComplete="off"
                             onFocus={() => setOpen(true)}
                             onChange={(e) => {
                                 const nextDraft = e.target.value.toUpperCase();
@@ -97,6 +107,13 @@ function TimePartCombobox({
                                     setOpen(false);
                                 } else if (e.key === "ArrowDown") {
                                     e.preventDefault();
+                                    const nextIndex = Math.min(options.length - 1, getCurrentOptionIndex() + 1);
+                                    commitValue(options[nextIndex], false);
+                                    setOpen(true);
+                                } else if (e.key === "ArrowUp") {
+                                    e.preventDefault();
+                                    const nextIndex = Math.max(0, getCurrentOptionIndex() - 1);
+                                    commitValue(options[nextIndex], false);
                                     setOpen(true);
                                 }
                             }}
@@ -105,7 +122,10 @@ function TimePartCombobox({
                                     tryCommitDraft();
                                 }, 0);
                             }}
-                            className="h-8 rounded-full border-control bg-control pr-8 text-[12px] md:text-[12px] font-medium leading-none tracking-normal focus-visible:ring-0 focus-visible:border-foreground/30"
+                            className="h-8 rounded-full border-control bg-control pr-8 text-[length:var(--builder-text-sm)] md:text-[length:var(--builder-text-sm)] font-medium leading-none tracking-normal focus-visible:ring-0 focus-visible:border-foreground/30"
+                            aria-haspopup="listbox"
+                            aria-expanded={open}
+                            aria-controls={listboxId}
                         />
                         <button
                             type="button"
@@ -125,16 +145,18 @@ function TimePartCombobox({
                 sideOffset={6}
                 className="w-[var(--radix-popover-trigger-width)] min-w-0 rounded-xl border border-border/60 bg-[hsl(var(--menu))] p-1 text-[hsl(var(--menu-text))] shadow-lg"
             >
-                <div className="max-h-56 overflow-y-auto">
+                <div id={listboxId} role="listbox" className="max-h-56 overflow-y-auto">
                     {options.map((option) => (
                         <button
                             key={option}
                             type="button"
+                            role="option"
+                            aria-selected={option === value}
                             onMouseDown={(e) => e.preventDefault()}
                             onClick={() => commitValue(option)}
                             className={cn(
-                                "relative flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-[12px] leading-none tracking-normal outline-none transition-colors",
-                                "hover:bg-[hsl(var(--menu-hover))] focus:bg-[hsl(var(--menu-hover))]",
+                                "relative flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-[length:var(--builder-text-sm)] leading-none tracking-normal outline-none transition-colors",
+                                "hover:bg-[hsl(var(--menu-hover))] focus:bg-[hsl(var(--menu-hover))] focus-visible:ring-1 focus-visible:ring-ring/40",
                                 option === value && "font-medium"
                             )}
                         >
@@ -195,9 +217,9 @@ export function PropertiesPane({
     const sectionHeaderClass =
         "flex items-center gap-1 text-builder-xs font-medium text-muted-foreground px-1.5 py-0.5 rounded-md leading-none hover:text-foreground hover:bg-control-hover focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-foreground/15 w-full justify-start text-left";
     const propertyValueClass =
-        "text-[11px] font-medium leading-none tracking-normal";
+        "text-[length:var(--builder-text-xs)] md:text-[length:var(--builder-text-xs)] font-medium leading-none tracking-normal";
     const propertyLabelClass =
-        "text-[10px] font-medium leading-none text-muted-foreground";
+        "text-[length:var(--builder-text-2xs)] font-medium leading-none text-muted-foreground";
     const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({
         overview: false,
         roles: false,
@@ -259,7 +281,7 @@ export function PropertiesPane({
                                     onFocus={(e) => e.target.select()}
                                     placeholder="e.g. Ward Conference"
                                     className={cn(
-                                        "bg-control h-8 border-control focus-visible:ring-0 focus-visible:border-foreground/30 md:text-[11px]",
+                                        "bg-control h-8 border-control focus-visible:ring-0 focus-visible:border-foreground/30",
                                         propertyValueClass
                                     )}
                                 />
@@ -351,7 +373,7 @@ export function PropertiesPane({
                                             {displayTime}
                                         </button>
                                     </PopoverTrigger>
-                                    <PopoverContent align="start" className="w-[280px] rounded-xl border-border/60 p-3 shadow-lg">
+                                    <PopoverContent align="start" className="w-[280px] max-w-[calc(100vw-2rem)] rounded-xl border-border/60 p-3 shadow-lg">
                                         <div className="grid grid-cols-3 gap-2">
                                             <TimePartCombobox
                                                 label="Hour"
@@ -440,9 +462,9 @@ export function PropertiesPane({
                                         onChange={(e) => setValue("presiding", e.target.value)}
                                         onFocus={(e) => e.target.select()}
                                         placeholder="e.g. Bishop Smith"
-                                        className={cn(
-                                            "bg-control h-8 border-control focus-visible:ring-0 focus-visible:border-foreground/30 md:text-[11px]",
-                                            "placeholder:text-[11px] placeholder:font-normal",
+                                    className={cn(
+                                            "bg-control h-8 border-control focus-visible:ring-0 focus-visible:border-foreground/30",
+                                            "placeholder:text-[length:var(--builder-text-xs)] placeholder:font-normal",
                                             propertyValueClass
                                         )}
                                         autoFocus={!presiding}
@@ -495,9 +517,9 @@ export function PropertiesPane({
                                         onChange={(e) => setValue("conducting", e.target.value)}
                                         onFocus={(e) => e.target.select()}
                                         placeholder="e.g. Brother Jones"
-                                        className={cn(
-                                            "bg-control h-8 border-control focus-visible:ring-0 focus-visible:border-foreground/30 md:text-[11px]",
-                                            "placeholder:text-[11px] placeholder:font-normal",
+                                    className={cn(
+                                            "bg-control h-8 border-control focus-visible:ring-0 focus-visible:border-foreground/30",
+                                            "placeholder:text-[length:var(--builder-text-xs)] placeholder:font-normal",
                                             propertyValueClass
                                         )}
                                         autoFocus={!conducting}
@@ -550,9 +572,9 @@ export function PropertiesPane({
                                         onChange={(e) => setValue("chorister", e.target.value)}
                                         onFocus={(e) => e.target.select()}
                                         placeholder="Name"
-                                        className={cn(
-                                            "bg-control h-8 border-control focus-visible:ring-0 focus-visible:border-foreground/30 md:text-[11px]",
-                                            "placeholder:text-[11px] placeholder:font-normal",
+                                    className={cn(
+                                            "bg-control h-8 border-control focus-visible:ring-0 focus-visible:border-foreground/30",
+                                            "placeholder:text-[length:var(--builder-text-xs)] placeholder:font-normal",
                                             propertyValueClass
                                         )}
                                         autoFocus={!chorister}
@@ -605,9 +627,9 @@ export function PropertiesPane({
                                         onChange={(e) => setValue("pianistOrganist", e.target.value)}
                                         onFocus={(e) => e.target.select()}
                                         placeholder="Name"
-                                        className={cn(
-                                            "bg-control h-8 border-control focus-visible:ring-0 focus-visible:border-foreground/30 md:text-[11px]",
-                                            "placeholder:text-[11px] placeholder:font-normal",
+                                    className={cn(
+                                            "bg-control h-8 border-control focus-visible:ring-0 focus-visible:border-foreground/30",
+                                            "placeholder:text-[length:var(--builder-text-xs)] placeholder:font-normal",
                                             propertyValueClass
                                         )}
                                         autoFocus={!pianistOrganist}
@@ -661,7 +683,7 @@ export function PropertiesPane({
                                 content={meetingNotes || ""}
                                 onSave={async (content) => onUpdateMeetingNotes?.(content)}
                                 placeholder="Add notes for the overall meeting..."
-                                placeholderFontSize="11px"
+                                placeholderFontSize="var(--builder-text-xs)"
                             />
                         </div>
                     ) : (
