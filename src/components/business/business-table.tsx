@@ -306,7 +306,8 @@ export function BusinessTable({
                         items.map((item) => (
                             <TableRow
                                 key={item.id}
-                                className="group transition-colors hover:bg-[hsl(var(--table-row-hover))]"
+                                data-state={selectedRows.has(item.id) ? "selected" : undefined}
+                                className="group transition-[background-color,box-shadow] duration-150 ease-out hover:bg-[hsl(var(--table-row-hover))] hover:shadow-[inset_0_0_0_1px_hsl(var(--table-shell-border)/0.28)] data-[state=selected]:bg-[hsl(var(--table-row-selected))] data-[state=selected]:shadow-[inset_0_0_0_1px_hsl(var(--table-shell-border)/0.4)]"
                             >
                                 {/* Checkbox */}
                                 <TableCell className="table-cell-check">
@@ -349,17 +350,18 @@ export function BusinessTable({
 
                                 {/* Status */}
                                 {!hiddenColumns.has("status") && (
-                                    <TableCell className="table-cell-meta capitalize">
+                                    <TableCell className="table-cell-meta !px-2 capitalize">
                                         <StatusIndicator
                                             label={item.status === "pending" ? "Pending" : "Completed"}
                                             tone={STATUS_TONES[item.status] || "neutral"}
+                                            className="text-[11.5px] text-foreground/66"
                                         />
                                     </TableCell>
                                 )}
 
                                 {/* Action Date */}
                                 {!hiddenColumns.has("action_date") && (
-                                    <TableCell className="table-cell-meta">
+                                    <TableCell className="table-cell-meta !px-2 text-[11.5px] text-foreground/56">
                                         {item.action_date
                                             ? format(
                                                   new Date(item.action_date),

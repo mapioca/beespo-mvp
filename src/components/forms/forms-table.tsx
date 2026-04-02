@@ -221,7 +221,11 @@ export function FormsTable({
                         </TableRow>
                     ) : (
                         forms.map((form) => (
-                                <TableRow key={form.id} className="group transition-colors hover:bg-[hsl(var(--table-row-hover))]">
+                                <TableRow
+                                    key={form.id}
+                                    data-state={selectedRows.has(form.id) ? "selected" : undefined}
+                                    className="group transition-[background-color,box-shadow] duration-150 ease-out hover:bg-[hsl(var(--table-row-hover))] hover:shadow-[inset_0_0_0_1px_hsl(var(--table-shell-border)/0.28)] data-[state=selected]:bg-[hsl(var(--table-row-selected))] data-[state=selected]:shadow-[inset_0_0_0_1px_hsl(var(--table-shell-border)/0.4)]"
+                                >
                                     {/* Checkbox */}
                                     <TableCell className="table-cell-check">
                                         <Checkbox
@@ -252,31 +256,32 @@ export function FormsTable({
 
                                     {/* Status */}
                                     {!hiddenColumns.has("status") && (
-                                        <TableCell className="table-cell-meta capitalize">
+                                        <TableCell className="table-cell-meta !px-2 capitalize">
                                             <StatusIndicator
                                                 label={form.is_published ? "Published" : "Draft"}
                                                 tone={form.is_published ? STATUS_TONES.published : STATUS_TONES.draft}
+                                                className="text-[11.5px] text-foreground/66"
                                             />
                                         </TableCell>
                                     )}
 
                                     {/* Views */}
                                     {!hiddenColumns.has("views") && (
-                                        <TableCell className="table-cell-meta tabular-nums">
+                                        <TableCell className="table-cell-meta text-[11.5px] text-foreground/56 tabular-nums">
                                             {form.views_count}
                                         </TableCell>
                                     )}
 
                                     {/* Responses */}
                                     {!hiddenColumns.has("responses") && (
-                                        <TableCell className="table-cell-meta tabular-nums">
+                                        <TableCell className="table-cell-meta text-[11.5px] text-foreground/56 tabular-nums">
                                             {form.submissions_count}
                                         </TableCell>
                                     )}
 
                                     {/* Created */}
                                     {!hiddenColumns.has("created_at") && (
-                                        <TableCell className="table-cell-meta">
+                                        <TableCell className="table-cell-meta !px-2 text-[11.5px] text-foreground/56">
                                             {format(new Date(form.created_at), "MMM d, yyyy")}
                                         </TableCell>
                                     )}

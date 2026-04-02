@@ -71,6 +71,21 @@ interface DiscussionDrawerProps {
 
 export function DiscussionDrawer({ discussion, open, onOpenChange, onDelete }: DiscussionDrawerProps) {
     const router = useRouter()
+    const sectionHeaderClass =
+        "text-drawer-section font-semibold tracking-[0.02em] text-foreground/60"
+    const propertyLabelClass =
+        "text-drawer-label font-medium leading-none text-muted-foreground"
+    const propertyValueClass =
+        "text-drawer-value font-medium leading-none tracking-normal"
+    const metaTextClass = "text-drawer-meta"
+    const inputClass =
+        "h-8 bg-control border-control focus-visible:ring-0 focus-visible:border-foreground/30"
+    const selectTriggerClass =
+        "h-8 bg-control border-control focus:ring-0 focus:border-foreground/30"
+    const selectContentClass =
+        "rounded-xl border border-border/60 bg-[hsl(var(--menu))] p-1 text-[hsl(var(--menu-text))] shadow-lg"
+    const selectItemClass =
+        "rounded-md px-2.5 py-1.5 text-drawer-menu-item font-medium leading-none tracking-normal focus:bg-[hsl(var(--menu-hover))] focus:text-[hsl(var(--menu-text))]"
     const [isSaving, setIsSaving] = useState(false)
     const [showDeleteDialog, setShowDeleteDialog] = useState(false)
     const [isDeleting, setIsDeleting] = useState(false)
@@ -138,7 +153,7 @@ export function DiscussionDrawer({ discussion, open, onOpenChange, onDelete }: D
                     <div className="flex items-center justify-between px-5 pt-4 pb-3 pr-12 shrink-0">
                         <div className="flex items-center gap-2">
                             <MessagesSquare className="h-4 w-4 text-muted-foreground" />
-                            <SheetTitle className="text-sm font-semibold">Discussion Details</SheetTitle>
+                            <SheetTitle className="text-drawer-title font-semibold">Discussion Details</SheetTitle>
                         </div>
                         <Button
                             variant="ghost"
@@ -159,36 +174,34 @@ export function DiscussionDrawer({ discussion, open, onOpenChange, onDelete }: D
                     <div className="flex-1 overflow-y-auto">
                         {/* DISCUSSION section */}
                         <div className="px-5 py-4 space-y-4">
-                            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-                                Discussion
-                            </p>
+                            <p className={sectionHeaderClass}>Discussion</p>
                             <div className="space-y-1.5">
-                                <label className="text-xs font-medium">Title</label>
+                                <label className={propertyLabelClass}>Title</label>
                                 <Input
                                     value={title}
                                     onChange={(e) => setTitle(e.target.value)}
-                                    className="h-8 text-sm"
+                                    className={`${inputClass} ${propertyValueClass} placeholder:text-[length:var(--drawer-text-value)] placeholder:font-normal`}
                                 />
                             </div>
                             <div className="space-y-1.5">
-                                <label className="text-xs font-medium">Description</label>
+                                <label className={propertyLabelClass}>Description</label>
                                 <Textarea
                                     value={description}
                                     onChange={(e) => setDescription(e.target.value)}
                                     placeholder="Discussion description..."
-                                    className="text-sm resize-none"
+                                    className={`resize-none bg-control border-control focus-visible:ring-0 focus-visible:border-foreground/30 ${propertyValueClass} placeholder:text-[length:var(--drawer-text-value)] placeholder:font-normal`}
                                     rows={4}
                                 />
                             </div>
                             <div className="space-y-1.5">
-                                <label className="text-xs font-medium">Category</label>
+                                <label className={propertyLabelClass}>Category</label>
                                 <Select value={category} onValueChange={setCategory}>
-                                    <SelectTrigger className="h-8 text-sm">
+                                    <SelectTrigger className={`${selectTriggerClass} ${propertyValueClass}`}>
                                         <SelectValue />
                                     </SelectTrigger>
-                                    <SelectContent>
+                                    <SelectContent className={selectContentClass}>
                                         {CATEGORY_OPTIONS.map((opt) => (
-                                            <SelectItem key={opt.value} value={opt.value}>
+                                            <SelectItem key={opt.value} value={opt.value} className={selectItemClass}>
                                                 {opt.label}
                                             </SelectItem>
                                         ))}
@@ -201,18 +214,16 @@ export function DiscussionDrawer({ discussion, open, onOpenChange, onDelete }: D
 
                         {/* DETAILS section */}
                         <div className="px-5 py-4 space-y-4">
-                            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-                                Details
-                            </p>
+                            <p className={sectionHeaderClass}>Details</p>
                             <div className="space-y-1.5">
-                                <label className="text-xs font-medium">Status</label>
+                                <label className={propertyLabelClass}>Status</label>
                                 <Select value={status} onValueChange={setStatus}>
-                                    <SelectTrigger className="h-8 text-sm">
+                                    <SelectTrigger className={`${selectTriggerClass} ${propertyValueClass}`}>
                                         <SelectValue />
                                     </SelectTrigger>
-                                    <SelectContent>
+                                    <SelectContent className={selectContentClass}>
                                         {STATUS_OPTIONS.map((opt) => (
-                                            <SelectItem key={opt.value} value={opt.value}>
+                                            <SelectItem key={opt.value} value={opt.value} className={selectItemClass}>
                                                 {opt.label}
                                             </SelectItem>
                                         ))}
@@ -220,14 +231,14 @@ export function DiscussionDrawer({ discussion, open, onOpenChange, onDelete }: D
                                 </Select>
                             </div>
                             <div className="space-y-1.5">
-                                <label className="text-xs font-medium">Priority</label>
+                                <label className={propertyLabelClass}>Priority</label>
                                 <Select value={priority} onValueChange={setPriority}>
-                                    <SelectTrigger className="h-8 text-sm">
+                                    <SelectTrigger className={`${selectTriggerClass} ${propertyValueClass}`}>
                                         <SelectValue />
                                     </SelectTrigger>
-                                    <SelectContent>
+                                    <SelectContent className={selectContentClass}>
                                         {PRIORITY_OPTIONS.map((opt) => (
-                                            <SelectItem key={opt.value} value={opt.value}>
+                                            <SelectItem key={opt.value} value={opt.value} className={selectItemClass}>
                                                 {opt.label}
                                             </SelectItem>
                                         ))}
@@ -235,26 +246,26 @@ export function DiscussionDrawer({ discussion, open, onOpenChange, onDelete }: D
                                 </Select>
                             </div>
                             <div className="space-y-1.5">
-                                <label className="text-xs font-medium">Due Date</label>
+                                <label className={propertyLabelClass}>Due Date</label>
                                 <Input
                                     type="date"
                                     value={dueDate}
                                     onChange={(e) => setDueDate(e.target.value)}
-                                    className="h-8 text-sm"
+                                    className={`${inputClass} ${propertyValueClass}`}
                                 />
                             </div>
                             {discussion && (
                                 <div className="flex items-start justify-between gap-4">
-                                    <span className="text-xs text-muted-foreground shrink-0">Created at</span>
-                                    <span className="text-xs text-right">
+                                    <span className={`${metaTextClass} text-muted-foreground shrink-0`}>Created at</span>
+                                    <span className={`${metaTextClass} text-right`}>
                                         {format(new Date(discussion.created_at), "MMM d, yyyy 'at' h:mm a")}
                                     </span>
                                 </div>
                             )}
                             {creatorName && (
                                 <div className="flex items-center justify-between">
-                                    <span className="text-xs text-muted-foreground">Created by</span>
-                                    <span className="text-xs">{creatorName}</span>
+                                    <span className={`${metaTextClass} text-muted-foreground`}>Created by</span>
+                                    <span className={metaTextClass}>{creatorName}</span>
                                 </div>
                             )}
                         </div>
@@ -263,13 +274,11 @@ export function DiscussionDrawer({ discussion, open, onOpenChange, onDelete }: D
 
                         {/* QUICK ACTIONS section */}
                         <div className="px-5 py-4 space-y-2">
-                            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-                                Quick Actions
-                            </p>
+                            <p className={sectionHeaderClass}>Quick actions</p>
                             <Button
                                 variant="outline"
                                 size="sm"
-                                className="w-full justify-start gap-2 h-8 text-xs font-normal"
+                                className="w-full justify-start gap-2 h-8 text-xs font-normal border-border/60 hover:bg-control-hover"
                                 asChild
                             >
                                 <Link href={`/meetings/discussions/${discussion?.id}`}>
@@ -286,9 +295,9 @@ export function DiscussionDrawer({ discussion, open, onOpenChange, onDelete }: D
                         <Button
                             onClick={handleSave}
                             disabled={isSaving || !title.trim()}
-                            className="w-full h-8 text-xs"
+                            className="w-full h-9 rounded-full text-[12px] font-semibold"
                         >
-                            {isSaving ? "Saving..." : "Save Changes"}
+                            {isSaving ? "Saving..." : "Save"}
                         </Button>
                     </div>
                 </SheetContent>

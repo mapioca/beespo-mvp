@@ -90,7 +90,11 @@ export function TagPicker({
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button variant="outline" size="sm" className="h-auto justify-start text-left">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-auto justify-start p-0 text-left hover:bg-transparent"
+        >
           {currentTags.length === 0 ? (
             <span className="flex items-center gap-2">
               <Plus className="h-3 w-3" />

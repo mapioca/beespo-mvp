@@ -78,10 +78,10 @@ export function SidebarNavCollapsible({
             onMouseEnter={openFlyout}
             onMouseLeave={scheduleFlyoutClose}
             className={cn(
-              "flex h-8 w-full items-center justify-center rounded-lg border px-2 text-[13px] transition-colors duration-150 ease-out",
+              "flex h-8 w-full items-center justify-center rounded-md px-2 text-[13px] transition-colors duration-150 ease-out",
               hasActiveChild
-                ? "border-nav-active bg-nav-selected text-nav-strong"
-                : "border-transparent text-nav hover:bg-nav-hover hover:text-nav-strong"
+                ? "bg-nav-selected text-nav-strong"
+                : "text-nav hover:bg-nav-hover hover:text-nav-strong"
             )}
           >
             <Icon className="h-4 w-4 shrink-0 stroke-[1.75]" />
@@ -110,10 +110,10 @@ export function SidebarNavCollapsible({
                   href={child.href}
                   onClick={() => setFlyoutOpen(false)}
                   className={cn(
-                    "flex h-8 items-center gap-2 rounded-md border px-2 text-[13px] transition-colors duration-150 ease-out",
+                    "flex h-8 items-center gap-2 rounded-md px-2 text-[13px] transition-colors duration-150 ease-out",
                     isActive
-                      ? "border-nav-active bg-nav-selected font-semibold text-nav-strong"
-                      : "border-transparent text-nav hover:bg-nav-hover hover:text-nav-strong"
+                      ? "bg-nav-selected font-semibold text-nav-strong"
+                      : "text-nav hover:bg-nav-hover hover:text-nav-strong"
                   )}
                 >
                   <ChildIcon className="h-4 w-4 shrink-0 stroke-[1.75]" />
@@ -135,10 +135,10 @@ export function SidebarNavCollapsible({
         <PopoverAnchor asChild>
           <CollapsibleTrigger
             className={cn(
-              "flex h-8 w-full items-center gap-2.5 rounded-lg border px-2.5 text-[13px] transition-colors duration-150 ease-out",
+              "flex h-8 w-full items-center gap-2.5 rounded-md px-2.5 text-[13px] transition-colors duration-150 ease-out",
               hasActiveChild
-                ? "border-nav-active bg-nav-selected text-nav-strong"
-                : "border-transparent text-nav hover:bg-nav-hover hover:text-nav-strong"
+                ? "bg-nav-selected text-nav-strong"
+                : "text-nav hover:bg-nav-hover hover:text-nav-strong"
             )}
             aria-expanded={isExpanded}
             aria-controls={groupId}
@@ -178,10 +178,10 @@ export function SidebarNavCollapsible({
                   href={child.href}
                   onClick={() => setFlyoutOpen(false)}
                   className={cn(
-                    "flex h-8 items-center gap-2 rounded-md border px-2 text-[13px] transition-colors duration-150 ease-out",
+                    "flex h-8 items-center gap-2 rounded-md px-2 text-[13px] transition-colors duration-150 ease-out",
                     isActive
-                      ? "border-nav-active bg-nav-selected font-semibold text-nav-strong"
-                      : "border-transparent text-nav hover:bg-nav-hover hover:text-nav-strong"
+                      ? "bg-nav-selected font-semibold text-nav-strong"
+                      : "text-nav hover:bg-nav-hover hover:text-nav-strong"
                   )}
                 >
                   <ChildIcon className="h-4 w-4 shrink-0 stroke-[1.75]" />

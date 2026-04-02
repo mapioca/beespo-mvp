@@ -44,6 +44,21 @@ interface AnnouncementDrawerProps {
 
 export function AnnouncementDrawer({ announcement, open, onOpenChange, onDelete }: AnnouncementDrawerProps) {
     const router = useRouter();
+    const sectionHeaderClass =
+        "text-drawer-section font-semibold tracking-[0.02em] text-foreground/60";
+    const propertyLabelClass =
+        "text-drawer-label font-medium leading-none text-muted-foreground";
+    const propertyValueClass =
+        "text-drawer-value font-medium leading-none tracking-normal";
+    const metaTextClass = "text-drawer-meta";
+    const inputClass =
+        "h-8 bg-control border-control focus-visible:ring-0 focus-visible:border-foreground/30";
+    const selectTriggerClass =
+        "h-8 bg-control border-control focus:ring-0 focus:border-foreground/30";
+    const selectContentClass =
+        "rounded-xl border border-border/60 bg-[hsl(var(--menu))] p-1 text-[hsl(var(--menu-text))] shadow-lg";
+    const selectItemClass =
+        "rounded-md px-2.5 py-1.5 text-drawer-menu-item font-medium leading-none tracking-normal focus:bg-[hsl(var(--menu-hover))] focus:text-[hsl(var(--menu-text))]";
     const [isSaving, setIsSaving] = useState(false);
     const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -137,7 +152,7 @@ export function AnnouncementDrawer({ announcement, open, onOpenChange, onDelete 
                     <div className="flex items-center justify-between px-5 pt-4 pb-3 pr-12 shrink-0 border-b border-border/40">
                         <div className="flex items-center gap-2">
                             <Megaphone className="h-4 w-4 text-muted-foreground stroke-[1.6]" />
-                            <SheetTitle className="text-sm font-semibold">Announcement Details</SheetTitle>
+                            <SheetTitle className="text-drawer-title font-semibold">Announcement Details</SheetTitle>
                         </div>
                         <Button
                             variant="ghost"
@@ -156,34 +171,32 @@ export function AnnouncementDrawer({ announcement, open, onOpenChange, onDelete 
                     <div className="flex-1 overflow-y-auto">
                         {/* ANNOUNCEMENT section */}
                         <div className="px-5 py-4 space-y-4">
-                            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-                                Announcement
-                            </p>
+                            <p className={sectionHeaderClass}>Announcement</p>
                             <div className="space-y-1.5">
-                                <label className="text-[11px] text-muted-foreground">Title</label>
+                                <label className={propertyLabelClass}>Title</label>
                                 <Input
                                     value={title}
                                     onChange={(e) => setTitle(e.target.value)}
-                                    className="h-8 text-sm bg-background border-border/60 focus-visible:ring-0 focus-visible:border-foreground/30"
+                                    className={`${inputClass} ${propertyValueClass} placeholder:text-[length:var(--drawer-text-value)] placeholder:font-normal`}
                                 />
                             </div>
                             <div className="space-y-1.5">
-                                <label className="text-[11px] text-muted-foreground">Content</label>
+                                <label className={propertyLabelClass}>Content</label>
                                 <Textarea
                                     value={content}
                                     onChange={(e) => setContent(e.target.value)}
                                     placeholder="Announcement content..."
-                                    className="text-sm resize-none bg-background border-border/60 focus-visible:ring-0 focus-visible:border-foreground/30"
+                                    className={`resize-none bg-control border-control focus-visible:ring-0 focus-visible:border-foreground/30 ${propertyValueClass} placeholder:text-[length:var(--drawer-text-value)] placeholder:font-normal`}
                                     rows={4}
                                 />
                             </div>
                             <div className="space-y-1.5">
-                                <label className="text-[11px] text-muted-foreground">Deadline</label>
+                                <label className={propertyLabelClass}>Deadline</label>
                                 <Input
                                     type="date"
                                     value={deadline}
                                     onChange={(e) => setDeadline(e.target.value)}
-                                    className="h-8 text-sm bg-background border-border/60 focus-visible:ring-0 focus-visible:border-foreground/30"
+                                    className={`${inputClass} ${propertyValueClass}`}
                                 />
                             </div>
                         </div>
@@ -192,65 +205,63 @@ export function AnnouncementDrawer({ announcement, open, onOpenChange, onDelete 
 
                         {/* DETAILS section */}
                         <div className="px-5 py-4 space-y-4">
-                            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-                                Details
-                            </p>
+                            <p className={sectionHeaderClass}>Details</p>
                             <div className="space-y-1.5">
-                                <label className="text-[11px] text-muted-foreground">Status</label>
+                                <label className={propertyLabelClass}>Status</label>
                                 <Select value={status} onValueChange={setStatus}>
-                                    <SelectTrigger className="h-8 text-sm bg-background border-border/60 focus:ring-0 focus:border-foreground/30">
+                                    <SelectTrigger className={`${selectTriggerClass} ${propertyValueClass}`}>
                                         <SelectValue />
                                     </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="draft">Draft</SelectItem>
-                                        <SelectItem value="active">Active</SelectItem>
-                                        <SelectItem value="stopped">Stopped</SelectItem>
+                                    <SelectContent className={selectContentClass}>
+                                        <SelectItem value="draft" className={selectItemClass}>Draft</SelectItem>
+                                        <SelectItem value="active" className={selectItemClass}>Active</SelectItem>
+                                        <SelectItem value="stopped" className={selectItemClass}>Stopped</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
                             <div className="space-y-1.5">
-                                <label className="text-[11px] text-muted-foreground">Priority</label>
+                                <label className={propertyLabelClass}>Priority</label>
                                 <Select value={priority} onValueChange={setPriority}>
-                                    <SelectTrigger className="h-8 text-sm bg-background border-border/60 focus:ring-0 focus:border-foreground/30">
+                                    <SelectTrigger className={`${selectTriggerClass} ${propertyValueClass}`}>
                                         <SelectValue />
                                     </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="low">Low</SelectItem>
-                                        <SelectItem value="medium">Medium</SelectItem>
-                                        <SelectItem value="high">High</SelectItem>
+                                    <SelectContent className={selectContentClass}>
+                                        <SelectItem value="low" className={selectItemClass}>Low</SelectItem>
+                                        <SelectItem value="medium" className={selectItemClass}>Medium</SelectItem>
+                                        <SelectItem value="high" className={selectItemClass}>High</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
                             <div className="space-y-1.5">
-                                <label className="text-[11px] text-muted-foreground">Display Start</label>
+                                <label className={propertyLabelClass}>Display Start</label>
                                 <Input
                                     type="date"
                                     value={displayStart}
                                     onChange={(e) => setDisplayStart(e.target.value)}
-                                    className="h-8 text-sm bg-background border-border/60 focus-visible:ring-0 focus-visible:border-foreground/30"
+                                    className={`${inputClass} ${propertyValueClass}`}
                                 />
                             </div>
                             <div className="space-y-1.5">
-                                <label className="text-[11px] text-muted-foreground">Display Until</label>
+                                <label className={propertyLabelClass}>Display Until</label>
                                 <Input
                                     type="date"
                                     value={displayUntil}
                                     onChange={(e) => setDisplayUntil(e.target.value)}
-                                    className="h-8 text-sm bg-background border-border/60 focus-visible:ring-0 focus-visible:border-foreground/30"
+                                    className={`${inputClass} ${propertyValueClass}`}
                                 />
                             </div>
                             {announcement && (
                                 <div className="flex items-start justify-between gap-4">
-                                    <span className="text-xs text-muted-foreground shrink-0">Created at</span>
-                                    <span className="text-xs text-right">
+                                    <span className={`${metaTextClass} text-muted-foreground shrink-0`}>Created at</span>
+                                    <span className={`${metaTextClass} text-right`}>
                                         {format(new Date(announcement.created_at), "MMM d, yyyy 'at' h:mm a")}
                                     </span>
                                 </div>
                             )}
                             {creatorName && (
                                 <div className="flex items-center justify-between">
-                                    <span className="text-xs text-muted-foreground">Created by</span>
-                                    <span className="text-xs">{creatorName}</span>
+                                    <span className={`${metaTextClass} text-muted-foreground`}>Created by</span>
+                                    <span className={metaTextClass}>{creatorName}</span>
                                 </div>
                             )}
                         </div>
@@ -259,14 +270,12 @@ export function AnnouncementDrawer({ announcement, open, onOpenChange, onDelete 
 
                         {/* QUICK ACTIONS section */}
                         <div className="px-5 py-4 space-y-2">
-                            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-                                Quick Actions
-                            </p>
+                            <p className={sectionHeaderClass}>Quick actions</p>
                             {status === "draft" && (
                                 <Button
                                     variant="outline"
                                     size="sm"
-                                    className="w-full justify-start gap-2 h-8 text-xs font-normal border-border/60 hover:bg-[hsl(var(--accent-warm)/0.6)]"
+                                    className="w-full justify-start gap-2 h-8 text-xs font-normal border-border/60 hover:bg-control-hover"
                                     onClick={() => handleSetStatus("active")}
                                     disabled={isUpdatingStatus}
                                 >
@@ -278,7 +287,7 @@ export function AnnouncementDrawer({ announcement, open, onOpenChange, onDelete 
                                 <Button
                                     variant="outline"
                                     size="sm"
-                                    className="w-full justify-start gap-2 h-8 text-xs font-normal border-border/60 hover:bg-[hsl(var(--accent-warm)/0.6)]"
+                                    className="w-full justify-start gap-2 h-8 text-xs font-normal border-border/60 hover:bg-control-hover"
                                     onClick={() => handleSetStatus("stopped")}
                                     disabled={isUpdatingStatus}
                                 >
@@ -290,7 +299,7 @@ export function AnnouncementDrawer({ announcement, open, onOpenChange, onDelete 
                                 <Button
                                     variant="outline"
                                     size="sm"
-                                    className="w-full justify-start gap-2 h-8 text-xs font-normal border-border/60 hover:bg-[hsl(var(--accent-warm)/0.6)]"
+                                    className="w-full justify-start gap-2 h-8 text-xs font-normal border-border/60 hover:bg-control-hover"
                                     onClick={() => handleSetStatus("active")}
                                     disabled={isUpdatingStatus}
                                 >
@@ -307,7 +316,7 @@ export function AnnouncementDrawer({ announcement, open, onOpenChange, onDelete 
                         <Button
                             onClick={handleSave}
                             disabled={isSaving || !title.trim()}
-                            className="w-full h-8 text-xs bg-[hsl(var(--accent-warm))] text-foreground hover:bg-[hsl(var(--accent-warm-hover))]"
+                            className="w-full h-9 rounded-full text-[12px] font-semibold"
                         >
                             {isSaving ? "Saving..." : "Save"}
                         </Button>

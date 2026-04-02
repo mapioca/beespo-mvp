@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useCallback, useEffect, useTransition } from "react"
 import { useRouter } from "next/navigation"
+import { createPortal } from "react-dom"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -30,9 +31,9 @@ import {
 import { createClient } from "@/lib/supabase/client"
 import { toast } from "@/lib/toast"
 import {
-    ParticipantsTable,
+    DirectoryTable,
     Participant,
-} from "@/components/participants/participants-table"
+} from "@/components/participants/directory-table"
 import { ParticipantDrawer } from "@/components/participants/participant-drawer"
 import { TagFilterDropdown } from "@/components/participants/tag-filter-dropdown"
 import { CreateTagDialog } from "@/components/participants/create-tag-dialog"
@@ -133,7 +134,7 @@ function matchesViewFilters(
 
 // ── Props ─────────────────────────────────────────────────────────────────────
 
-interface ParticipantsClientProps {
+interface DirectoryClientProps {
     participants: Participant[]
     userRole: string
     totalCount: number
@@ -142,17 +143,18 @@ interface ParticipantsClientProps {
 }
 
 // Export as both names for backward compat and new directory route
-export function DirectoryClient(props: ParticipantsClientProps) {
-    return <ParticipantsClient {...props} />
+export function DirectoryClient(props: DirectoryClientProps) {
+    return <DirectoryPageClient {...props} />
 }
 
-export function ParticipantsClient({
+export function DirectoryPageClient({
     participants,
     userRole,
     initialViews = [],
-}: ParticipantsClientProps) {
+}: DirectoryClientProps) {
     const router = useRouter()
     const [, startDeleteTransition] = useTransition()
+    const [mounted, setMounted] = useState(false)
     const canManage = userRole === "leader" || userRole === "admin"
 
     // ── Views state ──────────────────────────────────────────────────────────
@@ -205,9 +207,22 @@ export function ParticipantsClient({
 
     // Fetch workspace tags on mount
     useEffect(() => {
-        getDirectoryTags().then(({ data }) => {
-            if (data) setWorkspaceTags(data)
-        })
+        getDirectoryTags()
+            .then(({ data, error }) => {
+                if (error) {
+                    toast.error(error)
+                    return
+                }
+                if (data) setWorkspaceTags(data)
+            })
+            .catch((error) => {
+                console.error("Failed to fetch directory tags:", error)
+                toast.error("Failed to load tags")
+            })
+    }, [])
+
+    useEffect(() => {
+        setMounted(true)
     }, [])
 
     const handleCreateTag = async (name: string, color: string) => {
@@ -222,33 +237,46 @@ export function ParticipantsClient({
                 )
                 toast.success("Tag created")
             }
+        } catch (error) {
+            console.error("Failed to create tag:", error)
+            toast.error("Failed to create tag")
         } finally {
             setIsCreatingTag(false)
         }
     }
 
     const handleUpdateTag = async (id: string, name: string, color: string) => {
-        const { data, error } = await updateDirectoryTag(id, { name, color })
-        if (error) {
-            toast.error(error)
-        } else if (data) {
-            setWorkspaceTags((prev) =>
-                prev.map((t) => (t.id === id ? data : t)).sort((a, b) => a.name.localeCompare(b.name))
-            )
-            toast.success("Tag updated")
-            router.refresh()
+        try {
+            const { data, error } = await updateDirectoryTag(id, { name, color })
+            if (error) {
+                toast.error(error)
+            } else if (data) {
+                setWorkspaceTags((prev) =>
+                    prev.map((t) => (t.id === id ? data : t)).sort((a, b) => a.name.localeCompare(b.name))
+                )
+                toast.success("Tag updated")
+                router.refresh()
+            }
+        } catch (error) {
+            console.error("Failed to update tag:", error)
+            toast.error("Failed to update tag")
         }
     }
 
     const handleDeleteTag = async (id: string) => {
-        const { error } = await deleteDirectoryTag(id)
-        if (error) {
-            toast.error(error)
-        } else {
-            setWorkspaceTags((prev) => prev.filter((t) => t.id !== id))
-            setTagFilter((prev) => prev.filter((tId) => tId !== id))
-            toast.success("Tag deleted")
-            router.refresh()
+        try {
+            const { error } = await deleteDirectoryTag(id)
+            if (error) {
+                toast.error(error)
+            } else {
+                setWorkspaceTags((prev) => prev.filter((t) => t.id !== id))
+                setTagFilter((prev) => prev.filter((tId) => tId !== id))
+                toast.success("Tag deleted")
+                router.refresh()
+            }
+        } catch (error) {
+            console.error("Failed to delete tag:", error)
+            toast.error("Failed to delete tag")
         }
     }
 
@@ -578,7 +606,7 @@ export function ParticipantsClient({
     // ── Render ────────────────────────────────────────────────────────────────
 
     return (
-        <div className="flex flex-col h-full bg-muted/20">
+        <div className="flex flex-col h-full bg-muted/30">
             {/* Breadcrumb */}
             <Breadcrumbs
                 items={[
@@ -589,15 +617,15 @@ export function ParticipantsClient({
             />
 
             {/* Action Bar + Tabs */}
-            <div className="flex items-center justify-between w-full px-6 pt-4 pb-3 shrink-0 flex-wrap gap-3">
-                <div className="flex items-center gap-1.5 flex-wrap">
+            <div className="flex items-center justify-between w-full px-6 pt-3.5 pb-3.5 shrink-0 flex-wrap gap-3 border-b border-border/45">
+                <div className="flex items-center gap-2 flex-wrap min-h-8">
                     {/* All tab */}
                 <button
                     onClick={() => setActiveViewId(null)}
                     className={
                         activeViewId === null
-                            ? "rounded-full border px-3.5 py-1 text-xs font-medium bg-[hsl(var(--accent-warm))] text-foreground border-border/60 transition-all shadow-[0_1px_0_rgba(15,23,42,0.08)]"
-                            : "rounded-full border px-3.5 py-1 text-xs font-medium text-muted-foreground border-border/60 hover:text-foreground hover:bg-[hsl(var(--accent-warm)/0.5)] hover:border-border/60 transition-all"
+                            ? "rounded-full border border-transparent px-3.5 py-1.5 text-[11px] font-semibold leading-none bg-[hsl(var(--chip-active-bg))] text-[hsl(var(--chip-active-text))] transition-all shadow-[0_1px_0_rgba(15,23,42,0.1)]"
+                            : "rounded-full border px-3.5 py-1.5 text-[11px] font-medium leading-none bg-[hsl(var(--chip-bg))] text-[hsl(var(--chip-text))] border-[hsl(var(--chip-border))] hover:bg-[hsl(var(--chip-hover-bg))] hover:text-[hsl(var(--chip-active-text))] transition-all"
                     }
                 >
                     All Members
@@ -614,10 +642,10 @@ export function ParticipantsClient({
                         <button
                             onClick={() => setActiveViewId(view.id)}
                             className={cn(
-                                "rounded-full border pl-3.5 pr-7 py-1 text-xs font-medium transition-all shadow-sm",
+                                "rounded-full border pl-3.5 pr-7 py-1.5 text-[11px] leading-none transition-all shadow-sm",
                                 activeViewId === view.id
-                                    ? "bg-[hsl(var(--accent-warm))] text-foreground border-border/60"
-                                    : "text-muted-foreground border-border/60 hover:text-foreground hover:bg-[hsl(var(--accent-warm)/0.5)] hover:border-border/60"
+                                    ? "bg-[hsl(var(--chip-active-bg))] text-[hsl(var(--chip-active-text))] border-transparent font-semibold"
+                                    : "bg-[hsl(var(--chip-bg))] text-[hsl(var(--chip-text))] border-[hsl(var(--chip-border))] hover:bg-[hsl(var(--chip-hover-bg))] hover:text-[hsl(var(--chip-active-text))] font-medium"
                             )}
                         >
                             {view.name}
@@ -669,8 +697,8 @@ export function ParticipantsClient({
                 <div className="flex items-center gap-2">
                     {canManage && (
                         <Button
-                            variant="ghost"
-                            className="rounded-full border px-3.5 py-1 text-xs font-medium text-foreground border-border/60 bg-[hsl(var(--accent-warm))] hover:bg-[hsl(var(--accent-warm-hover))] transition-all shadow-[0_1px_0_rgba(15,23,42,0.08)]"
+                            size="sm"
+                            className="h-8 rounded-full px-3.5 text-[11px] font-semibold shadow-sm"
                             onClick={() => setCreateDialogOpen(true)}
                         >
                             <Plus className="h-3.5 w-3.5 mr-1.5 stroke-[1.6]" />
@@ -682,15 +710,15 @@ export function ParticipantsClient({
 
             {/* View filter summary */}
             {activeView && (
-                <div className="flex items-center gap-2 px-6 pb-3 flex-wrap text-xs text-muted-foreground">
+                <div className="flex items-center gap-2 px-6 pb-3 flex-wrap text-[11px] text-muted-foreground">
                     <span className="font-medium text-foreground">Filters:</span>
                     {describeViewFilters(activeView.filters).map((desc, i) => (
-                        <span key={i} className="rounded-md bg-[hsl(var(--accent-warm))] border border-border/50 px-2 py-0.5 text-slate-800">
+                        <span key={i} className="rounded-full bg-[hsl(var(--chip-bg))] border border-[hsl(var(--chip-border))] px-2.5 py-1.5 text-[hsl(var(--chip-text))] leading-none">
                             {desc}
                         </span>
                     ))}
                     {search && (
-                        <span className="rounded-md bg-[hsl(var(--accent-warm))] border border-border/50 px-2 py-0.5 text-slate-800">
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-[hsl(var(--chip-bg))] border border-[hsl(var(--chip-border))] px-2.5 py-1.5 text-[hsl(var(--chip-text))] leading-none">
                             Search: &quot;{search}&quot;
                             <button
                                 onClick={() => setSearch("")}
@@ -703,35 +731,11 @@ export function ParticipantsClient({
                 </div>
             )}
 
-            {/* Selection action bar */}
-            {selectedRows.size > 0 && (
-                <div className="flex items-center gap-3 px-6 pb-3 shrink-0">
-                    <span className="inline-flex items-center rounded-full bg-[hsl(var(--accent-warm))] px-2.5 py-1 text-[11px] font-medium text-slate-800 border border-border/50 tabular-nums">
-                        {selectedRows.size} selected
-                    </span>
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-7 px-2.5 text-xs text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30"
-                        onClick={() => setShowBulkDeleteDialog(true)}
-                    >
-                        <Trash2 className="mr-1.5 h-3 w-3 stroke-[1.6]" />
-                        Delete
-                    </Button>
-                    <button
-                        onClick={() => setSelectedRows(new Set())}
-                        className="text-xs text-muted-foreground hover:text-foreground ml-auto"
-                    >
-                        Deselect all
-                    </button>
-                </div>
-            )}
-
             {/* Active filter chips — non-view mode only */}
             {hasActiveFilters && selectedRows.size === 0 && (
                 <div className="flex items-center gap-2 px-6 pb-3 flex-wrap">
                     {search && (
-                        <span className="inline-flex items-center gap-1.5 rounded-md bg-[hsl(var(--accent-warm))] px-2.5 py-1 text-xs font-medium text-slate-800 border border-border/50">
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-[hsl(var(--chip-bg))] border border-[hsl(var(--chip-border))] px-2.5 py-1.5 text-[11px] font-medium leading-none text-[hsl(var(--chip-text))]">
                             Search: &quot;{search}&quot;
                             <button
                                 onClick={() => setSearch("")}
@@ -746,7 +750,7 @@ export function ParticipantsClient({
                         return tag ? (
                             <span
                                 key={tagId}
-                                className="inline-flex items-center gap-1.5 rounded-md bg-[hsl(var(--accent-warm))] px-2.5 py-1 text-xs font-medium text-slate-800 border border-border/50"
+                                className="inline-flex items-center gap-1.5 rounded-full bg-[hsl(var(--chip-bg))] border border-[hsl(var(--chip-border))] px-2.5 py-1.5 text-[11px] font-medium leading-none text-[hsl(var(--chip-text))]"
                             >
                                 Tag: {tag.name}
                                 <button
@@ -765,7 +769,7 @@ export function ParticipantsClient({
                     {hiddenColumns.size > 0 && (
                         <button
                             onClick={() => setHiddenColumns(new Set())}
-                            className="text-xs text-muted-foreground hover:text-foreground underline"
+                            className="inline-flex items-center rounded-full border border-[hsl(var(--chip-border))] px-2.5 py-1.5 text-[11px] text-muted-foreground hover:text-foreground hover:bg-[hsl(var(--chip-hover-bg))] transition-colors"
                         >
                             Show all columns
                         </button>
@@ -776,7 +780,7 @@ export function ParticipantsClient({
                             setHiddenColumns(new Set())
                             setTagFilter([])
                         }}
-                        className="text-xs text-muted-foreground hover:text-foreground"
+                        className="inline-flex items-center rounded-full border border-[hsl(var(--chip-border))] px-2.5 py-1.5 text-[11px] text-muted-foreground hover:text-foreground hover:bg-[hsl(var(--chip-hover-bg))] transition-colors"
                     >
                         Clear all
                     </button>
@@ -785,7 +789,7 @@ export function ParticipantsClient({
 
             {/* Table */}
             <div className="flex-1 overflow-auto px-6 pb-6">
-                <ParticipantsTable
+                <DirectoryTable
                     participants={filteredParticipants}
                     sortConfig={sortConfig}
                     onSort={handleSort}
@@ -1006,6 +1010,35 @@ export function ParticipantsClient({
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+
+            {/* Floating bulk selection pill */}
+            {mounted && selectedRows.size > 0 && createPortal(
+                <div className="fixed bottom-6 left-1/2 z-[95] flex -translate-x-1/2 pointer-events-none w-[90vw] sm:w-auto justify-center">
+                    <div className="pointer-events-auto inline-flex items-center gap-2 rounded-full border border-border/80 bg-background/96 px-2.5 py-2 text-foreground shadow-[0_10px_30px_rgba(15,23,42,0.12)] backdrop-blur-sm">
+                        <span className="inline-flex items-center rounded-full border border-border/70 bg-muted/55 px-2.5 py-1 text-[11px] font-semibold tabular-nums text-foreground/85">
+                            {selectedRows.size} selected
+                        </span>
+                        <span className="h-4 w-px bg-border/70" aria-hidden />
+                        <button
+                            onClick={() => setSelectedRows(new Set())}
+                            className="rounded-full px-2.5 py-1 text-[11px] font-medium text-foreground/70 hover:text-foreground hover:bg-muted/55 transition-colors"
+                        >
+                            Deselect
+                        </button>
+                        <button
+                            onClick={() => setShowBulkDeleteDialog(true)}
+                            className="inline-flex items-center gap-1.5 rounded-full border border-rose-200 bg-rose-50/70 px-2.5 py-1 text-[11px] font-semibold text-rose-700 hover:bg-rose-100/75 transition-colors"
+                        >
+                            <Trash2 className="h-3 w-3 stroke-[1.7]" />
+                            Delete
+                        </button>
+                    </div>
+                </div>,
+                document.body
+            )}
         </div>
     )
 }
+
+// Backward-compatible alias while imports are migrated.
+export { DirectoryPageClient as ParticipantsClient }

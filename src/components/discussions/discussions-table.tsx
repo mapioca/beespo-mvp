@@ -302,7 +302,8 @@ export function DiscussionsTable({
                         discussions.map((discussion) => (
                             <TableRow
                                 key={discussion.id}
-                                className="group transition-colors hover:bg-[hsl(var(--table-row-hover))]"
+                                data-state={selectedRows.has(discussion.id) ? "selected" : undefined}
+                                className="group transition-[background-color,box-shadow] duration-150 ease-out hover:bg-[hsl(var(--table-row-hover))] hover:shadow-[inset_0_0_0_1px_hsl(var(--table-shell-border)/0.28)] data-[state=selected]:bg-[hsl(var(--table-row-selected))] data-[state=selected]:shadow-[inset_0_0_0_1px_hsl(var(--table-shell-border)/0.4)]"
                             >
                                 {/* Checkbox */}
                                 <TableCell className="table-cell-check">
@@ -338,31 +339,32 @@ export function DiscussionsTable({
 
                                 {/* Category */}
                                 {!hiddenColumns.has("category") && (
-                                    <TableCell className="table-cell-meta capitalize whitespace-nowrap">
+                                    <TableCell className="table-cell-meta text-[11.5px] text-foreground/56 capitalize whitespace-nowrap">
                                         {formatLabel(discussion.category)}
                                     </TableCell>
                                 )}
 
                                 {/* Status */}
                                 {!hiddenColumns.has("status") && (
-                                    <TableCell className="table-cell-meta capitalize">
+                                    <TableCell className="table-cell-meta !px-2 capitalize">
                                         <StatusIndicator
                                             label={formatLabel(discussion.status)}
                                             tone={STATUS_TONES[discussion.status] || "neutral"}
+                                            className="text-[11.5px] text-foreground/66"
                                         />
                                     </TableCell>
                                 )}
 
                                 {/* Priority */}
                                 {!hiddenColumns.has("priority") && (
-                                    <TableCell className="table-cell-meta capitalize">
+                                    <TableCell className="table-cell-meta text-[11.5px] text-foreground/56 capitalize">
                                         {formatLabel(discussion.priority)}
                                     </TableCell>
                                 )}
 
                                 {/* Due Date */}
                                 {!hiddenColumns.has("due_date") && (
-                                    <TableCell className="table-cell-meta">
+                                    <TableCell className="table-cell-meta !px-2 text-[11.5px] text-foreground/56">
                                         {discussion.due_date
                                             ? format(
                                                   new Date(discussion.due_date),

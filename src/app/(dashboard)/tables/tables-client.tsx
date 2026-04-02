@@ -159,7 +159,10 @@ export function TablesClient({ tables }: TablesClientProps) {
                     {/* Placeholder for future tabs */}
                 </div>
 
-                <Button asChild variant="ghost" className="rounded-full border px-3.5 py-1 text-xs font-medium text-foreground border-border/60 bg-[hsl(var(--accent-warm))] hover:bg-[hsl(var(--accent-warm-hover))] transition-all shadow-[0_1px_0_rgba(15,23,42,0.08)]">
+                <Button
+                    asChild
+                    className="rounded-full border border-button-primary bg-button-primary px-3.5 py-1 text-xs font-medium text-button-primary hover:bg-button-primary-hover"
+                >
                     <Link href="/tables/new" className="flex items-center gap-1.5">
                         <Plus className="h-3.5 w-3.5 stroke-[1.6]" />
                         New

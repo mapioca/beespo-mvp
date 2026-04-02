@@ -86,7 +86,7 @@ const ITEM_TYPE_LABELS: Record<string, string> = {
 
 // ── Props ───────────────────────────────────────────────────────────────────
 
-interface ParticipantsTableProps {
+interface DirectoryTableProps {
     participants: Participant[]
     // Sort
     sortConfig?: { key: string; direction: "asc" | "desc" } | null
@@ -109,7 +109,7 @@ interface ParticipantsTableProps {
 
 // ── Component ───────────────────────────────────────────────────────────────
 
-export function ParticipantsTable({
+export function DirectoryTable({
     participants,
     sortConfig,
     onSort,
@@ -123,7 +123,7 @@ export function ParticipantsTable({
     onViewParticipant,
     onAddSpeakingAssignment,
     onDelete,
-}: ParticipantsTableProps) {
+}: DirectoryTableProps) {
     const [deleteTarget, setDeleteTarget] = useState<Participant | null>(null)
     const [isDeleting, setIsDeleting] = useState(false)
 
@@ -171,21 +171,29 @@ export function ParticipantsTable({
             // Mark as loading and fetch
             setLoadingIds((prev) => new Set(prev).add(id))
 
-            const [historyResult, speakingResult] = await Promise.all([
-                getParticipantHistory(id),
-                getSpeakingAssignments(id),
-            ])
+            try {
+                const [historyResult, speakingResult] = await Promise.all([
+                    getParticipantHistory(id),
+                    getSpeakingAssignments(id),
+                ])
 
-            dataCache.current.set(id, {
-                history: historyResult.items,
-                speaking: speakingResult.items,
-            })
-
-            setLoadingIds((prev) => {
-                const next = new Set(prev)
-                next.delete(id)
-                return next
-            })
+                dataCache.current.set(id, {
+                    history: historyResult.items,
+                    speaking: speakingResult.items,
+                })
+            } catch (error) {
+                console.error("Failed to fetch directory row details:", error)
+                dataCache.current.set(id, {
+                    history: [],
+                    speaking: [],
+                })
+            } finally {
+                setLoadingIds((prev) => {
+                    const next = new Set(prev)
+                    next.delete(id)
+                    return next
+                })
+            }
         },
         [expandedIds]
     )
@@ -215,7 +223,7 @@ export function ParticipantsTable({
                                 searchable
                                 searchValue={searchValue}
                                 onSearchChange={onSearchChange}
-                                searchPlaceholder="Search participants..."
+                                searchPlaceholder="Search directory..."
                                 onHide={() => onHideColumn?.("name")}
                             />
                         )}
@@ -237,7 +245,7 @@ export function ParticipantsTable({
                                 <div className="flex flex-col items-center justify-center py-4">
                                     <Users className="h-8 w-8 text-muted-foreground mb-2 stroke-[1.6]" />
                                     <p className="text-muted-foreground">
-                                        No participants found.
+                                        No directory entries found.
                                     </p>
                                 </div>
                             </TableCell>
@@ -251,8 +259,9 @@ export function ParticipantsTable({
                             return (
                                 <Fragment key={participant.id}>
                                     <TableRow
+                                        data-state={selectedRows.has(participant.id) ? "selected" : undefined}
                                         className={cn(
-                                            "group cursor-pointer transition-colors hover:bg-[hsl(var(--table-row-hover))]",
+                                            "group cursor-pointer transition-[background-color,box-shadow] duration-150 ease-out hover:bg-[hsl(var(--table-row-hover))] hover:shadow-[inset_0_0_0_1px_hsl(var(--table-shell-border)/0.28)] data-[state=selected]:bg-[hsl(var(--table-row-selected))] data-[state=selected]:shadow-[inset_0_0_0_1px_hsl(var(--table-shell-border)/0.4)]",
                                             isExpanded && "bg-[hsl(var(--table-row-hover))]"
                                         )}
                                         onClick={() =>
@@ -510,3 +519,6 @@ export function ParticipantsTable({
         </>
     )
 }
+
+// Backward-compatible alias while remaining imports are migrated.
+export { DirectoryTable as ParticipantsTable }

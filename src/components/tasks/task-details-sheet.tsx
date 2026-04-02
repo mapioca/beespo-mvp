@@ -85,6 +85,20 @@ export function TaskDetailsSheet({
     task,
 }: TaskDetailsSheetProps) {
     const router = useRouter();
+    const sectionHeaderClass =
+        "text-drawer-section font-semibold tracking-[0.02em] text-foreground/60";
+    const propertyLabelClass =
+        "text-drawer-label font-medium leading-none text-muted-foreground";
+    const propertyValueClass =
+        "text-drawer-value font-medium leading-none tracking-normal";
+    const inputClass =
+        "h-8 bg-control border-control focus-visible:ring-0 focus-visible:border-foreground/30";
+    const selectTriggerClass =
+        "h-8 bg-control border-control focus:ring-0 focus:border-foreground/30";
+    const selectContentClass =
+        "rounded-xl border border-border/60 bg-[hsl(var(--menu))] p-1 text-[hsl(var(--menu-text))] shadow-lg";
+    const selectItemClass =
+        "rounded-md px-2.5 py-1.5 text-drawer-menu-item font-medium leading-none tracking-normal focus:bg-[hsl(var(--menu-hover))] focus:text-[hsl(var(--menu-text))]";
 
     // Form state
     const [title, setTitle] = useState("");
@@ -224,7 +238,7 @@ export function TaskDetailsSheet({
                     <div className="flex items-center justify-between px-5 pt-4 pb-3 pr-12 shrink-0">
                         <div className="flex items-center gap-2">
                             <CheckSquare className="h-4 w-4 text-muted-foreground" />
-                            <SheetTitle className="text-sm font-semibold">Task Details</SheetTitle>
+                            <SheetTitle className="text-drawer-title font-semibold">Task Details</SheetTitle>
                         </div>
                         <Button
                             variant="ghost"
@@ -245,24 +259,24 @@ export function TaskDetailsSheet({
                     <div className="flex-1 overflow-y-auto">
                         {/* TASK section */}
                         <div className="px-5 py-4 space-y-4">
-                            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+                            <p className={sectionHeaderClass}>
                                 Task
                             </p>
                             <div className="space-y-1.5">
-                                <label className="text-xs font-medium">Title</label>
+                                <label className={propertyLabelClass}>Title</label>
                                 <Input
                                     value={title}
                                     onChange={(e) => setTitle(e.target.value)}
-                                    className="h-8 text-sm"
+                                    className={`${inputClass} ${propertyValueClass} placeholder:text-[length:var(--drawer-text-value)] placeholder:font-normal`}
                                 />
                             </div>
                             <div className="space-y-1.5">
-                                <label className="text-xs font-medium">Description</label>
+                                <label className={propertyLabelClass}>Description</label>
                                 <Textarea
                                     value={description}
                                     onChange={(e) => setDescription(e.target.value)}
                                     placeholder="Add a description..."
-                                    className="text-sm resize-none"
+                                    className={`resize-none bg-control border-control focus-visible:ring-0 focus-visible:border-foreground/30 ${propertyValueClass} placeholder:text-[length:var(--drawer-text-value)] placeholder:font-normal`}
                                     rows={3}
                                 />
                             </div>
@@ -272,45 +286,45 @@ export function TaskDetailsSheet({
 
                         {/* DETAILS section */}
                         <div className="px-5 py-4 space-y-4">
-                            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+                            <p className={sectionHeaderClass}>
                                 Details
                             </p>
                             <div className="space-y-1.5">
-                                <label className="text-xs font-medium">Status</label>
+                                <label className={propertyLabelClass}>Status</label>
                                 <Select value={status} onValueChange={setStatus}>
-                                    <SelectTrigger className="h-8 text-sm">
+                                    <SelectTrigger className={`${selectTriggerClass} ${propertyValueClass}`}>
                                         <SelectValue />
                                     </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="pending">Todo</SelectItem>
-                                        <SelectItem value="completed">Done</SelectItem>
-                                        <SelectItem value="cancelled">Canceled</SelectItem>
+                                    <SelectContent className={selectContentClass}>
+                                        <SelectItem value="pending" className={selectItemClass}>Todo</SelectItem>
+                                        <SelectItem value="completed" className={selectItemClass}>Done</SelectItem>
+                                        <SelectItem value="cancelled" className={selectItemClass}>Canceled</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
                             <div className="space-y-1.5">
-                                <label className="text-xs font-medium">Priority</label>
+                                <label className={propertyLabelClass}>Priority</label>
                                 <Select value={priority} onValueChange={(val) => setPriority(val as "low" | "medium" | "high")}>
-                                    <SelectTrigger className="h-8 text-sm">
+                                    <SelectTrigger className={`${selectTriggerClass} ${propertyValueClass}`}>
                                         <SelectValue />
                                     </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="low">Low</SelectItem>
-                                        <SelectItem value="medium">Medium</SelectItem>
-                                        <SelectItem value="high">High</SelectItem>
+                                    <SelectContent className={selectContentClass}>
+                                        <SelectItem value="low" className={selectItemClass}>Low</SelectItem>
+                                        <SelectItem value="medium" className={selectItemClass}>Medium</SelectItem>
+                                        <SelectItem value="high" className={selectItemClass}>High</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
                             <div className="space-y-1.5">
-                                <label className="text-xs font-medium">Assignee</label>
+                                <label className={propertyLabelClass}>Assignee</label>
                                 <Select value={assignee} onValueChange={setAssignee}>
-                                    <SelectTrigger className="h-8 text-sm">
+                                    <SelectTrigger className={`${selectTriggerClass} ${propertyValueClass}`}>
                                         <SelectValue placeholder="Unassigned" />
                                     </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="unassigned">Unassigned</SelectItem>
+                                    <SelectContent className={selectContentClass}>
+                                        <SelectItem value="unassigned" className={selectItemClass}>Unassigned</SelectItem>
                                         {profiles.map((p) => (
-                                            <SelectItem key={p.id} value={p.id}>
+                                            <SelectItem key={p.id} value={p.id} className={selectItemClass}>
                                                 {p.full_name}
                                             </SelectItem>
                                         ))}
@@ -318,13 +332,13 @@ export function TaskDetailsSheet({
                                 </Select>
                             </div>
                             <div className="space-y-1.5">
-                                <label className="text-xs font-medium">Due Date</label>
+                                <label className={propertyLabelClass}>Due Date</label>
                                 <Popover>
                                     <PopoverTrigger asChild>
                                         <Button
                                             variant="outline"
                                             className={cn(
-                                                "w-full h-8 justify-start text-sm font-normal",
+                                                `w-full h-8 justify-start bg-control border-control focus-visible:ring-0 focus-visible:border-foreground/30 ${propertyValueClass}`,
                                                 !dueDate && "text-muted-foreground"
                                             )}
                                         >
@@ -345,10 +359,10 @@ export function TaskDetailsSheet({
                             </div>
                             {task && (
                                 <div className="flex items-start justify-between gap-4">
-                                    <span className="text-xs text-muted-foreground shrink-0">
+                                    <span className="text-drawer-meta text-muted-foreground shrink-0">
                                         Created at
                                     </span>
-                                    <span className="text-xs text-right">
+                                    <span className="text-drawer-meta text-right">
                                         {format(
                                             new Date(task.created_at),
                                             "MMM d, yyyy 'at' h:mm a"
@@ -363,8 +377,8 @@ export function TaskDetailsSheet({
                         {/* LINKED NOTES section */}
                         {task && (
                             <div className="px-5 py-4">
-                                <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">
-                                    Linked Notes
+                                <p className={`${sectionHeaderClass} mb-3`}>
+                                    Linked notes
                                 </p>
                                 <LinkedNotesList
                                     entityId={task.id}
@@ -379,7 +393,7 @@ export function TaskDetailsSheet({
                         {/* ACTIVITY section */}
                         <div className="px-5 py-4 space-y-3">
                             <div className="flex items-center justify-between">
-                                <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+                                <p className={sectionHeaderClass}>
                                     Activity
                                 </p>
                                 {activityLoading && (
@@ -394,17 +408,17 @@ export function TaskDetailsSheet({
                                         <div key={item.id} className="flex gap-2 text-sm">
                                             <div className="mt-0.5 shrink-0">
                                                 {item.type === "comment" ? (
-                                                    <MessageSquare className="w-3.5 h-3.5 text-blue-500" />
+                                                    <MessageSquare className="w-3.5 h-3.5 text-foreground/55" />
                                                 ) : (
-                                                    <ActivityIcon className="w-3.5 h-3.5 text-gray-400" />
+                                                    <ActivityIcon className="w-3.5 h-3.5 text-foreground/45" />
                                                 )}
                                             </div>
                                             <div className="flex-1 min-w-0">
                                                 <div className="flex justify-between items-baseline mb-1 gap-2">
-                                                    <span className="font-medium text-xs text-foreground/80 truncate">
+                                                    <span className="text-drawer-meta font-medium text-foreground/80 truncate">
                                                         {item.user?.full_name || "System"}
                                                     </span>
-                                                    <span className="text-[10px] text-muted-foreground shrink-0">
+                                                    <span className="text-drawer-label text-muted-foreground shrink-0">
                                                         {format(
                                                             new Date(item.created_at),
                                                             "MMM d, h:mm a"
@@ -412,11 +426,11 @@ export function TaskDetailsSheet({
                                                     </span>
                                                 </div>
                                                 {item.type === "comment" ? (
-                                                    <div className="bg-blue-50/50 p-2 rounded text-xs text-foreground/90">
+                                                    <div className="rounded-xl border border-border/70 bg-muted/20 p-2 text-drawer-meta text-foreground/90">
                                                         {item.content}
                                                     </div>
                                                 ) : (
-                                                    <div className="text-muted-foreground text-xs italic">
+                                                    <div className="text-drawer-meta text-muted-foreground italic">
                                                         Changed status from{" "}
                                                         <strong>{item.details?.from}</strong> to{" "}
                                                         <strong>{item.details?.to}</strong>
@@ -427,7 +441,7 @@ export function TaskDetailsSheet({
                                     ))
                                 ) : (
                                     !activityLoading && (
-                                        <p className="text-xs text-muted-foreground text-center py-2">
+                                        <p className="text-drawer-meta text-muted-foreground text-center py-2">
                                             No activity yet.
                                         </p>
                                     )
@@ -440,12 +454,13 @@ export function TaskDetailsSheet({
                                     placeholder="Add a comment..."
                                     value={newComment}
                                     onChange={(e) => setNewComment(e.target.value)}
-                                    className="text-sm resize-none"
+                                    className={`resize-none bg-control border-control focus-visible:ring-0 focus-visible:border-foreground/30 ${propertyValueClass} placeholder:text-[length:var(--drawer-text-value)] placeholder:font-normal`}
                                     rows={2}
                                 />
                                 <Button
+                                    variant="outline"
                                     size="sm"
-                                    className="w-full h-7 text-xs"
+                                    className="w-full h-8 border-border/60 text-[12px] font-medium hover:bg-control-hover"
                                     onClick={handleSendComment}
                                     disabled={sending || !newComment.trim()}
                                 >
@@ -466,9 +481,9 @@ export function TaskDetailsSheet({
                         <Button
                             onClick={handleSave}
                             disabled={isSaving || !title.trim()}
-                            className="w-full h-8 text-xs"
+                            className="w-full h-9 rounded-full text-[12px] font-semibold"
                         >
-                            {isSaving ? "Saving..." : "Save Changes"}
+                            {isSaving ? "Saving..." : "Save"}
                         </Button>
                     </div>
                 </SheetContent>

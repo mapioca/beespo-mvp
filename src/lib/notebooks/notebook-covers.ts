@@ -1,6 +1,5 @@
 /**
- * Notebook cover styles using CSS gradients
- * 12+ predefined options for the cover picker
+ * Notebook cover styles using solid neutral surfaces.
  */
 
 export interface NotebookCover {
@@ -11,98 +10,83 @@ export interface NotebookCover {
 }
 
 export const NOTEBOOK_COVERS: NotebookCover[] = [
-    // Blues & Purples
     {
-        id: 'gradient-ocean',
-        name: 'Ocean',
-        gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        textColor: 'light',
-    },
-    {
-        id: 'gradient-twilight',
-        name: 'Twilight',
-        gradient: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #d946ef 100%)',
-        textColor: 'light',
-    },
-    {
-        id: 'gradient-midnight',
-        name: 'Midnight',
-        gradient: 'linear-gradient(135deg, #1e3a5f 0%, #0f172a 100%)',
-        textColor: 'light',
-    },
-
-    // Warm tones
-    {
-        id: 'gradient-sunset',
-        name: 'Sunset',
-        gradient: 'linear-gradient(135deg, #f97316 0%, #ef4444 50%, #ec4899 100%)',
-        textColor: 'light',
-    },
-    {
-        id: 'gradient-peach',
-        name: 'Peach',
-        gradient: 'linear-gradient(135deg, #fbbf24 0%, #f97316 100%)',
+        id: 'ledger-ivory',
+        name: 'Ledger',
+        gradient: '#ffffff',
         textColor: 'dark',
     },
     {
-        id: 'gradient-coral',
-        name: 'Coral',
-        gradient: 'linear-gradient(135deg, #fb7185 0%, #f43f5e 100%)',
-        textColor: 'light',
-    },
-
-    // Greens & Teals
-    {
-        id: 'gradient-forest',
-        name: 'Forest',
-        gradient: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-        textColor: 'light',
-    },
-    {
-        id: 'gradient-mint',
-        name: 'Mint',
-        gradient: 'linear-gradient(135deg, #6ee7b7 0%, #34d399 100%)',
+        id: 'midnight-grid',
+        name: 'Midnight Grid',
+        gradient: '#fcfcfb',
         textColor: 'dark',
     },
     {
-        id: 'gradient-teal',
-        name: 'Teal',
-        gradient: 'linear-gradient(135deg, #14b8a6 0%, #0891b2 100%)',
-        textColor: 'light',
-    },
-
-    // Neutrals & Subtle
-    {
-        id: 'gradient-slate',
-        name: 'Slate',
-        gradient: 'linear-gradient(135deg, #64748b 0%, #475569 100%)',
-        textColor: 'light',
-    },
-    {
-        id: 'gradient-stone',
-        name: 'Stone',
-        gradient: 'linear-gradient(135deg, #a8a29e 0%, #78716c 100%)',
-        textColor: 'light',
-    },
-    {
-        id: 'gradient-rose',
-        name: 'Rose',
-        gradient: 'linear-gradient(135deg, #fda4af 0%, #fb7185 100%)',
+        id: 'pinstripe-paper',
+        name: 'Pinstripe',
+        gradient: '#fafaf9',
         textColor: 'dark',
     },
-
-    // Special
     {
-        id: 'gradient-aurora',
-        name: 'Aurora',
-        gradient: 'linear-gradient(135deg, #22d3ee 0%, #a78bfa 50%, #f472b6 100%)',
-        textColor: 'light',
+        id: 'graphite-diagonal',
+        name: 'Graphite',
+        gradient: '#f8f8f7',
+        textColor: 'dark',
     },
     {
-        id: 'gradient-galaxy',
-        name: 'Galaxy',
-        gradient: 'linear-gradient(135deg, #1e1b4b 0%, #4c1d95 50%, #7c3aed 100%)',
-        textColor: 'light',
+        id: 'editorial-columns',
+        name: 'Editorial',
+        gradient: '#f7f7f5',
+        textColor: 'dark',
+    },
+    {
+        id: 'obsidian-ledger',
+        name: 'Obsidian',
+        gradient: '#f5f5f4',
+        textColor: 'dark',
+    },
+    {
+        id: 'linen-dot',
+        name: 'Linen',
+        gradient: '#f3f3f2',
+        textColor: 'dark',
+    },
+    {
+        id: 'drafting-board',
+        name: 'Drafting',
+        gradient: '#f1f1ef',
+        textColor: 'dark',
+    },
+    {
+        id: 'barcode',
+        name: 'Barcode',
+        gradient: '#efefed',
+        textColor: 'dark',
+    },
+    {
+        id: 'stitched-paper',
+        name: 'Stitched',
+        gradient: '#ededeb',
+        textColor: 'dark',
+    },
+    {
+        id: 'charcoal-frame',
+        name: 'Charcoal',
+        gradient: '#ebebe9',
+        textColor: 'dark',
+    },
+    {
+        id: 'micro-grid',
+        name: 'Micro Grid',
+        gradient: '#e9e9e7',
+        textColor: 'dark',
+    },
+    {
+        id: 'night-stripe',
+        name: 'Night Stripe',
+        gradient: '#e7e7e4',
+        textColor: 'dark',
     },
 ];
 

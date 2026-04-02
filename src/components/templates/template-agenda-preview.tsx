@@ -1,7 +1,5 @@
 "use client";
 
-import { cn } from "@/lib/utils";
-import { Badge } from "@/components/ui/badge";
 import { Clock } from "lucide-react";
 import { Database } from "@/types/database";
 
@@ -14,7 +12,7 @@ interface TemplateAgendaPreviewProps {
 export function TemplateAgendaPreview({ items }: TemplateAgendaPreviewProps) {
     if (!items || items.length === 0) {
         return (
-            <div className="p-4 rounded-lg bg-muted/30 border border-dashed text-center text-sm text-muted-foreground">
+            <div className="rounded-[22px] border border-dashed border-border/60 bg-control/25 p-6 text-center text-sm text-muted-foreground">
                 No agenda items defined for this template.
             </div>
         );
@@ -24,54 +22,53 @@ export function TemplateAgendaPreview({ items }: TemplateAgendaPreviewProps) {
     const totalDuration = sortedItems.reduce((acc, item) => acc + (item.duration_minutes || 0), 0);
 
     return (
-        <div className="space-y-4">
-            <div className="flex items-center justify-between text-sm text-muted-foreground px-1">
-                <span>Agenda Timeline</span>
-                <span className="flex items-center gap-1 bg-muted px-2 py-0.5 rounded-full text-xs">
+        <div className="space-y-5">
+            <div className="flex items-center justify-between gap-4 border-b border-border/60 pb-4">
+                <div>
+                    <p className="text-[15px] font-semibold tracking-[-0.01em] text-foreground/72">
+                        Agenda timeline
+                    </p>
+                    <p className="mt-1.5 text-[13px] leading-6 text-muted-foreground">
+                        A quick read of the full meeting flow.
+                    </p>
+                </div>
+                <span className="inline-flex items-center gap-1 rounded-full bg-control px-2.5 py-1 text-[11px] font-medium text-foreground/62">
                     <Clock className="w-3 h-3" />
                     Est. {totalDuration} min
                 </span>
             </div>
 
-            <div className="relative pl-6 space-y-6 before:absolute before:inset-y-2 before:left-[9px] before:w-[2px] before:bg-gradient-to-b before:from-border before:via-border/50 before:to-transparent">
-                {sortedItems.map((item) => (
-                    <div key={item.id} className="relative group">
-                        {/* Timeline Node */}
-                        <div className={cn(
-                            "absolute -left-[21px] top-1.5 w-4 h-4 rounded-full border-2 border-background ring-1 ring-border transition-colors group-hover:ring-primary",
-                            item.item_type === 'procedural' ? "bg-slate-100" : "bg-blue-50"
-                        )}>
-                            <div className={cn(
-                                "w-1.5 h-1.5 rounded-full absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2",
-                                item.item_type === 'procedural' ? "bg-slate-400" : "bg-blue-500"
-                            )} />
+            <div className="space-y-3">
+                {sortedItems.map((item, index) => (
+                    <div
+                        key={item.id}
+                        className="grid grid-cols-[40px_minmax(0,1fr)_72px] items-start gap-3 rounded-[18px] border border-border/55 bg-white px-4 py-3.5 transition-colors hover:bg-control/20"
+                    >
+                        <div className="flex items-start justify-center pt-0.5">
+                            <span className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-border/60 bg-control text-[11px] font-semibold text-foreground/62">
+                                {index + 1}
+                            </span>
                         </div>
 
-                        {/* Content */}
-                        <div className="flex flex-col gap-1">
-                            <div className="flex items-start justify-between gap-2">
-                                <span className="text-sm font-medium leading-none pt-0.5">
+                        <div className="min-w-0">
+                            <div className="flex items-start justify-between gap-3">
+                                <span className="text-[15px] font-medium leading-6 text-foreground">
                                     {item.title}
-                                </span>
-                                <span className="text-xs text-muted-foreground whitespace-nowrap tabular-nums shrink-0">
-                                    {item.duration_minutes} min
                                 </span>
                             </div>
 
                             {item.description && (
-                                <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+                                <p className="mt-1.5 line-clamp-2 text-[13px] leading-6 text-muted-foreground">
                                     {item.description}
                                 </p>
                             )}
 
-                            {/* Type Badge (Only for non-procedural) */}
-                            {item.item_type && item.item_type !== 'procedural' && (
-                                <div className="mt-1">
-                                    <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-5">
-                                        {item.item_type}
-                                    </Badge>
-                                </div>
-                            )}
+                        </div>
+
+                        <div className="pt-0.5 text-right">
+                            <span className="text-[12px] font-medium tabular-nums text-foreground/58">
+                                {item.duration_minutes ? `${item.duration_minutes} min` : "—"}
+                            </span>
                         </div>
                     </div>
                 ))}

@@ -82,23 +82,23 @@ export function CreateNotebookModal({
                                 Preview
                             </Label>
                             <div
-                                className="w-24 rounded-lg shadow-md overflow-hidden"
+                                className="w-24 overflow-hidden rounded-[18px] border border-border/60 shadow-[0_12px_24px_rgba(15,23,42,0.08)]"
                                 style={{ aspectRatio: "3/4" }}
                             >
                                 <div
-                                    className="w-full h-full relative"
+                                    className="relative h-full w-full"
                                     style={{ background: cover.gradient }}
                                 >
-                                    {/* Spine */}
-                                    <div className="absolute inset-y-0 left-0 w-2 bg-black/20" />
-                                    {/* Title */}
+                                    <div className="absolute inset-y-0 left-0 w-[8px] bg-black/10" />
+                                    <div className="absolute inset-y-2 left-[12px] w-px bg-white/40" />
+                                    <div className="absolute inset-2 rounded-[14px] border border-white/40" />
                                     <div className="absolute inset-x-0 bottom-0 p-2">
                                         <div
                                             className={cn(
-                                                "backdrop-blur-sm rounded px-2 py-1 text-xs font-medium truncate",
+                                                "truncate rounded-[12px] border px-2 py-1 text-xs font-medium backdrop-blur-sm",
                                                 cover.textColor === "light"
-                                                    ? "bg-black/30 text-white"
-                                                    : "bg-white/70 text-gray-900"
+                                                    ? "border-white/12 bg-black/40 text-white"
+                                                    : "border-white/70 bg-white/88 text-gray-900"
                                             )}
                                         >
                                             {title || "Untitled"}
@@ -168,11 +168,11 @@ function CoverOption({ cover, isSelected, onSelect }: CoverOptionProps) {
             type="button"
             onClick={onSelect}
             className={cn(
-                "relative rounded-md overflow-hidden transition-all duration-200",
+                "relative overflow-hidden rounded-[14px] border border-border/55 transition-all duration-200",
                 "focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
                 isSelected
-                    ? "ring-2 ring-primary ring-offset-2 scale-105"
-                    : "hover:scale-105"
+                    ? "ring-2 ring-primary ring-offset-2"
+                    : "hover:-translate-y-0.5 hover:shadow-[0_8px_18px_rgba(15,23,42,0.08)]"
             )}
             style={{ aspectRatio: "3/4" }}
             title={cover.name}
@@ -181,8 +181,10 @@ function CoverOption({ cover, isSelected, onSelect }: CoverOptionProps) {
                 className="absolute inset-0"
                 style={{ background: cover.gradient }}
             />
+            <div className="absolute inset-y-0 left-0 w-[6px] bg-black/10" />
+            <div className="absolute inset-1.5 rounded-[10px] border border-white/40" />
             {isSelected && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                <div className="absolute inset-0 flex items-center justify-center bg-black/18">
                     <Check className="w-4 h-4 text-white" />
                 </div>
             )}

@@ -263,7 +263,8 @@ export function AnnouncementsTable({
                         announcements.map((announcement) => (
                             <TableRow
                                 key={announcement.id}
-                                className="group transition-colors hover:bg-[hsl(var(--table-row-hover))]"
+                                data-state={selectedRows.has(announcement.id) ? "selected" : undefined}
+                                className="group transition-[background-color,box-shadow] duration-150 ease-out hover:bg-[hsl(var(--table-row-hover))] hover:shadow-[inset_0_0_0_1px_hsl(var(--table-shell-border)/0.28)] data-[state=selected]:bg-[hsl(var(--table-row-selected))] data-[state=selected]:shadow-[inset_0_0_0_1px_hsl(var(--table-shell-border)/0.4)]"
                             >
                                 {/* Checkbox */}
                                 <TableCell className="table-cell-check">
@@ -305,24 +306,25 @@ export function AnnouncementsTable({
 
                                 {/* Priority */}
                                 {!hiddenColumns.has("priority") && (
-                                    <TableCell className="table-cell-meta capitalize">
+                                    <TableCell className="table-cell-meta text-[11.5px] text-foreground/56 capitalize">
                                         {announcement.priority}
                                     </TableCell>
                                 )}
 
                                 {/* Status */}
                                 {!hiddenColumns.has("status") && (
-                                    <TableCell className="table-cell-meta capitalize">
+                                    <TableCell className="table-cell-meta !px-2 capitalize">
                                         <StatusIndicator
                                             label={formatStatus(announcement.status)}
                                             tone={STATUS_TONES[announcement.status] || "neutral"}
+                                            className="text-[11.5px] text-foreground/66"
                                         />
                                     </TableCell>
                                 )}
 
                                 {/* Deadline */}
                                 {!hiddenColumns.has("deadline") && (
-                                    <TableCell className="table-cell-meta">
+                                    <TableCell className="table-cell-meta !px-2 text-[11.5px] text-foreground/56">
                                         {announcement.deadline
                                             ? format(
                                                   new Date(
