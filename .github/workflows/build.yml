@@ -1,12 +1,19 @@
-name: Quality Check
+name: Build Check
 
 on:
   pull_request:
-    branches: [main]
+    branches: [development, main]
 
 jobs:
-  quality-check:
+  test-build-development:
+    if: github.base_ref == 'development'
     runs-on: ubuntu-latest
+    environment: Development
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+      ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
+      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
 
     steps:
       - name: Checkout
@@ -21,8 +28,31 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Type Check
-        run: npm run type-check
+      - name: Build
+        run: npm run build
 
-      - name: Lint
-        run: npm run lint
+  test-build-production:
+    if: github.base_ref == 'main'
+    runs-on: ubuntu-latest
+    environment: Production
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+      ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
+      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
