@@ -7,19 +7,12 @@ function normalizeAllDayTimes(startAt: string, endAt: string, isAllDay: boolean)
         return { start_at: startAt, end_at: endAt };
     }
 
-    // For all-day events: start at 00:00:00, end at 23:59:59 of respective dates
-    const startDate = new Date(startAt);
-    const endDate = new Date(endAt);
-
-    // Set start to beginning of day (00:00:00)
-    startDate.setHours(0, 0, 0, 0);
-
-    // Set end to end of day (23:59:59)
-    endDate.setHours(23, 59, 59, 999);
+    const startDate = startAt.slice(0, 10);
+    const endDate = endAt.slice(0, 10);
 
     return {
-        start_at: startDate.toISOString(),
-        end_at: endDate.toISOString(),
+        start_at: `${startDate}T00:00:00.000Z`,
+        end_at: `${endDate}T23:59:59.999Z`,
     };
 }
 

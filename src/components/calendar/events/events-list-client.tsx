@@ -22,6 +22,7 @@ import {
     ExternalLink,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { parseAllDayDate } from "@/lib/calendar-helpers"
 import { EventDetailDrawer } from "./event-detail-drawer"
 
 export interface EventListItem {
@@ -44,9 +45,21 @@ interface EventsListClientProps {
     canManageEvents?: boolean
 }
 
-function getEventStatus(startAt: string, endAt: string): "upcoming" | "ongoing" | "past" {
-    const start = parseISO(startAt)
-    const end = parseISO(endAt)
+function getStartDate(event: EventListItem): Date {
+    return event.is_all_day ? parseAllDayDate(event.start_at) : parseISO(event.start_at)
+}
+
+function getEndDate(event: EventListItem): Date {
+    if (!event.is_all_day) return parseISO(event.end_at)
+
+    const end = parseAllDayDate(event.end_at)
+    end.setHours(23, 59, 59, 999)
+    return end
+}
+
+function getEventStatus(event: EventListItem): "upcoming" | "ongoing" | "past" {
+    const start = getStartDate(event)
+    const end = getEndDate(event)
 
     if (isPast(end)) return "past"
     if (isFuture(start)) return "upcoming"
@@ -140,8 +153,8 @@ export function EventsListClient({ events, canManageEvents = false }: EventsList
 
     // Sort events: upcoming first, then ongoing, then past
     const sortedEvents = [...filteredEvents].sort((a, b) => {
-        const statusA = getEventStatus(a.start_at, a.end_at)
-        const statusB = getEventStatus(b.start_at, b.end_at)
+        const statusA = getEventStatus(a)
+        const statusB = getEventStatus(b)
         const statusOrder = { ongoing: 0, upcoming: 1, past: 2 }
 
         if (statusOrder[statusA] !== statusOrder[statusB]) {
@@ -149,7 +162,7 @@ export function EventsListClient({ events, canManageEvents = false }: EventsList
         }
 
         // Within same status, sort by start date
-        return new Date(a.start_at).getTime() - new Date(b.start_at).getTime()
+        return getStartDate(a).getTime() - getStartDate(b).getTime()
     })
 
     const handleEventClick = (event: EventListItem) => {
@@ -224,8 +237,8 @@ export function EventsListClient({ events, canManageEvents = false }: EventsList
                         </TableHeader>
                         <TableBody>
                             {sortedEvents.map((event) => {
-                                const status = getEventStatus(event.start_at, event.end_at)
-                                const startDate = parseISO(event.start_at)
+                                const status = getEventStatus(event)
+                                const startDate = getStartDate(event)
                                 const isMeeting = event.source_type === "meeting"
 
                                 return (

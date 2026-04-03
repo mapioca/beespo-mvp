@@ -13,6 +13,7 @@ import {
   getClaimedExternalIds,
   applyExternalEventShadowing,
   EventSource,
+  parseAllDayDate,
 } from "@/lib/calendar-helpers";
 import { CalendarToolbar } from "./calendar-toolbar";
 import { CalendarSidebar } from "./calendar-sidebar";
@@ -219,8 +220,14 @@ export function CalendarClient({
         id: event.id,
         title: event.title,
         description: event.description,
-        startDate: parseISO(event.start_date),
-        endDate: event.end_date ? parseISO(event.end_date) : undefined,
+        startDate: (event.is_all_day ?? false)
+          ? parseAllDayDate(event.start_date)
+          : parseISO(event.start_date),
+        endDate: event.end_date
+          ? ((event.is_all_day ?? false)
+            ? parseAllDayDate(event.end_date)
+            : parseISO(event.end_date))
+          : undefined,
         isAllDay: event.is_all_day ?? false,
         source: "external" as EventSource,
         sourceId: event.id,

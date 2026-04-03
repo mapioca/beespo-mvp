@@ -1,6 +1,7 @@
 import {
   format,
   parseISO,
+  startOfDay,
   startOfMonth,
   endOfMonth,
   startOfWeek,
@@ -84,6 +85,24 @@ export interface CalendarInternalEvent {
   external_source_id: string | null;
   external_source_type: string | null;
   announcements?: Array<{ id: string; title: string; status: string }> | null;
+}
+
+export function parseAllDayDate(dateString: string): Date {
+  const [year, month, day] = dateString.slice(0, 10).split("-").map(Number);
+  return new Date(year, (month || 1) - 1, day || 1);
+}
+
+function getDisplayStartDate(event: CalendarEvent): Date {
+  return event.isAllDay
+    ? new Date(event.startDate.getFullYear(), event.startDate.getMonth(), event.startDate.getDate())
+    : event.startDate;
+}
+
+function getDisplayEndDate(event: CalendarEvent): Date {
+  if (!event.endDate) return getDisplayStartDate(event);
+  return event.isAllDay
+    ? new Date(event.endDate.getFullYear(), event.endDate.getMonth(), event.endDate.getDate())
+    : event.endDate;
 }
 
 // Get visible date range for calendar view
@@ -287,8 +306,8 @@ export function internalEventsToCalendarEvents(
     id: event.id,
     title: event.title,
     description: event.description,
-    startDate: parseISO(event.start_at),
-    endDate: parseISO(event.end_at),
+    startDate: event.is_all_day ? parseAllDayDate(event.start_at) : parseISO(event.start_at),
+    endDate: event.is_all_day ? parseAllDayDate(event.end_at) : parseISO(event.end_at),
     isAllDay: event.is_all_day,
     source: "event" as EventSource,
     sourceId: event.id,
@@ -324,10 +343,17 @@ export function groupEventsByDate(
   const grouped = new Map<string, CalendarEvent[]>();
 
   for (const event of events) {
-    const dateKey = format(event.startDate, "yyyy-MM-dd");
-    const existing = grouped.get(dateKey) || [];
-    existing.push(event);
-    grouped.set(dateKey, existing);
+    const start = startOfDay(getDisplayStartDate(event));
+    const end = startOfDay(getDisplayEndDate(event));
+
+    let cursor = start;
+    while (!isAfter(cursor, end)) {
+      const dateKey = format(cursor, "yyyy-MM-dd");
+      const existing = grouped.get(dateKey) || [];
+      existing.push(event);
+      grouped.set(dateKey, existing);
+      cursor = addDays(cursor, 1);
+    }
   }
 
   // Sort events within each day by priority
@@ -335,6 +361,16 @@ export function groupEventsByDate(
     grouped.set(
       key,
       dayEvents.sort((a, b) => {
+        const aAllDay = a.isAllDay ? 0 : 1;
+        const bAllDay = b.isAllDay ? 0 : 1;
+        if (aAllDay !== bAllDay) return aAllDay - bAllDay;
+
+        if (!a.isAllDay && !b.isAllDay) {
+          if (a.startDate.getTime() !== b.startDate.getTime()) {
+            return a.startDate.getTime() - b.startDate.getTime();
+          }
+        }
+
         const priorityOrder = { high: 1, medium: 2, low: 3 };
         const aPriority = priorityOrder[a.priority || "low"] || 3;
         const bPriority = priorityOrder[b.priority || "low"] || 3;

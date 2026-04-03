@@ -20,6 +20,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "@/lib/toast";
 import { createClient } from "@/lib/supabase/client";
+import { parseAllDayDate } from "@/lib/calendar-helpers";
 import { Megaphone, CalendarDays, MapPin, X } from "lucide-react";
 
 // Event type returned from API
@@ -111,12 +112,16 @@ export function CreateEventDialog({
       setLocation(externalEvent.location || "");
       setIsAllDay(externalEvent.is_all_day);
 
-      const start = new Date(externalEvent.start_date);
+      const start = externalEvent.is_all_day
+        ? parseAllDayDate(externalEvent.start_date)
+        : new Date(externalEvent.start_date);
       setStartDate(format(start, "yyyy-MM-dd"));
       setStartTime(format(start, "HH:mm"));
 
       if (externalEvent.end_date) {
-        const end = new Date(externalEvent.end_date);
+        const end = externalEvent.is_all_day
+          ? parseAllDayDate(externalEvent.end_date)
+          : new Date(externalEvent.end_date);
         setEndDate(format(end, "yyyy-MM-dd"));
         setEndTime(format(end, "HH:mm"));
       } else {
@@ -204,8 +209,8 @@ export function CreateEventDialog({
       title,
       description: description || null,
       location: location || null,
-      start_at: new Date(startAt).toISOString(),
-      end_at: new Date(endAt).toISOString(),
+      start_at: isAllDay ? startDate : new Date(startAt).toISOString(),
+      end_at: isAllDay ? endDate : new Date(endAt).toISOString(),
       is_all_day: isAllDay,
       promote_to_announcement: promoteToAnnouncement,
     };

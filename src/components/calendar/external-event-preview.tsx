@@ -20,6 +20,7 @@ import {
   ExternalLink,
   Import,
 } from "lucide-react";
+import { parseAllDayDate } from "@/lib/calendar-helpers";
 
 export interface ExternalEventData {
   id: string;
@@ -49,8 +50,12 @@ export function ExternalEventPreview({
 }: ExternalEventPreviewProps) {
   if (!event) return null;
 
-  const startDate = new Date(event.start_date);
-  const endDate = event.end_date ? new Date(event.end_date) : null;
+  const startDate = event.is_all_day
+    ? parseAllDayDate(event.start_date)
+    : new Date(event.start_date);
+  const endDate = event.end_date
+    ? (event.is_all_day ? parseAllDayDate(event.end_date) : new Date(event.end_date))
+    : null;
 
   const formatDateTime = (date: Date, isAllDay: boolean) => {
     if (isAllDay) {

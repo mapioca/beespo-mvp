@@ -42,6 +42,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { toast } from "@/lib/toast"
 import { CreateEventDialog, type CalendarEventData } from "@/components/calendar/create-event-dialog"
+import { parseAllDayDate } from "@/lib/calendar-helpers"
 import type { EventListItem } from "./events-list-client"
 
 interface EventDetailDrawerProps {
@@ -77,8 +78,8 @@ export function EventDetailDrawer({
 
     if (!event) return null
 
-    const startDate = parseISO(event.start_at)
-    const endDate = parseISO(event.end_at)
+    const startDate = event.is_all_day ? parseAllDayDate(event.start_at) : parseISO(event.start_at)
+    const endDate = event.is_all_day ? parseAllDayDate(event.end_at) : parseISO(event.end_at)
     const isMeeting = event.source_type === "meeting"
     const isStandaloneEvent = event.source_type === "event"
 
