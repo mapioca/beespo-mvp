@@ -123,5 +123,7 @@ export default async function EventsPage() {
         (a, b) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime()
     )
 
-    return <EventsListClient events={allEvents} />
+    const canManageEvents = profile.role === "admin" || profile.role === "leader"
+
+    return <EventsListClient events={allEvents} canManageEvents={canManageEvents} />
 }
