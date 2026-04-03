@@ -53,21 +53,22 @@ export default async function SettingsPage() {
     }
 
     // Get team members
-    const { data: members } = await supabase
-        .from("profiles")
+    const { data: members } = await (supabase
+        .from("profiles") as ReturnType<typeof supabase.from>)
         .select("id, email, full_name, role, created_at")
         .eq("workspace_id", profile.workspace_id)
         .order("created_at", { ascending: true });
 
+    const memberRows = (members ?? []) as Array<{ email: string | null }>;
     const memberEmailSet = new Set(
-        (members || [])
+        memberRows
             .map((member) => member.email?.toLowerCase())
             .filter((email): email is string => Boolean(email))
     );
 
     // Get pending invitations
-    const { data: invitations } = await supabase
-        .from("workspace_invitations")
+    const { data: invitations } = await (supabase
+        .from("workspace_invitations") as ReturnType<typeof supabase.from>)
         .select(`
       id,
       email,
@@ -81,7 +82,8 @@ export default async function SettingsPage() {
         .eq("status", "pending")
         .order("created_at", { ascending: false });
 
-    const pendingInvitations = (invitations || []).filter(
+    const invitationRows = (invitations ?? []) as Array<{ email: string | null }>;
+    const pendingInvitations = invitationRows.filter(
         (invitation) => !memberEmailSet.has(invitation.email?.toLowerCase() || "")
     );
 
@@ -122,7 +124,7 @@ export default async function SettingsPage() {
         <SettingsClient
             workspace={workspace}
             members={members || []}
-            invitations={pendingInvitations}
+            invitations={pendingInvitations as typeof invitations}
             currentUserId={user.id}
             currentUserRole={profile.role}
             currentUserDetails={{
