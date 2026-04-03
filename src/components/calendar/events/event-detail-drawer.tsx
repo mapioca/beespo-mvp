@@ -19,6 +19,8 @@ import {
     ExternalLink,
     CalendarDays,
     Palette,
+    Pencil,
+    Trash2,
 } from "lucide-react"
 import Link from "next/link"
 import { DesignInvitationModal } from "@/components/canva/design-invitation-modal"
@@ -28,26 +30,48 @@ import {
     TooltipContent,
     TooltipTrigger,
 } from "@/components/ui/tooltip"
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { toast } from "@/lib/toast"
+import { CreateEventDialog, type CalendarEventData } from "@/components/calendar/create-event-dialog"
 import type { EventListItem } from "./events-list-client"
 
 interface EventDetailDrawerProps {
     event: EventListItem | null
     open: boolean
     onOpenChange: (open: boolean) => void
+    canManageEvents?: boolean
+    onEventUpdated?: (event: EventListItem) => void
+    onEventDeleted?: (eventId: string) => void
 }
 
 export function EventDetailDrawer({
     event,
     open,
     onOpenChange,
+    canManageEvents = false,
+    onEventUpdated,
+    onEventDeleted,
 }: EventDetailDrawerProps) {
     const [showDesignModal, setShowDesignModal] = useState(false)
+    const [showEditDialog, setShowEditDialog] = useState(false)
+    const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+    const [isDeleting, setIsDeleting] = useState(false)
     const isCanvaConnected = useIsCanvaConnected()
 
-    // Close design modal when drawer closes
     useEffect(() => {
         if (!open) {
             setShowDesignModal(false)
+            setShowEditDialog(false)
+            setShowDeleteDialog(false)
         }
     }, [open])
 
@@ -56,8 +80,8 @@ export function EventDetailDrawer({
     const startDate = parseISO(event.start_at)
     const endDate = parseISO(event.end_at)
     const isMeeting = event.source_type === "meeting"
+    const isStandaloneEvent = event.source_type === "event"
 
-    // Prepare event data for the design modal
     const eventData = {
         date: format(startDate, "EEEE, MMMM d, yyyy"),
         time: event.is_all_day
@@ -67,168 +91,254 @@ export function EventDetailDrawer({
         description: event.description || null,
     }
 
+    const editableEventData: CalendarEventData = {
+        id: event.id,
+        title: event.title,
+        description: event.description,
+        location: event.location,
+        start_at: event.start_at,
+        end_at: event.end_at,
+        is_all_day: event.is_all_day,
+        workspace_event_id: event.workspace_event_id,
+        external_source_id: event.external_source_id,
+        external_source_type: event.external_source_type,
+    }
+
+    const handleUpdated = (updatedEvent: CalendarEventData) => {
+        onEventUpdated?.({
+            ...event,
+            ...updatedEvent,
+            source_type: "event",
+        })
+        setShowEditDialog(false)
+    }
+
+    const handleDelete = async () => {
+        setIsDeleting(true)
+        try {
+            const response = await fetch(`/api/events/${event.id}`, { method: "DELETE" })
+            const data = await response.json()
+            if (!response.ok) {
+                throw new Error(data.error || "Failed to delete event")
+            }
+            toast.success("Event deleted successfully.")
+            onEventDeleted?.(event.id)
+            setShowDeleteDialog(false)
+            onOpenChange(false)
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : "Failed to delete event.")
+        } finally {
+            setIsDeleting(false)
+        }
+    }
+
     return (
-        <Sheet open={open} onOpenChange={onOpenChange}>
-            <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
-                <SheetHeader className="space-y-4">
-                    <div className="flex items-start justify-between gap-4">
-                        <SheetTitle className="text-xl font-semibold leading-tight">
-                            {event.title}
-                        </SheetTitle>
-                        <Badge
-                            variant="outline"
-                            className={
-                                isMeeting
-                                    ? "bg-[hsl(var(--accent-warm)/0.6)] text-slate-800 border border-border/50"
-                                    : "bg-[hsl(var(--accent-warm)/0.6)] text-slate-800 border border-border/50"
-                            }
-                        >
-                            {isMeeting ? "Meeting" : "Event"}
-                        </Badge>
-                    </div>
-                    <SheetDescription className="sr-only">
-                        Event details for {event.title}
-                    </SheetDescription>
-                </SheetHeader>
-
-                <div className="mt-6 space-y-6">
-                    {/* Date and Time */}
-                    <div className="space-y-3">
-                        <div className="flex items-center gap-3">
-                            <div className="flex items-center justify-center w-10 h-10 rounded-lg border border-border/50 bg-[hsl(var(--accent-warm)/0.35)]">
-                                <Calendar className="h-5 w-5 text-muted-foreground stroke-[1.6]" />
-                            </div>
-                            <div>
-                                <p className="font-medium">
-                                    {format(startDate, "EEEE, MMMM d, yyyy")}
-                                </p>
-                                {!event.is_all_day ? (
-                                    <p className="text-sm text-muted-foreground">
-                                        {format(startDate, "h:mm a")} - {format(endDate, "h:mm a")}
-                                    </p>
-                                ) : (
-                                    <p className="text-sm text-muted-foreground">All day</p>
-                                )}
-                            </div>
+        <>
+            <Sheet open={open} onOpenChange={onOpenChange}>
+                <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
+                    <SheetHeader className="space-y-4">
+                        <div className="flex items-start justify-between gap-4">
+                            <SheetTitle className="text-xl font-semibold leading-tight">
+                                {event.title}
+                            </SheetTitle>
+                            <Badge
+                                variant="outline"
+                                className="bg-[hsl(var(--accent-warm)/0.6)] text-slate-800 border border-border/50"
+                            >
+                                {isMeeting ? "Meeting" : "Event"}
+                            </Badge>
                         </div>
+                        <SheetDescription className="sr-only">
+                            Event details for {event.title}
+                        </SheetDescription>
+                    </SheetHeader>
 
-                        {event.location && (
+                    <div className="mt-6 space-y-6">
+                        <div className="space-y-3">
                             <div className="flex items-center gap-3">
                                 <div className="flex items-center justify-center w-10 h-10 rounded-lg border border-border/50 bg-[hsl(var(--accent-warm)/0.35)]">
-                                    <MapPin className="h-5 w-5 text-muted-foreground stroke-[1.6]" />
+                                    <Calendar className="h-5 w-5 text-muted-foreground stroke-[1.6]" />
                                 </div>
                                 <div>
-                                    <p className="font-medium">Location</p>
-                                    <p className="text-sm text-muted-foreground">{event.location}</p>
+                                    <p className="font-medium">
+                                        {format(startDate, "EEEE, MMMM d, yyyy")}
+                                    </p>
+                                    {!event.is_all_day ? (
+                                        <p className="text-sm text-muted-foreground">
+                                            {format(startDate, "h:mm a")} - {format(endDate, "h:mm a")}
+                                        </p>
+                                    ) : (
+                                        <p className="text-sm text-muted-foreground">All day</p>
+                                    )}
                                 </div>
                             </div>
+
+                            {event.location && (
+                                <div className="flex items-center gap-3">
+                                    <div className="flex items-center justify-center w-10 h-10 rounded-lg border border-border/50 bg-[hsl(var(--accent-warm)/0.35)]">
+                                        <MapPin className="h-5 w-5 text-muted-foreground stroke-[1.6]" />
+                                    </div>
+                                    <div>
+                                        <p className="font-medium">Location</p>
+                                        <p className="text-sm text-muted-foreground">{event.location}</p>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        {event.description && (
+                            <>
+                                <Separator />
+                                <div className="space-y-2">
+                                    <h4 className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+                                        Description
+                                    </h4>
+                                    <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                                        {event.description}
+                                    </p>
+                                </div>
+                            </>
                         )}
+
+                        {isMeeting && event.source_id && (
+                            <>
+                                <Separator />
+                                <div className="space-y-3">
+                                    <h4 className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+                                        Meeting Hub
+                                    </h4>
+                                    <Button asChild variant="outline" className="w-full gap-2 border-border/60 hover:bg-[hsl(var(--accent-warm)/0.6)] shadow-none">
+                                        <Link href={`/meetings/${event.source_id}`}>
+                                            <CalendarDays className="h-4 w-4 stroke-[1.6]" />
+                                            Open in Meeting Hub
+                                            <ExternalLink className="h-4 w-4 ml-auto stroke-[1.6]" />
+                                        </Link>
+                                    </Button>
+                                    <p className="text-xs text-muted-foreground text-center">
+                                        View agenda, conduct meeting, and manage details
+                                    </p>
+                                </div>
+                            </>
+                        )}
+
+                        {!isMeeting && (
+                            <>
+                                <Separator />
+                                <div className="space-y-3">
+                                    <h4 className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+                                        Design Tools
+                                    </h4>
+                                    <TooltipProvider>
+                                        {isCanvaConnected ? (
+                                            <Button
+                                                variant="outline"
+                                                className="w-full gap-2 border-border/60 hover:bg-[hsl(var(--accent-warm)/0.6)] shadow-none"
+                                                onClick={() => setShowDesignModal(true)}
+                                            >
+                                                <Palette className="h-4 w-4 stroke-[1.6]" />
+                                                Create Invitation
+                                            </Button>
+                                        ) : (
+                                            <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                    <span className="block w-full">
+                                                        <Button
+                                                            variant="outline"
+                                                            className="w-full gap-2 border-border/60 shadow-none"
+                                                            disabled
+                                                        >
+                                                            <Palette className="h-4 w-4 stroke-[1.6]" />
+                                                            Create Invitation
+                                                        </Button>
+                                                    </span>
+                                                </TooltipTrigger>
+                                                <TooltipContent>
+                                                    <p>Add Canva from the Apps Hub to enable this feature</p>
+                                                </TooltipContent>
+                                            </Tooltip>
+                                        )}
+                                    </TooltipProvider>
+                                    <p className="text-xs text-muted-foreground text-center">
+                                        {isCanvaConnected
+                                            ? "Design an invitation with Canva"
+                                            : "Connect Canva in Apps Hub to design invitations"}
+                                    </p>
+                                </div>
+                            </>
+                        )}
+
+                        {isStandaloneEvent && canManageEvents && (
+                            <>
+                                <Separator />
+                                <div className="grid grid-cols-2 gap-2">
+                                    <Button
+                                        variant="outline"
+                                        className="gap-2 border-border/60 hover:bg-[hsl(var(--accent-warm)/0.6)] shadow-none"
+                                        onClick={() => setShowEditDialog(true)}
+                                    >
+                                        <Pencil className="h-4 w-4 stroke-[1.6]" />
+                                        Edit
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        className="gap-2 border-destructive/30 text-destructive hover:bg-destructive/10 shadow-none"
+                                        onClick={() => setShowDeleteDialog(true)}
+                                    >
+                                        <Trash2 className="h-4 w-4 stroke-[1.6]" />
+                                        Delete
+                                    </Button>
+                                </div>
+                            </>
+                        )}
+
+                        <Separator />
+                        <Button
+                            variant="secondary"
+                            className="w-full bg-[hsl(var(--accent-warm))] text-foreground hover:bg-[hsl(var(--accent-warm-hover))] shadow-none"
+                            onClick={() => onOpenChange(false)}
+                        >
+                            Close
+                        </Button>
                     </div>
+                </SheetContent>
 
-                    {/* Description */}
-                    {event.description && (
-                        <>
-                            <Separator />
-                            <div className="space-y-2">
-                                <h4 className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
-                                    Description
-                                </h4>
-                                <p className="text-sm leading-relaxed whitespace-pre-wrap">
-                                    {event.description}
-                                </p>
-                            </div>
-                        </>
-                    )}
+                <DesignInvitationModal
+                    eventId={event.id}
+                    eventTitle={event.title}
+                    eventData={eventData}
+                    isOpen={showDesignModal}
+                    onClose={() => setShowDesignModal(false)}
+                />
+            </Sheet>
 
-                    {/* Meeting Link */}
-                    {isMeeting && event.source_id && (
-                        <>
-                            <Separator />
-                            <div className="space-y-3">
-                                <h4 className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
-                                    Meeting Hub
-                                </h4>
-                                <Button asChild variant="outline" className="w-full gap-2 border-border/60 hover:bg-[hsl(var(--accent-warm)/0.6)] shadow-none">
-                                    <Link href={`/meetings/${event.source_id}`}>
-                                        <CalendarDays className="h-4 w-4 stroke-[1.6]" />
-                                        Open in Meeting Hub
-                                        <ExternalLink className="h-4 w-4 ml-auto stroke-[1.6]" />
-                                    </Link>
-                                </Button>
-                                <p className="text-xs text-muted-foreground text-center">
-                                    View agenda, conduct meeting, and manage details
-                                </p>
-                            </div>
-                        </>
-                    )}
-
-                    {/* Create Invitation - Only for standalone events */}
-                    {!isMeeting && (
-                        <>
-                            <Separator />
-                            <div className="space-y-3">
-                                <h4 className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
-                                    Design Tools
-                                </h4>
-                                <TooltipProvider>
-                                    {isCanvaConnected ? (
-                                        <Button
-                                            variant="outline"
-                                            className="w-full gap-2 border-border/60 hover:bg-[hsl(var(--accent-warm)/0.6)] shadow-none"
-                                            onClick={() => setShowDesignModal(true)}
-                                        >
-                                            <Palette className="h-4 w-4 stroke-[1.6]" />
-                                            Create Invitation
-                                        </Button>
-                                    ) : (
-                                        <Tooltip>
-                                            <TooltipTrigger asChild>
-                                                <span className="block w-full">
-                                                    <Button
-                                                        variant="outline"
-                                                        className="w-full gap-2 border-border/60 shadow-none"
-                                                        disabled
-                                                    >
-                                                        <Palette className="h-4 w-4 stroke-[1.6]" />
-                                                        Create Invitation
-                                                    </Button>
-                                                </span>
-                                            </TooltipTrigger>
-                                            <TooltipContent>
-                                                <p>Add Canva from the Apps Hub to enable this feature</p>
-                                            </TooltipContent>
-                                        </Tooltip>
-                                    )}
-                                </TooltipProvider>
-                                <p className="text-xs text-muted-foreground text-center">
-                                    {isCanvaConnected
-                                        ? "Design an invitation with Canva"
-                                        : "Connect Canva in Apps Hub to design invitations"}
-                                </p>
-                            </div>
-                        </>
-                    )}
-
-                    {/* Close Button */}
-                    <Separator />
-                    <Button
-                        variant="secondary"
-                        className="w-full bg-[hsl(var(--accent-warm))] text-foreground hover:bg-[hsl(var(--accent-warm-hover))] shadow-none"
-                        onClick={() => onOpenChange(false)}
-                    >
-                        Close
-                    </Button>
-                </div>
-            </SheetContent>
-
-            {/* Design Invitation Modal */}
-            <DesignInvitationModal
-                eventId={event.id}
-                eventTitle={event.title}
-                eventData={eventData}
-                isOpen={showDesignModal}
-                onClose={() => setShowDesignModal(false)}
+            <CreateEventDialog
+                open={showEditDialog}
+                onOpenChange={setShowEditDialog}
+                selectedDate={startDate}
+                eventToEdit={editableEventData}
+                onUpdated={handleUpdated}
             />
-        </Sheet>
+
+            <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Event</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Are you sure you want to delete &quot;{event.title}&quot;? This action cannot be undone.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleDelete}
+                            disabled={isDeleting}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                            {isDeleting ? "Deleting..." : "Delete"}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+        </>
     )
 }

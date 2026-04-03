@@ -22,6 +22,7 @@ import { DayView } from "./views/day-view";
 import { AgendaView } from "./views/agenda-view";
 import { CreateEventDialog, CalendarEventData } from "./create-event-dialog";
 import { ExternalEventPreview, ExternalEventData } from "./external-event-preview";
+import { EventDetailDrawer, type EventListItem } from "./events";
 import type {
   CalendarViewType,
   CalendarVisibility,
@@ -67,6 +68,8 @@ export function CalendarClient({
 
   // Import mode - when importing from external event
   const [importingEvent, setImportingEvent] = useState<ExternalEventData | null>(null);
+  const [selectedInternalEvent, setSelectedInternalEvent] = useState<EventListItem | null>(null);
+  const [detailDrawerOpen, setDetailDrawerOpen] = useState(false);
 
   // Fetch external events and links
   const fetchExternalEvents = useCallback(async () => {
@@ -347,9 +350,25 @@ export function CalendarClient({
       return;
     }
 
-    // Internal events from events table navigate to events page
+    // Internal events from events table open in detail drawer
     if (event.source === "event") {
-      window.location.href = `/calendar/events`;
+      const matchingEvent = internalEvents.find((internalEvent) => internalEvent.id === event.sourceId);
+      if (matchingEvent) {
+        setSelectedInternalEvent({
+          id: matchingEvent.id,
+          title: matchingEvent.title,
+          description: matchingEvent.description,
+          location: matchingEvent.location,
+          start_at: matchingEvent.start_at,
+          end_at: matchingEvent.end_at,
+          is_all_day: matchingEvent.is_all_day,
+          workspace_event_id: matchingEvent.workspace_event_id,
+          external_source_id: matchingEvent.external_source_id,
+          external_source_type: matchingEvent.external_source_type,
+          source_type: "event",
+        });
+        setDetailDrawerOpen(true);
+      }
       return;
     }
 
@@ -366,7 +385,7 @@ export function CalendarClient({
     if (path) {
       window.location.href = path;
     }
-  }, [externalEvents]);
+  }, [externalEvents, internalEvents]);
 
   // Toggle calendar visibility
   const toggleVisibility = useCallback(
@@ -417,6 +436,34 @@ export function CalendarClient({
     setSelectedDate(new Date(event.start_date));
     setPreviewOpen(false);
     setCreateDialogOpen(true);
+  }, []);
+
+  const handleInternalEventUpdated = useCallback((updatedEvent: EventListItem) => {
+    setInternalEvents((prev) =>
+      prev.map((event) =>
+        event.id === updatedEvent.id
+          ? {
+            ...event,
+            title: updatedEvent.title,
+            description: updatedEvent.description,
+            location: updatedEvent.location,
+            start_at: updatedEvent.start_at,
+            end_at: updatedEvent.end_at,
+            is_all_day: updatedEvent.is_all_day,
+            workspace_event_id: updatedEvent.workspace_event_id,
+            external_source_id: updatedEvent.external_source_id,
+            external_source_type: updatedEvent.external_source_type,
+          }
+          : event
+      )
+    );
+    setSelectedInternalEvent(updatedEvent);
+  }, []);
+
+  const handleInternalEventDeleted = useCallback((eventId: string) => {
+    setInternalEvents((prev) => prev.filter((event) => event.id !== eventId));
+    setSelectedInternalEvent((prev) => (prev?.id === eventId ? null : prev));
+    setDetailDrawerOpen(false);
   }, []);
 
   // Render the appropriate view
@@ -492,6 +539,15 @@ export function CalendarClient({
         onOpenChange={setPreviewOpen}
         event={previewEvent}
         onImport={handleImportExternal}
+      />
+
+      <EventDetailDrawer
+        event={selectedInternalEvent}
+        open={detailDrawerOpen}
+        onOpenChange={setDetailDrawerOpen}
+        canManageEvents={canCreateEvents}
+        onEventUpdated={handleInternalEventUpdated}
+        onEventDeleted={handleInternalEventDeleted}
       />
     </div>
   );

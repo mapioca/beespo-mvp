@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { format, parseISO, isPast, isFuture, isToday } from "date-fns"
 import { useRouter } from "next/navigation"
 import {
@@ -41,6 +41,7 @@ export interface EventListItem {
 
 interface EventsListClientProps {
     events: EventListItem[]
+    canManageEvents?: boolean
 }
 
 function getEventStatus(startAt: string, endAt: string): "upcoming" | "ongoing" | "past" {
@@ -115,14 +116,19 @@ function getSourceBadge(sourceType: string) {
     }
 }
 
-export function EventsListClient({ events }: EventsListClientProps) {
+export function EventsListClient({ events, canManageEvents = false }: EventsListClientProps) {
     const router = useRouter()
     const [searchQuery, setSearchQuery] = useState("")
+    const [localEvents, setLocalEvents] = useState(events)
     const [selectedEvent, setSelectedEvent] = useState<EventListItem | null>(null)
     const [drawerOpen, setDrawerOpen] = useState(false)
 
+    useEffect(() => {
+        setLocalEvents(events)
+    }, [events])
+
     // Filter events by search query
-    const filteredEvents = events.filter((event) => {
+    const filteredEvents = localEvents.filter((event) => {
         if (!searchQuery) return true
         const query = searchQuery.toLowerCase()
         return (
@@ -160,6 +166,19 @@ export function EventsListClient({ events }: EventsListClientProps) {
         if (event.source_id) {
             router.push(`/meetings/${event.source_id}`)
         }
+    }
+
+    const handleEventUpdated = (updatedEvent: EventListItem) => {
+        setLocalEvents((prev) =>
+            prev.map((item) => (item.id === updatedEvent.id ? { ...item, ...updatedEvent } : item))
+        )
+        setSelectedEvent(updatedEvent)
+    }
+
+    const handleEventDeleted = (eventId: string) => {
+        setLocalEvents((prev) => prev.filter((item) => item.id !== eventId))
+        setSelectedEvent((prev) => (prev?.id === eventId ? null : prev))
+        setDrawerOpen(false)
     }
 
     return (
@@ -283,6 +302,9 @@ export function EventsListClient({ events }: EventsListClientProps) {
                 event={selectedEvent}
                 open={drawerOpen}
                 onOpenChange={setDrawerOpen}
+                canManageEvents={canManageEvents}
+                onEventUpdated={handleEventUpdated}
+                onEventDeleted={handleEventDeleted}
             />
         </div>
     )
