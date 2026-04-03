@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, use } from "react";
+import { useState, useEffect, useCallback, use, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -36,6 +36,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
+import { FavoriteButton } from "@/components/navigation/favorite-button";
+import { RecentVisitTracker } from "@/components/navigation/recent-visit-tracker";
 
 interface Note {
     id: string;
@@ -167,6 +169,16 @@ export default function NotebookViewPage({ params }: NotebookViewPageProps) {
     };
 
     const cover = notebook ? getCoverById(notebook.cover_style) : null;
+    const navigationItem = useMemo(() => (
+        notebook
+            ? {
+                id: notebook.id,
+                entityType: "notebook" as const,
+                title: notebook.title,
+                href: `/notebooks/${notebook.id}`,
+            }
+            : null
+    ), [notebook]);
 
     if (isLoading || !notebook || !cover) {
         return (
@@ -178,6 +190,7 @@ export default function NotebookViewPage({ params }: NotebookViewPageProps) {
 
     return (
         <div className="flex h-full flex-col bg-white">
+            <RecentVisitTracker item={navigationItem} />
             <Breadcrumbs
                 className="rounded-none border-b border-border/60 bg-white px-4 py-1.5 ring-0"
                 items={[
@@ -243,6 +256,17 @@ export default function NotebookViewPage({ params }: NotebookViewPageProps) {
                                 <Plus className="mr-1.5 h-4 w-4 stroke-[1.8]" />
                                 New note
                             </Button>
+
+                            {navigationItem ? (
+                                <FavoriteButton
+                                    item={navigationItem}
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-11 w-11 rounded-full border border-border/60 bg-white text-muted-foreground shadow-[0_1px_0_rgba(15,23,42,0.04)] hover:bg-control hover:text-foreground"
+                                    iconClassName="h-4 w-4"
+                                    activeClassName="border-amber-300 text-foreground"
+                                />
+                            ) : null}
 
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>

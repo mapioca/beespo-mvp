@@ -4,6 +4,7 @@ import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { CommandPalette } from "@/components/command-palette";
 import { getProfile } from "@/lib/supabase/cached-queries";
 import { checkTrustedDevice, checkWorkspaceMfaRequired } from "@/lib/mfa";
+import { getUserNavigationItems } from "@/lib/navigation/user-navigation";
 
 export default async function DashboardLayout({
   children,
@@ -50,6 +51,8 @@ export default async function DashboardLayout({
     }
   }
 
+  const initialNavigationItems = await getUserNavigationItems();
+
   return (
     <>
       <DashboardShell
@@ -58,6 +61,7 @@ export default async function DashboardLayout({
         userEmail={user?.email || ""}
         userId={user.id}
         userRoleTitle={profile?.role_title || ""}
+        initialNavigationItems={initialNavigationItems}
       >
         {children}
       </DashboardShell>

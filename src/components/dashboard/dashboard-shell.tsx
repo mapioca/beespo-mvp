@@ -2,8 +2,10 @@
 
 import { useState } from "react";
 import { AppSidebar } from "@/components/dashboard/app-sidebar";
+import { NavigationStoreHydrator } from "@/components/dashboard/navigation-store-hydrator";
 import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { MobileNavContext } from "@/components/dashboard/mobile-nav-context";
+import type { UserNavigationItems } from "@/lib/navigation/types";
 
 interface DashboardShellProps {
     children: React.ReactNode;
@@ -12,6 +14,7 @@ interface DashboardShellProps {
     userEmail: string;
     userId: string;
     userRoleTitle?: string;
+    initialNavigationItems: UserNavigationItems;
 }
 
 export function DashboardShell({
@@ -21,11 +24,13 @@ export function DashboardShell({
     userEmail,
     userId,
     userRoleTitle,
+    initialNavigationItems,
 }: DashboardShellProps) {
     const [mobileOpen, setMobileOpen] = useState(false);
 
     return (
         <MobileNavContext.Provider value={{ mobileOpen, setMobileOpen }}>
+            <NavigationStoreHydrator initialItems={initialNavigationItems} />
             <div className="flex h-screen-dynamic overflow-hidden overscroll-none bg-app-shell">
             <div className="hidden lg:flex">
                 <AppSidebar

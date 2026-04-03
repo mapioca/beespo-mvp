@@ -23,6 +23,7 @@ export type OrganizationType =
 
 // User roles
 export type UserRole = 'admin' | 'leader' | 'guest';
+export type FavoriteEntityType = 'meeting' | 'table' | 'form' | 'discussion' | 'notebook' | 'note';
 
 // Recurrence types for calendar events
 export type RecurrenceType = 'none' | 'daily' | 'weekly' | 'biweekly' | 'monthly' | 'yearly' | 'custom';
@@ -1608,6 +1609,76 @@ export type Database = {
           dashboard_layout?: any;
           created_at?: string;
           updated_at?: string;
+        };
+      };
+      user_favorites: {
+        Row: {
+          user_id: string;
+          entity_type: FavoriteEntityType;
+          entity_id: string;
+          workspace_id: string;
+          title: string;
+          href: string;
+          parent_title: string | null;
+          position: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          entity_type: FavoriteEntityType;
+          entity_id: string;
+          workspace_id: string;
+          title: string;
+          href: string;
+          parent_title?: string | null;
+          position?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          user_id?: string;
+          entity_type?: FavoriteEntityType;
+          entity_id?: string;
+          workspace_id?: string;
+          title?: string;
+          href?: string;
+          parent_title?: string | null;
+          position?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      user_recent_items: {
+        Row: {
+          user_id: string;
+          entity_type: FavoriteEntityType;
+          entity_id: string;
+          workspace_id: string;
+          title: string;
+          href: string;
+          parent_title: string | null;
+          last_viewed_at: string;
+        };
+        Insert: {
+          user_id: string;
+          entity_type: FavoriteEntityType;
+          entity_id: string;
+          workspace_id: string;
+          title: string;
+          href: string;
+          parent_title?: string | null;
+          last_viewed_at?: string;
+        };
+        Update: {
+          user_id?: string;
+          entity_type?: FavoriteEntityType;
+          entity_id?: string;
+          workspace_id?: string;
+          title?: string;
+          href?: string;
+          parent_title?: string | null;
+          last_viewed_at?: string;
         };
       };
       notebooks: {
