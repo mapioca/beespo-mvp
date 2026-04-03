@@ -32,8 +32,9 @@ import { SidebarUserProfile } from "@/components/dashboard/sidebar-user-profile"
 import { Button } from "@/components/ui/button"
 import { NavSection } from "./sidebar-types"
 import { SidebarNavSection } from "./sidebar-nav-section"
-import { SidebarFavoritesSection } from "./sidebar-favorites-section"
+import { SidebarSavedItemsSection } from "./sidebar-saved-items-section"
 import { useSidebarState } from "@/hooks/use-sidebar-state"
+import { useNavigationStore } from "@/stores/navigation-store"
 
 const navSections: NavSection[] = [
   {
@@ -98,6 +99,8 @@ export function AppSidebar({
   hideCollapseToggle,
 }: AppSidebarProps) {
   const pathname = usePathname()
+  const favorites = useNavigationStore((state) => state.favorites)
+  const recents = useNavigationStore((state) => state.recents)
 
   const {
     isCollapsed: storedCollapsed,
@@ -194,8 +197,18 @@ export function AppSidebar({
               isFirst={index === 0}
             />
           ))}
-          {/* Favorites Section */}
-          <SidebarFavoritesSection isCollapsed={isCollapsed} />
+          <SidebarSavedItemsSection
+            title="Favorites"
+            items={favorites}
+            isCollapsed={isCollapsed}
+            itemType="favorites"
+          />
+          <SidebarSavedItemsSection
+            title="Recents"
+            items={recents}
+            isCollapsed={isCollapsed}
+            itemType="recents"
+          />
         </nav>
 
         {/* User Profile */}

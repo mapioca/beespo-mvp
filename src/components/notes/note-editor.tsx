@@ -26,6 +26,8 @@ import { Label } from "@/components/ui/label";
 import dynamic from "next/dynamic";
 import { OutputData } from "@editorjs/editorjs";
 import { Database } from "@/types/database";
+import { FavoriteButton } from "@/components/navigation/favorite-button";
+import { RecentVisitTracker } from "@/components/navigation/recent-visit-tracker";
 
 // Dynamically import Editor to disable SSR
 const Editor = dynamic(() => import("./editor"), { ssr: false });
@@ -39,11 +41,19 @@ interface Note extends Omit<NoteRow, 'content'> {
 
 interface NoteEditorProps {
     noteId: string | null;
+    notebookId: string;
+    notebookTitle: string;
     onNoteUpdated: () => void;
     onNoteDeleted: () => void;
 }
 
-export function NoteEditor({ noteId, onNoteUpdated, onNoteDeleted }: NoteEditorProps) {
+export function NoteEditor({
+    noteId,
+    notebookId,
+    notebookTitle,
+    onNoteUpdated,
+    onNoteDeleted,
+}: NoteEditorProps) {
     const [note, setNote] = useState<Note | null>(null);
     const [title, setTitle] = useState("");
     const [isSaving, setIsSaving] = useState(false);
@@ -130,6 +140,12 @@ export function NoteEditor({ noteId, onNoteUpdated, onNoteDeleted }: NoteEditorP
                 toast.error("Failed to save changes");
                 return;
             }
+            setNote((previous) => previous ? {
+                ...previous,
+                title,
+                content,
+                updated_at: new Date().toISOString(),
+            } : previous);
             onNoteUpdated();
             toast.success("Saved");
         } catch (error) {
@@ -242,6 +258,16 @@ export function NoteEditor({ noteId, onNoteUpdated, onNoteDeleted }: NoteEditorP
         }
     }
 
+    const navigationItem = useMemo(() => (
+        note ? {
+            id: note.id,
+            entityType: "note" as const,
+            title: note.title || "Untitled Note",
+            href: `/notebooks/${notebookId}/notes/${note.id}`,
+            parentTitle: notebookTitle,
+        } : null
+    ), [note, notebookId, notebookTitle]);
+
     if (!noteId) {
         return (
             <div className="flex h-full items-center justify-center text-muted-foreground">
@@ -260,6 +286,7 @@ export function NoteEditor({ noteId, onNoteUpdated, onNoteDeleted }: NoteEditorP
 
     return (
         <div className="flex flex-col h-full bg-background">
+            <RecentVisitTracker item={navigationItem} />
             {/* Header Toolbar */}
             <div className="border-b p-4 flex items-center justify-between gap-4">
                 <Input
@@ -274,6 +301,16 @@ export function NoteEditor({ noteId, onNoteUpdated, onNoteDeleted }: NoteEditorP
                         <Badge variant="outline" className="gap-1"><Users className="w-3 h-3" /> Shared</Badge>
                     }
                     <div className="w-px h-6 bg-border mx-2" />
+
+                    {navigationItem ? (
+                        <FavoriteButton
+                            item={navigationItem}
+                            variant="ghost"
+                            size="icon"
+                            className="text-muted-foreground hover:text-foreground"
+                            iconClassName="h-4 w-4"
+                        />
+                    ) : null}
 
                     <Button variant="ghost" size="icon" onClick={saveNote} disabled={isSaving}>
                         {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}

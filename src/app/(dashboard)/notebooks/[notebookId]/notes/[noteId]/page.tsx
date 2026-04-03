@@ -108,6 +108,8 @@ export default function NoteEditorPage({ params }: NoteEditorPageProps) {
             <div className="flex-1 min-h-0 overflow-hidden">
                 <NoteEditor
                     noteId={resolvedParams.noteId}
+                    notebookId={resolvedParams.notebookId}
+                    notebookTitle={notebook.title}
                     onNoteUpdated={handleNoteUpdated}
                     onNoteDeleted={handleNoteDeleted}
                 />

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CalendarDays, MessageSquare } from "lucide-react";
 import { format } from "date-fns";
@@ -23,6 +23,8 @@ import { createClient } from "@/lib/supabase/client";
 import { toast } from "@/lib/toast";
 import { logDiscussionActivity } from "@/lib/actions/discussion-actions";
 import { Database } from "@/types/database";
+import { FavoriteButton } from "@/components/navigation/favorite-button";
+import { RecentVisitTracker } from "@/components/navigation/recent-visit-tracker";
 
 type Task = Database["public"]["Tables"]["tasks"]["Row"] & {
   assignee?: { full_name: string } | null;
@@ -115,6 +117,12 @@ export function DiscussionDetailView({
   const [priority, setPriority] = useState(discussion.priority);
   const [category, setCategory] = useState(discussion.category);
   const [dueDate, setDueDate] = useState(discussion.due_date?.split("T")[0] ?? "");
+  const navigationItem = useMemo(() => ({
+    id: discussion.id,
+    entityType: "discussion" as const,
+    title: savedTitle,
+    href: `/meetings/discussions/${discussion.id}`,
+  }), [discussion.id, savedTitle]);
 
   const updateField = async (field: string, value: string | null) => {
     const supabase = createClient();
@@ -207,6 +215,7 @@ export function DiscussionDetailView({
 
   return (
     <div className="flex flex-col h-full bg-muted/20">
+      <RecentVisitTracker item={navigationItem} />
       {/* Breadcrumb */}
       <Breadcrumbs
         items={[
@@ -214,6 +223,15 @@ export function DiscussionDetailView({
           { label: "Discussions", href: "/meetings/discussions", icon: <MessageSquare className="h-4 w-4 stroke-[1.6]" /> },
           { label: title },
         ]}
+        inlineAction={
+          <FavoriteButton
+            item={navigationItem}
+            variant="ghost"
+            size="icon"
+            className="inline-flex h-6 w-6 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            iconClassName="h-3.5 w-3.5"
+          />
+        }
         className="bg-transparent ring-0 border-b border-border/60 rounded-none px-4 py-1.5"
       />
 

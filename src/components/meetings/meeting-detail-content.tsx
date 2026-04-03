@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
     CalendarDays, Clock, Pencil, Download, Printer, Copy, Trash2,
-    ClipboardList, FileText, MoreHorizontal, Share2, Star, Loader2, Info, Smartphone,
+    ClipboardList, FileText, MoreHorizontal, Share2, Loader2, Info, Smartphone,
 } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
@@ -14,9 +14,10 @@ import { calculateTotalDurationWithGrouping } from "@/lib/agenda-grouping";
 import { ShareDialog } from "@/components/conduct/share-dialog";
 import { ZoomMeetingSheet } from "@/components/meetings/zoom-meeting-sheet";
 import { ZoomIcon, ZoomLogo } from "@/components/ui/zoom-icon";
-import { useFavoritesStore } from "@/stores/favorites-store";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "@/lib/toast";
+import { FavoriteButton } from "@/components/navigation/favorite-button";
+import { RecentVisitTracker } from "@/components/navigation/recent-visit-tracker";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -56,35 +57,6 @@ interface MeetingDetailContentProps {
     isZoomFreeAccount: boolean | null;
 }
 
-/** Small borderless icon button for use inline in the breadcrumb */
-function GhostIconButton({
-    onClick,
-    title,
-    children,
-    className,
-}: {
-    onClick?: () => void;
-    title: string;
-    children: React.ReactNode;
-    className?: string;
-}) {
-    return (
-        <button
-            type="button"
-            title={title}
-            onClick={onClick}
-            className={cn(
-                "inline-flex items-center justify-center h-6 w-6 rounded",
-                "text-muted-foreground hover:text-foreground hover:bg-accent",
-                "transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                className
-            )}
-        >
-            {children}
-        </button>
-    );
-}
-
 export function MeetingDetailContent({
     meeting,
     agendaItems: initialAgendaItems,
@@ -104,11 +76,12 @@ export function MeetingDetailContent({
 
     const totalDuration = calculateTotalDurationWithGrouping(initialAgendaItems);
 
-    const [mounted, setMounted] = useState(false);
-    useEffect(() => setMounted(true), []);
-
-    const { isFavorite, toggleFavorite } = useFavoritesStore();
-    const favorited = mounted && isFavorite(currentMeeting.id, "meeting");
+    const recentItem = useMemo(() => ({
+        id: currentMeeting.id,
+        entityType: "meeting" as const,
+        title: currentMeeting.title,
+        href: `/meetings/${currentMeeting.id}`,
+    }), [currentMeeting.id, currentMeeting.title]);
 
     const handleMeetingUpdate = (updatedMeeting: Meeting) => {
         setCurrentMeeting(updatedMeeting);
@@ -177,15 +150,6 @@ export function MeetingDetailContent({
         }
     };
 
-    const handleToggleFavorite = () => {
-        toggleFavorite({
-            id: currentMeeting.id,
-            type: "meeting",
-            title: currentMeeting.title,
-            href: `/meetings/${currentMeeting.id}`,
-        });
-    };
-
     const handleDuplicate = async () => {
         const supabase = createClient();
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -245,6 +209,7 @@ export function MeetingDetailContent({
 
     return (
         <div className="flex flex-col h-full overflow-hidden bg-muted/30">
+            <RecentVisitTracker item={recentItem} />
             <Breadcrumbs
                 items={[
                     { label: "Meetings", href: "/meetings/agendas", icon: <CalendarDays className="h-3.5 w-3.5" /> },
@@ -254,17 +219,13 @@ export function MeetingDetailContent({
                 inlineAction={
                     <>
                         {/* Favorite toggle */}
-                        <GhostIconButton
-                            title={favorited ? "Remove from favorites" : "Add to favorites"}
-                            onClick={handleToggleFavorite}
-                        >
-                            <Star
-                                className={cn(
-                                    "h-3.5 w-3.5 transition-colors",
-                                    favorited ? "fill-amber-400 text-amber-400" : ""
-                                )}
-                            />
-                        </GhostIconButton>
+                        <FavoriteButton
+                            item={recentItem}
+                            variant="ghost"
+                            size="icon"
+                            className="inline-flex h-6 w-6 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                            iconClassName="h-3.5 w-3.5"
+                        />
 
                         {/* More options */}
                         <DropdownMenu>

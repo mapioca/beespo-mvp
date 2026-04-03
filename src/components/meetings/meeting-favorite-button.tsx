@@ -1,9 +1,6 @@
 "use client";
 
-import { Star } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { useFavoritesStore } from "@/stores/favorites-store";
+import { FavoriteButton } from "@/components/navigation/favorite-button";
 
 interface MeetingFavoriteButtonProps {
   meetingId: string;
@@ -14,30 +11,19 @@ export function MeetingFavoriteButton({
   meetingId,
   meetingTitle,
 }: MeetingFavoriteButtonProps) {
-  const { isFavorite, toggleFavorite } = useFavoritesStore();
-  const favorited = isFavorite(meetingId, "meeting");
-
   return (
-    <Button
+    <FavoriteButton
+      item={{
+        id: meetingId,
+        entityType: "meeting",
+        title: meetingTitle,
+        href: `/meetings/${meetingId}`,
+      }}
       variant="outline"
       size="icon"
-      title={favorited ? "Remove from favorites" : "Add to favorites"}
-      onClick={() =>
-        toggleFavorite({
-          id: meetingId,
-          type: "meeting",
-          title: meetingTitle,
-          href: `/meetings/${meetingId}`,
-        })
-      }
-      className={cn(favorited && "border-amber-300")}
-    >
-      <Star
-        className={cn(
-          "h-4 w-4 transition-colors",
-          favorited ? "fill-amber-400 text-amber-400" : ""
-        )}
-      />
-    </Button>
+      className="border-border/60"
+      iconClassName="h-4 w-4"
+      activeClassName="border-amber-300"
+    />
   );
 }

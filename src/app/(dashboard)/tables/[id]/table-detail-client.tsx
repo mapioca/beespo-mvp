@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ChevronLeft, Settings2, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,8 @@ import { DeleteColumnDialog } from "@/components/tables/dialogs/delete-column-di
 import { RecoverColumnDialog } from "@/components/tables/dialogs/recover-column-dialog";
 import { useTablesStore } from "@/stores/tables-store";
 import type { DynamicTableWithRelations, Column } from "@/types/table-types";
+import { FavoriteButton } from "@/components/navigation/favorite-button";
+import { RecentVisitTracker } from "@/components/navigation/recent-visit-tracker";
 
 interface TableDetailClientProps {
     table: DynamicTableWithRelations;
@@ -56,8 +58,16 @@ export function TableDetailClient({ table }: TableDetailClientProps) {
         setAddColumnOpen(true);
     };
 
+    const navigationItem = useMemo(() => ({
+        id: table.id,
+        entityType: "table" as const,
+        title: table.name,
+        href: `/tables/${table.id}`,
+    }), [table.id, table.name]);
+
     return (
         <div className="h-full flex flex-col bg-muted/20">
+            <RecentVisitTracker item={navigationItem} />
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-3 border-b border-border/60 bg-background/90">
                 <div className="flex items-center gap-4">
@@ -82,6 +92,14 @@ export function TableDetailClient({ table }: TableDetailClientProps) {
                 </div>
 
                 <div className="flex items-center gap-2">
+                    <FavoriteButton
+                        item={navigationItem}
+                        variant="outline"
+                        size="icon"
+                        className="border-border/60 hover:bg-[hsl(var(--accent-warm)/0.6)]"
+                        iconClassName="h-4 w-4"
+                        activeClassName="border-amber-300"
+                    />
                     <Button
                         variant="outline"
                         size="sm"

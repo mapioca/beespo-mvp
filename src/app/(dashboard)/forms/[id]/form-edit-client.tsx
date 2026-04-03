@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Share2, BarChart2, Eye, EyeOff } from "lucide-react";
@@ -12,6 +12,8 @@ import { updateForm } from "@/lib/actions/form-actions";
 import { toast } from "@/lib/toast";
 import type { Form, FormSchema } from "@/types/form-types";
 import type { BuilderField } from "@/components/forms/builder/types";
+import { FavoriteButton } from "@/components/navigation/favorite-button";
+import { RecentVisitTracker } from "@/components/navigation/recent-visit-tracker";
 
 interface FormEditClientProps {
     form: Form;
@@ -30,6 +32,12 @@ export function FormEditClient({
     const [isPublishing, setIsPublishing] = useState(false);
     const [showShareModal, setShowShareModal] = useState(false);
     const [currentForm, setCurrentForm] = useState(form);
+    const navigationItem = useMemo(() => ({
+        id: currentForm.id,
+        entityType: "form" as const,
+        title: currentForm.title,
+        href: `/forms/${currentForm.id}`,
+    }), [currentForm.id, currentForm.title]);
 
     // Convert schema fields to builder fields
     const initialFields: BuilderField[] = (form.schema.fields || []).map((field) => ({
@@ -97,6 +105,7 @@ export function FormEditClient({
 
     return (
         <div className="h-full flex flex-col overflow-hidden bg-muted/20">
+            <RecentVisitTracker item={navigationItem} />
             {/* Header */}
             <div className="border-b border-border/60 bg-transparent px-6 py-3 flex items-center justify-between">
                 <div className="flex items-center gap-4">
@@ -127,6 +136,14 @@ export function FormEditClient({
                 </div>
 
                 <div className="flex items-center gap-2">
+                    <FavoriteButton
+                        item={navigationItem}
+                        variant="outline"
+                        size="icon"
+                        className="border-border/60 hover:bg-[hsl(var(--accent-warm)/0.6)] shadow-none"
+                        iconClassName="h-4 w-4"
+                        activeClassName="border-amber-300"
+                    />
                     <Button
                         variant="outline"
                         onClick={handlePublishToggle}
