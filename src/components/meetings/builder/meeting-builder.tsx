@@ -77,6 +77,8 @@ interface MeetingBuilderProps {
     initialMeetingId?: string;
 }
 
+type AutosaveStatus = "idle" | "saving" | "saved" | "error";
+
 export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingBuilderProps) {
     const router = useRouter();
 
@@ -99,6 +101,10 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
     const date = form.watch("date");
     const time = form.watch("time");
     const selectedTemplateId = form.watch("templateId");
+    const conductingValue = form.watch("conducting");
+    const presidingValue = form.watch("presiding");
+    const choristerValue = form.watch("chorister");
+    const pianistOrganistValue = form.watch("pianistOrganist");
 
     const setTitle = useCallback((t: string) => form.setValue("title", t, { shouldValidate: true }), [form]);
 
@@ -134,7 +140,8 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
     const [programPreviewDevice, setProgramPreviewDevice] = useState<"phone" | "tablet" | "desktop">("phone");
     const [workspaceName, setWorkspaceName] = useState("");
     const [workspaceSlug, setWorkspaceSlug] = useState<string | null>(null);
-    const [isLeader, setIsLeader] = useState(true); // assume leader until proven otherwise
+    const [isLeader, setIsLeader] = useState(false);
+    const canEdit = isLeader;
     const [isLive, setIsLive] = useState(false);
     const [isTogglingLive, setIsTogglingLive] = useState(false);
     const [programStyle, setProgramStyle] = useState<ProgramStyleSettings | null>(null);
@@ -168,6 +175,11 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
 
     // Meeting-level notes state
     const [meetingNotes, setMeetingNotes] = useState<string | null>(null);
+    const [autosaveStatus, setAutosaveStatus] = useState<AutosaveStatus>("idle");
+    const [lastAutosaveAt, setLastAutosaveAt] = useState<Date | null>(null);
+    const [isMeetingLoaded, setIsMeetingLoaded] = useState(!initialMeetingId);
+    const draftHashRef = useRef<string>("");
+    const serverHashRef = useRef<string>("");
 
     // Zoom — track if this meeting has a linked Zoom meeting so we can sync on save
     const [linkedZoomMeetingId, setLinkedZoomMeetingId] = useState<string | null>(null);
@@ -179,6 +191,14 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
     const [zoomCreateOpen, setZoomCreateOpen] = useState(false);
     const [zoomCreateDuration, setZoomCreateDuration] = useState(0);
     const [isCreatingZoom, setIsCreatingZoom] = useState(false);
+
+    const draftStorageKey = useMemo(
+        () =>
+            initialMeetingId
+                ? `beespo:meeting:draft:${initialMeetingId}`
+                : `beespo:meeting:draft:new:${initialTemplateId || "none"}`,
+        [initialMeetingId, initialTemplateId]
+    );
 
     // DnD sensors
     const sensors = useSensors(
@@ -240,6 +260,7 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                 target.isContentEditable;
 
             if (builderMode !== "planning") return;
+            if (!canEdit) return;
             if (isFormField) return;
             if (e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) return;
             if (e.key.toLowerCase() !== "i") return;
@@ -254,7 +275,7 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
 
         window.addEventListener("keydown", handleKeyDown);
         return () => window.removeEventListener("keydown", handleKeyDown);
-    }, [builderMode, selectedItemId, canvasItems]);
+    }, [builderMode, selectedItemId, canvasItems, canEdit]);
 
     // Load templates & workspace name
     useEffect(() => {
@@ -334,6 +355,7 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
 
             if (meetingError || !meeting) {
                 toast.error("Failed to load meeting details");
+                setIsMeetingLoaded(true);
                 return;
             }
 
@@ -373,6 +395,7 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
 
             if (itemsError || !agendaItems) {
                 toast.error("Failed to load agenda items");
+                setIsMeetingLoaded(true);
                 return;
             }
 
@@ -441,10 +464,185 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
             const containerIds = items.filter((i) => i.isContainer).map((i) => i.id);
             setExpandedContainers(new Set(containerIds));
             setCanvasItems(items);
+            const loadedPayload = {
+                title: meeting.title || "",
+                date: meeting.scheduled_date ? new Date(meeting.scheduled_date).toISOString() : new Date().toISOString(),
+                time: meeting.scheduled_date ? format(new Date(meeting.scheduled_date), "HH:mm") : "07:00",
+                templateId: meeting.template_id || null,
+                conducting: form.getValues("conducting") || "",
+                presiding: form.getValues("presiding") || "",
+                chorister: form.getValues("chorister") || "",
+                pianistOrganist: form.getValues("pianistOrganist") || "",
+                meetingNotes: (meeting.notes as string | null) || "",
+                canvasItems: items,
+            };
+            const loadedHash = JSON.stringify(loadedPayload);
+            draftHashRef.current = loadedHash;
+            serverHashRef.current = loadedHash;
+            setIsMeetingLoaded(true);
         };
 
         loadExistingMeeting();
     }, [initialMeetingId, form]);
+
+    // Restore local draft when creating a brand-new meeting.
+    useEffect(() => {
+        if (initialMeetingId || !canEdit) return;
+
+        try {
+            const raw = localStorage.getItem(draftStorageKey);
+            if (!raw) return;
+
+            const parsed = JSON.parse(raw) as {
+                title?: string;
+                date?: string;
+                time?: string;
+                templateId?: string | null;
+                conducting?: string;
+                presiding?: string;
+                chorister?: string;
+                pianistOrganist?: string;
+                meetingNotes?: string | null;
+                canvasItems?: CanvasItem[];
+            };
+
+            if (parsed.title) form.setValue("title", parsed.title);
+            if (parsed.date) form.setValue("date", new Date(parsed.date));
+            if (parsed.time) form.setValue("time", parsed.time);
+            if (parsed.templateId !== undefined) form.setValue("templateId", parsed.templateId);
+            if (parsed.conducting !== undefined) form.setValue("conducting", parsed.conducting);
+            if (parsed.presiding !== undefined) form.setValue("presiding", parsed.presiding);
+            if (parsed.chorister !== undefined) form.setValue("chorister", parsed.chorister);
+            if (parsed.pianistOrganist !== undefined) form.setValue("pianistOrganist", parsed.pianistOrganist);
+            if (parsed.meetingNotes !== undefined) setMeetingNotes(parsed.meetingNotes);
+            if (Array.isArray(parsed.canvasItems)) {
+                setCanvasItems(parsed.canvasItems);
+                const containerIds = parsed.canvasItems.filter((i) => i.isContainer).map((i) => i.id);
+                setExpandedContainers(new Set(containerIds));
+            }
+
+            toast.success("Draft restored", { description: "Recovered your unsaved agenda changes." });
+        } catch {
+            // Ignore malformed draft payloads
+        }
+    }, [initialMeetingId, canEdit, draftStorageKey, form]);
+
+    // Autosave draft to local storage and, for existing meetings, autosave to the database.
+    useEffect(() => {
+        if (!canEdit) return;
+        if (initialMeetingId && !isMeetingLoaded) return;
+        if (!date || Number.isNaN(date.getTime())) return;
+
+        const draftPayload = {
+            title,
+            date: date.toISOString(),
+            time,
+            templateId: selectedTemplateId,
+            conducting: conductingValue || "",
+            presiding: presidingValue || "",
+            chorister: choristerValue || "",
+            pianistOrganist: pianistOrganistValue || "",
+            meetingNotes: meetingNotes || "",
+            canvasItems,
+        };
+        const payloadHash = JSON.stringify(draftPayload);
+
+        const timeout = window.setTimeout(async () => {
+            if (payloadHash === draftHashRef.current && (!initialMeetingId || payloadHash === serverHashRef.current)) {
+                return;
+            }
+
+            setAutosaveStatus("saving");
+
+            try {
+                localStorage.setItem(draftStorageKey, payloadHash);
+                draftHashRef.current = payloadHash;
+
+                if (!initialMeetingId) {
+                    setLastAutosaveAt(new Date());
+                    setAutosaveStatus("saved");
+                    return;
+                }
+
+                if (payloadHash === serverHashRef.current) {
+                    setLastAutosaveAt(new Date());
+                    setAutosaveStatus("saved");
+                    return;
+                }
+
+                const [hours, minutes] = time.split(":").map(Number);
+                const scheduledDate = new Date(date);
+                scheduledDate.setHours(hours, minutes);
+
+                const agendaJson = canvasItems.map((item) => ({
+                    title: item.title,
+                    description: item.description,
+                    item_notes: item.item_notes || null,
+                    duration_minutes: item.duration_minutes,
+                    order_index: item.order_index,
+                    item_type: item.category,
+                    hymn_id: item.hymn_id || null,
+                    speaker_id: item.speaker_id || null,
+                    speaker_topic: item.speaker_topic || null,
+                    participant_id: item.participant_id || null,
+                    participant_name: item.participant_name || item.speaker_name || null,
+                    discussion_id: item.discussion_id || null,
+                    business_item_id: item.business_item_id || null,
+                    announcement_id: item.announcement_id || null,
+                    structural_type: item.structural_type || null,
+                    child_items: item.isContainer && item.childItems ? item.childItems.map((child) => ({
+                        title: child.title,
+                        description: child.description,
+                        item_notes: child.item_notes || null,
+                        discussion_id: child.discussion_id || null,
+                        business_item_id: child.business_item_id || null,
+                        announcement_id: child.announcement_id || null,
+                        person_name: child.person_name || null,
+                        position_calling: child.position_calling || null,
+                        business_category: child.business_category || null,
+                        business_details: child.business_details || null,
+                    })) : null,
+                }));
+
+                const supabase = createClient();
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const { error } = await (supabase as any).rpc("update_meeting_with_agenda", {
+                    p_meeting_id: initialMeetingId,
+                    p_title: title,
+                    p_scheduled_date: scheduledDate.toISOString(),
+                    p_agenda_items: agendaJson,
+                    p_notes: meetingNotes,
+                });
+
+                if (error) {
+                    throw new Error(error.message || "Autosave failed");
+                }
+
+                serverHashRef.current = payloadHash;
+                setLastAutosaveAt(new Date());
+                setAutosaveStatus("saved");
+            } catch {
+                setAutosaveStatus("error");
+            }
+        }, 1500);
+
+        return () => window.clearTimeout(timeout);
+    }, [
+        canEdit,
+        initialMeetingId,
+        isMeetingLoaded,
+        draftStorageKey,
+        title,
+        date,
+        time,
+        selectedTemplateId,
+        conductingValue,
+        presidingValue,
+        choristerValue,
+        pianistOrganistValue,
+        canvasItems,
+        meetingNotes,
+    ]);
 
     const getLiveUrl = useCallback(() => {
         if (!initialMeetingId || !workspaceSlug) return null;
@@ -1243,6 +1441,10 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
     }, [canvasItems]);
 
     const handleValidate = useCallback(() => {
+        if (!canEdit) {
+            toast.error("Read-only access", { description: "Guests can view agendas but cannot make changes." });
+            return;
+        }
         setValidationModalOpen(true);
         setValidationState("validating");
         setValidationItems([]);
@@ -1262,10 +1464,14 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                 setValidationState("success");
             }
         }, 800);
-    }, [validateAgenda]);
+    }, [validateAgenda, canEdit]);
 
     // Create meeting
     const handleCreateMeeting = useCallback(async () => {
+        if (!canEdit) {
+            toast.error("Read-only access", { description: "Guests can view agendas but cannot make changes." });
+            return;
+        }
         setIsCreating(true);
 
         try {
@@ -1383,6 +1589,7 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                 }
 
                 toast.success("Meeting updated", { description: "Redirecting..." });
+                localStorage.removeItem(draftStorageKey);
                 router.push(`/meetings/${initialMeetingId}`);
                 router.refresh();
                 return;
@@ -1438,6 +1645,7 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                 saveMeetingMarkdown(fallbackData, fallbackMarkdown).catch(() => { });
 
                 toast.success("Meeting created", { description: "Redirecting..." });
+                localStorage.removeItem(draftStorageKey);
                 router.push(`/meetings/${fallbackData}`);
                 router.refresh();
                 return;
@@ -1469,6 +1677,7 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
             saveMeetingMarkdown(data, markdown).catch(() => { });
 
             toast.success("Meeting created", { description: "Redirecting..." });
+            localStorage.removeItem(draftStorageKey);
             router.push(`/meetings/${data}`);
             router.refresh();
         } catch (err: unknown) {
@@ -1483,7 +1692,7 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
         } finally {
             setIsCreating(false);
         }
-    }, [canvasItems, date, time, title, selectedTemplateId, router, form, workspaceName, initialMeetingId, meetingNotes, linkedZoomMeetingId]);
+    }, [canvasItems, date, time, title, selectedTemplateId, router, form, workspaceName, initialMeetingId, meetingNotes, linkedZoomMeetingId, canEdit, draftStorageKey]);
 
     // Duplicate the current agenda as a brand-new meeting with a different name
     const handleSaveAsNew = useCallback(async (newTitle: string) => {
@@ -1840,11 +2049,11 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
             <TooltipProvider delayDuration={1200}>
             <form onSubmit={(e) => { e.preventDefault(); handleValidate(); }} className="h-full min-h-0 flex flex-col overflow-hidden bg-panel">
                 <DndContext
-                    sensors={sensors}
+                    sensors={canEdit ? sensors : []}
                     collisionDetection={closestCenter}
-                    onDragStart={handleDragStart}
-                    onDragOver={handleDragOver}
-                    onDragEnd={handleDragEnd}
+                    onDragStart={canEdit ? handleDragStart : undefined}
+                    onDragOver={canEdit ? handleDragOver : undefined}
+                    onDragEnd={canEdit ? handleDragEnd : undefined}
                 >
                     <div className="flex-1 flex flex-col overflow-hidden">
                         {/* Global Top Bar (all screen sizes) */}
@@ -1873,6 +2082,9 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                                 onAddZoom={handleCreateZoom}
                                 onDelete={handleDeleteMeeting}
                                 isLive={isLive}
+                                canEdit={canEdit}
+                                lastAutosaveAt={lastAutosaveAt}
+                                autosaveStatus={autosaveStatus}
                             />
                         </div>
 
@@ -1890,7 +2102,7 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                                             <SheetTitle className="sr-only">Library</SheetTitle>
                                             <SheetDescription className="sr-only">Agenda items library</SheetDescription>
                                             <ToolboxPane
-                                                onAddItem={handleAddCanvasItem}
+                                                onAddItem={canEdit ? handleAddCanvasItem : () => {}}
                                                 onItemsLoaded={setToolboxItems}
                                                 pinnedIds={pinnedToolboxIds}
                                                 recentIds={recentToolboxIds}
@@ -1898,7 +2110,7 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                                                 outlineItems={canvasItems}
                                                 selectedItemId={selectedItemId}
                                                 onSelectItem={setSelectedItemId}
-                                                onDuplicateItem={handleDuplicateItem}
+                                                onDuplicateItem={canEdit ? handleDuplicateItem : undefined}
                                             />
                                         </SheetContent>
                                     </Sheet>
@@ -1919,6 +2131,7 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                                                 templates={templates}
                                                 meetingNotes={meetingNotes}
                                                 onUpdateMeetingNotes={setMeetingNotes}
+                                                readOnly={!canEdit}
                                             />
                                         </SheetContent>
                                     </Sheet>
@@ -1929,7 +2142,7 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                                     {/* Left Pane - Library */}
                                     <div className="hidden lg:block w-64 h-full overflow-hidden shrink-0">
                                         <ToolboxPane
-                                            onAddItem={handleAddCanvasItem}
+                                            onAddItem={canEdit ? handleAddCanvasItem : () => {}}
                                             onItemsLoaded={setToolboxItems}
                                             pinnedIds={pinnedToolboxIds}
                                             recentIds={recentToolboxIds}
@@ -1937,7 +2150,7 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                                             outlineItems={canvasItems}
                                             selectedItemId={selectedItemId}
                                             onSelectItem={setSelectedItemId}
-                                            onDuplicateItem={handleDuplicateItem}
+                                            onDuplicateItem={canEdit ? handleDuplicateItem : undefined}
                                         />
                                     </div>
 
@@ -1945,8 +2158,8 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                                     <div className="flex-1 h-full overflow-hidden min-w-0">
                                         <AgendaCanvas
                                             items={canvasItems}
-                                            onRemoveItem={handleRemoveItem}
-                                            onDuplicateItem={handleDuplicateItem}
+                                            onRemoveItem={canEdit ? handleRemoveItem : () => {}}
+                                            onDuplicateItem={canEdit ? handleDuplicateItem : undefined}
                                             title={title}
                                             dateLabel={formattedDateLabel}
                                             timeLabel={formattedTimeLabel}
@@ -1955,23 +2168,23 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                                             selectedItemId={selectedItemId}
                                             onSelectItem={setSelectedItemId}
                                             isOver={isOverCanvas}
-                                            onUpdateItem={handleUpdateTitle}
-                                            onUpdateDescription={handleUpdateDescription}
-                                            onUpdateItemNotes={handleUpdateItemNotes}
-                                            onUpdateDuration={handleUpdateDuration}
-                                            onSelectHymn={handleSelectHymn}
-                                            onSelectParticipant={handleSelectParticipant}
-                                            onSelectDiscussion={(discs) => handleAddManyToContainer(discs, "discussion")}
-                                            onSelectBusiness={(biz) => handleAddManyToContainer(biz, "business")}
-                                            onSelectAnnouncement={(ann) => handleAddManyToContainer(ann, "announcement")}
-                                            onSelectSpeaker={handleSelectSpeaker}
+                                            onUpdateItem={canEdit ? handleUpdateTitle : undefined}
+                                            onUpdateDescription={canEdit ? handleUpdateDescription : undefined}
+                                            onUpdateItemNotes={canEdit ? handleUpdateItemNotes : undefined}
+                                            onUpdateDuration={canEdit ? handleUpdateDuration : undefined}
+                                            onSelectHymn={canEdit ? handleSelectHymn : undefined}
+                                            onSelectParticipant={canEdit ? handleSelectParticipant : undefined}
+                                            onSelectDiscussion={canEdit ? (discs) => handleAddManyToContainer(discs, "discussion") : undefined}
+                                            onSelectBusiness={canEdit ? (biz) => handleAddManyToContainer(biz, "business") : undefined}
+                                            onSelectAnnouncement={canEdit ? (ann) => handleAddManyToContainer(ann, "announcement") : undefined}
+                                            onSelectSpeaker={canEdit ? handleSelectSpeaker : undefined}
                                             selectedSpeakerIdsInMeeting={selectedSpeakerIds}
-                                            onAddToContainer={openContainerAddForSelected}
-                                            onRemoveChildItem={handleRemoveChildFromSelected}
+                                            onAddToContainer={canEdit ? openContainerAddForSelected : undefined}
+                                            onRemoveChildItem={canEdit ? handleRemoveChildFromSelected : undefined}
                                             toolboxItems={toolboxItems}
                                             pinnedIds={pinnedToolboxIds}
                                             recentIds={recentToolboxIds}
-                                            onInsertItemAt={handleInsertCanvasItemAt}
+                                            onInsertItemAt={canEdit ? handleInsertCanvasItemAt : undefined}
                                             openInsertAt={insertRequestIndex}
                                             onInsertOpenHandled={() => setInsertRequestIndex(null)}
                                         />
@@ -1983,6 +2196,7 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                                             templates={templates}
                                             meetingNotes={meetingNotes}
                                             onUpdateMeetingNotes={setMeetingNotes}
+                                            readOnly={!canEdit}
                                         />
                                     </div>
                                 </div>

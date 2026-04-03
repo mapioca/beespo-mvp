@@ -20,6 +20,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "@/lib/toast";
 import { createClient } from "@/lib/supabase/client";
+import { parseAllDayDate } from "@/lib/calendar-helpers";
 import { Megaphone, CalendarDays, MapPin, X } from "lucide-react";
 
 // Event type returned from API
@@ -46,7 +47,9 @@ interface CreateEventDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   selectedDate: Date | null;
-  onCreated: (event: CalendarEventData) => void;
+  onCreated?: (event: CalendarEventData) => void;
+  onUpdated?: (event: CalendarEventData) => void;
+  eventToEdit?: CalendarEventData | null;
   // For importing external events
   externalEvent?: {
     id: string;
@@ -65,6 +68,8 @@ export function CreateEventDialog({
   onOpenChange,
   selectedDate,
   onCreated,
+  onUpdated,
+  eventToEdit,
   externalEvent,
 }: CreateEventDialogProps) {
   const [isLoading, setIsLoading] = useState(false);
@@ -84,22 +89,39 @@ export function CreateEventDialog({
   const [selectedTemplates, setSelectedTemplates] = useState<string[]>([]);
   const [templates, setTemplates] = useState<TemplateStub[]>([]);
   const [loadingTemplates, setLoadingTemplates] = useState(false);
+  const isEditing = !!eventToEdit;
 
   // Initialize form when selectedDate or externalEvent changes
   useEffect(() => {
-    if (externalEvent) {
+    if (eventToEdit) {
+      setTitle(eventToEdit.title);
+      setDescription(eventToEdit.description || "");
+      setLocation(eventToEdit.location || "");
+      setIsAllDay(eventToEdit.is_all_day);
+
+      const start = new Date(eventToEdit.start_at);
+      const end = new Date(eventToEdit.end_at);
+      setStartDate(format(start, "yyyy-MM-dd"));
+      setStartTime(format(start, "HH:mm"));
+      setEndDate(format(end, "yyyy-MM-dd"));
+      setEndTime(format(end, "HH:mm"));
+    } else if (externalEvent) {
       // Pre-fill from external event
       setTitle(externalEvent.title);
       setDescription(externalEvent.description || "");
       setLocation(externalEvent.location || "");
       setIsAllDay(externalEvent.is_all_day);
 
-      const start = new Date(externalEvent.start_date);
+      const start = externalEvent.is_all_day
+        ? parseAllDayDate(externalEvent.start_date)
+        : new Date(externalEvent.start_date);
       setStartDate(format(start, "yyyy-MM-dd"));
       setStartTime(format(start, "HH:mm"));
 
       if (externalEvent.end_date) {
-        const end = new Date(externalEvent.end_date);
+        const end = externalEvent.is_all_day
+          ? parseAllDayDate(externalEvent.end_date)
+          : new Date(externalEvent.end_date);
         setEndDate(format(end, "yyyy-MM-dd"));
         setEndTime(format(end, "HH:mm"));
       } else {
@@ -120,7 +142,7 @@ export function CreateEventDialog({
     }
     setPromoteToAnnouncement(false);
     setSelectedTemplates([]);
-  }, [selectedDate, externalEvent, open]);
+  }, [selectedDate, externalEvent, eventToEdit, open]);
 
   // Fetch templates when promotion is enabled
   useEffect(() => {
@@ -187,8 +209,8 @@ export function CreateEventDialog({
       title,
       description: description || null,
       location: location || null,
-      start_at: new Date(startAt).toISOString(),
-      end_at: new Date(endAt).toISOString(),
+      start_at: isAllDay ? startDate : new Date(startAt).toISOString(),
+      end_at: isAllDay ? endDate : new Date(endAt).toISOString(),
       is_all_day: isAllDay,
       promote_to_announcement: promoteToAnnouncement,
     };
@@ -200,8 +222,10 @@ export function CreateEventDialog({
     }
 
     try {
-      const response = await fetch("/api/events", {
-        method: "POST",
+      const endpoint = isEditing ? `/api/events/${eventToEdit.id}` : "/api/events";
+      const method = isEditing ? "PATCH" : "POST";
+      const response = await fetch(endpoint, {
+        method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
@@ -209,11 +233,11 @@ export function CreateEventDialog({
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Failed to create event");
+        throw new Error(data.error || "Failed to save event");
       }
 
       // If promotion is enabled and templates selected, link to templates
-      if (promoteToAnnouncement && selectedTemplates.length > 0 && data.announcement) {
+      if (!isEditing && promoteToAnnouncement && selectedTemplates.length > 0 && data.announcement) {
         const supabase = createClient();
 
         // Create announcement_templates entries
@@ -227,9 +251,13 @@ export function CreateEventDialog({
         }
       }
 
-      toast.success(externalEvent
+      if (isEditing) {
+        toast.success("Event updated successfully.");
+      } else {
+        toast.success(externalEvent
           ? "External event imported successfully."
           : "Event created successfully.");
+      }
 
       if (data.announcement) {
         toast.success("Announcement Created", { description: `Event will be announced until it starts.${
@@ -239,11 +267,15 @@ export function CreateEventDialog({
           }` });
       }
 
-      onCreated(data.event);
+      if (isEditing) {
+        onUpdated?.(data.event);
+      } else {
+        onCreated?.(data.event);
+      }
       onOpenChange(false);
       resetForm();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to create event.");
+      toast.error(error instanceof Error ? error.message : "Failed to save event.");
     } finally {
       setIsLoading(false);
     }
@@ -257,10 +289,12 @@ export function CreateEventDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
             <CalendarDays className="h-4 w-4 stroke-[1.6]" />
-            {isImporting ? "Import to Beespo" : "Create Event"}
+            {isEditing ? "Edit Event" : isImporting ? "Import to Beespo" : "Create Event"}
           </DialogTitle>
           <DialogDescription>
-            {isImporting
+            {isEditing
+              ? "Update event details."
+              : isImporting
               ? "Create a Beespo event from this external calendar entry."
               : "Create a new calendar event for your workspace."}
           </DialogDescription>
@@ -499,7 +533,9 @@ export function CreateEventDialog({
               className="bg-[hsl(var(--accent-warm))] text-foreground hover:bg-[hsl(var(--accent-warm-hover))] shadow-none"
             >
               {isLoading
-                ? "Creating..."
+                ? isEditing ? "Saving..." : "Creating..."
+                : isEditing
+                  ? "Save Changes"
                 : isImporting
                   ? "Import Event"
                   : "Create Event"}
