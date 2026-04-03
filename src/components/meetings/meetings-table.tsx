@@ -25,7 +25,7 @@ import { Database } from "@/types/database"
 
 type MeetingRow = Database["public"]["Tables"]["meetings"]["Row"]
 
-export type MeetingStatus = "scheduled" | "in_progress" | "completed" | "cancelled"
+export type MeetingStatus = "draft" | "scheduled" | "in_progress" | "completed" | "cancelled"
 
 export interface Template {
     id: string
@@ -46,6 +46,7 @@ export interface Meeting extends MeetingRow {
 // ── Filter option data ──────────────────────────────────────────────────────
 
 const STATUS_OPTIONS = [
+    { value: "draft", label: "Draft" },
     { value: "scheduled", label: "Scheduled" },
     { value: "in_progress", label: "In Progress" },
     { value: "completed", label: "Completed" },
@@ -59,6 +60,7 @@ function formatLabel(value: string): string {
 }
 
 const STATUS_TONES: Record<string, "neutral" | "info" | "success" | "warning" | "danger"> = {
+    draft: "warning",
     scheduled: "info",
     in_progress: "success",
     completed: "neutral",

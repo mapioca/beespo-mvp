@@ -78,6 +78,7 @@ interface MeetingBuilderProps {
 }
 
 type AutosaveStatus = "idle" | "saving" | "saved" | "error";
+type MeetingStatus = "draft" | "scheduled" | "in_progress" | "completed" | "cancelled";
 
 export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingBuilderProps) {
     const router = useRouter();
@@ -142,6 +143,7 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
     const [workspaceSlug, setWorkspaceSlug] = useState<string | null>(null);
     const [isLeader, setIsLeader] = useState(false);
     const canEdit = isLeader;
+    const BY_INVITATION_LABEL = "By invitation";
     const [isLive, setIsLive] = useState(false);
     const [isTogglingLive, setIsTogglingLive] = useState(false);
     const [programStyle, setProgramStyle] = useState<ProgramStyleSettings | null>(null);
@@ -178,6 +180,7 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
     const [autosaveStatus, setAutosaveStatus] = useState<AutosaveStatus>("idle");
     const [lastAutosaveAt, setLastAutosaveAt] = useState<Date | null>(null);
     const [isMeetingLoaded, setIsMeetingLoaded] = useState(!initialMeetingId);
+    const [meetingStatus, setMeetingStatus] = useState<MeetingStatus | null>(null);
     const draftHashRef = useRef<string>("");
     const serverHashRef = useRef<string>("");
 
@@ -357,6 +360,11 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                 toast.error("Failed to load meeting details");
                 setIsMeetingLoaded(true);
                 return;
+            }
+
+            setMeetingStatus((meeting.status as MeetingStatus) || "scheduled");
+            if (meeting.status === "draft") {
+                setBuilderMode("planning");
             }
 
             form.setValue("title", meeting.title);
@@ -559,8 +567,60 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                 draftHashRef.current = payloadHash;
 
                 if (!initialMeetingId) {
+                    const [hours, minutes] = time.split(":").map(Number);
+                    const scheduledDate = new Date(date);
+                    scheduledDate.setHours(hours, minutes);
+
+                    const agendaJson = canvasItems.map((item) => ({
+                        title: item.title,
+                        description: item.description,
+                        item_notes: item.item_notes || null,
+                        duration_minutes: item.duration_minutes,
+                        order_index: item.order_index,
+                        item_type: item.category,
+                        hymn_id: item.hymn_id || null,
+                        speaker_id: item.speaker_id || null,
+                        speaker_topic: item.speaker_topic || null,
+                        participant_id: item.participant_id || null,
+                        participant_name: item.participant_name || item.speaker_name || null,
+                        discussion_id: item.discussion_id || null,
+                        business_item_id: item.business_item_id || null,
+                        announcement_id: item.announcement_id || null,
+                        structural_type: item.structural_type || null,
+                        child_items: item.isContainer && item.childItems ? item.childItems.map((child) => ({
+                            title: child.title,
+                            description: child.description,
+                            item_notes: child.item_notes || null,
+                            discussion_id: child.discussion_id || null,
+                            business_item_id: child.business_item_id || null,
+                            announcement_id: child.announcement_id || null,
+                            person_name: child.person_name || null,
+                            position_calling: child.position_calling || null,
+                            business_category: child.business_category || null,
+                            business_details: child.business_details || null,
+                        })) : null,
+                    }));
+
+                    const supabase = createClient();
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    const { data, error } = await (supabase as any).rpc("create_meeting_draft_with_agenda", {
+                        p_template_id: selectedTemplateId && selectedTemplateId !== "none" ? selectedTemplateId : null,
+                        p_title: title,
+                        p_scheduled_date: scheduledDate.toISOString(),
+                        p_agenda_items: agendaJson,
+                        p_notes: meetingNotes,
+                    });
+
+                    if (error || !data) {
+                        throw new Error(error?.message || "Draft autosave failed");
+                    }
+
+                    serverHashRef.current = payloadHash;
                     setLastAutosaveAt(new Date());
                     setAutosaveStatus("saved");
+                    localStorage.removeItem(draftStorageKey);
+                    router.replace(`/meetings/${data}`);
+                    router.refresh();
                     return;
                 }
 
@@ -631,6 +691,7 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
         canEdit,
         initialMeetingId,
         isMeetingLoaded,
+        router,
         draftStorageKey,
         title,
         date,
@@ -1192,6 +1253,22 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
         setUnifiedModalOpen(false);
     }, [selectedItemId]);
 
+    const handleToggleByInvitation = useCallback((enabled: boolean) => {
+        if (!selectedItemId) return;
+
+        setCanvasItems((prev) =>
+            prev.map((item) =>
+                item.id === selectedItemId
+                    ? enabled
+                        ? { ...item, participant_id: undefined, participant_name: BY_INVITATION_LABEL }
+                        : (item.participant_name === BY_INVITATION_LABEL
+                            ? { ...item, participant_name: undefined }
+                            : item)
+                    : item
+            )
+        );
+    }, [selectedItemId]);
+
     const handleSelectSpeaker = useCallback((speaker: SpeakerSelection) => {
         if (selectedItemId) {
             setCanvasItems((prev) =>
@@ -1209,6 +1286,33 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
             );
         }
         setUnifiedModalOpen(false);
+    }, [selectedItemId]);
+
+    const handleToggleSpeakerByInvitation = useCallback((enabled: boolean) => {
+        if (!selectedItemId) return;
+
+        setCanvasItems((prev) =>
+            prev.map((item) =>
+                item.id === selectedItemId
+                    ? enabled
+                        ? {
+                            ...item,
+                            speaker_id: undefined,
+                            speaker_name: BY_INVITATION_LABEL,
+                            speaker_topic: null,
+                            speaker_is_confirmed: false,
+                        }
+                        : (item.speaker_name === BY_INVITATION_LABEL
+                            ? {
+                                ...item,
+                                speaker_name: undefined,
+                                speaker_topic: null,
+                                speaker_is_confirmed: undefined,
+                            }
+                            : item)
+                    : item
+            )
+        );
     }, [selectedItemId]);
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -1376,32 +1480,32 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                 });
             }
 
-            if (item.requires_participant && item.category !== "speaker" && !item.participant_id) {
+            if (item.requires_participant && item.category !== "speaker" && !item.participant_id && !item.participant_name) {
                 items.push({
                     id: `${item.id}-participant`,
                     title: item.title,
                     status: "warning",
                     message: "Participant not assigned",
                 });
-            } else if (item.requires_participant && item.participant_id) {
+            } else if (item.requires_participant && (item.participant_id || item.participant_name)) {
                 items.push({
                     id: `${item.id}-participant`,
-                    title: `${item.title} - ${item.participant_name}`,
+                    title: `${item.title} - ${item.participant_name || "Assigned"}`,
                     status: "success",
                 });
             }
 
-            if (item.category === "speaker" && !item.speaker_id) {
+            if (item.category === "speaker" && !item.speaker_id && !item.speaker_name) {
                 items.push({
                     id: `${item.id}-speaker`,
                     title: item.title,
                     status: "warning",
                     message: "Speaker not assigned",
                 });
-            } else if (item.category === "speaker" && item.speaker_id) {
+            } else if (item.category === "speaker" && (item.speaker_id || item.speaker_name)) {
                 items.push({
                     id: `${item.id}-speaker`,
-                    title: `${item.title} - ${item.speaker_name}`,
+                    title: `${item.title} - ${item.speaker_name || "Assigned"}`,
                     status: "success",
                 });
             }
@@ -1563,6 +1667,27 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                     return;
                 }
 
+                if (meetingStatus === "draft") {
+                    // Promote a persisted draft into a scheduled meeting on explicit save.
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    const { error: statusError } = await (supabase.from("meetings") as any)
+                        .update({ status: "scheduled" })
+                        .eq("id", initialMeetingId);
+
+                    if (statusError) {
+                        toast.error("Failed to publish draft", { description: statusError.message });
+                        setValidationItems([{
+                            id: "error-publish",
+                            title: "Failed to publish draft",
+                            status: "error",
+                            message: statusError.message,
+                        }]);
+                        setValidationState("error");
+                        return;
+                    }
+                    setMeetingStatus("scheduled");
+                }
+
                 // Fire-and-forget: persist markdown agenda
                 const markdown = generateMeetingMarkdown({
                     title, date: date!, time,
@@ -1692,7 +1817,7 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
         } finally {
             setIsCreating(false);
         }
-    }, [canvasItems, date, time, title, selectedTemplateId, router, form, workspaceName, initialMeetingId, meetingNotes, linkedZoomMeetingId, canEdit, draftStorageKey]);
+    }, [canvasItems, date, time, title, selectedTemplateId, router, form, workspaceName, initialMeetingId, meetingNotes, linkedZoomMeetingId, canEdit, draftStorageKey, meetingStatus]);
 
     // Duplicate the current agenda as a brand-new meeting with a different name
     const handleSaveAsNew = useCallback(async (newTitle: string) => {
@@ -2049,7 +2174,7 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
             <TooltipProvider delayDuration={1200}>
             <form onSubmit={(e) => { e.preventDefault(); handleValidate(); }} className="h-full min-h-0 flex flex-col overflow-hidden bg-panel">
                 <DndContext
-                    sensors={canEdit ? sensors : []}
+                    sensors={sensors}
                     collisionDetection={closestCenter}
                     onDragStart={canEdit ? handleDragStart : undefined}
                     onDragOver={canEdit ? handleDragOver : undefined}
@@ -2174,10 +2299,12 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                                             onUpdateDuration={canEdit ? handleUpdateDuration : undefined}
                                             onSelectHymn={canEdit ? handleSelectHymn : undefined}
                                             onSelectParticipant={canEdit ? handleSelectParticipant : undefined}
+                                            onToggleByInvitation={canEdit ? handleToggleByInvitation : undefined}
                                             onSelectDiscussion={canEdit ? (discs) => handleAddManyToContainer(discs, "discussion") : undefined}
                                             onSelectBusiness={canEdit ? (biz) => handleAddManyToContainer(biz, "business") : undefined}
                                             onSelectAnnouncement={canEdit ? (ann) => handleAddManyToContainer(ann, "announcement") : undefined}
                                             onSelectSpeaker={canEdit ? handleSelectSpeaker : undefined}
+                                            onToggleSpeakerByInvitation={canEdit ? handleToggleSpeakerByInvitation : undefined}
                                             selectedSpeakerIdsInMeeting={selectedSpeakerIds}
                                             onAddToContainer={canEdit ? openContainerAddForSelected : undefined}
                                             onRemoveChildItem={canEdit ? handleRemoveChildFromSelected : undefined}

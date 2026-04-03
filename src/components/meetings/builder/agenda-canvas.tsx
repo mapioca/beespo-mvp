@@ -41,7 +41,9 @@ interface AgendaCanvasProps {
     onUpdateDuration?: (id: string, newDuration: number) => void;
     onSelectHymn?: (hymn: { id: string; number: number; title: string }) => void;
     onSelectParticipant?: (participant: { id: string; name: string }) => void;
+    onToggleByInvitation?: (enabled: boolean) => void;
     onSelectSpeaker?: (speaker: SpeakerSelection) => void;
+    onToggleSpeakerByInvitation?: (enabled: boolean) => void;
     selectedSpeakerIdsInMeeting?: string[];
     onAddToContainer?: () => void;
     onRemoveChildItem?: (childId: string) => void;
@@ -576,7 +578,9 @@ export function AgendaCanvas({
     onUpdateDuration,
     onSelectHymn,
     onSelectParticipant,
+    onToggleByInvitation,
     onSelectSpeaker,
+    onToggleSpeakerByInvitation,
     selectedSpeakerIdsInMeeting = [],
     onAddToContainer,
     onRemoveChildItem,
@@ -719,7 +723,9 @@ export function AgendaCanvas({
                                                             onUpdateDuration={onUpdateDuration}
                                                             onSelectHymn={onSelectHymn}
                                                             onSelectParticipant={onSelectParticipant}
+                                                            onToggleByInvitation={onToggleByInvitation}
                                                             onSelectSpeaker={onSelectSpeaker}
+                                                            onToggleSpeakerByInvitation={onToggleSpeakerByInvitation}
                                                             selectedSpeakerIdsInMeeting={selectedSpeakerIdsInMeeting}
                                                             onAddToContainer={onAddToContainer}
                                                             onRemoveChildItem={onRemoveChildItem}

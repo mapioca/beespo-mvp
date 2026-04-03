@@ -27,6 +27,7 @@ const CATEGORY_OPTIONS = [
 ] as const
 
 const STATUS_OPTIONS = [
+  { value: "draft", label: "Draft" },
   { value: "scheduled", label: "Scheduled" },
   { value: "in_progress", label: "In Progress" },
   { value: "completed", label: "Completed" },
