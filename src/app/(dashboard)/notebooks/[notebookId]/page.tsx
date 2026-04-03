@@ -17,6 +17,8 @@ import {
     MoreHorizontal,
     Edit2,
     Trash2,
+    Star,
+    StarOff,
 } from "lucide-react";
 import {
     DropdownMenu,
@@ -38,6 +40,8 @@ import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import { FavoriteButton } from "@/components/navigation/favorite-button";
 import { RecentVisitTracker } from "@/components/navigation/recent-visit-tracker";
+import { toggleFavorite } from "@/lib/actions/navigation-actions";
+import { useNavigationStore } from "@/stores/navigation-store";
 
 interface Note {
     id: string;
@@ -67,6 +71,8 @@ export default function NotebookViewPage({ params }: NotebookViewPageProps) {
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const router = useRouter();
     const supabase = createClient();
+    const isFavorite = useNavigationStore((state) => state.isFavorite);
+    const applyFavoriteToggle = useNavigationStore((state) => state.applyFavoriteToggle);
 
     const fetchData = useCallback(async () => {
         setIsLoading(true);
@@ -179,6 +185,30 @@ export default function NotebookViewPage({ params }: NotebookViewPageProps) {
             }
             : null
     ), [notebook]);
+
+    const handleNoteFavoriteToggle = async (note: Note) => {
+        const navigationItem = {
+            id: note.id,
+            entityType: "note" as const,
+            title: note.title || "Untitled Note",
+            href: `/notebooks/${resolvedParams.notebookId}/notes/${note.id}`,
+            icon: "note" as const,
+            parentTitle: notebook?.title ?? null,
+        };
+        const currentlyFavorite = isFavorite("note", note.id);
+        const nextFavorite = !currentlyFavorite;
+
+        applyFavoriteToggle(navigationItem, nextFavorite);
+
+        const result = await toggleFavorite(navigationItem);
+        if ("error" in result) {
+            applyFavoriteToggle(navigationItem, currentlyFavorite);
+            toast.error(result.error ?? "Unable to update favorite.");
+            return;
+        }
+
+        applyFavoriteToggle(result.item, result.favorited);
+    };
 
     if (isLoading || !notebook || !cover) {
         return (
@@ -320,44 +350,83 @@ export default function NotebookViewPage({ params }: NotebookViewPageProps) {
                         ) : (
                             <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
                                 {notes.map((note) => (
-                                    <Link
+                                    <div
                                         key={note.id}
-                                        href={`/notebooks/${notebook.id}/notes/${note.id}`}
                                         className={cn(
-                                            "group flex min-h-[148px] flex-col rounded-[24px] border border-border/65 bg-white p-5 shadow-[0_12px_24px_rgba(15,23,42,0.05)] transition-all duration-300 ease-out hover:-translate-y-0.5 hover:border-border/80 hover:shadow-[0_18px_34px_rgba(15,23,42,0.08)]"
+                                            "group relative flex min-h-[148px] flex-col rounded-[24px] border border-border/65 bg-white p-5 shadow-[0_12px_24px_rgba(15,23,42,0.05)] transition-all duration-300 ease-out hover:-translate-y-0.5 hover:border-border/80 hover:shadow-[0_18px_34px_rgba(15,23,42,0.08)]"
                                         )}
                                     >
-                                        <div className="flex items-start justify-between gap-4">
-                                            <div className="flex min-w-0 items-start gap-3">
-                                                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[16px] border border-border/55 bg-control/55 text-foreground/66">
-                                                    <FileText className="h-4.5 w-4.5 stroke-[1.7]" />
+                                        <Link
+                                            href={`/notebooks/${notebook.id}/notes/${note.id}`}
+                                            aria-label={`Open ${note.title || "Untitled Note"}`}
+                                            className="absolute inset-0 rounded-[24px]"
+                                        />
+
+                                        <div className="pointer-events-none relative z-10">
+                                            <div className="flex items-start justify-between gap-4">
+                                                <div className="flex min-w-0 items-start gap-3">
+                                                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[16px] border border-border/55 bg-control/55 text-foreground/66">
+                                                        <FileText className="h-4.5 w-4.5 stroke-[1.7]" />
+                                                    </div>
+                                                    <div className="min-w-0">
+                                                        <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-foreground/46">
+                                                            Note
+                                                        </p>
+                                                        <h3 className="mt-1 line-clamp-2 text-[20px] font-semibold leading-[1.08] tracking-[-0.03em] text-foreground">
+                                                            {note.title || "Untitled Note"}
+                                                        </h3>
+                                                    </div>
                                                 </div>
-                                                <div className="min-w-0">
-                                                    <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-foreground/46">
-                                                        Note
-                                                    </p>
-                                                    <h3 className="mt-1 line-clamp-2 text-[20px] font-semibold leading-[1.08] tracking-[-0.03em] text-foreground">
-                                                        {note.title || "Untitled Note"}
-                                                    </h3>
+                                                <div className="shrink-0 rounded-full bg-control/75 px-2.5 py-1 text-[10px] font-semibold tracking-[0.02em] text-foreground/62">
+                                                    Updated{" "}
+                                                    {new Date(note.updated_at).toLocaleDateString(undefined, {
+                                                        month: "short",
+                                                        day: "numeric",
+                                                    })}
                                                 </div>
                                             </div>
-                                            <div className="shrink-0 rounded-full bg-control/75 px-2.5 py-1 text-[10px] font-semibold tracking-[0.02em] text-foreground/62">
-                                                Updated{" "}
-                                                {new Date(note.updated_at).toLocaleDateString(undefined, {
-                                                    month: "short",
-                                                    day: "numeric",
-                                                })}
+
+                                            <div className="mt-5 flex items-center justify-between border-t border-border/55 pt-4 text-[12px] text-foreground/54">
+                                                <span>Open note</span>
+                                                <span className="inline-flex items-center gap-1 font-medium text-foreground/68 transition-colors group-hover:text-foreground">
+                                                    Continue
+                                                    <ArrowRight className="h-3.5 w-3.5 stroke-[1.8]" />
+                                                </span>
                                             </div>
                                         </div>
 
-                                        <div className="mt-5 flex items-center justify-between border-t border-border/55 pt-4 text-[12px] text-foreground/54">
-                                            <span>Open note</span>
-                                            <span className="inline-flex items-center gap-1 font-medium text-foreground/68 transition-colors group-hover:text-foreground">
-                                                Continue
-                                                <ArrowRight className="h-3.5 w-3.5 stroke-[1.8]" />
-                                            </span>
+                                        <div className="pointer-events-auto absolute right-3 top-3 z-20">
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-8 w-8 rounded-full bg-white/88 text-muted-foreground shadow-[0_1px_0_rgba(15,23,42,0.06)] backdrop-blur hover:bg-white hover:text-foreground"
+                                                    >
+                                                        <MoreHorizontal className="h-4 w-4 stroke-[1.8]" />
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end">
+                                                    <DropdownMenuItem asChild>
+                                                        <Link href={`/notebooks/${notebook.id}/notes/${note.id}`}>
+                                                            <FileText className="mr-2 h-4 w-4 stroke-[1.6]" />
+                                                            Open
+                                                        </Link>
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={() => void handleNoteFavoriteToggle(note)}>
+                                                        {isFavorite("note", note.id) ? (
+                                                            <StarOff className="mr-2 h-4 w-4 stroke-[1.6]" />
+                                                        ) : (
+                                                            <Star className="mr-2 h-4 w-4 stroke-[1.6]" />
+                                                        )}
+                                                        {isFavorite("note", note.id)
+                                                            ? "Remove from favorites"
+                                                            : "Add to favorites"}
+                                                    </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
                                         </div>
-                                    </Link>
+                                    </div>
                                 ))}
                             </div>
                         )}

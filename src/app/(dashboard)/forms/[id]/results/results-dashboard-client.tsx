@@ -31,6 +31,7 @@ import {
     CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import type { Form, FormSubmission } from "@/types/form-types";
+import { RecentVisitTracker } from "@/components/navigation/recent-visit-tracker";
 
 const ResultsCharts = dynamic(
     () => import("./results-charts").then((m) => m.ResultsCharts),
@@ -52,6 +53,15 @@ export function ResultsDashboardClient({
     submissionsOverTime,
 }: ResultsDashboardClientProps) {
     const [isTableExpanded, setIsTableExpanded] = useState(true);
+    const navigationItem = useMemo(
+        () => ({
+            id: form.id,
+            entityType: "form" as const,
+            title: form.title,
+            href: `/forms/${form.id}`,
+        }),
+        [form.id, form.title]
+    );
 
     // Calculate field distributions for select/radio fields
     const fieldDistributions = useMemo(() => {
@@ -110,6 +120,7 @@ export function ResultsDashboardClient({
 
     return (
         <div className="h-full overflow-auto bg-muted/20">
+            <RecentVisitTracker item={navigationItem} />
             <div className="p-6 max-w-6xl mx-auto space-y-6">
                 {/* Header */}
                 <div className="flex items-center justify-between">

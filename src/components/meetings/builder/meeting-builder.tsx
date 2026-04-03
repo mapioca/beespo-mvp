@@ -1,6 +1,6 @@
 "use client";
 
-import {useState, useEffect, useCallback, useRef} from "react";
+import {useState, useEffect, useCallback, useRef, useMemo} from "react";
 import { useRouter } from "next/navigation";
 import {
     DndContext,
@@ -57,6 +57,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { RecentVisitTracker } from "@/components/navigation/recent-visit-tracker";
 
 const meetingFormSchema = z.object({
     title: z.string().min(1, "Title is required"),
@@ -1820,8 +1821,22 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
         return format(d, "h:mm a");
     })();
 
+    const recentNavigationItem = useMemo(
+        () =>
+            initialMeetingId
+                ? {
+                    id: initialMeetingId,
+                    entityType: "meeting" as const,
+                    title: title || "Untitled Agenda",
+                    href: `/meetings/${initialMeetingId}`,
+                  }
+                : null,
+        [initialMeetingId, title]
+    );
+
     return (
         <Form {...form}>
+            <RecentVisitTracker item={recentNavigationItem} />
             <TooltipProvider delayDuration={1200}>
             <form onSubmit={(e) => { e.preventDefault(); handleValidate(); }} className="h-full min-h-0 flex flex-col overflow-hidden bg-panel">
                 <DndContext
