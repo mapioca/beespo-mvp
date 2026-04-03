@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, useCallback } from "react";
+import { formatDistanceToNow } from "date-fns";
 import {
     ArrowLeftRight,
     Link,
@@ -103,6 +104,12 @@ interface MeetingContextBarProps {
     onDelete?: () => Promise<void>;
     /** Whether the meeting is live */
     isLive?: boolean;
+    /** Whether current user can edit meeting content */
+    canEdit?: boolean;
+    /** Last successful autosave timestamp */
+    lastAutosaveAt?: Date | null;
+    /** Current autosave lifecycle status */
+    autosaveStatus?: "idle" | "saving" | "saved" | "error";
 }
 
 export function MeetingContextBar({
@@ -128,6 +135,9 @@ export function MeetingContextBar({
     onOpenZoomSheet,
     onAddZoom,
     onDelete,
+    canEdit = true,
+    lastAutosaveAt = null,
+    autosaveStatus = "idle",
 }: MeetingContextBarProps) {
     const [saveAsNewOpen, setSaveAsNewOpen] = useState(false);
     const [newTitle, setNewTitle] = useState("");
@@ -137,6 +147,7 @@ export function MeetingContextBar({
     const [isDeleting, setIsDeleting] = useState(false);
     const [deviceMenuOpen, setDeviceMenuOpen] = useState(false);
     const [isMac, setIsMac] = useState(false);
+    const [, setAutosaveClockTick] = useState(0);
 
     const openSaveAsNew = useCallback(() => {
         setNewTitle(title ? `${title} (Copy)` : "");
@@ -169,11 +180,20 @@ export function MeetingContextBar({
     );
 
     useEffect(() => {
+        if (!lastAutosaveAt) return;
+        const id = window.setInterval(() => {
+            setAutosaveClockTick((v) => v + 1);
+        }, 60_000);
+        return () => window.clearInterval(id);
+    }, [lastAutosaveAt]);
+
+    useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             const key = e.key.toLowerCase();
             const hasCmdOrCtrl = e.metaKey || e.ctrlKey;
 
             if (!hasCmdOrCtrl) return;
+            if (!canEdit) return;
 
             // Save (Cmd/Ctrl + S)
             if (!e.altKey && !e.shiftKey && key === "s") {
@@ -204,7 +224,7 @@ export function MeetingContextBar({
 
         window.addEventListener("keydown", handleKeyDown);
         return () => window.removeEventListener("keydown", handleKeyDown);
-    }, [isCreating, isValid, onSave, onSaveAsTemplate, openSaveAsNew]);
+    }, [isCreating, isValid, onSave, onSaveAsTemplate, openSaveAsNew, canEdit]);
 
     const handleCopyLink = async () => {
         const url = initialMeetingId
@@ -298,6 +318,13 @@ export function MeetingContextBar({
         : initialMeetingId
             ? "Save"
             : "Create Agenda";
+    const autosaveLabel = (() => {
+        if (!canEdit) return "Read-only";
+        if (autosaveStatus === "saving") return "Saving draft...";
+        if (autosaveStatus === "error") return "Autosave failed";
+        if (lastAutosaveAt) return `Saved ${formatDistanceToNow(lastAutosaveAt, { addSuffix: true })}`;
+        return "Autosave pending";
+    })();
 
     const deviceOptions = {
         phone: { label: "Phone", icon: Smartphone },
@@ -524,7 +551,7 @@ export function MeetingContextBar({
                             </DropdownMenuContent>
                         </DropdownMenu>
 
-                        {isLeader && (
+                        {isLeader && canEdit && (
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                     <button
@@ -575,6 +602,10 @@ export function MeetingContextBar({
                         <div className="hidden sm:block h-4 w-px bg-border/60" />
                         <span className="hidden sm:block whitespace-nowrap text-[11px] font-medium text-control">
                             {itemCount} {itemCount === 1 ? "item" : "items"} &bull; {totalDuration} min
+                        </span>
+                        <div className="hidden sm:block h-4 w-px bg-border/60" />
+                        <span className="hidden sm:block whitespace-nowrap text-[11px] font-medium text-control">
+                            {autosaveLabel}
                         </span>
                     </div>
                 }
