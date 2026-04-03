@@ -209,7 +209,7 @@ export function SidebarSavedItemsSection({
     }
   }, [isExpanded]);
 
-  if (items.length === 0 || isCollapsed) {
+  if (isCollapsed) {
     return null;
   }
 
@@ -250,33 +250,49 @@ export function SidebarSavedItemsSection({
               {title}
             </p>
             <div className="mt-0.5 space-y-0.5">
-              {items.map((item) => (
-                <SavedItemRow
-                  key={`${item.entityType}-${item.id}`}
-                  item={item}
-                  itemType={itemType}
-                  isActive={pathname === item.href}
-                  onMenuOpen={(open) => {
-                    if (open) {
-                      openFlyout();
-                    }
-                  }}
-                />
-              ))}
+              {items.length === 0 ? (
+                <p className="px-2 py-2 text-xs text-muted-foreground">
+                  {itemType === "favorites"
+                    ? "No favorites yet."
+                    : "No recent items yet."}
+                </p>
+              ) : (
+                items.map((item) => (
+                  <SavedItemRow
+                    key={`${item.entityType}-${item.id}`}
+                    item={item}
+                    itemType={itemType}
+                    isActive={pathname === item.href}
+                    onMenuOpen={(open) => {
+                      if (open) {
+                        openFlyout();
+                      }
+                    }}
+                  />
+                ))
+              )}
             </div>
           </PopoverContent>
         </Popover>
 
         <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down">
           <div className="mt-0.5 space-y-0.5">
-            {items.map((item) => (
-              <SavedItemRow
-                key={`${item.entityType}-${item.id}`}
-                item={item}
-                itemType={itemType}
-                isActive={pathname === item.href}
-              />
-            ))}
+            {items.length === 0 ? (
+              <p className="px-3 py-1.5 text-xs text-muted-foreground">
+                {itemType === "favorites"
+                  ? "No favorites yet."
+                  : "No recent items yet."}
+              </p>
+            ) : (
+              items.map((item) => (
+                <SavedItemRow
+                  key={`${item.entityType}-${item.id}`}
+                  item={item}
+                  itemType={itemType}
+                  isActive={pathname === item.href}
+                />
+              ))
+            )}
           </div>
         </CollapsibleContent>
       </Collapsible>

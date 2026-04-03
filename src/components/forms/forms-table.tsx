@@ -27,13 +27,16 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { FileText, BarChart2, ExternalLink, Trash2 } from "lucide-react"
+import { FileText, BarChart2, ExternalLink, Trash2, Star, StarOff } from "lucide-react"
 import { format } from "date-fns"
 import { DataTableColumnHeader } from "@/components/ui/data-table-header"
 import { useState } from "react"
 import type { Form } from "@/types/form-types"
 import { TableRowActionTrigger } from "@/components/ui/table-row-action-trigger"
 import { StatusIndicator } from "@/components/ui/status-indicator"
+import { toggleFavorite } from "@/lib/actions/navigation-actions"
+import { useNavigationStore } from "@/stores/navigation-store"
+import { toast } from "@/lib/toast"
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -97,6 +100,8 @@ export function FormsTable({
 }: FormsTableProps) {
     const [deleteTarget, setDeleteTarget] = useState<FormWithCount | null>(null)
     const [isDeleting, setIsDeleting] = useState(false)
+    const isFavorite = useNavigationStore((state) => state.isFavorite)
+    const applyFavoriteToggle = useNavigationStore((state) => state.applyFavoriteToggle)
 
     const handleDelete = async () => {
         if (!deleteTarget || !onDelete) return
@@ -107,6 +112,30 @@ export function FormsTable({
     }
 
     const allSelected = forms.length > 0 && selectedRows.size === forms.length
+
+    const handleFavoriteToggle = async (form: FormWithCount) => {
+        const navigationItem = {
+            id: form.id,
+            entityType: "form" as const,
+            title: form.title,
+            href: `/forms/${form.id}`,
+            icon: "form" as const,
+            parentTitle: null,
+        }
+        const currentlyFavorite = isFavorite("form", form.id)
+        const nextFavorite = !currentlyFavorite
+
+        applyFavoriteToggle(navigationItem, nextFavorite)
+
+        const result = await toggleFavorite(navigationItem)
+        if ("error" in result) {
+            applyFavoriteToggle(navigationItem, currentlyFavorite)
+            toast.error(result.error ?? "Unable to update favorite.")
+            return
+        }
+
+        applyFavoriteToggle(result.item, result.favorited)
+    }
 
     const visibleColumns =
         ["title", "status", "views", "responses", "created_at"].filter(
@@ -313,6 +342,16 @@ export function FormsTable({
                                                         </Link>
                                                     </DropdownMenuItem>
                                                 )}
+                                                <DropdownMenuItem onClick={() => void handleFavoriteToggle(form)}>
+                                                    {isFavorite("form", form.id) ? (
+                                                        <StarOff className="mr-2 h-4 w-4 stroke-[1.6]" />
+                                                    ) : (
+                                                        <Star className="mr-2 h-4 w-4 stroke-[1.6]" />
+                                                    )}
+                                                    {isFavorite("form", form.id)
+                                                        ? "Remove from favorites"
+                                                        : "Add to favorites"}
+                                                </DropdownMenuItem>
                                                 <DropdownMenuSeparator />
                                                 <DropdownMenuItem
                                                     className="text-destructive focus:text-destructive"

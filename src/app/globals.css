@@ -617,6 +617,34 @@
   }
 }
 
+/* Global native scrollbar styling */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--border) / 0.55) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: hsl(var(--border) / 0.5);
+  border-radius: 9999px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background-color: hsl(var(--border) / 0.7);
+}
+
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
 /* ============================================
    Responsive Typography with clamp()
    Fluid font sizes that scale with viewport

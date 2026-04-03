@@ -47,6 +47,15 @@ const NAVIGATION_ICON_BY_TYPE: Record<FavoriteEntityType, FavoriteEntityType> = 
   note: "note",
 };
 
+function isMissingTableError(errorMessage: string | null | undefined, tableName: string): boolean {
+  if (!errorMessage) return false;
+  const normalized = errorMessage.toLowerCase();
+  return (
+    normalized.includes("could not find the table") &&
+    normalized.includes(`'public.${tableName.toLowerCase()}'`)
+  );
+}
+
 async function getCurrentNavigationContext(
   supabase: NavigationDbClient
 ): Promise<UserNavigationContext | null> {
@@ -477,7 +486,21 @@ export async function recordRecentVisitForCurrentUser(item: NavigationItemInput)
     item
   );
 
-  if (!canonicalItem) {
+  const fallbackItem: NavigationItem | null =
+    item.title && item.href
+      ? {
+          id: item.id,
+          entityType: item.entityType,
+          title: item.title,
+          href: item.href,
+          icon: item.entityType,
+          parentTitle: item.parentTitle ?? null,
+        }
+      : null;
+
+  const resolvedItem = canonicalItem ?? fallbackItem;
+
+  if (!resolvedItem) {
     return { error: "Item not found" as const };
   }
 
@@ -487,32 +510,38 @@ export async function recordRecentVisitForCurrentUser(item: NavigationItemInput)
     .upsert(
       {
         user_id: context.userId,
-        entity_type: canonicalItem.entityType,
-        entity_id: canonicalItem.id,
+        entity_type: resolvedItem.entityType,
+        entity_id: resolvedItem.id,
         workspace_id: context.workspaceId,
-        title: canonicalItem.title,
-        href: canonicalItem.href,
-        parent_title: canonicalItem.parentTitle,
+        title: resolvedItem.title,
+        href: resolvedItem.href,
+        parent_title: resolvedItem.parentTitle,
         last_viewed_at: lastViewedAt,
       },
       { onConflict: "user_id,entity_type,entity_id" }
     );
 
   if (upsertRecentError) {
+    if (isMissingTableError(upsertRecentError.message, "user_recent_items")) {
+      return {
+        item: resolvedItem,
+        lastViewedAt,
+      };
+    }
     return { error: upsertRecentError.message } as const;
   }
 
   await fromTable(supabase, "user_favorites")
     .update({
-      title: canonicalItem.title,
-      href: canonicalItem.href,
-      parent_title: canonicalItem.parentTitle,
+      title: resolvedItem.title,
+      href: resolvedItem.href,
+      parent_title: resolvedItem.parentTitle,
       updated_at: new Date().toISOString(),
     })
     .eq("user_id", context.userId)
     .eq("workspace_id", context.workspaceId)
-    .eq("entity_type", canonicalItem.entityType)
-    .eq("entity_id", canonicalItem.id);
+    .eq("entity_type", resolvedItem.entityType)
+    .eq("entity_id", resolvedItem.id);
 
   const { data: staleRows } = await fromTable(supabase, "user_recent_items")
     .select("entity_type, entity_id")
@@ -534,7 +563,7 @@ export async function recordRecentVisitForCurrentUser(item: NavigationItemInput)
   }
 
   return {
-    item: canonicalItem,
+    item: resolvedItem,
     lastViewedAt,
   };
 }
@@ -558,6 +587,9 @@ export async function removeRecentForCurrentUser(
     .eq("entity_id", entityId);
 
   if (error) {
+    if (isMissingTableError(error.message, "user_recent_items")) {
+      return { success: true as const };
+    }
     return { error: error.message } as const;
   }
 

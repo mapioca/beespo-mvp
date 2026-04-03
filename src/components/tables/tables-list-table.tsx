@@ -28,11 +28,14 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { Table2, MoreHorizontal, Settings2, Trash2 } from "lucide-react"
+import { Table2, MoreHorizontal, Settings2, Trash2, Star, StarOff } from "lucide-react"
 import { format } from "date-fns"
 import { DataTableColumnHeader } from "@/components/ui/data-table-header"
 import { useState } from "react"
 import type { DynamicTable } from "@/types/table-types"
+import { toggleFavorite } from "@/lib/actions/navigation-actions"
+import { useNavigationStore } from "@/stores/navigation-store"
+import { toast } from "@/lib/toast"
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -76,6 +79,8 @@ export function TablesListTable({
 }: TablesListTableProps) {
     const [deleteTarget, setDeleteTarget] = useState<TableWithCount | null>(null)
     const [isDeleting, setIsDeleting] = useState(false)
+    const isFavorite = useNavigationStore((state) => state.isFavorite)
+    const applyFavoriteToggle = useNavigationStore((state) => state.applyFavoriteToggle)
 
     const handleDelete = async () => {
         if (!deleteTarget || !onDelete) return
@@ -86,6 +91,30 @@ export function TablesListTable({
     }
 
     const allSelected = tables.length > 0 && selectedRows.size === tables.length
+
+    const handleFavoriteToggle = async (table: TableWithCount) => {
+        const navigationItem = {
+            id: table.id,
+            entityType: "table" as const,
+            title: table.name,
+            href: `/tables/${table.id}`,
+            icon: "table" as const,
+            parentTitle: null,
+        }
+        const currentlyFavorite = isFavorite("table", table.id)
+        const nextFavorite = !currentlyFavorite
+
+        applyFavoriteToggle(navigationItem, nextFavorite)
+
+        const result = await toggleFavorite(navigationItem)
+        if ("error" in result) {
+            applyFavoriteToggle(navigationItem, currentlyFavorite)
+            toast.error(result.error ?? "Unable to update favorite.")
+            return
+        }
+
+        applyFavoriteToggle(result.item, result.favorited)
+    }
 
     const visibleColumns =
         ["name", "row_count", "created_at"].filter(
@@ -239,6 +268,16 @@ export function TablesListTable({
                                                     <Settings2 className="mr-2 h-4 w-4 stroke-[1.6]" />
                                                     Settings
                                                 </Link>
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem onClick={() => void handleFavoriteToggle(table)}>
+                                                {isFavorite("table", table.id) ? (
+                                                    <StarOff className="mr-2 h-4 w-4 stroke-[1.6]" />
+                                                ) : (
+                                                    <Star className="mr-2 h-4 w-4 stroke-[1.6]" />
+                                                )}
+                                                {isFavorite("table", table.id)
+                                                    ? "Remove from favorites"
+                                                    : "Add to favorites"}
                                             </DropdownMenuItem>
                                             <DropdownMenuSeparator />
                                             <DropdownMenuItem

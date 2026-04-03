@@ -27,12 +27,15 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { Eye, Trash2, MessagesSquare } from "lucide-react"
+import { Eye, Trash2, MessagesSquare, Star, StarOff } from "lucide-react"
 import { format } from "date-fns"
 import { DataTableColumnHeader } from "@/components/ui/data-table-header"
 import Link from "next/link"
 import { TableRowActionTrigger } from "@/components/ui/table-row-action-trigger"
 import { StatusIndicator } from "@/components/ui/status-indicator"
+import { toggleFavorite } from "@/lib/actions/navigation-actions"
+import { useNavigationStore } from "@/stores/navigation-store"
+import { toast } from "@/lib/toast"
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -158,6 +161,8 @@ export function DiscussionsTable({
 }: DiscussionsTableProps) {
     const [deleteTarget, setDeleteTarget] = useState<Discussion | null>(null)
     const [isDeleting, setIsDeleting] = useState(false)
+    const isFavorite = useNavigationStore((state) => state.isFavorite)
+    const applyFavoriteToggle = useNavigationStore((state) => state.applyFavoriteToggle)
 
     const handleDelete = async () => {
         if (!deleteTarget || !onDelete) return
@@ -169,6 +174,30 @@ export function DiscussionsTable({
 
     const allSelected =
         discussions.length > 0 && selectedRows.size === discussions.length
+
+    const handleFavoriteToggle = async (discussion: Discussion) => {
+        const navigationItem = {
+            id: discussion.id,
+            entityType: "discussion" as const,
+            title: discussion.title,
+            href: `/meetings/discussions/${discussion.id}`,
+            icon: "discussion" as const,
+            parentTitle: null,
+        }
+        const currentlyFavorite = isFavorite("discussion", discussion.id)
+        const nextFavorite = !currentlyFavorite
+
+        applyFavoriteToggle(navigationItem, nextFavorite)
+
+        const result = await toggleFavorite(navigationItem)
+        if ("error" in result) {
+            applyFavoriteToggle(navigationItem, currentlyFavorite)
+            toast.error(result.error ?? "Unable to update favorite.")
+            return
+        }
+
+        applyFavoriteToggle(result.item, result.favorited)
+    }
 
     // Count visible columns for empty state colspan
     const visibleColumns =
@@ -390,6 +419,16 @@ export function DiscussionsTable({
                                             >
                                                 <Eye className="mr-2 h-4 w-4 stroke-[1.6]" />
                                                 View
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem onClick={() => void handleFavoriteToggle(discussion)}>
+                                                {isFavorite("discussion", discussion.id) ? (
+                                                    <StarOff className="mr-2 h-4 w-4 stroke-[1.6]" />
+                                                ) : (
+                                                    <Star className="mr-2 h-4 w-4 stroke-[1.6]" />
+                                                )}
+                                                {isFavorite("discussion", discussion.id)
+                                                    ? "Remove from favorites"
+                                                    : "Add to favorites"}
                                             </DropdownMenuItem>
                                             {onDelete && (
                                                 <>

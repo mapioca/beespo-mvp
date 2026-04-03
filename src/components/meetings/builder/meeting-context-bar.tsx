@@ -49,6 +49,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { toast } from "@/lib/toast";
+import { FavoriteButton } from "@/components/navigation/favorite-button";
 import {
     generateMeetingPdf,
     generateMeetingDocx,
@@ -465,6 +466,25 @@ export function MeetingContextBar({
                 inlineAction={<div className="hidden sm:flex">{moreMenu}</div>}
                 action={
                     <div className="flex flex-wrap items-center gap-1.5 sm:flex-nowrap">
+                        {initialMeetingId ? (
+                            <FavoriteButton
+                                item={{
+                                    id: initialMeetingId,
+                                    entityType: "meeting",
+                                    title: title || "Untitled Agenda",
+                                    href: `/meetings/${initialMeetingId}`,
+                                }}
+                                variant="ghost"
+                                size="icon"
+                                className={cn(
+                                    "inline-flex h-8 w-8 items-center justify-center rounded-full",
+                                    "border border-control bg-control text-foreground hover:bg-control-hover"
+                                )}
+                                iconClassName="h-4 w-4 stroke-[1.6]"
+                                activeClassName="border-amber-300 text-foreground"
+                            />
+                        ) : null}
+
                         {mode === "program" && (
                             <DropdownMenu open={deviceMenuOpen} onOpenChange={setDeviceMenuOpen}>
                                 <DropdownMenuTrigger asChild>
