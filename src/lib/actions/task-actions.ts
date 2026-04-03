@@ -10,7 +10,7 @@ export async function completeTaskWithToken(token: string) {
 
     // 1. Find the task by token
     const { data: task, error: fetchError } = await (supabase
-        .from("tasks") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+        .from("tasks")) 
         .select("id, title, status")
         .eq("access_token", token)
         .single();
@@ -24,7 +24,7 @@ export async function completeTaskWithToken(token: string) {
     }
 
     const { error: updateError } = await (supabase
-        .from("tasks") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+        .from("tasks")) 
         .update({
             status: "completed",
             completed_at: new Date().toISOString()
@@ -54,7 +54,7 @@ export async function completeTask(taskId: string, comment?: string) {
     try {
         // 1. Add Comment if present
         if (comment) {
-            const { error: commentError } = await (supabase.from("task_comments") as any).insert({ // eslint-disable-line @typescript-eslint/no-explicit-any
+            const { error: commentError } = await (supabase.from("task_comments")).insert({ 
                 task_id: taskId,
                 user_id: user.id,
                 content: comment
@@ -63,19 +63,19 @@ export async function completeTask(taskId: string, comment?: string) {
 
             // Activity for comment
             // Fire and forget activity logging to avoid blocking
-            (supabase.from("task_activities") as any).insert({ // eslint-disable-line @typescript-eslint/no-explicit-any
+            (supabase.from("task_activities")).insert({ 
                 task_id: taskId,
                 user_id: user.id,
                 activity_type: 'comment',
                 details: { snippet: comment.substring(0, 50) }
-            }).then(({ error }: { error: any }) => { // eslint-disable-line @typescript-eslint/no-explicit-any
+            }).then(({ error }) => { 
                 if (error) console.error("Error logging comment activity:", error);
             });
         }
 
         // 2. Update Status
         const { error: updateError } = await (supabase
-            .from("tasks") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+            .from("tasks")) 
             .update({
                 status: "completed",
                 completed_at: new Date().toISOString()
@@ -89,12 +89,12 @@ export async function completeTask(taskId: string, comment?: string) {
 
         // 3. Log Activity
         // Fire and forget
-        (supabase.from("task_activities") as any).insert({ // eslint-disable-line @typescript-eslint/no-explicit-any
+        (supabase.from("task_activities")).insert({ 
             task_id: taskId,
             user_id: user.id,
             activity_type: 'status_change',
             details: { from: 'pending', to: 'completed' }
-        }).then(({ error }: { error: any }) => { // eslint-disable-line @typescript-eslint/no-explicit-any
+        }).then(({ error }) => { 
             if (error) console.error("Error logging status activity:", error);
         });
 
@@ -129,8 +129,15 @@ export async function updateTask(taskId: string, data: {
         if (data.priority !== undefined) updateData.priority = data.priority;
         if (data.status !== undefined) updateData.status = data.status;
 
+        // 1. Fetch current task to check for changes
+        const { data: currentTask } = await (supabase
+            .from("tasks"))
+            .select("status")
+            .eq("id", taskId)
+            .single();
+
         const { error } = await (supabase
-            .from("tasks") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+            .from("tasks")) 
             .update(updateData)
             .eq("id", taskId);
 
@@ -139,7 +146,15 @@ export async function updateTask(taskId: string, data: {
             return { error: error.message };
         }
 
-        // Log activity if assigned_to changed? Ideally yes, but keeping it simple for now as requested.
+        // 2. Log status change activity if changed
+        if (data.status && currentTask && currentTask.status !== data.status) {
+            (supabase.from("task_activities")).insert({ 
+                task_id: taskId,
+                user_id: user.id,
+                activity_type: 'status_change',
+                details: { from: currentTask.status, to: data.status }
+            }).catch((err) => console.error("Error logging status activity:", err));
+        }
 
         revalidatePath("/tasks");
         revalidatePath("/dashboard");
@@ -158,7 +173,7 @@ export async function addTaskComment(taskId: string, content: string) {
 
     try {
         const { error } = await (supabase
-            .from("task_comments") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+            .from("task_comments")) 
             .insert({
                 task_id: taskId,
                 user_id: user.id,
@@ -171,12 +186,12 @@ export async function addTaskComment(taskId: string, content: string) {
         }
 
         // Log Activity - Fire and forget
-        (supabase.from("task_activities") as any).insert({ // eslint-disable-line @typescript-eslint/no-explicit-any
+        (supabase.from("task_activities")).insert({ 
             task_id: taskId,
             user_id: user.id,
             activity_type: 'comment',
             details: { snippet: content.substring(0, 50) }
-        }).then(({ error }: { error: any }) => { // eslint-disable-line @typescript-eslint/no-explicit-any
+        }).then(({ error }) => { 
             if (error) console.error("Error logging comment activity:", error);
         });
 
@@ -235,7 +250,7 @@ export async function createTask(data: {
     if (!user) return { error: "Unauthorized" };
 
     const { data: profile } = await (supabase
-        .from("profiles") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+        .from("profiles")) 
         .select("workspace_id, role")
         .eq("id", user.id)
         .single();
@@ -243,7 +258,7 @@ export async function createTask(data: {
     if (!profile?.workspace_id) return { error: "Profile not found" };
 
     const { data: task, error } = await (supabase
-        .from("tasks") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+        .from("tasks")) 
         .insert({
             title: data.title,
             description: data.description,
@@ -294,7 +309,7 @@ export async function copyTask(taskId: string) {
     try {
         // Get the original task
         const { data: originalTask, error: fetchError } = await (supabase
-            .from("tasks") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+            .from("tasks")) 
             .select("*")
             .eq("id", taskId)
             .single();
@@ -305,7 +320,7 @@ export async function copyTask(taskId: string) {
 
         // Create a copy with a new workspace_task_id (auto-generated by trigger)
         const { data: newTask, error: createError } = await (supabase
-            .from("tasks") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+            .from("tasks")) 
             .insert({
                 title: originalTask.title + " (Copy)",
                 description: originalTask.description,
@@ -340,7 +355,7 @@ export async function copyTask(taskId: string) {
                 label_id: la.label_id
             }));
 
-            await (supabase.from("task_label_assignments") as any).insert(newAssignments); // eslint-disable-line @typescript-eslint/no-explicit-any
+            await (supabase.from("task_label_assignments")).insert(newAssignments); 
         }
 
         revalidatePath("/tasks");
@@ -359,7 +374,7 @@ export async function deleteTask(taskId: string) {
 
     try {
         const { error } = await (supabase
-            .from("tasks") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+            .from("tasks")) 
             .delete()
             .eq("id", taskId);
 
@@ -385,7 +400,7 @@ export async function getWorkspaceLabels() {
 
     try {
         const { data: profile } = await (supabase
-            .from("profiles") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+            .from("profiles")) 
             .select("workspace_id")
             .eq("id", user.id)
             .single();
@@ -393,7 +408,7 @@ export async function getWorkspaceLabels() {
         if (!profile?.workspace_id) return { error: "Profile not found" };
 
         const { data: labels, error } = await (supabase
-            .from("task_labels") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+            .from("task_labels")) 
             .select("*")
             .eq("workspace_id", profile.workspace_id)
             .order("name");
@@ -418,7 +433,7 @@ export async function getTaskLabels(taskId: string) {
 
     try {
         const { data: assignments, error } = await (supabase
-            .from("task_label_assignments") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+            .from("task_label_assignments")) 
             .select(`
                 label_id,
                 label:task_labels(id, name, color)
@@ -447,7 +462,7 @@ export async function assignLabels(taskId: string, labelIds: string[]) {
     try {
         // Delete existing assignments
         await (supabase
-            .from("task_label_assignments") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+            .from("task_label_assignments")) 
             .delete()
             .eq("task_id", taskId);
 
@@ -459,7 +474,7 @@ export async function assignLabels(taskId: string, labelIds: string[]) {
             }));
 
             const { error } = await (supabase
-                .from("task_label_assignments") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+                .from("task_label_assignments")) 
                 .insert(assignments);
 
             if (error) {
@@ -484,7 +499,7 @@ export async function createLabel(name: string, color: string) {
 
     try {
         const { data: profile } = await (supabase
-            .from("profiles") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+            .from("profiles")) 
             .select("workspace_id")
             .eq("id", user.id)
             .single();
@@ -492,7 +507,7 @@ export async function createLabel(name: string, color: string) {
         if (!profile?.workspace_id) return { error: "Profile not found" };
 
         const { data: label, error } = await (supabase
-            .from("task_labels") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+            .from("task_labels")) 
             .insert({
                 workspace_id: profile.workspace_id,
                 name,
@@ -522,7 +537,7 @@ export async function deleteLabel(labelId: string) {
 
     try {
         const { error } = await (supabase
-            .from("task_labels") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+            .from("task_labels")) 
             .delete()
             .eq("id", labelId);
 

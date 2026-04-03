@@ -1,5 +1,38 @@
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { NextRequest, NextResponse } from 'next/server';
+
+async function findAuthUserByEmail(email: string) {
+    const adminClient = createAdminClient();
+    let page = 1;
+    const perPage = 200;
+
+    while (true) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data, error } = await (adminClient.auth.admin as any).listUsers({
+            page,
+            perPage,
+        });
+
+        if (error) {
+            throw error;
+        }
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const users = (data?.users ?? []) as any[];
+        const matchedUser = users.find((user) => user.email?.toLowerCase() === email.toLowerCase());
+
+        if (matchedUser) {
+            return matchedUser;
+        }
+
+        if (users.length < perPage) {
+            return null;
+        }
+
+        page += 1;
+    }
+}
 
 // POST /api/invitations/accept - Accept an invitation
 export async function POST(request: NextRequest) {
@@ -38,15 +71,43 @@ export async function POST(request: NextRequest) {
     // Get current user
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
-        // Return invitation info so frontend can redirect to signup
+        const adminClient = createAdminClient();
+
+        const authUser = await findAuthUserByEmail(invitation.email);
+        const { data: invitedProfile } = await (adminClient
+            .from('profiles') as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+            .select('id, workspace_id, workspaces(name)')
+            .eq('email', invitation.email.toLowerCase())
+            .eq('is_deleted', false)
+            .single();
+
+        let authAction: 'signup' | 'login' | 'blocked' = 'signup';
+        let message: string | undefined;
+
+        if (invitedProfile?.workspace_id) {
+            authAction = 'blocked';
+            message = 'This email is already tied to another workspace. Leave that workspace before accepting this invitation.';
+        } else if (authUser) {
+            authAction = 'login';
+        }
+
         return NextResponse.json({
             needsAuth: true,
+            authAction,
+            message,
             invitation: {
                 email: invitation.email,
                 workspaceName: invitation.workspaces?.name,
                 role: invitation.role,
+                existingWorkspaceName: invitedProfile?.workspaces?.name || null,
             }
         }, { status: 200 });
+    }
+
+    if (user.email?.toLowerCase() !== invitation.email.toLowerCase()) {
+        return NextResponse.json({
+            error: `This invitation was sent to ${invitation.email}. Please sign in with that email address.`
+        }, { status: 400 });
     }
 
     // Check if user already has a profile

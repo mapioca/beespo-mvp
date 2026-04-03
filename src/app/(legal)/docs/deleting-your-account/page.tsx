@@ -25,7 +25,7 @@ export default function DeletingYourAccountDocs() {
         <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
           <li><strong>Permanently remove:</strong> Your name, email address, password, and profile preferences from our servers.</li>
           <li><strong>Detach:</strong> Your workspace membership and any roles you currently hold.</li>
-          <li><strong>Leave content intact:</strong> Meetings, agendas, notes, and tasks you created will remain in the workspace, with your name attributed to them or replaced by &#34;Former Member&#34; for privacy and workspace continuity.</li>
+          <li><strong>Leave content intact:</strong> Meetings, agendas, notes, and tasks you created will remain in the workspace, with your name attributed to them or replaced by &#34;Former User&#34; for privacy and workspace continuity.</li>
         </ul>
         <p className="mt-4 text-muted-foreground font-semibold">THIS ACTION CANNOT BE UNDONE.</p>
       </section>

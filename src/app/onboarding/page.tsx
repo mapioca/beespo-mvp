@@ -19,7 +19,9 @@ import { toast } from '@/lib/toast';
 import { UNIT_TYPES } from '@/lib/onboarding/constants';
 import {
   getOrganizationsForUnit,
+  getOrganizationKeyFromDbType,
   getRolesForOrganization,
+  getRoleTitle,
   getUnitNamePlaceholder,
   getUnitNameHelperText,
   generateWorkspaceName,
@@ -104,7 +106,7 @@ export default function OnboardingPage() {
   const [isInvitedUser, setIsInvitedUser] = useState(false);
   const [invitationToken, setInvitationToken] = useState<string | null>(null);
   const [invitationData, setInvitationData] = useState<WorkspaceInvitationData | null>(null);
-  const [roleTitle, setRoleTitle] = useState('');
+  const [selectedInvitedRole, setSelectedInvitedRole] = useState<RoleKey | ''>('');
 
   // Invite rows state - start with 2 empty rows
   const [inviteRows, setInviteRows] = useState<Array<{ email: string; role: WorkspaceMemberRole }>>([
@@ -138,9 +140,15 @@ export default function OnboardingPage() {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: profile } = await (supabase as any)
         .from('profiles')
-        .select('workspace_id')
+        .select('workspace_id, is_deleted')
         .eq('id', user.id)
         .single();
+
+      if (profile?.is_deleted) {
+        await supabase.auth.signOut();
+        router.push('/signup');
+        return;
+      }
 
       if (profile?.workspace_id) {
         // User already has a workspace, redirect to dashboard
@@ -177,6 +185,8 @@ export default function OnboardingPage() {
               email: data.email,
               workspaceName: data.workspaceName,
               role: data.role,
+              unitType: data.unitType,
+              organizationType: data.organizationType,
             });
           } else {
             // Token is no longer valid
@@ -197,6 +207,12 @@ export default function OnboardingPage() {
   const currentSteps = isInvitedUser ? INVITED_USER_ONBOARDING_STEPS : ONBOARDING_STEPS;
   const TOTAL_STEPS = currentSteps.length;
   const currentLoadingMessages = isInvitedUser ? INVITED_LOADING_MESSAGES : LOADING_MESSAGES;
+  const invitedOrganizationKey = invitationData?.organizationType && invitationData.unitType
+    ? getOrganizationKeyFromDbType(invitationData.organizationType, invitationData.unitType)
+    : null;
+  const invitedRoleOptions = invitedOrganizationKey && invitationData?.unitType
+    ? getRolesForOrganization(invitedOrganizationKey, invitationData.unitType)
+    : [];
 
   // Loading message rotation
   useEffect(() => {
@@ -216,7 +232,7 @@ export default function OnboardingPage() {
         case 1:
           return true; // Welcome step is always valid
         case 2:
-          return roleTitle.trim().length >= 2;
+          return Boolean(selectedInvitedRole);
         default:
           return false;
       }
@@ -299,7 +315,7 @@ export default function OnboardingPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           workspaceInvitationToken: invitationToken,
-          roleTitle: roleTitle.trim(),
+          role: selectedInvitedRole,
         }),
       });
 
@@ -553,33 +569,34 @@ export default function OnboardingPage() {
                       What is your calling or role?
                     </h1>
                     <p className="text-gray-500">
-                      This helps your teammates know your position in the organization.
+                      Select your role in the organization so your profile matches this workspace.
                     </p>
                   </div>
                   <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="roleTitle" className="text-sm text-gray-500 font-medium">
-                        Your Role Title
-                      </Label>
-                      <Input
-                        id="roleTitle"
-                        type="text"
-                        placeholder="e.g., Relief Society Secretary, Young Men Advisor"
-                        value={roleTitle}
-                        onChange={(e) => setRoleTitle(e.target.value)}
-                        className="text-base h-12 rounded-lg border-gray-200 focus:border-black focus:ring-2 focus:ring-black focus:ring-offset-0"
-                        autoFocus
-                      />
-                    </div>
-                    {roleTitle.trim() && (
+                    <PillSelector
+                      options={invitedRoleOptions.map((role) => ({
+                        value: role.value,
+                        label: role.label,
+                        description: role.description,
+                      }))}
+                      value={selectedInvitedRole}
+                      onChange={(value) => setSelectedInvitedRole(value as RoleKey)}
+                      ariaLabel="Select your role"
+                    />
+                    {selectedInvitedRole && invitedOrganizationKey && (
                       <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 space-y-1">
                         <p className="text-sm font-medium text-gray-500">
                           You&apos;ll appear as:
                         </p>
                         <p className="font-semibold text-gray-900">
-                          {roleTitle.trim()}
+                          {getRoleTitle(selectedInvitedRole, invitedOrganizationKey)}
                         </p>
                       </div>
+                    )}
+                    {invitedRoleOptions.length === 0 && (
+                      <p className="text-sm text-destructive">
+                        We couldn&apos;t determine the available roles for this workspace.
+                      </p>
                     )}
                   </div>
                 </div>

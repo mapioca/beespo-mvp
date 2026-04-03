@@ -29,7 +29,7 @@ BEGIN
   -- ========================================
   UPDATE profiles
   SET
-    full_name = 'Former Member',
+    full_name = 'Former User',
     email = v_anonymized_email,
     role_title = NULL,
     feature_interests = NULL,

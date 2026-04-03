@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
   // Get the invitation by token (RLS allows anyone to view by token)
   const { data: invitation, error: fetchError } = await (supabase
     .from('workspace_invitations') as ReturnType<typeof supabase.from>)
-    .select('*, workspaces(name)')
+    .select('*, workspaces(name, type, organization_type)')
     .eq('token', token)
     .single();
 
@@ -68,6 +68,8 @@ export async function POST(request: NextRequest) {
     valid: true,
     email: inv.email,
     workspaceName: inv.workspaces?.name || 'Workspace',
+    unitType: inv.workspaces?.type,
+    organizationType: inv.workspaces?.organization_type,
     role: inv.role,
   }, { status: 200 });
 }

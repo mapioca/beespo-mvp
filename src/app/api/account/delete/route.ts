@@ -1,8 +1,8 @@
 import { createClient } from '@/lib/supabase/server';
-import { createClient as createAdminClient } from '@supabase/supabase-js';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { NextRequest, NextResponse } from 'next/server';
 
-// POST /api/account/delete - Delete (anonymize) user account
+// POST /api/account/delete - Permanently delete the auth user and anonymize workspace data
 export async function POST(request: NextRequest) {
     const supabase = await createClient();
 
@@ -24,43 +24,45 @@ export async function POST(request: NextRequest) {
         }, { status: 400 });
     }
 
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-    if (!supabaseUrl || !supabaseServiceKey) {
-        return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
-    }
-
-    const adminClient = createAdminClient(supabaseUrl, supabaseServiceKey, {
-        auth: { autoRefreshToken: false, persistSession: false }
-    });
+    const adminClient = createAdminClient();
 
     try {
-        // Server-side pre-flight: enforce workspace rules before deletion
-
+        // Use the admin client so cleanup is not dependent on the current user's RLS state.
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { data: profile } = await (supabase.from('profiles') as any)
-            .select('workspace_id, role')
+        const { data: profile, error: profileError } = await (adminClient.from('profiles') as any)
+            .select('id, workspace_id, role, email, is_deleted')
             .eq('id', user.id)
             .single();
 
+        if (profileError || !profile) {
+            return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
+        }
+
+        if (profile.is_deleted) {
+            return NextResponse.json({ error: 'This account has already been deleted.' }, { status: 400 });
+        }
+
         let workspaceToDelete: string | null = null;
 
-        if (profile?.workspace_id) {
+        if (profile.workspace_id) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const { data: members } = await (supabase.from('profiles') as any)
+            const { data: members, error: membersError } = await (adminClient.from('profiles') as any)
                 .select('id, role')
                 .eq('workspace_id', profile.workspace_id)
                 .eq('is_deleted', false);
 
+            if (membersError) {
+                console.error('Failed to load workspace members during delete:', membersError);
+                return NextResponse.json({ error: 'Failed to validate workspace membership' }, { status: 500 });
+            }
+
             const totalMembers = (members ?? []).length;
 
             if (totalMembers <= 1) {
-                // Last member — workspace gets deleted after anonymization
                 workspaceToDelete = profile.workspace_id;
             } else if (profile.role === 'admin') {
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const otherAdmins = (members ?? []).filter((m: any) => m.id !== user.id && m.role === 'admin');
+                const otherAdmins = (members ?? []).filter((member: any) => member.id !== user.id && member.role === 'admin');
                 if (otherAdmins.length === 0) {
                     return NextResponse.json({
                         error: 'You are the only admin. Please promote another member to admin before deleting your account.'
@@ -69,68 +71,99 @@ export async function POST(request: NextRequest) {
             }
         }
 
-        // Step 1: Anonymize the user's profile (clears workspace_id, PII, etc.)
+        const anonymizedEmail = `deleted_${user.id}_${Date.now()}@deleted.beespo.com`;
+        const deletedAt = new Date().toISOString();
+
+        // Step 1: Anonymize the profile and detach it from the workspace.
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { data: anonymizeResult, error: anonymizeError } = await (supabase as any)
-            .rpc('anonymize_user_account', { target_user_id: user.id }) as {
-                data: {
-                    success: boolean;
-                    error?: string;
-                    user_id?: string;
-                    old_email?: string;
-                    anonymized_email?: string;
-                    unassigned_tasks?: number;
-                    deleted_at?: string;
-                } | null;
-                error: Error | null;
-            };
+        const { error: anonymizeError } = await (adminClient.from('profiles') as any)
+            .update({
+                full_name: 'Former User',
+                email: anonymizedEmail,
+                role_title: null,
+                role: 'guest',
+                feature_interests: null,
+                feature_tier: null,
+                workspace_id: null,
+                is_deleted: true,
+                deleted_at: deletedAt,
+                updated_at: deletedAt,
+            })
+            .eq('id', user.id);
 
         if (anonymizeError) {
-            console.error('Anonymization error:', anonymizeError);
+            console.error('Profile anonymization error:', anonymizeError);
             return NextResponse.json({ error: 'Failed to anonymize account data' }, { status: 500 });
         }
 
-        if (!anonymizeResult?.success) {
-            return NextResponse.json({
-                error: anonymizeResult?.error || 'Failed to anonymize account'
-            }, { status: 500 });
+        // Step 2: Unassign any incomplete tasks still assigned to the user.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: updatedTasks, error: tasksError } = await (adminClient.from('tasks') as any)
+            .update({ assigned_to: null, updated_at: deletedAt })
+            .eq('assigned_to', user.id)
+            .neq('status', 'completed')
+            .select('id');
+
+        if (tasksError) {
+            console.error('Task unassignment error:', tasksError);
+            return NextResponse.json({ error: 'Failed to unassign active tasks' }, { status: 500 });
         }
 
-        // Step 2: Delete workspace if user was the last member
+        // Step 3: Remove any lingering invitation ownership and revoke pending invites to the old email.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { error: sentInvitesError } = await (adminClient.from('workspace_invitations') as any)
+            .update({ invited_by: null })
+            .eq('invited_by', user.id);
+
+        if (sentInvitesError) {
+            console.error('Invitation cleanup error:', sentInvitesError);
+            return NextResponse.json({ error: 'Failed to clean up invitations' }, { status: 500 });
+        }
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { error: receivedInvitesError } = await (adminClient.from('workspace_invitations') as any)
+            .update({ status: 'revoked' })
+            .eq('email', profile.email)
+            .eq('status', 'pending');
+
+        if (receivedInvitesError) {
+            console.error('Invitation revoke error:', receivedInvitesError);
+            return NextResponse.json({ error: 'Failed to revoke pending invitations' }, { status: 500 });
+        }
+
+        // Step 4: Delete the workspace if this was the last active member.
         if (workspaceToDelete) {
-            const { error: wsDeleteError } = await adminClient
-                .from('workspaces')
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const { error: workspaceDeleteError } = await (adminClient.from('workspaces') as any)
                 .delete()
                 .eq('id', workspaceToDelete);
 
-            if (wsDeleteError) {
-                console.error('Workspace deletion error:', wsDeleteError);
-                // Non-fatal — profile is already anonymized and workspace_id is cleared
+            if (workspaceDeleteError) {
+                console.error('Workspace deletion error:', workspaceDeleteError);
+                return NextResponse.json({ error: 'Failed to delete workspace' }, { status: 500 });
             }
         }
 
-        // Step 3: Sign out all sessions
-        await supabase.auth.signOut({ scope: 'global' });
-
-        // Step 4: Delete auth user
+        // Step 5: Delete the auth user. This must succeed or the account can still sign in.
         const { error: deleteAuthError } = await adminClient.auth.admin.deleteUser(user.id);
 
         if (deleteAuthError) {
             console.error('Auth deletion error:', deleteAuthError);
-            // Profile is already anonymized — acceptable outcome
             return NextResponse.json({
-                success: true,
-                warning: 'Account anonymized but auth cleanup had issues',
-                details: anonymizeResult
-            }, { status: 200 });
+                error: 'Failed to fully delete the account authentication record'
+            }, { status: 500 });
         }
+
+        // Step 6: Best-effort server-side sign-out; client also clears its local session on success.
+        await supabase.auth.signOut({ scope: 'global' });
 
         return NextResponse.json({
             success: true,
             message: 'Your account has been permanently deleted',
             details: {
-                unassigned_tasks: anonymizeResult.unassigned_tasks,
-                deleted_at: anonymizeResult.deleted_at
+                unassigned_tasks: updatedTasks?.length ?? 0,
+                deleted_at: deletedAt,
+                workspace_deleted: Boolean(workspaceToDelete),
             }
         }, { status: 200 });
 

@@ -29,9 +29,14 @@ export async function GET(request: Request) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data: profile } = await (supabase as any)
           .from('profiles')
-          .select('id, workspace_id')
+          .select('id, workspace_id, is_deleted')
           .eq('id', user.id)
           .single() as { data: { id: string; workspace_id: string | null } | null }
+
+        if (profile && 'is_deleted' in profile && profile.is_deleted) {
+          await supabase.auth.signOut({ scope: 'local' })
+          return NextResponse.redirect(`${origin}/signup?message=account_deleted`)
+        }
 
         // If no profile or no workspace_id, redirect to onboarding
         if (!profile || !profile.workspace_id) {
@@ -53,4 +58,3 @@ export async function GET(request: Request) {
   // If something went wrong, redirect to login with error
   return NextResponse.redirect(`${origin}/login?error=auth_callback_failed`)
 }
-

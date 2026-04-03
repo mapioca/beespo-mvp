@@ -8,6 +8,7 @@ import {
   getRoleTitle,
   generateWorkspaceName,
   getDbOrganizationType,
+  getOrganizationKeyFromDbType,
 } from '@/lib/onboarding/filters';
 import type { OrganizationKey, RoleKey } from '@/types/onboarding';
 
@@ -57,14 +58,14 @@ export async function POST(request: NextRequest) {
 async function handleInvitedUserOnboarding(
   supabase: Awaited<ReturnType<typeof createClient>>,
   user: { id: string; email?: string; user_metadata?: { full_name?: string } },
-  body: { workspaceInvitationToken: string; roleTitle?: string }
+  body: { workspaceInvitationToken: string; role?: RoleKey; roleTitle?: string }
 ) {
-  const { workspaceInvitationToken, roleTitle } = body;
+  const { workspaceInvitationToken, role, roleTitle } = body;
 
   // Validate the invitation token
   const { data: invitation, error: fetchError } = await (supabase
     .from('workspace_invitations') as ReturnType<typeof supabase.from>)
-    .select('*, workspaces(name)')
+    .select('*, workspaces(name, type, organization_type)')
     .eq('token', workspaceInvitationToken)
     .single();
 
@@ -74,6 +75,13 @@ async function handleInvitedUserOnboarding(
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const inv = invitation as any;
+
+  const organizationKey = inv.workspaces?.organization_type && inv.workspaces?.type
+    ? getOrganizationKeyFromDbType(inv.workspaces.organization_type, inv.workspaces.type)
+    : null;
+  const resolvedRoleTitle = role && organizationKey
+    ? getRoleTitle(role, organizationKey)
+    : roleTitle?.trim() || null;
 
   if (inv.status !== 'pending') {
     return NextResponse.json({
@@ -106,7 +114,7 @@ async function handleInvitedUserOnboarding(
       full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
       workspace_id: inv.workspace_id,
       role: inv.role, // Role from invitation (admin, leader, guest)
-      role_title: roleTitle?.trim() || null, // User-provided display title
+      role_title: resolvedRoleTitle,
     });
 
   if (profileError) {

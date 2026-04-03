@@ -64,6 +64,13 @@ type TaskWithDetails = Database["public"]["Tables"]["tasks"]["Row"] & {
     labels?: Array<{ id: string; name: string; color: string }>;
 };
 
+const statusLabels = {
+    pending: "Todo",
+    in_progress: "In Progress",
+    completed: "Done",
+    cancelled: "Canceled",
+};
+
 interface TaskDetailsSheetProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
@@ -74,6 +81,7 @@ interface TimelineItem {
     id: string;
     created_at: string;
     type: "comment" | "activity";
+    activity_type?: string;
     content?: string;
     user?: { full_name: string } | null;
     details?: { from?: string; to?: string; snippet?: string };
@@ -145,10 +153,12 @@ export function TaskDetailsSheet({
                 (c) =>
                     ({ ...(c as Record<string, unknown>), type: "comment" as const } as unknown as TimelineItem)
             ),
-            ...(activities || []).map(
-                (a) =>
-                    ({ ...(a as Record<string, unknown>), type: "activity" as const } as unknown as TimelineItem)
-            ),
+            ...(activities || [])
+                .filter(a => a.activity_type !== 'comment')
+                .map(
+                    (a) =>
+                        ({ ...(a as Record<string, unknown>), type: "activity" as const } as unknown as TimelineItem)
+                ),
         ].sort(
             (a, b) =>
                 new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
@@ -429,11 +439,15 @@ export function TaskDetailsSheet({
                                                     <div className="rounded-xl border border-border/70 bg-muted/20 p-2 text-drawer-meta text-foreground/90">
                                                         {item.content}
                                                     </div>
-                                                ) : (
+                                                ) : item.activity_type === "status_change" ? (
                                                     <div className="text-drawer-meta text-muted-foreground italic">
                                                         Changed status from{" "}
-                                                        <strong>{item.details?.from}</strong> to{" "}
-                                                        <strong>{item.details?.to}</strong>
+                                                        <strong>{statusLabels[item.details?.from as keyof typeof statusLabels] || item.details?.from}</strong> to{" "}
+                                                        <strong>{statusLabels[item.details?.to as keyof typeof statusLabels] || item.details?.to}</strong>
+                                                    </div>
+                                                ) : (
+                                                    <div className="text-drawer-meta text-muted-foreground italic">
+                                                        Updated task details
                                                     </div>
                                                 )}
                                             </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,6 +21,8 @@ import { GoogleOAuthButton } from "@/components/auth/google-oauth-button";
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get("redirect");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -44,14 +46,25 @@ export default function LoginPage() {
           toast.error(error.message);
         }
       } else if (data.user) {
-        // Check if user has completed profile setup
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("id")
-          .eq("id", data.user.id)
-          .single();
+        if (redirectTo) {
+          toast.success("You've been logged in successfully.");
+          router.push(redirectTo);
+          router.refresh();
+          return;
+        }
 
-        if (!profile) {
+        // Check if user has completed profile setup
+        const { data: profile } = await (supabase
+          .from("profiles") as ReturnType<typeof supabase.from>)
+          .select("id, is_deleted")
+          .eq("id", data.user.id)
+          .single() as { data: { id: string; is_deleted?: boolean } | null };
+
+        if (profile?.is_deleted) {
+          await supabase.auth.signOut({ scope: "local" });
+          toast.error("This account has been deleted.");
+          router.push("/signup");
+        } else if (!profile) {
           toast.info("Complete Setup", { description: "Please complete your profile setup." });
           router.push("/onboarding");
         } else {

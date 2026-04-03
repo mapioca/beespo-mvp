@@ -89,6 +89,22 @@ export function getDbOrganizationType(org: OrganizationKey): string {
 }
 
 /**
+ * Map a workspace organization_type back to an onboarding organization key.
+ * Non-ward presidency workspaces are stored as bishopric in the database.
+ */
+export function getOrganizationKeyFromDbType(
+  organizationType: string,
+  unitType: UnitType
+): OrganizationKey | null {
+  if (organizationType === 'bishopric') {
+    return unitType === 'ward' ? 'bishopric' : 'presidency';
+  }
+
+  const orgOption = ORGANIZATIONS.find((org) => org.dbValue === organizationType);
+  return orgOption?.value ?? null;
+}
+
+/**
  * Validate that the selection chain is valid
  */
 export function isValidSelectionChain(

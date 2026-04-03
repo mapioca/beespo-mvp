@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/lib/toast";
+import { createClient } from "@/lib/supabase/client";
 import { AlertTriangle, Loader2, ShieldCheck, Trash2 } from "lucide-react";
 
 type PreflightResult = {
@@ -106,6 +107,9 @@ export function DeleteAccountDialog({ userEmail }: DeleteAccountDialogProps) {
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || "Failed to delete account");
 
+            const supabase = createClient();
+            await supabase.auth.signOut({ scope: "local" });
+
             toast.info("Account Deleted", { description: "Your account has been permanently deleted. Redirecting..." });
             setTimeout(() => {
                 router.push("/");
@@ -129,9 +133,15 @@ export function DeleteAccountDialog({ userEmail }: DeleteAccountDialogProps) {
 
                     {/* Loading */}
                     {step === "loading" && (
-                        <div className="flex items-center justify-center py-12">
-                            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                        </div>
+                        <>
+                            <DialogHeader className="sr-only">
+                                <DialogTitle>Checking Account Status</DialogTitle>
+                                <DialogDescription>Please wait while we verify your workspace membership and permissions.</DialogDescription>
+                            </DialogHeader>
+                            <div className="flex items-center justify-center py-12">
+                                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                            </div>
+                        </>
                     )}
 
                     {/* Last member — workspace will be deleted */}
@@ -255,7 +265,7 @@ export function DeleteAccountDialog({ userEmail }: DeleteAccountDialogProps) {
                                                 <li>Your name and email will be removed</li>
                                                 <li>You will be signed out of all devices</li>
                                                 <li>Active tasks assigned to you will be unassigned</li>
-                                                <li>Content you created will remain as &quot;Former Member&quot;</li>
+                                                <li>Content you created will remain as &quot;Former User&quot;</li>
                                             </ul>
                                         </div>
 

@@ -75,7 +75,7 @@ export default function ManagingYourProfileDocs() {
             <h4 className="font-semibold mb-1">Deleting Your Account</h4>
             <p className="text-sm text-muted-foreground">
               In the <strong>Danger Zone</strong>, you can permanently delete your account. This will remove your personal
-              data, but your workspace content will remain visible with an attribution to &#34;Former Member.&#34;
+              data, but your workspace content will remain visible with an attribution to &#34;Former User.&#34;
               THIS ACTION CANNOT BE UNDONE.
             </p>
           </div>

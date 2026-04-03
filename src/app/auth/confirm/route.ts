@@ -31,18 +31,24 @@ export async function GET(request: Request) {
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const { data: profile } = await (supabase as any)
                     .from('profiles')
-                    .select('id, workspace_id')
+                    .select('id, workspace_id, is_deleted')
                     .eq('id', user.id)
-                    .single() as { data: { id: string; workspace_id: string | null } | null }
+                    .single() as { data: { id: string; workspace_id: string | null; is_deleted?: boolean } | null }
+
+                if (profile?.is_deleted) {
+                    await supabase.auth.signOut({ scope: 'local' })
+                    return NextResponse.redirect(`${origin}/signup?message=account_deleted`)
+                }
 
                 if (profile && profile.workspace_id) {
-                    // Existing user with complete profile — go to dashboard
-                    return NextResponse.redirect(`${origin}/dashboard`)
+                    // Existing user with complete profile — go to dashboard after verified page
+                    return NextResponse.redirect(`${origin}/verified?next=/dashboard`)
                 }
             }
 
-            // New user or incomplete profile — go to onboarding
-            return NextResponse.redirect(`${origin}${next}`)
+            // New user or incomplete profile — go to verified page then onboarding
+            const nextPath = next === '/' ? '/onboarding' : next
+            return NextResponse.redirect(`${origin}/verified?next=${nextPath}`)
         }
     }
 

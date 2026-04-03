@@ -319,7 +319,7 @@ export function SettingsClient({
                                     <p className="font-medium">Delete Account</p>
                                     <p className="text-sm text-muted-foreground">
                                         Permanently delete your account and remove your personal data.
-                                        Your workspace content will remain visible as &quot;Former Member&quot;.
+                                        Your workspace content will remain visible as &quot;Former User&quot;.
                                     </p>
                                 </div>
                                 <DeleteAccountDialog userEmail={currentUserDetails.email} />

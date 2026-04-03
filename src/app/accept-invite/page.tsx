@@ -18,11 +18,12 @@ function AcceptInviteContent() {
     const searchParams = useSearchParams();
     const token = searchParams.get("token");
 
-    const [status, setStatus] = useState<"loading" | "needsAuth" | "success" | "error">("loading");
+    const [status, setStatus] = useState<"loading" | "needsSignup" | "needsLogin" | "blocked" | "success" | "error">("loading");
     const [message, setMessage] = useState("");
     const [workspaceName, setWorkspaceName] = useState("");
     const [invitedEmail, setInvitedEmail] = useState("");
     const [invitedRole, setInvitedRole] = useState("");
+    const [existingWorkspaceName, setExistingWorkspaceName] = useState("");
 
     useEffect(() => {
         if (!token) {
@@ -48,11 +49,19 @@ function AcceptInviteContent() {
                 }
 
                 if (data.needsAuth) {
-                    // User needs to sign up/login first
-                    setStatus("needsAuth");
                     setWorkspaceName(data.invitation?.workspaceName || "the workspace");
                     setInvitedEmail(data.invitation?.email || "");
                     setInvitedRole(data.invitation?.role || "member");
+                    setExistingWorkspaceName(data.invitation?.existingWorkspaceName || "");
+                    setMessage(data.message || "");
+
+                    if (data.authAction === "login") {
+                        setStatus("needsLogin");
+                    } else if (data.authAction === "blocked") {
+                        setStatus("blocked");
+                    } else {
+                        setStatus("needsSignup");
+                    }
                     return;
                 }
 
@@ -79,13 +88,17 @@ function AcceptInviteContent() {
                 <CardHeader className="text-center">
                     <CardTitle className="text-2xl">
                         {status === "loading" && "Processing Invitation..."}
-                        {status === "needsAuth" && "Welcome to Beespo!"}
+                        {status === "needsSignup" && "Create Your Account"}
+                        {status === "needsLogin" && "Sign In to Continue"}
+                        {status === "blocked" && "Invitation Blocked"}
                         {status === "success" && "You're In!"}
                         {status === "error" && "Invitation Error"}
                     </CardTitle>
                     <CardDescription>
                         {status === "loading" && "Please wait while we process your invitation."}
-                        {status === "needsAuth" && `You've been invited to join ${workspaceName}`}
+                        {status === "needsSignup" && `You've been invited to join ${workspaceName}`}
+                        {status === "needsLogin" && `Sign in as ${invitedEmail} to join ${workspaceName}`}
+                        {status === "blocked" && `This invitation is for ${invitedEmail}`}
                         {status === "success" && `Successfully joined ${workspaceName}`}
                         {status === "error" && "Something went wrong with your invitation."}
                     </CardDescription>
@@ -95,26 +108,35 @@ function AcceptInviteContent() {
                         <Loader2 className="h-12 w-12 animate-spin text-primary" />
                     )}
 
-                    {status === "needsAuth" && (
+                    {(status === "needsSignup" || status === "needsLogin" || status === "blocked") && (
                         <>
                             <p className="text-center text-muted-foreground">
-                                Please sign up or log in to accept this invitation.
+                                {status === "needsSignup" && "This email does not have a Beespo account yet, so you'll need to sign up first."}
+                                {status === "needsLogin" && "This email already has a Beespo account. Sign in to accept this invitation."}
+                                {status === "blocked" && (message || "This email already belongs to another workspace.")}
                             </p>
                             <p className="text-sm text-center text-muted-foreground">
                                 You&apos;ll be joining as <span className="font-medium capitalize">{invitedRole}</span>
                             </p>
-                            <div className="flex gap-4">
+                            {existingWorkspaceName && status === "blocked" && (
+                                <p className="text-sm text-center text-muted-foreground">
+                                    Current workspace: <span className="font-medium">{existingWorkspaceName}</span>
+                                </p>
+                            )}
+                            {status === "needsLogin" && (
                                 <Button asChild>
-                                    <Link href={`/login?redirect=/accept-invite?token=${token}`}>
+                                    <Link href={`/login?redirect=${encodeURIComponent(`/accept-invite?token=${token}`)}`}>
                                         Log In
                                     </Link>
                                 </Button>
-                                <Button variant="outline" asChild>
+                            )}
+                            {status === "needsSignup" && (
+                                <Button asChild>
                                     <Link href={`/signup?invitation_token=${token}&email=${encodeURIComponent(invitedEmail)}`}>
                                         Sign Up
                                     </Link>
                                 </Button>
-                            </div>
+                            )}
                         </>
                     )}
 
@@ -161,4 +183,3 @@ export default function AcceptInvitePage() {
         </Suspense>
     );
 }
-

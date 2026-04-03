@@ -26,6 +26,7 @@ export const getProfile = cache(async (userId: string): Promise<CachedProfile> =
   const { data } = await (supabase.from("profiles") as any)
     .select("full_name, workspace_id, role, role_title, feature_tier, last_read_release_note_at, workspaces(name)")
     .eq("id", userId)
+    .eq("is_deleted", false)
     .single();
   return data as CachedProfile;
 });

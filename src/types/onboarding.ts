@@ -149,6 +149,8 @@ export interface WorkspaceInvitationData {
   email: string;
   workspaceName: string;
   role: WorkspaceMemberRole;
+  unitType?: UnitType;
+  organizationType?: string;
 }
 
 // Step configuration for invited users (abbreviated flow)
