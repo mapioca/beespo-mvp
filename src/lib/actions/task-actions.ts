@@ -3,17 +3,44 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { sendTaskAssignmentEmail } from "@/lib/email/send-task-email";
+import type { Database } from "@/types/database";
+
+export type TaskCommentWithUser = Database["public"]["Tables"]["task_comments"]["Row"] & {
+    user?: { full_name: string | null } | null;
+};
+
+export type TaskActivityWithUser = Database["public"]["Tables"]["task_activities"]["Row"] & {
+    user?: { full_name: string | null } | null;
+};
+
+export type TaskActivityResult = {
+    comments: TaskCommentWithUser[];
+    activities: TaskActivityWithUser[];
+};
+
+type TaskSummary = Pick<
+    Database["public"]["Tables"]["tasks"]["Row"],
+    "id" | "title" | "status"
+>;
+
+type SupabaseClientType = Awaited<ReturnType<typeof createClient>>;
+
+const fromTable = (supabase: SupabaseClientType, table: string) =>
+    supabase.from(table as never) as ReturnType<typeof supabase.from>;
+
+const tasksTable = (supabase: SupabaseClientType) =>
+    supabase.from("tasks") as ReturnType<typeof supabase.from>;
 
 // Public Action (No Auth Required) - Validates Token
 export async function completeTaskWithToken(token: string) {
     const supabase = await createClient();
 
     // 1. Find the task by token
-    const { data: task, error: fetchError } = await (supabase
-        .from("tasks")) 
+    const { data, error: fetchError } = await tasksTable(supabase)
         .select("id, title, status")
         .eq("access_token", token)
         .single();
+    const task = data as TaskSummary | null;
 
     if (fetchError || !task) {
         return { error: "Invalid or expired task link." };
@@ -23,8 +50,7 @@ export async function completeTaskWithToken(token: string) {
         return { message: "Task is already completed!", task };
     }
 
-    const { error: updateError } = await (supabase
-        .from("tasks")) 
+    const { error: updateError } = await tasksTable(supabase)
         .update({
             status: "completed",
             completed_at: new Date().toISOString()
@@ -54,7 +80,7 @@ export async function completeTask(taskId: string, comment?: string) {
     try {
         // 1. Add Comment if present
         if (comment) {
-            const { error: commentError } = await (supabase.from("task_comments")).insert({ 
+            const { error: commentError } = await fromTable(supabase, "task_comments").insert({ 
                 task_id: taskId,
                 user_id: user.id,
                 content: comment
@@ -63,19 +89,18 @@ export async function completeTask(taskId: string, comment?: string) {
 
             // Activity for comment
             // Fire and forget activity logging to avoid blocking
-            (supabase.from("task_activities")).insert({ 
+            fromTable(supabase, "task_activities").insert({ 
                 task_id: taskId,
                 user_id: user.id,
                 activity_type: 'comment',
                 details: { snippet: comment.substring(0, 50) }
-            }).then(({ error }) => { 
-                if (error) console.error("Error logging comment activity:", error);
+            }).then((result: { error: unknown } | null) => { 
+                if (result?.error) console.error("Error logging comment activity:", result.error);
             });
         }
 
         // 2. Update Status
-        const { error: updateError } = await (supabase
-            .from("tasks")) 
+        const { error: updateError } = await tasksTable(supabase)
             .update({
                 status: "completed",
                 completed_at: new Date().toISOString()
@@ -89,13 +114,13 @@ export async function completeTask(taskId: string, comment?: string) {
 
         // 3. Log Activity
         // Fire and forget
-        (supabase.from("task_activities")).insert({ 
+        fromTable(supabase, "task_activities").insert({ 
             task_id: taskId,
             user_id: user.id,
             activity_type: 'status_change',
             details: { from: 'pending', to: 'completed' }
-        }).then(({ error }) => { 
-            if (error) console.error("Error logging status activity:", error);
+        }).then((result: { error: unknown } | null) => { 
+            if (result?.error) console.error("Error logging status activity:", result.error);
         });
 
         revalidatePath("/tasks");
@@ -130,14 +155,12 @@ export async function updateTask(taskId: string, data: {
         if (data.status !== undefined) updateData.status = data.status;
 
         // 1. Fetch current task to check for changes
-        const { data: currentTask } = await (supabase
-            .from("tasks"))
+        const { data: currentTask } = await tasksTable(supabase)
             .select("status")
             .eq("id", taskId)
             .single();
 
-        const { error } = await (supabase
-            .from("tasks")) 
+        const { error } = await tasksTable(supabase)
             .update(updateData)
             .eq("id", taskId);
 
@@ -148,12 +171,12 @@ export async function updateTask(taskId: string, data: {
 
         // 2. Log status change activity if changed
         if (data.status && currentTask && currentTask.status !== data.status) {
-            (supabase.from("task_activities")).insert({ 
+            fromTable(supabase, "task_activities").insert({ 
                 task_id: taskId,
                 user_id: user.id,
                 activity_type: 'status_change',
                 details: { from: currentTask.status, to: data.status }
-            }).catch((err) => console.error("Error logging status activity:", err));
+            }).catch((err: unknown) => console.error("Error logging status activity:", err));
         }
 
         revalidatePath("/tasks");
@@ -172,8 +195,7 @@ export async function addTaskComment(taskId: string, content: string) {
     if (!user) return { error: "Unauthorized" };
 
     try {
-        const { error } = await (supabase
-            .from("task_comments")) 
+        const { error } = await fromTable(supabase, "task_comments")
             .insert({
                 task_id: taskId,
                 user_id: user.id,
@@ -186,13 +208,13 @@ export async function addTaskComment(taskId: string, content: string) {
         }
 
         // Log Activity - Fire and forget
-        (supabase.from("task_activities")).insert({ 
+        fromTable(supabase, "task_activities").insert({ 
             task_id: taskId,
             user_id: user.id,
             activity_type: 'comment',
             details: { snippet: content.substring(0, 50) }
-        }).then(({ error }) => { 
-            if (error) console.error("Error logging comment activity:", error);
+        }).then((result: { error: unknown } | null) => { 
+            if (result?.error) console.error("Error logging comment activity:", result.error);
         });
 
         revalidatePath("/tasks");
@@ -203,12 +225,11 @@ export async function addTaskComment(taskId: string, content: string) {
     }
 }
 
-export async function getTaskActivity(taskId: string) {
+export async function getTaskActivity(taskId: string): Promise<TaskActivityResult> {
     const supabase = await createClient();
 
     // Fetch comments
-    const { data: comments } = await supabase
-        .from('task_comments')
+    const { data: comments } = await fromTable(supabase, "task_comments")
         .select(`
             *,
             user:profiles!task_comments_user_id_fkey(full_name)
@@ -217,8 +238,7 @@ export async function getTaskActivity(taskId: string) {
         .order('created_at', { ascending: true });
 
     // Fetch activities
-    const { data: activities } = await supabase
-        .from('task_activities')
+    const { data: activities } = await fromTable(supabase, "task_activities")
         .select(`
             *,
             user:profiles!task_activities_user_id_fkey(full_name)
@@ -227,8 +247,8 @@ export async function getTaskActivity(taskId: string) {
         .order('created_at', { ascending: true });
 
     return {
-        comments: comments || [],
-        activities: activities || []
+        comments: (comments ?? []) as TaskCommentWithUser[],
+        activities: (activities ?? []) as TaskActivityWithUser[]
     };
 }
 
@@ -249,16 +269,14 @@ export async function createTask(data: {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { error: "Unauthorized" };
 
-    const { data: profile } = await (supabase
-        .from("profiles")) 
+    const { data: profile } = await fromTable(supabase, "profiles")
         .select("workspace_id, role")
         .eq("id", user.id)
         .single();
 
     if (!profile?.workspace_id) return { error: "Profile not found" };
 
-    const { data: task, error } = await (supabase
-        .from("tasks")) 
+    const { data: task, error } = await tasksTable(supabase)
         .insert({
             title: data.title,
             description: data.description,
@@ -308,8 +326,7 @@ export async function copyTask(taskId: string) {
 
     try {
         // Get the original task
-        const { data: originalTask, error: fetchError } = await (supabase
-            .from("tasks")) 
+        const { data: originalTask, error: fetchError } = await tasksTable(supabase)
             .select("*")
             .eq("id", taskId)
             .single();
@@ -319,8 +336,7 @@ export async function copyTask(taskId: string) {
         }
 
         // Create a copy with a new workspace_task_id (auto-generated by trigger)
-        const { data: newTask, error: createError } = await (supabase
-            .from("tasks")) 
+        const { data: newTask, error: createError } = await tasksTable(supabase)
             .insert({
                 title: originalTask.title + " (Copy)",
                 description: originalTask.description,
@@ -344,8 +360,7 @@ export async function copyTask(taskId: string) {
         }
 
         // Copy labels
-        const { data: labelAssignments } = await supabase
-            .from("task_label_assignments")
+        const { data: labelAssignments } = await fromTable(supabase, "task_label_assignments")
             .select("label_id")
             .eq("task_id", taskId);
 
@@ -355,7 +370,7 @@ export async function copyTask(taskId: string) {
                 label_id: la.label_id
             }));
 
-            await (supabase.from("task_label_assignments")).insert(newAssignments); 
+            await fromTable(supabase, "task_label_assignments").insert(newAssignments); 
         }
 
         revalidatePath("/tasks");
@@ -373,8 +388,7 @@ export async function deleteTask(taskId: string) {
     if (!user) return { error: "Unauthorized" };
 
     try {
-        const { error } = await (supabase
-            .from("tasks")) 
+        const { error } = await tasksTable(supabase)
             .delete()
             .eq("id", taskId);
 
@@ -399,16 +413,14 @@ export async function getWorkspaceLabels() {
     if (!user) return { error: "Unauthorized" };
 
     try {
-        const { data: profile } = await (supabase
-            .from("profiles")) 
+        const { data: profile } = await fromTable(supabase, "profiles")
             .select("workspace_id")
             .eq("id", user.id)
             .single();
 
         if (!profile?.workspace_id) return { error: "Profile not found" };
 
-        const { data: labels, error } = await (supabase
-            .from("task_labels")) 
+        const { data: labels, error } = await fromTable(supabase, "task_labels")
             .select("*")
             .eq("workspace_id", profile.workspace_id)
             .order("name");
@@ -432,8 +444,7 @@ export async function getTaskLabels(taskId: string) {
     if (!user) return { error: "Unauthorized" };
 
     try {
-        const { data: assignments, error } = await (supabase
-            .from("task_label_assignments")) 
+        const { data: assignments, error } = await fromTable(supabase, "task_label_assignments")
             .select(`
                 label_id,
                 label:task_labels(id, name, color)
@@ -461,8 +472,7 @@ export async function assignLabels(taskId: string, labelIds: string[]) {
 
     try {
         // Delete existing assignments
-        await (supabase
-            .from("task_label_assignments")) 
+        await fromTable(supabase, "task_label_assignments")
             .delete()
             .eq("task_id", taskId);
 
@@ -473,8 +483,7 @@ export async function assignLabels(taskId: string, labelIds: string[]) {
                 label_id: labelId
             }));
 
-            const { error } = await (supabase
-                .from("task_label_assignments")) 
+            const { error } = await fromTable(supabase, "task_label_assignments")
                 .insert(assignments);
 
             if (error) {
@@ -498,16 +507,14 @@ export async function createLabel(name: string, color: string) {
     if (!user) return { error: "Unauthorized" };
 
     try {
-        const { data: profile } = await (supabase
-            .from("profiles")) 
+        const { data: profile } = await fromTable(supabase, "profiles")
             .select("workspace_id")
             .eq("id", user.id)
             .single();
 
         if (!profile?.workspace_id) return { error: "Profile not found" };
 
-        const { data: label, error } = await (supabase
-            .from("task_labels")) 
+        const { data: label, error } = await fromTable(supabase, "task_labels")
             .insert({
                 workspace_id: profile.workspace_id,
                 name,
@@ -536,8 +543,7 @@ export async function deleteLabel(labelId: string) {
     if (!user) return { error: "Unauthorized" };
 
     try {
-        const { error } = await (supabase
-            .from("task_labels")) 
+        const { error } = await fromTable(supabase, "task_labels")
             .delete()
             .eq("id", labelId);
 

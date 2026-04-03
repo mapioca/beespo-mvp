@@ -90,7 +90,7 @@ function SavedItemRow({
       const result = await removeFavorite(item.entityType, item.id);
       if ("error" in result) {
         applyFavoriteToggle(item, true);
-        toast.error(result.error);
+        toast.error(result.error ?? "Unable to remove favorite.");
         return;
       }
       return;
@@ -100,7 +100,7 @@ function SavedItemRow({
     const result = await removeRecent(item.entityType, item.id);
     if ("error" in result) {
       applyRecentVisit(item, "lastViewedAt" in item ? item.lastViewedAt : new Date().toISOString());
-      toast.error(result.error);
+      toast.error(result.error ?? "Unable to remove recent item.");
     }
   };
 

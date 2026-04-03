@@ -59,6 +59,12 @@ export default async function SettingsPage() {
         .eq("workspace_id", profile.workspace_id)
         .order("created_at", { ascending: true });
 
+    const memberEmailSet = new Set(
+        (members || [])
+            .map((member) => member.email?.toLowerCase())
+            .filter((email): email is string => Boolean(email))
+    );
+
     // Get pending invitations
     const { data: invitations } = await supabase
         .from("workspace_invitations")
@@ -74,6 +80,10 @@ export default async function SettingsPage() {
         .eq("workspace_id", profile.workspace_id)
         .eq("status", "pending")
         .order("created_at", { ascending: false });
+
+    const pendingInvitations = (invitations || []).filter(
+        (invitation) => !memberEmailSet.has(invitation.email?.toLowerCase() || "")
+    );
 
     // Get sharing groups with member counts
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -112,7 +122,7 @@ export default async function SettingsPage() {
         <SettingsClient
             workspace={workspace}
             members={members || []}
-            invitations={invitations || []}
+            invitations={pendingInvitations}
             currentUserId={user.id}
             currentUserRole={profile.role}
             currentUserDetails={{

@@ -64,7 +64,7 @@ export function FavoriteButton({
           favorited
         );
         setOptimisticFavorite(null);
-        toast.error(result.error);
+        toast.error(result.error ?? "Unable to update favorite.");
         return;
       }
 
