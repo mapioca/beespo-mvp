@@ -6,9 +6,9 @@ Source of truth for implementation tokens aligned to `BEESPO_DESIGN_SYSTEM.md` a
 
 | Token | Value (Light) | Value (Dark) | Usage |
 |---|---|---|---|
-| `--color-primary` | `219 100% 50%` | `219 100% 62%` | Primary CTA, links, active states |
-| `--color-primary-hover` | `220 100% 42%` | `219 100% 68%` | Hover state for primary actions |
-| `--color-primary-light` | `221 100% 95%` | `219 70% 22%` | Selected/active background tint |
+| `--color-primary` | `0 0% 9%` | `0 0% 16%` | Primary CTA, links, active states |
+| `--color-primary-hover` | `0 0% 16%` | `0 0% 24%` | Hover state for primary actions |
+| `--color-primary-light` | `0 0% 92%` | `0 0% 22%` | Selected/active background tint |
 | `--color-gray-50` | `0 0% 98%` | `0 0% 8%` | Page background |
 | `--color-gray-100` | `0 0% 96%` | `0 0% 10%` | Secondary surfaces, sidebar |
 | `--color-gray-200` | `0 0% 90%` | `0 0% 18%` | Borders/dividers |

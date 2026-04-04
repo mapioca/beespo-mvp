@@ -5,9 +5,9 @@
 @layer base {
   :root {
     /* Canonical design tokens (Intercom-aligned, Beespo-adapted) */
-    --color-primary: 219 100% 50%;
-    --color-primary-hover: 220 100% 42%;
-    --color-primary-light: 221 100% 95%;
+    --color-primary: 0 0% 9%;
+    --color-primary-hover: 0 0% 16%;
+    --color-primary-light: 0 0% 92%;
 
     --color-gray-50: 0 0% 98%;
     --color-gray-100: 0 0% 96%;
@@ -213,9 +213,9 @@
   }
 
   .dark {
-    --color-primary: 219 100% 62%;
-    --color-primary-hover: 219 100% 68%;
-    --color-primary-light: 219 70% 22%;
+    --color-primary: 0 0% 16%;
+    --color-primary-hover: 0 0% 24%;
+    --color-primary-light: 0 0% 22%;
 
     --color-gray-50: 0 0% 8%;
     --color-gray-100: 0 0% 10%;
