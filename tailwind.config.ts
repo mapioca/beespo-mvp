@@ -70,6 +70,8 @@ const config: Config = {
       transparent: "transparent",
       current: "currentColor",
       inherit: "inherit",
+      white: "#ffffff",
+      black: "#000000",
 
       primary: {
         DEFAULT: colorVar("--color-primary"),

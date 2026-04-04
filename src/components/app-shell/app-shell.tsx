@@ -100,23 +100,23 @@ function SidebarNavItem({ item, collapsed }: { item: AppShellNavItem; collapsed:
       href={item.href}
       className={cn(
         "group flex h-11 items-center rounded-xl text-sm font-medium transition-all duration-150 ease-in-out",
-        "hover:bg-white/8",
+        "hover:bg-black/4",
         active
-          ? "bg-white/10 text-white"
-          : "text-white/50 hover:text-white/85",
+          ? "bg-black/5 text-gray-900"
+          : "text-gray-500 hover:text-gray-900",
         collapsed ? "justify-center px-2" : "justify-between px-3"
       )}
     >
       <span className={cn("flex items-center", collapsed ? "justify-center" : "gap-3")}>
-        <Icon className="h-6 w-6 shrink-0" strokeWidth={1.75} />
-        {!collapsed ? <span className={cn(active ? "text-white" : "text-white/85")}>{item.label}</span> : null}
+        <Icon className="h-5 w-5 shrink-0" strokeWidth={1.75} />
+        {!collapsed ? <span className={cn(active ? "text-gray-900" : "text-gray-700")}>{item.label}</span> : null}
       </span>
       {!collapsed && item.badgeCount ? (
         <Badge
           variant="secondary"
           className={cn(
             "h-5 rounded-full border-0 px-1.5 text-[11px] font-semibold",
-            active ? "bg-white/15 text-white" : "bg-white/10 text-white/80"
+            active ? "bg-black/10 text-gray-900" : "bg-black/5 text-gray-600"
           )}
         >
           {item.badgeCount}
@@ -138,17 +138,17 @@ function UserMenu({ collapsed, userName, userEmail }: { collapsed: boolean; user
     <div className={cn("flex items-center", collapsed ? "justify-center" : "justify-between gap-2")}>
       <button
         className={cn(
-          "flex h-11 items-center rounded-xl text-left text-sm font-medium text-white/70 transition-all duration-150 ease-in-out hover:bg-white/8 hover:text-white",
+          "flex h-11 items-center rounded-xl text-left text-sm font-medium text-gray-600 transition-all duration-150 ease-in-out hover:bg-black/4 hover:text-gray-900",
           collapsed ? "w-11 justify-center px-0" : "min-w-0 flex-1 gap-3 px-3"
         )}
       >
-        <Avatar className="h-8 w-8 border border-white/15">
-          <AvatarFallback className="bg-white/8 text-[10px] font-semibold text-white">{initials}</AvatarFallback>
+        <Avatar className="h-8 w-8 border border-black/10">
+          <AvatarFallback className="bg-black/5 text-[10px] font-semibold text-gray-900">{initials}</AvatarFallback>
         </Avatar>
         {!collapsed ? (
           <span className="min-w-0 flex-1 truncate">
-            <span className="block truncate text-sm font-medium text-white">{userName}</span>
-            <span className="block truncate text-xs text-white/50">{userEmail}</span>
+            <span className="block truncate text-sm font-medium text-gray-900">{userName}</span>
+            <span className="block truncate text-xs text-gray-500">{userEmail}</span>
           </span>
         ) : null}
       </button>
@@ -156,7 +156,7 @@ function UserMenu({ collapsed, userName, userEmail }: { collapsed: boolean; user
       {!collapsed ? (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button className="flex h-11 w-11 items-center justify-center rounded-xl text-white/50 transition-all duration-150 ease-in-out hover:bg-white/8 hover:text-white">
+            <button className="flex h-11 w-11 items-center justify-center rounded-xl text-gray-500 transition-all duration-150 ease-in-out hover:bg-black/4 hover:text-gray-900">
               <MoreHorizontal className="h-4 w-4" />
               <span className="sr-only">Open profile menu</span>
             </button>
@@ -194,7 +194,7 @@ function NavigationSidebar({
   return (
     <aside
       className={cn(
-        "fixed top-3 bottom-3 left-3 z-40 hidden shrink-0 md:block",
+        "fixed top-3 bottom-3 left-3 z-40 hidden shrink-0 text-gray-900 md:block",
         "transition-[width] duration-200 ease-in-out",
         expanded ? "w-[240px]" : "w-16",
         className
@@ -212,7 +212,7 @@ function NavigationSidebar({
     >
       <div
         className={cn(
-          "relative flex h-full flex-col overflow-hidden rounded-[18px] border border-white/8 bg-[#1A1A1A] shadow-sm transition-all duration-200 ease-in-out",
+          "relative flex h-full flex-col overflow-hidden rounded-[18px] bg-background text-gray-900 transition-all duration-200 ease-in-out",
           pinned
             ? ""
             : expanded
@@ -223,7 +223,7 @@ function NavigationSidebar({
         <div className={cn("flex items-center px-2.5 pb-3 pt-3", collapsed ? "justify-center" : "justify-between")}>
           <div
             className={cn(
-              "flex h-11 items-center justify-center rounded-2xl bg-white text-sm font-semibold text-black transition-all duration-200",
+              "flex h-11 items-center justify-center rounded-2xl bg-card text-sm font-semibold text-gray-900 shadow-sm transition-all duration-200",
               collapsed ? "w-11 text-base" : "w-11 text-base"
             )}
           >
@@ -236,8 +236,8 @@ function NavigationSidebar({
               size="icon"
               onClick={onTogglePinned}
               className={cn(
-                "h-9 w-9 rounded-xl border border-white/8 text-white/60 transition-all duration-150 ease-in-out hover:bg-white/8 hover:text-white",
-                pinned && "bg-white/10 text-white"
+                "h-9 w-9 rounded-xl text-gray-500 transition-all duration-150 ease-in-out hover:bg-black/4 hover:text-gray-900",
+                pinned && "bg-black/5 text-gray-900"
               )}
             >
               <Pin className={cn("h-4 w-4 transition-transform duration-200", !pinned && "rotate-45")} strokeWidth={1.75} />
@@ -253,7 +253,7 @@ function NavigationSidebar({
 
             return (
               <React.Fragment key={item.href}>
-                {showDivider ? <div className="mx-2 my-2 h-px bg-white/8" /> : null}
+                {showDivider ? <div className="mx-2 my-2 h-px bg-gray-200" /> : null}
                 <SidebarNavItem item={item} collapsed={collapsed} />
               </React.Fragment>
             );
@@ -277,22 +277,22 @@ function MobileSidebarDrawer({ userName, userEmail }: { userName: string; userEm
           <span className="sr-only">Open navigation</span>
         </Button>
       </SheetTrigger>
-      <SheetContent side="left" className="w-[280px] border-r border-white/8 bg-[#1A1A1A] p-0 text-white">
+      <SheetContent side="left" className="w-[280px] border-r-0 bg-background p-0 text-gray-900">
         <SheetTitle className="sr-only">Navigation</SheetTitle>
         <SheetDescription className="sr-only">Primary Beespo app navigation.</SheetDescription>
         <div className="flex h-full flex-col">
           <div className="px-4 pb-3 pt-4">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-base font-semibold text-black">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-card text-base font-semibold text-gray-900 shadow-sm">
               B
             </div>
           </div>
-          <Separator className="bg-white/8" />
+          <Separator className="bg-gray-200" />
           <nav className="flex-1 space-y-1 p-2">
             {APP_SHELL_NAV_ITEMS.map((item) => (
               <SidebarNavItem key={`mobile-${item.href}`} item={item} collapsed={false} />
             ))}
           </nav>
-          <div className="border-t border-white/8 p-2">
+          <div className="border-t border-gray-200 p-2">
             <UserMenu collapsed={false} userName={userName} userEmail={userEmail} />
           </div>
         </div>
