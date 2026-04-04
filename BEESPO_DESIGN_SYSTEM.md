@@ -305,6 +305,34 @@ Build the persistent app layout that every page renders inside. This is the skel
 - **Page Header**: Every page has a consistent header with: page title (`text-2xl`, `font-semibold`), optional breadcrumbs, and primary action button(s) aligned right
 - **Padding**: `24px` horizontal, `24px` top
 
+### Card-Not-Bento Shell Rules (Required)
+
+To match Intercom's app structure, the desktop workspace MUST be rendered as **independent cards on a shared canvas**, not as one subdivided/bento container.
+
+- **Global canvas**: `var(--color-bg-page)`
+- **Desktop inset**: `12px` around workspace (`p-3`)
+- **Inter-card gap**: `12px` (`gap-3`)
+- **Secondary panel**: standalone card, `240–280px` wide, `rounded-lg`, `border`, `bg-card`, `shadow-sm`, `overflow-hidden`
+- **Main content pane**: standalone card, fills remaining width, same treatment as secondary panel (`rounded-lg`, `border`, `bg-card`, `shadow-sm`, `overflow-hidden`)
+- **Both cards share identical radius, border, and shadow tokens**
+- **Do not visually fuse the secondary + main pane into one surface**
+
+Desktop composition:
+
+```
+Canvas (bg-page)
+└── Workspace inset (p-3)
+    └── Row (gap-3)
+        ├── SecondaryPanelCard (optional)
+        └── MainContentCard
+```
+
+Mobile composition:
+
+- Primary nav becomes a slide-out drawer
+- Secondary panel collapses into drawer/sheet behavior (not persistent side-by-side)
+- Main content remains the primary surface
+
 ### Prompt
 
 ```

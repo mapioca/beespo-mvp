@@ -53,10 +53,6 @@ export default function AppShellPreviewPage() {
       <PageHeader
         title="App Shell Preview"
         description="Validation checkpoint for navigation, tokens, hierarchy, and component consistency."
-        breadcrumbs={[
-          { label: "Home", href: "/app-shell-preview" },
-          { label: "Preview" },
-        ]}
         actions={
           <>
             <Button variant="outline">

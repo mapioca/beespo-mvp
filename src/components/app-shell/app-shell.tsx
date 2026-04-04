@@ -4,7 +4,7 @@ import * as React from "react";
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, PanelLeftClose, PanelLeftOpen, UserCircle2, LogOut } from "lucide-react";
+import { LogOut, Menu, MoreHorizontal, Pin, UserCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -26,11 +26,11 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { APP_SHELL_NAV_ITEMS, type AppShellNavItem } from "./navigation-config";
 
-const STORAGE_KEY = "beespo-app-shell-collapsed";
+const STORAGE_KEY = "beespo-app-shell-pinned";
 
 type NavigationSidebarProps = {
-  collapsed: boolean;
-  onToggleCollapsed: () => void;
+  pinned: boolean;
+  onTogglePinned: () => void;
   userName: string;
   userEmail: string;
   className?: string;
@@ -40,6 +40,7 @@ type ContentAreaProps = {
   children: ReactNode;
   className?: string;
   fullWidth?: boolean;
+  inCard?: boolean;
 };
 
 type AppShellProps = {
@@ -51,14 +52,14 @@ type AppShellProps = {
   userEmail?: string;
 };
 
-function useCollapsedSidebarState() {
-  const [collapsed, setCollapsed] = React.useState(false);
+function usePinnedSidebarState() {
+  const [pinned, setPinned] = React.useState(true);
 
   React.useEffect(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored === "true") {
-        setCollapsed(true);
+      if (stored === "false") {
+        setPinned(false);
       }
     } catch {
       // Ignore storage errors.
@@ -67,16 +68,16 @@ function useCollapsedSidebarState() {
 
   React.useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEY, String(collapsed));
+      localStorage.setItem(STORAGE_KEY, String(pinned));
     } catch {
       // Ignore storage errors.
     }
-  }, [collapsed]);
+  }, [pinned]);
 
   return {
-    collapsed,
-    setCollapsed,
-    toggleCollapsed: () => setCollapsed((prev) => !prev),
+    pinned,
+    setPinned,
+    togglePinned: () => setPinned((prev) => !prev),
   };
 }
 
@@ -96,11 +97,11 @@ function SidebarNavItem({ item, collapsed }: { item: AppShellNavItem; collapsed:
     <Link
       href={item.href}
       className={cn(
-        "group flex items-center rounded-md text-sm font-medium transition-colors duration-200",
-        "hover:bg-gray-100",
+        "group flex items-center rounded-xl text-sm font-semibold transition-colors duration-200",
+        "hover:bg-card",
         active
-          ? "bg-primary-light text-primary"
-          : "text-gray-600",
+          ? "border border-border bg-card text-foreground shadow-sm"
+          : "text-foreground/85",
         collapsed ? "justify-center px-2 py-2" : "justify-between px-3 py-2"
       )}
     >
@@ -109,7 +110,7 @@ function SidebarNavItem({ item, collapsed }: { item: AppShellNavItem; collapsed:
         {!collapsed ? <span>{item.label}</span> : null}
       </span>
       {!collapsed && item.badgeCount ? (
-        <Badge variant="secondary" className="rounded-full px-2 py-0 text-xs">
+        <Badge variant="secondary" className="h-5 rounded-full bg-secondary px-1.5 text-[11px] font-semibold">
           {item.badgeCount}
         </Badge>
       ) : null}
@@ -126,77 +127,121 @@ function UserMenu({ collapsed, userName, userEmail }: { collapsed: boolean; user
     .toUpperCase();
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <button
-          className={cn(
-            "flex w-full items-center rounded-md border border-border bg-card text-left transition-colors",
-            "hover:bg-gray-100",
-            collapsed ? "justify-center p-2" : "gap-3 p-2"
-          )}
-        >
-          <Avatar className="h-8 w-8">
-            <AvatarFallback className="text-xs font-medium">{initials}</AvatarFallback>
-          </Avatar>
-          {!collapsed ? (
-            <span className="min-w-0">
-              <span className="block truncate text-sm font-medium text-foreground">{userName}</span>
-              <span className="block truncate text-xs text-muted-foreground">{userEmail}</span>
-            </span>
-          ) : null}
-        </button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuItem asChild>
-          <Link href="/settings" className="cursor-pointer">
-            <UserCircle2 className="mr-2 h-4 w-4" />
-            Account
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem className="cursor-pointer text-destructive focus:text-destructive">
-          <LogOut className="mr-2 h-4 w-4" />
-          Sign out
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <div className={cn("flex items-center", collapsed ? "justify-center" : "justify-between gap-2")}>
+      <button
+        className={cn(
+          "flex h-9 items-center rounded-xl px-2.5 text-left text-sm font-semibold text-foreground/85 transition-colors hover:bg-card",
+          collapsed ? "w-9 justify-center px-0" : "min-w-0 flex-1 gap-2"
+        )}
+      >
+        <Avatar className="h-5 w-5">
+          <AvatarFallback className="text-[10px] font-semibold">{initials}</AvatarFallback>
+        </Avatar>
+        {!collapsed ? <span className="truncate">Profile</span> : null}
+      </button>
+
+      {!collapsed ? (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="flex h-9 w-9 items-center justify-center rounded-xl text-foreground/75 transition-colors hover:bg-card hover:text-foreground">
+              <MoreHorizontal className="h-4 w-4" />
+              <span className="sr-only">Open profile menu</span>
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuItem asChild>
+              <Link href="/settings" className="cursor-pointer">
+                <UserCircle2 className="mr-2 h-4 w-4" />
+                Account
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem className="cursor-pointer text-destructive focus:text-destructive">
+              <LogOut className="mr-2 h-4 w-4" />
+              Sign out
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ) : null}
+    </div>
   );
 }
 
 function NavigationSidebar({
-  collapsed,
-  onToggleCollapsed,
+  pinned,
+  onTogglePinned,
   userName,
   userEmail,
   className,
 }: NavigationSidebarProps) {
+  const [isHovered, setIsHovered] = React.useState(false);
+  const expanded = pinned || isHovered;
+  const collapsed = !expanded;
+
   return (
     <aside
       className={cn(
-        "fixed inset-y-0 left-0 z-30 hidden h-screen shrink-0 border-r border-border bg-panel md:flex md:flex-col",
+        "fixed inset-y-0 left-0 z-30 hidden shrink-0 md:block",
         "transition-[width] duration-300 ease-out",
-        collapsed ? "w-16" : "w-[220px]",
+        expanded ? "w-[220px]" : "w-16",
         className
       )}
+      onMouseEnter={() => {
+        if (!pinned) {
+          setIsHovered(true);
+        }
+      }}
+      onMouseLeave={() => {
+        if (!pinned) {
+          setIsHovered(false);
+        }
+      }}
     >
-      <div className="flex h-14 items-center justify-between px-3">
-        <span className={cn("text-sm font-semibold text-foreground", collapsed && "sr-only")}>Beespo</span>
-        <Button variant="ghost" size="icon" onClick={onToggleCollapsed}>
-          {collapsed ? <PanelLeftOpen className="h-5 w-5" /> : <PanelLeftClose className="h-5 w-5" />}
-          <span className="sr-only">Toggle sidebar</span>
-        </Button>
-      </div>
+      <div
+        className={cn(
+          "relative flex h-full flex-col transition-all duration-300 ease-out",
+          pinned
+            ? "border-r border-border bg-panel"
+            : expanded
+              ? "my-2 mr-2 rounded-r-[18px] border border-l-0 border-border bg-panel shadow-sm"
+              : "bg-transparent"
+        )}
+      >
+        <div className="flex h-14 items-center px-2.5">
+          <div
+            className={cn(
+              "flex h-9 items-center justify-center border border-border bg-card text-foreground shadow-sm transition-all duration-200",
+              collapsed ? "w-9 rounded-full text-xs font-bold" : "w-full rounded-full text-sm font-semibold"
+            )}
+          >
+            {collapsed ? "B" : "Beespo"}
+          </div>
+        </div>
 
-      <Separator />
+        {expanded ? (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onTogglePinned}
+            className={cn(
+              "absolute top-4 right-3 z-40 h-7 w-7 rounded-full text-muted-foreground",
+              "hover:bg-card hover:text-foreground"
+            )}
+          >
+            <Pin className={cn("h-3.5 w-3.5 transition-transform", !pinned && "rotate-45")} />
+            <span className="sr-only">{pinned ? "Unpin sidebar" : "Pin sidebar"}</span>
+          </Button>
+        ) : null}
 
-      <nav className="flex-1 space-y-1 p-2">
-        {APP_SHELL_NAV_ITEMS.map((item) => (
-          <SidebarNavItem key={item.href} item={item} collapsed={collapsed} />
-        ))}
-      </nav>
+        <nav className="flex-1 space-y-1 p-2">
+          {APP_SHELL_NAV_ITEMS.map((item) => (
+            <SidebarNavItem key={item.href} item={item} collapsed={collapsed} />
+          ))}
+        </nav>
 
-      <div className="border-t border-border p-2">
-        <UserMenu collapsed={collapsed} userName={userName} userEmail={userEmail} />
+        <div className="p-2">
+          <UserMenu collapsed={collapsed} userName={userName} userEmail={userEmail} />
+        </div>
       </div>
     </aside>
   );
@@ -235,9 +280,20 @@ export function ContentArea({
   children,
   className,
   fullWidth = false,
+  inCard = false,
   userName = "Preview User",
   userEmail = "preview@beespo.com",
 }: ContentAreaProps & { userName?: string; userEmail?: string }) {
+  if (inCard) {
+    return (
+      <main className={cn("h-full bg-card", className)}>
+        <div className="h-full overflow-y-auto px-6 pt-6 pb-6">
+          <div className={cn(fullWidth ? "max-w-none" : "mx-auto max-w-5xl")}>{children}</div>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className={cn("flex-1 bg-background", className)}>
       <div className="h-14 border-b border-border px-4 md:hidden">
@@ -262,41 +318,47 @@ export function AppShell({
   userName = "Preview User",
   userEmail = "preview@beespo.com",
 }: AppShellProps) {
-  const { collapsed, toggleCollapsed } = useCollapsedSidebarState();
-  const contentOffset = secondaryPanel
-    ? collapsed
-      ? "md:pl-[320px]"
-      : "md:pl-[480px]"
-    : collapsed
-      ? "md:pl-16"
-      : "md:pl-[220px]";
-  const secondaryLeft = collapsed ? "left-16" : "left-[220px]";
+  const { pinned, togglePinned } = usePinnedSidebarState();
+  const navOffset = pinned ? "md:pl-[220px]" : "md:pl-16";
 
   return (
     <div className="min-h-screen bg-background text-foreground">
       <NavigationSidebar
-        collapsed={collapsed}
-        onToggleCollapsed={toggleCollapsed}
+        pinned={pinned}
+        onTogglePinned={togglePinned}
         userName={userName}
         userEmail={userEmail}
         className={sidebarClassName}
       />
 
-      {secondaryPanel ? (
-        <aside
-          className={cn(
-            "fixed inset-y-0 z-20 hidden w-[260px] border-r border-border bg-card md:block",
-            secondaryLeft
-          )}
-        >
-          {secondaryPanel}
-        </aside>
-      ) : null}
+      <div className={cn("min-h-screen transition-[padding] duration-300 ease-out", navOffset)}>
+        <div className="hidden h-screen p-3 md:block">
+          <div className="flex h-full gap-3">
+            {secondaryPanel ? (
+              <aside className="w-[260px] shrink-0 overflow-hidden rounded-[18px] border border-border bg-card shadow-sm">
+                {secondaryPanel}
+              </aside>
+            ) : null}
 
-      <div className={cn(contentOffset)}>
-        <ContentArea className={contentClassName} fullWidth userName={userName} userEmail={userEmail}>
-          {children}
-        </ContentArea>
+            <section className="min-w-0 flex-1 overflow-hidden rounded-[18px] border border-border bg-card shadow-sm">
+              <ContentArea
+                className={contentClassName}
+                fullWidth
+                inCard
+                userName={userName}
+                userEmail={userEmail}
+              >
+                {children}
+              </ContentArea>
+            </section>
+          </div>
+        </div>
+
+        <div className="md:hidden">
+          <ContentArea className={contentClassName} fullWidth userName={userName} userEmail={userEmail}>
+            {children}
+          </ContentArea>
+        </div>
       </div>
     </div>
   );
