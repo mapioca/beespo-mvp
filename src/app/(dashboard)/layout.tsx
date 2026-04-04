@@ -1,7 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { CommandPalette } from "@/components/command-palette";
+import { AppShell } from "@/components/app-shell";
+import { NavigationStoreHydrator } from "@/components/dashboard/navigation-store-hydrator";
 import { getProfile } from "@/lib/supabase/cached-queries";
 import { checkTrustedDevice, checkWorkspaceMfaRequired } from "@/lib/mfa";
 import { getUserNavigationItems } from "@/lib/navigation/user-navigation";
@@ -55,16 +56,13 @@ export default async function DashboardLayout({
 
   return (
     <>
-      <DashboardShell
-        workspaceName={profile?.workspaces?.name || "Workspace"}
+      <NavigationStoreHydrator initialItems={initialNavigationItems} />
+      <AppShell
         userName={profile?.full_name || ""}
         userEmail={user?.email || ""}
-        userId={user.id}
-        userRoleTitle={profile?.role_title || ""}
-        initialNavigationItems={initialNavigationItems}
       >
         {children}
-      </DashboardShell>
+      </AppShell>
       <CommandPalette />
     </>
   );
