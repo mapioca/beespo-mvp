@@ -1,6 +1,8 @@
 import type { Config } from "tailwindcss";
 import tailwindcssAnimate from "tailwindcss-animate";
 
+const colorVar = (name: string) => `hsl(var(${name}) / <alpha-value>)`;
+
 const config: Config = {
   darkMode: ["class"],
   content: [
@@ -9,57 +11,128 @@ const config: Config = {
     "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
   ],
   theme: {
+    // Intentionally restricted scales to match BEESPO_DESIGN_SYSTEM.md
+    spacing: {
+      0: "0px",
+      px: "1px",
+      1: "0.25rem",
+      2: "0.5rem",
+      3: "0.75rem",
+      4: "1rem",
+      5: "1.25rem",
+      6: "1.5rem",
+      8: "2rem",
+      10: "2.5rem",
+      12: "3rem",
+      16: "4rem",
+    },
+    fontFamily: {
+      sans: ["var(--font-sans)"],
+    },
+    fontSize: {
+      xs: ["var(--text-xs)", { lineHeight: "var(--leading-normal)" }],
+      sm: ["var(--text-sm)", { lineHeight: "var(--leading-normal)" }],
+      base: ["var(--text-base)", { lineHeight: "var(--leading-normal)" }],
+      lg: ["var(--text-lg)", { lineHeight: "var(--leading-tight)" }],
+      xl: ["var(--text-xl)", { lineHeight: "var(--leading-tight)" }],
+      "2xl": ["var(--text-2xl)", { lineHeight: "var(--leading-tight)" }],
+    },
+    fontWeight: {
+      normal: "var(--font-normal)",
+      medium: "var(--font-medium)",
+      semibold: "var(--font-semibold)",
+      // Compatibility alias to avoid hard breaks while enforcing 3 effective weights.
+      bold: "var(--font-semibold)",
+    },
+    lineHeight: {
+      tight: "var(--leading-tight)",
+      normal: "var(--leading-normal)",
+      relaxed: "var(--leading-relaxed)",
+    },
+    borderRadius: {
+      none: "0px",
+      sm: "var(--radius-sm)",
+      md: "var(--radius-md)",
+      lg: "var(--radius-lg)",
+      full: "var(--radius-full)",
+    },
+    borderWidth: {
+      0: "0px",
+      DEFAULT: "1px",
+    },
+    boxShadow: {
+      none: "none",
+      sm: "var(--shadow-sm)",
+      md: "var(--shadow-md)",
+      lg: "var(--shadow-lg)",
+    },
+    colors: {
+      transparent: "transparent",
+      current: "currentColor",
+      inherit: "inherit",
+
+      primary: {
+        DEFAULT: colorVar("--color-primary"),
+        hover: colorVar("--color-primary-hover"),
+        light: colorVar("--color-primary-light"),
+        foreground: colorVar("--color-bg-card"),
+      },
+
+      gray: {
+        50: colorVar("--color-gray-50"),
+        100: colorVar("--color-gray-100"),
+        200: colorVar("--color-gray-200"),
+        300: colorVar("--color-gray-300"),
+        400: colorVar("--color-gray-400"),
+        500: colorVar("--color-gray-500"),
+        600: colorVar("--color-gray-600"),
+        700: colorVar("--color-gray-700"),
+        900: colorVar("--color-gray-900"),
+      },
+
+      success: colorVar("--color-success"),
+      warning: colorVar("--color-warning"),
+      error: colorVar("--color-error"),
+      info: colorVar("--color-info"),
+
+      "bg-page": colorVar("--color-bg-page"),
+      "bg-card": colorVar("--color-bg-card"),
+      "bg-sidebar": colorVar("--color-bg-sidebar"),
+      "bg-hover": colorVar("--color-bg-hover"),
+      "bg-selected": colorVar("--color-bg-selected"),
+
+      // Legacy shadcn/beespo aliases mapped to canonical tokens.
+      background: colorVar("--background"),
+      foreground: colorVar("--foreground"),
+      card: {
+        DEFAULT: colorVar("--card"),
+        foreground: colorVar("--card-foreground"),
+      },
+      popover: {
+        DEFAULT: colorVar("--popover"),
+        foreground: colorVar("--popover-foreground"),
+      },
+      secondary: {
+        DEFAULT: colorVar("--secondary"),
+        foreground: colorVar("--secondary-foreground"),
+      },
+      muted: {
+        DEFAULT: colorVar("--muted"),
+        foreground: colorVar("--muted-foreground"),
+      },
+      accent: {
+        DEFAULT: colorVar("--accent"),
+        foreground: colorVar("--accent-foreground"),
+      },
+      destructive: {
+        DEFAULT: colorVar("--destructive"),
+        foreground: colorVar("--destructive-foreground"),
+      },
+      border: colorVar("--border"),
+      input: colorVar("--input"),
+      ring: colorVar("--ring"),
+    },
     extend: {
-      colors: {
-        background: "hsl(var(--background))",
-        foreground: "hsl(var(--foreground))",
-        card: {
-          DEFAULT: "hsl(var(--card))",
-          foreground: "hsl(var(--card-foreground))",
-        },
-        popover: {
-          DEFAULT: "hsl(var(--popover))",
-          foreground: "hsl(var(--popover-foreground))",
-        },
-        primary: {
-          DEFAULT: "hsl(var(--primary))",
-          foreground: "hsl(var(--primary-foreground))",
-        },
-        secondary: {
-          DEFAULT: "hsl(var(--secondary))",
-          foreground: "hsl(var(--secondary-foreground))",
-        },
-        muted: {
-          DEFAULT: "hsl(var(--muted))",
-          foreground: "hsl(var(--muted-foreground))",
-        },
-        accent: {
-          DEFAULT: "hsl(var(--accent))",
-          foreground: "hsl(var(--accent-foreground))",
-        },
-        destructive: {
-          DEFAULT: "hsl(var(--destructive))",
-          foreground: "hsl(var(--destructive-foreground))",
-        },
-        border: "hsl(var(--border))",
-        input: "hsl(var(--input))",
-        ring: "hsl(var(--ring))",
-        chart: {
-          "1": "hsl(var(--chart-1))",
-          "2": "hsl(var(--chart-2))",
-          "3": "hsl(var(--chart-3))",
-          "4": "hsl(var(--chart-4))",
-          "5": "hsl(var(--chart-5))",
-        },
-      },
-      borderRadius: {
-        lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
-      },
-      fontFamily: {
-        sans: ["var(--font-inter)", "system-ui", "sans-serif"],
-      },
       keyframes: {
         "accordion-down": {
           from: { height: "0" },

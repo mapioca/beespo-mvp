@@ -4,24 +4,72 @@
 
 @layer base {
   :root {
-    /* Black & White Elegance Theme */
-    --canvas: 0 0% 96.5%; /* Back-compat */
-    --panel: 0 0% 96.5%; /* Base app surface (sidebar + shell canvas) */
-    --paper: 0 0% 99.2%; /* Document surface */
-    --background: 0 0% 100%; /* Pure white */
-    --foreground: 0 0% 0%; /* Pure black */
-    --card: 0 0% 100%;
-    --card-foreground: 0 0% 0%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 0%;
-    --primary: 0 0% 0%; /* Black */
-    --primary-foreground: 0 0% 100%; /* White */
-    --secondary: 0 0% 96%; /* Near white gray */
-    --secondary-foreground: 0 0% 0%;
-    --muted: 0 0% 96%;
-    --muted-foreground: 0 0% 40%;
-    --accent: 0 0% 96%;
-    --accent-foreground: 0 0% 0%;
+    /* Canonical design tokens (Intercom-aligned, Beespo-adapted) */
+    --color-primary: 219 100% 50%;
+    --color-primary-hover: 220 100% 42%;
+    --color-primary-light: 221 100% 95%;
+
+    --color-gray-50: 0 0% 98%;
+    --color-gray-100: 0 0% 96%;
+    --color-gray-200: 0 0% 90%;
+    --color-gray-300: 0 0% 83%;
+    --color-gray-400: 0 0% 64%;
+    --color-gray-500: 0 0% 45%;
+    --color-gray-600: 0 0% 32%;
+    --color-gray-700: 0 0% 25%;
+    --color-gray-900: 0 0% 9%;
+
+    --color-success: 142 76% 36%;
+    --color-warning: 45 89% 47%;
+    --color-error: 0 72% 51%;
+    --color-info: var(--color-primary);
+
+    --color-bg-page: var(--color-gray-50);
+    --color-bg-card: 0 0% 100%;
+    --color-bg-sidebar: var(--color-gray-100);
+    --color-bg-hover: var(--color-gray-100);
+    --color-bg-selected: var(--color-primary-light);
+
+    --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --text-xs: 0.75rem;
+    --text-sm: 0.875rem;
+    --text-base: 1rem;
+    --text-lg: 1.125rem;
+    --text-xl: 1.25rem;
+    --text-2xl: 1.5rem;
+    --font-normal: 400;
+    --font-medium: 500;
+    --font-semibold: 600;
+    --leading-tight: 1.25;
+    --leading-normal: 1.5;
+    --leading-relaxed: 1.625;
+    --radius-sm: 4px;
+    --radius-md: 6px;
+    --radius-lg: 8px;
+    --radius-full: 9999px;
+    --border-default: 1px solid hsl(var(--color-gray-200));
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px rgba(0, 0, 0, 0.05);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px rgba(0, 0, 0, 0.04);
+
+    /* Compatibility aliases used by current Beespo UI */
+    --canvas: var(--color-bg-sidebar); /* Back-compat */
+    --panel: var(--color-bg-sidebar); /* Base app surface (sidebar + shell canvas) */
+    --paper: 0 0% 99.2%;
+    --background: var(--color-bg-page);
+    --foreground: var(--color-gray-900);
+    --card: var(--color-bg-card);
+    --card-foreground: var(--color-gray-900);
+    --popover: var(--color-bg-card);
+    --popover-foreground: var(--color-gray-900);
+    --primary: var(--color-primary);
+    --primary-foreground: var(--color-bg-card);
+    --secondary: var(--color-gray-100);
+    --secondary-foreground: var(--color-gray-900);
+    --muted: var(--color-gray-100);
+    --muted-foreground: var(--color-gray-500);
+    --accent: var(--color-gray-100);
+    --accent-foreground: var(--color-gray-900);
     --accent-warm: 24 38% 91%; /* Warm peach-gray (#EFE7E1) */
     --accent-warm-hover: 24 27% 88%; /* Slightly deeper warm hover (#E6DDD6) */
     --chrome: 0 0% 99.4%; /* App chrome surface (top bars, toolbars) */
@@ -112,9 +160,9 @@
     --shadow-builder-card-selected: 0 10px 24px rgba(15,23,42,0.08);
     --shadow-builder-header: 0 8px 20px rgba(15,23,42,0.04);
     --shadow-builder-canvas: 0 28px 70px rgba(15,23,42,0.07);
-    --button-primary: 0 0% 0%;
-    --button-primary-hover: 0 0% 12%;
-    --button-primary-foreground: 0 0% 100%;
+    --button-primary: var(--color-primary);
+    --button-primary-hover: var(--color-primary-hover);
+    --button-primary-foreground: var(--color-bg-card);
     --pill: 0 0% 92%;
     --pill-foreground: 0 0% 20%;
     --control: 0 0% 100%;
@@ -151,12 +199,12 @@
     --chip-active-bg: 0 0% 92%;
     --chip-active-border: 0 0% 82%;
     --chip-active-text: 0 0% 10%;
-    --destructive: 0 84% 60%; /* Error red - minimal color */
-    --destructive-foreground: 0 0% 100%;
-    --border: 0 0% 89%; /* Light gray for borders */
-    --input: 0 0% 89%;
-    --ring: 0 0% 0%;
-    --radius: 0.875rem;
+    --destructive: var(--color-error);
+    --destructive-foreground: var(--color-bg-card);
+    --border: var(--color-gray-200);
+    --input: var(--color-gray-300);
+    --ring: var(--color-primary);
+    --radius: var(--radius-md);
     --chart-1: 0 0% 60%;
     --chart-2: 0 0% 40%;
     --chart-3: 0 0% 20%;
@@ -165,23 +213,48 @@
   }
 
   .dark {
-    --canvas: 24 18% 22%; /* Back-compat */
-    --panel: 0 0% 8%;
-    --paper: 0 0% 5%;
-    --background: 0 0% 0%;
-    --foreground: 0 0% 100%;
-    --card: 0 0% 5%;
-    --card-foreground: 0 0% 100%;
-    --popover: 0 0% 5%;
-    --popover-foreground: 0 0% 100%;
-    --primary: 0 0% 100%;
-    --primary-foreground: 0 0% 0%;
-    --secondary: 0 0% 10%;
-    --secondary-foreground: 0 0% 100%;
-    --muted: 0 0% 10%;
-    --muted-foreground: 0 0% 60%;
-    --accent: 0 0% 10%;
-    --accent-foreground: 0 0% 100%;
+    --color-primary: 219 100% 62%;
+    --color-primary-hover: 219 100% 68%;
+    --color-primary-light: 219 70% 22%;
+
+    --color-gray-50: 0 0% 8%;
+    --color-gray-100: 0 0% 10%;
+    --color-gray-200: 0 0% 18%;
+    --color-gray-300: 0 0% 28%;
+    --color-gray-400: 0 0% 45%;
+    --color-gray-500: 0 0% 60%;
+    --color-gray-600: 0 0% 72%;
+    --color-gray-700: 0 0% 84%;
+    --color-gray-900: 0 0% 96%;
+
+    --color-success: 142 69% 45%;
+    --color-warning: 45 90% 56%;
+    --color-error: 0 79% 62%;
+    --color-info: var(--color-primary);
+
+    --color-bg-page: var(--color-gray-50);
+    --color-bg-card: var(--color-gray-100);
+    --color-bg-sidebar: var(--color-gray-100);
+    --color-bg-hover: 0 0% 14%;
+    --color-bg-selected: var(--color-primary-light);
+
+    --canvas: var(--color-bg-sidebar); /* Back-compat */
+    --panel: var(--color-bg-sidebar);
+    --paper: 0 0% 7%;
+    --background: var(--color-bg-page);
+    --foreground: var(--color-gray-900);
+    --card: var(--color-bg-card);
+    --card-foreground: var(--color-gray-900);
+    --popover: var(--color-bg-card);
+    --popover-foreground: var(--color-gray-900);
+    --primary: var(--color-primary);
+    --primary-foreground: 0 0% 8%;
+    --secondary: var(--color-gray-100);
+    --secondary-foreground: var(--color-gray-900);
+    --muted: var(--color-gray-100);
+    --muted-foreground: var(--color-gray-500);
+    --accent: var(--color-gray-100);
+    --accent-foreground: var(--color-gray-900);
     --accent-warm: 24 18% 22%;
     --accent-warm-hover: 24 20% 26%;
     --chrome: 0 0% 8%;
@@ -260,9 +333,9 @@
     --drawer-text-section: 13.5px;
     --drawer-text-menu-item: 13.5px;
     --drawer-text-title: 15.5px;
-    --button-primary: 0 0% 100%;
-    --button-primary-hover: 0 0% 88%;
-    --button-primary-foreground: 0 0% 100%;
+    --button-primary: var(--color-primary);
+    --button-primary-hover: var(--color-primary-hover);
+    --button-primary-foreground: 0 0% 8%;
     --pill: 0 0% 18%;
     --pill-foreground: 0 0% 90%;
     --control: 0 0% 10%;
@@ -299,11 +372,11 @@
     --chip-active-bg: 220 12% 22%;
     --chip-active-border: 220 10% 34%;
     --chip-active-text: 0 0% 98%;
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 0%;
-    --border: 0 0% 15%;
-    --input: 0 0% 15%;
-    --ring: 0 0% 100%;
+    --destructive: var(--color-error);
+    --destructive-foreground: 0 0% 8%;
+    --border: var(--color-gray-200);
+    --input: var(--color-gray-300);
+    --ring: var(--color-primary);
   }
 }
 
