@@ -59,7 +59,7 @@ export interface CalendarMeeting {
   id: string;
   title: string;
   scheduled_date: string;
-  status: "scheduled" | "in_progress" | "completed" | "cancelled";
+  status: "draft" | "scheduled" | "in_progress" | "completed" | "cancelled";
 }
 
 // Task type for calendar

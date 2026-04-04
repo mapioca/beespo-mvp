@@ -21,7 +21,7 @@ import {
     Loader2,
 } from "lucide-react";
 
-export type MeetingStatus = "scheduled" | "in_progress" | "completed" | "cancelled";
+export type MeetingStatus = "draft" | "scheduled" | "in_progress" | "completed" | "cancelled";
 
 export interface Template {
     id: string;
@@ -40,6 +40,7 @@ interface MeetingFiltersProps {
 }
 
 const STATUS_OPTIONS: { value: MeetingStatus; label: string; icon: React.ReactNode }[] = [
+    { value: "draft", label: "Draft", icon: <FileText className="h-4 w-4 text-amber-500 stroke-[1.6]" /> },
     { value: "scheduled", label: "Scheduled", icon: <Calendar className="h-4 w-4 text-blue-500 stroke-[1.6]" /> },
     { value: "in_progress", label: "In Progress", icon: <CirclePlay className="h-4 w-4 text-yellow-500 stroke-[1.6]" /> },
     { value: "completed", label: "Completed", icon: <CheckCheck className="h-4 w-4 text-green-500 stroke-[1.6]" /> },

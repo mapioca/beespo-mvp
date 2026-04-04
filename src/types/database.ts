@@ -536,7 +536,7 @@ export type Database = {
           title: string;
           description: string | null;
           scheduled_date: string;
-          status: "scheduled" | "in_progress" | "completed" | "cancelled";
+          status: "draft" | "scheduled" | "in_progress" | "completed" | "cancelled";
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           notes: any | null; // Editor.js JSON
           public_share_token: string | null;
@@ -565,7 +565,7 @@ export type Database = {
           title: string;
           description?: string | null;
           scheduled_date: string;
-          status?: "scheduled" | "in_progress" | "completed" | "cancelled";
+          status?: "draft" | "scheduled" | "in_progress" | "completed" | "cancelled";
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           notes?: any | null;
           public_share_token?: string | null;
@@ -594,7 +594,7 @@ export type Database = {
           title?: string;
           description?: string | null;
           scheduled_date?: string;
-          status?: "scheduled" | "in_progress" | "completed" | "cancelled";
+          status?: "draft" | "scheduled" | "in_progress" | "completed" | "cancelled";
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           notes?: any | null;
           public_share_token?: string | null;

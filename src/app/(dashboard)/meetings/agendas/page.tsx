@@ -127,6 +127,7 @@ export default async function AgendasPage() {
 
   // Compute counts for filter badges
   const statusCounts: Record<string, number> = {
+    draft: 0,
     scheduled: 0,
     in_progress: 0,
     completed: 0,
