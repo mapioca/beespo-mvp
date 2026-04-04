@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { AnimatePresence } from "framer-motion";
 import { useToastStore } from "@/lib/toast";
 import { ToastPill } from "./toast-pill";
 
@@ -19,13 +18,11 @@ export function ToastContainer() {
   return createPortal(
     <div
       aria-label="Notifications"
-      className="fixed bottom-6 left-1/2 z-[100] flex -translate-x-1/2 flex-col-reverse items-center gap-2 pointer-events-none w-[90vw] sm:w-auto sm:max-w-md"
+      className="fixed right-6 top-6 z-[100] flex w-[92vw] max-w-md flex-col gap-2 pointer-events-none"
     >
-      <AnimatePresence mode="popLayout">
-        {toasts.map((item) => (
-          <ToastPill key={item.id} item={item} />
-        ))}
-      </AnimatePresence>
+      {toasts.map((item) => (
+        <ToastPill key={item.id} item={item} />
+      ))}
     </div>,
     document.body,
   );

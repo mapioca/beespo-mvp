@@ -1,139 +1,92 @@
 "use client";
 
-import { useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import {
-  CheckCircle2,
-  XCircle,
-  Info,
-  AlertTriangle,
-  Loader2,
-  X,
-} from "lucide-react";
+import * as React from "react";
+import { CheckCircle2, Info, AlertTriangle, XCircle, Loader2, X } from "lucide-react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 import { type ToastItem, removeToast, pauseToast, resumeToast } from "@/lib/toast";
 
-// ---------------------------------------------------------------------------
-// CVA variants
-// ---------------------------------------------------------------------------
-
-const pillVariants = cva(
-  "relative flex items-center gap-2.5 rounded-full px-4 py-2.5 shadow-lg text-sm font-medium pointer-events-auto select-none",
+const toastVariants = cva(
+  "pointer-events-auto relative flex w-full items-start gap-3 rounded-md border border-gray-200 bg-white px-4 py-3 shadow-lg",
   {
     variants: {
       variant: {
-        success: "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900",
-        error: "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900",
-        info: "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900",
-        warning: "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900",
-        loading: "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900",
+        success: "border-l-4 border-l-success",
+        error: "border-l-4 border-l-error",
+        info: "border-l-4 border-l-primary",
+        warning: "border-l-4 border-l-warning",
+        loading: "border-l-4 border-l-gray-400",
       },
     },
     defaultVariants: {
       variant: "info",
     },
-  },
+  }
 );
 
-type PillVariant = NonNullable<VariantProps<typeof pillVariants>["variant"]>;
+type ToastVariant = NonNullable<VariantProps<typeof toastVariants>["variant"]>;
 
-// ---------------------------------------------------------------------------
-// Icon map
-// ---------------------------------------------------------------------------
-
-const iconMap: Record<PillVariant, { icon: React.ElementType; className: string }> = {
-  success: { icon: CheckCircle2, className: "text-emerald-400 dark:text-emerald-600" },
-  error: { icon: XCircle, className: "text-red-400 dark:text-red-600" },
-  info: { icon: Info, className: "text-blue-400 dark:text-blue-600" },
-  warning: { icon: AlertTriangle, className: "text-amber-400 dark:text-amber-600" },
-  loading: { icon: Loader2, className: "text-zinc-400 dark:text-zinc-500" },
+const iconMap: Record<ToastVariant, React.ComponentType<{ className?: string }>> = {
+  success: CheckCircle2,
+  error: XCircle,
+  info: Info,
+  warning: AlertTriangle,
+  loading: Loader2,
 };
 
-// ---------------------------------------------------------------------------
-// Component
-// ---------------------------------------------------------------------------
+const iconColorMap: Record<ToastVariant, string> = {
+  success: "text-success",
+  error: "text-error",
+  info: "text-primary",
+  warning: "text-warning",
+  loading: "text-gray-500",
+};
 
-interface ToastPillProps {
+export interface ToastPillProps extends React.HTMLAttributes<HTMLDivElement> {
   item: ToastItem;
 }
 
-export function ToastPill({ item }: ToastPillProps) {
-  const handleDismiss = useCallback(() => {
-    removeToast(item.id);
-  }, [item.id]);
-
-  const handleMouseEnter = useCallback(() => {
-    pauseToast(item.id);
-  }, [item.id]);
-
-  const handleMouseLeave = useCallback(() => {
-    resumeToast(item.id);
-  }, [item.id]);
-
-
-  const { icon: IconComp, className: iconClassName } = iconMap[item.type];
+const ToastPill = React.forwardRef<HTMLDivElement, ToastPillProps>(({ item, className, ...props }, ref) => {
+  const Icon = iconMap[item.type];
 
   return (
-    <motion.div
-      layout
-      initial={{ y: 24, opacity: 0, scale: 0.95 }}
-      animate={{ y: 0, opacity: 1, scale: 1 }}
-      exit={{ y: -12, opacity: 0, scale: 0.95 }}
-      transition={{
-        type: "spring",
-        stiffness: 400,
-        damping: 30,
-        mass: 0.8,
-      }}
+    <div
+      ref={ref}
       role="status"
       aria-live="polite"
-      className={cn(pillVariants({ variant: item.type }))}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
+      className={cn(toastVariants({ variant: item.type }), className)}
+      onMouseEnter={() => pauseToast(item.id)}
+      onMouseLeave={() => resumeToast(item.id)}
+      {...props}
     >
-      {/* Icon with crossfade */}
-      <AnimatePresence mode="wait" initial={false}>
-        <motion.span
-          key={item.type}
-          initial={{ scale: 0.5, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          exit={{ scale: 0.5, opacity: 0 }}
-          transition={{ duration: 0.15 }}
-          className="flex-shrink-0"
-        >
-          {item.type === "loading" ? (
-            <motion.span
-              animate={{ rotate: 360 }}
-              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-              className="block"
-            >
-              <IconComp className={cn("h-4 w-4", iconClassName)} />
-            </motion.span>
-          ) : (
-            <IconComp className={cn("h-4 w-4", iconClassName)} />
+      <span className="mt-0.5 shrink-0">
+        <Icon
+          className={cn(
+            "h-4 w-4",
+            iconColorMap[item.type],
+            item.type === "loading" ? "animate-spin" : ""
           )}
-        </motion.span>
-      </AnimatePresence>
+          aria-hidden
+        />
+      </span>
 
-      {/* Content */}
-      <div className="flex flex-col gap-0.5 min-w-0">
-        <span className="truncate leading-tight">{item.message}</span>
-        {item.description && (
-          <span className="text-xs opacity-70 truncate leading-tight">
-            {item.description}
-          </span>
-        )}
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-medium text-gray-700">{item.message}</p>
+        {item.description ? <p className="mt-1 text-sm text-gray-500">{item.description}</p> : null}
       </div>
 
-      {/* Dismiss */}
       <button
-        onClick={handleDismiss}
+        type="button"
+        onClick={() => removeToast(item.id)}
         aria-label="Dismiss notification"
-        className="flex-shrink-0 ml-1 rounded-full p-0.5 opacity-60 hover:opacity-100 transition-opacity"
+        className="shrink-0 rounded-sm p-0.5 text-gray-400 transition-colors hover:text-gray-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
       >
-        <X className="h-3.5 w-3.5" />
+        <X className="h-4 w-4" />
       </button>
-    </motion.div>
+    </div>
   );
-}
+});
+
+ToastPill.displayName = "ToastPill";
+
+export { ToastPill, toastVariants };
