@@ -134,7 +134,7 @@ function SavedItemRow({
           <button
             type="button"
             className={cn(
-              "mr-1 flex h-6 w-6 shrink-0 items-center justify-center rounded transition-opacity",
+              "mr-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-opacity",
               "opacity-0 group-hover:opacity-100 data-[state=open]:opacity-100",
               "hover:bg-nav-hover focus-visible:outline-none"
             )}
@@ -214,16 +214,16 @@ export function SidebarSavedItemsSection({
   }
 
   return (
-    <div className="mt-3 px-2.5">
+    <div className="mt-4 px-2.5">
       <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
         <Popover open={flyoutEnabled && flyoutOpen} onOpenChange={() => {}}>
           <PopoverAnchor asChild>
             <CollapsibleTrigger
-              className="group flex w-full items-center gap-1 rounded-md px-3 py-1 transition-colors hover:bg-nav-hover"
+              className="group flex w-full items-center gap-1 rounded-md px-3 py-1.5 transition-colors hover:bg-nav-hover"
               onMouseEnter={openFlyout}
               onMouseLeave={scheduleFlyoutClose}
             >
-              <span className="flex-1 text-left text-[11px] font-medium text-muted-foreground">
+              <span className="flex-1 text-left text-xs font-medium text-nav-muted">
                 {title}
               </span>
               <ChevronRight
@@ -246,7 +246,7 @@ export function SidebarSavedItemsSection({
             onOpenAutoFocus={(event) => event.preventDefault()}
             onInteractOutside={(event) => event.preventDefault()}
           >
-            <p className="px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+            <p className="px-2 py-1 text-xs font-medium text-nav-muted">
               {title}
             </p>
             <div className="mt-0.5 space-y-0.5">

@@ -23,7 +23,7 @@ export function SidebarNavSection({
   isFirst = false,
 }: SidebarNavSectionProps) {
   return (
-    <div className={cn(!isFirst && "mt-3")}>
+    <div className={cn(isFirst ? "mt-1" : "mt-4")}>
       {/* Section Header - Hidden when collapsed */}
       {!isCollapsed && section.title && (
         <h3 className="text-nav-muted mb-2 px-3 text-[11px] font-semibold uppercase tracking-[0.06em]">
@@ -32,7 +32,7 @@ export function SidebarNavSection({
       )}
 
       {/* Section Items */}
-      <div className="space-y-0.5 px-2.5">
+      <div className="space-y-1 px-2.5">
         {section.items.map((item) => {
           if (isNavItemParent(item)) {
             const groupId = `${section.id}-${item.label.toLowerCase().replace(/\s+/g, "-")}`

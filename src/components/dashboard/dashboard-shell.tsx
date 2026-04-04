@@ -60,7 +60,7 @@ export function DashboardShell({
             </Sheet>
 
             <div className="flex-1 min-w-0 min-h-0 bg-app-shell p-0 sm:p-2.5 xl:p-3 2xl:p-4">
-                <main className="h-full min-h-0 overflow-hidden rounded-none border-0 bg-app-island shadow-none sm:rounded-[16px] sm:border sm:border-app-island sm:shadow-[var(--shadow-app-island)]">
+                <main className="h-full min-h-0 overflow-hidden rounded-none border-0 bg-app-island shadow-none sm:rounded-[16px] sm:border sm:border-app-island sm:border-l-0 sm:shadow-[var(--shadow-app-island)]">
                     {children}
                 </main>
             </div>

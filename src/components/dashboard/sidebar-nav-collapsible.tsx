@@ -78,13 +78,13 @@ export function SidebarNavCollapsible({
             onMouseEnter={openFlyout}
             onMouseLeave={scheduleFlyoutClose}
             className={cn(
-              "flex h-8 w-full items-center justify-center rounded-md px-2 text-[13px] transition-colors duration-150 ease-out",
+              "flex h-9 w-full items-center justify-center rounded-lg px-2 text-sm transition-[background-color,color] duration-150 ease-out",
               hasActiveChild
                 ? "bg-nav-selected text-nav-strong"
                 : "text-nav hover:bg-nav-hover hover:text-nav-strong"
             )}
           >
-            <Icon className="h-4 w-4 shrink-0 stroke-[1.75]" />
+            <Icon className="h-4 w-4 shrink-0 stroke-[1.7]" />
           </button>
         </PopoverAnchor>
 
@@ -110,13 +110,13 @@ export function SidebarNavCollapsible({
                   href={child.href}
                   onClick={() => setFlyoutOpen(false)}
                   className={cn(
-                    "flex h-8 items-center gap-2 rounded-md px-2 text-[13px] transition-colors duration-150 ease-out",
+                    "flex h-9 items-center gap-2 rounded-lg px-2.5 text-sm transition-[background-color,color] duration-150 ease-out",
                     isActive
                       ? "bg-nav-selected font-semibold text-nav-strong"
                       : "text-nav hover:bg-nav-hover hover:text-nav-strong"
                   )}
                 >
-                  <ChildIcon className="h-4 w-4 shrink-0 stroke-[1.75]" />
+                  <ChildIcon className="h-4 w-4 shrink-0 stroke-[1.7]" />
                   {child.label}
                 </Link>
               )
@@ -135,7 +135,7 @@ export function SidebarNavCollapsible({
         <PopoverAnchor asChild>
           <CollapsibleTrigger
             className={cn(
-              "flex h-8 w-full items-center gap-2.5 rounded-md px-2.5 text-[13px] transition-colors duration-150 ease-out",
+              "flex h-9 w-full items-center gap-2.5 rounded-lg px-3 text-sm transition-[background-color,color] duration-150 ease-out",
               hasActiveChild
                 ? "bg-nav-selected text-nav-strong"
                 : "text-nav hover:bg-nav-hover hover:text-nav-strong"
@@ -145,11 +145,11 @@ export function SidebarNavCollapsible({
             onMouseEnter={openFlyout}
             onMouseLeave={scheduleFlyoutClose}
           >
-            <Icon className="h-4 w-4 shrink-0 stroke-[1.75]" />
+            <Icon className="h-4 w-4 shrink-0 stroke-[1.7]" />
             <span className={cn("flex-1 text-left", hasActiveChild ? "font-semibold" : "font-medium")}>{item.label}</span>
             <ChevronRight
               className={cn(
-                "h-4 w-4 shrink-0 stroke-[1.75] transition-transform duration-150",
+                "h-4 w-4 shrink-0 stroke-[1.7] transition-transform duration-150",
                 isExpanded && "rotate-90"
               )}
             />
@@ -160,7 +160,7 @@ export function SidebarNavCollapsible({
           side="right"
           align="start"
           sideOffset={8}
-          className="w-44 p-1"
+          className="w-48 p-1"
           onMouseEnter={openFlyout}
           onMouseLeave={scheduleFlyoutClose}
           onOpenAutoFocus={(e) => e.preventDefault()}
@@ -178,13 +178,13 @@ export function SidebarNavCollapsible({
                   href={child.href}
                   onClick={() => setFlyoutOpen(false)}
                   className={cn(
-                    "flex h-8 items-center gap-2 rounded-md px-2 text-[13px] transition-colors duration-150 ease-out",
+                    "flex h-9 items-center gap-2 rounded-lg px-2.5 text-sm transition-[background-color,color] duration-150 ease-out",
                     isActive
                       ? "bg-nav-selected font-semibold text-nav-strong"
                       : "text-nav hover:bg-nav-hover hover:text-nav-strong"
                   )}
                 >
-                  <ChildIcon className="h-4 w-4 shrink-0 stroke-[1.75]" />
+                  <ChildIcon className="h-4 w-4 shrink-0 stroke-[1.7]" />
                   {child.label}
                 </Link>
               )
