@@ -1,8 +1,9 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { Inbox, Star, Archive, CircleDot } from "lucide-react";
+import { Inbox, Star, Archive, CircleDot, Plus } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
 function SecondaryPanelPreview() {
   const items = [
@@ -13,9 +14,17 @@ function SecondaryPanelPreview() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="border-b border-border px-4 py-4">
-        <h2 className="text-sm font-semibold text-foreground">Secondary Panel</h2>
-        <p className="mt-1 text-xs text-muted-foreground">Inbox/sub-navigation preview</p>
+      <div className="border-b border-gray-200 px-4 py-4">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">Secondary Panel</h2>
+            <p className="mt-1 text-xs text-gray-400">Inbox/sub-navigation preview</p>
+          </div>
+          <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full">
+            <Plus className="h-4 w-4" />
+            <span className="sr-only">Add item</span>
+          </Button>
+        </div>
       </div>
 
       <div className="flex-1 space-y-1 p-2">

@@ -53,12 +53,14 @@ type AppShellProps = {
 };
 
 function usePinnedSidebarState() {
-  const [pinned, setPinned] = React.useState(true);
+  const [pinned, setPinned] = React.useState(false);
 
   React.useEffect(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored === "false") {
+      if (stored === "true") {
+        setPinned(true);
+      } else if (stored === "false") {
         setPinned(false);
       }
     } catch {
@@ -97,20 +99,26 @@ function SidebarNavItem({ item, collapsed }: { item: AppShellNavItem; collapsed:
     <Link
       href={item.href}
       className={cn(
-        "group flex items-center rounded-xl text-sm font-semibold transition-colors duration-200",
-        "hover:bg-card",
+        "group flex h-11 items-center rounded-xl text-sm font-medium transition-all duration-150 ease-in-out",
+        "hover:bg-white/8",
         active
-          ? "border border-border bg-card text-foreground shadow-sm"
-          : "text-foreground/85",
-        collapsed ? "justify-center px-2 py-2" : "justify-between px-3 py-2"
+          ? "bg-white/10 text-white"
+          : "text-white/50 hover:text-white/85",
+        collapsed ? "justify-center px-2" : "justify-between px-3"
       )}
     >
-      <span className={cn("flex items-center", collapsed ? "justify-center" : "gap-3")}> 
-        <Icon className="h-5 w-5" />
-        {!collapsed ? <span>{item.label}</span> : null}
+      <span className={cn("flex items-center", collapsed ? "justify-center" : "gap-3")}>
+        <Icon className="h-6 w-6 shrink-0" strokeWidth={1.75} />
+        {!collapsed ? <span className={cn(active ? "text-white" : "text-white/85")}>{item.label}</span> : null}
       </span>
       {!collapsed && item.badgeCount ? (
-        <Badge variant="secondary" className="h-5 rounded-full bg-secondary px-1.5 text-[11px] font-semibold">
+        <Badge
+          variant="secondary"
+          className={cn(
+            "h-5 rounded-full border-0 px-1.5 text-[11px] font-semibold",
+            active ? "bg-white/15 text-white" : "bg-white/10 text-white/80"
+          )}
+        >
           {item.badgeCount}
         </Badge>
       ) : null}
@@ -130,20 +138,25 @@ function UserMenu({ collapsed, userName, userEmail }: { collapsed: boolean; user
     <div className={cn("flex items-center", collapsed ? "justify-center" : "justify-between gap-2")}>
       <button
         className={cn(
-          "flex h-9 items-center rounded-xl px-2.5 text-left text-sm font-semibold text-foreground/85 transition-colors hover:bg-card",
-          collapsed ? "w-9 justify-center px-0" : "min-w-0 flex-1 gap-2"
+          "flex h-11 items-center rounded-xl text-left text-sm font-medium text-white/70 transition-all duration-150 ease-in-out hover:bg-white/8 hover:text-white",
+          collapsed ? "w-11 justify-center px-0" : "min-w-0 flex-1 gap-3 px-3"
         )}
       >
-        <Avatar className="h-5 w-5">
-          <AvatarFallback className="text-[10px] font-semibold">{initials}</AvatarFallback>
+        <Avatar className="h-8 w-8 border border-white/15">
+          <AvatarFallback className="bg-white/8 text-[10px] font-semibold text-white">{initials}</AvatarFallback>
         </Avatar>
-        {!collapsed ? <span className="truncate">Profile</span> : null}
+        {!collapsed ? (
+          <span className="min-w-0 flex-1 truncate">
+            <span className="block truncate text-sm font-medium text-white">{userName}</span>
+            <span className="block truncate text-xs text-white/50">{userEmail}</span>
+          </span>
+        ) : null}
       </button>
 
       {!collapsed ? (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button className="flex h-9 w-9 items-center justify-center rounded-xl text-foreground/75 transition-colors hover:bg-card hover:text-foreground">
+            <button className="flex h-11 w-11 items-center justify-center rounded-xl text-white/50 transition-all duration-150 ease-in-out hover:bg-white/8 hover:text-white">
               <MoreHorizontal className="h-4 w-4" />
               <span className="sr-only">Open profile menu</span>
             </button>
@@ -181,9 +194,9 @@ function NavigationSidebar({
   return (
     <aside
       className={cn(
-        "fixed inset-y-0 left-0 z-30 hidden shrink-0 md:block",
-        "transition-[width] duration-300 ease-out",
-        expanded ? "w-[220px]" : "w-16",
+        "fixed top-3 bottom-3 left-3 z-40 hidden shrink-0 md:block",
+        "transition-[width] duration-200 ease-in-out",
+        expanded ? "w-[240px]" : "w-16",
         className
       )}
       onMouseEnter={() => {
@@ -199,47 +212,55 @@ function NavigationSidebar({
     >
       <div
         className={cn(
-          "relative flex h-full flex-col transition-all duration-300 ease-out",
+          "relative flex h-full flex-col overflow-hidden rounded-[18px] border border-white/8 bg-[#1A1A1A] shadow-sm transition-all duration-200 ease-in-out",
           pinned
-            ? "border-r border-border bg-panel"
+            ? ""
             : expanded
-              ? "my-2 mr-2 rounded-r-[18px] border border-l-0 border-border bg-panel shadow-sm"
-              : "bg-transparent"
+              ? ""
+              : ""
         )}
       >
-        <div className="flex h-14 items-center px-2.5">
+        <div className={cn("flex items-center px-2.5 pb-3 pt-3", collapsed ? "justify-center" : "justify-between")}>
           <div
             className={cn(
-              "flex h-9 items-center justify-center border border-border bg-card text-foreground shadow-sm transition-all duration-200",
-              collapsed ? "w-9 rounded-full text-xs font-bold" : "w-full rounded-full text-sm font-semibold"
+              "flex h-11 items-center justify-center rounded-2xl bg-white text-sm font-semibold text-black transition-all duration-200",
+              collapsed ? "w-11 text-base" : "w-11 text-base"
             )}
           >
-            {collapsed ? "B" : "Beespo"}
+            B
           </div>
+
+          {expanded ? (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onTogglePinned}
+              className={cn(
+                "h-9 w-9 rounded-xl border border-white/8 text-white/60 transition-all duration-150 ease-in-out hover:bg-white/8 hover:text-white",
+                pinned && "bg-white/10 text-white"
+              )}
+            >
+              <Pin className={cn("h-4 w-4 transition-transform duration-200", !pinned && "rotate-45")} strokeWidth={1.75} />
+              <span className="sr-only">{pinned ? "Unpin sidebar" : "Pin sidebar"}</span>
+            </Button>
+          ) : null}
         </div>
 
-        {expanded ? (
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onTogglePinned}
-            className={cn(
-              "absolute top-4 right-3 z-40 h-7 w-7 rounded-full text-muted-foreground",
-              "hover:bg-card hover:text-foreground"
-            )}
-          >
-            <Pin className={cn("h-3.5 w-3.5 transition-transform", !pinned && "rotate-45")} />
-            <span className="sr-only">{pinned ? "Unpin sidebar" : "Pin sidebar"}</span>
-          </Button>
-        ) : null}
+        <nav className="flex-1 px-2 pb-2">
+          {APP_SHELL_NAV_ITEMS.map((item, index) => {
+            const previousGroup = index === 0 ? null : APP_SHELL_NAV_ITEMS[index - 1]?.group;
+            const showDivider = index > 0 && previousGroup !== item.group;
 
-        <nav className="flex-1 space-y-1 p-2">
-          {APP_SHELL_NAV_ITEMS.map((item) => (
-            <SidebarNavItem key={item.href} item={item} collapsed={collapsed} />
-          ))}
+            return (
+              <React.Fragment key={item.href}>
+                {showDivider ? <div className="mx-2 my-2 h-px bg-white/8" /> : null}
+                <SidebarNavItem item={item} collapsed={collapsed} />
+              </React.Fragment>
+            );
+          })}
         </nav>
 
-        <div className="p-2">
+        <div className="p-2 pt-1">
           <UserMenu collapsed={collapsed} userName={userName} userEmail={userEmail} />
         </div>
       </div>
@@ -256,18 +277,22 @@ function MobileSidebarDrawer({ userName, userEmail }: { userName: string; userEm
           <span className="sr-only">Open navigation</span>
         </Button>
       </SheetTrigger>
-      <SheetContent side="left" className="w-[280px] border-r border-border bg-panel p-0">
+      <SheetContent side="left" className="w-[280px] border-r border-white/8 bg-[#1A1A1A] p-0 text-white">
         <SheetTitle className="sr-only">Navigation</SheetTitle>
         <SheetDescription className="sr-only">Primary Beespo app navigation.</SheetDescription>
         <div className="flex h-full flex-col">
-          <div className="h-14 px-4 py-4 text-sm font-semibold text-foreground">Beespo</div>
-          <Separator />
+          <div className="px-4 pb-3 pt-4">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-base font-semibold text-black">
+              B
+            </div>
+          </div>
+          <Separator className="bg-white/8" />
           <nav className="flex-1 space-y-1 p-2">
             {APP_SHELL_NAV_ITEMS.map((item) => (
               <SidebarNavItem key={`mobile-${item.href}`} item={item} collapsed={false} />
             ))}
           </nav>
-          <div className="border-t border-border p-2">
+          <div className="border-t border-white/8 p-2">
             <UserMenu collapsed={false} userName={userName} userEmail={userEmail} />
           </div>
         </div>
@@ -319,7 +344,7 @@ export function AppShell({
   userEmail = "preview@beespo.com",
 }: AppShellProps) {
   const { pinned, togglePinned } = usePinnedSidebarState();
-  const navOffset = pinned ? "md:pl-[220px]" : "md:pl-16";
+  const navOffset = pinned ? "md:pl-[252px]" : "md:pl-[76px]";
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -331,7 +356,7 @@ export function AppShell({
         className={sidebarClassName}
       />
 
-      <div className={cn("min-h-screen transition-[padding] duration-300 ease-out", navOffset)}>
+      <div className={cn("min-h-screen transition-[padding] duration-200 ease-in-out", navOffset)}>
         <div className="hidden h-screen p-3 md:block">
           <div className="flex h-full gap-3">
             {secondaryPanel ? (

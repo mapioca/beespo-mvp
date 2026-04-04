@@ -68,36 +68,36 @@ export default function AppShellPreviewPage() {
       />
 
       <section className="grid gap-4 md:grid-cols-3">
-        <Card>
-          <CardHeader>
-            <CardTitle>Readiness</CardTitle>
-            <CardDescription>Overall weekly execution health.</CardDescription>
+        <Card className="border-gray-200">
+          <CardHeader className="p-5 pb-0">
+            <CardTitle className="text-sm font-medium text-gray-700">Readiness</CardTitle>
+            <CardDescription className="text-xs text-gray-500">Overall weekly execution health.</CardDescription>
           </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-semibold text-foreground">87%</p>
-            <p className="mt-1 text-sm text-muted-foreground">+4.2% from last week</p>
+          <CardContent className="p-5 pt-3">
+            <p className="text-3xl font-semibold text-foreground">87%</p>
+            <p className="mt-1 text-xs text-gray-500">+4.2% from last week</p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Open Assignments</CardTitle>
-            <CardDescription>Items waiting for owners.</CardDescription>
+        <Card className="border-gray-200">
+          <CardHeader className="p-5 pb-0">
+            <CardTitle className="text-sm font-medium text-gray-700">Open Assignments</CardTitle>
+            <CardDescription className="text-xs text-gray-500">Items waiting for owners.</CardDescription>
           </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-semibold text-foreground">12</p>
-            <p className="mt-1 text-sm text-muted-foreground">3 require review today</p>
+          <CardContent className="p-5 pt-3">
+            <p className="text-3xl font-semibold text-foreground">12</p>
+            <p className="mt-1 text-xs text-gray-500">3 require review today</p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Upcoming Meetings</CardTitle>
-            <CardDescription>Scheduled in the next 7 days.</CardDescription>
+        <Card className="border-gray-200">
+          <CardHeader className="p-5 pb-0">
+            <CardTitle className="text-sm font-medium text-gray-700">Upcoming Meetings</CardTitle>
+            <CardDescription className="text-xs text-gray-500">Scheduled in the next 7 days.</CardDescription>
           </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-semibold text-foreground">6</p>
-            <p className="mt-1 text-sm text-muted-foreground">2 have pending agenda items</p>
+          <CardContent className="p-5 pt-3">
+            <p className="text-3xl font-semibold text-foreground">6</p>
+            <p className="mt-1 text-xs text-gray-500">2 have pending agenda items</p>
           </CardContent>
         </Card>
       </section>
