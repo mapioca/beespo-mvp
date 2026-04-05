@@ -39,7 +39,7 @@ import { useNavigationStore } from "@/stores/navigation-store"
 const navSections: NavSection[] = [
   {
     id: "main",
-    title: "", // No section header for clean look
+    title: "Workspace",
     items: [
       { href: "/dashboard", icon: Home, label: "Home" },
       { href: "/calendar", icon: Calendar, label: "Calendar" },
@@ -185,7 +185,7 @@ export function AppSidebar({
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto py-3">
+        <nav className="flex-1 overflow-y-auto py-2.5">
           {navSections.map((section, index) => (
             <SidebarNavSection
               key={section.id}
@@ -198,13 +198,13 @@ export function AppSidebar({
             />
           ))}
           <SidebarSavedItemsSection
-            title="Favorites"
+            title="Pinned"
             items={favorites}
             isCollapsed={isCollapsed}
             itemType="favorites"
           />
           <SidebarSavedItemsSection
-            title="Recents"
+            title="Frequent"
             items={recents}
             isCollapsed={isCollapsed}
             itemType="recents"

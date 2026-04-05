@@ -365,9 +365,11 @@ export function MeetingsClient({
                         }}
                         className={
                             activeViewId === null && activeCategory === value
-                                ? "rounded-full border border-transparent px-3.5 py-1.5 text-[11px] font-semibold leading-none bg-[hsl(var(--chip-active-bg))] text-[hsl(var(--chip-active-text))] transition-all shadow-[0_1px_0_rgba(15,23,42,0.1)]"
-                                : "rounded-full border px-3.5 py-1.5 text-[11px] font-medium leading-none bg-[hsl(var(--chip-bg))] text-[hsl(var(--chip-text))] border-[hsl(var(--chip-border))] hover:bg-[hsl(var(--chip-hover-bg))] hover:text-[hsl(var(--chip-active-text))] transition-all"
+                                ? "rounded-full border px-3.5 py-1.5 text-[11px] font-semibold leading-none border-[hsl(var(--chip-active-border))] bg-[hsl(var(--chip-active-bg))] text-[hsl(var(--chip-active-text))] transition-all shadow-[0_1px_0_rgba(15,23,42,0.1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                                : "rounded-full border px-3.5 py-1.5 text-[11px] font-medium leading-none bg-[hsl(var(--chip-bg))] text-[hsl(var(--chip-text))] border-[hsl(var(--chip-border))] hover:bg-[hsl(var(--chip-hover-bg))] hover:text-[hsl(var(--chip-active-text))] active:bg-[hsl(var(--chip-active-bg))] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                         }
+                        aria-pressed={activeViewId === null && activeCategory === value}
+                        aria-label={`Filter agendas by ${label}`}
                     >
                         {label}
                     </button>
@@ -380,10 +382,12 @@ export function MeetingsClient({
                             onClick={() => setActiveViewId(view.id)}
                             className={cn(
                                 "rounded-full border pl-3.5 pr-7 py-1 text-[11px] leading-none transition-all shadow-sm",
+                                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
                                 activeViewId === view.id
-                                    ? "bg-[hsl(var(--chip-active-bg))] text-[hsl(var(--chip-active-text))] border-transparent font-semibold"
-                                    : "bg-[hsl(var(--chip-bg))] text-[hsl(var(--chip-text))] border-[hsl(var(--chip-border))] hover:bg-[hsl(var(--chip-hover-bg))] hover:text-[hsl(var(--chip-active-text))] font-medium"
+                                    ? "bg-[hsl(var(--chip-active-bg))] text-[hsl(var(--chip-active-text))] border-[hsl(var(--chip-active-border))] font-semibold"
+                                    : "bg-[hsl(var(--chip-bg))] text-[hsl(var(--chip-text))] border-[hsl(var(--chip-border))] hover:bg-[hsl(var(--chip-hover-bg))] hover:text-[hsl(var(--chip-active-text))] active:bg-[hsl(var(--chip-active-bg))] font-medium"
                             )}
+                            aria-pressed={activeViewId === view.id}
                         >
                             {view.name}
                         </button>
@@ -398,6 +402,7 @@ export function MeetingsClient({
                                     "absolute right-2 top-1/2 -translate-y-1/2",
                                     "flex items-center justify-center h-3.5 w-3.5 rounded-full",
                                     "opacity-0 group-hover/view:opacity-100 group-focus-within/view:opacity-100 transition-opacity",
+                                    "focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
                                     activeViewId === view.id
                                         ? "text-muted-foreground/70 hover:text-foreground"
                                         : "text-muted-foreground hover:text-foreground"
@@ -416,7 +421,7 @@ export function MeetingsClient({
 
                 <div className="ml-auto flex items-center gap-2">
                     {isLeader && (
-                        <Button asChild size="sm" className="h-8 rounded-full px-3.5 text-[11px] font-semibold shadow-sm">
+                        <Button asChild size="sm" className="h-8 rounded-full px-3.5 text-[11px] font-semibold shadow-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background">
                             <Link href="/meetings/new" className="flex items-center gap-1.5">
                                 <Plus className="h-3.5 w-3.5 stroke-[1.6]" />
                                 New
@@ -429,7 +434,7 @@ export function MeetingsClient({
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                             placeholder="Search agendas..."
-                            className="h-8 rounded-full border-[hsl(var(--chip-border))] bg-[hsl(var(--chip-bg))] pl-8 pr-3 text-[11px]"
+                            className="h-8 rounded-full border-[hsl(var(--chip-border))] bg-[hsl(var(--chip-bg))] pl-8 pr-3 text-[11px] focus-visible:border-[hsl(var(--chip-active-border))] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                         />
                     </div>
                 </div>

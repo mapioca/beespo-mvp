@@ -25,6 +25,7 @@ export const TableRowActionTrigger = React.forwardRef<
                 "duration-150 group-hover:opacity-100 focus-visible:opacity-100 data-[state=open]:opacity-100",
                 "hover:bg-control-hover hover:text-foreground hover:border-border/50",
                 "data-[state=open]:bg-control-hover data-[state=open]:text-foreground data-[state=open]:border-border/50",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
                 className
             )}
             {...props}

@@ -144,12 +144,15 @@ export function MeetingsTable({
 
     return (
         <>
-        <div className="table-shell-standard">
-        <Table className="text-[13px] [--table-row-py:0.5rem]">
-            <TableHeader>
+        <div className="table-shell-standard !overflow-visible">
+        <Table
+            containerClassName="overflow-visible"
+            className="text-[13px] [--table-row-py:0.5rem]"
+        >
+            <TableHeader className="sticky top-0 z-30 bg-[hsl(var(--table-header-bg)/0.98)] backdrop-blur-sm">
                 <TableRow className="table-header-row-standard">
                     {/* Checkbox */}
-                    <TableHead className="w-10 px-3 py-2">
+                    <TableHead className="sticky top-0 z-20 w-10 bg-[hsl(var(--table-header-bg)/0.98)] px-3 py-2 backdrop-blur-sm">
                         <Checkbox
                             checked={allSelected}
                             onCheckedChange={() => onToggleAllRows?.()}
@@ -169,7 +172,7 @@ export function MeetingsTable({
                             onSearchChange={onSearchChange}
                             searchPlaceholder="Search agendas..."
                             onHide={() => onHideColumn?.("title")}
-                            className="min-w-[250px]"
+                            className="sticky top-0 z-20 min-w-[250px] bg-[hsl(var(--table-header-bg)/0.98)] backdrop-blur-sm"
                         />
                     )}
 
@@ -185,7 +188,7 @@ export function MeetingsTable({
                             selectedFilters={selectedTemplates}
                             onFilterToggle={onTemplateToggle}
                             onHide={() => onHideColumn?.("template")}
-                            className="w-[200px]"
+                            className="sticky top-0 z-20 w-[200px] bg-[hsl(var(--table-header-bg)/0.98)] backdrop-blur-sm"
                         />
                     )}
 
@@ -204,7 +207,7 @@ export function MeetingsTable({
                             selectedFilters={selectedStatuses}
                             onFilterToggle={onStatusToggle}
                             onHide={() => onHideColumn?.("status")}
-                            className="w-[148px]"
+                            className="sticky top-0 z-20 w-[148px] bg-[hsl(var(--table-header-bg)/0.98)] backdrop-blur-sm"
                         />
                     )}
 
@@ -217,12 +220,12 @@ export function MeetingsTable({
                             onSortAsc={() => onSort?.("scheduled_date", "asc")}
                             onSortDesc={() => onSort?.("scheduled_date", "desc")}
                             onHide={() => onHideColumn?.("scheduled_date")}
-                            className="w-[168px]"
+                            className="sticky top-0 z-20 w-[168px] bg-[hsl(var(--table-header-bg)/0.98)] backdrop-blur-sm"
                         />
                     )}
 
                     {/* Actions */}
-                    <TableHead className="w-[52px]">
+                    <TableHead className="sticky top-0 z-20 w-[52px] bg-[hsl(var(--table-header-bg)/0.98)] backdrop-blur-sm">
                         <span className="sr-only">Actions</span>
                     </TableHead>
                 </TableRow>
@@ -248,7 +251,7 @@ export function MeetingsTable({
                         <TableRow
                             key={meeting.id}
                             data-state={selectedRows.has(meeting.id) ? "selected" : undefined}
-                            className="group transition-[background-color,box-shadow] duration-150 ease-out hover:bg-[hsl(var(--table-row-hover))] hover:shadow-[inset_0_0_0_1px_hsl(var(--table-shell-border)/0.28)] data-[state=selected]:bg-[hsl(var(--table-row-selected))] data-[state=selected]:shadow-[inset_0_0_0_1px_hsl(var(--table-shell-border)/0.4)]"
+                            className="group transition-[background-color,box-shadow] duration-150 ease-out hover:bg-[hsl(var(--table-row-hover))] hover:shadow-[inset_0_0_0_1px_hsl(var(--table-shell-border)/0.28)] focus-within:bg-[hsl(var(--table-row-hover))] focus-within:shadow-[inset_0_0_0_2px_hsl(var(--ring)/0.4)] data-[state=selected]:bg-[hsl(var(--table-row-selected))] data-[state=selected]:shadow-[inset_0_0_0_1px_hsl(var(--table-shell-border)/0.4)]"
                         >
                             {/* Checkbox */}
                             <TableCell className="px-3 py-2.5">
@@ -267,7 +270,7 @@ export function MeetingsTable({
                             <div className="flex items-center gap-1.5">
                                 <Link
                                     href={`/meetings/${meeting.id}`}
-                                    className="text-[13px] font-semibold text-foreground hover:text-foreground/90 hover:underline underline-offset-2 transition-colors"
+                                    className="rounded-sm text-[13px] font-semibold text-foreground hover:text-foreground/90 hover:underline underline-offset-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                                 >
                                     {meeting.title}
                                 </Link>

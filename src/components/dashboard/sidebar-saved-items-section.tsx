@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   BookOpen,
+  Clock3,
   ChevronRight,
   ClipboardList,
   ExternalLink,
@@ -13,6 +14,7 @@ import {
   MessageSquare,
   MoreHorizontal,
   NotebookTabs,
+  Pin,
   StarOff,
   Table2,
   Undo2,
@@ -107,22 +109,24 @@ function SavedItemRow({
   return (
     <div
       className={cn(
-        "group flex items-center rounded-lg transition-colors",
-        isActive ? "bg-nav-selected" : "hover:bg-nav-hover"
+        "group flex items-center rounded-md transition-[background-color,color,box-shadow]",
+        isActive
+          ? "bg-nav-selected shadow-[inset_0_0_0_1px_hsl(var(--nav-active-border))]"
+          : "hover:bg-nav-hover"
       )}
     >
       <Link
         href={item.href}
         className={cn(
-          "flex min-w-0 flex-1 items-center gap-2.5 px-3 py-1.5 transition-colors",
-          isActive ? "text-foreground font-medium" : "text-muted-foreground hover:text-foreground"
+          "flex min-w-0 flex-1 items-center gap-2 px-2 py-1 transition-colors",
+          isActive ? "text-nav-strong font-semibold" : "text-nav hover:text-nav-strong"
         )}
       >
         <Icon className="h-4 w-4 shrink-0 stroke-[1.6]" />
         <div className="min-w-0">
-          <p className="truncate text-sm">{item.title}</p>
+          <p className="truncate text-[12.5px]">{item.title}</p>
           {item.parentTitle ? (
-            <p className="truncate text-[11px] text-muted-foreground/90">
+            <p className="truncate text-[10.5px] text-nav-muted">
               {item.parentTitle}
             </p>
           ) : null}
@@ -136,7 +140,7 @@ function SavedItemRow({
             className={cn(
               "mr-1 flex h-6 w-6 shrink-0 items-center justify-center rounded transition-opacity",
               "opacity-0 group-hover:opacity-100 data-[state=open]:opacity-100",
-              "hover:bg-nav-hover focus-visible:outline-none"
+              "hover:bg-nav-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             )}
             onClick={(event) => event.preventDefault()}
           >
@@ -213,18 +217,28 @@ export function SidebarSavedItemsSection({
     return null;
   }
 
+  if (items.length === 0) {
+    return null;
+  }
+
+  const SectionIcon = itemType === "favorites" ? Pin : Clock3;
+
   return (
     <div className="mt-3 px-2.5">
       <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
         <Popover open={flyoutEnabled && flyoutOpen} onOpenChange={() => {}}>
           <PopoverAnchor asChild>
             <CollapsibleTrigger
-              className="group flex w-full items-center gap-1 rounded-md px-3 py-1 transition-colors hover:bg-nav-hover"
+              className="group flex w-full items-center gap-1 rounded-md px-2 py-1 transition-colors hover:bg-nav-hover"
               onMouseEnter={openFlyout}
               onMouseLeave={scheduleFlyoutClose}
             >
-              <span className="flex-1 text-left text-[11px] font-medium text-muted-foreground">
+              <SectionIcon className="h-3.5 w-3.5 text-nav-muted" />
+              <span className="flex-1 text-left text-[10px] font-semibold uppercase tracking-[0.08em] text-nav-muted">
                 {title}
+              </span>
+              <span className="rounded-full bg-control px-1.5 py-0.5 text-[10px] font-medium text-nav-muted">
+                {items.length}
               </span>
               <ChevronRight
                 className={cn(
@@ -250,49 +264,33 @@ export function SidebarSavedItemsSection({
               {title}
             </p>
             <div className="mt-0.5 space-y-0.5">
-              {items.length === 0 ? (
-                <p className="px-2 py-2 text-xs text-muted-foreground">
-                  {itemType === "favorites"
-                    ? "No favorites yet."
-                    : "No recent items yet."}
-                </p>
-              ) : (
-                items.map((item) => (
-                  <SavedItemRow
-                    key={`${item.entityType}-${item.id}`}
-                    item={item}
-                    itemType={itemType}
-                    isActive={pathname === item.href}
-                    onMenuOpen={(open) => {
-                      if (open) {
-                        openFlyout();
-                      }
-                    }}
-                  />
-                ))
-              )}
+              {items.map((item) => (
+                <SavedItemRow
+                  key={`${item.entityType}-${item.id}`}
+                  item={item}
+                  itemType={itemType}
+                  isActive={pathname === item.href}
+                  onMenuOpen={(open) => {
+                    if (open) {
+                      openFlyout();
+                    }
+                  }}
+                />
+              ))}
             </div>
           </PopoverContent>
         </Popover>
 
         <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down">
           <div className="mt-0.5 space-y-0.5">
-            {items.length === 0 ? (
-              <p className="px-3 py-1.5 text-xs text-muted-foreground">
-                {itemType === "favorites"
-                  ? "No favorites yet."
-                  : "No recent items yet."}
-              </p>
-            ) : (
-              items.map((item) => (
-                <SavedItemRow
-                  key={`${item.entityType}-${item.id}`}
-                  item={item}
-                  itemType={itemType}
-                  isActive={pathname === item.href}
-                />
-              ))
-            )}
+            {items.map((item) => (
+              <SavedItemRow
+                key={`${item.entityType}-${item.id}`}
+                item={item}
+                itemType={itemType}
+                isActive={pathname === item.href}
+              />
+            ))}
           </div>
         </CollapsibleContent>
       </Collapsible>

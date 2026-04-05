@@ -78,9 +78,9 @@ export function SidebarNavCollapsible({
             onMouseEnter={openFlyout}
             onMouseLeave={scheduleFlyoutClose}
             className={cn(
-              "flex h-8 w-full items-center justify-center rounded-md px-2 text-[13px] transition-colors duration-150 ease-out",
+              "flex h-[30px] w-full items-center justify-center rounded-md px-2 text-[12.5px] transition-[background-color,color,box-shadow] duration-150 ease-out",
               hasActiveChild
-                ? "bg-nav-selected text-nav-strong"
+                ? "bg-nav-selected text-nav-strong shadow-[inset_0_0_0_1px_hsl(var(--nav-active-border))]"
                 : "text-nav hover:bg-nav-hover hover:text-nav-strong"
             )}
           >
@@ -110,9 +110,9 @@ export function SidebarNavCollapsible({
                   href={child.href}
                   onClick={() => setFlyoutOpen(false)}
                   className={cn(
-                    "flex h-8 items-center gap-2 rounded-md px-2 text-[13px] transition-colors duration-150 ease-out",
+                    "flex h-[30px] items-center gap-2 rounded-md px-2 text-[12.5px] transition-[background-color,color,box-shadow] duration-150 ease-out",
                     isActive
-                      ? "bg-nav-selected font-semibold text-nav-strong"
+                      ? "bg-nav-selected font-semibold text-nav-strong shadow-[inset_0_0_0_1px_hsl(var(--nav-active-border))]"
                       : "text-nav hover:bg-nav-hover hover:text-nav-strong"
                   )}
                 >
@@ -135,9 +135,10 @@ export function SidebarNavCollapsible({
         <PopoverAnchor asChild>
           <CollapsibleTrigger
             className={cn(
-              "flex h-8 w-full items-center gap-2.5 rounded-md px-2.5 text-[13px] transition-colors duration-150 ease-out",
+              "flex h-[30px] w-full items-center gap-2 rounded-md px-2 text-[12.5px] transition-[background-color,color,box-shadow] duration-150 ease-out",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
               hasActiveChild
-                ? "bg-nav-selected text-nav-strong"
+                ? "bg-nav-selected text-nav-strong shadow-[inset_0_0_0_1px_hsl(var(--nav-active-border))]"
                 : "text-nav hover:bg-nav-hover hover:text-nav-strong"
             )}
             aria-expanded={isExpanded}
@@ -178,9 +179,9 @@ export function SidebarNavCollapsible({
                   href={child.href}
                   onClick={() => setFlyoutOpen(false)}
                   className={cn(
-                    "flex h-8 items-center gap-2 rounded-md px-2 text-[13px] transition-colors duration-150 ease-out",
+                    "flex h-[30px] items-center gap-2 rounded-md px-2 text-[12.5px] transition-[background-color,color,box-shadow] duration-150 ease-out",
                     isActive
-                      ? "bg-nav-selected font-semibold text-nav-strong"
+                      ? "bg-nav-selected font-semibold text-nav-strong shadow-[inset_0_0_0_1px_hsl(var(--nav-active-border))]"
                       : "text-nav hover:bg-nav-hover hover:text-nav-strong"
                   )}
                 >

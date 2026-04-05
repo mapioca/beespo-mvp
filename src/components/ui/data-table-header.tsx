@@ -77,7 +77,8 @@ export function DataTableColumnHeader({
                             "inline-flex items-center gap-1.5 -mx-1.5 px-1.5 py-1 rounded transition-colors",
                             "hover:bg-[hsl(var(--table-filter-hover))] hover:text-foreground",
                             open && "bg-[hsl(var(--table-filter-active))] text-foreground",
-                            hasActiveFilter && "text-foreground"
+                            hasActiveFilter && "text-foreground",
+                            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                         )}
                     >
                         {label}
