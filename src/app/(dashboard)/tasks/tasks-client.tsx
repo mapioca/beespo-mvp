@@ -37,6 +37,7 @@ import {
 import { cn } from "@/lib/utils"
 import { TableView } from "@/lib/table-views"
 import { BulkSelectionBar } from "@/components/ui/bulk-selection-bar"
+import { TopbarSearchAction } from "@/components/ui/topbar-search-action"
 
 // ── Filter sections config ────────────────────────────────────────────────────
 
@@ -344,6 +345,36 @@ export function TasksClient({
                     { label: "Tasks", icon: <ListTodo className="h-3.5 w-3.5" /> },
                 ]}
                 className="bg-transparent ring-0 border-b border-border/60 rounded-none px-4 py-1.5"
+                action={
+                    <div className="hidden items-center gap-1 sm:flex">
+                        <TopbarSearchAction
+                            value={search}
+                            onChange={setSearch}
+                            placeholder="Search tasks..."
+                            items={filteredTasks.slice(0, 8).map((task) => ({
+                                id: task.id,
+                                label: task.title,
+                                actionLabel: "Open",
+                            }))}
+                            onSelect={(taskId) => {
+                                const task = filteredTasks.find((item) => item.id === taskId)
+                                if (!task) return
+                                handleViewTask(task)
+                            }}
+                            emptyText="No matching tasks."
+                        />
+                        <CreateTaskDialog>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 gap-1 rounded-full px-2.5 text-[length:var(--agenda-control-font-size)] text-nav transition-colors hover:bg-[hsl(var(--agenda-interactive-hover))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--agenda-interactive-focus-ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                            >
+                                <Plus className="h-3.5 w-3.5 stroke-[1.6]" />
+                                New task
+                            </Button>
+                        </CreateTaskDialog>
+                    </div>
+                }
             />
 
             {/* Action Bar + View Tabs */}
@@ -400,12 +431,6 @@ export function TasksClient({
                     />
                 </div>
 
-                <CreateTaskDialog>
-                    <Button size="sm" className="h-8 rounded-full px-3.5 text-[11px] font-semibold shadow-sm">
-                        <Plus className="h-3.5 w-3.5 mr-1.5" />
-                        New
-                    </Button>
-                </CreateTaskDialog>
             </div>
 
             {/* View filter summary bar */}

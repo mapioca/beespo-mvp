@@ -6,16 +6,10 @@ import Link from "next/link"
 import { createPortal } from "react-dom"
 import { addDays, addMonths, endOfDay, startOfDay, subDays, subMonths } from "date-fns"
 import { Button } from "@/components/ui/button"
-import { Check, Plus, Search, SlidersHorizontal, X } from "lucide-react"
+import { Check, Plus, SlidersHorizontal, X } from "lucide-react"
 import { Columns3 } from "lucide-react"
 import { ToolbarIconButton } from "@/components/ui/toolbar-icon-button"
 import { BulkSelectionBar } from "@/components/ui/bulk-selection-bar"
-import { Input } from "@/components/ui/input"
-import {
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
-} from "@/components/ui/popover"
 import {
     StandardPopoverMenu,
     StandardPopoverMenuContent,
@@ -47,6 +41,7 @@ import { Breadcrumbs } from "@/components/dashboard/breadcrumbs"
 import { ClipboardList } from "lucide-react"
 import { AgendaFilter, deleteAgendaFilter } from "@/lib/agenda-views"
 import { CreateFilterDialog } from "./create-filter-dialog"
+import { TopbarSearchAction } from "@/components/ui/topbar-search-action"
 
 interface MeetingsClientProps {
     meetings: Meeting[]
@@ -106,7 +101,6 @@ export function MeetingsClient({
     // Bulk delete
     const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false)
     const [isBulkDeleting, setIsBulkDeleting] = useState(false)
-    const [jumpOpen, setJumpOpen] = useState(false)
     const [savedFiltersOpen, setSavedFiltersOpen] = useState(false)
     const [displayOptionsOpen, setDisplayOptionsOpen] = useState(false)
 
@@ -481,47 +475,18 @@ export function MeetingsClient({
                 className="bg-transparent ring-0 border-b border-border/60 rounded-none px-4 py-1.5"
                 action={
                     <div className="hidden items-center gap-1 sm:flex">
-                        <Popover open={jumpOpen} onOpenChange={setJumpOpen}>
-                            <PopoverTrigger asChild>
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="h-7 gap-1 rounded-full border-0 px-2.5 text-[length:var(--agenda-control-font-size)] text-nav shadow-none ring-0 transition-colors hover:bg-[hsl(var(--agenda-interactive-hover))] data-[state=open]:bg-[hsl(var(--agenda-interactive-active))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--agenda-interactive-focus-ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-                                >
-                                    <Search className="h-3.5 w-3.5" />
-                                    {search ? `Search: ${search}` : "Search"}
-                                </Button>
-                            </PopoverTrigger>
-                            <PopoverContent align="end" className="w-72 p-2">
-                                <Input
-                                    value={search}
-                                    onChange={(e) => setSearch(e.target.value)}
-                                    placeholder="Search agendas..."
-                                    className="h-8 rounded-md border-0 bg-transparent px-2 text-sm shadow-none focus-visible:border-0 focus-visible:ring-0"
-                                />
-                                <div className="mt-1 border-t border-border/60" />
-                                <div className="mt-2 max-h-64 space-y-1 overflow-y-auto">
-                                    {filteredMeetings.slice(0, 8).map((meeting) => (
-                                        <Link
-                                            key={meeting.id}
-                                            href={`/meetings/${meeting.id}`}
-                                            onClick={() => setJumpOpen(false)}
-                                            className="flex items-center justify-between rounded-md px-2 py-1.5 text-[length:var(--agenda-control-font-size)] text-nav hover:bg-nav-hover hover:text-nav-strong"
-                                        >
-                                            <span className="truncate font-medium">{meeting.title}</span>
-                                            <span className="ml-2 shrink-0 text-[length:var(--table-micro-font-size)] text-nav-muted">
-                                                Open
-                                            </span>
-                                        </Link>
-                                    ))}
-                                    {filteredMeetings.length === 0 && (
-                                        <p className="px-2 py-1.5 text-[length:var(--table-header-font-size)] text-muted-foreground">
-                                            No matching agendas.
-                                        </p>
-                                    )}
-                                </div>
-                            </PopoverContent>
-                        </Popover>
+                        <TopbarSearchAction
+                            value={search}
+                            onChange={setSearch}
+                            placeholder="Search agendas..."
+                            items={filteredMeetings.slice(0, 8).map((meeting) => ({
+                                id: meeting.id,
+                                label: meeting.title,
+                                actionLabel: "Open",
+                            }))}
+                            onSelect={(meetingId) => router.push(`/meetings/${meetingId}`)}
+                            emptyText="No matching agendas."
+                        />
                         {isLeader && (
                             <Button
                                 asChild
