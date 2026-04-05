@@ -145,7 +145,7 @@ export function MeetingsTable({
     return (
         <>
         <div className="table-shell-standard">
-        <Table className="text-[13px]">
+        <Table className="text-[13px] [--table-row-py:0.5rem]">
             <TableHeader>
                 <TableRow className="table-header-row-standard">
                     {/* Checkbox */}

@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { createPortal } from "react-dom"
 import { Button } from "@/components/ui/button"
-import { Plus, X, Trash2 } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { Plus, Search, X, Trash2 } from "lucide-react"
 import {
     AlertDialog,
     AlertDialogAction,
@@ -346,7 +347,7 @@ export function MeetingsClient({
             />
 
             {/* Action Bar + Tabs */}
-            <div className="flex items-center justify-between w-full px-6 pt-3.5 pb-3.5 shrink-0 flex-wrap gap-3 border-b border-border/45">
+            <div className="flex items-center justify-between w-full px-6 pt-3.5 pb-3.5 shrink-0 flex-wrap gap-3">
                 <div className="flex items-center gap-2 flex-wrap min-h-8">
                     {/* Built-in tabs */}
                     {(
@@ -371,11 +372,6 @@ export function MeetingsClient({
                         {label}
                     </button>
                 ))}
-
-                {/* Divider before custom views */}
-                {views.length > 0 && (
-                    <span className="h-5 w-px bg-border/80 mx-1.5 shrink-0" aria-hidden />
-                )}
 
                 {/* Custom view tabs */}
                 {views.map((view) => (
@@ -418,14 +414,25 @@ export function MeetingsClient({
                     />
                 </div>
 
-                {isLeader && (
-                    <Button asChild size="sm" className="h-8 rounded-full px-3.5 text-[11px] font-semibold shadow-sm">
-                        <Link href="/meetings/new" className="flex items-center gap-1.5">
-                            <Plus className="h-3.5 w-3.5 stroke-[1.6]" />
-                            New
-                        </Link>
-                    </Button>
-                )}
+                <div className="ml-auto flex items-center gap-2">
+                    {isLeader && (
+                        <Button asChild size="sm" className="h-8 rounded-full px-3.5 text-[11px] font-semibold shadow-sm">
+                            <Link href="/meetings/new" className="flex items-center gap-1.5">
+                                <Plus className="h-3.5 w-3.5 stroke-[1.6]" />
+                                New
+                            </Link>
+                        </Button>
+                    )}
+                    <div className="relative w-[220px]">
+                        <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground stroke-[1.6]" />
+                        <Input
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            placeholder="Search agendas..."
+                            className="h-8 rounded-full border-[hsl(var(--chip-border))] bg-[hsl(var(--chip-bg))] pl-8 pr-3 text-[11px]"
+                        />
+                    </div>
+                </div>
             </div>
 
             {/* View filter summary bar (shown when a custom view is active) */}
