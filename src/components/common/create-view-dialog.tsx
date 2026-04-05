@@ -37,6 +37,7 @@ interface CreateViewDialogProps {
   onSave: (name: string, filters: Record<string, string[]>) => Promise<{ data?: any; error?: string }>
   /** Called with the newly created view after a successful save */
   onCreated: (view: TableView) => void
+  renderTrigger?: (openDialog: () => void) => React.ReactNode
 }
 
 // ── Sub-components ────────────────────────────────────────────────────────────
@@ -81,6 +82,7 @@ export function CreateViewDialog({
   filterSections,
   onSave,
   onCreated,
+  renderTrigger,
 }: CreateViewDialogProps) {
   const [open, setOpen] = useState(false)
   const [isPending, startTransition] = useTransition()
@@ -131,19 +133,23 @@ export function CreateViewDialog({
   return (
     <>
       {/* Trigger button */}
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        title="Create a view"
-        className={cn(
-          "flex items-center justify-center rounded-full h-[30px] w-[30px] border border-border",
-          "text-muted-foreground hover:text-foreground hover:border-foreground/40",
-          "transition-colors shrink-0"
-        )}
-      >
-        <Grid2x2Plus className="h-3.5 w-3.5" />
-        <span className="sr-only">Create a view</span>
-      </button>
+      {renderTrigger ? (
+        renderTrigger(() => setOpen(true))
+      ) : (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          title="Create a view"
+          className={cn(
+            "flex items-center justify-center rounded-full h-[30px] w-[30px] border border-border",
+            "text-muted-foreground hover:text-foreground hover:border-foreground/40",
+            "transition-colors shrink-0"
+          )}
+        >
+          <Grid2x2Plus className="h-3.5 w-3.5" />
+          <span className="sr-only">Create a view</span>
+        </button>
+      )}
 
       {/* Dialog */}
       <Dialog

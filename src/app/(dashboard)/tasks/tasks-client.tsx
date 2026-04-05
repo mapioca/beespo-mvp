@@ -4,7 +4,7 @@ import { useState, useMemo, useCallback, useTransition, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { createPortal } from "react-dom"
 import { Button } from "@/components/ui/button"
-import { Plus, X, ListTodo } from "lucide-react"
+import { Check, Columns3, Plus, SlidersHorizontal, X, ListTodo } from "lucide-react"
 import { Breadcrumbs } from "@/components/dashboard/breadcrumbs"
 import {
     AlertDialog,
@@ -38,6 +38,16 @@ import { cn } from "@/lib/utils"
 import { TableView } from "@/lib/table-views"
 import { BulkSelectionBar } from "@/components/ui/bulk-selection-bar"
 import { TopbarSearchAction } from "@/components/ui/topbar-search-action"
+import {
+    StandardPopoverMenu,
+    StandardPopoverMenuContent,
+    StandardPopoverMenuItem,
+    StandardPopoverMenuSub,
+    StandardPopoverMenuSubContent,
+    StandardPopoverMenuSubTrigger,
+    StandardPopoverMenuTrigger,
+} from "@/components/ui/standard-popover-menu"
+import { ToolbarIconButton } from "@/components/ui/toolbar-icon-button"
 
 // ── Filter sections config ────────────────────────────────────────────────────
 
@@ -64,6 +74,19 @@ const TASK_FILTER_SECTIONS = [
         ],
     },
 ]
+
+const STATUS_FILTER_OPTIONS = [
+    { value: "pending", label: "Pending" },
+    { value: "in_progress", label: "In Progress" },
+    { value: "completed", label: "Completed" },
+    { value: "cancelled", label: "Cancelled" },
+] as const
+
+const PRIORITY_FILTER_OPTIONS = [
+    { value: "high", label: "High" },
+    { value: "medium", label: "Medium" },
+    { value: "low", label: "Low" },
+] as const
 
 // ── Props ─────────────────────────────────────────────────────────────────────
 
@@ -117,6 +140,8 @@ export function TasksClient({
     // Bulk delete
     const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false)
     const [isBulkDeleting, setIsBulkDeleting] = useState(false)
+    const [filtersOpen, setFiltersOpen] = useState(false)
+    const [displayOptionsOpen, setDisplayOptionsOpen] = useState(false)
 
     useEffect(() => {
         setMounted(true)
@@ -230,10 +255,18 @@ export function TasksClient({
         )
     }, [])
 
-    const handleHideColumn = useCallback((column: string) => {
+    const handleToggleColumnVisibility = useCallback((column: string) => {
         setHiddenColumns((prev) => {
             const next = new Set(prev)
-            next.add(column)
+            const visibleCount = ["title", "status", "priority", "assignee", "due_date"].filter(
+                (c) => !next.has(c)
+            ).length
+            const isVisible = !next.has(column)
+
+            if (isVisible && visibleCount <= 1) return prev
+
+            if (isVisible) next.add(column)
+            else next.delete(column)
             return next
         })
     }, [])
@@ -424,11 +457,188 @@ export function TasksClient({
                         </button>
                     )}
 
-                    <CreateViewDialog
-                        filterSections={TASK_FILTER_SECTIONS}
-                        onSave={handleSaveView}
-                        onCreated={handleViewCreated}
-                    />
+                    <StandardPopoverMenu open={filtersOpen} onOpenChange={setFiltersOpen}>
+                        <StandardPopoverMenuTrigger asChild>
+                            <ToolbarIconButton
+                                title="Filters"
+                                aria-label="Open filters"
+                            >
+                                <SlidersHorizontal className="h-3.5 w-3.5" />
+                            </ToolbarIconButton>
+                        </StandardPopoverMenuTrigger>
+                        <StandardPopoverMenuContent align="start" className="w-64">
+                            <StandardPopoverMenuSub>
+                                <StandardPopoverMenuSubTrigger
+                                    active={selectedStatuses.length > 0}
+                                    disabled={!!activeView}
+                                >
+                                    Status
+                                </StandardPopoverMenuSubTrigger>
+                                <StandardPopoverMenuSubContent>
+                                    {STATUS_FILTER_OPTIONS.map((opt) => {
+                                        const selected = selectedStatuses.includes(opt.value as TaskStatus)
+                                        return (
+                                            <StandardPopoverMenuItem
+                                                key={opt.value}
+                                                active={selected}
+                                                onSelect={() => handleStatusToggle(opt.value)}
+                                            >
+                                                <span className="flex items-center gap-2">
+                                                    <span className="inline-flex h-4 w-4 items-center justify-center rounded-sm border border-border/60">
+                                                        {selected ? <Check className="h-3 w-3" /> : null}
+                                                    </span>
+                                                    {opt.label}
+                                                </span>
+                                                <span className="ml-auto text-[length:var(--table-header-font-size)] text-muted-foreground">
+                                                    {statusCounts?.[opt.value] || 0}
+                                                </span>
+                                            </StandardPopoverMenuItem>
+                                        )
+                                    })}
+                                </StandardPopoverMenuSubContent>
+                            </StandardPopoverMenuSub>
+
+                            <StandardPopoverMenuSub>
+                                <StandardPopoverMenuSubTrigger
+                                    active={selectedPriorities.length > 0}
+                                    disabled={!!activeView}
+                                >
+                                    Priority
+                                </StandardPopoverMenuSubTrigger>
+                                <StandardPopoverMenuSubContent>
+                                    {PRIORITY_FILTER_OPTIONS.map((opt) => {
+                                        const selected = selectedPriorities.includes(opt.value as TaskPriority)
+                                        return (
+                                            <StandardPopoverMenuItem
+                                                key={opt.value}
+                                                active={selected}
+                                                onSelect={() => handlePriorityToggle(opt.value)}
+                                            >
+                                                <span className="flex items-center gap-2">
+                                                    <span className="inline-flex h-4 w-4 items-center justify-center rounded-sm border border-border/60">
+                                                        {selected ? <Check className="h-3 w-3" /> : null}
+                                                    </span>
+                                                    {opt.label}
+                                                </span>
+                                                <span className="ml-auto text-[length:var(--table-header-font-size)] text-muted-foreground">
+                                                    {priorityCounts?.[opt.value] || 0}
+                                                </span>
+                                            </StandardPopoverMenuItem>
+                                        )
+                                    })}
+                                </StandardPopoverMenuSubContent>
+                            </StandardPopoverMenuSub>
+
+                            {(selectedStatuses.length > 0 || selectedPriorities.length > 0) && !activeView && (
+                                <StandardPopoverMenuItem
+                                    onSelect={() => {
+                                        setSelectedStatuses([])
+                                        setSelectedPriorities([])
+                                    }}
+                                    className="text-muted-foreground"
+                                >
+                                    Clear filters
+                                </StandardPopoverMenuItem>
+                            )}
+
+                            <div className="my-1 h-px bg-[hsl(var(--menu-separator))]" />
+
+                            <StandardPopoverMenuSub>
+                                <StandardPopoverMenuSubTrigger active={!!activeView}>
+                                    Advanced filters
+                                </StandardPopoverMenuSubTrigger>
+                                <StandardPopoverMenuSubContent className="w-64">
+                                    {views.length === 0 ? (
+                                        <p className="px-2 py-1.5 text-xs text-muted-foreground">
+                                            No saved filters yet.
+                                        </p>
+                                    ) : (
+                                        views.map((view) => (
+                                            <StandardPopoverMenuItem
+                                                key={view.id}
+                                                active={activeViewId === view.id}
+                                                onSelect={() => {
+                                                    setActiveViewId(view.id)
+                                                    setFiltersOpen(false)
+                                                }}
+                                            >
+                                                <span className="truncate">{view.name}</span>
+                                            </StandardPopoverMenuItem>
+                                        ))
+                                    )}
+
+                                    <div className="my-1 h-px bg-[hsl(var(--menu-separator))]" />
+
+                                    <CreateViewDialog
+                                        filterSections={TASK_FILTER_SECTIONS}
+                                        onSave={handleSaveView}
+                                        onCreated={(view) => {
+                                            handleViewCreated(view)
+                                            setFiltersOpen(false)
+                                        }}
+                                        renderTrigger={(openDialog) => (
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setFiltersOpen(false)
+                                                    openDialog()
+                                                }}
+                                                className="flex w-full items-center justify-start gap-2 rounded-md px-2.5 py-1.5 text-[length:var(--menu-item-font-size)] text-[hsl(var(--menu-text))] hover:bg-[hsl(var(--menu-hover))]"
+                                            >
+                                                <Plus className="h-3.5 w-3.5" />
+                                                Create new filter
+                                            </button>
+                                        )}
+                                    />
+                                </StandardPopoverMenuSubContent>
+                            </StandardPopoverMenuSub>
+                        </StandardPopoverMenuContent>
+                    </StandardPopoverMenu>
+
+                    <StandardPopoverMenu open={displayOptionsOpen} onOpenChange={setDisplayOptionsOpen}>
+                        <StandardPopoverMenuTrigger asChild>
+                            <ToolbarIconButton
+                                title="Display options"
+                                aria-label="Display options"
+                            >
+                                <Columns3 className="h-3.5 w-3.5" />
+                            </ToolbarIconButton>
+                        </StandardPopoverMenuTrigger>
+                        <StandardPopoverMenuContent align="start" className="w-56">
+                            {[
+                                { key: "title", label: "Title" },
+                                { key: "status", label: "Status" },
+                                { key: "priority", label: "Priority" },
+                                { key: "assignee", label: "Assignee" },
+                                { key: "due_date", label: "Due Date" },
+                            ].map((column) => {
+                                const visible = !hiddenColumns.has(column.key)
+                                return (
+                                    <StandardPopoverMenuItem
+                                        key={column.key}
+                                        onSelect={() => handleToggleColumnVisibility(column.key)}
+                                        className="gap-2"
+                                    >
+                                        <span className="inline-flex h-4 w-4 items-center justify-center rounded-sm border border-border/60">
+                                            {visible ? <Check className="h-3 w-3" /> : null}
+                                        </span>
+                                        <span>{column.label}</span>
+                                    </StandardPopoverMenuItem>
+                                )
+                            })}
+                            {hiddenColumns.size > 0 && (
+                                <>
+                                    <div className="my-1 h-px bg-[hsl(var(--menu-separator))]" />
+                                    <StandardPopoverMenuItem
+                                        onSelect={() => setHiddenColumns(new Set())}
+                                        className="text-muted-foreground"
+                                    >
+                                        Show all columns
+                                    </StandardPopoverMenuItem>
+                                </>
+                            )}
+                        </StandardPopoverMenuContent>
+                    </StandardPopoverMenu>
                 </div>
 
             </div>
@@ -531,16 +741,7 @@ export function TasksClient({
                     tasks={filteredTasks}
                     sortConfig={sortConfig}
                     onSort={handleSort}
-                    searchValue={search}
-                    onSearchChange={setSearch}
-                    selectedStatuses={activeView?.filters.statuses as TaskStatus[] ?? selectedStatuses}
-                    statusCounts={statusCounts}
-                    onStatusToggle={activeView ? undefined : handleStatusToggle}
-                    selectedPriorities={activeView?.filters.priorities as TaskPriority[] ?? selectedPriorities}
-                    priorityCounts={priorityCounts}
-                    onPriorityToggle={activeView ? undefined : handlePriorityToggle}
                     hiddenColumns={hiddenColumns}
-                    onHideColumn={handleHideColumn}
                     selectedRows={selectedRows}
                     onToggleRow={handleToggleRow}
                     onToggleAllRows={handleToggleAllRows}

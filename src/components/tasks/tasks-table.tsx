@@ -27,9 +27,9 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Eye, Trash2, CheckSquare } from "lucide-react"
 import { format } from "date-fns"
-import { DataTableColumnHeader } from "@/components/ui/data-table-header"
 import { TableRowActionTrigger } from "@/components/ui/table-row-action-trigger"
 import { StatusIndicator } from "@/components/ui/status-indicator"
+import { SortableTableHeader } from "@/components/ui/sortable-table-header"
 import {
     StandardActionsHeadCell,
     StandardSelectAllHeadCell,
@@ -57,21 +57,6 @@ export interface Task {
     labels?: Array<{ id: string; name: string; color: string }>
 }
 
-// ── Filter option data ──────────────────────────────────────────────────────
-
-const STATUS_OPTIONS = [
-    { value: "pending", label: "Pending" },
-    { value: "in_progress", label: "In Progress" },
-    { value: "completed", label: "Completed" },
-    { value: "cancelled", label: "Cancelled" },
-]
-
-const PRIORITY_OPTIONS = [
-    { value: "low", label: "Low" },
-    { value: "medium", label: "Medium" },
-    { value: "high", label: "High" },
-]
-
 // ── Badge helpers ───────────────────────────────────────────────────────────
 
 function formatLabel(value: string): string {
@@ -92,20 +77,8 @@ interface TasksTableProps {
     // Sort
     sortConfig?: { key: string; direction: "asc" | "desc" } | null
     onSort?: (key: string, direction: "asc" | "desc") => void
-    // Search (applied from Title header)
-    searchValue?: string
-    onSearchChange?: (value: string) => void
-    // Status filter
-    selectedStatuses?: TaskStatus[]
-    statusCounts?: Record<string, number>
-    onStatusToggle?: (status: string) => void
-    // Priority filter
-    selectedPriorities?: TaskPriority[]
-    priorityCounts?: Record<string, number>
-    onPriorityToggle?: (priority: string) => void
     // Column visibility
     hiddenColumns?: Set<string>
-    onHideColumn?: (column: string) => void
     // Row selection
     selectedRows?: Set<string>
     onToggleRow?: (id: string) => void
@@ -121,16 +94,7 @@ export function TasksTable({
     tasks,
     sortConfig,
     onSort,
-    searchValue,
-    onSearchChange,
-    selectedStatuses = [],
-    statusCounts,
-    onStatusToggle,
-    selectedPriorities = [],
-    priorityCounts,
-    onPriorityToggle,
     hiddenColumns = new Set(),
-    onHideColumn,
     selectedRows = new Set(),
     onToggleRow,
     onToggleAllRows,
@@ -169,81 +133,60 @@ export function TasksTable({
 
                         {/* Title */}
                         {!hiddenColumns.has("title") && (
-                            <DataTableColumnHeader
+                            <SortableTableHeader
+                                sortKey="title"
                                 label="Title"
-                                sortActive={sortConfig?.key === "title"}
-                                sortDirection={sortConfig?.direction}
-                                onSortAsc={() => onSort?.("title", "asc")}
-                                onSortDesc={() => onSort?.("title", "desc")}
-                                searchable
-                                searchValue={searchValue}
-                                onSearchChange={onSearchChange}
-                                searchPlaceholder="Search tasks..."
-                                onHide={() => onHideColumn?.("title")}
+                                defaultDirection="asc"
+                                sortConfig={sortConfig}
+                                onSort={onSort}
                                 className="min-w-[250px]"
                             />
                         )}
 
                         {/* Status */}
                         {!hiddenColumns.has("status") && (
-                            <DataTableColumnHeader
+                            <SortableTableHeader
+                                sortKey="status"
                                 label="Status"
-                                sortActive={sortConfig?.key === "status"}
-                                sortDirection={sortConfig?.direction}
-                                onSortAsc={() => onSort?.("status", "asc")}
-                                onSortDesc={() => onSort?.("status", "desc")}
-                                filterOptions={STATUS_OPTIONS.map((opt) => ({
-                                    ...opt,
-                                    count: statusCounts?.[opt.value] || 0,
-                                }))}
-                                selectedFilters={selectedStatuses}
-                                onFilterToggle={onStatusToggle}
-                                onHide={() => onHideColumn?.("status")}
+                                defaultDirection="asc"
+                                sortConfig={sortConfig}
+                                onSort={onSort}
                                 className="w-[160px]"
                             />
                         )}
 
                         {/* Priority */}
                         {!hiddenColumns.has("priority") && (
-                            <DataTableColumnHeader
+                            <SortableTableHeader
+                                sortKey="priority"
                                 label="Priority"
-                                sortActive={sortConfig?.key === "priority"}
-                                sortDirection={sortConfig?.direction}
-                                onSortAsc={() => onSort?.("priority", "asc")}
-                                onSortDesc={() => onSort?.("priority", "desc")}
-                                filterOptions={PRIORITY_OPTIONS.map((opt) => ({
-                                    ...opt,
-                                    count: priorityCounts?.[opt.value] || 0,
-                                }))}
-                                selectedFilters={selectedPriorities}
-                                onFilterToggle={onPriorityToggle}
-                                onHide={() => onHideColumn?.("priority")}
+                                defaultDirection="asc"
+                                sortConfig={sortConfig}
+                                onSort={onSort}
                                 className="w-[120px]"
                             />
                         )}
 
                         {/* Assignee */}
                         {!hiddenColumns.has("assignee") && (
-                            <DataTableColumnHeader
+                            <SortableTableHeader
+                                sortKey="assignee"
                                 label="Assignee"
-                                sortActive={sortConfig?.key === "assignee"}
-                                sortDirection={sortConfig?.direction}
-                                onSortAsc={() => onSort?.("assignee", "asc")}
-                                onSortDesc={() => onSort?.("assignee", "desc")}
-                                onHide={() => onHideColumn?.("assignee")}
+                                defaultDirection="asc"
+                                sortConfig={sortConfig}
+                                onSort={onSort}
                                 className="w-[160px]"
                             />
                         )}
 
                         {/* Due Date */}
                         {!hiddenColumns.has("due_date") && (
-                            <DataTableColumnHeader
+                            <SortableTableHeader
+                                sortKey="due_date"
                                 label="Due Date"
-                                sortActive={sortConfig?.key === "due_date"}
-                                sortDirection={sortConfig?.direction}
-                                onSortAsc={() => onSort?.("due_date", "asc")}
-                                onSortDesc={() => onSort?.("due_date", "desc")}
-                                onHide={() => onHideColumn?.("due_date")}
+                                defaultDirection="desc"
+                                sortConfig={sortConfig}
+                                onSort={onSort}
                                 className="w-[130px]"
                             />
                         )}
