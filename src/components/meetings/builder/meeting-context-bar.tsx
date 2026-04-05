@@ -9,7 +9,6 @@ import {
     FileText,
     FileCode,
     FileType,
-    CalendarDays,
     ClipboardList,
     MoreHorizontal,
     Monitor,
@@ -38,6 +37,13 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+    StandardPopoverMenu,
+    StandardPopoverMenuContent,
+    StandardPopoverMenuItem,
+    StandardPopoverMenuShortcut,
+    StandardPopoverMenuTrigger,
+} from "@/components/ui/standard-popover-menu";
 import {
     Dialog,
     DialogContent,
@@ -458,7 +464,6 @@ export function MeetingContextBar({
         <>
             <Breadcrumbs
                 items={[
-                    { label: "Meetings", href: "/meetings/agendas", icon: <CalendarDays className="h-4 w-4 stroke-[1.6]" /> },
                     { label: "Agendas", href: "/meetings/agendas", icon: <ClipboardList className="h-4 w-4 stroke-[1.6]" /> },
                     { label: title || "Untitled Agenda", icon: <FileText className="h-4 w-4 stroke-[1.6]" /> },
                 ]}
@@ -532,8 +537,8 @@ export function MeetingContextBar({
                             </DropdownMenu>
                         )}
 
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
+                        <StandardPopoverMenu>
+                            <StandardPopoverMenuTrigger asChild>
                                 <button
                                     type="button"
                                     title="Switch mode"
@@ -548,32 +553,41 @@ export function MeetingContextBar({
                                     <span className="hidden sm:inline text-[12px] ml-1">Switch mode</span>
                                     <span className="sr-only">Switch mode</span>
                                 </button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-56">
-                                <DropdownMenuItem onSelect={() => onModeChange("planning")} className={cn(mode === "planning" && "font-medium")}>
+                            </StandardPopoverMenuTrigger>
+                            <StandardPopoverMenuContent align="end">
+                                <StandardPopoverMenuItem
+                                    onSelect={() => onModeChange("planning")}
+                                    active={mode === "planning"}
+                                >
                                     Planning
-                                    <span className="ml-auto text-[11px] text-muted-foreground tabular-nums">
+                                    <StandardPopoverMenuShortcut className="tabular-nums">
                                         {modeShortcuts.planning}
-                                    </span>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onSelect={() => onModeChange("print-preview")} className={cn(mode === "print-preview" && "font-medium")}>
+                                    </StandardPopoverMenuShortcut>
+                                </StandardPopoverMenuItem>
+                                <StandardPopoverMenuItem
+                                    onSelect={() => onModeChange("print-preview")}
+                                    active={mode === "print-preview"}
+                                >
                                     Print Preview
-                                    <span className="ml-auto text-[11px] text-muted-foreground tabular-nums">
+                                    <StandardPopoverMenuShortcut className="tabular-nums">
                                         {modeShortcuts["print-preview"]}
-                                    </span>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onSelect={() => onModeChange("program")} className={cn(mode === "program" && "font-medium")}>
+                                    </StandardPopoverMenuShortcut>
+                                </StandardPopoverMenuItem>
+                                <StandardPopoverMenuItem
+                                    onSelect={() => onModeChange("program")}
+                                    active={mode === "program"}
+                                >
                                     Program
-                                    <span className="ml-auto text-[11px] text-muted-foreground tabular-nums">
+                                    <StandardPopoverMenuShortcut className="tabular-nums">
                                         {modeShortcuts.program}
-                                    </span>
-                                </DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
+                                    </StandardPopoverMenuShortcut>
+                                </StandardPopoverMenuItem>
+                            </StandardPopoverMenuContent>
+                        </StandardPopoverMenu>
 
                         {isLeader && canEdit && (
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
+                            <StandardPopoverMenu>
+                                <StandardPopoverMenuTrigger asChild>
                                     <button
                                         type="button"
                                         title="Save options"
@@ -590,29 +604,29 @@ export function MeetingContextBar({
                                         <span className="hidden sm:inline text-[12px] ml-1">Save</span>
                                         <span className="sr-only">Save options</span>
                                     </button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="w-52">
-                                <DropdownMenuItem onSelect={onSave} disabled={isCreating || !isValid}>
+                                </StandardPopoverMenuTrigger>
+                                <StandardPopoverMenuContent align="end">
+                                <StandardPopoverMenuItem onSelect={onSave} disabled={isCreating || !isValid}>
                                     {isCreating && <Loader2 className="h-3.5 w-3.5 mr-2 animate-spin" />}
                                     {saveLabel}
-                                    <span className="ml-auto text-[11px] text-muted-foreground tabular-nums">
+                                    <StandardPopoverMenuShortcut className="tabular-nums">
                                         {saveShortcuts.save}
-                                    </span>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onSelect={onSaveAsTemplate} disabled={isCreating || !isValid}>
+                                    </StandardPopoverMenuShortcut>
+                                </StandardPopoverMenuItem>
+                                <StandardPopoverMenuItem onSelect={onSaveAsTemplate} disabled={isCreating || !isValid}>
                                     Save as Template
-                                    <span className="ml-auto text-[11px] text-muted-foreground tabular-nums">
+                                    <StandardPopoverMenuShortcut className="tabular-nums">
                                         {saveShortcuts.template}
-                                    </span>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onSelect={openSaveAsNew} disabled={isCreating || !isValid}>
+                                    </StandardPopoverMenuShortcut>
+                                </StandardPopoverMenuItem>
+                                <StandardPopoverMenuItem onSelect={openSaveAsNew} disabled={isCreating || !isValid}>
                                     Save as New Meeting
-                                    <span className="ml-auto text-[11px] text-muted-foreground tabular-nums">
+                                    <StandardPopoverMenuShortcut className="tabular-nums">
                                         {saveShortcuts.newMeeting}
-                                    </span>
-                                </DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
+                                    </StandardPopoverMenuShortcut>
+                                </StandardPopoverMenuItem>
+                                </StandardPopoverMenuContent>
+                            </StandardPopoverMenu>
                         )}
 
                         <div className="sm:hidden">

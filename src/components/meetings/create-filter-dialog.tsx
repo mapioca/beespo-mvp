@@ -14,7 +14,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { cn } from "@/lib/utils"
-import { createAgendaView, AgendaView, ViewFilters } from "@/lib/agenda-views"
+import { createAgendaFilter, AgendaFilter, FilterCriteria } from "@/lib/agenda-views"
 import { toast } from "@/lib/toast"
 import { Template } from "./meetings-table"
 
@@ -72,14 +72,15 @@ function ToggleChip({
 
 // ── Props ─────────────────────────────────────────────────────────────────────
 
-interface CreateViewDialogProps {
+interface CreateFilterDialogProps {
   templates: Template[]
-  onCreated: (view: AgendaView) => void
+  onCreated: (filter: AgendaFilter) => void
+  renderTrigger?: (openDialog: () => void) => React.ReactNode
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
-export function CreateViewDialog({ templates, onCreated }: CreateViewDialogProps) {
+export function CreateFilterDialog({ templates, onCreated, renderTrigger }: CreateFilterDialogProps) {
   const [open, setOpen] = useState(false)
   const [isPending, startTransition] = useTransition()
 
@@ -114,7 +115,7 @@ export function CreateViewDialog({ templates, onCreated }: CreateViewDialogProps
     e.preventDefault()
     if (!name.trim()) return
 
-    const filters: ViewFilters = {
+    const filters: FilterCriteria = {
       category,
       ...(selectedStatuses.length > 0 && { statuses: selectedStatuses }),
       ...(selectedTemplates.length > 0 && { templateIds: selectedTemplates }),
@@ -122,12 +123,12 @@ export function CreateViewDialog({ templates, onCreated }: CreateViewDialogProps
     }
 
     startTransition(async () => {
-      const result = await createAgendaView(name.trim(), filters)
+      const result = await createAgendaFilter(name.trim(), filters)
       if (result.error) {
         toast.error(result.error)
         return
       }
-      toast.success(`View "${name.trim()}" created`)
+      toast.success(`Filter "${name.trim()}" created`)
       onCreated(result.data!)
       reset()
       setOpen(false)
@@ -137,19 +138,23 @@ export function CreateViewDialog({ templates, onCreated }: CreateViewDialogProps
   return (
     <>
       {/* Trigger button */}
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        title="Create a view"
-        className={cn(
-          "flex items-center justify-center rounded-full h-[30px] w-[30px] border border-border",
-          "text-muted-foreground hover:text-foreground hover:border-foreground/40",
-          "transition-colors shrink-0"
-        )}
-      >
-        <Grid2x2Plus className="h-3.5 w-3.5" />
-        <span className="sr-only">Create a view</span>
-      </button>
+      {renderTrigger ? (
+        renderTrigger(() => setOpen(true))
+      ) : (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          title="Create a filter"
+          className={cn(
+            "flex items-center justify-center rounded-full h-[30px] w-[30px] border border-border",
+            "text-muted-foreground hover:text-foreground hover:border-foreground/40",
+            "transition-colors shrink-0"
+          )}
+        >
+          <Grid2x2Plus className="h-3.5 w-3.5" />
+          <span className="sr-only">Create a filter</span>
+        </button>
+      )}
 
       {/* Dialog */}
       <Dialog
@@ -163,18 +168,18 @@ export function CreateViewDialog({ templates, onCreated }: CreateViewDialogProps
       >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Create a view</DialogTitle>
+            <DialogTitle>Create a filter</DialogTitle>
             <DialogDescription>
-              Define a reusable filter. All members of your workspace will see this view.
+              Define a reusable filter. All members of your workspace will see this filter.
             </DialogDescription>
           </DialogHeader>
 
           <form onSubmit={handleSubmit} className="space-y-5 mt-1">
             {/* Name */}
             <div className="space-y-1.5">
-              <Label htmlFor="view-name">View name</Label>
+              <Label htmlFor="filter-name">Filter name</Label>
               <Input
-                id="view-name"
+                id="filter-name"
                 placeholder="e.g. Youth Council Agendas"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -263,7 +268,7 @@ export function CreateViewDialog({ templates, onCreated }: CreateViewDialogProps
                     Creating…
                   </>
                 ) : (
-                  "Create view"
+                  "Create filter"
                 )}
               </Button>
             </DialogFooter>

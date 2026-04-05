@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { useEffect, useRef, useState } from "react"
 import { ChevronRight, Database, Table2, BookOpen, PanelLeft, Library } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { getBreadcrumbTrail, BreadcrumbItem } from "@/lib/navigation/breadcrumb-config"
@@ -40,8 +41,48 @@ interface BreadcrumbsProps {
 
 export function Breadcrumbs({ items, className, inlineAction, action }: BreadcrumbsProps) {
   const pathname = usePathname()
+  const containerRef = useRef<HTMLDivElement | null>(null)
+  const [isElevated, setIsElevated] = useState(false)
   const trail: BreadcrumbItemWithIcon[] = items ?? getBreadcrumbTrail(pathname)
   const mobileNav = useMobileNav()
+
+  useEffect(() => {
+    const node = containerRef.current
+    if (!node) return
+
+    let scrollParent: HTMLElement | Window = window
+    let current: HTMLElement | null = node.parentElement
+
+    while (current) {
+      const style = window.getComputedStyle(current)
+      const canScrollY =
+        style.overflowY === "auto" ||
+        style.overflowY === "scroll" ||
+        style.overflow === "auto" ||
+        style.overflow === "scroll"
+
+      if (canScrollY) {
+        scrollParent = current
+        break
+      }
+      current = current.parentElement
+    }
+
+    const readScrolled = () => {
+      if (scrollParent === window) {
+        setIsElevated(window.scrollY > 2)
+        return
+      }
+      setIsElevated((scrollParent as HTMLElement).scrollTop > 2)
+    }
+
+    readScrolled()
+    scrollParent.addEventListener("scroll", readScrolled, { passive: true })
+
+    return () => {
+      scrollParent.removeEventListener("scroll", readScrolled)
+    }
+  }, [])
 
   if (trail.length === 0) {
     return null
@@ -50,8 +91,12 @@ export function Breadcrumbs({ items, className, inlineAction, action }: Breadcru
   return (
     <div className="flex-shrink-0">
       <div
+        ref={containerRef}
         className={cn(
-          "flex h-12 items-center gap-2 border-b border-border/80 bg-card px-4",
+          "sticky top-0 z-30 flex h-10 items-center gap-2 px-4 transition-[background-color,border-color,box-shadow] duration-200",
+          isElevated
+            ? "border-b border-border/55 bg-[hsl(var(--chrome)/0.86)] shadow-[0_1px_0_rgba(15,23,42,0.06)] backdrop-blur supports-[backdrop-filter]:bg-[hsl(var(--chrome)/0.82)]"
+            : "border-b border-transparent bg-transparent",
           className
         )}
       >
@@ -66,7 +111,7 @@ export function Breadcrumbs({ items, className, inlineAction, action }: Breadcru
           </button>
         )}
         <nav aria-label="Breadcrumb" className="hidden min-w-0 flex-1 overflow-hidden sm:block">
-          <ol className="flex min-w-0 items-center gap-1 text-[12px] font-medium text-[#8a8f98]">
+          <ol className="flex min-w-0 items-center gap-1 text-[12px] font-medium text-nav-muted">
             {trail.map((item, index) => {
               const isLast = index === trail.length - 1
 
@@ -81,18 +126,18 @@ export function Breadcrumbs({ items, className, inlineAction, action }: Breadcru
                   )}
                 >
                   {index > 0 && (
-                    <ChevronRight className="h-3.5 w-3.5 text-[#b0b4bc]" />
+                    <ChevronRight className="h-3.5 w-3.5 text-nav-muted/70" />
                   )}
                   {item.href && !isLast ? (
                     <Link
                       href={item.href}
-                      className="flex min-w-0 items-center gap-1 transition-colors hover:text-[#23262b]"
+                      className="flex min-w-0 items-center gap-1 transition-colors hover:text-nav-strong"
                     >
                       <span className="opacity-70">{icon}</span>
                       <span className="truncate max-w-[160px] sm:max-w-none">{item.label}</span>
                     </Link>
                   ) : (
-                    <span className={cn("flex min-w-0 items-center gap-1", isLast && "font-semibold text-[#23262b]")}>
+                    <span className={cn("flex min-w-0 items-center gap-1", isLast && "font-semibold text-nav-strong")}>
                       <span className={cn(!isLast && "opacity-70")}>{icon}</span>
                       <span className="truncate max-w-[200px] sm:max-w-none">{item.label}</span>
                     </span>

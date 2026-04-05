@@ -11,15 +11,15 @@ import {
     TableRow,
 } from "@/components/ui/table"
 import { Checkbox } from "@/components/ui/checkbox"
-import { CalendarDays } from "lucide-react"
+import { ArrowDown, ArrowUp, CalendarDays } from "lucide-react"
 import { format } from "date-fns"
-import { DataTableColumnHeader } from "@/components/ui/data-table-header"
 import { MeetingRowActions } from "./meeting-row-actions"
 import { MeetingShareBadge } from "./meeting-share-badge"
 import { ShareDialog } from "@/components/conduct/share-dialog"
 import { ZoomIcon } from "@/components/ui/zoom-icon"
 import { StatusIndicator } from "@/components/ui/status-indicator"
 import { Database } from "@/types/database"
+import { cn } from "@/lib/utils"
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -43,16 +43,6 @@ export interface Meeting extends MeetingRow {
     _isSharedOutward?: boolean
 }
 
-// ── Filter option data ──────────────────────────────────────────────────────
-
-const STATUS_OPTIONS = [
-    { value: "draft", label: "Draft" },
-    { value: "scheduled", label: "Scheduled" },
-    { value: "in_progress", label: "In Progress" },
-    { value: "completed", label: "Completed" },
-    { value: "cancelled", label: "Cancelled" },
-]
-
 // ── Badge helpers ───────────────────────────────────────────────────────────
 
 function formatLabel(value: string): string {
@@ -71,26 +61,13 @@ const STATUS_TONES: Record<string, "neutral" | "info" | "success" | "warning" | 
 
 interface MeetingsTableProps {
     meetings: Meeting[]
-    templates: Template[]
     workspaceSlug: string | null
     isLeader: boolean
     // Sort
     sortConfig?: { key: string; direction: "asc" | "desc" } | null
     onSort?: (key: string, direction: "asc" | "desc") => void
-    // Search (applied from Title header)
-    searchValue?: string
-    onSearchChange?: (value: string) => void
-    // Status filter
-    selectedStatuses?: MeetingStatus[]
-    statusCounts?: Record<string, number>
-    onStatusToggle?: (status: string) => void
-    // Template filter
-    selectedTemplates?: string[]
-    templateCounts?: Record<string, number>
-    onTemplateToggle?: (templateId: string) => void
     // Column visibility
     hiddenColumns?: Set<string>
-    onHideColumn?: (column: string) => void
     // Row selection
     selectedRows?: Set<string>
     onToggleRow?: (id: string) => void
@@ -101,21 +78,11 @@ interface MeetingsTableProps {
 
 export function MeetingsTable({
     meetings,
-    templates,
     workspaceSlug,
     isLeader,
     sortConfig,
     onSort,
-    searchValue,
-    onSearchChange,
-    selectedStatuses = [],
-    statusCounts,
-    onStatusToggle,
-    selectedTemplates = [],
-    templateCounts,
-    onTemplateToggle,
     hiddenColumns = new Set(),
-    onHideColumn,
     selectedRows = new Set(),
     onToggleRow,
     onToggleAllRows,
@@ -125,22 +92,59 @@ export function MeetingsTable({
     const allSelected =
         meetings.length > 0 && selectedRows.size === meetings.length
 
-    const templateFilterOptions = [
-        {
-            value: "no-template",
-            label: "No Template",
-            count: templateCounts?.["no-template"] || 0,
-        },
-        ...templates.map((t) => ({
-            value: t.id,
-            label: t.name,
-            count: templateCounts?.[t.id] || 0,
-        })),
-    ]
-
     const visibleColumns =
         ["title", "template", "status", "scheduled_date"]
             .filter((c) => !hiddenColumns.has(c)).length + 2 // +2 for checkbox + actions
+
+    type SortableKey = "title" | "template" | "status" | "scheduled_date"
+
+    const handleHeaderSort = (key: SortableKey, defaultDirection: "asc" | "desc") => {
+        const nextDirection =
+            sortConfig?.key === key
+                ? sortConfig.direction === "asc"
+                    ? "desc"
+                    : "asc"
+                : defaultDirection
+        onSort?.(key, nextDirection)
+    }
+
+    const renderSortableHeader = (
+        key: SortableKey,
+        label: string,
+        defaultDirection: "asc" | "desc",
+        className: string
+    ) => {
+        const isActive = sortConfig?.key === key
+        const activeDirection = isActive ? sortConfig?.direction : undefined
+        const showUp = isActive ? activeDirection === "asc" : defaultDirection === "asc"
+        const Icon = showUp ? ArrowUp : ArrowDown
+
+        return (
+            <TableHead className={className}>
+                <button
+                    type="button"
+                    onClick={() => handleHeaderSort(key, defaultDirection)}
+                    className={cn(
+                        "group inline-flex items-center gap-1.5 rounded px-1.5 py-1 -mx-1.5",
+                        "transition-colors hover:bg-[hsl(var(--table-filter-hover))]",
+                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                        isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+                    )}
+                    aria-label={`Sort by ${label}`}
+                >
+                    <span className="text-[length:var(--table-header-font-size)] tracking-normal font-semibold">
+                        {label}
+                    </span>
+                    <Icon
+                        className={cn(
+                            "h-3 w-3 transition-opacity",
+                            isActive ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                        )}
+                    />
+                </button>
+            </TableHead>
+        )
+    }
 
     return (
         <>
@@ -149,8 +153,8 @@ export function MeetingsTable({
             containerClassName="overflow-visible"
             className="text-[13px] [--table-row-py:0.5rem]"
         >
-            <TableHeader className="sticky top-0 z-30 bg-[hsl(var(--table-header-bg)/0.98)] backdrop-blur-sm">
-                <TableRow className="table-header-row-standard">
+            <TableHeader className="sticky top-0 z-30">
+                <TableRow className="table-header-row-standard !bg-transparent hover:!bg-transparent [&>th:first-child]:rounded-tl-md [&>th:last-child]:rounded-tr-md">
                     {/* Checkbox */}
                     <TableHead className="sticky top-0 z-20 w-10 bg-[hsl(var(--table-header-bg)/0.98)] px-3 py-2 backdrop-blur-sm">
                         <Checkbox
@@ -161,67 +165,42 @@ export function MeetingsTable({
 
                     {/* Title */}
                     {!hiddenColumns.has("title") && (
-                        <DataTableColumnHeader
-                            label="Title"
-                            sortActive={sortConfig?.key === "title"}
-                            sortDirection={sortConfig?.direction}
-                            onSortAsc={() => onSort?.("title", "asc")}
-                            onSortDesc={() => onSort?.("title", "desc")}
-                            searchable
-                            searchValue={searchValue}
-                            onSearchChange={onSearchChange}
-                            searchPlaceholder="Search agendas..."
-                            onHide={() => onHideColumn?.("title")}
-                            className="sticky top-0 z-20 min-w-[250px] bg-[hsl(var(--table-header-bg)/0.98)] backdrop-blur-sm"
-                        />
+                        renderSortableHeader(
+                            "title",
+                            "Title",
+                            "asc",
+                            "sticky top-0 z-20 min-w-[250px] bg-[hsl(var(--table-header-bg)/0.98)] backdrop-blur-sm"
+                        )
                     )}
 
                     {/* Template */}
                     {!hiddenColumns.has("template") && (
-                        <DataTableColumnHeader
-                            label="Template"
-                            sortActive={sortConfig?.key === "template"}
-                            sortDirection={sortConfig?.direction}
-                            onSortAsc={() => onSort?.("template", "asc")}
-                            onSortDesc={() => onSort?.("template", "desc")}
-                            filterOptions={templateFilterOptions}
-                            selectedFilters={selectedTemplates}
-                            onFilterToggle={onTemplateToggle}
-                            onHide={() => onHideColumn?.("template")}
-                            className="sticky top-0 z-20 w-[200px] bg-[hsl(var(--table-header-bg)/0.98)] backdrop-blur-sm"
-                        />
+                        renderSortableHeader(
+                            "template",
+                            "Template",
+                            "asc",
+                            "sticky top-0 z-20 w-[200px] bg-[hsl(var(--table-header-bg)/0.98)] backdrop-blur-sm"
+                        )
                     )}
 
                     {/* Status */}
                     {!hiddenColumns.has("status") && (
-                        <DataTableColumnHeader
-                            label="Status"
-                            sortActive={sortConfig?.key === "status"}
-                            sortDirection={sortConfig?.direction}
-                            onSortAsc={() => onSort?.("status", "asc")}
-                            onSortDesc={() => onSort?.("status", "desc")}
-                            filterOptions={STATUS_OPTIONS.map((opt) => ({
-                                ...opt,
-                                count: statusCounts?.[opt.value] || 0,
-                            }))}
-                            selectedFilters={selectedStatuses}
-                            onFilterToggle={onStatusToggle}
-                            onHide={() => onHideColumn?.("status")}
-                            className="sticky top-0 z-20 w-[148px] bg-[hsl(var(--table-header-bg)/0.98)] backdrop-blur-sm"
-                        />
+                        renderSortableHeader(
+                            "status",
+                            "Status",
+                            "asc",
+                            "sticky top-0 z-20 w-[148px] bg-[hsl(var(--table-header-bg)/0.98)] backdrop-blur-sm"
+                        )
                     )}
 
                     {/* Scheduled Date */}
                     {!hiddenColumns.has("scheduled_date") && (
-                        <DataTableColumnHeader
-                            label="Scheduled Date"
-                            sortActive={sortConfig?.key === "scheduled_date"}
-                            sortDirection={sortConfig?.direction}
-                            onSortAsc={() => onSort?.("scheduled_date", "asc")}
-                            onSortDesc={() => onSort?.("scheduled_date", "desc")}
-                            onHide={() => onHideColumn?.("scheduled_date")}
-                            className="sticky top-0 z-20 w-[168px] bg-[hsl(var(--table-header-bg)/0.98)] backdrop-blur-sm"
-                        />
+                        renderSortableHeader(
+                            "scheduled_date",
+                            "Date",
+                            "desc",
+                            "sticky top-0 z-20 w-[168px] bg-[hsl(var(--table-header-bg)/0.98)] backdrop-blur-sm"
+                        )
                     )}
 
                     {/* Actions */}

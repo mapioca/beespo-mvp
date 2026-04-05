@@ -26,11 +26,15 @@ export interface AgendaView {
   updated_at: string
 }
 
+// UI-friendly aliases (DB table remains `agenda_views`)
+export type FilterCriteria = ViewFilters
+export type AgendaFilter = AgendaView
+
 // ── Server actions ────────────────────────────────────────────────────────────
 
 /**
- * Create a new agenda view for the current user's workspace.
- * Views are visible to all members of the same workspace.
+ * Create a new saved agenda filter for the current user's workspace.
+ * Saved filters are visible to all members of the same workspace.
  */
 export async function createAgendaView(
   name: string,
@@ -68,8 +72,15 @@ export async function createAgendaView(
   return { data: data as AgendaView }
 }
 
+export async function createAgendaFilter(
+  name: string,
+  filters: FilterCriteria
+): Promise<{ data?: AgendaFilter; error?: string }> {
+  return createAgendaView(name, filters)
+}
+
 /**
- * Delete an agenda view. Only the creator, leaders, and admins may delete.
+ * Delete a saved agenda filter. Only the creator, leaders, and admins may delete.
  * RLS enforces this on the database side as well.
  */
 export async function deleteAgendaView(
@@ -86,4 +97,10 @@ export async function deleteAgendaView(
 
   revalidatePath("/meetings/agendas")
   return {}
+}
+
+export async function deleteAgendaFilter(
+  id: string
+): Promise<{ error?: string }> {
+  return deleteAgendaView(id)
 }
