@@ -5,11 +5,9 @@ import {
     Table,
     TableBody,
     TableCell,
-    TableHead,
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
-import { Checkbox } from "@/components/ui/checkbox"
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -32,6 +30,12 @@ import { format } from "date-fns"
 import { DataTableColumnHeader } from "@/components/ui/data-table-header"
 import { TableRowActionTrigger } from "@/components/ui/table-row-action-trigger"
 import { StatusIndicator } from "@/components/ui/status-indicator"
+import {
+    StandardActionsHeadCell,
+    StandardSelectAllHeadCell,
+    StandardSelectableRow,
+    StandardTableShell,
+} from "@/components/ui/standard-data-table"
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -153,17 +157,15 @@ export function TasksTable({
 
     return (
         <>
-            <div className="table-shell-standard">
+            <StandardTableShell className="overflow-hidden">
             <Table>
                 <TableHeader>
                     <TableRow className="table-header-row-standard">
-                        {/* Checkbox */}
-                        <TableHead className="w-10 table-cell-check">
-                            <Checkbox
-                                checked={allSelected}
-                                onCheckedChange={() => onToggleAllRows?.()}
-                            />
-                        </TableHead>
+                        <StandardSelectAllHeadCell
+                            checked={allSelected}
+                            onToggle={() => onToggleAllRows?.()}
+                            className="w-10 table-cell-check static px-[var(--table-cell-px)] py-[var(--table-row-py)] backdrop-blur-none"
+                        />
 
                         {/* Title */}
                         {!hiddenColumns.has("title") && (
@@ -246,10 +248,7 @@ export function TasksTable({
                             />
                         )}
 
-                        {/* Actions */}
-                        <TableHead className="w-[52px]">
-                            <span className="sr-only">Actions</span>
-                        </TableHead>
+                        <StandardActionsHeadCell className="static backdrop-blur-none" />
                     </TableRow>
                 </TableHeader>
 
@@ -270,22 +269,44 @@ export function TasksTable({
                         </TableRow>
                     ) : (
                         tasks.map((task) => (
-                            <TableRow
+                            <StandardSelectableRow
                                 key={task.id}
-                                data-state={selectedRows.has(task.id) ? "selected" : undefined}
-                                className="group transition-[background-color,box-shadow] duration-150 ease-out hover:bg-[hsl(var(--table-row-hover))] hover:shadow-[inset_0_0_0_1px_hsl(var(--table-shell-border)/0.28)] data-[state=selected]:bg-[hsl(var(--table-row-selected))] data-[state=selected]:shadow-[inset_0_0_0_1px_hsl(var(--table-shell-border)/0.4)]"
+                                id={task.id}
+                                selected={selectedRows.has(task.id)}
+                                onToggle={onToggleRow}
+                                className="focus-within:bg-transparent focus-within:shadow-none"
+                                actions={
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <TableRowActionTrigger />
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end">
+                                            <DropdownMenuItem
+                                                onClick={() =>
+                                                    onViewTask?.(task)
+                                                }
+                                            >
+                                                <Eye className="mr-2 h-4 w-4" />
+                                                View
+                                            </DropdownMenuItem>
+                                            {onDelete && (
+                                                <>
+                                                    <DropdownMenuSeparator />
+                                                    <DropdownMenuItem
+                                                        className="text-destructive focus:text-destructive"
+                                                        onClick={() =>
+                                                            setDeleteTarget(task)
+                                                        }
+                                                    >
+                                                        <Trash2 className="mr-2 h-4 w-4" />
+                                                        Delete
+                                                    </DropdownMenuItem>
+                                                </>
+                                            )}
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                }
                             >
-                                {/* Checkbox */}
-                                <TableCell className="table-cell-check">
-                                    <Checkbox
-                                        checked={selectedRows.has(task.id)}
-                                        className="opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100 data-[state=checked]:opacity-100"
-                                        onCheckedChange={() =>
-                                            onToggleRow?.(task.id)
-                                        }
-                                    />
-                                </TableCell>
-
                                 {/* Title */}
                                 {!hiddenColumns.has("title") && (
                                     <TableCell className="table-cell-title">
@@ -341,45 +362,12 @@ export function TasksTable({
                                             : "—"}
                                     </TableCell>
                                 )}
-
-                                {/* Actions */}
-                                <TableCell className="table-cell-actions">
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                            <TableRowActionTrigger />
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end">
-                                            <DropdownMenuItem
-                                                onClick={() =>
-                                                    onViewTask?.(task)
-                                                }
-                                            >
-                                                <Eye className="mr-2 h-4 w-4" />
-                                                View
-                                            </DropdownMenuItem>
-                                            {onDelete && (
-                                                <>
-                                                    <DropdownMenuSeparator />
-                                                    <DropdownMenuItem
-                                                        className="text-destructive focus:text-destructive"
-                                                        onClick={() =>
-                                                            setDeleteTarget(task)
-                                                        }
-                                                    >
-                                                        <Trash2 className="mr-2 h-4 w-4" />
-                                                        Delete
-                                                    </DropdownMenuItem>
-                                                </>
-                                            )}
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
-                                </TableCell>
-                            </TableRow>
+                            </StandardSelectableRow>
                         ))
                     )}
                 </TableBody>
             </Table>
-            </div>
+            </StandardTableShell>
 
             {/* Delete confirmation dialog */}
             <AlertDialog

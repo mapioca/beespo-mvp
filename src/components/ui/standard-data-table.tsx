@@ -59,6 +59,7 @@ interface StandardSelectableRowProps {
   id: string
   selected: boolean
   onToggle?: (id: string) => void
+  selectOnRowClick?: boolean
   children: React.ReactNode
   actions?: React.ReactNode
   className?: string
@@ -77,6 +78,7 @@ export function StandardSelectableRow({
   id,
   selected,
   onToggle,
+  selectOnRowClick = true,
   children,
   actions,
   className,
@@ -89,6 +91,7 @@ export function StandardSelectableRow({
         className
       )}
       onClick={(event) => {
+        if (!selectOnRowClick) return
         if (isInteractiveTarget(event.target)) return
         onToggle?.(id)
       }}

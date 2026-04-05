@@ -4,7 +4,7 @@ import { useState, useMemo, useCallback, useTransition, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { createPortal } from "react-dom"
 import { Button } from "@/components/ui/button"
-import { Plus, X, Trash2, ListTodo } from "lucide-react"
+import { Plus, X, ListTodo } from "lucide-react"
 import { Breadcrumbs } from "@/components/dashboard/breadcrumbs"
 import {
     AlertDialog,
@@ -36,6 +36,7 @@ import {
 } from "@/lib/table-views"
 import { cn } from "@/lib/utils"
 import { TableView } from "@/lib/table-views"
+import { BulkSelectionBar } from "@/components/ui/bulk-selection-bar"
 
 // ── Filter sections config ────────────────────────────────────────────────────
 
@@ -566,25 +567,12 @@ export function TasksClient({
             {/* Floating bulk selection pill */}
             {mounted && selectedRows.size > 0 && createPortal(
                 <div className="fixed bottom-6 left-1/2 z-[95] flex -translate-x-1/2 pointer-events-none w-[90vw] sm:w-auto justify-center">
-                    <div className="pointer-events-auto inline-flex items-center gap-2 rounded-full border border-border/80 bg-background/96 px-2.5 py-2 text-foreground shadow-[0_10px_30px_rgba(15,23,42,0.12)] backdrop-blur-sm">
-                        <span className="inline-flex items-center rounded-full border border-border/70 bg-muted/55 px-2.5 py-1 text-[11px] font-semibold tabular-nums text-foreground/85">
-                            {selectedRows.size} selected
-                        </span>
-                        <span className="h-4 w-px bg-border/70" aria-hidden />
-                        <button
-                            onClick={() => setSelectedRows(new Set())}
-                            className="rounded-full px-2.5 py-1 text-[11px] font-medium text-foreground/70 hover:text-foreground hover:bg-muted/55 transition-colors"
-                        >
-                            Deselect
-                        </button>
-                        <button
-                            onClick={() => setShowBulkDeleteDialog(true)}
-                            className="inline-flex items-center gap-1.5 rounded-full border border-rose-200 bg-rose-50/70 px-2.5 py-1 text-[11px] font-semibold text-rose-700 hover:bg-rose-100/75 transition-colors"
-                        >
-                            <Trash2 className="h-3 w-3 stroke-[1.7]" />
-                            Delete
-                        </button>
-                    </div>
+                    <BulkSelectionBar
+                        selectedCount={selectedRows.size}
+                        onClear={() => setSelectedRows(new Set())}
+                        onDelete={() => setShowBulkDeleteDialog(true)}
+                        isDeleting={isBulkDeleting}
+                    />
                 </div>,
                 document.body
             )}
