@@ -150,6 +150,11 @@
     --table-micro-font-size: 10px;
     --agenda-control-font-size: 12px;
     --agenda-chip-font-size: 12px;
+    --agenda-icon-control-size: 30px;
+    --agenda-interactive-hover: 0 0% 94%;
+    --agenda-interactive-active: 0 0% 92%;
+    --agenda-interactive-focus-ring: 0 0% 0%;
+    --agenda-interactive-disabled-opacity: 0.5;
     --chip-bg: 0 0% 98.8%;
     --chip-border: 0 0% 90%;
     --chip-text: 0 0% 22%;
@@ -296,8 +301,16 @@
     --table-cell-px: 0.75rem;
     --table-row-py: 0.625rem;
     --table-header-font-size: 11px;
+    --table-header-letter-spacing: 0.01em;
     --table-body-font-size: 13px;
     --table-meta-font-size: 12px;
+    --table-micro-font-size: 10px;
+    --agenda-control-font-size: 12px;
+    --agenda-chip-font-size: 12px;
+    --agenda-interactive-hover: 220 10% 14%;
+    --agenda-interactive-active: 220 10% 18%;
+    --agenda-interactive-focus-ring: 0 0% 100%;
+    --agenda-interactive-disabled-opacity: 0.5;
     --chip-bg: 220 10% 14%;
     --chip-border: 220 10% 24%;
     --chip-text: 220 12% 88%;

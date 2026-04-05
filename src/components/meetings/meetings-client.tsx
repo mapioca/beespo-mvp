@@ -8,6 +8,7 @@ import { addDays, addMonths, endOfDay, startOfDay, subDays, subMonths } from "da
 import { Button } from "@/components/ui/button"
 import { Check, Plus, Search, SlidersHorizontal, X, Trash2 } from "lucide-react"
 import { Columns3 } from "lucide-react"
+import { ToolbarIconButton } from "@/components/ui/toolbar-icon-button"
 import { Input } from "@/components/ui/input"
 import {
     Popover,
@@ -484,7 +485,7 @@ export function MeetingsClient({
                                 <Button
                                     variant="ghost"
                                     size="sm"
-                                    className="h-7 gap-1 rounded-full border-0 px-2.5 text-[length:var(--agenda-control-font-size)] text-nav shadow-none ring-0 focus-visible:outline-none focus-visible:ring-0"
+                                    className="h-7 gap-1 rounded-full border-0 px-2.5 text-[length:var(--agenda-control-font-size)] text-nav shadow-none ring-0 transition-colors hover:bg-[hsl(var(--agenda-interactive-hover))] data-[state=open]:bg-[hsl(var(--agenda-interactive-active))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--agenda-interactive-focus-ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                                 >
                                     <Search className="h-3.5 w-3.5" />
                                     {search ? `Search: ${search}` : "Search"}
@@ -525,7 +526,7 @@ export function MeetingsClient({
                                 asChild
                                 variant="ghost"
                                 size="sm"
-                                className="h-7 gap-1 rounded-full px-2.5 text-[length:var(--agenda-control-font-size)] text-nav"
+                                className="h-7 gap-1 rounded-full px-2.5 text-[length:var(--agenda-control-font-size)] text-nav transition-colors hover:bg-[hsl(var(--agenda-interactive-hover))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--agenda-interactive-focus-ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                             >
                                 <Link href="/meetings/new">
                                     <Plus className="h-3.5 w-3.5 stroke-[1.6]" />
@@ -556,8 +557,8 @@ export function MeetingsClient({
                         }}
                         className={
                             activeFilterId === null && activeCategory === value
-                                ? "rounded-full border px-3.5 py-1.5 text-[length:var(--agenda-chip-font-size)] font-semibold leading-none border-[hsl(var(--chip-active-border))] bg-[hsl(var(--chip-active-bg))] text-[hsl(var(--chip-active-text))] transition-all shadow-[0_1px_0_rgba(15,23,42,0.1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-                                : "rounded-full border px-3.5 py-1.5 text-[length:var(--agenda-chip-font-size)] font-medium leading-none bg-[hsl(var(--chip-bg))] text-[hsl(var(--chip-text))] border-[hsl(var(--chip-border))] hover:bg-[hsl(var(--chip-hover-bg))] hover:text-[hsl(var(--chip-active-text))] active:bg-[hsl(var(--chip-active-bg))] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                                ? "rounded-full border px-3.5 py-1.5 text-[length:var(--agenda-chip-font-size)] font-semibold leading-none border-[hsl(var(--chip-active-border))] bg-[hsl(var(--agenda-interactive-active))] text-[hsl(var(--chip-active-text))] transition-all shadow-[0_1px_0_rgba(15,23,42,0.1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--agenda-interactive-focus-ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                                : "rounded-full border px-3.5 py-1.5 text-[length:var(--agenda-chip-font-size)] font-medium leading-none bg-[hsl(var(--chip-bg))] text-[hsl(var(--chip-text))] border-[hsl(var(--chip-border))] hover:bg-[hsl(var(--agenda-interactive-hover))] hover:text-[hsl(var(--chip-active-text))] active:bg-[hsl(var(--agenda-interactive-active))] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--agenda-interactive-focus-ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                         }
                         aria-pressed={activeFilterId === null && activeCategory === value}
                         aria-label={`Filter agendas by ${label}`}
@@ -568,14 +569,12 @@ export function MeetingsClient({
 
                     <StandardPopoverMenu open={savedFiltersOpen} onOpenChange={setSavedFiltersOpen}>
                         <StandardPopoverMenuTrigger asChild>
-                            <button
-                                type="button"
+                            <ToolbarIconButton
                                 title="Saved filters"
-                                className="flex items-center justify-center rounded-full h-[30px] w-[30px] border border-border text-muted-foreground hover:text-foreground hover:border-foreground/40 transition-colors shrink-0"
                                 aria-label="Open saved filters"
                             >
                                 <SlidersHorizontal className="h-3.5 w-3.5" />
-                            </button>
+                            </ToolbarIconButton>
                         </StandardPopoverMenuTrigger>
                         <StandardPopoverMenuContent align="start" className="w-64">
                             <StandardPopoverMenuSub>
@@ -749,14 +748,12 @@ export function MeetingsClient({
 
                     <StandardPopoverMenu open={displayOptionsOpen} onOpenChange={setDisplayOptionsOpen}>
                         <StandardPopoverMenuTrigger asChild>
-                            <button
-                                type="button"
+                            <ToolbarIconButton
                                 title="Display options"
-                                className="flex items-center justify-center rounded-full h-[30px] w-[30px] border border-border text-muted-foreground hover:text-foreground hover:border-foreground/40 transition-colors shrink-0"
                                 aria-label="Display options"
                             >
                                 <Columns3 className="h-3.5 w-3.5" />
-                            </button>
+                            </ToolbarIconButton>
                         </StandardPopoverMenuTrigger>
                         <StandardPopoverMenuContent align="start" className="w-56">
                             {[
@@ -829,7 +826,7 @@ export function MeetingsClient({
                     )}
                     <button
                         onClick={clearAllFilters}
-                        className="inline-flex items-center rounded-full px-2.5 py-1.5 text-[length:var(--agenda-chip-font-size)] text-muted-foreground hover:text-foreground hover:bg-[hsl(var(--chip-hover-bg))] transition-colors"
+                        className="inline-flex items-center rounded-full px-2.5 py-1.5 text-[length:var(--agenda-chip-font-size)] text-muted-foreground hover:text-foreground hover:bg-[hsl(var(--agenda-interactive-hover))] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--agenda-interactive-focus-ring))] focus-visible:ring-offset-1 focus-visible:ring-offset-background"
                     >
                         Clear all
                     </button>
@@ -844,7 +841,7 @@ export function MeetingsClient({
                             Search: &quot;{search}&quot;
                             <button
                                 onClick={() => setSearch("")}
-                                className="text-muted-foreground hover:text-foreground"
+                            className="text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--agenda-interactive-focus-ring))] focus-visible:ring-offset-1 focus-visible:ring-offset-background rounded-sm"
                             >
                                 <X className="h-3 w-3 stroke-[1.6]" />
                             </button>
@@ -858,7 +855,7 @@ export function MeetingsClient({
                             {formatStatusLabel(s)}
                             <button
                                 onClick={() => handleStatusToggle(s)}
-                                className="text-muted-foreground hover:text-foreground"
+                                className="text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--agenda-interactive-focus-ring))] focus-visible:ring-offset-1 focus-visible:ring-offset-background rounded-sm"
                             >
                                 <X className="h-3 w-3 stroke-[1.6]" />
                             </button>
@@ -872,7 +869,7 @@ export function MeetingsClient({
                             {getTemplateName(id)}
                             <button
                                 onClick={() => handleTemplateToggle(id)}
-                                className="text-muted-foreground hover:text-foreground"
+                                className="text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--agenda-interactive-focus-ring))] focus-visible:ring-offset-1 focus-visible:ring-offset-background rounded-sm"
                             >
                                 <X className="h-3 w-3 stroke-[1.6]" />
                             </button>
@@ -886,7 +883,7 @@ export function MeetingsClient({
                             {dateFilterLabelByValue[preset] || preset}
                             <button
                                 onClick={() => handleDateFilterToggle(preset)}
-                                className="text-muted-foreground hover:text-foreground"
+                                className="text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--agenda-interactive-focus-ring))] focus-visible:ring-offset-1 focus-visible:ring-offset-background rounded-sm"
                             >
                                 <X className="h-3 w-3 stroke-[1.6]" />
                             </button>
@@ -895,14 +892,14 @@ export function MeetingsClient({
                     {hiddenColumns.size > 0 && (
                         <button
                             onClick={() => setHiddenColumns(new Set())}
-                            className="inline-flex items-center rounded-full border border-[hsl(var(--chip-border))] px-2.5 py-1.5 text-[length:var(--agenda-chip-font-size)] text-muted-foreground hover:text-foreground hover:bg-[hsl(var(--chip-hover-bg))] transition-colors"
+                            className="inline-flex items-center rounded-full border border-[hsl(var(--chip-border))] px-2.5 py-1.5 text-[length:var(--agenda-chip-font-size)] text-muted-foreground hover:text-foreground hover:bg-[hsl(var(--agenda-interactive-hover))] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--agenda-interactive-focus-ring))] focus-visible:ring-offset-1 focus-visible:ring-offset-background"
                         >
                             Show all columns
                         </button>
                     )}
                     <button
                         onClick={clearAllFilters}
-                        className="inline-flex items-center rounded-full px-2.5 py-1.5 text-[length:var(--agenda-chip-font-size)] text-muted-foreground hover:text-foreground hover:bg-[hsl(var(--chip-hover-bg))] transition-colors"
+                        className="inline-flex items-center rounded-full px-2.5 py-1.5 text-[length:var(--agenda-chip-font-size)] text-muted-foreground hover:text-foreground hover:bg-[hsl(var(--agenda-interactive-hover))] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--agenda-interactive-focus-ring))] focus-visible:ring-offset-1 focus-visible:ring-offset-background"
                     >
                         Clear all
                     </button>

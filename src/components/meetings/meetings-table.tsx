@@ -126,9 +126,11 @@ export function MeetingsTable({
                     onClick={() => handleHeaderSort(key, defaultDirection)}
                     className={cn(
                         "group inline-flex items-center gap-1.5 rounded px-1.5 py-1 -mx-1.5",
-                        "transition-colors hover:bg-[hsl(var(--table-filter-hover))]",
-                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-                        isActive ? "text-foreground/85" : "text-foreground/55 hover:text-foreground/80"
+                        "transition-colors hover:bg-[hsl(var(--agenda-interactive-hover))]",
+                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--agenda-interactive-focus-ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                        isActive
+                            ? "bg-[hsl(var(--agenda-interactive-active))] text-foreground/85"
+                            : "text-foreground/55 hover:text-foreground/80"
                     )}
                     aria-label={`Sort by ${label}`}
                 >

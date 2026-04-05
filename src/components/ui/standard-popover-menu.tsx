@@ -62,8 +62,10 @@ const StandardPopoverMenuSubTrigger = React.forwardRef<
     data-active={active ? "true" : "false"}
     className={cn(
       "relative flex cursor-default select-none items-center gap-2 rounded-md px-2.5 py-1.5 text-[length:var(--menu-item-font-size)] text-[hsl(var(--menu-text))] outline-none transition-colors",
-      "focus:bg-[hsl(var(--menu-hover))] data-[state=open]:bg-[hsl(var(--menu-hover))] data-[active=true]:font-medium",
-      "data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+      "hover:bg-[hsl(var(--agenda-interactive-hover))] focus:bg-[hsl(var(--agenda-interactive-hover))] data-[state=open]:bg-[hsl(var(--agenda-interactive-hover))]",
+      "focus-visible:ring-2 focus-visible:ring-[hsl(var(--agenda-interactive-focus-ring))] focus-visible:ring-offset-1 focus-visible:ring-offset-background",
+      "data-[active=true]:bg-[hsl(var(--agenda-interactive-active))] data-[active=true]:font-medium",
+      "data-[disabled]:pointer-events-none data-[disabled]:opacity-[var(--agenda-interactive-disabled-opacity)]",
       className
     )}
     {...props}
@@ -88,8 +90,10 @@ const StandardPopoverMenuItem = React.forwardRef<
     data-active={active ? "true" : "false"}
     className={cn(
       "relative flex cursor-default select-none items-center gap-2 rounded-md px-2.5 py-1.5 text-[length:var(--menu-item-font-size)] text-[hsl(var(--menu-text))] outline-none transition-colors",
-      "focus:bg-[hsl(var(--menu-hover))] data-[active=true]:font-medium",
-      "data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+      "hover:bg-[hsl(var(--agenda-interactive-hover))] focus:bg-[hsl(var(--agenda-interactive-hover))]",
+      "focus-visible:ring-2 focus-visible:ring-[hsl(var(--agenda-interactive-focus-ring))] focus-visible:ring-offset-1 focus-visible:ring-offset-background",
+      "data-[active=true]:bg-[hsl(var(--agenda-interactive-active))] data-[active=true]:font-medium",
+      "data-[disabled]:pointer-events-none data-[disabled]:opacity-[var(--agenda-interactive-disabled-opacity)]",
       className
     )}
     {...props}
