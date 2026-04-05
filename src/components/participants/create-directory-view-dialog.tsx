@@ -63,6 +63,10 @@ function ToggleChip({
 interface CreateDirectoryViewDialogProps {
   workspaceTags: DirectoryTag[]
   onCreated: (view: DirectoryView) => void
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
+  hideTrigger?: boolean
+  renderTrigger?: (openDialog: () => void) => React.ReactNode
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -70,9 +74,15 @@ interface CreateDirectoryViewDialogProps {
 export function CreateDirectoryViewDialog({
   workspaceTags,
   onCreated,
+  open: openProp,
+  onOpenChange,
+  hideTrigger = false,
+  renderTrigger,
 }: CreateDirectoryViewDialogProps) {
-  const [open, setOpen] = useState(false)
+  const [internalOpen, setInternalOpen] = useState(false)
   const [isPending, startTransition] = useTransition()
+  const isControlled = openProp !== undefined
+  const open = isControlled ? openProp : internalOpen
 
   // Form state
   const [name, setName] = useState("")
@@ -158,7 +168,8 @@ export function CreateDirectoryViewDialog({
       toast.success(`View "${name.trim()}" created`)
       onCreated(result.data!)
       reset()
-      setOpen(false)
+      if (!isControlled) setInternalOpen(false)
+      onOpenChange?.(false)
     })
   }
 
@@ -168,26 +179,37 @@ export function CreateDirectoryViewDialog({
   return (
     <>
       {/* Trigger */}
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        title="Create a view"
-        className={cn(
-          "flex items-center justify-center rounded-full h-[30px] w-[30px] border border-border",
-          "text-muted-foreground hover:text-foreground hover:border-foreground/40",
-          "transition-colors shrink-0"
-        )}
-      >
-        <Grid2x2Plus className="h-3.5 w-3.5" />
-        <span className="sr-only">Create a view</span>
-      </button>
+      {!hideTrigger && (renderTrigger ? (
+        renderTrigger(() => {
+          if (!isControlled) setInternalOpen(true)
+          onOpenChange?.(true)
+        })
+      ) : (
+        <button
+          type="button"
+          onClick={() => {
+            if (!isControlled) setInternalOpen(true)
+            onOpenChange?.(true)
+          }}
+          title="Create a view"
+          className={cn(
+            "flex items-center justify-center rounded-full h-[30px] w-[30px] border border-border",
+            "text-muted-foreground hover:text-foreground hover:border-foreground/40",
+            "transition-colors shrink-0"
+          )}
+        >
+          <Grid2x2Plus className="h-3.5 w-3.5" />
+          <span className="sr-only">Create a view</span>
+        </button>
+      ))}
 
       {/* Dialog */}
       <Dialog
         open={open}
         onOpenChange={(o) => {
           if (!isPending) {
-            setOpen(o)
+            if (!isControlled) setInternalOpen(o)
+            onOpenChange?.(o)
             if (!o) reset()
           }
         }}

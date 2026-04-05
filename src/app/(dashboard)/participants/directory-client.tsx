@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Checkbox as UICheckbox } from "@/components/ui/checkbox"
-import { Plus, X, Trash2, Users, BookUser } from "lucide-react"
+import { Check, Columns3, Plus, SlidersHorizontal, X, BookUser } from "lucide-react"
 import { Breadcrumbs } from "@/components/dashboard/breadcrumbs"
 import {
     Dialog,
@@ -35,7 +35,6 @@ import {
     Participant,
 } from "@/components/participants/directory-table"
 import { ParticipantDrawer } from "@/components/participants/participant-drawer"
-import { TagFilterDropdown } from "@/components/participants/tag-filter-dropdown"
 import { CreateTagDialog } from "@/components/participants/create-tag-dialog"
 import { ManageTagsDialog } from "@/components/participants/manage-tags-dialog"
 import {
@@ -48,6 +47,18 @@ import type { DirectoryTag } from "@/types/database"
 import { DirectoryView, DirectoryViewFilters, deleteDirectoryView } from "@/lib/directory-views"
 import { CreateDirectoryViewDialog } from "@/components/participants/create-directory-view-dialog"
 import { cn } from "@/lib/utils"
+import {
+    StandardPopoverMenu,
+    StandardPopoverMenuContent,
+    StandardPopoverMenuItem,
+    StandardPopoverMenuSub,
+    StandardPopoverMenuSubContent,
+    StandardPopoverMenuSubTrigger,
+    StandardPopoverMenuTrigger,
+} from "@/components/ui/standard-popover-menu"
+import { ToolbarIconButton } from "@/components/ui/toolbar-icon-button"
+import { TopbarSearchAction } from "@/components/ui/topbar-search-action"
+import { BulkSelectionBar } from "@/components/ui/bulk-selection-bar"
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -197,6 +208,9 @@ export function DirectoryPageClient({
     // Bulk delete
     const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false)
     const [isBulkDeleting, setIsBulkDeleting] = useState(false)
+    const [filtersOpen, setFiltersOpen] = useState(false)
+    const [displayOptionsOpen, setDisplayOptionsOpen] = useState(false)
+    const [createFilterDialogOpen, setCreateFilterDialogOpen] = useState(false)
 
     // Tags
     const [tagFilter, setTagFilter] = useState<string[]>([])
@@ -357,10 +371,14 @@ export function DirectoryPageClient({
         []
     )
 
-    const handleHideColumn = useCallback((column: string) => {
+    const handleToggleColumnVisibility = useCallback((column: string) => {
         setHiddenColumns((prev) => {
             const next = new Set(prev)
-            next.add(column)
+            const visibleCount = ["name"].filter((c) => !next.has(c)).length
+            const isVisible = !next.has(column)
+            if (isVisible && visibleCount <= 1) return prev
+            if (isVisible) next.add(column)
+            else next.delete(column)
             return next
         })
     }, [])
@@ -603,6 +621,20 @@ export function DirectoryPageClient({
         !activeView &&
         (search.length > 0 || hiddenColumns.size > 0 || tagFilter.length > 0)
 
+    const tagCounts = useMemo(() => {
+        const counts: Record<string, number> = {}
+        participants.forEach((participant) => {
+            if (!participant.tags || participant.tags.length === 0) {
+                counts.untagged = (counts.untagged || 0) + 1
+                return
+            }
+            participant.tags.forEach((tag) => {
+                counts[tag.id] = (counts[tag.id] || 0) + 1
+            })
+        })
+        return counts
+    }, [participants])
+
     // ── Render ────────────────────────────────────────────────────────────────
 
     return (
@@ -610,10 +642,40 @@ export function DirectoryPageClient({
             {/* Breadcrumb */}
             <Breadcrumbs
                 items={[
-                    { label: "Directory", href: "/directory", icon: <Users className="h-4 w-4 stroke-[1.6]" /> },
-                    { label: "Members", icon: <BookUser className="h-4 w-4 stroke-[1.6]" /> },
+                    { label: "Directory", icon: <BookUser className="h-4 w-4 stroke-[1.6]" /> },
                 ]}
                 className="bg-transparent ring-0 border-b border-border/60 rounded-none px-4 py-1.5"
+                action={
+                    <div className="hidden items-center gap-1 sm:flex">
+                        <TopbarSearchAction
+                            value={search}
+                            onChange={setSearch}
+                            placeholder="Search directory..."
+                            items={filteredParticipants.slice(0, 8).map((participant) => ({
+                                id: participant.id,
+                                label: participant.name,
+                                actionLabel: "Open",
+                            }))}
+                            onSelect={(participantId) => {
+                                const participant = filteredParticipants.find((item) => item.id === participantId)
+                                if (!participant) return
+                                handleViewParticipant(participant)
+                            }}
+                            emptyText="No matching directory members."
+                        />
+                        {canManage && (
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 gap-1 rounded-full px-2.5 text-[length:var(--agenda-control-font-size)] text-nav transition-colors hover:bg-[hsl(var(--agenda-interactive-hover))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--agenda-interactive-focus-ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                                onClick={() => setCreateDialogOpen(true)}
+                            >
+                                <Plus className="h-3.5 w-3.5 stroke-[1.6]" />
+                                New member
+                            </Button>
+                        )}
+                    </div>
+                }
             />
 
             {/* Action Bar + Tabs */}
@@ -671,40 +733,156 @@ export function DirectoryPageClient({
                     </span>
                 ))}
 
-                {/* Divider before action buttons */}
-                <span className="h-4 w-px bg-border mx-1 shrink-0" aria-hidden />
+                <StandardPopoverMenu open={filtersOpen} onOpenChange={setFiltersOpen}>
+                    <StandardPopoverMenuTrigger asChild>
+                        <ToolbarIconButton title="Filters" aria-label="Open filters">
+                            <SlidersHorizontal className="h-3.5 w-3.5" />
+                        </ToolbarIconButton>
+                    </StandardPopoverMenuTrigger>
+                    <StandardPopoverMenuContent align="start" className="w-64">
+                        <StandardPopoverMenuSub>
+                            <StandardPopoverMenuSubTrigger
+                                active={tagFilter.length > 0}
+                                disabled={!!activeView}
+                            >
+                                Tags
+                            </StandardPopoverMenuSubTrigger>
+                            <StandardPopoverMenuSubContent className="max-h-72 overflow-y-auto">
+                                <StandardPopoverMenuItem
+                                    active={tagFilter.includes("untagged")}
+                                    onSelect={() => {
+                                        if (activeView) return
+                                        setTagFilter((prev) =>
+                                            prev.includes("untagged")
+                                                ? prev.filter((id) => id !== "untagged")
+                                                : [...prev, "untagged"]
+                                        )
+                                    }}
+                                >
+                                    <span className="flex items-center gap-2">
+                                        <span className="inline-flex h-4 w-4 items-center justify-center rounded-sm border border-border/60">
+                                            {tagFilter.includes("untagged") ? <Check className="h-3 w-3" /> : null}
+                                        </span>
+                                        Untagged
+                                    </span>
+                                    <span className="ml-auto text-[length:var(--table-header-font-size)] text-muted-foreground">
+                                        {tagCounts.untagged || 0}
+                                    </span>
+                                </StandardPopoverMenuItem>
+                                {workspaceTags.map((tag) => {
+                                    const selected = tagFilter.includes(tag.id)
+                                    return (
+                                        <StandardPopoverMenuItem
+                                            key={tag.id}
+                                            active={selected}
+                                            onSelect={() => {
+                                                if (activeView) return
+                                                setTagFilter((prev) =>
+                                                    prev.includes(tag.id)
+                                                        ? prev.filter((id) => id !== tag.id)
+                                                        : [...prev, tag.id]
+                                                )
+                                            }}
+                                        >
+                                            <span className="flex min-w-0 items-center gap-2">
+                                                <span className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-sm border border-border/60">
+                                                    {selected ? <Check className="h-3 w-3" /> : null}
+                                                </span>
+                                                <span className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: tag.color }} />
+                                                <span className="truncate">{tag.name}</span>
+                                            </span>
+                                            <span className="ml-auto shrink-0 text-[length:var(--table-header-font-size)] text-muted-foreground">
+                                                {tagCounts[tag.id] || 0}
+                                            </span>
+                                        </StandardPopoverMenuItem>
+                                    )
+                                })}
 
-                {/* Tags filter — hidden when a view is active */}
-                {!activeView && (
-                    <TagFilterDropdown
-                        workspaceTags={workspaceTags}
-                        selectedTagIds={tagFilter}
-                        onSelectionChange={setTagFilter}
-                        canManage={canManage}
-                        onCreateTag={() => setCreateTagDialogOpen(true)}
-                        onManageTags={() => setManageTagsDialogOpen(true)}
-                    />
-                )}
+                                {canManage && (
+                                    <>
+                                        <div className="my-1 h-px bg-[hsl(var(--menu-separator))]" />
+                                        <StandardPopoverMenuItem onSelect={() => setCreateTagDialogOpen(true)}>
+                                            <Plus className="h-3.5 w-3.5" />
+                                            Create new tag
+                                        </StandardPopoverMenuItem>
+                                        <StandardPopoverMenuItem onSelect={() => setManageTagsDialogOpen(true)}>
+                                            Manage tags
+                                        </StandardPopoverMenuItem>
+                                    </>
+                                )}
+                            </StandardPopoverMenuSubContent>
+                        </StandardPopoverMenuSub>
 
-                {/* Add view button */}
-                <CreateDirectoryViewDialog
-                    workspaceTags={workspaceTags}
-                    onCreated={handleViewCreated}
-                />
-                </div>
+                        {!activeView && tagFilter.length > 0 && (
+                            <StandardPopoverMenuItem
+                                onSelect={() => setTagFilter([])}
+                                className="text-muted-foreground"
+                            >
+                                Clear filters
+                            </StandardPopoverMenuItem>
+                        )}
 
-                {/* Top Actions */}
-                <div className="flex items-center gap-2">
-                    {canManage && (
-                        <Button
-                            size="sm"
-                            className="h-8 rounded-full px-3.5 text-[11px] font-semibold shadow-sm"
-                            onClick={() => setCreateDialogOpen(true)}
+                        <div className="my-1 h-px bg-[hsl(var(--menu-separator))]" />
+
+                        <StandardPopoverMenuSub>
+                            <StandardPopoverMenuSubTrigger active={!!activeView}>
+                                Advanced filters
+                            </StandardPopoverMenuSubTrigger>
+                            <StandardPopoverMenuSubContent className="w-64">
+                                {views.length === 0 ? (
+                                    <p className="px-2 py-1.5 text-xs text-muted-foreground">
+                                        No saved filters yet.
+                                    </p>
+                                ) : (
+                                    views.map((view) => (
+                                        <StandardPopoverMenuItem
+                                            key={view.id}
+                                            active={activeViewId === view.id}
+                                            onSelect={() => {
+                                                setActiveViewId(view.id)
+                                                setFiltersOpen(false)
+                                            }}
+                                        >
+                                            <span className="truncate">{view.name}</span>
+                                        </StandardPopoverMenuItem>
+                                    ))
+                                )}
+
+                                <div className="my-1 h-px bg-[hsl(var(--menu-separator))]" />
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setFiltersOpen(false)
+                                        setCreateFilterDialogOpen(true)
+                                    }}
+                                    className="flex w-full items-center justify-start gap-2 rounded-md px-2.5 py-1.5 text-[length:var(--menu-item-font-size)] text-[hsl(var(--menu-text))] hover:bg-[hsl(var(--menu-hover))]"
+                                >
+                                    <Plus className="h-3.5 w-3.5" />
+                                    Create new filter
+                                </button>
+                            </StandardPopoverMenuSubContent>
+                        </StandardPopoverMenuSub>
+                    </StandardPopoverMenuContent>
+                </StandardPopoverMenu>
+
+                <StandardPopoverMenu open={displayOptionsOpen} onOpenChange={setDisplayOptionsOpen}>
+                    <StandardPopoverMenuTrigger asChild>
+                        <ToolbarIconButton title="Display options" aria-label="Display options">
+                            <Columns3 className="h-3.5 w-3.5" />
+                        </ToolbarIconButton>
+                    </StandardPopoverMenuTrigger>
+                    <StandardPopoverMenuContent align="start" className="w-56">
+                        <StandardPopoverMenuItem
+                            onSelect={() => handleToggleColumnVisibility("name")}
+                            className="gap-2"
                         >
-                            <Plus className="h-3.5 w-3.5 mr-1.5 stroke-[1.6]" />
-                            New
-                        </Button>
-                    )}
+                            <span className="inline-flex h-4 w-4 items-center justify-center rounded-sm border border-border/60">
+                                {!hiddenColumns.has("name") ? <Check className="h-3 w-3" /> : null}
+                            </span>
+                            <span>Name</span>
+                        </StandardPopoverMenuItem>
+                    </StandardPopoverMenuContent>
+                </StandardPopoverMenu>
                 </div>
             </div>
 
@@ -793,10 +971,7 @@ export function DirectoryPageClient({
                     participants={filteredParticipants}
                     sortConfig={sortConfig}
                     onSort={handleSort}
-                    searchValue={search}
-                    onSearchChange={setSearch}
                     hiddenColumns={hiddenColumns}
-                    onHideColumn={handleHideColumn}
                     selectedRows={selectedRows}
                     onToggleRow={handleToggleRow}
                     onToggleAllRows={handleToggleAllRows}
@@ -951,6 +1126,14 @@ export function DirectoryPageClient({
                 onDeleteTag={handleDeleteTag}
             />
 
+            <CreateDirectoryViewDialog
+                workspaceTags={workspaceTags}
+                onCreated={handleViewCreated}
+                open={createFilterDialogOpen}
+                onOpenChange={setCreateFilterDialogOpen}
+                hideTrigger
+            />
+
             {/* Bulk delete confirmation */}
             <AlertDialog
                 open={showBulkDeleteDialog}
@@ -1014,25 +1197,12 @@ export function DirectoryPageClient({
             {/* Floating bulk selection pill */}
             {mounted && selectedRows.size > 0 && createPortal(
                 <div className="fixed bottom-6 left-1/2 z-[95] flex -translate-x-1/2 pointer-events-none w-[90vw] sm:w-auto justify-center">
-                    <div className="pointer-events-auto inline-flex items-center gap-2 rounded-full border border-border/80 bg-background/96 px-2.5 py-2 text-foreground shadow-[0_10px_30px_rgba(15,23,42,0.12)] backdrop-blur-sm">
-                        <span className="inline-flex items-center rounded-full border border-border/70 bg-muted/55 px-2.5 py-1 text-[11px] font-semibold tabular-nums text-foreground/85">
-                            {selectedRows.size} selected
-                        </span>
-                        <span className="h-4 w-px bg-border/70" aria-hidden />
-                        <button
-                            onClick={() => setSelectedRows(new Set())}
-                            className="rounded-full px-2.5 py-1 text-[11px] font-medium text-foreground/70 hover:text-foreground hover:bg-muted/55 transition-colors"
-                        >
-                            Deselect
-                        </button>
-                        <button
-                            onClick={() => setShowBulkDeleteDialog(true)}
-                            className="inline-flex items-center gap-1.5 rounded-full border border-rose-200 bg-rose-50/70 px-2.5 py-1 text-[11px] font-semibold text-rose-700 hover:bg-rose-100/75 transition-colors"
-                        >
-                            <Trash2 className="h-3 w-3 stroke-[1.7]" />
-                            Delete
-                        </button>
-                    </div>
+                    <BulkSelectionBar
+                        selectedCount={selectedRows.size}
+                        onClear={() => setSelectedRows(new Set())}
+                        onDelete={() => setShowBulkDeleteDialog(true)}
+                        isDeleting={isBulkDeleting}
+                    />
                 </div>,
                 document.body
             )}

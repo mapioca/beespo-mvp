@@ -5,7 +5,6 @@ import {
     Table,
     TableBody,
     TableCell,
-    TableHead,
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
@@ -38,8 +37,9 @@ import {
 } from "lucide-react"
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
-import { DataTableColumnHeader } from "@/components/ui/data-table-header"
 import { TableRowActionTrigger } from "@/components/ui/table-row-action-trigger"
+import { SortableTableHeader } from "@/components/ui/sortable-table-header"
+import { StandardActionsHeadCell, StandardSelectAllHeadCell, StandardTableShell } from "@/components/ui/standard-data-table"
 import {
     getParticipantHistory,
     getSpeakingAssignments,
@@ -91,12 +91,8 @@ interface DirectoryTableProps {
     // Sort
     sortConfig?: { key: string; direction: "asc" | "desc" } | null
     onSort?: (key: string, direction: "asc" | "desc") => void
-    // Search
-    searchValue?: string
-    onSearchChange?: (value: string) => void
     // Column visibility
     hiddenColumns?: Set<string>
-    onHideColumn?: (column: string) => void
     // Row selection
     selectedRows?: Set<string>
     onToggleRow?: (id: string) => void
@@ -113,10 +109,7 @@ export function DirectoryTable({
     participants,
     sortConfig,
     onSort,
-    searchValue,
-    onSearchChange,
     hiddenColumns = new Set(),
-    onHideColumn,
     selectedRows = new Set(),
     onToggleRow,
     onToggleAllRows,
@@ -200,38 +193,28 @@ export function DirectoryTable({
 
     return (
         <>
-            <div className="table-shell-standard">
+            <StandardTableShell className="overflow-hidden">
             <Table className="text-[13px]">
                 <TableHeader>
                     <TableRow className="table-header-row-standard">
-                        {/* Checkbox */}
-                        <TableHead className="w-10 table-cell-check">
-                            <Checkbox
-                                checked={allSelected}
-                                onCheckedChange={() => onToggleAllRows?.()}
-                            />
-                        </TableHead>
+                        <StandardSelectAllHeadCell
+                            checked={allSelected}
+                            onToggle={() => onToggleAllRows?.()}
+                            className="w-10 table-cell-check static px-[var(--table-cell-px)] py-[var(--table-row-py)] backdrop-blur-none"
+                        />
 
                         {/* Name */}
                         {!hiddenColumns.has("name") && (
-                            <DataTableColumnHeader
+                            <SortableTableHeader
+                                sortKey="name"
                                 label="Name"
-                                sortActive={sortConfig?.key === "name"}
-                                sortDirection={sortConfig?.direction}
-                                onSortAsc={() => onSort?.("name", "asc")}
-                                onSortDesc={() => onSort?.("name", "desc")}
-                                searchable
-                                searchValue={searchValue}
-                                onSearchChange={onSearchChange}
-                                searchPlaceholder="Search directory..."
-                                onHide={() => onHideColumn?.("name")}
+                                defaultDirection="asc"
+                                sortConfig={sortConfig}
+                                onSort={onSort}
                             />
                         )}
 
-                        {/* Actions */}
-                        <TableHead className="w-[52px]">
-                            <span className="sr-only">Actions</span>
-                        </TableHead>
+                        <StandardActionsHeadCell className="static backdrop-blur-none" />
                     </TableRow>
                 </TableHeader>
 
@@ -486,7 +469,7 @@ export function DirectoryTable({
                     )}
                 </TableBody>
             </Table>
-            </div>
+            </StandardTableShell>
 
             {/* Delete confirmation dialog */}
             <AlertDialog
