@@ -64,3 +64,5 @@ export { ToastPill, toastVariants, type ToastPillProps } from "./toast-pill";
 export { EmptyState, type EmptyStateProps } from "./empty-state";
 export { Avatar, AvatarImage, AvatarFallback, avatarVariants } from "./avatar";
 export { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "./tooltip";
+export { FilterChip, type FilterChipProps } from "./filter-chip";
+export { UnderlineTabs, type UnderlineTabItem } from "./underline-tabs";

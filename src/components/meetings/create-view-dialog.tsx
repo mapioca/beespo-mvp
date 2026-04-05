@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useTransition } from "react"
-import { Grid2x2Plus, Check, Loader2 } from "lucide-react"
+import { Grid2x2Plus, Check, Loader2, Video } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -38,7 +38,7 @@ const STATUS_OPTIONS = [
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
+    <p className="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500">
       {children}
     </p>
   )
@@ -60,8 +60,8 @@ function ToggleChip({
       className={cn(
         "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors",
         active
-          ? "bg-stone-200 text-foreground border-stone-200 shadow-sm"
-          : "text-muted-foreground border-border hover:bg-stone-100 hover:text-foreground hover:border-foreground/20"
+          ? "border-primary bg-primary text-white"
+          : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50 hover:text-gray-900"
       )}
     >
       {active && <Check className="h-3 w-3" />}
@@ -137,19 +137,10 @@ export function CreateViewDialog({ templates, onCreated }: CreateViewDialogProps
   return (
     <>
       {/* Trigger button */}
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        title="Create a view"
-        className={cn(
-          "flex items-center justify-center rounded-full h-[30px] w-[30px] border border-border",
-          "text-muted-foreground hover:text-foreground hover:border-foreground/40",
-          "transition-colors shrink-0"
-        )}
-      >
+      <Button type="button" onClick={() => setOpen(true)} title="Create a view" size="icon" variant="secondary" className="h-8 w-8 rounded-full">
         <Grid2x2Plus className="h-3.5 w-3.5" />
         <span className="sr-only">Create a view</span>
-      </button>
+      </Button>
 
       {/* Dialog */}
       <Dialog
@@ -243,7 +234,8 @@ export function CreateViewDialog({ templates, onCreated }: CreateViewDialogProps
             <div>
               <SectionLabel>Other filters</SectionLabel>
               <ToggleChip active={hasZoom} onClick={() => setHasZoom((v) => !v)}>
-                🎥 Has Zoom meeting
+                <Video className="h-3.5 w-3.5" />
+                Has Zoom meeting
               </ToggleChip>
             </div>
 

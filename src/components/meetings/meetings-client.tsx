@@ -1,10 +1,15 @@
 "use client"
 
 import { useState, useMemo, useCallback, useTransition, useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { createPortal } from "react-dom"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { FilterChip } from "@/components/ui/filter-chip"
+import { EmptyState } from "@/components/ui/empty-state"
+import { Skeleton } from "@/components/ui/skeleton"
+import { PageHeader } from "@/components/app-shell"
 import { Plus, X, Trash2 } from "lucide-react"
 import {
     AlertDialog,
@@ -24,11 +29,11 @@ import {
     MeetingStatus,
     Template,
 } from "./meetings-table"
-import { Breadcrumbs } from "@/components/dashboard/breadcrumbs"
-import { CalendarDays, ClipboardList } from "lucide-react"
+import { CalendarDays } from "lucide-react"
 import { AgendaView, deleteAgendaView } from "@/lib/agenda-views"
 import { CreateViewDialog } from "./create-view-dialog"
 import { cn } from "@/lib/utils"
+import { useMeetingsUiStore } from "@/stores/meetings-ui-store"
 
 interface MeetingsClientProps {
     meetings: Meeting[]
@@ -54,6 +59,7 @@ export function MeetingsClient({
     initialViews = [],
 }: MeetingsClientProps) {
     const router = useRouter()
+    const searchParams = useSearchParams()
     const [, startDeleteTransition] = useTransition()
     const [mounted, setMounted] = useState(false)
 
@@ -62,8 +68,11 @@ export function MeetingsClient({
     const [activeViewId, setActiveViewId] = useState<string | null>(null)
     const [deletingViewId, setDeletingViewId] = useState<string | null>(null)
 
-    // Category filter (used when no custom view is active)
-    const [activeCategory, setActiveCategory] = useState<"mine" | "shared" | "all">("mine")
+    const categoryFromQuery = searchParams.get("category")
+    const activeCategory: "mine" | "shared" | "all" =
+        categoryFromQuery === "shared" || categoryFromQuery === "all"
+            ? categoryFromQuery
+            : "mine"
 
     // Search
     const [search, setSearch] = useState("")
@@ -87,6 +96,7 @@ export function MeetingsClient({
     // Bulk delete
     const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false)
     const [isBulkDeleting, setIsBulkDeleting] = useState(false)
+    const isCategoryNavigating = useMeetingsUiStore((s) => s.isCategoryNavigating)
 
     useEffect(() => {
         setMounted(true)
@@ -335,204 +345,152 @@ export function MeetingsClient({
     // ── Render ────────────────────────────────────────────────────────────────
 
     return (
-        <div className="flex flex-col h-full bg-muted/30">
-            {/* Breadcrumb */}
-            <Breadcrumbs
-                items={[
-                    { label: "Meetings", href: "/meetings/agendas", icon: <CalendarDays className="h-3.5 w-3.5" /> },
-                    { label: "Agendas", icon: <ClipboardList className="h-3.5 w-3.5" /> },
-                ]}
-                className="bg-transparent ring-0 border-b border-border/60 rounded-none px-4 py-1.5"
+        <div className="flex h-full flex-col">
+            <PageHeader
+                title="Agendas"
+                description="Manage meetings, templates, and shared agendas."
+                className="mb-4 border-b-0 pb-0"
+                actions={
+                    <div className="flex items-center gap-3">
+                        {isLeader ? (
+                            <Button asChild size="sm">
+                                <Link href="/meetings/new" className="flex items-center gap-2">
+                                    <Plus className="h-4 w-4" />
+                                    New agenda
+                                </Link>
+                            </Button>
+                        ) : null}
+                        <Input
+                            type="search"
+                            inputSize="compact"
+                            placeholder="Search agendas..."
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            className="w-[320px] shadow-none"
+                        />
+                    </div>
+                }
             />
 
-            {/* Action Bar + Tabs */}
-            <div className="flex items-center justify-between w-full px-6 pt-3.5 pb-3.5 shrink-0 flex-wrap gap-3 border-b border-border/45">
-                <div className="flex items-center gap-2 flex-wrap min-h-8">
-                    {/* Built-in tabs */}
-                    {(
-                        [
-                            { value: "mine", label: "My Meetings" },
-                            { value: "shared", label: "Shared with Me" },
-                            { value: "all", label: "All" },
-                    ] as const
-                ).map(({ value, label }) => (
-                    <button
-                        key={value}
-                        onClick={() => {
-                            setActiveViewId(null)
-                            setActiveCategory(value)
-                        }}
-                        className={
-                            activeViewId === null && activeCategory === value
-                                ? "rounded-full border border-transparent px-3.5 py-1.5 text-[11px] font-semibold leading-none bg-[hsl(var(--chip-active-bg))] text-[hsl(var(--chip-active-text))] transition-all shadow-[0_1px_0_rgba(15,23,42,0.1)]"
-                                : "rounded-full border px-3.5 py-1.5 text-[11px] font-medium leading-none bg-[hsl(var(--chip-bg))] text-[hsl(var(--chip-text))] border-[hsl(var(--chip-border))] hover:bg-[hsl(var(--chip-hover-bg))] hover:text-[hsl(var(--chip-active-text))] transition-all"
-                        }
-                    >
-                        {label}
-                    </button>
-                ))}
-
-                {/* Divider before custom views */}
-                {views.length > 0 && (
-                    <span className="h-5 w-px bg-border/80 mx-1.5 shrink-0" aria-hidden />
-                )}
-
-                {/* Custom view tabs */}
-                {views.map((view) => (
-                    <span key={view.id} className="relative group/view inline-flex items-center">
-                        <button
-                            onClick={() => setActiveViewId(view.id)}
-                            className={cn(
-                                "rounded-full border pl-3.5 pr-7 py-1 text-[11px] leading-none transition-all shadow-sm",
-                                activeViewId === view.id
-                                    ? "bg-[hsl(var(--chip-active-bg))] text-[hsl(var(--chip-active-text))] border-transparent font-semibold"
-                                    : "bg-[hsl(var(--chip-bg))] text-[hsl(var(--chip-text))] border-[hsl(var(--chip-border))] hover:bg-[hsl(var(--chip-hover-bg))] hover:text-[hsl(var(--chip-active-text))] font-medium"
-                            )}
-                        >
-                            {view.name}
-                        </button>
-                        {/* Delete (×) button — appears on hover */}
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation()
-                                handleDeleteView(view.id)
-                            }}
-                            title="Delete view"
+            {/* Top controls */}
+            <div className="w-full shrink-0 border-b border-gray-200 px-6 pb-3">
+                {/* 1) Custom filters (saved views) */}
+                <div className="flex min-h-8 flex-wrap items-center gap-2">
+                    {views.map((view) => (
+                        <span key={view.id} className="relative group/view inline-flex items-center">
+                            <button
+                                onClick={() => setActiveViewId(view.id)}
+                                className={cn(
+                                    "h-8 rounded-cta border px-4 text-sm leading-none transition-all",
+                                    activeViewId === view.id
+                                        ? "border-transparent bg-primary text-white font-semibold"
+                                        : "border-gray-200 bg-white text-gray-600 hover:bg-white hover:text-gray-900 font-medium"
+                                )}
+                            >
+                                {view.name}
+                            </button>
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation()
+                                    handleDeleteView(view.id)
+                                }}
+                                title="Delete view"
                                 className={cn(
                                     "absolute right-2 top-1/2 -translate-y-1/2",
-                                    "flex items-center justify-center h-3.5 w-3.5 rounded-full",
+                                    "flex h-5 w-5 items-center justify-center rounded-full",
                                     "opacity-0 group-hover/view:opacity-100 group-focus-within/view:opacity-100 transition-opacity",
                                     activeViewId === view.id
-                                        ? "text-muted-foreground/70 hover:text-foreground"
-                                        : "text-muted-foreground hover:text-foreground"
-                            )}
-                        >
-                            <X className="h-2.5 w-2.5 stroke-[1.6]" />
-                        </button>
-                    </span>
-                ))}
+                                        ? "bg-black/20 text-white/85 hover:text-white"
+                                        : "border border-gray-200 bg-white/95 text-gray-400 hover:text-gray-700"
+                                )}
+                            >
+                                <X className="h-3 w-3" />
+                            </button>
+                        </span>
+                    ))}
 
-                    <CreateViewDialog
-                        templates={templates}
-                        onCreated={handleViewCreated}
-                    />
+                    {activeViewId && (
+                        <button
+                            onClick={() => setActiveViewId(null)}
+                            className="h-8 rounded-cta border border-gray-200 bg-white px-3 text-sm font-medium leading-none text-gray-600 transition-colors hover:text-gray-900"
+                        >
+                            Clear view
+                        </button>
+                    )}
+
+                    <CreateViewDialog templates={templates} onCreated={handleViewCreated} />
                 </div>
 
-                {isLeader && (
-                    <Button asChild size="sm" className="h-8 rounded-full px-3.5 text-[11px] font-semibold shadow-sm">
-                        <Link href="/meetings/new" className="flex items-center gap-1.5">
-                            <Plus className="h-3.5 w-3.5 stroke-[1.6]" />
-                            New
-                        </Link>
-                    </Button>
+                {/* 2) Read-only filters */}
+                {(activeView || hasActiveFilters) && (
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                        <span className="text-xs font-medium text-gray-900">Filters:</span>
+
+                        {activeView ? (
+                            <>
+                                <FilterChip className="capitalize">
+                                    {activeView.filters.category ?? "all"} meetings
+                                </FilterChip>
+                                {activeView.filters.statuses?.map((s) => (
+                                    <FilterChip key={s}>{formatStatusLabel(s)}</FilterChip>
+                                ))}
+                                {activeView.filters.templateIds?.map((id) => (
+                                    <FilterChip key={id}>{getTemplateName(id)}</FilterChip>
+                                ))}
+                                {activeView.filters.hasZoom && <FilterChip>Has Zoom</FilterChip>}
+                                {search && <FilterChip>Search: &quot;{search}&quot;</FilterChip>}
+                            </>
+                        ) : (
+                            <>
+                                {search && <FilterChip>Search: &quot;{search}&quot;</FilterChip>}
+                                {selectedStatuses.map((s) => (
+                                    <FilterChip key={s}>{formatStatusLabel(s)}</FilterChip>
+                                ))}
+                                {selectedTemplates.map((id) => (
+                                    <FilterChip key={id}>{getTemplateName(id)}</FilterChip>
+                                ))}
+                                {hiddenColumns.size > 0 && (
+                                    <FilterChip>{hiddenColumns.size} hidden column{hiddenColumns.size > 1 ? "s" : ""}</FilterChip>
+                                )}
+                            </>
+                        )}
+                    </div>
                 )}
             </div>
 
-            {/* View filter summary bar (shown when a custom view is active) */}
-            {activeView && (
-                <div className="flex items-center gap-2 px-6 pb-3 flex-wrap text-[11px] text-muted-foreground">
-                    <span className="font-medium text-foreground">Filters:</span>
-                    <span className="rounded-full bg-[hsl(var(--chip-bg))] border border-[hsl(var(--chip-border))] px-2.5 py-1.5 capitalize text-[hsl(var(--chip-text))] leading-none">
-                        {activeView.filters.category ?? "all"} meetings
-                    </span>
-                    {activeView.filters.statuses?.map((s) => (
-                        <span key={s} className="rounded-full bg-[hsl(var(--chip-bg))] border border-[hsl(var(--chip-border))] px-2.5 py-1.5 text-[hsl(var(--chip-text))] leading-none">
-                            {formatStatusLabel(s)}
-                        </span>
-                    ))}
-                    {activeView.filters.templateIds?.map((id) => (
-                        <span key={id} className="rounded-full bg-[hsl(var(--chip-bg))] border border-[hsl(var(--chip-border))] px-2.5 py-1.5 text-[hsl(var(--chip-text))] leading-none">
-                            {getTemplateName(id)}
-                        </span>
-                    ))}
-                    {activeView.filters.hasZoom && (
-                        <span className="rounded-full bg-[hsl(var(--chip-bg))] border border-[hsl(var(--chip-border))] px-2.5 py-1.5 text-[hsl(var(--chip-text))] leading-none">🎥 Has Zoom</span>
-                    )}
-                    {search && (
-                        <span className="inline-flex items-center gap-1.5 rounded-full bg-[hsl(var(--chip-bg))] border border-[hsl(var(--chip-border))] px-2.5 py-1.5 text-[hsl(var(--chip-text))] leading-none">
-                            Search: &quot;{search}&quot;
-                            <button
-                                onClick={() => setSearch("")}
-                                className="ml-1 text-muted-foreground hover:text-foreground"
-                            >
-                                <X className="h-3 w-3 inline stroke-[1.6]" />
-                            </button>
-                        </span>
-                    )}
-                </div>
-            )}
-
-            {/* Active filter chips — only in non-view mode */}
-            {hasActiveFilters && selectedRows.size === 0 && (
-                <div className="flex items-center gap-2 px-6 pb-3 flex-wrap">
-                    {search && (
-                        <span className="inline-flex items-center gap-1.5 rounded-full bg-[hsl(var(--chip-bg))] border border-[hsl(var(--chip-border))] px-2.5 py-1.5 text-[11px] font-medium leading-none text-[hsl(var(--chip-text))]">
-                            Search: &quot;{search}&quot;
-                            <button
-                                onClick={() => setSearch("")}
-                                className="text-muted-foreground hover:text-foreground"
-                            >
-                                <X className="h-3 w-3 stroke-[1.6]" />
-                            </button>
-                        </span>
-                    )}
-                    {selectedStatuses.map((s) => (
-                        <span
-                            key={s}
-                            className="inline-flex items-center gap-1.5 rounded-full bg-[hsl(var(--chip-bg))] border border-[hsl(var(--chip-border))] px-2.5 py-1.5 text-[11px] font-medium leading-none text-[hsl(var(--chip-text))]"
-                        >
-                            {formatStatusLabel(s)}
-                            <button
-                                onClick={() => handleStatusToggle(s)}
-                                className="text-muted-foreground hover:text-foreground"
-                            >
-                                <X className="h-3 w-3 stroke-[1.6]" />
-                            </button>
-                        </span>
-                    ))}
-                    {selectedTemplates.map((id) => (
-                        <span
-                            key={id}
-                            className="inline-flex items-center gap-1.5 rounded-full bg-[hsl(var(--chip-bg))] border border-[hsl(var(--chip-border))] px-2.5 py-1.5 text-[11px] font-medium leading-none text-[hsl(var(--chip-text))]"
-                        >
-                            {getTemplateName(id)}
-                            <button
-                                onClick={() => handleTemplateToggle(id)}
-                                className="text-muted-foreground hover:text-foreground"
-                            >
-                                <X className="h-3 w-3 stroke-[1.6]" />
-                            </button>
-                        </span>
-                    ))}
-                    {hiddenColumns.size > 0 && (
-                        <button
-                            onClick={() => setHiddenColumns(new Set())}
-                            className="inline-flex items-center rounded-full border border-[hsl(var(--chip-border))] px-2.5 py-1.5 text-[11px] text-muted-foreground hover:text-foreground hover:bg-[hsl(var(--chip-hover-bg))] transition-colors"
-                        >
-                            Show all columns
-                        </button>
-                    )}
-                    <button
-                        onClick={() => {
-                            setSearch("")
-                            setSelectedStatuses([])
-                            setSelectedTemplates([])
-                            setHiddenColumns(new Set())
-                        }}
-                        className="inline-flex items-center rounded-full border border-[hsl(var(--chip-border))] px-2.5 py-1.5 text-[11px] text-muted-foreground hover:text-foreground hover:bg-[hsl(var(--chip-hover-bg))] transition-colors"
-                    >
-                        Clear all
-                    </button>
-                </div>
-            )}
-
             {/* Table */}
-            <div className="flex-1 overflow-auto px-6 pb-6">
-                {activeCategory === "shared" && !activeView && sharedMeetings.length === 0 && !search ? (
-                    <div className="flex flex-col items-center justify-center h-48 text-center">
-                        <p className="text-muted-foreground text-sm">
-                            No meetings shared with you yet.
-                        </p>
+            <div className="flex-1 overflow-auto pb-6">
+                {isCategoryNavigating ? (
+                    <div className="overflow-hidden rounded-md border border-gray-200">
+                        <div className="flex items-center gap-4 border-b bg-gray-50 px-3 py-3">
+                            <Skeleton className="h-4 w-4" />
+                            <Skeleton className="h-4 w-48 flex-1" />
+                            <Skeleton className="h-4 w-28" />
+                            <Skeleton className="h-4 w-20" />
+                            <Skeleton className="h-4 w-32" />
+                            <Skeleton className="h-4 w-4" />
+                        </div>
+                        {Array.from({ length: 8 }).map((_, i) => (
+                            <div key={i} className="flex items-center gap-4 border-b px-3 py-4 last:border-b-0">
+                                <Skeleton className="h-4 w-4" />
+                                <div className="flex-1 space-y-1.5">
+                                    <Skeleton className="h-4 w-3/4" />
+                                    <Skeleton className="h-3 w-1/4" />
+                                </div>
+                                <Skeleton className="h-4 w-28" />
+                                <Skeleton className="h-5 w-20 rounded" />
+                                <Skeleton className="h-4 w-32" />
+                                <Skeleton className="h-8 w-8 rounded" />
+                            </div>
+                        ))}
+                    </div>
+                ) : activeCategory === "shared" && !activeView && sharedMeetings.length === 0 && !search ? (
+                    <div className="flex h-48 items-center justify-center text-center">
+                        <EmptyState
+                            title="No shared meetings"
+                            description="No meetings have been shared with you yet."
+                            icon={<CalendarDays className="h-6 w-6" />}
+                        />
                     </div>
                 ) : (
                     <MeetingsTable
@@ -583,7 +541,7 @@ export function MeetingsClient({
                         <AlertDialogAction
                             onClick={handleBulkDelete}
                             disabled={isBulkDeleting}
-                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            className="bg-error text-white hover:bg-error/90"
                         >
                             {isBulkDeleting ? "Deleting..." : "Delete"}
                         </AlertDialogAction>
@@ -610,7 +568,7 @@ export function MeetingsClient({
                         </AlertDialogCancel>
                         <AlertDialogAction
                             onClick={confirmDeleteView}
-                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            className="bg-error text-white hover:bg-error/90"
                         >
                             Delete view
                         </AlertDialogAction>
@@ -620,23 +578,23 @@ export function MeetingsClient({
 
             {/* Floating bulk selection pill */}
             {mounted && selectedRows.size > 0 && createPortal(
-                <div className="fixed bottom-6 left-1/2 z-[95] flex -translate-x-1/2 pointer-events-none w-[90vw] sm:w-auto justify-center">
-                    <div className="pointer-events-auto inline-flex items-center gap-2 rounded-full border border-border/80 bg-background/96 px-2.5 py-2 text-foreground shadow-[0_10px_30px_rgba(15,23,42,0.12)] backdrop-blur-sm">
-                        <span className="inline-flex items-center rounded-full border border-border/70 bg-muted/55 px-2.5 py-1 text-[11px] font-semibold tabular-nums text-foreground/85">
+                <div className="pointer-events-none fixed bottom-6 left-1/2 z-[95] flex w-[90vw] -translate-x-1/2 justify-center sm:w-auto">
+                    <div className="pointer-events-auto inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-2.5 py-2 text-gray-900 shadow-lg">
+                        <span className="inline-flex items-center rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1 text-xs font-semibold tabular-nums text-gray-700">
                             {selectedRows.size} selected
                         </span>
-                        <span className="h-4 w-px bg-border/70" aria-hidden />
+                        <span className="h-4 w-px bg-gray-200" aria-hidden />
                         <button
                             onClick={() => setSelectedRows(new Set())}
-                            className="rounded-full px-2.5 py-1 text-[11px] font-medium text-foreground/70 hover:text-foreground hover:bg-muted/55 transition-colors"
+                            className="rounded-full px-2.5 py-1 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900"
                         >
                             Deselect
                         </button>
                         <button
                             onClick={() => setShowBulkDeleteDialog(true)}
-                            className="inline-flex items-center gap-1.5 rounded-full border border-rose-200 bg-rose-50/70 px-2.5 py-1 text-[11px] font-semibold text-rose-700 hover:bg-rose-100/75 transition-colors"
+                            className="inline-flex items-center gap-1.5 rounded-full border border-red-200 bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-700 transition-colors hover:bg-red-100"
                         >
-                            <Trash2 className="h-3 w-3 stroke-[1.7]" />
+                            <Trash2 className="h-3 w-3" />
                             Delete
                         </button>
                     </div>

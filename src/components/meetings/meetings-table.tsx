@@ -11,6 +11,8 @@ import {
     TableRow,
 } from "@/components/ui/table"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Card } from "@/components/ui/card"
+import { EmptyState } from "@/components/ui/empty-state"
 import { CalendarDays } from "lucide-react"
 import { format } from "date-fns"
 import { DataTableColumnHeader } from "@/components/ui/data-table-header"
@@ -144,10 +146,10 @@ export function MeetingsTable({
 
     return (
         <>
-        <div className="table-shell-standard">
-        <Table className="text-[13px]">
+        <Card shadow="none" size="compact" className="overflow-hidden border-0 p-0">
+        <Table className="text-sm">
             <TableHeader>
-                <TableRow className="table-header-row-standard">
+                <TableRow>
                     {/* Checkbox */}
                     <TableHead className="w-10 px-3 py-2">
                         <Checkbox
@@ -164,10 +166,6 @@ export function MeetingsTable({
                             sortDirection={sortConfig?.direction}
                             onSortAsc={() => onSort?.("title", "asc")}
                             onSortDesc={() => onSort?.("title", "desc")}
-                            searchable
-                            searchValue={searchValue}
-                            onSearchChange={onSearchChange}
-                            searchPlaceholder="Search agendas..."
                             onHide={() => onHideColumn?.("title")}
                             className="min-w-[250px]"
                         />
@@ -235,11 +233,12 @@ export function MeetingsTable({
                             colSpan={visibleColumns}
                             className="h-32 text-center"
                         >
-                            <div className="flex flex-col items-center justify-center py-4">
-                                <CalendarDays className="h-8 w-8 text-muted-foreground mb-2 stroke-[1.6]" />
-                                <p className="text-muted-foreground">
-                                    No agendas found.
-                                </p>
+                            <div className="py-4">
+                                <EmptyState
+                                    title="No agendas found"
+                                    description="Create your first agenda to get started."
+                                    icon={<CalendarDays className="h-6 w-6" />}
+                                />
                             </div>
                         </TableCell>
                     </TableRow>
@@ -248,7 +247,7 @@ export function MeetingsTable({
                         <TableRow
                             key={meeting.id}
                             data-state={selectedRows.has(meeting.id) ? "selected" : undefined}
-                            className="group transition-[background-color,box-shadow] duration-150 ease-out hover:bg-[hsl(var(--table-row-hover))] hover:shadow-[inset_0_0_0_1px_hsl(var(--table-shell-border)/0.28)] data-[state=selected]:bg-[hsl(var(--table-row-selected))] data-[state=selected]:shadow-[inset_0_0_0_1px_hsl(var(--table-shell-border)/0.4)]"
+                            className="group"
                         >
                             {/* Checkbox */}
                             <TableCell className="px-3 py-2.5">
@@ -263,16 +262,16 @@ export function MeetingsTable({
 
                             {/* Title */}
                             {!hiddenColumns.has("title") && (
-                        <TableCell className="table-cell-title">
+                        <TableCell className="font-medium text-gray-900">
                             <div className="flex items-center gap-1.5">
                                 <Link
                                     href={`/meetings/${meeting.id}`}
-                                    className="text-[13px] font-semibold text-foreground hover:text-foreground/90 hover:underline underline-offset-2 transition-colors"
+                                    className="text-sm font-semibold text-gray-900 transition-colors hover:text-gray-700 hover:underline underline-offset-2"
                                 >
                                     {meeting.title}
                                 </Link>
                                         {meeting.is_publicly_shared && (
-                                            <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
+                                            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700">
                                                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
                                                 Live
                                             </span>
@@ -299,7 +298,7 @@ export function MeetingsTable({
 
                             {/* Template */}
                             {!hiddenColumns.has("template") && (
-                        <TableCell className="table-cell-meta text-[11.5px] text-foreground/56">
+                        <TableCell className="text-sm text-gray-500">
                             {meeting.templates?.name || (
                                 <span className="italic">
                                     No Template
@@ -310,18 +309,18 @@ export function MeetingsTable({
 
                             {/* Status */}
                             {!hiddenColumns.has("status") && (
-                        <TableCell className="table-cell-meta !px-2 capitalize">
+                        <TableCell className="capitalize">
                             <StatusIndicator
                                 label={formatLabel(meeting.status)}
                                 tone={STATUS_TONES[meeting.status] || "neutral"}
-                                className="text-[11.5px] text-foreground/66"
+                                className="text-sm text-gray-600"
                             />
                         </TableCell>
                             )}
 
                             {/* Scheduled Date */}
                             {!hiddenColumns.has("scheduled_date") && (
-                        <TableCell className="table-cell-meta !px-2 text-[11.5px] text-foreground/56">
+                        <TableCell className="text-sm text-gray-500">
                             {meeting.scheduled_date
                                 ? format(
                                       new Date(meeting.scheduled_date),
@@ -332,7 +331,7 @@ export function MeetingsTable({
                             )}
 
                             {/* Actions */}
-                            <TableCell className="table-cell-actions">
+                            <TableCell>
                                 <MeetingRowActions
                                     meeting={meeting}
                                     workspaceSlug={workspaceSlug}
@@ -344,7 +343,7 @@ export function MeetingsTable({
                 )}
             </TableBody>
         </Table>
-        </div>
+        </Card>
 
         {/* Share dialog — opened by clicking the shared_outward badge */}
         {shareDialogMeeting && (

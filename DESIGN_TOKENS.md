@@ -53,6 +53,7 @@ Source of truth for implementation tokens aligned to `BEESPO_DESIGN_SYSTEM.md` a
 | `--radius-sm` | `4px` | Badges/tags |
 | `--radius-md` | `6px` | Default controls/cards |
 | `--radius-lg` | `8px` | Modals/larger containers |
+| `--radius-cta` | `9999px` | Primary CTA buttons (pill) |
 | `--radius-full` | `9999px` | Pills/avatars |
 | `--border-default` | `1px solid hsl(var(--color-gray-200))` | Standard border style |
 
@@ -71,7 +72,7 @@ Source of truth for implementation tokens aligned to `BEESPO_DESIGN_SYSTEM.md` a
 - `fontWeight`: `normal`, `medium`, `semibold` (plus compatibility alias `bold -> semibold`)
 - `lineHeight`: `tight`, `normal`, `relaxed`
 - `spacing`: restricted to `0`, `px`, `1`, `2`, `3`, `4`, `5`, `6`, `8`, `10`, `12`, `16`
-- `borderRadius`: `sm`, `md`, `lg`, `full`
+- `borderRadius`: `sm`, `md`, `lg`, `cta`, `full`
 - `boxShadow`: `sm`, `md`, `lg`, `none`
 
 ## Compatibility Layer

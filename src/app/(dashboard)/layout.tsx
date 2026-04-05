@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { CommandPalette } from "@/components/command-palette";
-import { AppShell } from "@/components/app-shell";
+import { DashboardAppShell } from "@/components/app-shell";
 import { NavigationStoreHydrator } from "@/components/dashboard/navigation-store-hydrator";
 import { getProfile } from "@/lib/supabase/cached-queries";
 import { checkTrustedDevice, checkWorkspaceMfaRequired } from "@/lib/mfa";
@@ -57,12 +57,12 @@ export default async function DashboardLayout({
   return (
     <>
       <NavigationStoreHydrator initialItems={initialNavigationItems} />
-      <AppShell
+      <DashboardAppShell
         userName={profile?.full_name || ""}
         userEmail={user?.email || ""}
       >
         {children}
-      </AppShell>
+      </DashboardAppShell>
       <CommandPalette />
     </>
   );

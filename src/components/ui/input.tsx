@@ -19,7 +19,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
           <input
             type="search"
             className={cn(
-              "flex w-full rounded-md border border-gray-200 bg-white pl-9 pr-3 text-sm text-gray-700 transition-colors placeholder:text-gray-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary disabled:cursor-not-allowed disabled:opacity-50",
+              "flex w-full appearance-none rounded-cta border border-gray-200 bg-white pl-10 pr-3 text-sm text-gray-700 transition-colors placeholder:text-gray-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary disabled:cursor-not-allowed disabled:opacity-50 [&::-webkit-search-cancel-button]:hidden [&::-webkit-search-decoration]:hidden [&::-webkit-search-results-button]:hidden [&::-webkit-search-results-decoration]:hidden",
               inputSize === "compact" ? "h-8" : "h-10",
               className
             )}

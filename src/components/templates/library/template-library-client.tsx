@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Search, Library, Plus, ArrowUpRight, FormInput } from "lucide-react";
+import { Library, Plus, ArrowUpRight, FormInput } from "lucide-react";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -287,15 +287,13 @@ export function TemplateLibraryClient({ templates, workspaceId, currentUserId }:
                 </Button>
               )}
 
-              <div className="relative min-w-[280px] flex-1 sm:min-w-[340px]">
-                <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground stroke-[1.6]" />
-                <Input
-                  placeholder="Search templates..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="h-10 rounded-full border-border/60 bg-white pl-10 text-[14px] shadow-[0_1px_0_rgba(15,23,42,0.04)] focus-visible:ring-0 focus-visible:border-foreground/30"
-                />
-              </div>
+              <Input
+                type="search"
+                placeholder="Search templates..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="min-w-[280px] flex-1 border-border/60 bg-white text-[14px] shadow-[0_1px_0_rgba(15,23,42,0.04)] focus-visible:ring-0 focus-visible:border-foreground/30 sm:min-w-[340px]"
+              />
             </div>
           </div>
         </div>

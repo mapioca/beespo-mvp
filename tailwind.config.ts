@@ -54,6 +54,7 @@ const config: Config = {
       sm: "var(--radius-sm)",
       md: "var(--radius-md)",
       lg: "var(--radius-lg)",
+      cta: "var(--radius-cta)",
       full: "var(--radius-full)",
     },
     borderWidth: {

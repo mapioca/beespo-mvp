@@ -4,7 +4,7 @@ import * as React from "react";
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LogOut, Menu, MoreHorizontal, Pin, UserCircle2 } from "lucide-react";
+import { ChevronRight, LogOut, Menu, MoreHorizontal, Pin, UserCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -24,6 +24,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { getBreadcrumbTrail } from "@/lib/navigation/breadcrumb-config";
 import { APP_SHELL_NAV_ITEMS, type AppShellNavItem } from "./navigation-config";
 
 const STORAGE_KEY = "beespo-app-shell-pinned";
@@ -51,6 +52,35 @@ type AppShellProps = {
   userName?: string;
   userEmail?: string;
 };
+
+function ShellBreadcrumbs() {
+  const pathname = usePathname();
+  const breadcrumbs = getBreadcrumbTrail(pathname);
+
+  if (!breadcrumbs.length) {
+    return null;
+  }
+
+  return (
+    <nav className="mb-4 flex items-center gap-1 text-xs text-gray-500" aria-label="Breadcrumb">
+      {breadcrumbs.map((crumb, index) => {
+        const isLast = index === breadcrumbs.length - 1;
+        return (
+          <span key={`${crumb.label}-${index}`} className="inline-flex items-center gap-1">
+            {crumb.href && !isLast ? (
+              <Link href={crumb.href} className="transition-colors hover:text-gray-900">
+                {crumb.label}
+              </Link>
+            ) : (
+              <span className={cn(isLast && "text-gray-900")}>{crumb.label}</span>
+            )}
+            {!isLast ? <ChevronRight className="h-3 w-3" /> : null}
+          </span>
+        );
+      })}
+    </nav>
+  );
+}
 
 function usePinnedSidebarState() {
   const [pinned, setPinned] = React.useState(false);
@@ -313,7 +343,10 @@ export function ContentArea({
     return (
       <main className={cn("h-full bg-card", className)}>
         <div className="h-full overflow-y-auto px-6 pt-6 pb-6">
-          <div className={cn(fullWidth ? "max-w-none" : "mx-auto max-w-5xl")}>{children}</div>
+          <div className={cn(fullWidth ? "max-w-none" : "mx-auto max-w-5xl")}>
+            <ShellBreadcrumbs />
+            {children}
+          </div>
         </div>
       </main>
     );
@@ -329,7 +362,10 @@ export function ContentArea({
         </div>
       </div>
       <div className="px-6 pt-6">
-        <div className={cn(fullWidth ? "max-w-none" : "mx-auto max-w-5xl")}>{children}</div>
+        <div className={cn(fullWidth ? "max-w-none" : "mx-auto max-w-5xl")}>
+          <ShellBreadcrumbs />
+          {children}
+        </div>
       </div>
     </main>
   );
