@@ -142,6 +142,7 @@ export function TasksClient({
     const [isBulkDeleting, setIsBulkDeleting] = useState(false)
     const [filtersOpen, setFiltersOpen] = useState(false)
     const [displayOptionsOpen, setDisplayOptionsOpen] = useState(false)
+    const [createFilterDialogOpen, setCreateFilterDialogOpen] = useState(false)
 
     useEffect(() => {
         setMounted(true)
@@ -569,27 +570,17 @@ export function TasksClient({
 
                                     <div className="my-1 h-px bg-[hsl(var(--menu-separator))]" />
 
-                                    <CreateViewDialog
-                                        filterSections={TASK_FILTER_SECTIONS}
-                                        onSave={handleSaveView}
-                                        onCreated={(view) => {
-                                            handleViewCreated(view)
+                                    <button
+                                        type="button"
+                                        onClick={() => {
                                             setFiltersOpen(false)
+                                            setCreateFilterDialogOpen(true)
                                         }}
-                                        renderTrigger={(openDialog) => (
-                                            <button
-                                                type="button"
-                                                onClick={() => {
-                                                    setFiltersOpen(false)
-                                                    openDialog()
-                                                }}
-                                                className="flex w-full items-center justify-start gap-2 rounded-md px-2.5 py-1.5 text-[length:var(--menu-item-font-size)] text-[hsl(var(--menu-text))] hover:bg-[hsl(var(--menu-hover))]"
-                                            >
-                                                <Plus className="h-3.5 w-3.5" />
-                                                Create new filter
-                                            </button>
-                                        )}
-                                    />
+                                        className="flex w-full items-center justify-start gap-2 rounded-md px-2.5 py-1.5 text-[length:var(--menu-item-font-size)] text-[hsl(var(--menu-text))] hover:bg-[hsl(var(--menu-hover))]"
+                                    >
+                                        <Plus className="h-3.5 w-3.5" />
+                                        Create new filter
+                                    </button>
                                 </StandardPopoverMenuSubContent>
                             </StandardPopoverMenuSub>
                         </StandardPopoverMenuContent>
@@ -756,6 +747,15 @@ export function TasksClient({
                 onOpenChange={setDrawerOpen}
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 task={selectedTask as any}
+            />
+
+            <CreateViewDialog
+                filterSections={TASK_FILTER_SECTIONS}
+                onSave={handleSaveView}
+                onCreated={handleViewCreated}
+                open={createFilterDialogOpen}
+                onOpenChange={setCreateFilterDialogOpen}
+                hideTrigger
             />
 
             {/* Bulk delete confirmation */}

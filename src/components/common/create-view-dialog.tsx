@@ -38,6 +38,9 @@ interface CreateViewDialogProps {
   /** Called with the newly created view after a successful save */
   onCreated: (view: TableView) => void
   renderTrigger?: (openDialog: () => void) => React.ReactNode
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
+  hideTrigger?: boolean
 }
 
 // ── Sub-components ────────────────────────────────────────────────────────────
@@ -83,9 +86,14 @@ export function CreateViewDialog({
   onSave,
   onCreated,
   renderTrigger,
+  open: openProp,
+  onOpenChange,
+  hideTrigger = false,
 }: CreateViewDialogProps) {
-  const [open, setOpen] = useState(false)
+  const [internalOpen, setInternalOpen] = useState(false)
   const [isPending, startTransition] = useTransition()
+  const isControlled = openProp !== undefined
+  const open = isControlled ? openProp : internalOpen
 
   const [name, setName] = useState("")
   // Map of key → selected values
@@ -126,19 +134,26 @@ export function CreateViewDialog({
       toast.success(`View "${name.trim()}" created`)
       onCreated(result.data!)
       reset()
-      setOpen(false)
+      if (!isControlled) setInternalOpen(false)
+      onOpenChange?.(false)
     })
   }
 
   return (
     <>
       {/* Trigger button */}
-      {renderTrigger ? (
-        renderTrigger(() => setOpen(true))
+      {!hideTrigger && (renderTrigger ? (
+        renderTrigger(() => {
+          if (!isControlled) setInternalOpen(true)
+          onOpenChange?.(true)
+        })
       ) : (
         <button
           type="button"
-          onClick={() => setOpen(true)}
+          onClick={() => {
+            if (!isControlled) setInternalOpen(true)
+            onOpenChange?.(true)
+          }}
           title="Create a view"
           className={cn(
             "flex items-center justify-center rounded-full h-[30px] w-[30px] border border-border",
@@ -149,14 +164,15 @@ export function CreateViewDialog({
           <Grid2x2Plus className="h-3.5 w-3.5" />
           <span className="sr-only">Create a view</span>
         </button>
-      )}
+      ))}
 
       {/* Dialog */}
       <Dialog
         open={open}
         onOpenChange={(o) => {
           if (!isPending) {
-            setOpen(o)
+            if (!isControlled) setInternalOpen(o)
+            onOpenChange?.(o)
             if (!o) reset()
           }
         }}
@@ -211,7 +227,8 @@ export function CreateViewDialog({
                 type="button"
                 variant="outline"
                 onClick={() => {
-                  setOpen(false)
+                  if (!isControlled) setInternalOpen(false)
+                  onOpenChange?.(false)
                   reset()
                 }}
                 disabled={isPending}
