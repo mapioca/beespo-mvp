@@ -6,12 +6,10 @@ import {
     Table,
     TableBody,
     TableCell,
-    TableHead,
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
-import { Checkbox } from "@/components/ui/checkbox"
-import { ArrowDown, ArrowUp, CalendarDays } from "lucide-react"
+import { CalendarDays } from "lucide-react"
 import { format } from "date-fns"
 import { MeetingRowActions } from "./meeting-row-actions"
 import { MeetingShareBadge } from "./meeting-share-badge"
@@ -19,7 +17,13 @@ import { ShareDialog } from "@/components/conduct/share-dialog"
 import { ZoomIcon } from "@/components/ui/zoom-icon"
 import { StatusIndicator } from "@/components/ui/status-indicator"
 import { Database } from "@/types/database"
-import { cn } from "@/lib/utils"
+import { SortableTableHeader } from "@/components/ui/sortable-table-header"
+import {
+    StandardActionsHeadCell,
+    StandardSelectAllHeadCell,
+    StandardSelectableRow,
+    StandardTableShell,
+} from "@/components/ui/standard-data-table"
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -96,119 +100,69 @@ export function MeetingsTable({
         ["title", "template", "status", "scheduled_date"]
             .filter((c) => !hiddenColumns.has(c)).length + 2 // +2 for checkbox + actions
 
-    type SortableKey = "title" | "template" | "status" | "scheduled_date"
-
-    const handleHeaderSort = (key: SortableKey, defaultDirection: "asc" | "desc") => {
-        const nextDirection =
-            sortConfig?.key === key
-                ? sortConfig.direction === "asc"
-                    ? "desc"
-                    : "asc"
-                : defaultDirection
-        onSort?.(key, nextDirection)
-    }
-
-    const renderSortableHeader = (
-        key: SortableKey,
-        label: string,
-        defaultDirection: "asc" | "desc",
-        className: string
-    ) => {
-        const isActive = sortConfig?.key === key
-        const activeDirection = isActive ? sortConfig?.direction : undefined
-        const showUp = isActive ? activeDirection === "asc" : defaultDirection === "asc"
-        const Icon = showUp ? ArrowUp : ArrowDown
-
-        return (
-            <TableHead className={className}>
-                <button
-                    type="button"
-                    onClick={() => handleHeaderSort(key, defaultDirection)}
-                    className={cn(
-                        "group inline-flex items-center gap-1.5 rounded px-1.5 py-1 -mx-1.5",
-                        "transition-colors hover:bg-[hsl(var(--agenda-interactive-hover))]",
-                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--agenda-interactive-focus-ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-                        isActive
-                            ? "bg-[hsl(var(--agenda-interactive-active))] text-foreground/85"
-                            : "text-foreground/55 hover:text-foreground/80"
-                    )}
-                    aria-label={`Sort by ${label}`}
-                >
-                    <span className="text-[length:var(--table-header-font-size)] font-semibold [letter-spacing:var(--table-header-letter-spacing)]">
-                        {label}
-                    </span>
-                    <Icon
-                        className={cn(
-                            "h-3 w-3 transition-opacity",
-                            isActive ? "opacity-100" : "opacity-0 group-hover:opacity-100"
-                        )}
-                    />
-                </button>
-            </TableHead>
-        )
-    }
-
     return (
         <>
-        <div className="table-shell-standard !overflow-visible">
+        <StandardTableShell>
         <Table
             containerClassName="overflow-visible"
             className="text-[length:var(--table-body-font-size)] [--table-row-py:0.5rem]"
         >
             <TableHeader className="sticky top-0 z-30">
                 <TableRow className="table-header-row-standard !bg-transparent hover:!bg-transparent [&>th:first-child]:rounded-tl-md [&>th:last-child]:rounded-tr-md">
-                    {/* Checkbox */}
-                    <TableHead className="sticky top-0 z-20 w-10 bg-[hsl(var(--table-header-bg)/0.98)] px-3 py-2 backdrop-blur-sm">
-                        <Checkbox
-                            checked={allSelected}
-                            onCheckedChange={() => onToggleAllRows?.()}
-                        />
-                    </TableHead>
+                    <StandardSelectAllHeadCell
+                        checked={allSelected}
+                        onToggle={() => onToggleAllRows?.()}
+                    />
 
                     {/* Title */}
                     {!hiddenColumns.has("title") && (
-                        renderSortableHeader(
-                            "title",
-                            "Title",
-                            "asc",
-                            "sticky top-0 z-20 min-w-[250px] bg-[hsl(var(--table-header-bg)/0.98)] backdrop-blur-sm"
-                        )
+                        <SortableTableHeader
+                            sortKey="title"
+                            label="Title"
+                            defaultDirection="asc"
+                            sortConfig={sortConfig}
+                            onSort={onSort}
+                            className="sticky top-0 z-20 min-w-[250px] bg-[hsl(var(--table-header-bg)/0.98)] backdrop-blur-sm"
+                        />
                     )}
 
                     {/* Template */}
                     {!hiddenColumns.has("template") && (
-                        renderSortableHeader(
-                            "template",
-                            "Template",
-                            "asc",
-                            "sticky top-0 z-20 w-[200px] bg-[hsl(var(--table-header-bg)/0.98)] backdrop-blur-sm"
-                        )
+                        <SortableTableHeader
+                            sortKey="template"
+                            label="Template"
+                            defaultDirection="asc"
+                            sortConfig={sortConfig}
+                            onSort={onSort}
+                            className="sticky top-0 z-20 w-[200px] bg-[hsl(var(--table-header-bg)/0.98)] backdrop-blur-sm"
+                        />
                     )}
 
                     {/* Status */}
                     {!hiddenColumns.has("status") && (
-                        renderSortableHeader(
-                            "status",
-                            "Status",
-                            "asc",
-                            "sticky top-0 z-20 w-[148px] bg-[hsl(var(--table-header-bg)/0.98)] backdrop-blur-sm"
-                        )
+                        <SortableTableHeader
+                            sortKey="status"
+                            label="Status"
+                            defaultDirection="asc"
+                            sortConfig={sortConfig}
+                            onSort={onSort}
+                            className="sticky top-0 z-20 w-[148px] bg-[hsl(var(--table-header-bg)/0.98)] backdrop-blur-sm"
+                        />
                     )}
 
                     {/* Scheduled Date */}
                     {!hiddenColumns.has("scheduled_date") && (
-                        renderSortableHeader(
-                            "scheduled_date",
-                            "Date",
-                            "desc",
-                            "sticky top-0 z-20 w-[168px] bg-[hsl(var(--table-header-bg)/0.98)] backdrop-blur-sm"
-                        )
+                        <SortableTableHeader
+                            sortKey="scheduled_date"
+                            label="Date"
+                            defaultDirection="desc"
+                            sortConfig={sortConfig}
+                            onSort={onSort}
+                            className="sticky top-0 z-20 w-[168px] bg-[hsl(var(--table-header-bg)/0.98)] backdrop-blur-sm"
+                        />
                     )}
 
-                    {/* Actions */}
-                    <TableHead className="sticky top-0 z-20 w-[52px] bg-[hsl(var(--table-header-bg)/0.98)] backdrop-blur-sm">
-                        <span className="sr-only">Actions</span>
-                    </TableHead>
+                    <StandardActionsHeadCell />
                 </TableRow>
             </TableHeader>
 
@@ -229,22 +183,19 @@ export function MeetingsTable({
                     </TableRow>
                 ) : (
                     meetings.map((meeting) => (
-                        <TableRow
+                        <StandardSelectableRow
                             key={meeting.id}
-                            data-state={selectedRows.has(meeting.id) ? "selected" : undefined}
-                            className="group transition-[background-color,box-shadow] duration-150 ease-out hover:bg-[hsl(var(--table-row-hover))] hover:shadow-[inset_0_0_0_1px_hsl(var(--table-shell-border)/0.28)] focus-within:bg-[hsl(var(--table-row-hover))] focus-within:shadow-[inset_0_0_0_2px_hsl(var(--ring)/0.4)] data-[state=selected]:bg-[hsl(var(--table-row-selected))] data-[state=selected]:shadow-[inset_0_0_0_1px_hsl(var(--table-shell-border)/0.4)]"
-                        >
-                            {/* Checkbox */}
-                            <TableCell className="px-3 py-2.5">
-                                <Checkbox
-                                    checked={selectedRows.has(meeting.id)}
-                                    className="opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100 data-[state=checked]:opacity-100"
-                                    onCheckedChange={() =>
-                                        onToggleRow?.(meeting.id)
-                                    }
+                            id={meeting.id}
+                            selected={selectedRows.has(meeting.id)}
+                            onToggle={onToggleRow}
+                            actions={
+                                <MeetingRowActions
+                                    meeting={meeting}
+                                    workspaceSlug={workspaceSlug}
+                                    isLeader={isLeader}
                                 />
-                            </TableCell>
-
+                            }
+                        >
                             {/* Title */}
                             {!hiddenColumns.has("title") && (
                         <TableCell className="table-cell-title">
@@ -314,21 +265,12 @@ export function MeetingsTable({
                                         : "—"}
                                 </TableCell>
                             )}
-
-                            {/* Actions */}
-                            <TableCell className="table-cell-actions">
-                                <MeetingRowActions
-                                    meeting={meeting}
-                                    workspaceSlug={workspaceSlug}
-                                    isLeader={isLeader}
-                                />
-                            </TableCell>
-                        </TableRow>
+                        </StandardSelectableRow>
                     ))
                 )}
             </TableBody>
         </Table>
-        </div>
+        </StandardTableShell>
 
         {/* Share dialog — opened by clicking the shared_outward badge */}
         {shareDialogMeeting && (
