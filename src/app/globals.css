@@ -128,6 +128,8 @@
     --menu-icon: 0 0% 40%;
     --menu-hover: 0 0% 96%;
     --menu-separator: 0 0% 92%;
+    --menu-item-font-size: 12px;
+    --menu-shortcut-font-size: 11px;
     --table-row-hover: 0 0% 97.8%;
     --table-row-selected: 0 0% 97.3%;
     --table-filter-hover: 0 0% 94%;
@@ -142,8 +144,12 @@
     --table-cell-px: 0.75rem;
     --table-row-py: 0.625rem;
     --table-header-font-size: 11px;
+    --table-header-letter-spacing: 0.01em;
     --table-body-font-size: 13px;
     --table-meta-font-size: 12px;
+    --table-micro-font-size: 10px;
+    --agenda-control-font-size: 12px;
+    --agenda-chip-font-size: 12px;
     --chip-bg: 0 0% 98.8%;
     --chip-border: 0 0% 90%;
     --chip-text: 0 0% 22%;

@@ -484,7 +484,7 @@ export function MeetingsClient({
                                 <Button
                                     variant="ghost"
                                     size="sm"
-                                    className="h-7 gap-1 rounded-full border-0 px-2.5 text-[11px] text-nav shadow-none ring-0 focus-visible:outline-none focus-visible:ring-0"
+                                    className="h-7 gap-1 rounded-full border-0 px-2.5 text-[length:var(--agenda-control-font-size)] text-nav shadow-none ring-0 focus-visible:outline-none focus-visible:ring-0"
                                 >
                                     <Search className="h-3.5 w-3.5" />
                                     {search ? `Search: ${search}` : "Search"}
@@ -504,16 +504,16 @@ export function MeetingsClient({
                                             key={meeting.id}
                                             href={`/meetings/${meeting.id}`}
                                             onClick={() => setJumpOpen(false)}
-                                            className="flex items-center justify-between rounded-md px-2 py-1.5 text-[12px] text-nav hover:bg-nav-hover hover:text-nav-strong"
+                                            className="flex items-center justify-between rounded-md px-2 py-1.5 text-[length:var(--agenda-control-font-size)] text-nav hover:bg-nav-hover hover:text-nav-strong"
                                         >
                                             <span className="truncate font-medium">{meeting.title}</span>
-                                            <span className="ml-2 shrink-0 text-[10px] text-nav-muted">
+                                            <span className="ml-2 shrink-0 text-[length:var(--table-micro-font-size)] text-nav-muted">
                                                 Open
                                             </span>
                                         </Link>
                                     ))}
                                     {filteredMeetings.length === 0 && (
-                                        <p className="px-2 py-1.5 text-[11px] text-muted-foreground">
+                                        <p className="px-2 py-1.5 text-[length:var(--table-header-font-size)] text-muted-foreground">
                                             No matching agendas.
                                         </p>
                                     )}
@@ -525,7 +525,7 @@ export function MeetingsClient({
                                 asChild
                                 variant="ghost"
                                 size="sm"
-                                className="h-7 gap-1 rounded-full px-2.5 text-[11px] text-nav"
+                                className="h-7 gap-1 rounded-full px-2.5 text-[length:var(--agenda-control-font-size)] text-nav"
                             >
                                 <Link href="/meetings/new">
                                     <Plus className="h-3.5 w-3.5 stroke-[1.6]" />
@@ -556,8 +556,8 @@ export function MeetingsClient({
                         }}
                         className={
                             activeFilterId === null && activeCategory === value
-                                ? "rounded-full border px-3.5 py-1.5 text-[11px] font-semibold leading-none border-[hsl(var(--chip-active-border))] bg-[hsl(var(--chip-active-bg))] text-[hsl(var(--chip-active-text))] transition-all shadow-[0_1px_0_rgba(15,23,42,0.1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-                                : "rounded-full border px-3.5 py-1.5 text-[11px] font-medium leading-none bg-[hsl(var(--chip-bg))] text-[hsl(var(--chip-text))] border-[hsl(var(--chip-border))] hover:bg-[hsl(var(--chip-hover-bg))] hover:text-[hsl(var(--chip-active-text))] active:bg-[hsl(var(--chip-active-bg))] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                                ? "rounded-full border px-3.5 py-1.5 text-[length:var(--agenda-chip-font-size)] font-semibold leading-none border-[hsl(var(--chip-active-border))] bg-[hsl(var(--chip-active-bg))] text-[hsl(var(--chip-active-text))] transition-all shadow-[0_1px_0_rgba(15,23,42,0.1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                                : "rounded-full border px-3.5 py-1.5 text-[length:var(--agenda-chip-font-size)] font-medium leading-none bg-[hsl(var(--chip-bg))] text-[hsl(var(--chip-text))] border-[hsl(var(--chip-border))] hover:bg-[hsl(var(--chip-hover-bg))] hover:text-[hsl(var(--chip-active-text))] active:bg-[hsl(var(--chip-active-bg))] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                         }
                         aria-pressed={activeFilterId === null && activeCategory === value}
                         aria-label={`Filter agendas by ${label}`}
@@ -600,7 +600,7 @@ export function MeetingsClient({
                                                     </span>
                                                     {opt.label}
                                                 </span>
-                                                <span className="ml-auto text-[11px] text-muted-foreground">
+                                                <span className="ml-auto text-[length:var(--table-header-font-size)] text-muted-foreground">
                                                     {statusCounts?.[opt.value] || 0}
                                                 </span>
                                             </StandardPopoverMenuItem>
@@ -631,7 +631,7 @@ export function MeetingsClient({
                                                     </span>
                                                     <span className="truncate">{opt.label}</span>
                                                 </span>
-                                                <span className="ml-auto shrink-0 text-[11px] text-muted-foreground">
+                                                <span className="ml-auto shrink-0 text-[length:var(--table-header-font-size)] text-muted-foreground">
                                                     {opt.count}
                                                 </span>
                                             </StandardPopoverMenuItem>
@@ -735,7 +735,7 @@ export function MeetingsClient({
                                                     setSavedFiltersOpen(false)
                                                     openDialog()
                                                 }}
-                                                className="flex w-full items-center justify-start gap-2 rounded-md px-2.5 py-1.5 text-[12px] text-[hsl(var(--menu-text))] hover:bg-[hsl(var(--menu-hover))]"
+                                                className="flex w-full items-center justify-start gap-2 rounded-md px-2.5 py-1.5 text-[length:var(--menu-item-font-size)] text-[hsl(var(--menu-text))] hover:bg-[hsl(var(--menu-hover))]"
                                             >
                                                 <Plus className="h-3.5 w-3.5" />
                                                 Create new filter
@@ -798,7 +798,7 @@ export function MeetingsClient({
 
             {/* Saved filter summary bar (shown when a saved filter is active) */}
             {activeFilter && (
-                <div className="flex items-center gap-2 px-6 pb-3 flex-wrap text-[11px] text-muted-foreground">
+                <div className="flex items-center gap-2 px-6 pb-3 flex-wrap text-[length:var(--agenda-control-font-size)] text-muted-foreground">
                     <span className="font-medium text-foreground">Filters:</span>
                     <span className="rounded-full bg-[hsl(var(--chip-bg))] border border-[hsl(var(--chip-border))] px-2.5 py-1.5 capitalize text-[hsl(var(--chip-text))] leading-none">
                         {activeFilter.filters.category ?? "all"} meetings
@@ -829,7 +829,7 @@ export function MeetingsClient({
                     )}
                     <button
                         onClick={clearAllFilters}
-                        className="inline-flex items-center rounded-full px-2.5 py-1.5 text-[11px] text-muted-foreground hover:text-foreground hover:bg-[hsl(var(--chip-hover-bg))] transition-colors"
+                        className="inline-flex items-center rounded-full px-2.5 py-1.5 text-[length:var(--agenda-chip-font-size)] text-muted-foreground hover:text-foreground hover:bg-[hsl(var(--chip-hover-bg))] transition-colors"
                     >
                         Clear all
                     </button>
@@ -840,7 +840,7 @@ export function MeetingsClient({
             {hasActiveFilters && selectedRows.size === 0 && (
                 <div className="flex items-center gap-2 px-6 pb-3 flex-wrap">
                     {search && (
-                        <span className="inline-flex items-center gap-1.5 rounded-full bg-[hsl(var(--chip-bg))] border border-[hsl(var(--chip-border))] px-2.5 py-1.5 text-[11px] font-medium leading-none text-[hsl(var(--chip-text))]">
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-[hsl(var(--chip-bg))] border border-[hsl(var(--chip-border))] px-2.5 py-1.5 text-[length:var(--agenda-chip-font-size)] font-medium leading-none text-[hsl(var(--chip-text))]">
                             Search: &quot;{search}&quot;
                             <button
                                 onClick={() => setSearch("")}
@@ -853,7 +853,7 @@ export function MeetingsClient({
                     {selectedStatuses.map((s) => (
                         <span
                             key={s}
-                            className="inline-flex items-center gap-1.5 rounded-full bg-[hsl(var(--chip-bg))] border border-[hsl(var(--chip-border))] px-2.5 py-1.5 text-[11px] font-medium leading-none text-[hsl(var(--chip-text))]"
+                            className="inline-flex items-center gap-1.5 rounded-full bg-[hsl(var(--chip-bg))] border border-[hsl(var(--chip-border))] px-2.5 py-1.5 text-[length:var(--agenda-chip-font-size)] font-medium leading-none text-[hsl(var(--chip-text))]"
                         >
                             {formatStatusLabel(s)}
                             <button
@@ -867,7 +867,7 @@ export function MeetingsClient({
                     {selectedTemplates.map((id) => (
                         <span
                             key={id}
-                            className="inline-flex items-center gap-1.5 rounded-full bg-[hsl(var(--chip-bg))] border border-[hsl(var(--chip-border))] px-2.5 py-1.5 text-[11px] font-medium leading-none text-[hsl(var(--chip-text))]"
+                            className="inline-flex items-center gap-1.5 rounded-full bg-[hsl(var(--chip-bg))] border border-[hsl(var(--chip-border))] px-2.5 py-1.5 text-[length:var(--agenda-chip-font-size)] font-medium leading-none text-[hsl(var(--chip-text))]"
                         >
                             {getTemplateName(id)}
                             <button
@@ -881,7 +881,7 @@ export function MeetingsClient({
                     {selectedDateFilters.map((preset) => (
                         <span
                             key={preset}
-                            className="inline-flex items-center gap-1.5 rounded-full bg-[hsl(var(--chip-bg))] border border-[hsl(var(--chip-border))] px-2.5 py-1.5 text-[11px] font-medium leading-none text-[hsl(var(--chip-text))]"
+                            className="inline-flex items-center gap-1.5 rounded-full bg-[hsl(var(--chip-bg))] border border-[hsl(var(--chip-border))] px-2.5 py-1.5 text-[length:var(--agenda-chip-font-size)] font-medium leading-none text-[hsl(var(--chip-text))]"
                         >
                             {dateFilterLabelByValue[preset] || preset}
                             <button
@@ -895,14 +895,14 @@ export function MeetingsClient({
                     {hiddenColumns.size > 0 && (
                         <button
                             onClick={() => setHiddenColumns(new Set())}
-                            className="inline-flex items-center rounded-full border border-[hsl(var(--chip-border))] px-2.5 py-1.5 text-[11px] text-muted-foreground hover:text-foreground hover:bg-[hsl(var(--chip-hover-bg))] transition-colors"
+                            className="inline-flex items-center rounded-full border border-[hsl(var(--chip-border))] px-2.5 py-1.5 text-[length:var(--agenda-chip-font-size)] text-muted-foreground hover:text-foreground hover:bg-[hsl(var(--chip-hover-bg))] transition-colors"
                         >
                             Show all columns
                         </button>
                     )}
                     <button
                         onClick={clearAllFilters}
-                        className="inline-flex items-center rounded-full px-2.5 py-1.5 text-[11px] text-muted-foreground hover:text-foreground hover:bg-[hsl(var(--chip-hover-bg))] transition-colors"
+                        className="inline-flex items-center rounded-full px-2.5 py-1.5 text-[length:var(--agenda-chip-font-size)] text-muted-foreground hover:text-foreground hover:bg-[hsl(var(--chip-hover-bg))] transition-colors"
                     >
                         Clear all
                     </button>
@@ -995,19 +995,19 @@ export function MeetingsClient({
             {mounted && selectedRows.size > 0 && createPortal(
                 <div className="fixed bottom-6 left-1/2 z-[95] flex -translate-x-1/2 pointer-events-none w-[90vw] sm:w-auto justify-center">
                     <div className="pointer-events-auto inline-flex items-center gap-2 rounded-full border border-border/80 bg-background/96 px-2.5 py-2 text-foreground shadow-[0_10px_30px_rgba(15,23,42,0.12)] backdrop-blur-sm">
-                        <span className="inline-flex items-center rounded-full border border-border/70 bg-muted/55 px-2.5 py-1 text-[11px] font-semibold tabular-nums text-foreground/85">
+                        <span className="inline-flex items-center rounded-full border border-border/70 bg-muted/55 px-2.5 py-1 text-[length:var(--table-header-font-size)] font-semibold tabular-nums text-foreground/85">
                             {selectedRows.size} selected
                         </span>
                         <span className="h-4 w-px bg-border/70" aria-hidden />
                         <button
                             onClick={() => setSelectedRows(new Set())}
-                            className="rounded-full px-2.5 py-1 text-[11px] font-medium text-foreground/70 hover:text-foreground hover:bg-muted/55 transition-colors"
+                            className="rounded-full px-2.5 py-1 text-[length:var(--table-header-font-size)] font-medium text-foreground/70 hover:text-foreground hover:bg-muted/55 transition-colors"
                         >
                             Deselect
                         </button>
                         <button
                             onClick={() => setShowBulkDeleteDialog(true)}
-                            className="inline-flex items-center gap-1.5 rounded-full border border-rose-200 bg-rose-50/70 px-2.5 py-1 text-[11px] font-semibold text-rose-700 hover:bg-rose-100/75 transition-colors"
+                            className="inline-flex items-center gap-1.5 rounded-full border border-rose-200 bg-rose-50/70 px-2.5 py-1 text-[length:var(--table-header-font-size)] font-semibold text-rose-700 hover:bg-rose-100/75 transition-colors"
                         >
                             <Trash2 className="h-3 w-3 stroke-[1.7]" />
                             Delete

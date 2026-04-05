@@ -61,7 +61,7 @@ const StandardPopoverMenuSubTrigger = React.forwardRef<
     ref={ref}
     data-active={active ? "true" : "false"}
     className={cn(
-      "relative flex cursor-default select-none items-center gap-2 rounded-md px-2.5 py-1.5 text-[12px] text-[hsl(var(--menu-text))] outline-none transition-colors",
+      "relative flex cursor-default select-none items-center gap-2 rounded-md px-2.5 py-1.5 text-[length:var(--menu-item-font-size)] text-[hsl(var(--menu-text))] outline-none transition-colors",
       "focus:bg-[hsl(var(--menu-hover))] data-[state=open]:bg-[hsl(var(--menu-hover))] data-[active=true]:font-medium",
       "data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
       className
@@ -87,7 +87,7 @@ const StandardPopoverMenuItem = React.forwardRef<
     ref={ref}
     data-active={active ? "true" : "false"}
     className={cn(
-      "relative flex cursor-default select-none items-center gap-2 rounded-md px-2.5 py-1.5 text-[12px] text-[hsl(var(--menu-text))] outline-none transition-colors",
+      "relative flex cursor-default select-none items-center gap-2 rounded-md px-2.5 py-1.5 text-[length:var(--menu-item-font-size)] text-[hsl(var(--menu-text))] outline-none transition-colors",
       "focus:bg-[hsl(var(--menu-hover))] data-[active=true]:font-medium",
       "data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
       className
@@ -103,7 +103,7 @@ const StandardPopoverMenuShortcut = ({
 }: React.HTMLAttributes<HTMLSpanElement>) => (
   <span
     className={cn(
-      "ml-auto text-[11px] text-muted-foreground tabular-nums",
+      "ml-auto text-[length:var(--menu-shortcut-font-size)] text-muted-foreground tabular-nums",
       className
     )}
     {...props}

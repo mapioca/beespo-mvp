@@ -128,11 +128,11 @@ export function MeetingsTable({
                         "group inline-flex items-center gap-1.5 rounded px-1.5 py-1 -mx-1.5",
                         "transition-colors hover:bg-[hsl(var(--table-filter-hover))]",
                         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-                        isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+                        isActive ? "text-foreground/85" : "text-foreground/55 hover:text-foreground/80"
                     )}
                     aria-label={`Sort by ${label}`}
                 >
-                    <span className="text-[length:var(--table-header-font-size)] tracking-normal font-semibold">
+                    <span className="text-[length:var(--table-header-font-size)] font-semibold [letter-spacing:var(--table-header-letter-spacing)]">
                         {label}
                     </span>
                     <Icon
@@ -151,7 +151,7 @@ export function MeetingsTable({
         <div className="table-shell-standard !overflow-visible">
         <Table
             containerClassName="overflow-visible"
-            className="text-[13px] [--table-row-py:0.5rem]"
+            className="text-[length:var(--table-body-font-size)] [--table-row-py:0.5rem]"
         >
             <TableHeader className="sticky top-0 z-30">
                 <TableRow className="table-header-row-standard !bg-transparent hover:!bg-transparent [&>th:first-child]:rounded-tl-md [&>th:last-child]:rounded-tr-md">
@@ -249,12 +249,12 @@ export function MeetingsTable({
                             <div className="flex items-center gap-1.5">
                                 <Link
                                     href={`/meetings/${meeting.id}`}
-                                    className="rounded-sm text-[13px] font-semibold text-foreground hover:text-foreground/90 hover:underline underline-offset-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                                    className="rounded-sm text-[length:var(--table-body-font-size)] font-semibold text-foreground/90 hover:text-foreground hover:underline underline-offset-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                                 >
                                     {meeting.title}
                                 </Link>
                                         {meeting.is_publicly_shared && (
-                                            <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
+                                            <span className="inline-flex items-center gap-1 text-[length:var(--table-micro-font-size)] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
                                                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
                                                 Live
                                             </span>
@@ -281,7 +281,7 @@ export function MeetingsTable({
 
                             {/* Template */}
                             {!hiddenColumns.has("template") && (
-                        <TableCell className="table-cell-meta text-[11.5px] text-foreground/56">
+                        <TableCell className="table-cell-meta text-[length:var(--table-meta-font-size)] text-foreground/58">
                             {meeting.templates?.name || (
                                 <span className="italic">
                                     No Template
@@ -296,14 +296,14 @@ export function MeetingsTable({
                             <StatusIndicator
                                 label={formatLabel(meeting.status)}
                                 tone={STATUS_TONES[meeting.status] || "neutral"}
-                                className="text-[11.5px] text-foreground/66"
+                                className="text-[length:var(--table-meta-font-size)] text-foreground/64"
                             />
                         </TableCell>
                             )}
 
                             {/* Scheduled Date */}
                             {!hiddenColumns.has("scheduled_date") && (
-                        <TableCell className="table-cell-meta !px-2 text-[11.5px] text-foreground/56">
+                        <TableCell className="table-cell-meta !px-2 text-[length:var(--table-meta-font-size)] text-foreground/58">
                             {meeting.scheduled_date
                                 ? format(
                                       new Date(meeting.scheduled_date),
