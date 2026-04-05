@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { createPortal } from "react-dom"
 import { Button } from "@/components/ui/button"
-import { Plus, X, Trash2, CalendarDays, Megaphone } from "lucide-react"
+import { Check, Columns3, Plus, SlidersHorizontal, X, Megaphone } from "lucide-react"
 import { Breadcrumbs } from "@/components/dashboard/breadcrumbs"
 import {
     AlertDialog,
@@ -35,6 +35,18 @@ import {
     TableView,
 } from "@/lib/table-views"
 import { cn } from "@/lib/utils"
+import {
+    StandardPopoverMenu,
+    StandardPopoverMenuContent,
+    StandardPopoverMenuItem,
+    StandardPopoverMenuSub,
+    StandardPopoverMenuSubContent,
+    StandardPopoverMenuSubTrigger,
+    StandardPopoverMenuTrigger,
+} from "@/components/ui/standard-popover-menu"
+import { ToolbarIconButton } from "@/components/ui/toolbar-icon-button"
+import { BulkSelectionBar } from "@/components/ui/bulk-selection-bar"
+import { TopbarSearchAction } from "@/components/ui/topbar-search-action"
 
 // ── Filter sections config ────────────────────────────────────────────────────
 
@@ -60,6 +72,18 @@ const ANNOUNCEMENT_FILTER_SECTIONS = [
         ],
     },
 ]
+
+const STATUS_FILTER_OPTIONS = [
+    { value: "draft", label: "Draft" },
+    { value: "active", label: "Active" },
+    { value: "stopped", label: "Stopped" },
+] as const
+
+const PRIORITY_FILTER_OPTIONS = [
+    { value: "high", label: "High" },
+    { value: "medium", label: "Medium" },
+    { value: "low", label: "Low" },
+] as const
 
 // ── Props ─────────────────────────────────────────────────────────────────────
 
@@ -120,6 +144,8 @@ export function AnnouncementsClient({
     // Bulk delete
     const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false)
     const [isBulkDeleting, setIsBulkDeleting] = useState(false)
+    const [filtersOpen, setFiltersOpen] = useState(false)
+    const [displayOptionsOpen, setDisplayOptionsOpen] = useState(false)
 
     useEffect(() => {
         setMounted(true)
@@ -231,10 +257,18 @@ export function AnnouncementsClient({
         )
     }, [])
 
-    const handleHideColumn = useCallback((column: string) => {
+    const handleToggleColumnVisibility = useCallback((column: string) => {
         setHiddenColumns((prev) => {
             const next = new Set(prev)
-            next.add(column)
+            const visibleCount = ["title", "priority", "status", "deadline"].filter(
+                (c) => !next.has(c)
+            ).length
+            const isVisible = !next.has(column)
+
+            if (isVisible && visibleCount <= 1) return prev
+
+            if (isVisible) next.add(column)
+            else next.delete(column)
             return next
         })
     }, [])
@@ -344,10 +378,42 @@ export function AnnouncementsClient({
             {/* Breadcrumb */}
             <Breadcrumbs
                 items={[
-                    { label: "Meetings", href: "/meetings/agendas", icon: <CalendarDays className="h-4 w-4 stroke-[1.6]" /> },
                     { label: "Announcements", icon: <Megaphone className="h-4 w-4 stroke-[1.6]" /> },
                 ]}
                 className="bg-transparent ring-0 border-b border-border/60 rounded-none px-4 py-1.5"
+                action={
+                    <div className="hidden items-center gap-1 sm:flex">
+                        <TopbarSearchAction
+                            value={search}
+                            onChange={setSearch}
+                            placeholder="Search announcements..."
+                            items={filteredAnnouncements.slice(0, 8).map((announcement) => ({
+                                id: announcement.id,
+                                label: announcement.title,
+                                actionLabel: "Open",
+                            }))}
+                            onSelect={(announcementId) => {
+                                const announcement = filteredAnnouncements.find(
+                                    (item) => item.id === announcementId
+                                )
+                                if (!announcement) return
+                                handleViewAnnouncement(announcement)
+                            }}
+                            emptyText="No matching announcements."
+                        />
+                        <Button
+                            asChild
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 gap-1 rounded-full px-2.5 text-[length:var(--agenda-control-font-size)] text-nav transition-colors hover:bg-[hsl(var(--agenda-interactive-hover))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--agenda-interactive-focus-ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                        >
+                            <Link href="/meetings/announcements/new" className="flex items-center gap-1.5">
+                                <Plus className="h-3.5 w-3.5 stroke-[1.6]" />
+                                New announcement
+                            </Link>
+                        </Button>
+                    </div>
+                }
             />
 
             {/* Action Bar + View Tabs */}
@@ -396,19 +462,187 @@ export function AnnouncementsClient({
                         </button>
                     )}
 
-                    <CreateViewDialog
-                        filterSections={ANNOUNCEMENT_FILTER_SECTIONS}
-                        onSave={handleSaveView}
-                        onCreated={handleViewCreated}
-                    />
-                </div>
+                    <StandardPopoverMenu open={filtersOpen} onOpenChange={setFiltersOpen}>
+                        <StandardPopoverMenuTrigger asChild>
+                            <ToolbarIconButton
+                                title="Filters"
+                                aria-label="Open filters"
+                            >
+                                <SlidersHorizontal className="h-3.5 w-3.5" />
+                            </ToolbarIconButton>
+                        </StandardPopoverMenuTrigger>
+                        <StandardPopoverMenuContent align="start" className="w-64">
+                            <StandardPopoverMenuSub>
+                                <StandardPopoverMenuSubTrigger
+                                    active={selectedStatuses.length > 0}
+                                    disabled={!!activeView}
+                                >
+                                    Status
+                                </StandardPopoverMenuSubTrigger>
+                                <StandardPopoverMenuSubContent>
+                                    {STATUS_FILTER_OPTIONS.map((opt) => {
+                                        const selected = selectedStatuses.includes(opt.value as AnnouncementStatus)
+                                        return (
+                                            <StandardPopoverMenuItem
+                                                key={opt.value}
+                                                active={selected}
+                                                onSelect={() => handleStatusToggle(opt.value)}
+                                            >
+                                                <span className="flex items-center gap-2">
+                                                    <span className="inline-flex h-4 w-4 items-center justify-center rounded-sm border border-border/60">
+                                                        {selected ? <Check className="h-3 w-3" /> : null}
+                                                    </span>
+                                                    {opt.label}
+                                                </span>
+                                                <span className="ml-auto text-[length:var(--table-header-font-size)] text-muted-foreground">
+                                                    {statusCounts?.[opt.value] || 0}
+                                                </span>
+                                            </StandardPopoverMenuItem>
+                                        )
+                                    })}
+                                </StandardPopoverMenuSubContent>
+                            </StandardPopoverMenuSub>
 
-                <Button asChild size="sm" className="h-8 rounded-full px-3.5 text-[11px] font-semibold shadow-sm">
-                    <Link href="/meetings/announcements/new" className="flex items-center gap-1.5">
-                        <Plus className="h-3.5 w-3.5 stroke-[1.6]" />
-                        New
-                    </Link>
-                </Button>
+                            <StandardPopoverMenuSub>
+                                <StandardPopoverMenuSubTrigger
+                                    active={selectedPriorities.length > 0}
+                                    disabled={!!activeView}
+                                >
+                                    Priority
+                                </StandardPopoverMenuSubTrigger>
+                                <StandardPopoverMenuSubContent>
+                                    {PRIORITY_FILTER_OPTIONS.map((opt) => {
+                                        const selected = selectedPriorities.includes(opt.value as AnnouncementPriority)
+                                        return (
+                                            <StandardPopoverMenuItem
+                                                key={opt.value}
+                                                active={selected}
+                                                onSelect={() => handlePriorityToggle(opt.value)}
+                                            >
+                                                <span className="flex items-center gap-2">
+                                                    <span className="inline-flex h-4 w-4 items-center justify-center rounded-sm border border-border/60">
+                                                        {selected ? <Check className="h-3 w-3" /> : null}
+                                                    </span>
+                                                    {opt.label}
+                                                </span>
+                                                <span className="ml-auto text-[length:var(--table-header-font-size)] text-muted-foreground">
+                                                    {priorityCounts?.[opt.value] || 0}
+                                                </span>
+                                            </StandardPopoverMenuItem>
+                                        )
+                                    })}
+                                </StandardPopoverMenuSubContent>
+                            </StandardPopoverMenuSub>
+
+                            {(selectedStatuses.length > 0 || selectedPriorities.length > 0) && !activeView && (
+                                <StandardPopoverMenuItem
+                                    onSelect={() => {
+                                        setSelectedStatuses([])
+                                        setSelectedPriorities([])
+                                    }}
+                                    className="text-muted-foreground"
+                                >
+                                    Clear filters
+                                </StandardPopoverMenuItem>
+                            )}
+
+                            <div className="my-1 h-px bg-[hsl(var(--menu-separator))]" />
+
+                            <StandardPopoverMenuSub>
+                                <StandardPopoverMenuSubTrigger active={!!activeView}>
+                                    Advanced filters
+                                </StandardPopoverMenuSubTrigger>
+                                <StandardPopoverMenuSubContent className="w-64">
+                                    {views.length === 0 ? (
+                                        <p className="px-2 py-1.5 text-xs text-muted-foreground">
+                                            No saved filters yet.
+                                        </p>
+                                    ) : (
+                                        views.map((view) => (
+                                            <StandardPopoverMenuItem
+                                                key={view.id}
+                                                active={activeViewId === view.id}
+                                                onSelect={() => {
+                                                    setActiveViewId(view.id)
+                                                    setFiltersOpen(false)
+                                                }}
+                                            >
+                                                <span className="truncate">{view.name}</span>
+                                            </StandardPopoverMenuItem>
+                                        ))
+                                    )}
+
+                                    <div className="my-1 h-px bg-[hsl(var(--menu-separator))]" />
+                                    <CreateViewDialog
+                                        filterSections={ANNOUNCEMENT_FILTER_SECTIONS}
+                                        onSave={handleSaveView}
+                                        onCreated={(view) => {
+                                            handleViewCreated(view)
+                                            setFiltersOpen(false)
+                                        }}
+                                        renderTrigger={(openDialog) => (
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setFiltersOpen(false)
+                                                    openDialog()
+                                                }}
+                                                className="flex w-full items-center justify-start gap-2 rounded-md px-2.5 py-1.5 text-[length:var(--menu-item-font-size)] text-[hsl(var(--menu-text))] hover:bg-[hsl(var(--menu-hover))]"
+                                            >
+                                                <Plus className="h-3.5 w-3.5" />
+                                                Create new filter
+                                            </button>
+                                        )}
+                                    />
+                                </StandardPopoverMenuSubContent>
+                            </StandardPopoverMenuSub>
+                        </StandardPopoverMenuContent>
+                    </StandardPopoverMenu>
+
+                    <StandardPopoverMenu open={displayOptionsOpen} onOpenChange={setDisplayOptionsOpen}>
+                        <StandardPopoverMenuTrigger asChild>
+                            <ToolbarIconButton
+                                title="Display options"
+                                aria-label="Display options"
+                            >
+                                <Columns3 className="h-3.5 w-3.5" />
+                            </ToolbarIconButton>
+                        </StandardPopoverMenuTrigger>
+                        <StandardPopoverMenuContent align="start" className="w-56">
+                            {[
+                                { key: "title", label: "Title" },
+                                { key: "priority", label: "Priority" },
+                                { key: "status", label: "Status" },
+                                { key: "deadline", label: "Deadline" },
+                            ].map((column) => {
+                                const visible = !hiddenColumns.has(column.key)
+                                return (
+                                    <StandardPopoverMenuItem
+                                        key={column.key}
+                                        onSelect={() => handleToggleColumnVisibility(column.key)}
+                                        className="gap-2"
+                                    >
+                                        <span className="inline-flex h-4 w-4 items-center justify-center rounded-sm border border-border/60">
+                                            {visible ? <Check className="h-3 w-3" /> : null}
+                                        </span>
+                                        <span>{column.label}</span>
+                                    </StandardPopoverMenuItem>
+                                )
+                            })}
+                            {hiddenColumns.size > 0 && (
+                                <>
+                                    <div className="my-1 h-px bg-[hsl(var(--menu-separator))]" />
+                                    <StandardPopoverMenuItem
+                                        onSelect={() => setHiddenColumns(new Set())}
+                                        className="text-muted-foreground"
+                                    >
+                                        Show all columns
+                                    </StandardPopoverMenuItem>
+                                </>
+                            )}
+                        </StandardPopoverMenuContent>
+                    </StandardPopoverMenu>
+                </div>
             </div>
 
             {/* View filter summary bar */}
@@ -488,16 +722,7 @@ export function AnnouncementsClient({
                     announcements={filteredAnnouncements}
                     sortConfig={sortConfig}
                     onSort={handleSort}
-                    searchValue={search}
-                    onSearchChange={setSearch}
-                    selectedStatuses={activeView?.filters.statuses as AnnouncementStatus[] ?? selectedStatuses}
-                    statusCounts={statusCounts}
-                    onStatusToggle={activeView ? undefined : handleStatusToggle}
-                    selectedPriorities={activeView?.filters.priorities as AnnouncementPriority[] ?? selectedPriorities}
-                    priorityCounts={priorityCounts}
-                    onPriorityToggle={activeView ? undefined : handlePriorityToggle}
                     hiddenColumns={hiddenColumns}
-                    onHideColumn={handleHideColumn}
                     selectedRows={selectedRows}
                     onToggleRow={handleToggleRow}
                     onToggleAllRows={handleToggleAllRows}
@@ -562,25 +787,12 @@ export function AnnouncementsClient({
             {/* Floating bulk selection pill */}
             {mounted && selectedRows.size > 0 && createPortal(
                 <div className="fixed bottom-6 left-1/2 z-[95] flex -translate-x-1/2 pointer-events-none w-[90vw] sm:w-auto justify-center">
-                    <div className="pointer-events-auto inline-flex items-center gap-2 rounded-full border border-border/80 bg-background/96 px-2.5 py-2 text-foreground shadow-[0_10px_30px_rgba(15,23,42,0.12)] backdrop-blur-sm">
-                        <span className="inline-flex items-center rounded-full border border-border/70 bg-muted/55 px-2.5 py-1 text-[11px] font-semibold tabular-nums text-foreground/85">
-                            {selectedRows.size} selected
-                        </span>
-                        <span className="h-4 w-px bg-border/70" aria-hidden />
-                        <button
-                            onClick={() => setSelectedRows(new Set())}
-                            className="rounded-full px-2.5 py-1 text-[11px] font-medium text-foreground/70 hover:text-foreground hover:bg-muted/55 transition-colors"
-                        >
-                            Deselect
-                        </button>
-                        <button
-                            onClick={() => setShowBulkDeleteDialog(true)}
-                            className="inline-flex items-center gap-1.5 rounded-full border border-rose-200 bg-rose-50/70 px-2.5 py-1 text-[11px] font-semibold text-rose-700 hover:bg-rose-100/75 transition-colors"
-                        >
-                            <Trash2 className="h-3 w-3 stroke-[1.7]" />
-                            Delete
-                        </button>
-                    </div>
+                    <BulkSelectionBar
+                        selectedCount={selectedRows.size}
+                        onClear={() => setSelectedRows(new Set())}
+                        onDelete={() => setShowBulkDeleteDialog(true)}
+                        isDeleting={isBulkDeleting}
+                    />
                 </div>,
                 document.body
             )}
