@@ -5,11 +5,9 @@ import {
     Table,
     TableBody,
     TableCell,
-    TableHead,
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
-import { Checkbox } from "@/components/ui/checkbox"
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -29,10 +27,16 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Eye, Trash2, Briefcase } from "lucide-react"
 import { format } from "date-fns"
-import { DataTableColumnHeader } from "@/components/ui/data-table-header"
 import type { BusinessItemDetails } from "@/lib/business-script-generator"
 import { TableRowActionTrigger } from "@/components/ui/table-row-action-trigger"
 import { StatusIndicator } from "@/components/ui/status-indicator"
+import { SortableTableHeader } from "@/components/ui/sortable-table-header"
+import {
+    StandardActionsHeadCell,
+    StandardSelectAllHeadCell,
+    StandardSelectableRow,
+    StandardTableShell,
+} from "@/components/ui/standard-data-table"
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -60,22 +64,6 @@ export interface BusinessItem {
     creator?: { full_name?: string | null } | null
 }
 
-// ── Filter option data ──────────────────────────────────────────────────────
-
-const STATUS_OPTIONS = [
-    { value: "pending", label: "Pending" },
-    { value: "completed", label: "Completed" },
-]
-
-const CATEGORY_OPTIONS = [
-    { value: "sustaining", label: "Sustaining" },
-    { value: "release", label: "Release" },
-    { value: "confirmation", label: "Confirmation" },
-    { value: "ordination", label: "Ordination" },
-    { value: "setting_apart", label: "Setting Apart" },
-    { value: "other", label: "Other" },
-]
-
 // ── Badge helpers ───────────────────────────────────────────────────────────
 
 function formatCategory(category: string): string {
@@ -94,20 +82,8 @@ interface BusinessTableProps {
     // Sort
     sortConfig?: { key: string; direction: "asc" | "desc" } | null
     onSort?: (key: string, direction: "asc" | "desc") => void
-    // Search (applied from Person Name header)
-    searchValue?: string
-    onSearchChange?: (value: string) => void
-    // Status filter
-    selectedStatuses?: BusinessStatus[]
-    statusCounts?: Record<string, number>
-    onStatusToggle?: (status: string) => void
-    // Category filter
-    selectedCategories?: BusinessCategory[]
-    categoryCounts?: Record<string, number>
-    onCategoryToggle?: (category: string) => void
     // Column visibility
     hiddenColumns?: Set<string>
-    onHideColumn?: (column: string) => void
     // Row selection
     selectedRows?: Set<string>
     onToggleRow?: (id: string) => void
@@ -123,16 +99,7 @@ export function BusinessTable({
     items,
     sortConfig,
     onSort,
-    searchValue,
-    onSearchChange,
-    selectedStatuses = [],
-    statusCounts,
-    onStatusToggle,
-    selectedCategories = [],
-    categoryCounts,
-    onCategoryToggle,
     hiddenColumns = new Set(),
-    onHideColumn,
     selectedRows = new Set(),
     onToggleRow,
     onToggleAllRows,
@@ -160,130 +127,76 @@ export function BusinessTable({
 
     return (
         <>
-            <div className="table-shell-standard">
+            <StandardTableShell className="overflow-hidden">
             <Table className="text-[13px]">
                 <TableHeader>
                     <TableRow className="table-header-row-standard">
-                        {/* Checkbox */}
-                        <TableHead className="w-10 table-cell-check">
-                            <Checkbox
-                                checked={allSelected}
-                                onCheckedChange={() => onToggleAllRows?.()}
-                            />
-                        </TableHead>
+                        <StandardSelectAllHeadCell
+                            checked={allSelected}
+                            onToggle={() => onToggleAllRows?.()}
+                            className="w-10 table-cell-check static px-[var(--table-cell-px)] py-[var(--table-row-py)] backdrop-blur-none"
+                        />
 
                         {/* Person Name */}
                         {!hiddenColumns.has("person_name") && (
-                            <DataTableColumnHeader
+                            <SortableTableHeader
+                                sortKey="person_name"
                                 label="Person Name"
-                                sortActive={
-                                    sortConfig?.key === "person_name"
-                                }
-                                sortDirection={sortConfig?.direction}
-                                onSortAsc={() =>
-                                    onSort?.("person_name", "asc")
-                                }
-                                onSortDesc={() =>
-                                    onSort?.("person_name", "desc")
-                                }
-                                searchable
-                                searchValue={searchValue}
-                                onSearchChange={onSearchChange}
-                                searchPlaceholder="Search names..."
-                                onHide={() => onHideColumn?.("person_name")}
+                                defaultDirection="asc"
+                                sortConfig={sortConfig}
+                                onSort={onSort}
                                 className="min-w-[200px]"
                             />
                         )}
 
                         {/* Position/Calling */}
                         {!hiddenColumns.has("position_calling") && (
-                            <DataTableColumnHeader
+                            <SortableTableHeader
+                                sortKey="position_calling"
                                 label="Position / Calling"
-                                sortActive={
-                                    sortConfig?.key === "position_calling"
-                                }
-                                sortDirection={sortConfig?.direction}
-                                onSortAsc={() =>
-                                    onSort?.("position_calling", "asc")
-                                }
-                                onSortDesc={() =>
-                                    onSort?.("position_calling", "desc")
-                                }
-                                onHide={() =>
-                                    onHideColumn?.("position_calling")
-                                }
+                                defaultDirection="asc"
+                                sortConfig={sortConfig}
+                                onSort={onSort}
                             />
                         )}
 
                         {/* Category */}
                         {!hiddenColumns.has("category") && (
-                            <DataTableColumnHeader
+                            <SortableTableHeader
+                                sortKey="category"
                                 label="Category"
-                                sortActive={sortConfig?.key === "category"}
-                                sortDirection={sortConfig?.direction}
-                                onSortAsc={() =>
-                                    onSort?.("category", "asc")
-                                }
-                                onSortDesc={() =>
-                                    onSort?.("category", "desc")
-                                }
-                                filterOptions={CATEGORY_OPTIONS.map((opt) => ({
-                                    ...opt,
-                                    count: categoryCounts?.[opt.value] || 0,
-                                }))}
-                                selectedFilters={selectedCategories}
-                                onFilterToggle={onCategoryToggle}
-                                onHide={() => onHideColumn?.("category")}
+                                defaultDirection="asc"
+                                sortConfig={sortConfig}
+                                onSort={onSort}
                                 className="w-[140px]"
                             />
                         )}
 
                         {/* Status */}
                         {!hiddenColumns.has("status") && (
-                            <DataTableColumnHeader
+                            <SortableTableHeader
+                                sortKey="status"
                                 label="Status"
-                                sortActive={sortConfig?.key === "status"}
-                                sortDirection={sortConfig?.direction}
-                                onSortAsc={() =>
-                                    onSort?.("status", "asc")
-                                }
-                                onSortDesc={() =>
-                                    onSort?.("status", "desc")
-                                }
-                                filterOptions={STATUS_OPTIONS.map((opt) => ({
-                                    ...opt,
-                                    count: statusCounts?.[opt.value] || 0,
-                                }))}
-                                selectedFilters={selectedStatuses}
-                                onFilterToggle={onStatusToggle}
-                                onHide={() => onHideColumn?.("status")}
+                                defaultDirection="asc"
+                                sortConfig={sortConfig}
+                                onSort={onSort}
                                 className="w-[120px]"
                             />
                         )}
 
                         {/* Action Date */}
                         {!hiddenColumns.has("action_date") && (
-                            <DataTableColumnHeader
+                            <SortableTableHeader
+                                sortKey="action_date"
                                 label="Action Date"
-                                sortActive={
-                                    sortConfig?.key === "action_date"
-                                }
-                                sortDirection={sortConfig?.direction}
-                                onSortAsc={() =>
-                                    onSort?.("action_date", "asc")
-                                }
-                                onSortDesc={() =>
-                                    onSort?.("action_date", "desc")
-                                }
-                                onHide={() => onHideColumn?.("action_date")}
+                                defaultDirection="desc"
+                                sortConfig={sortConfig}
+                                onSort={onSort}
                                 className="w-[130px]"
                             />
                         )}
 
-                        {/* Actions (screen-reader only label) */}
-                        <TableHead className="w-[52px]">
-                            <span className="sr-only">Actions</span>
-                        </TableHead>
+                        <StandardActionsHeadCell className="static backdrop-blur-none" />
                     </TableRow>
                 </TableHeader>
 
@@ -304,22 +217,46 @@ export function BusinessTable({
                         </TableRow>
                     ) : (
                         items.map((item) => (
-                            <TableRow
+                            <StandardSelectableRow
                                 key={item.id}
-                                data-state={selectedRows.has(item.id) ? "selected" : undefined}
-                                className="group transition-[background-color,box-shadow] duration-150 ease-out hover:bg-[hsl(var(--table-row-hover))] hover:shadow-[inset_0_0_0_1px_hsl(var(--table-shell-border)/0.28)] data-[state=selected]:bg-[hsl(var(--table-row-selected))] data-[state=selected]:shadow-[inset_0_0_0_1px_hsl(var(--table-shell-border)/0.4)]"
+                                id={item.id}
+                                selected={selectedRows.has(item.id)}
+                                onToggle={onToggleRow}
+                                className="focus-within:bg-transparent focus-within:shadow-none"
+                                actions={
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <TableRowActionTrigger />
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end">
+                                            <DropdownMenuItem
+                                                onClick={() =>
+                                                    onViewItem?.(item)
+                                                }
+                                            >
+                                                <Eye className="mr-2 h-4 w-4 stroke-[1.6]" />
+                                                View
+                                            </DropdownMenuItem>
+                                            {onDeleteItem && (
+                                                <>
+                                                    <DropdownMenuSeparator />
+                                                    <DropdownMenuItem
+                                                        className="text-destructive focus:text-destructive"
+                                                        onClick={() =>
+                                                            setDeleteTarget(
+                                                                item
+                                                            )
+                                                        }
+                                                    >
+                                                        <Trash2 className="mr-2 h-4 w-4 stroke-[1.6]" />
+                                                        Delete
+                                                    </DropdownMenuItem>
+                                                </>
+                                            )}
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                }
                             >
-                                {/* Checkbox */}
-                                <TableCell className="table-cell-check">
-                                    <Checkbox
-                                        checked={selectedRows.has(item.id)}
-                                        className="opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100 data-[state=checked]:opacity-100"
-                                        onCheckedChange={() =>
-                                            onToggleRow?.(item.id)
-                                        }
-                                    />
-                                </TableCell>
-
                                 {/* Person Name */}
                                 {!hiddenColumns.has("person_name") && (
                                     <TableCell className="table-cell-title">
@@ -370,47 +307,12 @@ export function BusinessTable({
                                             : "—"}
                                     </TableCell>
                                 )}
-
-                                {/* Actions */}
-                                <TableCell className="table-cell-actions">
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                            <TableRowActionTrigger />
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end">
-                                            <DropdownMenuItem
-                                                onClick={() =>
-                                                    onViewItem?.(item)
-                                                }
-                                            >
-                                                <Eye className="mr-2 h-4 w-4 stroke-[1.6]" />
-                                                View
-                                            </DropdownMenuItem>
-                                            {onDeleteItem && (
-                                                <>
-                                                    <DropdownMenuSeparator />
-                                                    <DropdownMenuItem
-                                                        className="text-destructive focus:text-destructive"
-                                                        onClick={() =>
-                                                            setDeleteTarget(
-                                                                item
-                                                            )
-                                                        }
-                                                    >
-                                                        <Trash2 className="mr-2 h-4 w-4 stroke-[1.6]" />
-                                                        Delete
-                                                    </DropdownMenuItem>
-                                                </>
-                                            )}
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
-                                </TableCell>
-                            </TableRow>
+                            </StandardSelectableRow>
                         ))
                     )}
                 </TableBody>
             </Table>
-            </div>
+            </StandardTableShell>
 
             {/* Delete confirmation dialog */}
             <AlertDialog
