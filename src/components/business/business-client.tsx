@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useMemo, useCallback, useTransition, useEffect } from "react"
-import Link from "next/link"
 import { createPortal } from "react-dom"
 import { Button } from "@/components/ui/button"
 import { Check, Columns3, Plus, SlidersHorizontal, X, Briefcase } from "lucide-react"
@@ -17,12 +16,19 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog"
+import {
     BusinessTable,
     BusinessItem,
     BusinessStatus,
     BusinessCategory,
 } from "./business-table"
 import { BusinessDrawer } from "./business-drawer"
+import { BusinessItemForm, BusinessItemFormData } from "./business-item-form"
 import { createClient } from "@/lib/supabase/client"
 import { toast } from "@/lib/toast"
 import { useRouter } from "next/navigation"
@@ -132,6 +138,8 @@ export function BusinessClient({ items, initialViews = [] }: BusinessClientProps
     const [filtersOpen, setFiltersOpen] = useState(false)
     const [displayOptionsOpen, setDisplayOptionsOpen] = useState(false)
     const [createFilterDialogOpen, setCreateFilterDialogOpen] = useState(false)
+    const [newBusinessModalOpen, setNewBusinessModalOpen] = useState(false)
+    const [isCreating, setIsCreating] = useState(false)
 
     useEffect(() => {
         setMounted(true)
@@ -320,6 +328,66 @@ export function BusinessClient({ items, initialViews = [] }: BusinessClientProps
         setDrawerOpen(true)
     }
 
+    const handleCreateBusinessItem = async (formData: BusinessItemFormData) => {
+        setIsCreating(true)
+        const supabase = createClient()
+
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) {
+            toast.error("Not authenticated. Please log in again.")
+            setIsCreating(false)
+            return
+        }
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: profile } = await (supabase.from("profiles") as any)
+            .select("workspace_id, role")
+            .eq("id", user.id)
+            .single()
+
+        if (!profile || !["leader", "admin"].includes(profile.role)) {
+            toast.error("Only leaders and admins can create business items.")
+            setIsCreating(false)
+            return
+        }
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: businessItem, error: createError } = await (supabase.from("business_items") as any)
+            .insert({
+                person_name: formData.personName,
+                position_calling: formData.positionCalling,
+                category: formData.category,
+                status: formData.status,
+                action_date: formData.actionDate || null,
+                notes: formData.notes || null,
+                details: formData.details,
+                workspace_id: profile.workspace_id,
+                created_by: user.id,
+            })
+            .select("id")
+            .single()
+
+        if (createError || !businessItem) {
+            toast.error(createError?.message || "Failed to create business item.")
+            setIsCreating(false)
+            return
+        }
+
+        if (formData.templateId) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const { error: linkError } = await (supabase.from("business_templates") as any)
+                .insert({ business_item_id: businessItem.id, template_id: formData.templateId })
+            if (linkError) {
+                toast.warning("Created, but could not link to template.")
+            }
+        }
+
+        toast.success("Business item created successfully!")
+        setIsCreating(false)
+        setNewBusinessModalOpen(false)
+        router.refresh()
+    }
+
     function handleViewCreated(view: TableView) {
         setViews((prev) => [...prev, view as BusinessView])
         setActiveViewId(view.id)
@@ -392,15 +460,13 @@ export function BusinessClient({ items, initialViews = [] }: BusinessClientProps
                             emptyText="No matching business items."
                         />
                         <Button
-                            asChild
                             variant="ghost"
                             size="sm"
+                            onClick={() => setNewBusinessModalOpen(true)}
                             className="h-7 gap-1 rounded-full px-2.5 text-[length:var(--agenda-control-font-size)] text-nav transition-colors hover:bg-[hsl(var(--agenda-interactive-hover))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--agenda-interactive-focus-ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                         >
-                            <Link href="/meetings/business/new">
-                                <Plus className="h-3.5 w-3.5 stroke-[1.6]" />
-                                New business
-                            </Link>
+                            <Plus className="h-3.5 w-3.5 stroke-[1.6]" />
+                            New business
                         </Button>
                     </div>
                 }
@@ -711,6 +777,20 @@ export function BusinessClient({ items, initialViews = [] }: BusinessClientProps
                     onDeleteItem={handleDelete}
                 />
             </div>
+
+            {/* New Business Modal */}
+            <Dialog open={newBusinessModalOpen} onOpenChange={setNewBusinessModalOpen}>
+                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle>New Business Item</DialogTitle>
+                    </DialogHeader>
+                    <BusinessItemForm
+                        onSubmit={handleCreateBusinessItem}
+                        isLoading={isCreating}
+                        mode="create"
+                    />
+                </DialogContent>
+            </Dialog>
 
             {/* Drawer */}
             <BusinessDrawer

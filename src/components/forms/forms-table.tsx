@@ -5,11 +5,9 @@ import {
     Table,
     TableBody,
     TableCell,
-    TableHead,
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
-import { Checkbox } from "@/components/ui/checkbox"
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -29,7 +27,6 @@ import {
 } from "@/components/ui/alert-dialog"
 import { FileText, BarChart2, ExternalLink, Trash2, Star, StarOff } from "lucide-react"
 import { format } from "date-fns"
-import { DataTableColumnHeader } from "@/components/ui/data-table-header"
 import { useState } from "react"
 import type { Form } from "@/types/form-types"
 import { TableRowActionTrigger } from "@/components/ui/table-row-action-trigger"
@@ -37,6 +34,13 @@ import { StatusIndicator } from "@/components/ui/status-indicator"
 import { toggleFavorite } from "@/lib/actions/navigation-actions"
 import { useNavigationStore } from "@/stores/navigation-store"
 import { toast } from "@/lib/toast"
+import { SortableTableHeader } from "@/components/ui/sortable-table-header"
+import {
+    StandardActionsHeadCell,
+    StandardSelectAllHeadCell,
+    StandardSelectableRow,
+    StandardTableShell,
+} from "@/components/ui/standard-data-table"
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -44,11 +48,6 @@ export type FormStatus = "published" | "draft"
 export type FormWithCount = Form & { submissions_count: number }
 
 // ── Filter option data ────────────────────────────────────────────────────────
-
-const STATUS_OPTIONS = [
-    { value: "published", label: "Published" },
-    { value: "draft", label: "Draft" },
-]
 
 const STATUS_TONES: Record<string, "neutral" | "info" | "success" | "warning" | "danger"> = {
     published: "success",
@@ -62,16 +61,8 @@ interface FormsTableProps {
     // Sort
     sortConfig?: { key: string; direction: "asc" | "desc" } | null
     onSort?: (key: string, direction: "asc" | "desc") => void
-    // Search
-    searchValue?: string
-    onSearchChange?: (value: string) => void
-    // Status filter
-    selectedStatuses?: FormStatus[]
-    statusCounts?: Record<string, number>
-    onStatusToggle?: (status: string) => void
     // Column visibility
     hiddenColumns?: Set<string>
-    onHideColumn?: (column: string) => void
     // Row selection
     selectedRows?: Set<string>
     onToggleRow?: (id: string) => void
@@ -86,13 +77,7 @@ export function FormsTable({
     forms,
     sortConfig,
     onSort,
-    searchValue,
-    onSearchChange,
-    selectedStatuses = [],
-    statusCounts,
-    onStatusToggle,
     hiddenColumns = new Set(),
-    onHideColumn,
     selectedRows = new Set(),
     onToggleRow,
     onToggleAllRows,
@@ -144,97 +129,79 @@ export function FormsTable({
 
     return (
         <>
-            <div className="table-shell-standard">
+            <StandardTableShell className="overflow-hidden">
             <Table className="text-[13px]">
                 <TableHeader>
                     <TableRow className="table-header-row-standard">
                         {/* Checkbox */}
-                        <TableHead className="w-10 table-cell-check">
-                            <Checkbox
-                                checked={allSelected}
-                                onCheckedChange={() => onToggleAllRows?.()}
-                            />
-                        </TableHead>
+                        <StandardSelectAllHeadCell
+                            checked={allSelected}
+                            onToggle={() => onToggleAllRows?.()}
+                            className="w-10 table-cell-check static px-[var(--table-cell-px)] py-[var(--table-row-py)] backdrop-blur-none"
+                        />
 
                         {/* Title */}
                         {!hiddenColumns.has("title") && (
-                            <DataTableColumnHeader
+                            <SortableTableHeader
+                                sortKey="title"
                                 label="Title"
-                                sortActive={sortConfig?.key === "title"}
-                                sortDirection={sortConfig?.direction}
-                                onSortAsc={() => onSort?.("title", "asc")}
-                                onSortDesc={() => onSort?.("title", "desc")}
-                                searchable
-                                searchValue={searchValue}
-                                onSearchChange={onSearchChange}
-                                searchPlaceholder="Search forms..."
-                                onHide={() => onHideColumn?.("title")}
+                                defaultDirection="asc"
+                                sortConfig={sortConfig}
+                                onSort={onSort}
                                 className="min-w-[250px]"
                             />
                         )}
 
                         {/* Status */}
                         {!hiddenColumns.has("status") && (
-                            <DataTableColumnHeader
+                            <SortableTableHeader
+                                sortKey="status"
                                 label="Status"
-                                sortActive={sortConfig?.key === "status"}
-                                sortDirection={sortConfig?.direction}
-                                onSortAsc={() => onSort?.("status", "asc")}
-                                onSortDesc={() => onSort?.("status", "desc")}
-                                filterOptions={STATUS_OPTIONS.map((opt) => ({
-                                    ...opt,
-                                    count: statusCounts?.[opt.value] || 0,
-                                }))}
-                                selectedFilters={selectedStatuses}
-                                onFilterToggle={onStatusToggle}
-                                onHide={() => onHideColumn?.("status")}
+                                defaultDirection="asc"
+                                sortConfig={sortConfig}
+                                onSort={onSort}
                                 className="w-[130px]"
                             />
                         )}
 
                         {/* Views */}
                         {!hiddenColumns.has("views") && (
-                            <DataTableColumnHeader
+                            <SortableTableHeader
+                                sortKey="views_count"
                                 label="Views"
-                                sortActive={sortConfig?.key === "views_count"}
-                                sortDirection={sortConfig?.direction}
-                                onSortAsc={() => onSort?.("views_count", "asc")}
-                                onSortDesc={() => onSort?.("views_count", "desc")}
-                                onHide={() => onHideColumn?.("views")}
+                                defaultDirection="desc"
+                                sortConfig={sortConfig}
+                                onSort={onSort}
                                 className="w-[100px]"
                             />
                         )}
 
                         {/* Responses */}
                         {!hiddenColumns.has("responses") && (
-                            <DataTableColumnHeader
+                            <SortableTableHeader
+                                sortKey="submissions_count"
                                 label="Responses"
-                                sortActive={sortConfig?.key === "submissions_count"}
-                                sortDirection={sortConfig?.direction}
-                                onSortAsc={() => onSort?.("submissions_count", "asc")}
-                                onSortDesc={() => onSort?.("submissions_count", "desc")}
-                                onHide={() => onHideColumn?.("responses")}
+                                defaultDirection="desc"
+                                sortConfig={sortConfig}
+                                onSort={onSort}
                                 className="w-[120px]"
                             />
                         )}
 
                         {/* Created */}
                         {!hiddenColumns.has("created_at") && (
-                            <DataTableColumnHeader
+                            <SortableTableHeader
+                                sortKey="created_at"
                                 label="Created"
-                                sortActive={sortConfig?.key === "created_at"}
-                                sortDirection={sortConfig?.direction}
-                                onSortAsc={() => onSort?.("created_at", "asc")}
-                                onSortDesc={() => onSort?.("created_at", "desc")}
-                                onHide={() => onHideColumn?.("created_at")}
+                                defaultDirection="desc"
+                                sortConfig={sortConfig}
+                                onSort={onSort}
                                 className="w-[140px]"
                             />
                         )}
 
                         {/* Actions */}
-                        <TableHead className="w-[52px]">
-                            <span className="sr-only">Actions</span>
-                        </TableHead>
+                        <StandardActionsHeadCell className="static backdrop-blur-none" />
                     </TableRow>
                 </TableHeader>
 
@@ -250,19 +217,60 @@ export function FormsTable({
                         </TableRow>
                     ) : (
                         forms.map((form) => (
-                                <TableRow
+                                <StandardSelectableRow
                                     key={form.id}
-                                    data-state={selectedRows.has(form.id) ? "selected" : undefined}
-                                    className="group transition-[background-color,box-shadow] duration-150 ease-out hover:bg-[hsl(var(--table-row-hover))] hover:shadow-[inset_0_0_0_1px_hsl(var(--table-shell-border)/0.28)] data-[state=selected]:bg-[hsl(var(--table-row-selected))] data-[state=selected]:shadow-[inset_0_0_0_1px_hsl(var(--table-shell-border)/0.4)]"
+                                    id={form.id}
+                                    selected={selectedRows.has(form.id)}
+                                    onToggle={onToggleRow}
+                                    className="focus-within:bg-transparent focus-within:shadow-none"
+                                    actions={
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <TableRowActionTrigger />
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end">
+                                                <DropdownMenuItem asChild>
+                                                    <Link href={`/forms/${form.id}`}>
+                                                        <FileText className="mr-2 h-4 w-4 stroke-[1.6]" />
+                                                        Edit
+                                                    </Link>
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem asChild>
+                                                    <Link href={`/forms/${form.id}/results`}>
+                                                        <BarChart2 className="mr-2 h-4 w-4 stroke-[1.6]" />
+                                                        View Results
+                                                    </Link>
+                                                </DropdownMenuItem>
+                                                {form.is_published && (
+                                                    <DropdownMenuItem asChild>
+                                                        <Link href={`/f/${form.slug}`} target="_blank">
+                                                            <ExternalLink className="mr-2 h-4 w-4 stroke-[1.6]" />
+                                                            Open Form
+                                                        </Link>
+                                                    </DropdownMenuItem>
+                                                )}
+                                                <DropdownMenuItem onClick={() => void handleFavoriteToggle(form)}>
+                                                    {isFavorite("form", form.id) ? (
+                                                        <StarOff className="mr-2 h-4 w-4 stroke-[1.6]" />
+                                                    ) : (
+                                                        <Star className="mr-2 h-4 w-4 stroke-[1.6]" />
+                                                    )}
+                                                    {isFavorite("form", form.id)
+                                                        ? "Remove from favorites"
+                                                        : "Add to favorites"}
+                                                </DropdownMenuItem>
+                                                <DropdownMenuSeparator />
+                                                <DropdownMenuItem
+                                                    className="text-destructive focus:text-destructive"
+                                                    onClick={() => setDeleteTarget(form)}
+                                                >
+                                                    <Trash2 className="mr-2 h-4 w-4 stroke-[1.6]" />
+                                                    Delete
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    }
                                 >
-                                    {/* Checkbox */}
-                                    <TableCell className="table-cell-check">
-                                        <Checkbox
-                                            checked={selectedRows.has(form.id)}
-                                            className="opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100 data-[state=checked]:opacity-100"
-                                            onCheckedChange={() => onToggleRow?.(form.id)}
-                                        />
-                                    </TableCell>
 
                                     {/* Title */}
                                     {!hiddenColumns.has("title") && (
@@ -315,60 +323,12 @@ export function FormsTable({
                                         </TableCell>
                                     )}
 
-                                    {/* Actions */}
-                                    <TableCell className="table-cell-actions">
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                <TableRowActionTrigger />
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end">
-                                                <DropdownMenuItem asChild>
-                                                    <Link href={`/forms/${form.id}`}>
-                                                        <FileText className="mr-2 h-4 w-4 stroke-[1.6]" />
-                                                        Edit
-                                                    </Link>
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem asChild>
-                                                    <Link href={`/forms/${form.id}/results`}>
-                                                        <BarChart2 className="mr-2 h-4 w-4 stroke-[1.6]" />
-                                                        View Results
-                                                    </Link>
-                                                </DropdownMenuItem>
-                                                {form.is_published && (
-                                                    <DropdownMenuItem asChild>
-                                                        <Link href={`/f/${form.slug}`} target="_blank">
-                                                            <ExternalLink className="mr-2 h-4 w-4 stroke-[1.6]" />
-                                                            Open Form
-                                                        </Link>
-                                                    </DropdownMenuItem>
-                                                )}
-                                                <DropdownMenuItem onClick={() => void handleFavoriteToggle(form)}>
-                                                    {isFavorite("form", form.id) ? (
-                                                        <StarOff className="mr-2 h-4 w-4 stroke-[1.6]" />
-                                                    ) : (
-                                                        <Star className="mr-2 h-4 w-4 stroke-[1.6]" />
-                                                    )}
-                                                    {isFavorite("form", form.id)
-                                                        ? "Remove from favorites"
-                                                        : "Add to favorites"}
-                                                </DropdownMenuItem>
-                                                <DropdownMenuSeparator />
-                                                <DropdownMenuItem
-                                                    className="text-destructive focus:text-destructive"
-                                                    onClick={() => setDeleteTarget(form)}
-                                                >
-                                                    <Trash2 className="mr-2 h-4 w-4 stroke-[1.6]" />
-                                                    Delete
-                                                </DropdownMenuItem>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
-                                    </TableCell>
-                                </TableRow>
+                                </StandardSelectableRow>
                         ))
                     )}
                 </TableBody>
             </Table>
-            </div>
+            </StandardTableShell>
 
             {/* Delete confirmation */}
             <AlertDialog

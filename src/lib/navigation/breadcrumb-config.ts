@@ -61,6 +61,10 @@ export const breadcrumbConfigs: BreadcrumbConfig[] = [
     trail: [{ label: "Meetings", href: "/meetings/agendas" }, { label: "Discussions" }],
   },
   {
+    pattern: "/meetings/assignments",
+    trail: [{ label: "Meetings", href: "/meetings/agendas" }, { label: "Assignments" }],
+  },
+  {
     pattern: "/templates/library",
     trail: [
       { label: "Templates", href: "/templates/library", iconType: "template" },
