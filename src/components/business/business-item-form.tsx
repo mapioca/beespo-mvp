@@ -514,7 +514,7 @@ export function BusinessItemForm({
       .eq("id", selectedDirectoryPersonId);
 
     if (error) {
-      console.error("Failed to update directory gender:", error);
+      console.error("Failed to update member gender:", error);
       setIsUpdatingDirectoryGender(false);
       return;
     }
