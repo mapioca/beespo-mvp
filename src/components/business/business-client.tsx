@@ -30,6 +30,7 @@ import {
 import { BusinessDrawer } from "./business-drawer"
 import { BusinessItemForm, BusinessItemFormData } from "./business-item-form"
 import { createClient } from "@/lib/supabase/client"
+import { prefetchBusinessFormData } from "@/lib/cache/form-data-cache"
 import { toast } from "@/lib/toast"
 import { useRouter } from "next/navigation"
 import { CreateViewDialog } from "@/components/common/create-view-dialog"
@@ -143,6 +144,8 @@ export function BusinessClient({ items, initialViews = [] }: BusinessClientProps
 
     useEffect(() => {
         setMounted(true)
+        // Prefetch directory + templates so the "New business" modal opens instantly
+        prefetchBusinessFormData()
     }, [])
 
     // ── Derived data ────────────────────────────────────────────────────────
@@ -468,6 +471,8 @@ export function BusinessClient({ items, initialViews = [] }: BusinessClientProps
                             variant="ghost"
                             size="sm"
                             onClick={() => setNewBusinessModalOpen(true)}
+                            onMouseEnter={() => prefetchBusinessFormData()}
+                            onFocus={() => prefetchBusinessFormData()}
                             className="h-7 gap-1 rounded-full px-2.5 text-[length:var(--agenda-control-font-size)] text-nav transition-colors hover:bg-[hsl(var(--agenda-interactive-hover))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--agenda-interactive-focus-ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                         >
                             <Plus className="h-3.5 w-3.5 stroke-[1.6]" />
@@ -786,7 +791,7 @@ export function BusinessClient({ items, initialViews = [] }: BusinessClientProps
             {/* New Business Modal */}
             <Dialog open={newBusinessModalOpen} onOpenChange={setNewBusinessModalOpen}>
                 <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden p-0 gap-0">
-                    <DialogHeader className="px-5 py-4 border-b border-border/60 space-y-3">
+                    <DialogHeader className="px-5 py-4 space-y-3">
                         <DialogTitle>New Business Item</DialogTitle>
                         <p className="text-xs text-muted-foreground">
                             Add a formal church procedure to track. The conducting script is generated automatically.

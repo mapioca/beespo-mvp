@@ -19,6 +19,7 @@ import {
   getDirectoryCache,
   setDirectoryCache,
   clearDirectoryCache,
+  getWorkspaceProfile,
 } from "@/lib/cache/form-data-cache";
 import {
   Command,
@@ -391,6 +392,24 @@ export function BusinessItemForm({
     }
   }, [category]);
 
+  // Eagerly hydrate from cache on mount — the prefetch from the parent page
+  // will have already populated the module-level caches in most cases,
+  // so this runs synchronously with zero flash.
+  useEffect(() => {
+    const wp = getWorkspaceProfile();
+    if (wp) {
+      setWorkspaceCallingLevel(mapWorkspaceTypeToCallingLevel(wp.workspaceType));
+      const cached = getDirectoryCache(wp.workspaceId);
+      if (cached) {
+        setDirectoryPeople(cached);
+        return; // fully resolved from cache — no loading state at all
+      }
+    }
+    // Cache miss — fall back to async fetch
+    loadDirectoryPeople();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const loadDirectoryPeople = async () => {
     if (isDirectoryLoading) return;
     setIsDirectoryLoading(true);
@@ -543,13 +562,12 @@ export function BusinessItemForm({
 
   return (
     <ModalForm onSubmit={handleSubmit}>
-      <ModalFormBody className="mx-auto w-full max-w-[560px] space-y-4 pt-2 pb-2">
+      <ModalFormBody className="w-full space-y-4 pt-2 pb-2">
         <ModalFormSection>
           <div className="max-w-[32rem] space-y-2">
             <Label htmlFor="personName">Person Name*</Label>
             <Select
               value={selectedDirectoryPersonId}
-              onOpenChange={(open) => { if (open && directoryPeople.length === 0) loadDirectoryPeople(); }}
               onValueChange={(value) => {
                 setSelectedDirectoryPersonId(value);
                 const selected = directoryPeople.find((person) => person.id === value);
@@ -563,7 +581,6 @@ export function BusinessItemForm({
             >
               <SelectTrigger
                 id="personName"
-                onBlur={() => markTouched("personName")}
                 className={cn(
                   touched.personName && fieldErrors.personName && "border-destructive focus:ring-destructive/30"
                 )}
@@ -630,7 +647,6 @@ export function BusinessItemForm({
               >
                 <SelectTrigger
                   id="category"
-                  onBlur={() => markTouched("category")}
                   className={cn(
                     touched.category && fieldErrors.category && "border-destructive focus:ring-destructive/30"
                   )}
@@ -666,7 +682,6 @@ export function BusinessItemForm({
                 >
                   <SelectTrigger
                     id="priesthoodOffice"
-                    onBlur={() => markTouched("office")}
                     className={cn(
                       touched.office && fieldErrors.office && "border-destructive focus:ring-destructive/30"
                     )}
@@ -697,14 +712,15 @@ export function BusinessItemForm({
                       role="combobox"
                       aria-expanded={callingOpen}
                       disabled={isLoading}
-                      onBlur={() => markTouched("positionCalling")}
                       className={cn(
                         "h-9 w-full justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm font-normal ring-offset-background",
                         !selectedCalling && "text-muted-foreground",
                         touched.positionCalling && fieldErrors.positionCalling && "border-destructive"
                       )}
                     >
-                      {selectedCalling ? selectedCalling.labels[languageKey] : "Select calling"}
+                      <span className="min-w-0 flex-1 truncate text-left">
+                        {selectedCalling ? selectedCalling.labels[languageKey] : "Select calling"}
+                      </span>
                       <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                     </Button>
                   </PopoverTrigger>
@@ -775,26 +791,26 @@ export function BusinessItemForm({
           </ModalFormSection>
         )}
 
-        {category && validation.valid && (
-          <ModalFormSection>
-            <p className="max-w-[34rem] text-sm font-semibold tracking-tight text-foreground">
-              Script Preview
-            </p>
+        <ModalFormSection>
+          <p className="max-w-[34rem] text-sm font-semibold tracking-tight text-foreground">
+            Script Preview
+          </p>
 
-            <div
-              className={cn(
-                "max-h-[180px] max-w-[34rem] overflow-y-auto rounded-md border border-muted bg-muted p-3 text-sm leading-relaxed whitespace-pre-wrap",
-                "font-serif"
-              )}
-            >
-              {highlightedScriptPreview || (
-                <span className="text-muted-foreground italic">
-                  Complete the form to see the script preview...
-                </span>
-              )}
-            </div>
-          </ModalFormSection>
-        )}
+          <div
+            className={cn(
+              "max-h-[180px] max-w-[34rem] overflow-y-auto rounded-md border border-muted bg-muted p-3 text-sm leading-relaxed whitespace-pre-wrap",
+              "font-serif"
+            )}
+          >
+            {validation.valid && highlightedScriptPreview ? (
+              highlightedScriptPreview
+            ) : (
+              <span className="text-muted-foreground italic">
+                Complete the form to see the script preview...
+              </span>
+            )}
+          </div>
+        </ModalFormSection>
 
         <ModalFormSection className="pt-3">
           <div className="max-w-[34rem] space-y-2">
@@ -809,7 +825,7 @@ export function BusinessItemForm({
                     "h-7 w-auto rounded-full px-2.5 text-[11px] font-medium shadow-sm transition-colors [&>svg]:hidden",
                     language !== "ENG"
                       ? "border-transparent bg-[hsl(var(--chip-active-bg))] text-[hsl(var(--chip-active-text))]"
-                      : "border-[hsl(var(--chip-border))] bg-[hsl(var(--chip-bg))] text-[hsl(var(--chip-text))] hover:bg-[hsl(var(--chip-hover-bg))]"
+                      : "border-[hsl(var(--chip-border))] bg-background text-[hsl(var(--chip-text))] hover:bg-[hsl(var(--chip-hover-bg))]"
                   )}
                 >
                   <div className="inline-flex items-center gap-1.5 whitespace-nowrap leading-none">

@@ -1,8 +1,8 @@
 import { Label } from "@/components/ui/label";
 import { createClient } from "@/lib/supabase/client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "@/lib/toast";
-import { getTemplateCache, setTemplateCache } from "@/lib/cache/form-data-cache";
+import { getTemplateCache, setTemplateCache, getWorkspaceProfile } from "@/lib/cache/form-data-cache";
 import { Button } from "@/components/ui/button";
 import {
     DropdownMenu,
@@ -44,6 +44,18 @@ export function TemplateSelector({
 }: TemplateSelectorProps) {
     const [templates, setTemplates] = useState<TemplateStub[]>([]);
     const [isLoading, setIsLoading] = useState(false);
+
+    // Hydrate from cache on mount — the prefetch from the parent page
+    // will have already populated the template cache in most cases.
+    useEffect(() => {
+        const wp = getWorkspaceProfile();
+        const cached = getTemplateCache(wp?.workspaceId ?? null);
+        if (cached) {
+            setTemplates(cached);
+            onTemplatesLoaded?.(cached);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     const fetchTemplates = async () => {
         if (isLoading) return;
@@ -121,7 +133,7 @@ export function TemplateSelector({
                             "h-7 rounded-full px-2.5 text-[11px] font-medium shadow-sm transition-colors",
                             isActive
                                 ? "border-transparent bg-[hsl(var(--chip-active-bg))] text-[hsl(var(--chip-active-text))]"
-                                : "border-[hsl(var(--chip-border))] bg-[hsl(var(--chip-bg))] text-[hsl(var(--chip-text))] hover:bg-[hsl(var(--chip-hover-bg))]"
+                                : "border-[hsl(var(--chip-border))] bg-background text-[hsl(var(--chip-text))] hover:bg-[hsl(var(--chip-hover-bg))]"
                         )}
                     >
                         <span className="inline-flex items-center gap-1.5 whitespace-nowrap leading-none">
