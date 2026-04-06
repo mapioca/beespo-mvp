@@ -20,6 +20,7 @@ interface TemplateSelectorProps {
     className?: string;
     mode?: "field" | "pill";
     pillLabel?: string;
+    pillIcon?: React.ReactNode;
     onTemplatesLoaded?: (templates: TemplateStub[]) => void;
 }
 
@@ -37,6 +38,7 @@ export function TemplateSelector({
     className,
     mode = "field",
     pillLabel = "Link to template",
+    pillIcon,
     onTemplatesLoaded,
 }: TemplateSelectorProps) {
     const [templates, setTemplates] = useState<TemplateStub[]>([]);
@@ -109,13 +111,16 @@ export function TemplateSelector({
                         variant="outline"
                         disabled={disabled || isLoading}
                         className={cn(
-                            "h-8 rounded-full px-3 text-xs font-medium shadow-sm transition-colors",
+                            "h-7 rounded-full px-2.5 text-[11px] font-medium shadow-sm transition-colors",
                             isActive
                                 ? "border-transparent bg-[hsl(var(--chip-active-bg))] text-[hsl(var(--chip-active-text))]"
                                 : "border-[hsl(var(--chip-border))] bg-[hsl(var(--chip-bg))] text-[hsl(var(--chip-text))] hover:bg-[hsl(var(--chip-hover-bg))]"
                         )}
                     >
-                        <span>{pillLabel}</span>
+                        <span className="inline-flex items-center gap-1.5 whitespace-nowrap leading-none">
+                            {pillIcon}
+                            {pillLabel}
+                        </span>
                     </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start" className="min-w-[14rem]">

@@ -2,7 +2,6 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -12,23 +11,31 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { cn } from "@/lib/utils";
 import { TemplateSelector } from "@/components/templates/template-selector";
-import { X } from "lucide-react";
+import { Check, ChevronsUpDown, Languages, Link as LinkIcon, X } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   ModalForm,
   ModalFormBody,
   ModalFormFooter,
   ModalFormSection,
 } from "@/components/ui/modal-form-layout";
+import callingsCatalog from "@/data/callings.json";
 import {
   generateBusinessScript,
   validateBusinessItemDetails,
   PRIESTHOOD_OFFICES,
   getPriesthoodFromOffice,
-  formatOffice,
-  formatPriesthood,
   type Language,
   type Gender,
   type PriesthoodOffice,
@@ -121,6 +128,35 @@ const CATEGORY_OPTIONS = [
   },
 ];
 
+interface DirectoryPersonOption {
+  id: string;
+  name: string;
+  gender: Gender | null;
+}
+
+type CallingLevel = "ward" | "branch" | "stake" | "district";
+
+interface CallingCatalogEntry {
+  id: string;
+  organization: string;
+  level: CallingLevel;
+  labels: { en: string; es: string };
+  active: boolean;
+}
+
+const mapWorkspaceTypeToCallingLevel = (workspaceType: string | null): CallingLevel | null => {
+  if (workspaceType === "group") return "ward";
+  if (
+    workspaceType === "ward" ||
+    workspaceType === "branch" ||
+    workspaceType === "stake" ||
+    workspaceType === "district"
+  ) {
+    return workspaceType;
+  }
+  return null;
+};
+
 export function BusinessItemForm({
   initialData,
   onSubmit,
@@ -132,11 +168,15 @@ export function BusinessItemForm({
     | "personName"
     | "category"
     | "positionCalling"
-    | "office"
-    | "gender";
+    | "office";
 
   // Form state
   const [personName, setPersonName] = useState(initialData?.personName || "");
+  const [selectedDirectoryPersonId, setSelectedDirectoryPersonId] = useState<string>("");
+  const [directoryPeople, setDirectoryPeople] = useState<DirectoryPersonOption[]>([]);
+  const [isDirectoryLoading, setIsDirectoryLoading] = useState(false);
+  const [isUpdatingDirectoryGender, setIsUpdatingDirectoryGender] = useState(false);
+  const [workspaceCallingLevel, setWorkspaceCallingLevel] = useState<CallingLevel | null>(null);
   const [positionCalling, setPositionCalling] = useState(
     initialData?.positionCalling || ""
   );
@@ -146,13 +186,13 @@ export function BusinessItemForm({
     initialData?.templateId ? [initialData.templateId] : []
   );
   const [templateOptions, setTemplateOptions] = useState<{ id: string; name: string }[]>([]);
+  const [callingOpen, setCallingOpen] = useState(false);
+  const [callingSearch, setCallingSearch] = useState("");
+  const [selectedCallingId, setSelectedCallingId] = useState<string>("");
 
   // Details state (structured metadata)
   const [language, setLanguage] = useState<Language>(
     initialData?.details?.language || "ENG"
-  );
-  const [gender, setGender] = useState<Gender | undefined>(
-    initialData?.details?.gender
   );
   const [office, setOffice] = useState<PriesthoodOffice | undefined>(
     initialData?.details?.office
@@ -165,11 +205,39 @@ export function BusinessItemForm({
     category: false,
     positionCalling: false,
     office: false,
-    gender: false,
   });
 
   // Get current category config
   const categoryConfig = CATEGORY_OPTIONS.find((c) => c.value === category);
+  const selectedDirectoryPerson = useMemo(
+    () => directoryPeople.find((person) => person.id === selectedDirectoryPersonId) ?? null,
+    [directoryPeople, selectedDirectoryPersonId]
+  );
+  const languageKey = language === "SPA" ? "es" : "en";
+  const availableCallings = useMemo(() => {
+    const callings = callingsCatalog as CallingCatalogEntry[];
+    return callings.filter((calling) =>
+      calling.active &&
+      (workspaceCallingLevel ? calling.level === workspaceCallingLevel : false)
+    );
+  }, [workspaceCallingLevel]);
+  const filteredCallings = useMemo(() => {
+    if (!callingSearch.trim()) return availableCallings;
+    const q = callingSearch.toLowerCase();
+    return availableCallings.filter((calling) =>
+      calling.labels.en.toLowerCase().includes(q) ||
+      calling.labels.es.toLowerCase().includes(q) ||
+      calling.organization.toLowerCase().includes(q)
+    );
+  }, [availableCallings, callingSearch]);
+  const selectedCalling = useMemo(
+    () => availableCallings.find((calling) => calling.id === selectedCallingId) ?? null,
+    [availableCallings, selectedCallingId]
+  );
+  const effectiveGender: Gender | undefined =
+    category === "ordination"
+      ? "male"
+      : selectedDirectoryPerson?.gender ?? undefined;
 
   // Auto-set priesthood type from office
   const priesthood = office ? getPriesthoodFromOffice(office) : undefined;
@@ -183,13 +251,13 @@ export function BusinessItemForm({
       notes: notes || null,
       details: {
         language,
-        gender: category === "ordination" ? "male" : gender,
+        gender: effectiveGender,
         office,
         priesthood,
         customScript: category === "other" ? customScript : undefined,
       },
     }),
-    [personName, positionCalling, category, notes, language, gender, office, priesthood, customScript]
+    [personName, positionCalling, category, notes, language, effectiveGender, office, priesthood, customScript]
   );
 
   // Generate script preview
@@ -205,25 +273,12 @@ export function BusinessItemForm({
     const trimmedCalling = positionCalling.trim();
     if (trimmedName) tokens.add(trimmedName);
     if (trimmedCalling) tokens.add(trimmedCalling);
-    if (office) tokens.add(formatOffice(office, language));
-    if (priesthood) tokens.add(formatPriesthood(priesthood, language));
-
-    if (language === "ENG") {
-      if (gender === "female") {
-        tokens.add("she");
-        tokens.add("her");
-      }
-      if (gender === "male") {
-        tokens.add("he");
-        tokens.add("his");
-      }
-    }
 
     return Array.from(tokens)
       .map((token) => token.trim())
       .filter(Boolean)
       .sort((a, b) => b.length - a.length);
-  }, [gender, language, office, personName, positionCalling, priesthood]);
+  }, [personName, positionCalling]);
 
   const highlightedScriptPreview = useMemo(() => {
     if (!scriptPreview || scriptVariableTokens.length === 0) return scriptPreview;
@@ -254,19 +309,19 @@ export function BusinessItemForm({
   // Validation
   const validation = useMemo(() => {
     if (!category) return { valid: false, errors: ["Select a category"] };
-    if (!personName.trim()) return { valid: false, errors: ["Name is required"] };
+    if (!selectedDirectoryPersonId) return { valid: false, errors: ["Person is required"] };
 
     return validateBusinessItemDetails(
       category,
       positionCalling,
       businessItem.details
     );
-  }, [category, personName, positionCalling, businessItem.details]);
+  }, [category, selectedDirectoryPersonId, positionCalling, businessItem.details]);
 
   const fieldErrors = useMemo(() => {
     const errors: Partial<Record<RequiredFieldKey, string>> = {};
 
-    if (!personName.trim()) {
+    if (!selectedDirectoryPersonId) {
       errors.personName = "Person name is required.";
     }
     if (!category) {
@@ -278,12 +333,8 @@ export function BusinessItemForm({
     if (categoryConfig?.requiresOffice && !office) {
       errors.office = "Priesthood office is required.";
     }
-    if (categoryConfig?.requiresGender && !gender) {
-      errors.gender = "Gender is required.";
-    }
-
     return errors;
-  }, [personName, category, categoryConfig, positionCalling, office, gender]);
+  }, [selectedDirectoryPersonId, category, categoryConfig, positionCalling, office]);
 
   const markTouched = (field: RequiredFieldKey) => {
     setTouched((prev) => ({ ...prev, [field]: true }));
@@ -295,7 +346,6 @@ export function BusinessItemForm({
       category: true,
       positionCalling: Boolean(categoryConfig?.requiresCalling),
       office: Boolean(categoryConfig?.requiresOffice),
-      gender: Boolean(categoryConfig?.requiresGender),
     });
   };
 
@@ -317,7 +367,7 @@ export function BusinessItemForm({
       notes,
       details: {
         language,
-        gender: category === "ordination" ? "male" : gender,
+        gender: effectiveGender,
         office,
         priesthood,
         customScript: category === "other" ? customScript : undefined,
@@ -337,6 +387,135 @@ export function BusinessItemForm({
   }, [category]);
 
   useEffect(() => {
+    const loadDirectoryPeople = async () => {
+      setIsDirectoryLoading(true);
+      const supabase = createClient();
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        setIsDirectoryLoading(false);
+        return;
+      }
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: profile } = await (supabase.from("profiles") as any)
+        .select("workspace_id, workspaces(type)")
+        .eq("id", user.id)
+        .single();
+
+      if (!profile?.workspace_id) {
+        setIsDirectoryLoading(false);
+        return;
+      }
+      setWorkspaceCallingLevel(
+        mapWorkspaceTypeToCallingLevel(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          ((profile as any).workspaces?.type as string | null) ?? null
+        )
+      );
+
+      // Try with gender column first; fallback for environments where migration isn't applied yet.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase.from("directory") as any)
+        .select("id, name, gender")
+        .eq("workspace_id", profile.workspace_id)
+        .order("name");
+
+      if (error) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: fallbackData, error: fallbackError } = await (supabase.from("directory") as any)
+          .select("id, name")
+          .eq("workspace_id", profile.workspace_id)
+          .order("name");
+
+        if (fallbackError) {
+          console.error("Failed to load directory people for business form:", fallbackError);
+          setIsDirectoryLoading(false);
+          return;
+        }
+
+        const normalized = ((fallbackData || []) as Array<{ id: string; name: string }>).map((person) => ({
+          ...person,
+          gender: null,
+        }));
+        setDirectoryPeople(normalized);
+        setIsDirectoryLoading(false);
+        return;
+      }
+
+      setDirectoryPeople((data || []) as DirectoryPersonOption[]);
+      setIsDirectoryLoading(false);
+    };
+
+    loadDirectoryPeople();
+  }, []);
+
+  useEffect(() => {
+    if (!selectedDirectoryPersonId || !selectedDirectoryPerson) return;
+    setPersonName(selectedDirectoryPerson.name);
+  }, [selectedDirectoryPersonId, selectedDirectoryPerson]);
+
+  useEffect(() => {
+    if (!selectedCalling) {
+      if (categoryConfig?.requiresCalling) {
+        setPositionCalling("");
+      }
+      return;
+    }
+    setPositionCalling(selectedCalling.labels[languageKey]);
+  }, [selectedCalling, languageKey, categoryConfig?.requiresCalling]);
+
+  useEffect(() => {
+    if (!initialData?.positionCalling || selectedCallingId || availableCallings.length === 0) return;
+    const match = availableCallings.find((calling) =>
+      calling.labels.en === initialData.positionCalling ||
+      calling.labels.es === initialData.positionCalling
+    );
+    if (match) {
+      setSelectedCallingId(match.id);
+      setPositionCalling(match.labels[languageKey]);
+    }
+  }, [initialData?.positionCalling, selectedCallingId, availableCallings, languageKey]);
+
+  useEffect(() => {
+    if (!initialData?.personName || directoryPeople.length === 0 || selectedDirectoryPersonId) return;
+    const match = directoryPeople.find((person) => person.name === initialData.personName);
+    if (match) {
+      setSelectedDirectoryPersonId(match.id);
+      setPersonName(match.name);
+    }
+  }, [initialData?.personName, directoryPeople, selectedDirectoryPersonId]);
+
+  const handleSetDirectoryGender = async (value: Gender) => {
+    if (!selectedDirectoryPersonId || !selectedDirectoryPerson) return;
+    setIsUpdatingDirectoryGender(true);
+    const supabase = createClient();
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase.from("directory") as any)
+      .update({ gender: value })
+      .eq("id", selectedDirectoryPersonId);
+
+    if (error) {
+      console.error("Failed to update directory gender:", error);
+      setIsUpdatingDirectoryGender(false);
+      return;
+    }
+
+    setDirectoryPeople((prev) =>
+      prev.map((person) =>
+        person.id === selectedDirectoryPersonId
+          ? { ...person, gender: value }
+          : person
+      )
+    );
+    setIsUpdatingDirectoryGender(false);
+  };
+
+  useEffect(() => {
     setTouched((prev) => ({
       ...prev,
       positionCalling: categoryConfig?.requiresCalling ? prev.positionCalling : false,
@@ -351,21 +530,72 @@ export function BusinessItemForm({
         <ModalFormSection>
           <div className="max-w-[32rem] space-y-2">
             <Label htmlFor="personName">Person Name*</Label>
-            <Input
-              id="personName"
-              value={personName}
-              onChange={(e) => setPersonName(e.target.value)}
-              onBlur={() => markTouched("personName")}
-              placeholder="e.g., John Smith"
+            <Select
+              value={selectedDirectoryPersonId}
+              onValueChange={(value) => {
+                setSelectedDirectoryPersonId(value);
+                const selected = directoryPeople.find((person) => person.id === value);
+                if (selected) {
+                  setPersonName(selected.name);
+                }
+                markTouched("personName");
+              }}
+              disabled={isLoading || isDirectoryLoading}
               required
-              disabled={isLoading}
-              className={cn(
-                touched.personName && fieldErrors.personName && "border-destructive focus-visible:ring-destructive/30"
-              )}
-            />
+            >
+              <SelectTrigger
+                id="personName"
+                onBlur={() => markTouched("personName")}
+                className={cn(
+                  touched.personName && fieldErrors.personName && "border-destructive focus:ring-destructive/30"
+                )}
+              >
+                <SelectValue
+                  placeholder={isDirectoryLoading ? "Loading directory..." : "Select a person from directory"}
+                />
+              </SelectTrigger>
+              <SelectContent>
+                {directoryPeople.map((person) => (
+                  <SelectItem key={person.id} value={person.id}>
+                    {person.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             {touched.personName && fieldErrors.personName && (
               <p className="text-xs text-destructive">{fieldErrors.personName}</p>
             )}
+            {selectedDirectoryPerson &&
+              categoryConfig?.requiresGender &&
+              !selectedDirectoryPerson.gender && (
+                <div className="space-y-2 rounded-md border border-border/60 bg-muted/30 p-2.5">
+                  <p className="text-xs text-muted-foreground">
+                    This person is missing gender in Directory. Set it once to continue.
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleSetDirectoryGender("male")}
+                      disabled={isUpdatingDirectoryGender || isLoading}
+                      className="h-7 rounded-full px-2.5 text-[11px]"
+                    >
+                      Set as Brother
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleSetDirectoryGender("female")}
+                      disabled={isUpdatingDirectoryGender || isLoading}
+                      className="h-7 rounded-full px-2.5 text-[11px]"
+                    >
+                      Set as Sister
+                    </Button>
+                  </div>
+                </div>
+              )}
           </div>
 
           <div className="grid max-w-[34rem] grid-cols-1 gap-3 sm:grid-cols-2">
@@ -390,7 +620,9 @@ export function BusinessItemForm({
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
                 <SelectContent>
-                  {CATEGORY_OPTIONS.map((opt) => (
+                  {CATEGORY_OPTIONS
+                    .filter((opt) => opt.value !== "setting_apart" && opt.value !== "other")
+                    .map((opt) => (
                     <SelectItem key={opt.value} value={opt.value}>
                       {opt.label}
                     </SelectItem>
@@ -402,112 +634,111 @@ export function BusinessItemForm({
               )}
             </div>
 
-            {categoryConfig?.requiresCalling && (
+            {categoryConfig?.requiresOffice ? (
+              <div className="space-y-2">
+                <Label htmlFor="priesthoodOffice">Priesthood Office*</Label>
+                <Select
+                  value={office}
+                  onValueChange={(value) => {
+                    setOffice(value as PriesthoodOffice);
+                    markTouched("office");
+                  }}
+                  disabled={isLoading}
+                  required
+                >
+                  <SelectTrigger
+                    id="priesthoodOffice"
+                    onBlur={() => markTouched("office")}
+                    className={cn(
+                      touched.office && fieldErrors.office && "border-destructive focus:ring-destructive/30"
+                    )}
+                  >
+                    <SelectValue placeholder="Select office" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PRIESTHOOD_OFFICES.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {touched.office && fieldErrors.office && (
+                  <p className="text-xs text-destructive">{fieldErrors.office}</p>
+                )}
+              </div>
+            ) : categoryConfig?.requiresCalling ? (
               <div className="space-y-2">
                 <Label htmlFor="positionCalling">Calling*</Label>
-                <Input
-                  id="positionCalling"
-                  value={positionCalling}
-                  onChange={(e) => setPositionCalling(e.target.value)}
-                  onBlur={() => markTouched("positionCalling")}
-                  placeholder="e.g., Sunday School President"
-                  required
-                  disabled={isLoading}
-                  className={cn(
-                    touched.positionCalling && fieldErrors.positionCalling && "border-destructive focus-visible:ring-destructive/30"
-                  )}
-                />
+                <Popover open={callingOpen} onOpenChange={setCallingOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      id="positionCalling"
+                      type="button"
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={callingOpen}
+                      disabled={isLoading}
+                      onBlur={() => markTouched("positionCalling")}
+                      className={cn(
+                        "h-9 w-full justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm font-normal ring-offset-background",
+                        !selectedCalling && "text-muted-foreground",
+                        touched.positionCalling && fieldErrors.positionCalling && "border-destructive"
+                      )}
+                    >
+                      {selectedCalling ? selectedCalling.labels[languageKey] : "Select calling"}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent align="start" className="w-[--radix-popover-trigger-width] p-0">
+                    <Command shouldFilter={false}>
+                      <CommandInput
+                        placeholder="Search callings..."
+                        value={callingSearch}
+                        onValueChange={setCallingSearch}
+                      />
+                      <CommandList className="max-h-64 overflow-y-auto">
+                        <CommandEmpty>
+                          {workspaceCallingLevel
+                            ? "No callings found."
+                            : "Unsupported workspace type for callings."}
+                        </CommandEmpty>
+                        <CommandGroup>
+                          {filteredCallings.map((calling) => (
+                            <CommandItem
+                              key={calling.id}
+                              value={calling.id}
+                              onSelect={() => {
+                                setSelectedCallingId(calling.id);
+                                setPositionCalling(calling.labels[languageKey]);
+                                markTouched("positionCalling");
+                                setCallingOpen(false);
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  selectedCallingId === calling.id ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              {calling.labels[languageKey]}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
                 {touched.positionCalling && fieldErrors.positionCalling && (
                   <p className="text-xs text-destructive">{fieldErrors.positionCalling}</p>
                 )}
               </div>
-            )}
+            ) : null}
           </div>
         </ModalFormSection>
 
         {category && (
           <ModalFormSection>
-            {categoryConfig?.requiresOffice && (
-              <div className="max-w-[34rem] space-y-3">
-                <Label>Priesthood Office*</Label>
-                <div
-                  className={cn(
-                    "grid grid-cols-1 gap-3 sm:grid-cols-2",
-                    touched.office && fieldErrors.office && "rounded-md border border-destructive/50 p-2"
-                  )}
-                  onBlurCapture={() => markTouched("office")}
-                >
-                  <div className="space-y-2 rounded-md border border-border/50 p-2.5">
-                    <p className="text-xs font-medium text-muted-foreground">Aaronic Priesthood</p>
-                    <RadioGroup
-                      value={office}
-                      onValueChange={(v) => setOffice(v as PriesthoodOffice)}
-                      className="space-y-2"
-                    >
-                      {PRIESTHOOD_OFFICES.filter(
-                        (o) => o.priesthood === "aaronic"
-                      ).map((o) => (
-                        <div
-                          key={o.value}
-                          className="flex items-center space-x-2"
-                        >
-                          <RadioGroupItem
-                            value={o.value}
-                            id={o.value}
-                            disabled={isLoading}
-                          />
-                          <Label
-                            htmlFor={o.value}
-                            className="cursor-pointer text-sm font-normal"
-                          >
-                            {o.label}
-                          </Label>
-                        </div>
-                      ))}
-                    </RadioGroup>
-                  </div>
-                  <div className="space-y-2 rounded-md border border-border/50 p-2.5">
-                    <p className="text-xs font-medium text-muted-foreground">Melchizedek Priesthood</p>
-                    <RadioGroup
-                      value={office}
-                      onValueChange={(v) => setOffice(v as PriesthoodOffice)}
-                      className="space-y-2"
-                    >
-                      {PRIESTHOOD_OFFICES.filter(
-                        (o) => o.priesthood === "melchizedek"
-                      ).map((o) => (
-                        <div
-                          key={o.value}
-                          className="flex items-center space-x-2"
-                        >
-                          <RadioGroupItem
-                            value={o.value}
-                            id={o.value}
-                            disabled={isLoading}
-                          />
-                          <Label
-                            htmlFor={o.value}
-                            className="cursor-pointer text-sm font-normal"
-                          >
-                            {o.label}
-                          </Label>
-                        </div>
-                      ))}
-                    </RadioGroup>
-                  </div>
-                </div>
-                {touched.office && fieldErrors.office && (
-                  <p className="text-xs text-destructive">{fieldErrors.office}</p>
-                )}
-                {office && (
-                  <p className="text-sm text-muted-foreground">
-                    Selected: <strong>{formatOffice(office)}</strong> in the{" "}
-                    <strong>{formatPriesthood(priesthood)}</strong> Priesthood
-                  </p>
-                )}
-              </div>
-            )}
-
             {category === "other" && (
               <div className="max-w-[32rem] space-y-2">
                 <Label htmlFor="customScript">
@@ -525,42 +756,6 @@ export function BusinessItemForm({
             )}
           </ModalFormSection>
         )}
-
-        <ModalFormSection>
-          <div className="max-w-[34rem] space-y-3">
-            <p className="text-sm font-semibold tracking-tight text-foreground">Script</p>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <div className="space-y-2 sm:max-w-[16rem]">
-                <Label>Gender pronouns*</Label>
-                <Select
-                  value={gender}
-                  onValueChange={(v) => {
-                    setGender(v as Gender);
-                    markTouched("gender");
-                  }}
-                  disabled={isLoading}
-                >
-                  <SelectTrigger
-                    id="genderPronouns"
-                    onBlur={() => markTouched("gender")}
-                    className={cn(
-                      touched.gender && fieldErrors.gender && "border-destructive focus:ring-destructive/30"
-                    )}
-                  >
-                    <SelectValue placeholder="Select pronoun..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="male">Brother (he/him)</SelectItem>
-                    <SelectItem value="female">Sister (she/her)</SelectItem>
-                  </SelectContent>
-                </Select>
-                {touched.gender && fieldErrors.gender && (
-                  <p className="text-xs text-destructive">{fieldErrors.gender}</p>
-                )}
-              </div>
-            </div>
-          </div>
-        </ModalFormSection>
 
         {category && validation.valid && (
           <ModalFormSection>
@@ -583,7 +778,7 @@ export function BusinessItemForm({
           </ModalFormSection>
         )}
 
-        <ModalFormSection>
+        <ModalFormSection className="pt-3">
           <div className="max-w-[34rem] space-y-2">
             <div className="flex flex-wrap items-center gap-2">
               <Select
@@ -593,13 +788,16 @@ export function BusinessItemForm({
               >
                 <SelectTrigger
                   className={cn(
-                    "h-8 w-auto rounded-full px-3 text-xs font-medium shadow-sm transition-colors [&>svg]:hidden",
+                    "h-7 w-auto rounded-full px-2.5 text-[11px] font-medium shadow-sm transition-colors [&>svg]:hidden",
                     language !== "ENG"
                       ? "border-transparent bg-[hsl(var(--chip-active-bg))] text-[hsl(var(--chip-active-text))]"
                       : "border-[hsl(var(--chip-border))] bg-[hsl(var(--chip-bg))] text-[hsl(var(--chip-text))] hover:bg-[hsl(var(--chip-hover-bg))]"
                   )}
                 >
-                  <span>Overwrite language</span>
+                  <div className="inline-flex items-center gap-1.5 whitespace-nowrap leading-none">
+                    <Languages className="h-2.5 w-2.5 shrink-0" />
+                    Overwrite language
+                  </div>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="ENG">English</SelectItem>
@@ -614,6 +812,7 @@ export function BusinessItemForm({
                 disabled={isLoading}
                 mode="pill"
                 pillLabel="Link to template"
+                pillIcon={<LinkIcon className="h-2.5 w-2.5 shrink-0" />}
               />
             </div>
 

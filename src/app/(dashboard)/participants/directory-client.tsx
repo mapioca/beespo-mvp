@@ -7,6 +7,13 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select"
 import { Checkbox as UICheckbox } from "@/components/ui/checkbox"
 import { Check, Columns3, Plus, SlidersHorizontal, X, BookUser } from "lucide-react"
 import { Breadcrumbs } from "@/components/dashboard/breadcrumbs"
@@ -181,6 +188,7 @@ export function DirectoryPageClient({
     // Create dialog
     const [createDialogOpen, setCreateDialogOpen] = useState(false)
     const [newName, setNewName] = useState("")
+    const [newGender, setNewGender] = useState<"male" | "female" | "unspecified">("unspecified")
     const [isCreating, setIsCreating] = useState(false)
 
     // Speaking assignment dialog
@@ -426,6 +434,7 @@ export function DirectoryPageClient({
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { error } = await (supabase.from("directory") as any).insert({
             name: newName.trim(),
+            gender: newGender === "unspecified" ? null : newGender,
             workspace_id: profile.workspace_id,
             created_by: user.id,
         })
@@ -435,6 +444,7 @@ export function DirectoryPageClient({
         } else {
             toast.success("Added to directory")
             setNewName("")
+            setNewGender("unspecified")
             setCreateDialogOpen(false)
             router.refresh()
         }
@@ -1012,15 +1022,35 @@ export function DirectoryPageClient({
                         </DialogDescription>
                     </DialogHeader>
                     <div className="py-4">
-                        <Input
-                            placeholder="Enter name..."
-                            value={newName}
-                            onChange={(e) => setNewName(e.target.value)}
-                            onKeyDown={(e) =>
-                                e.key === "Enter" && handleCreate()
-                            }
-                            autoFocus
-                        />
+                        <div className="space-y-3">
+                            <Input
+                                placeholder="Enter name..."
+                                value={newName}
+                                onChange={(e) => setNewName(e.target.value)}
+                                onKeyDown={(e) =>
+                                    e.key === "Enter" && handleCreate()
+                                }
+                                autoFocus
+                            />
+                            <div className="space-y-2">
+                                <Label htmlFor="new-member-gender">Gender (optional)</Label>
+                                <Select
+                                    value={newGender}
+                                    onValueChange={(value) =>
+                                        setNewGender(value as "male" | "female" | "unspecified")
+                                    }
+                                >
+                                    <SelectTrigger id="new-member-gender">
+                                        <SelectValue placeholder="Select gender" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="unspecified">Unspecified</SelectItem>
+                                        <SelectItem value="male">Brother (he/him)</SelectItem>
+                                        <SelectItem value="female">Sister (she/her)</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
                     </div>
                     <DialogFooter>
                         <Button

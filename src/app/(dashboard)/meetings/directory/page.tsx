@@ -41,7 +41,7 @@ export default async function DirectoryPage({ searchParams }: DirectoryPageProps
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .from("directory" as any)
         .select(
-            `id, name, created_at, created_by,
+            `id, name, gender, created_at, created_by,
              tags:directory_tag_assignments(tag:directory_tags(id, name, color))`,
             { count: "exact" }
         )

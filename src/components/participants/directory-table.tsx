@@ -63,6 +63,7 @@ export interface MeetingAssignmentSummary {
 export interface Participant {
     id: string
     name: string
+    gender?: "male" | "female" | null
     created_at: string
     created_by: string | null
     profiles?: { full_name: string } | null
