@@ -786,7 +786,7 @@ export function BusinessClient({ items, initialViews = [] }: BusinessClientProps
             {/* New Business Modal */}
             <Dialog open={newBusinessModalOpen} onOpenChange={setNewBusinessModalOpen}>
                 <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden p-0 gap-0">
-                    <DialogHeader className="px-5 py-3 border-b border-border/60">
+                    <DialogHeader className="px-5 py-4 border-b border-border/60 space-y-3">
                         <DialogTitle>New Business Item</DialogTitle>
                         <p className="text-xs text-muted-foreground">
                             Add a formal church procedure to track. The conducting script is generated automatically.

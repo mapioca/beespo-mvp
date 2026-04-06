@@ -30,6 +30,7 @@ import {
 import { User, Trash2, Loader2, Calendar } from "lucide-react";
 import { format } from "date-fns";
 import { createClient } from "@/lib/supabase/client";
+import { clearDirectoryCache } from "@/lib/cache/form-data-cache";
 import { toast } from "@/lib/toast";
 import { useRouter } from "next/navigation";
 import {
@@ -144,6 +145,7 @@ export function ParticipantDrawer({
         if (error) {
             toast.error(error.message);
         } else {
+            clearDirectoryCache()
             toast.success("Participant updated.");
             router.refresh();
         }
@@ -261,8 +263,8 @@ export function ParticipantDrawer({
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="unspecified">Unspecified</SelectItem>
-                                        <SelectItem value="male">Brother (he/him)</SelectItem>
-                                        <SelectItem value="female">Sister (she/her)</SelectItem>
+                                        <SelectItem value="male">Male</SelectItem>
+                                        <SelectItem value="female">Female</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>

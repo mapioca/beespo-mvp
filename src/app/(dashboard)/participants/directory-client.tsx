@@ -36,6 +36,7 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { createClient } from "@/lib/supabase/client"
+import { clearDirectoryCache } from "@/lib/cache/form-data-cache"
 import { toast } from "@/lib/toast"
 import {
     DirectoryTable,
@@ -382,7 +383,7 @@ export function DirectoryPageClient({
     const handleToggleColumnVisibility = useCallback((column: string) => {
         setHiddenColumns((prev) => {
             const next = new Set(prev)
-            const visibleCount = ["name"].filter((c) => !next.has(c)).length
+            const visibleCount = ["name", "gender"].filter((c) => !next.has(c)).length
             const isVisible = !next.has(column)
             if (isVisible && visibleCount <= 1) return prev
             if (isVisible) next.add(column)
@@ -442,6 +443,7 @@ export function DirectoryPageClient({
         if (error) {
             toast.error("Failed to add to directory")
         } else {
+            clearDirectoryCache()
             toast.success("Added to directory")
             setNewName("")
             setNewGender("unspecified")
@@ -449,6 +451,20 @@ export function DirectoryPageClient({
             router.refresh()
         }
         setIsCreating(false)
+    }
+
+    const handleUpdateGender = async (id: string, gender: "male" | "female") => {
+        const supabase = createClient()
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { error } = await (supabase.from("directory") as any)
+            .update({ gender })
+            .eq("id", id)
+        if (error) {
+            toast.error("Failed to update gender")
+        } else {
+            clearDirectoryCache()
+            router.refresh()
+        }
     }
 
     const handleDelete = async (id: string) => {
@@ -461,6 +477,7 @@ export function DirectoryPageClient({
         if (error) {
             toast.error("Failed to delete entry")
         } else {
+            clearDirectoryCache()
             toast.success("Entry deleted")
             router.refresh()
         }
@@ -479,6 +496,7 @@ export function DirectoryPageClient({
         if (error) {
             toast.error(error.message || "Failed to delete items")
         } else {
+            clearDirectoryCache()
             toast.success(
                 `${ids.length} entr${ids.length > 1 ? "ies" : "y"} deleted`
             )
@@ -891,6 +909,15 @@ export function DirectoryPageClient({
                             </span>
                             <span>Name</span>
                         </StandardPopoverMenuItem>
+                        <StandardPopoverMenuItem
+                            onSelect={() => handleToggleColumnVisibility("gender")}
+                            className="gap-2"
+                        >
+                            <span className="inline-flex h-4 w-4 items-center justify-center rounded-sm border border-border/60">
+                                {!hiddenColumns.has("gender") ? <Check className="h-3 w-3" /> : null}
+                            </span>
+                            <span>Gender</span>
+                        </StandardPopoverMenuItem>
                     </StandardPopoverMenuContent>
                 </StandardPopoverMenu>
                 </div>
@@ -988,6 +1015,7 @@ export function DirectoryPageClient({
                     onViewParticipant={handleViewParticipant}
                     onAddSpeakingAssignment={handleAddSpeakingAssignment}
                     onDelete={canManage ? handleDelete : undefined}
+                    onUpdateGender={canManage ? handleUpdateGender : undefined}
                 />
             </div>
 
@@ -1045,8 +1073,8 @@ export function DirectoryPageClient({
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="unspecified">Unspecified</SelectItem>
-                                        <SelectItem value="male">Brother (he/him)</SelectItem>
-                                        <SelectItem value="female">Sister (she/her)</SelectItem>
+                                        <SelectItem value="male">Male</SelectItem>
+                                        <SelectItem value="female">Female</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>

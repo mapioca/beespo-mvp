@@ -1,7 +1,8 @@
 import { Label } from "@/components/ui/label";
 import { createClient } from "@/lib/supabase/client";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "@/lib/toast";
+import { getTemplateCache, setTemplateCache } from "@/lib/cache/form-data-cache";
 import { Button } from "@/components/ui/button";
 import {
     DropdownMenu,
@@ -44,45 +45,51 @@ export function TemplateSelector({
     const [templates, setTemplates] = useState<TemplateStub[]>([]);
     const [isLoading, setIsLoading] = useState(false);
 
-    useEffect(() => {
-        const fetchTemplates = async () => {
-            setIsLoading(true);
-            const supabase = createClient();
+    const fetchTemplates = async () => {
+        if (isLoading) return;
+        setIsLoading(true);
+        const supabase = createClient();
 
-            const { data: { user } } = await supabase.auth.getUser();
-            let workspaceId: string | null = null;
-            if (user) {
-                const { data: profile } = await (supabase.from("profiles") as ReturnType<typeof supabase.from>)
-                    .select("workspace_id")
-                    .eq("id", user.id)
-                    .single();
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                workspaceId = (profile as any)?.workspace_id ?? null;
-            }
+        const { data: { user } } = await supabase.auth.getUser();
+        let workspaceId: string | null = null;
+        if (user) {
+            const { data: profile } = await (supabase.from("profiles") as ReturnType<typeof supabase.from>)
+                .select("workspace_id")
+                .eq("id", user.id)
+                .single();
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            workspaceId = (profile as any)?.workspace_id ?? null;
+        }
 
-            const filter = workspaceId
-                ? `workspace_id.is.null,workspace_id.eq.${workspaceId}`
-                : "workspace_id.is.null";
-
-            const { data, error } = await supabase
-                .from("templates")
-                .select("id, name")
-                .or(filter)
-                .order("name");
-
-            if (error) {
-                console.error("Error fetching templates:", error);
-                toast.error("Failed to load templates");
-            } else {
-                setTemplates(data || []);
-                onTemplatesLoaded?.(data || []);
-            }
+        const cached = getTemplateCache(workspaceId);
+        if (cached) {
+            setTemplates(cached);
+            onTemplatesLoaded?.(cached);
             setIsLoading(false);
-        };
+            return;
+        }
 
-        fetchTemplates();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [onTemplatesLoaded]);
+        const filter = workspaceId
+            ? `workspace_id.is.null,workspace_id.eq.${workspaceId}`
+            : "workspace_id.is.null";
+
+        const { data, error } = await supabase
+            .from("templates")
+            .select("id, name")
+            .or(filter)
+            .order("name");
+
+        if (error) {
+            console.error("Error fetching templates:", error);
+            toast.error("Failed to load templates");
+        } else {
+            const result = data || [];
+            setTemplateCache(workspaceId, result);
+            setTemplates(result);
+            onTemplatesLoaded?.(result);
+        }
+        setIsLoading(false);
+    };
 
     const toggleTemplate = (templateId: string) => {
         if (value.includes(templateId)) {
@@ -103,7 +110,7 @@ export function TemplateSelector({
         const isActive = value.length > 0;
 
         return (
-            <DropdownMenu>
+            <DropdownMenu onOpenChange={(open) => { if (open && templates.length === 0) fetchTemplates(); }}>
                 <DropdownMenuTrigger asChild>
                     <Button
                         id="template-selector-trigger"

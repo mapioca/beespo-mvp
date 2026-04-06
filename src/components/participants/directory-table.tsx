@@ -27,6 +27,11 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@/components/ui/popover"
+import {
     Eye,
     Trash2,
     Users,
@@ -85,6 +90,71 @@ const ITEM_TYPE_LABELS: Record<string, string> = {
     announcement: "Announcement",
 }
 
+// ── GenderCell ───────────────────────────────────────────────────────────────
+
+function GenderCell({
+    participantId,
+    gender,
+    onUpdate,
+}: {
+    participantId: string
+    gender?: "male" | "female" | null
+    onUpdate: (id: string, gender: "male" | "female") => Promise<void>
+}) {
+    const [open, setOpen] = useState(false)
+    const [saving, setSaving] = useState(false)
+
+    if (gender === "male") {
+        return <span className="text-xs text-muted-foreground">Male</span>
+    }
+    if (gender === "female") {
+        return <span className="text-xs text-muted-foreground">Female</span>
+    }
+
+    const pick = async (value: "male" | "female") => {
+        setSaving(true)
+        await onUpdate(participantId, value)
+        setSaving(false)
+        setOpen(false)
+    }
+
+    return (
+        <Popover open={open} onOpenChange={setOpen}>
+            <PopoverTrigger asChild>
+                <button
+                    className="text-xs text-muted-foreground/50 border border-dashed border-border/50 rounded px-1.5 py-0.5 hover:border-border hover:text-muted-foreground transition-colors"
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    Set gender
+                </button>
+            </PopoverTrigger>
+            <PopoverContent
+                side="bottom"
+                align="start"
+                className="w-auto p-1"
+                onClick={(e) => e.stopPropagation()}
+            >
+                <div className="flex gap-1">
+                    <button
+                        disabled={saving}
+                        onClick={() => pick("male")}
+                        className="rounded px-3 py-1.5 text-xs font-medium hover:bg-muted transition-colors disabled:opacity-50"
+                    >
+                        Male
+                    </button>
+                    <button
+                        disabled={saving}
+                        onClick={() => pick("female")}
+                        className="rounded px-3 py-1.5 text-xs font-medium hover:bg-muted transition-colors disabled:opacity-50"
+                    >
+                        Female
+                    </button>
+                </div>
+            </PopoverContent>
+        </Popover>
+    )
+}
+
 // ── Props ───────────────────────────────────────────────────────────────────
 
 interface DirectoryTableProps {
@@ -102,6 +172,7 @@ interface DirectoryTableProps {
     onViewParticipant?: (participant: Participant) => void
     onAddSpeakingAssignment?: (participant: Participant) => void
     onDelete?: (id: string) => Promise<void>
+    onUpdateGender?: (id: string, gender: "male" | "female") => Promise<void>
 }
 
 // ── Component ───────────────────────────────────────────────────────────────
@@ -117,6 +188,7 @@ export function DirectoryTable({
     onViewParticipant,
     onAddSpeakingAssignment,
     onDelete,
+    onUpdateGender,
 }: DirectoryTableProps) {
     const [deleteTarget, setDeleteTarget] = useState<Participant | null>(null)
     const [isDeleting, setIsDeleting] = useState(false)
@@ -140,7 +212,7 @@ export function DirectoryTable({
         participants.length > 0 && selectedRows.size === participants.length
 
     const visibleColumns =
-        ["name"].filter((c) => !hiddenColumns.has(c)).length + 2 // +2 for checkbox + actions
+        ["name", "gender"].filter((c) => !hiddenColumns.has(c)).length + 2 // +2 for checkbox + actions
 
     const toggleExpand = useCallback(
         async (participant: Participant) => {
@@ -212,6 +284,18 @@ export function DirectoryTable({
                                 defaultDirection="asc"
                                 sortConfig={sortConfig}
                                 onSort={onSort}
+                            />
+                        )}
+
+                        {/* Gender */}
+                        {!hiddenColumns.has("gender") && (
+                            <SortableTableHeader
+                                sortKey="gender"
+                                label="Gender"
+                                defaultDirection="asc"
+                                sortConfig={sortConfig}
+                                onSort={onSort}
+                                className="w-28"
                             />
                         )}
 
@@ -291,6 +375,28 @@ export function DirectoryTable({
                                                         </div>
                                                     )}
                                                 </div>
+                                            </TableCell>
+                                        )}
+
+                                        {/* Gender */}
+                                        {!hiddenColumns.has("gender") && (
+                                            <TableCell
+                                                className="py-0"
+                                                onClick={(e) => e.stopPropagation()}
+                                            >
+                                                {onUpdateGender ? (
+                                                    <GenderCell
+                                                        participantId={participant.id}
+                                                        gender={participant.gender}
+                                                        onUpdate={onUpdateGender}
+                                                    />
+                                                ) : participant.gender === "male" ? (
+                                                    <span className="text-xs text-muted-foreground">Male</span>
+                                                ) : participant.gender === "female" ? (
+                                                    <span className="text-xs text-muted-foreground">Female</span>
+                                                ) : (
+                                                    <span className="text-xs text-muted-foreground/40">—</span>
+                                                )}
                                             </TableCell>
                                         )}
 

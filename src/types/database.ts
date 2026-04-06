@@ -982,6 +982,35 @@ export type Database = {
           updated_at?: string;
         };
       };
+      directory: {
+        Row: {
+          id: string;
+          workspace_id: string;
+          name: string;
+          gender: "male" | "female" | null;
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          workspace_id: string;
+          name: string;
+          gender?: "male" | "female" | null;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          workspace_id?: string;
+          name?: string;
+          gender?: "male" | "female" | null;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
       announcements: {
         Row: {
           id: string;

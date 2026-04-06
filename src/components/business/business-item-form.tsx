@@ -16,6 +16,11 @@ import { TemplateSelector } from "@/components/templates/template-selector";
 import { Check, ChevronsUpDown, Languages, Link as LinkIcon, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import {
+  getDirectoryCache,
+  setDirectoryCache,
+  clearDirectoryCache,
+} from "@/lib/cache/form-data-cache";
+import {
   Command,
   CommandEmpty,
   CommandGroup,
@@ -386,72 +391,81 @@ export function BusinessItemForm({
     }
   }, [category]);
 
-  useEffect(() => {
-    const loadDirectoryPeople = async () => {
-      setIsDirectoryLoading(true);
-      const supabase = createClient();
+  const loadDirectoryPeople = async () => {
+    if (isDirectoryLoading) return;
+    setIsDirectoryLoading(true);
+    const supabase = createClient();
 
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-      if (!user) {
-        setIsDirectoryLoading(false);
-        return;
-      }
+    if (!user) {
+      setIsDirectoryLoading(false);
+      return;
+    }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: profile } = await (supabase.from("profiles") as any)
+      .select("workspace_id, workspaces(type)")
+      .eq("id", user.id)
+      .single();
+
+    if (!profile?.workspace_id) {
+      setIsDirectoryLoading(false);
+      return;
+    }
+
+    setWorkspaceCallingLevel(
+      mapWorkspaceTypeToCallingLevel(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ((profile as any).workspaces?.type as string | null) ?? null
+      )
+    );
+
+    // Return cached data if available
+    const cached = getDirectoryCache(profile.workspace_id);
+    if (cached) {
+      setDirectoryPeople(cached);
+      setIsDirectoryLoading(false);
+      return;
+    }
+
+    // Try with gender column first; fallback for environments where migration isn't applied yet.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data, error } = await (supabase.from("directory") as any)
+      .select("id, name, gender")
+      .eq("workspace_id", profile.workspace_id)
+      .order("name");
+
+    if (error) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: profile } = await (supabase.from("profiles") as any)
-        .select("workspace_id, workspaces(type)")
-        .eq("id", user.id)
-        .single();
-
-      if (!profile?.workspace_id) {
-        setIsDirectoryLoading(false);
-        return;
-      }
-      setWorkspaceCallingLevel(
-        mapWorkspaceTypeToCallingLevel(
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          ((profile as any).workspaces?.type as string | null) ?? null
-        )
-      );
-
-      // Try with gender column first; fallback for environments where migration isn't applied yet.
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (supabase.from("directory") as any)
-        .select("id, name, gender")
+      const { data: fallbackData, error: fallbackError } = await (supabase.from("directory") as any)
+        .select("id, name")
         .eq("workspace_id", profile.workspace_id)
         .order("name");
 
-      if (error) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { data: fallbackData, error: fallbackError } = await (supabase.from("directory") as any)
-          .select("id, name")
-          .eq("workspace_id", profile.workspace_id)
-          .order("name");
-
-        if (fallbackError) {
-          console.error("Failed to load directory people for business form:", fallbackError);
-          setIsDirectoryLoading(false);
-          return;
-        }
-
-        const normalized = ((fallbackData || []) as Array<{ id: string; name: string }>).map((person) => ({
-          ...person,
-          gender: null,
-        }));
-        setDirectoryPeople(normalized);
+      if (fallbackError) {
+        console.error("Failed to load members for business form:", fallbackError);
         setIsDirectoryLoading(false);
         return;
       }
 
-      setDirectoryPeople((data || []) as DirectoryPersonOption[]);
+      const normalized = ((fallbackData || []) as Array<{ id: string; name: string }>).map((person) => ({
+        ...person,
+        gender: null as null,
+      }));
+      setDirectoryCache(profile.workspace_id, normalized);
+      setDirectoryPeople(normalized);
       setIsDirectoryLoading(false);
-    };
+      return;
+    }
 
-    loadDirectoryPeople();
-  }, []);
+    const people = (data || []) as DirectoryPersonOption[];
+    setDirectoryCache(profile.workspace_id, people);
+    setDirectoryPeople(people);
+    setIsDirectoryLoading(false);
+  };
 
   useEffect(() => {
     if (!selectedDirectoryPersonId || !selectedDirectoryPerson) return;
@@ -505,13 +519,16 @@ export function BusinessItemForm({
       return;
     }
 
-    setDirectoryPeople((prev) =>
-      prev.map((person) =>
+    setDirectoryPeople((prev) => {
+      const updated = prev.map((person) =>
         person.id === selectedDirectoryPersonId
           ? { ...person, gender: value }
           : person
-      )
-    );
+      );
+      // Keep cache in sync
+      clearDirectoryCache();
+      return updated;
+    });
     setIsUpdatingDirectoryGender(false);
   };
 
@@ -532,6 +549,7 @@ export function BusinessItemForm({
             <Label htmlFor="personName">Person Name*</Label>
             <Select
               value={selectedDirectoryPersonId}
+              onOpenChange={(open) => { if (open && directoryPeople.length === 0) loadDirectoryPeople(); }}
               onValueChange={(value) => {
                 setSelectedDirectoryPersonId(value);
                 const selected = directoryPeople.find((person) => person.id === value);
@@ -540,7 +558,7 @@ export function BusinessItemForm({
                 }
                 markTouched("personName");
               }}
-              disabled={isLoading || isDirectoryLoading}
+              disabled={isLoading}
               required
             >
               <SelectTrigger
@@ -551,7 +569,7 @@ export function BusinessItemForm({
                 )}
               >
                 <SelectValue
-                  placeholder={isDirectoryLoading ? "Loading directory..." : "Select a person from directory"}
+                  placeholder={isDirectoryLoading ? "Loading members..." : "Select a person"}
                 />
               </SelectTrigger>
               <SelectContent>
@@ -581,7 +599,7 @@ export function BusinessItemForm({
                       disabled={isUpdatingDirectoryGender || isLoading}
                       className="h-7 rounded-full px-2.5 text-[11px]"
                     >
-                      Set as Brother
+                      Set as Male
                     </Button>
                     <Button
                       type="button"
@@ -591,7 +609,7 @@ export function BusinessItemForm({
                       disabled={isUpdatingDirectoryGender || isLoading}
                       className="h-7 rounded-full px-2.5 text-[11px]"
                     >
-                      Set as Sister
+                      Set as Female
                     </Button>
                   </div>
                 </div>

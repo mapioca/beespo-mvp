@@ -18,6 +18,13 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 import { Speech, Megaphone, MessageSquare, Briefcase, UserPlus, Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
@@ -147,6 +154,7 @@ export function UnifiedSelectorModal({
     // Create participant state
     const [isCreatingParticipant, setIsCreatingParticipant] = useState(false);
     const [newParticipantName, setNewParticipantName] = useState("");
+    const [newParticipantGender, setNewParticipantGender] = useState<"male" | "female" | "unspecified">("unspecified");
 
     // Load data when modal opens
     useEffect(() => {
@@ -154,6 +162,7 @@ export function UnifiedSelectorModal({
             setSearch("");
             setIsCreatingParticipant(false);
             setNewParticipantName("");
+            setNewParticipantGender("unspecified");
             loadData();
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -374,6 +383,7 @@ export function UnifiedSelectorModal({
         const { data, error } = await (supabase.from("directory") as any)
             .insert({
                 name: newParticipantName.trim(),
+                gender: newParticipantGender === "unspecified" ? null : newParticipantGender,
                 workspace_id: profile.workspace_id,
             })
             .select()
@@ -386,7 +396,7 @@ export function UnifiedSelectorModal({
         } else if (error) {
             console.error("Error creating participant:", error);
         }
-    }, [newParticipantName, onSelectParticipant, onClose]);
+    }, [newParticipantName, newParticipantGender, onSelectParticipant, onClose]);
 
     // Modal title based on mode
     const modalConfig: Record<UnifiedSelectorMode, { title: string; icon: React.ElementType; color: string }> = {
@@ -428,6 +438,22 @@ export function UnifiedSelectorModal({
                                     if (e.key === "Escape") setIsCreatingParticipant(false);
                                 }}
                             />
+                        </div>
+                        <div>
+                            <label className="text-sm font-medium">Gender (optional)</label>
+                            <Select
+                                value={newParticipantGender}
+                                onValueChange={(v) => setNewParticipantGender(v as "male" | "female" | "unspecified")}
+                            >
+                                <SelectTrigger className="mt-1">
+                                    <SelectValue placeholder="Select gender" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="unspecified">Unspecified</SelectItem>
+                                    <SelectItem value="male">Male</SelectItem>
+                                    <SelectItem value="female">Female</SelectItem>
+                                </SelectContent>
+                            </Select>
                         </div>
                         <div className="flex justify-end gap-2">
                             <Button variant="outline" onClick={() => setIsCreatingParticipant(false)}>
