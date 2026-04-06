@@ -6,13 +6,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
   Select,
   SelectContent,
   SelectItem,
@@ -20,11 +13,18 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
-import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { TemplateSelector } from "@/components/templates/template-selector";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import {
+  ModalForm,
+  ModalFormBody,
+  ModalFormFooter,
+  ModalFormSection,
+  ModalFormSectionDescription,
+  ModalFormSectionHeader,
+  ModalFormSectionTitle,
+} from "@/components/ui/modal-form-layout";
 import {
   generateBusinessScript,
   validateBusinessItemDetails,
@@ -44,6 +44,7 @@ import {
   Briefcase,
   AlertCircle,
   CheckCircle2,
+  ChevronDown,
 } from "lucide-react";
 
 // Props for the form
@@ -65,6 +66,7 @@ interface BusinessItemFormProps {
   isLoading?: boolean;
   // Mode
   mode?: "create" | "edit";
+  onCancel?: () => void;
 }
 
 // Form data structure
@@ -131,6 +133,7 @@ export function BusinessItemForm({
   onSubmit,
   isLoading = false,
   mode = "create",
+  onCancel,
 }: BusinessItemFormProps) {
   // Form state
   const [personName, setPersonName] = useState(initialData?.personName || "");
@@ -158,6 +161,7 @@ export function BusinessItemForm({
   const [customScript, setCustomScript] = useState(
     initialData?.details?.customScript || ""
   );
+  const [optionalOpen, setOptionalOpen] = useState(false);
 
   // Get current category config
   const categoryConfig = CATEGORY_OPTIONS.find((c) => c.value === category);
@@ -235,20 +239,16 @@ export function BusinessItemForm({
   }, [category]);
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Main Form Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle>
-            {mode === "create" ? "Create New" : "Edit"} Business Item
-          </CardTitle>
-          <CardDescription>
-            Add a formal church procedure to track. The conducting script will
-            be generated automatically.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Person Name - Always visible */}
+    <ModalForm onSubmit={handleSubmit}>
+      <ModalFormBody className="space-y-5">
+        <ModalFormSection className="rounded-xl border border-border/60 p-4">
+          <ModalFormSectionHeader>
+            <ModalFormSectionTitle>Required</ModalFormSectionTitle>
+            <ModalFormSectionDescription>
+              Core fields needed to create this item.
+            </ModalFormSectionDescription>
+          </ModalFormSectionHeader>
+
           <div className="space-y-2">
             <Label htmlFor="personName" className="flex items-center gap-2">
               <User className="h-4 w-4" />
@@ -264,7 +264,6 @@ export function BusinessItemForm({
             />
           </div>
 
-          {/* Category Selection */}
           <div className="space-y-2">
             <Label htmlFor="category" className="flex items-center gap-2">
               <Briefcase className="h-4 w-4" />
@@ -294,7 +293,6 @@ export function BusinessItemForm({
             </Select>
           </div>
 
-          {/* Script Language Selection */}
           <div className="space-y-2">
             <Label htmlFor="scriptLanguage" className="flex items-center gap-2">
               <FileText className="h-4 w-4" />
@@ -315,264 +313,251 @@ export function BusinessItemForm({
               </SelectContent>
             </Select>
           </div>
+        </ModalFormSection>
 
-          {/* Conditional Fields Based on Category */}
-          {category && (
-            <div className="space-y-4 pt-4 border-t">
-              {/* Position/Calling - for sustaining, release, setting_apart */}
-              {categoryConfig?.requiresCalling && (
-                <div className="space-y-2">
-                  <Label htmlFor="positionCalling">
-                    Position/Calling *
-                  </Label>
-                  <Input
-                    id="positionCalling"
-                    value={positionCalling}
-                    onChange={(e) => setPositionCalling(e.target.value)}
-                    placeholder="e.g., Sunday School President"
-                    required
-                    disabled={isLoading}
-                  />
-                </div>
-              )}
+        {category && (
+          <ModalFormSection className="rounded-xl border border-border/60 p-4">
+            <ModalFormSectionHeader>
+              <ModalFormSectionTitle>Category Details</ModalFormSectionTitle>
+              <ModalFormSectionDescription>
+                Fields required by the selected category.
+              </ModalFormSectionDescription>
+            </ModalFormSectionHeader>
 
-              {/* Priesthood Office - for ordination */}
-              {categoryConfig?.requiresOffice && (
-                <div className="space-y-3">
-                  <Label>Priesthood Office *</Label>
-                  <div className="grid grid-cols-2 gap-4">
-                    {/* Aaronic Priesthood */}
-                    <div className="space-y-2">
-                      <Badge variant="outline" className="mb-2">
-                        Aaronic Priesthood
-                      </Badge>
-                      <RadioGroup
-                        value={office}
-                        onValueChange={(v) => setOffice(v as PriesthoodOffice)}
-                        className="space-y-2"
-                      >
-                        {PRIESTHOOD_OFFICES.filter(
-                          (o) => o.priesthood === "aaronic"
-                        ).map((o) => (
-                          <div
-                            key={o.value}
-                            className="flex items-center space-x-2"
-                          >
-                            <RadioGroupItem
-                              value={o.value}
-                              id={o.value}
-                              disabled={isLoading}
-                            />
-                            <Label
-                              htmlFor={o.value}
-                              className="font-normal cursor-pointer"
-                            >
-                              {o.label}
-                            </Label>
-                          </div>
-                        ))}
-                      </RadioGroup>
-                    </div>
-                    {/* Melchizedek Priesthood */}
-                    <div className="space-y-2">
-                      <Badge variant="outline" className="mb-2">
-                        Melchizedek Priesthood
-                      </Badge>
-                      <RadioGroup
-                        value={office}
-                        onValueChange={(v) => setOffice(v as PriesthoodOffice)}
-                        className="space-y-2"
-                      >
-                        {PRIESTHOOD_OFFICES.filter(
-                          (o) => o.priesthood === "melchizedek"
-                        ).map((o) => (
-                          <div
-                            key={o.value}
-                            className="flex items-center space-x-2"
-                          >
-                            <RadioGroupItem
-                              value={o.value}
-                              id={o.value}
-                              disabled={isLoading}
-                            />
-                            <Label
-                              htmlFor={o.value}
-                              className="font-normal cursor-pointer"
-                            >
-                              {o.label}
-                            </Label>
-                          </div>
-                        ))}
-                      </RadioGroup>
-                    </div>
-                  </div>
-                  {office && (
-                    <p className="text-sm text-muted-foreground">
-                      Selected: <strong>{formatOffice(office)}</strong> in the{" "}
-                      <strong>{formatPriesthood(priesthood)}</strong> Priesthood
-                    </p>
-                  )}
-                </div>
-              )}
-
-              {/* Gender Selection - for categories that need pronouns */}
-              {categoryConfig?.requiresGender && (
-                <div className="space-y-2">
-                  <Label>Gender (for correct pronouns) *</Label>
-                  <RadioGroup
-                    value={gender}
-                    onValueChange={(v) => setGender(v as Gender)}
-                    className="flex gap-4"
-                  >
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem
-                        value="male"
-                        id="male"
-                        disabled={isLoading}
-                      />
-                      <Label htmlFor="male" className="font-normal cursor-pointer">
-                        Brother (he/him)
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem
-                        value="female"
-                        id="female"
-                        disabled={isLoading}
-                      />
-                      <Label htmlFor="female" className="font-normal cursor-pointer">
-                        Sister (she/her)
-                      </Label>
-                    </div>
-                  </RadioGroup>
-                </div>
-              )}
-
-              {/* Custom Script - for "other" category */}
-              {category === "other" && (
-                <div className="space-y-2">
-                  <Label htmlFor="customScript">
-                    Custom Script (optional)
-                  </Label>
-                  <Textarea
-                    id="customScript"
-                    value={customScript}
-                    onChange={(e) => setCustomScript(e.target.value)}
-                    placeholder="Enter custom conducting script or leave blank to use notes"
-                    rows={4}
-                    disabled={isLoading}
-                  />
-                </div>
-              )}
-            </div>
-          )}
-
-          <Separator />
-
-          {/* Status and Notes */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="status">Status</Label>
-              <Select
-                value={status}
-                onValueChange={setStatus}
-                disabled={isLoading}
-              >
-                <SelectTrigger id="status">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {status === "completed" && (
+            {categoryConfig?.requiresCalling && (
               <div className="space-y-2">
-                <Label htmlFor="actionDate">Action Date</Label>
+                <Label htmlFor="positionCalling">
+                  Position/Calling *
+                </Label>
                 <Input
-                  id="actionDate"
-                  type="date"
-                  value={actionDate}
-                  onChange={(e) => setActionDate(e.target.value)}
+                  id="positionCalling"
+                  value={positionCalling}
+                  onChange={(e) => setPositionCalling(e.target.value)}
+                  placeholder="e.g., Sunday School President"
+                  required
                   disabled={isLoading}
                 />
-                <p className="text-xs text-muted-foreground">
-                  Leave blank to use today&apos;s date
-                </p>
               </div>
             )}
-          </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="notes">Notes</Label>
-            <Textarea
-              id="notes"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Additional context or details (not shown in script)"
-              rows={2}
-              disabled={isLoading}
-            />
-          </div>
+            {categoryConfig?.requiresOffice && (
+              <div className="space-y-3">
+                <Label>Priesthood Office *</Label>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div className="space-y-2 rounded-md border border-border/50 p-3">
+                    <p className="text-xs font-medium text-muted-foreground">Aaronic Priesthood</p>
+                    <RadioGroup
+                      value={office}
+                      onValueChange={(v) => setOffice(v as PriesthoodOffice)}
+                      className="space-y-2"
+                    >
+                      {PRIESTHOOD_OFFICES.filter(
+                        (o) => o.priesthood === "aaronic"
+                      ).map((o) => (
+                        <div
+                          key={o.value}
+                          className="flex items-center space-x-2"
+                        >
+                          <RadioGroupItem
+                            value={o.value}
+                            id={o.value}
+                            disabled={isLoading}
+                          />
+                          <Label
+                            htmlFor={o.value}
+                            className="cursor-pointer text-sm font-normal"
+                          >
+                            {o.label}
+                          </Label>
+                        </div>
+                      ))}
+                    </RadioGroup>
+                  </div>
+                  <div className="space-y-2 rounded-md border border-border/50 p-3">
+                    <p className="text-xs font-medium text-muted-foreground">Melchizedek Priesthood</p>
+                    <RadioGroup
+                      value={office}
+                      onValueChange={(v) => setOffice(v as PriesthoodOffice)}
+                      className="space-y-2"
+                    >
+                      {PRIESTHOOD_OFFICES.filter(
+                        (o) => o.priesthood === "melchizedek"
+                      ).map((o) => (
+                        <div
+                          key={o.value}
+                          className="flex items-center space-x-2"
+                        >
+                          <RadioGroupItem
+                            value={o.value}
+                            id={o.value}
+                            disabled={isLoading}
+                          />
+                          <Label
+                            htmlFor={o.value}
+                            className="cursor-pointer text-sm font-normal"
+                          >
+                            {o.label}
+                          </Label>
+                        </div>
+                      ))}
+                    </RadioGroup>
+                  </div>
+                </div>
+                {office && (
+                  <p className="text-sm text-muted-foreground">
+                    Selected: <strong>{formatOffice(office)}</strong> in the{" "}
+                    <strong>{formatPriesthood(priesthood)}</strong> Priesthood
+                  </p>
+                )}
+              </div>
+            )}
 
-          {/* Template Selector */}
-          <div className="pt-4 border-t">
-            <TemplateSelector
-              value={selectedTemplateId}
-              onChange={setSelectedTemplateId}
-              disabled={isLoading}
-            />
-          </div>
-        </CardContent>
-      </Card>
+            {categoryConfig?.requiresGender && (
+              <div className="space-y-2">
+                <Label>Gender (for correct pronouns) *</Label>
+                <RadioGroup
+                  value={gender}
+                  onValueChange={(v) => setGender(v as Gender)}
+                  className="flex flex-col gap-2 sm:flex-row sm:gap-4"
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem
+                      value="male"
+                      id="male"
+                      disabled={isLoading}
+                    />
+                    <Label htmlFor="male" className="font-normal cursor-pointer">
+                      Brother (he/him)
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem
+                      value="female"
+                      id="female"
+                      disabled={isLoading}
+                    />
+                    <Label htmlFor="female" className="font-normal cursor-pointer">
+                      Sister (she/her)
+                    </Label>
+                  </div>
+                </RadioGroup>
+              </div>
+            )}
 
-      {/* Script Preview Card */}
-      {category && (
-        <Card
-          className={cn(
-            "border-2",
-            validation.valid ? "border-blue-200 bg-blue-50/50" : "border-amber-200 bg-amber-50/50"
-          )}
-        >
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <FileText className="h-5 w-5" />
-                Conducting Script Preview
-              </CardTitle>
+            {category === "other" && (
+              <div className="space-y-2">
+                <Label htmlFor="customScript">
+                  Custom Script (optional)
+                </Label>
+                <Textarea
+                  id="customScript"
+                  value={customScript}
+                  onChange={(e) => setCustomScript(e.target.value)}
+                  placeholder="Enter custom conducting script or leave blank to use notes"
+                  rows={3}
+                  disabled={isLoading}
+                />
+              </div>
+            )}
+          </ModalFormSection>
+        )}
+
+        <Collapsible open={optionalOpen} onOpenChange={setOptionalOpen}>
+          <ModalFormSection className="rounded-xl border border-border/60 p-4">
+            <CollapsibleTrigger className="group flex w-full items-center justify-between text-left">
+              <div className="space-y-1">
+                <ModalFormSectionTitle>Optional Metadata</ModalFormSectionTitle>
+                <ModalFormSectionDescription>
+                  Additional context and defaults.
+                </ModalFormSectionDescription>
+              </div>
+              <ChevronDown
+                className={cn(
+                  "h-4 w-4 text-muted-foreground transition-transform",
+                  optionalOpen && "rotate-180"
+                )}
+              />
+            </CollapsibleTrigger>
+
+            <CollapsibleContent className="mt-4 space-y-4">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="status">Status</Label>
+                  <Select
+                    value={status}
+                    onValueChange={setStatus}
+                    disabled={isLoading}
+                  >
+                    <SelectTrigger id="status">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="completed">Completed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {status === "completed" && (
+                  <div className="space-y-2">
+                    <Label htmlFor="actionDate">Action Date</Label>
+                    <Input
+                      id="actionDate"
+                      type="date"
+                      value={actionDate}
+                      onChange={(e) => setActionDate(e.target.value)}
+                      disabled={isLoading}
+                    />
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="notes">Notes</Label>
+                <Textarea
+                  id="notes"
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Additional context or details (not shown in script)"
+                  rows={2}
+                  disabled={isLoading}
+                />
+              </div>
+
+              <div className="pt-1">
+                <TemplateSelector
+                  value={selectedTemplateId}
+                  onChange={setSelectedTemplateId}
+                  disabled={isLoading}
+                />
+              </div>
+            </CollapsibleContent>
+          </ModalFormSection>
+        </Collapsible>
+
+        {category && (
+          <ModalFormSection className="rounded-xl border border-border/60 p-4">
+            <div className="flex items-center justify-between gap-3">
+              <ModalFormSectionTitle className="flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                Script Preview
+              </ModalFormSectionTitle>
               {validation.valid ? (
-                <Badge
-                  variant="outline"
-                  className="bg-green-50 text-green-700 border-green-200"
-                >
-                  <CheckCircle2 className="h-3 w-3 mr-1" />
+                <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] text-emerald-700">
+                  <CheckCircle2 className="h-3 w-3" />
                   Ready
-                </Badge>
+                </span>
               ) : (
-                <Badge
-                  variant="outline"
-                  className="bg-amber-50 text-amber-700 border-amber-200"
-                >
-                  <AlertCircle className="h-3 w-3 mr-1" />
+                <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[11px] text-amber-700">
+                  <AlertCircle className="h-3 w-3" />
                   Incomplete
-                </Badge>
+                </span>
               )}
             </div>
-            <CardDescription>
-              This is the official wording that will be displayed to the
-              conducting leader
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {/* Validation Errors */}
+
             {!validation.valid && validation.errors.length > 0 && (
-              <div className="mb-4 p-3 bg-amber-100 rounded-md border border-amber-200">
-                <p className="text-sm font-medium text-amber-800 mb-1">
-                  Please complete the following:
-                </p>
-                <ul className="text-sm text-amber-700 list-disc list-inside">
+              <div className="rounded-md border border-amber-200 bg-amber-50 p-2.5">
+                <ul className="list-disc list-inside text-xs text-amber-700 space-y-0.5">
                   {validation.errors.map((error, i) => (
                     <li key={i}>{error}</li>
                   ))}
@@ -580,36 +565,36 @@ export function BusinessItemForm({
               </div>
             )}
 
-            {/* Script Preview */}
-            <ScrollArea className="h-[180px]">
-              <div
-                className={cn(
-                  "p-4 rounded-md font-serif text-base leading-relaxed whitespace-pre-wrap",
-                  "bg-white border shadow-inner"
-                )}
-              >
-                {scriptPreview || (
-                  <span className="text-muted-foreground italic">
-                    Complete the form to see the script preview...
-                  </span>
-                )}
-              </div>
-            </ScrollArea>
+            <div
+              className={cn(
+                "max-h-[180px] overflow-y-auto rounded-md border bg-background p-3 text-sm leading-relaxed whitespace-pre-wrap",
+                "font-serif"
+              )}
+            >
+              {scriptPreview || (
+                <span className="text-muted-foreground italic">
+                  Complete the form to see the script preview...
+                </span>
+              )}
+            </div>
+          </ModalFormSection>
+        )}
+      </ModalFormBody>
 
-            <p className="text-xs text-muted-foreground mt-3 italic">
-              Note: This script follows General Handbook standards. The text in
-              [brackets] indicates where you need to pause or take action.
-            </p>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Submit Buttons */}
-      <div className="flex justify-end gap-3">
+      <ModalFormFooter>
+        <Button
+          type="button"
+          variant="ghost"
+          onClick={onCancel}
+          disabled={isLoading}
+          className="h-8 rounded-full px-3 text-xs"
+        >
+          Cancel
+        </Button>
         <Button
           type="submit"
           disabled={isLoading || !validation.valid}
-          size="lg"
+          className="h-8 rounded-full px-3 text-xs"
         >
           {isLoading
             ? mode === "create"
@@ -619,7 +604,7 @@ export function BusinessItemForm({
             ? "Create Business Item"
             : "Save Changes"}
         </Button>
-      </div>
-    </form>
+      </ModalFormFooter>
+    </ModalForm>
   );
 }
