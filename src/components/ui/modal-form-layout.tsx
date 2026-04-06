@@ -22,7 +22,7 @@ const ModalFormBody = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn("min-h-0 flex-1 overflow-y-auto px-5 py-4", className)}
+    className={cn("min-h-0 flex-1 overflow-y-auto px-5 py-3", className)}
     {...props}
   />
 ))
@@ -79,7 +79,7 @@ const ModalFormFooter = React.forwardRef<
   <div
     ref={ref}
     className={cn(
-      "sticky bottom-0 z-10 flex items-center justify-end gap-2 border-t border-border/60 bg-[hsl(var(--chrome)/0.95)] px-5 py-3 backdrop-blur supports-[backdrop-filter]:bg-[hsl(var(--chrome)/0.9)]",
+      "sticky bottom-0 z-10 flex items-center justify-end gap-2 bg-[hsl(var(--chrome)/0.95)] px-5 py-2.5 backdrop-blur supports-[backdrop-filter]:bg-[hsl(var(--chrome)/0.9)]",
       className
     )}
     {...props}
@@ -96,4 +96,3 @@ export {
   ModalFormSectionDescription,
   ModalFormFooter,
 }
-

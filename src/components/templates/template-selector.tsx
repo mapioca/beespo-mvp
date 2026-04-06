@@ -1,19 +1,26 @@
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState } from "react";
 import { toast } from "@/lib/toast";
+import { Button } from "@/components/ui/button";
+import {
+    DropdownMenu,
+    DropdownMenuCheckboxItem,
+    DropdownMenuContent,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { cn } from "@/lib/utils";
 
 interface TemplateSelectorProps {
-    value: string | null;
-    onChange: (value: string | null) => void;
+    value: string[];
+    onChange: (value: string[]) => void;
     disabled?: boolean;
+    label?: string;
+    hideHelperText?: boolean;
+    className?: string;
+    mode?: "field" | "pill";
+    pillLabel?: string;
+    onTemplatesLoaded?: (templates: TemplateStub[]) => void;
 }
 
 interface TemplateStub {
@@ -21,7 +28,17 @@ interface TemplateStub {
     name: string;
 }
 
-export function TemplateSelector({ value, onChange, disabled }: TemplateSelectorProps) {
+export function TemplateSelector({
+    value,
+    onChange,
+    disabled,
+    label = "Meeting Template",
+    hideHelperText = false,
+    className,
+    mode = "field",
+    pillLabel = "Link to template",
+    onTemplatesLoaded,
+}: TemplateSelectorProps) {
     const [templates, setTemplates] = useState<TemplateStub[]>([]);
     const [isLoading, setIsLoading] = useState(false);
 
@@ -56,37 +73,100 @@ export function TemplateSelector({ value, onChange, disabled }: TemplateSelector
                 toast.error("Failed to load templates");
             } else {
                 setTemplates(data || []);
+                onTemplatesLoaded?.(data || []);
             }
             setIsLoading(false);
         };
 
         fetchTemplates();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [onTemplatesLoaded]);
+
+    const toggleTemplate = (templateId: string) => {
+        if (value.includes(templateId)) {
+            onChange(value.filter((id) => id !== templateId));
+            return;
+        }
+        onChange([...value, templateId]);
+    };
+
+    const selectedLabel =
+        value.length === 0
+            ? "Select template(s)..."
+            : value.length === 1
+                ? templates.find((template) => template.id === value[0])?.name ?? "1 template selected"
+                : `${value.length} templates selected`;
+
+    if (mode === "pill") {
+        const isActive = value.length > 0;
+
+        return (
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button
+                        id="template-selector-trigger"
+                        type="button"
+                        variant="outline"
+                        disabled={disabled || isLoading}
+                        className={cn(
+                            "h-8 rounded-full px-3 text-xs font-medium shadow-sm transition-colors",
+                            isActive
+                                ? "border-transparent bg-[hsl(var(--chip-active-bg))] text-[hsl(var(--chip-active-text))]"
+                                : "border-[hsl(var(--chip-border))] bg-[hsl(var(--chip-bg))] text-[hsl(var(--chip-text))] hover:bg-[hsl(var(--chip-hover-bg))]"
+                        )}
+                    >
+                        <span>{pillLabel}</span>
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="min-w-[14rem]">
+                    {templates.map((template) => (
+                        <DropdownMenuCheckboxItem
+                            key={template.id}
+                            checked={value.includes(template.id)}
+                            onCheckedChange={() => toggleTemplate(template.id)}
+                            onSelect={(event) => event.preventDefault()}
+                        >
+                            {template.name}
+                        </DropdownMenuCheckboxItem>
+                    ))}
+                </DropdownMenuContent>
+            </DropdownMenu>
+        );
+    }
 
     return (
-        <div className="space-y-2">
-            <Label htmlFor="template-selector">Meeting Template (Optional)</Label>
-            <Select
-                value={value || "none"}
-                onValueChange={(val) => onChange(val === "none" ? null : val)}
-                disabled={disabled || isLoading}
-            >
-                <SelectTrigger id="template-selector">
-                    <SelectValue placeholder="Select a template..." />
-                </SelectTrigger>
-                <SelectContent>
-                    <SelectItem value="none">None (General)</SelectItem>
+        <div className={`space-y-2 ${className ?? ""}`}>
+            <Label htmlFor="template-selector-trigger">{label}</Label>
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button
+                        id="template-selector-trigger"
+                        type="button"
+                        variant="outline"
+                        disabled={disabled || isLoading}
+                        className="w-full justify-between rounded-xl border-input bg-background px-3 font-normal text-foreground hover:bg-background"
+                    >
+                        <span className="truncate">{selectedLabel}</span>
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-[var(--radix-dropdown-menu-trigger-width)] min-w-[14rem]">
                     {templates.map((template) => (
-                        <SelectItem key={template.id} value={template.id}>
+                        <DropdownMenuCheckboxItem
+                            key={template.id}
+                            checked={value.includes(template.id)}
+                            onCheckedChange={() => toggleTemplate(template.id)}
+                            onSelect={(event) => event.preventDefault()}
+                        >
                             {template.name}
-                        </SelectItem>
+                        </DropdownMenuCheckboxItem>
                     ))}
-                </SelectContent>
-            </Select>
-            <p className="text-xs text-muted-foreground">
-                Link this item to a specific meeting type (e.g., Ward Council) to have it automatically appear on agendas.
-            </p>
+                </DropdownMenuContent>
+            </DropdownMenu>
+            {!hideHelperText && (
+                <p className="text-xs text-muted-foreground">
+                    Link this item to a specific meeting type (e.g., Ward Council) to have it automatically appear on agendas.
+                </p>
+            )}
         </div>
     );
 }

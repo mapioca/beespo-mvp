@@ -15,15 +15,12 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { cn } from "@/lib/utils";
 import { TemplateSelector } from "@/components/templates/template-selector";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { X } from "lucide-react";
 import {
   ModalForm,
   ModalFormBody,
   ModalFormFooter,
   ModalFormSection,
-  ModalFormSectionDescription,
-  ModalFormSectionHeader,
-  ModalFormSectionTitle,
 } from "@/components/ui/modal-form-layout";
 import {
   generateBusinessScript,
@@ -38,14 +35,9 @@ import {
   type BusinessItemDetails,
   type BusinessItem,
 } from "@/lib/business-script-generator";
-import {
-  FileText,
-  User,
-  Briefcase,
-  AlertCircle,
-  CheckCircle2,
-  ChevronDown,
-} from "lucide-react";
+
+const escapeRegExp = (value: string): string =>
+  value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 // Props for the form
 interface BusinessItemFormProps {
@@ -78,6 +70,7 @@ export interface BusinessItemFormData {
   actionDate: string;
   notes: string;
   details: BusinessItemDetails;
+  templateIds: string[];
   templateId: string | null;
 }
 
@@ -135,18 +128,24 @@ export function BusinessItemForm({
   mode = "create",
   onCancel,
 }: BusinessItemFormProps) {
+  type RequiredFieldKey =
+    | "personName"
+    | "category"
+    | "positionCalling"
+    | "office"
+    | "gender";
+
   // Form state
   const [personName, setPersonName] = useState(initialData?.personName || "");
   const [positionCalling, setPositionCalling] = useState(
     initialData?.positionCalling || ""
   );
   const [category, setCategory] = useState(initialData?.category || "");
-  const [status, setStatus] = useState(initialData?.status || "pending");
-  const [actionDate, setActionDate] = useState(initialData?.actionDate || "");
-  const [notes, setNotes] = useState(initialData?.notes || "");
-  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(
-    initialData?.templateId || null
+  const [notes] = useState(initialData?.notes || "");
+  const [selectedTemplateIds, setSelectedTemplateIds] = useState<string[]>(
+    initialData?.templateId ? [initialData.templateId] : []
   );
+  const [templateOptions, setTemplateOptions] = useState<{ id: string; name: string }[]>([]);
 
   // Details state (structured metadata)
   const [language, setLanguage] = useState<Language>(
@@ -161,7 +160,13 @@ export function BusinessItemForm({
   const [customScript, setCustomScript] = useState(
     initialData?.details?.customScript || ""
   );
-  const [optionalOpen, setOptionalOpen] = useState(false);
+  const [touched, setTouched] = useState<Record<RequiredFieldKey, boolean>>({
+    personName: false,
+    category: false,
+    positionCalling: false,
+    office: false,
+    gender: false,
+  });
 
   // Get current category config
   const categoryConfig = CATEGORY_OPTIONS.find((c) => c.value === category);
@@ -193,6 +198,59 @@ export function BusinessItemForm({
     return generateBusinessScript(businessItem);
   }, [businessItem, category]);
 
+  const scriptVariableTokens = useMemo(() => {
+    const tokens = new Set<string>();
+
+    const trimmedName = personName.trim();
+    const trimmedCalling = positionCalling.trim();
+    if (trimmedName) tokens.add(trimmedName);
+    if (trimmedCalling) tokens.add(trimmedCalling);
+    if (office) tokens.add(formatOffice(office, language));
+    if (priesthood) tokens.add(formatPriesthood(priesthood, language));
+
+    if (language === "ENG") {
+      if (gender === "female") {
+        tokens.add("she");
+        tokens.add("her");
+      }
+      if (gender === "male") {
+        tokens.add("he");
+        tokens.add("his");
+      }
+    }
+
+    return Array.from(tokens)
+      .map((token) => token.trim())
+      .filter(Boolean)
+      .sort((a, b) => b.length - a.length);
+  }, [gender, language, office, personName, positionCalling, priesthood]);
+
+  const highlightedScriptPreview = useMemo(() => {
+    if (!scriptPreview || scriptVariableTokens.length === 0) return scriptPreview;
+
+    const regex = new RegExp(`(${scriptVariableTokens
+      .map((token) => {
+        const escapedToken = escapeRegExp(token);
+        const shouldUseWordBoundaries = /^[\p{L}\p{N}_]+$/u.test(token);
+        return shouldUseWordBoundaries ? `\\b${escapedToken}\\b` : escapedToken;
+      })
+      .join("|")})`, "g");
+    const tokenSet = new Set(scriptVariableTokens);
+
+    return scriptPreview.split(regex).map((part, index) => {
+      if (!part) return null;
+      if (tokenSet.has(part)) {
+        return (
+          <span key={`${part}-${index}`} className="font-semibold italic">
+            {part}
+          </span>
+        );
+      }
+
+      return <span key={`text-${index}`}>{part}</span>;
+    });
+  }, [scriptPreview, scriptVariableTokens]);
+
   // Validation
   const validation = useMemo(() => {
     if (!category) return { valid: false, errors: ["Select a category"] };
@@ -205,18 +263,57 @@ export function BusinessItemForm({
     );
   }, [category, personName, positionCalling, businessItem.details]);
 
+  const fieldErrors = useMemo(() => {
+    const errors: Partial<Record<RequiredFieldKey, string>> = {};
+
+    if (!personName.trim()) {
+      errors.personName = "Person name is required.";
+    }
+    if (!category) {
+      errors.category = "Category is required.";
+    }
+    if (categoryConfig?.requiresCalling && !positionCalling.trim()) {
+      errors.positionCalling = "Calling is required.";
+    }
+    if (categoryConfig?.requiresOffice && !office) {
+      errors.office = "Priesthood office is required.";
+    }
+    if (categoryConfig?.requiresGender && !gender) {
+      errors.gender = "Gender is required.";
+    }
+
+    return errors;
+  }, [personName, category, categoryConfig, positionCalling, office, gender]);
+
+  const markTouched = (field: RequiredFieldKey) => {
+    setTouched((prev) => ({ ...prev, [field]: true }));
+  };
+
+  const touchAllRequiredFields = () => {
+    setTouched({
+      personName: true,
+      category: true,
+      positionCalling: Boolean(categoryConfig?.requiresCalling),
+      office: Boolean(categoryConfig?.requiresOffice),
+      gender: Boolean(categoryConfig?.requiresGender),
+    });
+  };
+
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!validation.valid) return;
+    if (!validation.valid) {
+      touchAllRequiredFields();
+      return;
+    }
 
     const formData: BusinessItemFormData = {
       personName,
       positionCalling,
       category,
-      status,
-      actionDate,
+      status: "pending",
+      actionDate: "",
       notes,
       details: {
         language,
@@ -225,7 +322,8 @@ export function BusinessItemForm({
         priesthood,
         customScript: category === "other" ? customScript : undefined,
       },
-      templateId: selectedTemplateId,
+      templateIds: selectedTemplateIds,
+      templateId: selectedTemplateIds[0] ?? null,
     };
 
     await onSubmit(formData);
@@ -238,113 +336,108 @@ export function BusinessItemForm({
     }
   }, [category]);
 
+  useEffect(() => {
+    setTouched((prev) => ({
+      ...prev,
+      positionCalling: categoryConfig?.requiresCalling ? prev.positionCalling : false,
+      office: categoryConfig?.requiresOffice ? prev.office : false,
+      gender: categoryConfig?.requiresGender ? prev.gender : false,
+    }));
+  }, [categoryConfig]);
+
   return (
     <ModalForm onSubmit={handleSubmit}>
-      <ModalFormBody className="space-y-5">
-        <ModalFormSection className="rounded-xl border border-border/60 p-4">
-          <ModalFormSectionHeader>
-            <ModalFormSectionTitle>Required</ModalFormSectionTitle>
-            <ModalFormSectionDescription>
-              Core fields needed to create this item.
-            </ModalFormSectionDescription>
-          </ModalFormSectionHeader>
-
-          <div className="space-y-2">
-            <Label htmlFor="personName" className="flex items-center gap-2">
-              <User className="h-4 w-4" />
-              Person Name *
-            </Label>
+      <ModalFormBody className="mx-auto w-full max-w-[560px] space-y-4 pt-2 pb-2">
+        <ModalFormSection>
+          <div className="max-w-[32rem] space-y-2">
+            <Label htmlFor="personName">Person Name*</Label>
             <Input
               id="personName"
               value={personName}
               onChange={(e) => setPersonName(e.target.value)}
+              onBlur={() => markTouched("personName")}
               placeholder="e.g., John Smith"
               required
               disabled={isLoading}
+              className={cn(
+                touched.personName && fieldErrors.personName && "border-destructive focus-visible:ring-destructive/30"
+              )}
             />
+            {touched.personName && fieldErrors.personName && (
+              <p className="text-xs text-destructive">{fieldErrors.personName}</p>
+            )}
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="category" className="flex items-center gap-2">
-              <Briefcase className="h-4 w-4" />
-              Category *
-            </Label>
-            <Select
-              value={category}
-              onValueChange={setCategory}
-              disabled={isLoading}
-              required
-            >
-              <SelectTrigger id="category">
-                <SelectValue placeholder="Select category" />
-              </SelectTrigger>
-              <SelectContent>
-                {CATEGORY_OPTIONS.map((opt) => (
-                  <SelectItem key={opt.value} value={opt.value}>
-                    <div className="flex flex-col">
-                      <span>{opt.label}</span>
-                      <span className="text-xs text-muted-foreground">
-                        {opt.description}
-                      </span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="scriptLanguage" className="flex items-center gap-2">
-              <FileText className="h-4 w-4" />
-              Script Language *
-            </Label>
-            <Select
-              value={language}
-              onValueChange={(v) => setLanguage(v as Language)}
-              disabled={isLoading}
-              required
-            >
-              <SelectTrigger id="scriptLanguage">
-                <SelectValue placeholder="Select language" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ENG">English</SelectItem>
-                <SelectItem value="SPA">Español</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </ModalFormSection>
-
-        {category && (
-          <ModalFormSection className="rounded-xl border border-border/60 p-4">
-            <ModalFormSectionHeader>
-              <ModalFormSectionTitle>Category Details</ModalFormSectionTitle>
-              <ModalFormSectionDescription>
-                Fields required by the selected category.
-              </ModalFormSectionDescription>
-            </ModalFormSectionHeader>
+          <div className="grid max-w-[34rem] grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="category">Category*</Label>
+              <Select
+                value={category}
+                onValueChange={(value) => {
+                  setCategory(value);
+                  markTouched("category");
+                }}
+                disabled={isLoading}
+                required
+              >
+                <SelectTrigger
+                  id="category"
+                  onBlur={() => markTouched("category")}
+                  className={cn(
+                    touched.category && fieldErrors.category && "border-destructive focus:ring-destructive/30"
+                  )}
+                >
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {CATEGORY_OPTIONS.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {touched.category && fieldErrors.category && (
+                <p className="text-xs text-destructive">{fieldErrors.category}</p>
+              )}
+            </div>
 
             {categoryConfig?.requiresCalling && (
               <div className="space-y-2">
-                <Label htmlFor="positionCalling">
-                  Position/Calling *
-                </Label>
+                <Label htmlFor="positionCalling">Calling*</Label>
                 <Input
                   id="positionCalling"
                   value={positionCalling}
                   onChange={(e) => setPositionCalling(e.target.value)}
+                  onBlur={() => markTouched("positionCalling")}
                   placeholder="e.g., Sunday School President"
                   required
                   disabled={isLoading}
+                  className={cn(
+                    touched.positionCalling && fieldErrors.positionCalling && "border-destructive focus-visible:ring-destructive/30"
+                  )}
                 />
+                {touched.positionCalling && fieldErrors.positionCalling && (
+                  <p className="text-xs text-destructive">{fieldErrors.positionCalling}</p>
+                )}
               </div>
             )}
+          </div>
+        </ModalFormSection>
 
+        {category && (
+          <ModalFormSection>
             {categoryConfig?.requiresOffice && (
-              <div className="space-y-3">
-                <Label>Priesthood Office *</Label>
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <div className="space-y-2 rounded-md border border-border/50 p-3">
+              <div className="max-w-[34rem] space-y-3">
+                <Label>Priesthood Office*</Label>
+                <div
+                  className={cn(
+                    "grid grid-cols-1 gap-3 sm:grid-cols-2",
+                    touched.office && fieldErrors.office && "rounded-md border border-destructive/50 p-2"
+                  )}
+                  onBlurCapture={() => markTouched("office")}
+                >
+                  <div className="space-y-2 rounded-md border border-border/50 p-2.5">
                     <p className="text-xs font-medium text-muted-foreground">Aaronic Priesthood</p>
                     <RadioGroup
                       value={office}
@@ -373,7 +466,7 @@ export function BusinessItemForm({
                       ))}
                     </RadioGroup>
                   </div>
-                  <div className="space-y-2 rounded-md border border-border/50 p-3">
+                  <div className="space-y-2 rounded-md border border-border/50 p-2.5">
                     <p className="text-xs font-medium text-muted-foreground">Melchizedek Priesthood</p>
                     <RadioGroup
                       value={office}
@@ -403,6 +496,9 @@ export function BusinessItemForm({
                     </RadioGroup>
                   </div>
                 </div>
+                {touched.office && fieldErrors.office && (
+                  <p className="text-xs text-destructive">{fieldErrors.office}</p>
+                )}
                 {office && (
                   <p className="text-sm text-muted-foreground">
                     Selected: <strong>{formatOffice(office)}</strong> in the{" "}
@@ -412,40 +508,8 @@ export function BusinessItemForm({
               </div>
             )}
 
-            {categoryConfig?.requiresGender && (
-              <div className="space-y-2">
-                <Label>Gender (for correct pronouns) *</Label>
-                <RadioGroup
-                  value={gender}
-                  onValueChange={(v) => setGender(v as Gender)}
-                  className="flex flex-col gap-2 sm:flex-row sm:gap-4"
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem
-                      value="male"
-                      id="male"
-                      disabled={isLoading}
-                    />
-                    <Label htmlFor="male" className="font-normal cursor-pointer">
-                      Brother (he/him)
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem
-                      value="female"
-                      id="female"
-                      disabled={isLoading}
-                    />
-                    <Label htmlFor="female" className="font-normal cursor-pointer">
-                      Sister (she/her)
-                    </Label>
-                  </div>
-                </RadioGroup>
-              </div>
-            )}
-
             {category === "other" && (
-              <div className="space-y-2">
+              <div className="max-w-[32rem] space-y-2">
                 <Label htmlFor="customScript">
                   Custom Script (optional)
                 </Label>
@@ -462,116 +526,55 @@ export function BusinessItemForm({
           </ModalFormSection>
         )}
 
-        <Collapsible open={optionalOpen} onOpenChange={setOptionalOpen}>
-          <ModalFormSection className="rounded-xl border border-border/60 p-4">
-            <CollapsibleTrigger className="group flex w-full items-center justify-between text-left">
-              <div className="space-y-1">
-                <ModalFormSectionTitle>Optional Metadata</ModalFormSectionTitle>
-                <ModalFormSectionDescription>
-                  Additional context and defaults.
-                </ModalFormSectionDescription>
-              </div>
-              <ChevronDown
-                className={cn(
-                  "h-4 w-4 text-muted-foreground transition-transform",
-                  optionalOpen && "rotate-180"
-                )}
-              />
-            </CollapsibleTrigger>
-
-            <CollapsibleContent className="mt-4 space-y-4">
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="status">Status</Label>
-                  <Select
-                    value={status}
-                    onValueChange={setStatus}
-                    disabled={isLoading}
+        <ModalFormSection>
+          <div className="max-w-[34rem] space-y-3">
+            <p className="text-sm font-semibold tracking-tight text-foreground">Script</p>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="space-y-2 sm:max-w-[16rem]">
+                <Label>Gender pronouns*</Label>
+                <Select
+                  value={gender}
+                  onValueChange={(v) => {
+                    setGender(v as Gender);
+                    markTouched("gender");
+                  }}
+                  disabled={isLoading}
+                >
+                  <SelectTrigger
+                    id="genderPronouns"
+                    onBlur={() => markTouched("gender")}
+                    className={cn(
+                      touched.gender && fieldErrors.gender && "border-destructive focus:ring-destructive/30"
+                    )}
                   >
-                    <SelectTrigger id="status">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="pending">Pending</SelectItem>
-                      <SelectItem value="completed">Completed</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {status === "completed" && (
-                  <div className="space-y-2">
-                    <Label htmlFor="actionDate">Action Date</Label>
-                    <Input
-                      id="actionDate"
-                      type="date"
-                      value={actionDate}
-                      onChange={(e) => setActionDate(e.target.value)}
-                      disabled={isLoading}
-                    />
-                  </div>
+                    <SelectValue placeholder="Select pronoun..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="male">Brother (he/him)</SelectItem>
+                    <SelectItem value="female">Sister (she/her)</SelectItem>
+                  </SelectContent>
+                </Select>
+                {touched.gender && fieldErrors.gender && (
+                  <p className="text-xs text-destructive">{fieldErrors.gender}</p>
                 )}
               </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="notes">Notes</Label>
-                <Textarea
-                  id="notes"
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Additional context or details (not shown in script)"
-                  rows={2}
-                  disabled={isLoading}
-                />
-              </div>
-
-              <div className="pt-1">
-                <TemplateSelector
-                  value={selectedTemplateId}
-                  onChange={setSelectedTemplateId}
-                  disabled={isLoading}
-                />
-              </div>
-            </CollapsibleContent>
-          </ModalFormSection>
-        </Collapsible>
-
-        {category && (
-          <ModalFormSection className="rounded-xl border border-border/60 p-4">
-            <div className="flex items-center justify-between gap-3">
-              <ModalFormSectionTitle className="flex items-center gap-2">
-                <FileText className="h-4 w-4" />
-                Script Preview
-              </ModalFormSectionTitle>
-              {validation.valid ? (
-                <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] text-emerald-700">
-                  <CheckCircle2 className="h-3 w-3" />
-                  Ready
-                </span>
-              ) : (
-                <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[11px] text-amber-700">
-                  <AlertCircle className="h-3 w-3" />
-                  Incomplete
-                </span>
-              )}
             </div>
+          </div>
+        </ModalFormSection>
 
-            {!validation.valid && validation.errors.length > 0 && (
-              <div className="rounded-md border border-amber-200 bg-amber-50 p-2.5">
-                <ul className="list-disc list-inside text-xs text-amber-700 space-y-0.5">
-                  {validation.errors.map((error, i) => (
-                    <li key={i}>{error}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
+        {category && validation.valid && (
+          <ModalFormSection>
+            <p className="max-w-[34rem] text-sm font-semibold tracking-tight text-foreground">
+              Script Preview
+            </p>
 
             <div
               className={cn(
-                "max-h-[180px] overflow-y-auto rounded-md border bg-background p-3 text-sm leading-relaxed whitespace-pre-wrap",
+                "max-h-[180px] max-w-[34rem] overflow-y-auto rounded-md border border-muted bg-muted p-3 text-sm leading-relaxed whitespace-pre-wrap",
                 "font-serif"
               )}
             >
-              {scriptPreview || (
+              {highlightedScriptPreview || (
                 <span className="text-muted-foreground italic">
                   Complete the form to see the script preview...
                 </span>
@@ -579,6 +582,74 @@ export function BusinessItemForm({
             </div>
           </ModalFormSection>
         )}
+
+        <ModalFormSection>
+          <div className="max-w-[34rem] space-y-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <Select
+                value={language}
+                onValueChange={(value) => setLanguage(value as Language)}
+                disabled={isLoading}
+              >
+                <SelectTrigger
+                  className={cn(
+                    "h-8 w-auto rounded-full px-3 text-xs font-medium shadow-sm transition-colors [&>svg]:hidden",
+                    language !== "ENG"
+                      ? "border-transparent bg-[hsl(var(--chip-active-bg))] text-[hsl(var(--chip-active-text))]"
+                      : "border-[hsl(var(--chip-border))] bg-[hsl(var(--chip-bg))] text-[hsl(var(--chip-text))] hover:bg-[hsl(var(--chip-hover-bg))]"
+                  )}
+                >
+                  <span>Overwrite language</span>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ENG">English</SelectItem>
+                  <SelectItem value="SPA">Español</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <TemplateSelector
+                value={selectedTemplateIds}
+                onChange={setSelectedTemplateIds}
+                onTemplatesLoaded={setTemplateOptions}
+                disabled={isLoading}
+                mode="pill"
+                pillLabel="Link to template"
+              />
+            </div>
+
+            {selectedTemplateIds.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {selectedTemplateIds.map((templateId) => {
+                  const templateName =
+                    templateOptions.find((template) => template.id === templateId)?.name ||
+                    "Template";
+
+                  return (
+                    <span
+                      key={templateId}
+                      className="inline-flex items-center gap-1 rounded-full border border-muted bg-muted px-2.5 py-1 text-xs text-foreground"
+                    >
+                      {templateName}
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setSelectedTemplateIds((prev) =>
+                            prev.filter((id) => id !== templateId)
+                          )
+                        }
+                        className="inline-flex h-3.5 w-3.5 items-center justify-center rounded-full text-muted-foreground hover:text-foreground"
+                        aria-label={`Remove ${templateName}`}
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </span>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </ModalFormSection>
+
       </ModalFormBody>
 
       <ModalFormFooter>

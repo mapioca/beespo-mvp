@@ -67,15 +67,17 @@ export default function NewBusinessItemPage() {
       return;
     }
 
-    // Link to template if selected
-    if (formData.templateId) {
+    // Link to template(s) if selected
+    if (formData.templateIds.length > 0) {
       const { error: linkError } = await (supabase
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .from("business_templates") as any)
-        .insert({
-          business_item_id: businessItem.id,
-          template_id: formData.templateId,
-        });
+        .insert(
+          formData.templateIds.map((templateId) => ({
+            business_item_id: businessItem.id,
+            template_id: templateId,
+          }))
+        );
 
       if (linkError) {
         console.error("Error linking business item to template:", linkError);

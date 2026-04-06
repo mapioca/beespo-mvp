@@ -373,10 +373,15 @@ export function BusinessClient({ items, initialViews = [] }: BusinessClientProps
             return
         }
 
-        if (formData.templateId) {
+        if (formData.templateIds.length > 0) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const { error: linkError } = await (supabase.from("business_templates") as any)
-                .insert({ business_item_id: businessItem.id, template_id: formData.templateId })
+                .insert(
+                    formData.templateIds.map((templateId) => ({
+                        business_item_id: businessItem.id,
+                        template_id: templateId,
+                    }))
+                )
             if (linkError) {
                 toast.warning("Created, but could not link to template.")
             }
@@ -780,8 +785,8 @@ export function BusinessClient({ items, initialViews = [] }: BusinessClientProps
 
             {/* New Business Modal */}
             <Dialog open={newBusinessModalOpen} onOpenChange={setNewBusinessModalOpen}>
-                <DialogContent className="max-w-2xl h-[min(90vh,760px)] overflow-hidden p-0 gap-0">
-                    <DialogHeader className="px-5 py-4 border-b border-border/60">
+                <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden p-0 gap-0">
+                    <DialogHeader className="px-5 py-3 border-b border-border/60">
                         <DialogTitle>New Business Item</DialogTitle>
                         <p className="text-xs text-muted-foreground">
                             Add a formal church procedure to track. The conducting script is generated automatically.
