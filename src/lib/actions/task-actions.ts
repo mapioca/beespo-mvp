@@ -173,12 +173,15 @@ export async function updateTask(taskId: string, data: {
 
         // 2. Log status change activity if changed
         if (data.status && currentTask && currentTask.status !== data.status) {
-            fromTable(supabase, "task_activities").insert({ 
+            // Fire and forget activity logging
+            fromTable(supabase, "task_activities").insert({
                 task_id: taskId,
                 user_id: user.id,
                 activity_type: 'status_change',
                 details: { from: currentTask.status, to: data.status }
-            }).catch((err: unknown) => console.error("Error logging status activity:", err));
+            }).then((result: { error: unknown } | null) => {
+                if (result?.error) console.error("Error logging status activity:", result.error);
+            });
         }
 
         revalidatePath("/tasks");

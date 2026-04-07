@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { createPortal } from "react-dom";
-import { PanelRightClose } from "lucide-react";
+import { PanelRightClose, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -33,25 +33,39 @@ function useIsDesktop() {
 function PanelCard({
     title,
     onClose,
+    onDelete,
     children,
 }: {
     title: string;
     onClose: () => void;
+    onDelete?: () => void;
     children: React.ReactNode;
 }) {
     return (
         <div className="h-full flex flex-col rounded-[16px] border border-app-island bg-app-island shadow-[var(--shadow-app-island)] min-w-[320px] overflow-hidden">
             {/* Header — always visible, body scrolls beneath it */}
-            <div className="shrink-0 flex items-center justify-between px-4 pt-3.5 pb-3 bg-app-island">
-                <span className="text-drawer-title font-semibold">{title}</span>
-                <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                    onClick={onClose}
-                >
-                    <PanelRightClose className="h-4 w-4" />
-                </Button>
+            <div className="shrink-0 flex items-center justify-between px-4 py-1.5 bg-app-island gap-2">
+                <div className="flex items-center gap-1.5 min-w-0">
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-muted-foreground hover:text-foreground shrink-0 -ml-1.5"
+                        onClick={onClose}
+                    >
+                        <PanelRightClose className="h-4 w-4" />
+                    </Button>
+                    <span className="text-[13px] font-semibold truncate">{title}</span>
+                </div>
+                {onDelete && (
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-muted-foreground hover:text-destructive shrink-0 -mr-1.5"
+                        onClick={onDelete}
+                    >
+                        <Trash2 className="h-4 w-4" />
+                    </Button>
+                )}
             </div>
             <Separator />
             {/* Scrollable body */}
@@ -70,6 +84,7 @@ interface DetailsPanelProps {
     title?: string;
     children: React.ReactNode;
     className?: string;
+    onDelete?: () => void;
 }
 
 export function DetailsPanel({
@@ -77,6 +92,7 @@ export function DetailsPanel({
     onOpenChange,
     title = "Details",
     children,
+    onDelete,
 }: DetailsPanelProps) {
     const { portalEl, reportOpen } = useDetailsPanelContext();
     const isDesktop = useIsDesktop();
@@ -107,7 +123,7 @@ export function DetailsPanel({
     if (isDesktop) {
         if (!portalEl || !open) return null;
         return createPortal(
-            <PanelCard title={title} onClose={handleClose}>
+            <PanelCard title={title} onClose={handleClose} onDelete={onDelete}>
                 {children}
             </PanelCard>,
             portalEl
@@ -123,8 +139,8 @@ export function DetailsPanel({
             >
                 <SheetTitle className="sr-only">{title}</SheetTitle>
                 <SheetDescription className="sr-only">{title} panel</SheetDescription>
-                <div className="shrink-0 flex items-center justify-between px-4 pt-3.5 pb-3">
-                    <span className="text-drawer-title font-semibold">{title}</span>
+                <div className="shrink-0 flex items-center justify-between px-4 py-1.5">
+                    <span className="text-[13px] font-semibold">{title}</span>
                 </div>
                 <Separator />
                 <div className="flex-1 overflow-y-auto">

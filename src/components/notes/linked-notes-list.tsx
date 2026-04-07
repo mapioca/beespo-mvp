@@ -12,6 +12,7 @@ interface LinkedNotesListProps {
     entityId: string;
     entityType: 'discussion' | 'meeting' | 'task';
     className?: string;
+    showEmptyState?: boolean;
 }
 
 interface LinkedNote {
@@ -24,7 +25,7 @@ interface LinkedNote {
     };
 }
 
-export function LinkedNotesList({ entityId, entityType, className }: LinkedNotesListProps) {
+export function LinkedNotesList({ entityId, entityType, className, showEmptyState = false }: LinkedNotesListProps) {
     const [linkedNotes, setLinkedNotes] = useState<LinkedNote[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const supabase = createClient();
@@ -61,6 +62,9 @@ export function LinkedNotesList({ entityId, entityType, className }: LinkedNotes
     }
 
     if (linkedNotes.length === 0) {
+        if (showEmptyState) {
+            return <p className="text-[12px] text-muted-foreground text-center py-1">No linked notes yet.</p>;
+        }
         return null; // Don't show anything if no linked notes
     }
 

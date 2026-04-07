@@ -69,7 +69,7 @@ export function DashboardShell({
                 </Sheet>
 
                 {/* Content area: main island + optional details panel island side by side */}
-                <div className="flex-1 min-w-0 min-h-0 flex items-stretch bg-app-shell p-0 sm:p-2.5 sm:gap-2.5 xl:p-3 xl:gap-3 2xl:p-4 2xl:gap-4">
+                <div className="flex-1 min-w-0 min-h-0 flex items-stretch bg-app-shell p-0 sm:p-1.5 sm:gap-1 xl:p-2 xl:gap-1.5 2xl:p-2.5 2xl:gap-1.5">
                     <main className="flex-1 min-w-0 h-full min-h-0 overflow-hidden rounded-none border-0 bg-app-island shadow-none sm:rounded-[16px] sm:border sm:border-app-island sm:shadow-[var(--shadow-app-island)]">
                         {children}
                     </main>

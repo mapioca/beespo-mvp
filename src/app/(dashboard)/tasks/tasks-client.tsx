@@ -25,7 +25,7 @@ import {
     TaskStatus,
     TaskPriority,
 } from "@/components/tasks/tasks-table"
-import { TaskDetailsSheet } from "@/components/tasks/task-details-sheet"
+import { TaskDetailsPanel } from "@/components/tasks/task-details-panel"
 import { CreateTaskDialog } from "@/components/tasks/create-task-dialog"
 import { CreateViewDialog } from "@/components/common/create-view-dialog"
 import {
@@ -741,12 +741,11 @@ export function TasksClient({
                 />
             </div>
 
-            {/* Task details sheet */}
-            <TaskDetailsSheet
+            {/* Task details panel */}
+            <TaskDetailsPanel
                 open={drawerOpen}
                 onOpenChange={setDrawerOpen}
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                task={selectedTask as any}
+                task={selectedTask}
             />
 
             <CreateViewDialog
