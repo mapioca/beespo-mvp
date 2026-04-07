@@ -149,11 +149,11 @@ export function BusinessTable({
                             />
                         )}
 
-                        {/* Position/Calling */}
+                        {/* Calling */}
                         {!hiddenColumns.has("position_calling") && (
                             <SortableTableHeader
                                 sortKey="position_calling"
-                                label="Position / Calling"
+                                label="Calling"
                                 defaultDirection="asc"
                                 sortConfig={sortConfig}
                                 onSort={onSort}

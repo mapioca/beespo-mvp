@@ -27,7 +27,7 @@ import {
     BusinessStatus,
     BusinessCategory,
 } from "./business-table"
-import { BusinessDrawer } from "./business-drawer"
+import { BusinessDetailsPanel } from "./business-details-panel"
 import { BusinessItemForm, BusinessItemFormData } from "./business-item-form"
 import { createClient } from "@/lib/supabase/client"
 import { prefetchBusinessFormData } from "@/lib/cache/form-data-cache"
@@ -806,8 +806,8 @@ export function BusinessClient({ items, initialViews = [] }: BusinessClientProps
                 </DialogContent>
             </Dialog>
 
-            {/* Drawer */}
-            <BusinessDrawer
+            {/* Details panel */}
+            <BusinessDetailsPanel
                 item={selectedItem}
                 open={drawerOpen}
                 onOpenChange={setDrawerOpen}

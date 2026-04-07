@@ -17,7 +17,7 @@ import { cn } from "@/lib/utils";
 // ── Responsive hook ──────────────────────────────────────────────────────────
 
 function useIsDesktop() {
-    const [isDesktop, setIsDesktop] = useState(false);
+    const [isDesktop, setIsDesktop] = useState(true);
     useEffect(() => {
         const mq = window.matchMedia("(min-width: 1024px)");
         setIsDesktop(mq.matches);
