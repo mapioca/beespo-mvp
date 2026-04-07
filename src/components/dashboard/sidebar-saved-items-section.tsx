@@ -122,7 +122,7 @@ function SavedItemRow({
           isActive ? "text-nav-strong font-semibold" : "text-nav hover:text-nav-strong"
         )}
       >
-        <Icon className="h-4 w-4 shrink-0 stroke-[1.6]" />
+        <Icon className="h-[18px] w-[18px] shrink-0 stroke-[1.6]" />
         <div className="min-w-0">
           <p className="truncate text-[12.5px]">{item.title}</p>
           {item.parentTitle ? (
@@ -224,20 +224,20 @@ export function SidebarSavedItemsSection({
   const SectionIcon = itemType === "favorites" ? Pin : Clock3;
 
   return (
-    <div className="mt-3 px-2.5">
+    <div className="mt-3 px-2">
       <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
         <Popover open={flyoutEnabled && flyoutOpen} onOpenChange={() => {}}>
           <PopoverAnchor asChild>
             <CollapsibleTrigger
-              className="group flex w-full items-center gap-1 rounded-md px-2 py-1 transition-colors hover:bg-nav-hover"
+              className="group flex h-[30px] w-full items-center gap-2 rounded-md px-2 transition-colors hover:bg-nav-hover"
               onMouseEnter={openFlyout}
               onMouseLeave={scheduleFlyoutClose}
             >
-              <SectionIcon className="h-3.5 w-3.5 text-nav-muted" />
-              <span className="flex-1 text-left text-[10px] font-semibold uppercase tracking-[0.08em] text-nav-muted">
+              <SectionIcon className="h-[18px] w-[18px] shrink-0 text-nav-muted" />
+              <span className="flex-1 text-left text-[11px] font-semibold tracking-[0.02em] text-nav-muted whitespace-nowrap">
                 {title}
               </span>
-              <span className="rounded-full bg-control px-1.5 py-0.5 text-[10px] font-medium text-nav-muted">
+              <span className="rounded-full bg-control px-1.5 py-0.5 text-[10px] font-medium text-nav-muted shrink-0">
                 {items.length}
               </span>
               <ChevronRight
@@ -260,7 +260,7 @@ export function SidebarSavedItemsSection({
             onOpenAutoFocus={(event) => event.preventDefault()}
             onInteractOutside={(event) => event.preventDefault()}
           >
-            <p className="px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+            <p className="px-2 py-1 text-[10px] font-semibold tracking-[0.04em] text-muted-foreground">
               {title}
             </p>
             <div className="mt-0.5 space-y-0.5">

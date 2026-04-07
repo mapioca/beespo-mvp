@@ -62,8 +62,8 @@ export function DashboardShell({
                             userId={userId}
                             userRoleTitle={userRoleTitle}
                             className="w-full"
-                            forceCollapsed={false}
-                            hideCollapseToggle
+                            forceExpanded
+                            hidePinToggle
                         />
                     </SheetContent>
                 </Sheet>

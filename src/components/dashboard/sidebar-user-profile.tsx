@@ -219,9 +219,9 @@ export function SidebarUserProfile({ name, email, userId, roleTitle, avatarUrl, 
 
     return (
         <>
-            <div className="border-t border-border/70 p-3">
+            <div className="border-t border-border/70 py-3 pl-2 pr-3">
                 <div className="flex items-center justify-between w-full group">
-                    <div className="flex items-center gap-3 overflow-hidden">
+                    <div className="flex items-center gap-2.5 overflow-hidden">
                         {avatarElement}
                         <div className="grid gap-0.5 text-left text-sm leading-tight">
                             <span className="text-nav-strong w-28 truncate font-semibold">{name}</span>

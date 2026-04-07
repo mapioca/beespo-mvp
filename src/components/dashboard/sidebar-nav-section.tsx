@@ -32,19 +32,20 @@ export function SidebarNavSection({
       )}
 
       {/* Section Items */}
-      <div className="space-y-0.5 px-2">
+      <div className="px-2">
         {section.items.map((item) => {
           if (isNavItemParent(item)) {
             const groupId = `${section.id}-${item.label.toLowerCase().replace(/\s+/g, "-")}`
             return (
-              <SidebarNavCollapsible
-                key={groupId}
-                item={item}
-                isExpanded={isGroupExpanded(groupId, item.defaultOpen)}
-                onToggle={() => toggleGroup(groupId)}
-                pathname={pathname}
-                isCollapsed={isCollapsed}
-              />
+              <div key={groupId} className="mt-3">
+                <SidebarNavCollapsible
+                  item={item}
+                  isExpanded={isGroupExpanded(groupId, item.defaultOpen)}
+                  onToggle={() => toggleGroup(groupId)}
+                  pathname={pathname}
+                  isCollapsed={isCollapsed}
+                />
+              </div>
             )
           }
 
@@ -53,12 +54,13 @@ export function SidebarNavSection({
             (item.href !== "/dashboard" && pathname.startsWith(item.href))
 
           return (
-            <SidebarNavItem
-              key={item.href}
-              item={item}
-              isCollapsed={isCollapsed}
-              isActive={isActive}
-            />
+            <div key={item.href} className="mt-0.5">
+              <SidebarNavItem
+                item={item}
+                isCollapsed={isCollapsed}
+                isActive={isActive}
+              />
+            </div>
           )
         })}
       </div>
