@@ -2,7 +2,6 @@
 
 import { useState, useMemo, useCallback, useTransition, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import Link from "next/link"
 import { createPortal } from "react-dom"
 import { Button } from "@/components/ui/button"
 import { Check, Columns3, Plus, SlidersHorizontal, X, Megaphone } from "lucide-react"
@@ -17,6 +16,12 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog"
 import { createClient } from "@/lib/supabase/client"
 import { toast } from "@/lib/toast"
 import {
@@ -26,6 +31,7 @@ import {
     AnnouncementPriority,
 } from "./announcements-table"
 import { AnnouncementDrawer } from "./announcement-drawer"
+import { AnnouncementForm, AnnouncementFormData } from "./announcement-form"
 import { CreateViewDialog } from "@/components/common/create-view-dialog"
 import {
     AnnouncementView,
@@ -147,6 +153,8 @@ export function AnnouncementsClient({
     const [filtersOpen, setFiltersOpen] = useState(false)
     const [displayOptionsOpen, setDisplayOptionsOpen] = useState(false)
     const [createFilterDialogOpen, setCreateFilterDialogOpen] = useState(false)
+    const [newAnnouncementModalOpen, setNewAnnouncementModalOpen] = useState(false)
+    const [isCreating, setIsCreating] = useState(false)
 
     useEffect(() => {
         setMounted(true)
@@ -333,6 +341,70 @@ export function AnnouncementsClient({
         setDrawerOpen(true)
     }
 
+    const handleCreateAnnouncement = async (formData: AnnouncementFormData) => {
+        setIsCreating(true)
+        const supabase = createClient()
+
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) {
+            toast.error("Not authenticated. Please log in again.")
+            setIsCreating(false)
+            return
+        }
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: profile } = await (supabase.from("profiles") as any)
+            .select("workspace_id, role")
+            .eq("id", user.id)
+            .single()
+
+        if (!profile || !["leader", "admin"].includes(profile.role)) {
+            toast.error("Only leaders and admins can create announcements.")
+            setIsCreating(false)
+            return
+        }
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: newAnnouncement, error } = await (supabase.from("announcements") as any)
+            .insert({
+                title: formData.title,
+                content: formData.content,
+                priority: formData.priority,
+                status: "active",
+                display_start: formData.displayStart || null,
+                display_until: formData.displayUntil || null,
+                workspace_id: profile.workspace_id,
+                created_by: user.id,
+            })
+            .select("id")
+            .single()
+
+        if (error || !newAnnouncement) {
+            toast.error(error?.message || "Failed to create announcement.")
+            setIsCreating(false)
+            return
+        }
+
+        if (formData.templateIds.length > 0) {
+            const { error: linkError } = await (supabase
+                .from("announcement_templates") as ReturnType<typeof supabase.from>)
+                .insert(
+                    formData.templateIds.map((templateId) => ({
+                        announcement_id: newAnnouncement.id,
+                        template_id: templateId,
+                    }))
+                )
+            if (linkError) {
+                toast.warning("Created, but could not link to template.")
+            }
+        }
+
+        toast.success("Announcement created successfully!")
+        setIsCreating(false)
+        setNewAnnouncementModalOpen(false)
+        router.refresh()
+    }
+
     function handleViewCreated(view: TableView) {
         setViews((prev) => [...prev, view as AnnouncementView])
         setActiveViewId(view.id)
@@ -403,15 +475,13 @@ export function AnnouncementsClient({
                             emptyText="No matching announcements."
                         />
                         <Button
-                            asChild
                             variant="ghost"
                             size="sm"
+                            onClick={() => setNewAnnouncementModalOpen(true)}
                             className="h-7 gap-1 rounded-full px-2.5 text-[length:var(--agenda-control-font-size)] text-nav transition-colors hover:bg-[hsl(var(--agenda-interactive-hover))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--agenda-interactive-focus-ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                         >
-                            <Link href="/meetings/announcements/new" className="flex items-center gap-1.5">
-                                <Plus className="h-3.5 w-3.5 stroke-[1.6]" />
-                                New announcement
-                            </Link>
+                            <Plus className="h-3.5 w-3.5 stroke-[1.6]" />
+                            New announcement
                         </Button>
                     </div>
                 }
@@ -721,6 +791,23 @@ export function AnnouncementsClient({
                     onDelete={handleDelete}
                 />
             </div>
+
+            {/* New Announcement Modal */}
+            <Dialog open={newAnnouncementModalOpen} onOpenChange={setNewAnnouncementModalOpen}>
+                <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden p-0 gap-0">
+                    <DialogHeader className="px-5 py-4 space-y-3">
+                        <DialogTitle>New Announcement</DialogTitle>
+                        <p className="text-xs text-muted-foreground">
+                            Add a time-based announcement for your organization.
+                        </p>
+                    </DialogHeader>
+                    <AnnouncementForm
+                        onSubmit={handleCreateAnnouncement}
+                        isLoading={isCreating}
+                        onCancel={() => setNewAnnouncementModalOpen(false)}
+                    />
+                </DialogContent>
+            </Dialog>
 
             {/* Drawer */}
             <AnnouncementDrawer

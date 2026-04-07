@@ -10,6 +10,7 @@ import { createClient } from "@/lib/supabase/client";
 import { toast } from "@/lib/toast";
 import { Speech, Megaphone, Plus, Trash2, Music, BookOpen, MessageSquare, Briefcase, UserPlus, Pencil, CheckCircle, Minus } from "lucide-react";
 import { AddMeetingItemDialog, SelectedItem, CategoryType } from "./add-meeting-item-dialog";
+import { isAnnouncementInWindow } from "@/lib/announcement-utils";
 import { UnifiedSelectorModal, UnifiedSelectorMode, SpeakerSelection } from "./unified-selector-modal";
 import { ContainerAgendaItem, ContainerChildItem, ContainerType } from "./container-agenda-item";
 import { ValidationModal, ValidationItem, ValidationState } from "./validation-modal";
@@ -148,7 +149,7 @@ export function MeetingComposer({
             let linkedAnnouncements: any[] | null = null;
             const { data: annData, error: annError } = await (supabase
                 .from("announcement_templates") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
-                .select("announcement_id, announcements(id, title, content, status, priority)")
+                .select("announcement_id, announcements(id, title, content, status, priority, display_start, display_until)")
                 .eq("template_id", templateId);
             if (!annError) linkedAnnouncements = annData;
             console.log("Linked announcements:", linkedAnnouncements?.length || 0);
@@ -235,11 +236,11 @@ export function MeetingComposer({
                     if (linkedAnnouncements?.length) {
                         for (const link of linkedAnnouncements) {
                             const ann = link.announcements;
-                            if (ann && ann.status === "active") {
+                            if (ann && ann.status === "active" && isAnnouncementInWindow(ann, meetingDate)) {
                                 childItems.push({
                                     id: `child-ann-${ann.id}`,
                                     title: ann.title,
-                                    description: ann.content, // Note: announcements table uses 'content' not 'description'
+                                    description: ann.content,
                                     announcement_id: ann.id,
                                     priority: ann.priority,
                                 });
