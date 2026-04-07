@@ -6,8 +6,16 @@ import { useRouter } from "next/navigation"
 import { Check, ClipboardList, Columns3, Plus, SlidersHorizontal, X } from "lucide-react"
 
 import { Breadcrumbs } from "@/components/dashboard/breadcrumbs"
+import { Button } from "@/components/ui/button"
 import { AssignmentsTable, AssignmentRecord } from "@/components/assignments/assignments-table"
+import { AssignmentForm, AssignmentFormData } from "@/components/assignments/assignment-form"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { BulkSelectionBar } from "@/components/ui/bulk-selection-bar"
 import {
   StandardPopoverMenu,
@@ -71,6 +79,8 @@ export function AssignmentsClient({ assignments, initialViews = [] }: Assignment
   const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false)
   const [isBulkDeleting, setIsBulkDeleting] = useState(false)
   const [createFilterDialogOpen, setCreateFilterDialogOpen] = useState(false)
+  const [newAssignmentModalOpen, setNewAssignmentModalOpen] = useState(false)
+  const [isCreating, setIsCreating] = useState(false)
 
   useEffect(() => {
     setMounted(true)
@@ -259,6 +269,53 @@ export function AssignmentsClient({ assignments, initialViews = [] }: Assignment
     router.push(`/meetings/${meetingId}`)
   }
 
+  const handleCreateAssignment = async (formData: AssignmentFormData) => {
+    setIsCreating(true)
+    const supabase = createClient()
+
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      toast.error("Not authenticated. Please log in again.")
+      setIsCreating(false)
+      return
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: profile } = await (supabase.from("profiles") as any)
+      .select("workspace_id, role")
+      .eq("id", user.id)
+      .single()
+
+    if (!profile || !["leader", "admin"].includes(profile.role)) {
+      toast.error("Only leaders and admins can create assignments.")
+      setIsCreating(false)
+      return
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase.from("meeting_assignments") as any)
+      .insert({
+        directory_id: formData.directoryId,
+        assignment_type: formData.assignmentType,
+        topic: formData.topic || null,
+        is_confirmed: formData.isConfirmed,
+        workspace_id: profile.workspace_id,
+        created_by: user.id,
+        agenda_item_id: formData.agendaItemId || null,
+      })
+
+    if (error) {
+      toast.error(error.message || "Failed to create assignment.")
+      setIsCreating(false)
+      return
+    }
+
+    toast.success("Assignment created successfully!")
+    setIsCreating(false)
+    setNewAssignmentModalOpen(false)
+    router.refresh()
+  }
+
   function handleViewCreated(view: TableView) {
     setViews((prev) => [...prev, view as AssignmentView])
     setActiveViewId(view.id)
@@ -312,6 +369,15 @@ export function AssignmentsClient({ assignments, initialViews = [] }: Assignment
               }}
               emptyText="No matching assignments."
             />
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setNewAssignmentModalOpen(true)}
+              className="h-7 gap-1 rounded-full px-2.5 text-[length:var(--agenda-control-font-size)] text-nav transition-colors hover:bg-[hsl(var(--agenda-interactive-hover))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--agenda-interactive-focus-ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            >
+              <Plus className="h-3.5 w-3.5 stroke-[1.6]" />
+              New assignment
+            </Button>
           </div>
         }
       />
@@ -609,6 +675,23 @@ export function AssignmentsClient({ assignments, initialViews = [] }: Assignment
           onDelete={handleDelete}
         />
       </div>
+
+      {/* New Assignment Modal */}
+      <Dialog open={newAssignmentModalOpen} onOpenChange={setNewAssignmentModalOpen}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden p-0 gap-0">
+          <DialogHeader className="px-5 py-4 space-y-3">
+            <DialogTitle>New Assignment</DialogTitle>
+            <p className="text-xs text-muted-foreground">
+              Create a new assignment for a directory member.
+            </p>
+          </DialogHeader>
+          <AssignmentForm
+            onSubmit={handleCreateAssignment}
+            isLoading={isCreating}
+            onCancel={() => setNewAssignmentModalOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
 
       <AlertDialog open={showBulkDeleteDialog} onOpenChange={setShowBulkDeleteDialog}>
         <AlertDialogContent>
