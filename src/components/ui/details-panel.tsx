@@ -139,8 +139,28 @@ export function DetailsPanel({
             >
                 <SheetTitle className="sr-only">{title}</SheetTitle>
                 <SheetDescription className="sr-only">{title} panel</SheetDescription>
-                <div className="shrink-0 flex items-center justify-between px-4 py-1.5">
-                    <span className="text-[13px] font-semibold">{title}</span>
+                <div className="shrink-0 flex items-center justify-between px-4 py-1.5 gap-2">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-muted-foreground hover:text-foreground shrink-0 -ml-1.5"
+                            onClick={handleClose}
+                        >
+                            <PanelRightClose className="h-4 w-4" />
+                        </Button>
+                        <span className="text-[13px] font-semibold truncate">{title}</span>
+                    </div>
+                    {onDelete && (
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-muted-foreground hover:text-destructive shrink-0 -mr-1.5"
+                            onClick={onDelete}
+                        >
+                            <Trash2 className="h-4 w-4" />
+                        </Button>
+                    )}
                 </div>
                 <Separator />
                 <div className="flex-1 overflow-y-auto">
