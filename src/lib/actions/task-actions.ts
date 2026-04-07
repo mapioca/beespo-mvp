@@ -147,7 +147,7 @@ export async function updateTask(taskId: string, data: {
     if (!user) return { error: "Unauthorized" };
 
     try {
-        const updateData: Record<string, any> = { updated_at: new Date().toISOString() };
+        const updateData: Partial<Database["public"]["Tables"]["tasks"]["Update"]> = { updated_at: new Date().toISOString() };
         if (data.title !== undefined) updateData.title = data.title;
         if (data.description !== undefined) updateData.description = data.description;
         if (data.assigned_to !== undefined) updateData.assigned_to = data.assigned_to;

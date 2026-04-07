@@ -4,7 +4,6 @@ import { useState, useMemo, useCallback, useTransition, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { createPortal } from "react-dom"
-import { addDays, addMonths, endOfDay, startOfDay, subDays, subMonths } from "date-fns"
 import { Button } from "@/components/ui/button"
 import { Check, Plus, SlidersHorizontal, X } from "lucide-react"
 import { Columns3 } from "lucide-react"
@@ -84,7 +83,6 @@ export function MeetingsClient({
     // Filters
     const [selectedStatuses, setSelectedStatuses] = useState<MeetingStatus[]>([])
     const [selectedTemplates, setSelectedTemplates] = useState<string[]>([])
-    const [selectedDateFilters, setSelectedDateFilters] = useState<string[]>([])
 
     // Sort
     const [sortConfig, setSortConfig] = useState<{
@@ -185,59 +183,6 @@ export function MeetingsClient({
             result = result.filter((m) => !!m.zoom_meeting_id)
         }
 
-        // Date filter (manual filters only)
-        if (!activeFilter && selectedDateFilters.length > 0) {
-            const now = new Date()
-            result = result.filter((meeting) => {
-                if (!meeting.scheduled_date) return false
-                const scheduledAt = new Date(meeting.scheduled_date)
-                if (Number.isNaN(scheduledAt.getTime())) return false
-
-                return selectedDateFilters.some((preset) => {
-                    if (preset === "today") {
-                        return scheduledAt >= startOfDay(now) && scheduledAt <= endOfDay(now)
-                    }
-                    if (preset === "tomorrow") {
-                        const day = addDays(now, 1)
-                        return scheduledAt >= startOfDay(day) && scheduledAt <= endOfDay(day)
-                    }
-                    if (preset === "within_1_week") {
-                        return scheduledAt >= now && scheduledAt <= addDays(now, 7)
-                    }
-                    if (preset === "within_2_weeks") {
-                        return scheduledAt >= now && scheduledAt <= addDays(now, 14)
-                    }
-                    if (preset === "within_1_month") {
-                        return scheduledAt >= now && scheduledAt <= addMonths(now, 1)
-                    }
-                    if (preset === "within_2_months") {
-                        return scheduledAt >= now && scheduledAt <= addMonths(now, 2)
-                    }
-                    if (preset === "yesterday") {
-                        const day = subDays(now, 1)
-                        return scheduledAt >= startOfDay(day) && scheduledAt <= endOfDay(day)
-                    }
-                    if (preset === "days_7_ago") {
-                        const day = subDays(now, 7)
-                        return scheduledAt >= startOfDay(day) && scheduledAt <= endOfDay(day)
-                    }
-                    if (preset === "weeks_2_ago") {
-                        const day = subDays(now, 14)
-                        return scheduledAt >= startOfDay(day) && scheduledAt <= endOfDay(day)
-                    }
-                    if (preset === "month_1_ago") {
-                        const day = subMonths(now, 1)
-                        return scheduledAt >= startOfDay(day) && scheduledAt <= endOfDay(day)
-                    }
-                    if (preset === "months_2_ago") {
-                        const day = subMonths(now, 2)
-                        return scheduledAt >= startOfDay(day) && scheduledAt <= endOfDay(day)
-                    }
-                    return true
-                })
-            })
-        }
-
         // Sort
         if (sortConfig) {
             result = [...result].sort((a, b) => {
@@ -271,7 +216,6 @@ export function MeetingsClient({
         search,
         selectedStatuses,
         selectedTemplates,
-        selectedDateFilters,
         sortConfig,
     ])
 
@@ -300,18 +244,10 @@ export function MeetingsClient({
         )
     }, [])
 
-    const handleDateFilterToggle = useCallback((preset: string) => {
-        setSelectedDateFilters((prev) =>
-            prev.includes(preset)
-                ? prev.filter((p) => p !== preset)
-                : [...prev, preset]
-        )
-    }, [])
-
     const handleToggleColumnVisibility = useCallback((column: string) => {
         setHiddenColumns((prev) => {
             const next = new Set(prev)
-            const visibleCount = ["title", "template", "status", "scheduled_date"].filter(
+            const visibleCount = ["title", "template", "status", "scheduled_date", "scheduled_time"].filter(
                 (c) => !next.has(c)
             ).length
             const isVisible = !next.has(column)
@@ -403,7 +339,6 @@ export function MeetingsClient({
         (search.length > 0 ||
             selectedStatuses.length > 0 ||
             selectedTemplates.length > 0 ||
-            selectedDateFilters.length > 0 ||
             hiddenColumns.size > 0)
 
     function formatStatusLabel(s: string) {
@@ -420,7 +355,6 @@ export function MeetingsClient({
         setSearch("")
         setSelectedStatuses([])
         setSelectedTemplates([])
-        setSelectedDateFilters([])
         setHiddenColumns(new Set())
     }, [])
 
@@ -445,23 +379,6 @@ export function MeetingsClient({
         })),
     ]
 
-    const dateFilterOptions = [
-        { value: "today", label: "Today" },
-        { value: "tomorrow", label: "Tomorrow" },
-        { value: "within_1_week", label: "Within 1 week from now" },
-        { value: "within_2_weeks", label: "Within 2 weeks from now" },
-        { value: "within_1_month", label: "Within 1 month from now" },
-        { value: "within_2_months", label: "Within 2 months from now" },
-        { value: "yesterday", label: "Yesterday" },
-        { value: "days_7_ago", label: "7 days ago" },
-        { value: "weeks_2_ago", label: "2 weeks ago" },
-        { value: "month_1_ago", label: "1 month ago" },
-        { value: "months_2_ago", label: "2 months ago" },
-    ] as const
-
-    const dateFilterLabelByValue = Object.fromEntries(
-        dateFilterOptions.map((opt) => [opt.value, opt.label])
-    ) as Record<string, string>
 
     // ── Render ────────────────────────────────────────────────────────────────
 
@@ -605,41 +522,14 @@ export function MeetingsClient({
                                 </StandardPopoverMenuSubContent>
                             </StandardPopoverMenuSub>
 
-                            <StandardPopoverMenuSub>
-                                <StandardPopoverMenuSubTrigger
-                                    active={selectedDateFilters.length > 0}
-                                    disabled={!!activeFilter}
-                                >
-                                    Date
-                                </StandardPopoverMenuSubTrigger>
-                                <StandardPopoverMenuSubContent className="max-h-72 overflow-y-auto">
-                                    {dateFilterOptions.map((opt) => {
-                                        const selected = selectedDateFilters.includes(opt.value)
-                                        return (
-                                            <StandardPopoverMenuItem
-                                                key={opt.value}
-                                                active={selected}
-                                                onSelect={() => handleDateFilterToggle(opt.value)}
-                                            >
-                                                <span className="flex min-w-0 items-center gap-2">
-                                                    <span className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-sm border border-border/60">
-                                                        {selected ? <Check className="h-3 w-3" /> : null}
-                                                    </span>
-                                                    <span className="truncate">{opt.label}</span>
-                                                </span>
-                                            </StandardPopoverMenuItem>
-                                        )
-                                    })}
-                                </StandardPopoverMenuSubContent>
-                            </StandardPopoverMenuSub>
 
-                            {(selectedStatuses.length > 0 || selectedTemplates.length > 0 || selectedDateFilters.length > 0) && !activeFilter && (
+
+                            {(selectedStatuses.length > 0 || selectedTemplates.length > 0) && !activeFilter && (
                                 <StandardPopoverMenuItem
                                     onSelect={() => {
                                         setSelectedStatuses([])
                                         setSelectedTemplates([])
-                                        setSelectedDateFilters([])
-                                    }}
+                                                                    }}
                                     className="text-muted-foreground"
                                 >
                                     Clear filters
@@ -727,6 +617,7 @@ export function MeetingsClient({
                                 { key: "template", label: "Template" },
                                 { key: "status", label: "Status" },
                                 { key: "scheduled_date", label: "Date" },
+                                { key: "scheduled_time", label: "Time" },
                             ].map((column) => {
                                 const visible = !hiddenColumns.has(column.key)
                                 return (
@@ -835,20 +726,6 @@ export function MeetingsClient({
                             {getTemplateName(id)}
                             <button
                                 onClick={() => handleTemplateToggle(id)}
-                                className="text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--agenda-interactive-focus-ring))] focus-visible:ring-offset-1 focus-visible:ring-offset-background rounded-sm"
-                            >
-                                <X className="h-3 w-3 stroke-[1.6]" />
-                            </button>
-                        </span>
-                    ))}
-                    {selectedDateFilters.map((preset) => (
-                        <span
-                            key={preset}
-                            className="inline-flex items-center gap-1.5 rounded-full bg-[hsl(var(--chip-bg))] border border-[hsl(var(--chip-border))] px-2.5 py-1.5 text-[length:var(--agenda-chip-font-size)] font-medium leading-none text-[hsl(var(--chip-text))]"
-                        >
-                            {dateFilterLabelByValue[preset] || preset}
-                            <button
-                                onClick={() => handleDateFilterToggle(preset)}
                                 className="text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--agenda-interactive-focus-ring))] focus-visible:ring-offset-1 focus-visible:ring-offset-background rounded-sm"
                             >
                                 <X className="h-3 w-3 stroke-[1.6]" />

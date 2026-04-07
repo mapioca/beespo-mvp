@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import React, { useState } from "react"
 import {
     Table,
     TableBody,
@@ -25,11 +25,10 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { Eye, Trash2, Briefcase } from "lucide-react"
+import { Eye, Trash2, Briefcase, CircleDashed, CircleCheck, CalendarCheck } from "lucide-react"
 import { format } from "date-fns"
 import type { BusinessItemDetails } from "@/lib/business-script-generator"
 import { TableRowActionTrigger } from "@/components/ui/table-row-action-trigger"
-import { StatusIndicator } from "@/components/ui/status-indicator"
 import { SortableTableHeader } from "@/components/ui/sortable-table-header"
 import {
     StandardActionsHeadCell,
@@ -73,6 +72,11 @@ function formatCategory(category: string): string {
 const STATUS_TONES: Record<string, "neutral" | "info" | "success" | "warning" | "danger"> = {
     pending: "warning",
     completed: "neutral",
+}
+
+const STATUS_ICONS: Record<string, React.ElementType> = {
+    pending: CircleDashed,
+    completed: CircleCheck,
 }
 
 // ── Props ───────────────────────────────────────────────────────────────────
@@ -137,11 +141,11 @@ export function BusinessTable({
                             className="w-10 table-cell-check static px-[var(--table-cell-px)] py-[var(--table-row-py)] backdrop-blur-none"
                         />
 
-                        {/* Person Name */}
+                        {/* Member */}
                         {!hiddenColumns.has("person_name") && (
                             <SortableTableHeader
                                 sortKey="person_name"
-                                label="Person Name"
+                                label="Member"
                                 defaultDirection="asc"
                                 sortConfig={sortConfig}
                                 onSort={onSort}
@@ -222,6 +226,8 @@ export function BusinessTable({
                                 id={item.id}
                                 selected={selectedRows.has(item.id)}
                                 onToggle={onToggleRow}
+                                onRowClick={onViewItem ? () => onViewItem(item) : undefined}
+                                selectOnRowClick={false}
                                 className="focus-within:bg-transparent focus-within:shadow-none"
                                 actions={
                                     <DropdownMenu>
@@ -287,24 +293,40 @@ export function BusinessTable({
 
                                 {/* Status */}
                                 {!hiddenColumns.has("status") && (
-                                    <TableCell className="table-cell-meta !px-2 capitalize">
-                                        <StatusIndicator
-                                            label={item.status === "pending" ? "Pending" : "Completed"}
-                                            tone={STATUS_TONES[item.status] || "neutral"}
-                                            className="text-[11.5px] text-foreground/66"
-                                        />
+                                    <TableCell className="table-cell-meta">
+                                        {(() => {
+                                            const Icon = STATUS_ICONS[item.status] ?? CircleDashed;
+                                            const tone = STATUS_TONES[item.status] ?? "neutral";
+                                            const iconClass = {
+                                                neutral: "text-zinc-400/70",
+                                                warning: "text-amber-500/80",
+                                                success: "text-emerald-500/80",
+                                                info: "text-blue-400/80",
+                                                danger: "text-rose-500/80",
+                                            }[tone];
+                                            return (
+                                                <span className="inline-flex items-center gap-1.5">
+                                                    <Icon className={`h-3.5 w-3.5 shrink-0 ${iconClass}`} />
+                                                    <span className="text-[11.5px] font-medium text-foreground/66 capitalize">
+                                                        {item.status}
+                                                    </span>
+                                                </span>
+                                            );
+                                        })()}
                                     </TableCell>
                                 )}
 
                                 {/* Action Date */}
                                 {!hiddenColumns.has("action_date") && (
-                                    <TableCell className="table-cell-meta !px-2 text-[11.5px] text-foreground/56">
-                                        {item.action_date
-                                            ? format(
-                                                  new Date(item.action_date),
-                                                  "MMM d, yyyy"
-                                              )
-                                            : "—"}
+                                    <TableCell className="table-cell-meta">
+                                        {item.action_date ? (
+                                            <span className="inline-flex items-center gap-1.5">
+                                                <CalendarCheck className="h-3.5 w-3.5 shrink-0 text-foreground/40" />
+                                                <span className="text-[11.5px] font-medium text-foreground/66">
+                                                    {format(new Date(item.action_date), "MMM d, yyyy")}
+                                                </span>
+                                            </span>
+                                        ) : null}
                                     </TableCell>
                                 )}
                             </StandardSelectableRow>

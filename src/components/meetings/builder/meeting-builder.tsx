@@ -19,7 +19,6 @@ import { format } from "date-fns";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
-import { isAnnouncementInWindow } from "@/lib/announcement-utils";
 import { PropertiesPane } from "./properties-pane";
 import { ToolboxPane } from "./toolbox-pane";
 import { AgendaCanvas } from "./agenda-canvas";

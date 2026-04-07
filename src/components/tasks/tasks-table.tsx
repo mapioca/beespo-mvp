@@ -33,7 +33,6 @@ import {
 import { Eye, Trash2, CheckSquare, CircleDashed, CircleCheck, ChevronDown, ChevronUp, ChevronsUp, CalendarIcon, UserCircle } from "lucide-react"
 import { format } from "date-fns"
 import { TableRowActionTrigger } from "@/components/ui/table-row-action-trigger"
-import { StatusIndicator } from "@/components/ui/status-indicator"
 import { SortableTableHeader } from "@/components/ui/sortable-table-header"
 import {
     StandardActionsHeadCell,
@@ -69,12 +68,10 @@ export interface Task {
 function formatLabel(value: string): string {
     return value.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())
 }
-
-const STATUS_TONES: Record<string, "neutral" | "info" | "success" | "warning" | "danger"> = {
-    pending: "warning",
-    in_progress: "info",
-    completed: "neutral",
-    cancelled: "danger",
+export interface Profile {
+    id: string;
+    full_name: string;
+    email?: string;
 }
 
 // ── Props ───────────────────────────────────────────────────────────────────
@@ -120,7 +117,7 @@ export function TasksTable({
     }
 
     const [isUpdating, setIsUpdating] = useState<string | null>(null)
-    const [profiles, setProfiles] = useState<any[]>([])
+    const [profiles, setProfiles] = useState<Profile[]>([])
 
     // Load available profiles (members) for assignment
     useEffect(() => {
@@ -271,6 +268,8 @@ export function TasksTable({
                                 id={task.id}
                                 selected={selectedRows.has(task.id)}
                                 onToggle={onToggleRow}
+                                onRowClick={onViewTask ? () => onViewTask(task) : undefined}
+                                selectOnRowClick={false}
                                 className="focus-within:bg-transparent focus-within:shadow-none"
                                 actions={
                                     <DropdownMenu>

@@ -15,7 +15,6 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import {
@@ -54,7 +53,12 @@ import { format } from "date-fns";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "@/lib/toast";
 import { generateBusinessScript, type Language } from "@/lib/business-script-generator";
-import { getWorkspaceProfile } from "@/lib/cache/form-data-cache";
+import {
+    getWorkspaceProfile,
+    getDirectoryCache,
+    setDirectoryCache,
+    type DirectoryPersonCacheEntry,
+} from "@/lib/cache/form-data-cache";
 import callingsCatalog from "@/data/callings.json";
 import { cn } from "@/lib/utils";
 import type { BusinessItem } from "./business-table";
@@ -136,6 +140,13 @@ export function BusinessDetailsPanel({
     const [language, setLanguage] = useState<Language>("ENG");
     const [notes, setNotes] = useState("");
 
+    // Person combobox state
+    const [selectedPersonId, setSelectedPersonId] = useState("");
+    const [personOpen, setPersonOpen] = useState(false);
+    const [personSearch, setPersonSearch] = useState("");
+    const [directoryPeople, setDirectoryPeople] = useState<DirectoryPersonCacheEntry[]>([]);
+    const [isDirectoryLoading, setIsDirectoryLoading] = useState(false);
+
     // Calling combobox state
     const [selectedCallingId, setSelectedCallingId] = useState("");
     const [callingOpen, setCallingOpen] = useState(false);
@@ -172,25 +183,55 @@ export function BusinessDetailsPanel({
 
     const languageKey = language === "SPA" ? "es" : "en";
 
-    // Load workspace calling level from cache or Supabase on mount
+    const filteredPeople = useMemo(() => {
+        if (!personSearch.trim()) return directoryPeople;
+        const q = personSearch.toLowerCase();
+        return directoryPeople.filter((p) => p.name.toLowerCase().includes(q));
+    }, [directoryPeople, personSearch]);
+
+    const selectedPerson = useMemo(
+        () => directoryPeople.find((p) => p.id === selectedPersonId) ?? null,
+        [directoryPeople, selectedPersonId]
+    );
+
+    // Load workspace calling level + directory from cache or Supabase on mount
     useEffect(() => {
         const wp = getWorkspaceProfile();
         if (wp) {
             setWorkspaceCallingLevel(mapWorkspaceTypeToCallingLevel(wp.workspaceType));
-            return;
+            const cached = getDirectoryCache(wp.workspaceId);
+            if (cached) {
+                setDirectoryPeople(cached);
+                return;
+            }
         }
+        // Fallback: fetch from Supabase
         (async () => {
+            setIsDirectoryLoading(true);
             const supabase = createClient();
             const { data: { user } } = await supabase.auth.getUser();
-            if (!user) return;
+            if (!user) { setIsDirectoryLoading(false); return; }
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const { data: profile } = await (supabase.from("profiles") as any)
-                .select("workspaces(type)")
+                .select("workspace_id, workspaces(type)")
                 .eq("id", user.id)
                 .single();
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const workspaceId: string | null = (profile as any)?.workspace_id ?? null;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const type = ((profile as any)?.workspaces?.type as string | null) ?? null;
             setWorkspaceCallingLevel(mapWorkspaceTypeToCallingLevel(type));
+            if (!workspaceId) { setIsDirectoryLoading(false); return; }
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const { data } = await (supabase.from("directory") as any)
+                .select("id, name, gender")
+                .eq("workspace_id", workspaceId)
+                .order("name");
+            if (data) {
+                setDirectoryCache(workspaceId, data as DirectoryPersonCacheEntry[]);
+                setDirectoryPeople(data as DirectoryPersonCacheEntry[]);
+            }
+            setIsDirectoryLoading(false);
         })();
     }, []);
 
@@ -203,9 +244,18 @@ export function BusinessDetailsPanel({
             setStatus(item.status);
             setLanguage(item.details?.language ?? "ENG");
             setNotes(item.notes ?? "");
-            setSelectedCallingId(""); // reset; resolved by catalog-match effect below
+            setSelectedPersonId(""); // resolved by directory-match effect below
+            setSelectedCallingId(""); // resolved by catalog-match effect below
         }
     }, [item]);
+
+    // Once directory is available, try to match person_name against it
+    useEffect(() => {
+        if (!item?.person_name || !directoryPeople.length) return;
+        const match = directoryPeople.find((p) => p.name === item.person_name);
+        setSelectedPersonId(match?.id ?? "");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [item?.id, item?.person_name, directoryPeople]);
 
     // Once callings catalog is available, try to match position_calling against it
     useEffect(() => {
@@ -272,10 +322,13 @@ export function BusinessDetailsPanel({
         saveFields({ details: { ...(item?.details ?? {}), language: val } });
     };
 
-    const handlePersonNameBlur = () => {
-        if (!item || personName.trim() === item.person_name) return;
-        if (!personName.trim()) { setPersonName(item.person_name); return; }
-        saveFields({ person_name: personName.trim() });
+    const handlePersonSelect = (personId: string) => {
+        const person = directoryPeople.find((p) => p.id === personId);
+        if (!person) return;
+        setSelectedPersonId(personId);
+        setPersonName(person.name);
+        setPersonOpen(false);
+        saveFields({ person_name: person.name });
     };
 
     const handleCallingSelect = (callingId: string, labelOverride?: string) => {
@@ -321,13 +374,55 @@ export function BusinessDetailsPanel({
             >
                 {/* Person Name + Calling */}
                 <DetailsPanelSection>
-                    <Input
-                        value={personName}
-                        onChange={(e) => setPersonName(e.target.value)}
-                        onBlur={handlePersonNameBlur}
-                        placeholder="Person name"
-                        className="border-0 bg-transparent shadow-none px-0 h-auto text-[15px] font-semibold placeholder:text-muted-foreground/50 focus-visible:ring-0"
-                    />
+                    <Popover open={personOpen} onOpenChange={setPersonOpen}>
+                        <PopoverTrigger asChild>
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                role="combobox"
+                                aria-expanded={personOpen}
+                                className="h-auto px-0 py-0 font-semibold text-[15px] text-foreground hover:bg-transparent hover:text-foreground justify-start gap-1 w-full max-w-full"
+                            >
+                                <span className="truncate min-w-0 flex-1 text-left">
+                                    {selectedPerson
+                                        ? selectedPerson.name
+                                        : personName || (
+                                            <span className="font-normal text-muted-foreground/50">Select person...</span>
+                                        )}
+                                </span>
+                                <ChevronsUpDown className="h-3 w-3 opacity-40 shrink-0" />
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent align="start" className="w-[280px] p-0">
+                            <Command shouldFilter={false}>
+                                <CommandInput
+                                    placeholder={isDirectoryLoading ? "Loading..." : "Search members..."}
+                                    value={personSearch}
+                                    onValueChange={setPersonSearch}
+                                />
+                                <CommandList className="max-h-64 overflow-y-auto">
+                                    <CommandEmpty>No members found.</CommandEmpty>
+                                    <CommandGroup>
+                                        {filteredPeople.map((person) => (
+                                            <CommandItem
+                                                key={person.id}
+                                                value={person.id}
+                                                onSelect={() => handlePersonSelect(person.id)}
+                                            >
+                                                <Check
+                                                    className={cn(
+                                                        "mr-2 h-4 w-4 shrink-0",
+                                                        selectedPersonId === person.id ? "opacity-100" : "opacity-0"
+                                                    )}
+                                                />
+                                                {person.name}
+                                            </CommandItem>
+                                        ))}
+                                    </CommandGroup>
+                                </CommandList>
+                            </Command>
+                        </PopoverContent>
+                    </Popover>
                     <Popover open={callingOpen} onOpenChange={setCallingOpen}>
                         <PopoverTrigger asChild>
                             <Button
@@ -360,18 +455,20 @@ export function BusinessDetailsPanel({
                                             ? "No callings found."
                                             : "Workspace type not supported for callings."}
                                     </CommandEmpty>
-                                    {selectedCallingId && (
-                                        <CommandGroup>
-                                            <CommandItem
-                                                value="__clear__"
-                                                onSelect={handleCallingClear}
-                                                className="text-muted-foreground text-[12px]"
-                                            >
-                                                Clear calling
-                                            </CommandItem>
-                                        </CommandGroup>
-                                    )}
                                     <CommandGroup>
+                                        <CommandItem
+                                            value="__none__"
+                                            onSelect={handleCallingClear}
+                                            className="text-muted-foreground"
+                                        >
+                                            <Check
+                                                className={cn(
+                                                    "mr-2 h-4 w-4 shrink-0",
+                                                    !selectedCallingId ? "opacity-100" : "opacity-0"
+                                                )}
+                                            />
+                                            No calling
+                                        </CommandItem>
                                         {filteredCallings.map((calling) => (
                                             <CommandItem
                                                 key={calling.id}

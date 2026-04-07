@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import React, { useState } from "react"
 import Link from "next/link"
 import {
     Table,
@@ -9,13 +9,12 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
-import { CalendarDays } from "lucide-react"
+import { Calendar, CalendarDays, CalendarClock, CalendarCheck2, CalendarCog } from "lucide-react"
 import { format } from "date-fns"
 import { MeetingRowActions } from "./meeting-row-actions"
 import { MeetingShareBadge } from "./meeting-share-badge"
 import { ShareDialog } from "@/components/conduct/share-dialog"
 import { ZoomIcon } from "@/components/ui/zoom-icon"
-import { StatusIndicator } from "@/components/ui/status-indicator"
 import { Database } from "@/types/database"
 import { SortableTableHeader } from "@/components/ui/sortable-table-header"
 import {
@@ -61,6 +60,14 @@ const STATUS_TONES: Record<string, "neutral" | "info" | "success" | "warning" | 
     cancelled: "danger",
 }
 
+const STATUS_ICONS: Record<string, React.ElementType> = {
+    draft: CalendarCog,
+    scheduled: CalendarClock,
+    in_progress: CalendarDays,
+    completed: CalendarCheck2,
+    cancelled: CalendarDays,
+}
+
 // ── Props ───────────────────────────────────────────────────────────────────
 
 interface MeetingsTableProps {
@@ -97,7 +104,7 @@ export function MeetingsTable({
         meetings.length > 0 && selectedRows.size === meetings.length
 
     const visibleColumns =
-        ["title", "template", "status", "scheduled_date"]
+        ["title", "template", "status", "scheduled_date", "scheduled_time"]
             .filter((c) => !hiddenColumns.has(c)).length + 2 // +2 for checkbox + actions
 
     return (
@@ -158,7 +165,19 @@ export function MeetingsTable({
                             defaultDirection="desc"
                             sortConfig={sortConfig}
                             onSort={onSort}
-                            className="sticky top-0 z-20 w-[168px] bg-[hsl(var(--table-header-bg)/0.98)] backdrop-blur-sm"
+                            className="sticky top-0 z-20 w-[140px] bg-[hsl(var(--table-header-bg)/0.98)] backdrop-blur-sm"
+                        />
+                    )}
+
+                    {/* Scheduled Time */}
+                    {!hiddenColumns.has("scheduled_time") && (
+                        <SortableTableHeader
+                            sortKey="scheduled_date"
+                            label="Time"
+                            defaultDirection="desc"
+                            sortConfig={sortConfig}
+                            onSort={onSort}
+                            className="sticky top-0 z-20 w-[100px] bg-[hsl(var(--table-header-bg)/0.98)] backdrop-blur-sm"
                         />
                     )}
 
@@ -235,34 +254,57 @@ export function MeetingsTable({
                             {/* Template */}
                             {!hiddenColumns.has("template") && (
                         <TableCell className="table-cell-meta text-[length:var(--table-meta-font-size)] text-foreground/58">
-                            {meeting.templates?.name || (
-                                <span className="italic">
-                                    No Template
-                                </span>
-                            )}
+                            {meeting.templates?.name}
                         </TableCell>
                             )}
 
                             {/* Status */}
                             {!hiddenColumns.has("status") && (
-                        <TableCell className="table-cell-meta !px-2 capitalize">
-                            <StatusIndicator
-                                label={formatLabel(meeting.status)}
-                                tone={STATUS_TONES[meeting.status] || "neutral"}
-                                className="text-[length:var(--table-meta-font-size)] text-foreground/64"
-                            />
+                        <TableCell className="table-cell-meta">
+                            {(() => {
+                                const Icon = STATUS_ICONS[meeting.status] ?? CalendarDays;
+                                const tone = STATUS_TONES[meeting.status] ?? "neutral";
+                                const iconClass = {
+                                    neutral: "text-zinc-400/70",
+                                    warning: "text-amber-500/80",
+                                    success: "text-emerald-500/80",
+                                    info: "text-blue-400/80",
+                                    danger: "text-rose-500/80",
+                                }[tone];
+                                return (
+                                    <span className="inline-flex items-center gap-1.5">
+                                        <Icon className={`h-3.5 w-3.5 shrink-0 ${iconClass}`} />
+                                        <span className="text-[length:var(--table-meta-font-size)] font-medium text-foreground/66 capitalize">
+                                            {formatLabel(meeting.status)}
+                                        </span>
+                                    </span>
+                                );
+                            })()}
                         </TableCell>
                             )}
 
                             {/* Scheduled Date */}
                             {!hiddenColumns.has("scheduled_date") && (
-                        <TableCell className="table-cell-meta !px-2 text-[length:var(--table-meta-font-size)] text-foreground/58">
-                            {meeting.scheduled_date
-                                ? format(
-                                      new Date(meeting.scheduled_date),
-                                              "MMM d, yyyy h:mm a"
-                                          )
-                                        : "—"}
+                        <TableCell className="table-cell-meta">
+                            {meeting.scheduled_date ? (
+                                <span className="inline-flex items-center gap-1.5">
+                                    <Calendar className="h-3.5 w-3.5 shrink-0 text-foreground/40" />
+                                    <span className="text-[length:var(--table-meta-font-size)] font-medium text-foreground/66">
+                                        {format(new Date(meeting.scheduled_date), "MMM d, yyyy")}
+                                    </span>
+                                </span>
+                            ) : null}
+                                </TableCell>
+                            )}
+
+                            {/* Scheduled Time */}
+                            {!hiddenColumns.has("scheduled_time") && (
+                        <TableCell className="table-cell-meta">
+                            {meeting.scheduled_date ? (
+                                <span className="text-[length:var(--table-meta-font-size)] font-medium text-foreground/66">
+                                    {format(new Date(meeting.scheduled_date), "h:mm a")}
+                                </span>
+                            ) : null}
                                 </TableCell>
                             )}
                         </StandardSelectableRow>

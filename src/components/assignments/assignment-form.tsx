@@ -27,6 +27,17 @@ import { CalendarIcon, Check, CircleCheckBig, CircleDashed, ChevronsUpDown, X, L
 import { cn } from "@/lib/utils"
 import { createClient } from "@/lib/supabase/client"
 
+export interface AgendaItem {
+  id: string
+  title: string
+  item_type: string
+  meetings: {
+    id: string
+    title: string
+    scheduled_date: string | null
+  } | null
+}
+
 export interface AssignmentFormData {
   directoryId: string
   assignmentType: string
@@ -60,8 +71,7 @@ export function AssignmentForm({
 
   // Directory entries
   const [directoryEntries, setDirectoryEntries] = useState<{ id: string; name: string }[]>([])
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [agendas, setAgendas] = useState<any[]>([])
+  const [agendas, setAgendas] = useState<AgendaItem[]>([])
   const [loadingDirectory, setLoadingDirectory] = useState(false)
   const [directorySearch, setDirectorySearch] = useState("")
 
@@ -79,13 +89,12 @@ export function AssignmentForm({
   const selectedAssigneeName =
     directoryEntries.find((d) => d.id === directoryId)?.name ?? ""
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const selectedAgenda = agendas.find((a: any) => a.id === agendaItemId)
+  const selectedAgenda = agendas.find((a) => a.id === agendaItemId)
   const agendaDateRaw = selectedAgenda?.meetings?.scheduled_date
 
   // Filter agendas based on the selected assignmentType
   const filteredAgendas = useMemo(() => {
-    return agendas.filter((a: any) => {
+    return agendas.filter((a) => {
       if (assignmentType === "speaker") {
         return a.item_type === "speaker"
       }
@@ -101,19 +110,17 @@ export function AssignmentForm({
 
   // Clear agenda item if it doesn't match the newly selected type
   useEffect(() => {
-    if (agendaItemId && !filteredAgendas.find((a: any) => a.id === agendaItemId)) {
+    if (agendaItemId && !filteredAgendas.find((a) => a.id === agendaItemId)) {
       setAgendaItemId("")
     }
   }, [assignmentType, filteredAgendas, agendaItemId])
 
   // Group filtered agendas to find unique meetings
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const uniqueMeetings = Array.from(new Set(filteredAgendas.map((a: any) => a.meetings?.id))).map(id => {
-    return filteredAgendas.find((a: any) => a.meetings?.id === id)?.meetings;
+  const uniqueMeetings = Array.from(new Set(filteredAgendas.map((a) => a.meetings?.id))).map(id => {
+    return filteredAgendas.find((a) => a.meetings?.id === id)?.meetings;
   }).filter(Boolean);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const currentMeetingItems = filteredAgendas.filter((a: any) => a.meetings?.id === selectedMeetingId);
+  const currentMeetingItems = filteredAgendas.filter((a) => a.meetings?.id === selectedMeetingId);
 
   const isValid = directoryId.trim().length > 0
 
@@ -124,8 +131,7 @@ export function AssignmentForm({
       const supabase = createClient()
       
       // Fetch directory
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: dirData, error: dirError } = await (supabase.from("directory") as any)
+      const { data: dirData, error: dirError } = await supabase.from("directory")
         .select("id, name")
         .order("name")
 
@@ -136,8 +142,7 @@ export function AssignmentForm({
       }
 
       // Fetch agendas
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: agendaData } = await (supabase.from("agenda_items") as any)
+      const { data: agendaData } = await supabase.from("agenda_items")
         .select(`
           id,
           title,
@@ -325,7 +330,7 @@ export function AssignmentForm({
                     <div>
                       <div className="px-2.5 py-1.5 text-xs font-semibold text-muted-foreground">Select a meeting</div>
                       <div className="max-h-[220px] overflow-y-auto">
-                        {uniqueMeetings.map((meeting: any) => (
+                        {uniqueMeetings.map((meeting: NonNullable<AgendaItem["meetings"]>) => (
                           <button
                             key={meeting.id}
                             type="button"
@@ -336,7 +341,7 @@ export function AssignmentForm({
                             className="flex w-full items-center justify-between rounded-md px-2.5 py-1.5 text-[13px] text-foreground hover:bg-accent/50 transition-colors"
                           >
                             <span className="truncate pr-2">
-                              {meeting.title} <span className="text-[11px] text-muted-foreground ml-1">{new Date(meeting.scheduled_date).toLocaleDateString()}</span>
+                              {meeting.title} <span className="text-[11px] text-muted-foreground ml-1">{meeting.scheduled_date ? new Date(meeting.scheduled_date).toLocaleDateString() : ""}</span>
                             </span>
                             <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                           </button>
@@ -359,7 +364,7 @@ export function AssignmentForm({
                         {currentMeetingItems.length === 0 ? (
                           <div className="px-2.5 py-1.5 text-[12px] text-muted-foreground text-center italic">No items found</div>
                         ) : (
-                          currentMeetingItems.map((item: any) => (
+                          currentMeetingItems.map((item: AgendaItem) => (
                             <button
                               key={item.id}
                               type="button"

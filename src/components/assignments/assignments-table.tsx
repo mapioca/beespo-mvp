@@ -26,7 +26,6 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { SortableTableHeader } from "@/components/ui/sortable-table-header"
 import { StandardTableShell, StandardSelectAllHeadCell, StandardActionsHeadCell, StandardSelectableRow } from "@/components/ui/standard-data-table"
-import { StatusIndicator } from "@/components/ui/status-indicator"
 import { Table, TableBody, TableCell, TableHeader, TableRow } from "@/components/ui/table"
 import { TableRowActionTrigger } from "@/components/ui/table-row-action-trigger"
 
@@ -336,7 +335,6 @@ export function AssignmentsTable({
               </TableRow>
             ) : (
               assignments.map((assignment) => {
-                const assignmentTitle = assignment.topic || assignment.agenda_item?.title || toTitleCase(assignment.assignment_type)
                 const meetingTitle = assignment.agenda_item?.meeting?.title || "—"
                 const scheduledDate = assignment.agenda_item?.meeting?.scheduled_date
                 return (

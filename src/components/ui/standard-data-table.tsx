@@ -59,6 +59,7 @@ interface StandardSelectableRowProps {
   id: string
   selected: boolean
   onToggle?: (id: string) => void
+  onRowClick?: () => void
   selectOnRowClick?: boolean
   children: React.ReactNode
   actions?: React.ReactNode
@@ -78,6 +79,7 @@ export function StandardSelectableRow({
   id,
   selected,
   onToggle,
+  onRowClick,
   selectOnRowClick = true,
   children,
   actions,
@@ -88,12 +90,16 @@ export function StandardSelectableRow({
       data-state={selected ? "selected" : undefined}
       className={cn(
         "group transition-[background-color,box-shadow] duration-150 ease-out hover:bg-[hsl(var(--table-row-hover))] hover:shadow-[inset_0_0_0_1px_hsl(var(--table-shell-border)/0.28)] focus-within:bg-[hsl(var(--table-row-hover))] focus-within:shadow-[inset_0_0_0_2px_hsl(var(--ring)/0.4)] data-[state=selected]:bg-[hsl(var(--table-row-selected))] data-[state=selected]:shadow-[inset_0_0_0_1px_hsl(var(--table-shell-border)/0.4)]",
+        onRowClick && "cursor-pointer",
         className
       )}
       onClick={(event) => {
-        if (!selectOnRowClick) return
         if (isInteractiveTarget(event.target)) return
-        onToggle?.(id)
+        if (onRowClick) {
+          onRowClick()
+          return
+        }
+        if (selectOnRowClick) onToggle?.(id)
       }}
     >
       <TableCell className="px-3 py-2.5">

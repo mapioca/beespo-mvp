@@ -14,7 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
 import {
     ModalForm,
     ModalFormBody,
@@ -22,7 +22,7 @@ import {
     ModalFormSection,
 } from "@/components/ui/modal-form-layout";
 import { TagsInput } from "@/components/ui/tags-input";
-import { CalendarIcon, Loader2, Plus, UserCircle, Flag, Check, CircleDashed, CircleCheck, ChevronDown, ChevronUp, ChevronsUp, Tag } from "lucide-react";
+import { CalendarIcon, Loader2, Plus, UserCircle, Check, CircleDashed, CircleCheck, ChevronDown, ChevronUp, ChevronsUp, Tag } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { createTask } from "@/lib/actions/task-actions";
