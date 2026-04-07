@@ -21,7 +21,8 @@ import {
     ModalFormFooter,
     ModalFormSection,
 } from "@/components/ui/modal-form-layout";
-import { CalendarIcon, Loader2, Plus, UserCircle, Flag, Check, CircleDashed, CircleCheck, ChevronDown, ChevronUp, ChevronsUp } from "lucide-react";
+import { TagsInput } from "@/components/ui/tags-input";
+import { CalendarIcon, Loader2, Plus, UserCircle, Flag, Check, CircleDashed, CircleCheck, ChevronDown, ChevronUp, ChevronsUp, Tag } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { createTask } from "@/lib/actions/task-actions";
@@ -51,8 +52,10 @@ export function CreateTaskDialog({ children, context, onTaskCreated }: CreateTas
     const [dueDate, setDueDate] = useState<Date | undefined>(undefined);
     const [priority, setPriority] = useState<'low' | 'medium' | 'high'>('medium');
     const [status, setStatus] = useState<string>("pending");
+    const [tags, setTags] = useState<string[]>([]);
 
     const [assigneePopoverOpen, setAssigneePopoverOpen] = useState(false);
+    const [tagsPopoverOpen, setTagsPopoverOpen] = useState(false);
     const [assigneeSearch, setAssigneeSearch] = useState("");
 
     // Load available profiles (members) for assignment
@@ -82,6 +85,7 @@ export function CreateTaskDialog({ children, context, onTaskCreated }: CreateTas
             due_date: dueDate ? format(dueDate, 'yyyy-MM-dd') : undefined,
             priority,
             status,
+            tags: tags.length > 0 ? tags : undefined,
             ...context
         });
 
@@ -99,6 +103,7 @@ export function CreateTaskDialog({ children, context, onTaskCreated }: CreateTas
             setDueDate(undefined);
             setPriority('medium');
             setStatus('pending');
+            setTags([]);
             setAssigneeSearch("");
             if (onTaskCreated) onTaskCreated();
         }
@@ -336,6 +341,34 @@ export function CreateTaskDialog({ children, context, onTaskCreated }: CreateTas
                                             selected={dueDate}
                                             onSelect={setDueDate}
                                             initialFocus
+                                        />
+                                    </PopoverContent>
+                                </Popover>
+
+                                {/* Tags Pill (Popover) */}
+                                <Popover open={tagsPopoverOpen} onOpenChange={setTagsPopoverOpen}>
+                                    <PopoverTrigger asChild>
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            className={cn(
+                                                "h-7 w-auto rounded-full px-2.5 text-[11px] font-medium shadow-sm transition-colors",
+                                                tags.length > 0
+                                                    ? "border-transparent bg-[hsl(var(--chip-active-bg))] text-[hsl(var(--chip-active-text))]"
+                                                    : "border-[hsl(var(--chip-border))] bg-background text-[hsl(var(--chip-text))] hover:bg-[hsl(var(--chip-hover-bg))]"
+                                            )}
+                                        >
+                                            <span className="inline-flex items-center gap-1.5 whitespace-nowrap leading-none">
+                                                <Tag className="h-2.5 w-2.5 shrink-0" />
+                                                {tags.length > 0 ? `${tags.length} Tag${tags.length > 1 ? 's' : ''}` : "Tags"}
+                                            </span>
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-[280px] p-3" align="start">
+                                        <TagsInput
+                                            tags={tags}
+                                            onTagsChange={setTags}
+                                            placeholder="Type tag & press enter"
                                         />
                                     </PopoverContent>
                                 </Popover>

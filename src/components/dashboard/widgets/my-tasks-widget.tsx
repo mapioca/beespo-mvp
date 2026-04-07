@@ -53,7 +53,7 @@ export function MyTasksWidget({ data, dragHandleProps, isDragging }: Props) {
                 </span>
                 {task.due_date && (
                   <span className="text-xs text-muted-foreground shrink-0">
-                    {new Date(task.due_date).toLocaleDateString("en-US", {
+                    {new Date(task.due_date + "T00:00:00").toLocaleDateString("en-US", {
                       month: "short",
                       day: "numeric",
                     })}

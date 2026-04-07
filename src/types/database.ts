@@ -706,6 +706,7 @@ export type Database = {
           updated_at: string;
           workspace_task_id: string | null;
           priority: "low" | "medium" | "high";
+          tags: string[] | null;
         };
         Insert: {
           id?: string;
@@ -727,6 +728,7 @@ export type Database = {
           updated_at?: string;
           workspace_task_id?: string | null;
           priority?: "low" | "medium" | "high";
+          tags?: string[] | null;
         };
         Update: {
           id?: string;
@@ -748,6 +750,7 @@ export type Database = {
           updated_at?: string;
           workspace_task_id?: string | null;
           priority?: "low" | "medium" | "high";
+          tags?: string[] | null;
         };
       };
       task_comments: {

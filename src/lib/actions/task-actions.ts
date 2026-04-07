@@ -140,19 +140,21 @@ export async function updateTask(taskId: string, data: {
     due_date?: string | null;
     priority?: 'low' | 'medium' | 'high';
     status?: string;
+    tags?: string[];
 }) {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { error: "Unauthorized" };
 
     try {
-        const updateData: Record<string, string | null> = { updated_at: new Date().toISOString() };
+        const updateData: Record<string, any> = { updated_at: new Date().toISOString() };
         if (data.title !== undefined) updateData.title = data.title;
         if (data.description !== undefined) updateData.description = data.description;
         if (data.assigned_to !== undefined) updateData.assigned_to = data.assigned_to;
         if (data.due_date !== undefined) updateData.due_date = data.due_date;
         if (data.priority !== undefined) updateData.priority = data.priority;
         if (data.status !== undefined) updateData.status = data.status;
+        if (data.tags !== undefined) updateData.tags = data.tags;
 
         // 1. Fetch current task to check for changes
         const { data: currentTask } = await tasksTable(supabase)
@@ -260,6 +262,7 @@ export async function createTask(data: {
     due_date?: string;
     priority?: 'low' | 'medium' | 'high';
     status?: string;
+    tags?: string[];
     meeting_id?: string;
     agenda_item_id?: string;
     discussion_id?: string;
@@ -290,7 +293,8 @@ export async function createTask(data: {
             business_item_id: data.business_item_id,
             workspace_id: profile.workspace_id,
             created_by: user.id,
-            status: data.status || 'pending'
+            status: data.status || 'pending',
+            tags: data.tags
         })
         .select(`
             *,

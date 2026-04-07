@@ -57,7 +57,7 @@ export function DiscussionTasksSection({ initialTasks }: DiscussionTasksSectionP
                                     {task.due_date && (
                                         <div className="flex items-center gap-1 text-xs text-muted-foreground">
                                             <Calendar className="h-3 w-3" />
-                                            {format(new Date(task.due_date), "MMM d")}
+                                            {format(new Date(task.due_date + "T00:00:00"), "MMM d")}
                                         </div>
                                     )}
                                 </div>
