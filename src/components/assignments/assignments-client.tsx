@@ -81,9 +81,16 @@ export function AssignmentsClient({ assignments, initialViews = [] }: Assignment
   const [createFilterDialogOpen, setCreateFilterDialogOpen] = useState(false)
   const [newAssignmentModalOpen, setNewAssignmentModalOpen] = useState(false)
   const [isCreating, setIsCreating] = useState(false)
+  const [directoryEntries, setDirectoryEntries] = useState<{ id: string; name: string }[]>([])
 
   useEffect(() => {
     setMounted(true)
+    const fetchDirectory = async () => {
+      const supabase = createClient()
+      const { data } = await supabase.from("directory").select("id, name").order("name")
+      if (data) setDirectoryEntries(data)
+    }
+    fetchDirectory()
   }, [])
 
   const typeOptions = useMemo(() => {
@@ -241,6 +248,48 @@ export function AssignmentsClient({ assignments, initialViews = [] }: Assignment
       return
     }
     toast.success("Assignment deleted.")
+    router.refresh()
+  }
+
+  const handleUpdateStatus = async (id: string, isConfirmed: boolean) => {
+    const supabase = createClient()
+    const { error } = await (supabase.from("meeting_assignments") as ReturnType<typeof supabase.from>)
+      .update({ is_confirmed: isConfirmed })
+      .eq("id", id)
+    
+    if (error) {
+      toast.error(error.message || "Failed to update status.")
+      return
+    }
+    toast.success("Status updated.")
+    router.refresh()
+  }
+
+  const handleUpdateAssignee = async (id: string, directoryId: string) => {
+    const supabase = createClient()
+    const { error } = await (supabase.from("meeting_assignments") as ReturnType<typeof supabase.from>)
+      .update({ directory_id: directoryId })
+      .eq("id", id)
+    
+    if (error) {
+      toast.error(error.message || "Failed to update assignee.")
+      return
+    }
+    toast.success("Assignee updated.")
+    router.refresh()
+  }
+
+  const handleUpdateTopic = async (id: string, topic: string | null) => {
+    const supabase = createClient()
+    const { error } = await (supabase.from("meeting_assignments") as ReturnType<typeof supabase.from>)
+      .update({ topic })
+      .eq("id", id)
+
+    if (error) {
+      toast.error(error.message || "Failed to update topic.")
+      return
+    }
+    toast.success("Topic updated.")
     router.refresh()
   }
 
@@ -544,7 +593,7 @@ export function AssignmentsClient({ assignments, initialViews = [] }: Assignment
             <StandardPopoverMenuContent align="start" className="w-56">
               {[
                 { key: "assignee", label: "Assignee" },
-                { key: "assignment", label: "Assignment" },
+                { key: "assignment", label: "Topic" },
                 { key: "type", label: "Type" },
                 { key: "status", label: "Status" },
                 { key: "meeting", label: "Meeting" },
@@ -673,6 +722,10 @@ export function AssignmentsClient({ assignments, initialViews = [] }: Assignment
           onToggleAllRows={handleToggleAllRows}
           onOpenAssignment={handleOpenAssignment}
           onDelete={handleDelete}
+          onUpdateStatus={handleUpdateStatus}
+          onUpdateAssignee={handleUpdateAssignee}
+          onUpdateTopic={handleUpdateTopic}
+          directoryEntries={directoryEntries}
         />
       </div>
 

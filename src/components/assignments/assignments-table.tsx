@@ -2,7 +2,10 @@
 
 import { useState } from "react"
 import { format } from "date-fns"
-import { CheckSquare, Eye, Trash2 } from "lucide-react"
+import { CheckSquare, Eye, Trash2, CircleCheckBig, CircleDashed, Check } from "lucide-react"
+import { cn } from "@/lib/utils"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Input } from "@/components/ui/input"
 
 import {
   AlertDialog,
@@ -58,6 +61,150 @@ interface AssignmentsTableProps {
   onToggleAllRows?: () => void
   onOpenAssignment?: (assignment: AssignmentRecord) => void
   onDelete?: (id: string) => Promise<void>
+  onUpdateStatus?: (id: string, isConfirmed: boolean) => Promise<void>
+  onUpdateAssignee?: (id: string, dirId: string) => Promise<void>
+  onUpdateTopic?: (id: string, topic: string | null) => Promise<void>
+  directoryEntries?: { id: string; name: string }[]
+}
+
+function TopicCell({
+  assignment,
+  onUpdateTopic,
+}: {
+  assignment: AssignmentRecord
+  onUpdateTopic?: (id: string, topic: string | null) => Promise<void>
+}) {
+  const [open, setOpen] = useState(false)
+  const defaultTopic = assignment.topic || ""
+  const [value, setValue] = useState(defaultTopic)
+
+  const handleSave = () => {
+    if (onUpdateTopic) {
+      onUpdateTopic(assignment.id, value.trim() || null)
+    }
+    setOpen(false)
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      e.preventDefault()
+      handleSave()
+    }
+  }
+
+  // The display text logic stays the same - fallback to agenda title or type if no explicit topic
+  const displayText = assignment.topic || assignment.agenda_item?.title || toTitleCase(assignment.assignment_type)
+
+  if (!onUpdateTopic) {
+    return <span className="table-cell-title">{displayText}</span>
+  }
+
+  return (
+    <Popover open={open} onOpenChange={(newOpen) => {
+      setOpen(newOpen)
+      if (newOpen) setValue(assignment.topic || "")
+    }}>
+      <PopoverTrigger
+        onClick={(e) => e.stopPropagation()}
+        className="font-medium text-foreground table-cell-text hover:underline underline-offset-4 decoration-border outline-none transition-colors focus-visible:ring-1 focus-visible:ring-ring rounded-sm px-1 -ml-1 text-left"
+      >
+        {displayText}
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-64 p-2 bg-popover/95 backdrop-blur-md" onClick={(e) => e.stopPropagation()}>
+        <div className="flex flex-col gap-2">
+          <Input
+            placeholder="Enter topic..."
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            onKeyDown={handleKeyDown}
+            className="h-8 text-[13px]"
+            autoFocus
+          />
+          <button
+            onClick={handleSave}
+            className="h-7 rounded-sm bg-primary px-3 text-[12px] font-medium text-primary-foreground hover:bg-primary/90 transition-colors self-end"
+          >
+            Save
+          </button>
+        </div>
+      </PopoverContent>
+    </Popover>
+  )
+}
+
+function AssigneeCell({
+  assignment,
+  directoryEntries,
+  onUpdateAssignee,
+}: {
+  assignment: AssignmentRecord
+  directoryEntries?: { id: string; name: string }[]
+  onUpdateAssignee?: (id: string, dirId: string) => Promise<void>
+}) {
+  const [open, setOpen] = useState(false)
+  const [search, setSearch] = useState("")
+
+  const filtered = search && directoryEntries
+    ? directoryEntries.filter((d) => d.name.toLowerCase().includes(search.toLowerCase()))
+    : directoryEntries || []
+
+  if (!onUpdateAssignee || !directoryEntries || directoryEntries.length === 0) {
+    return (
+      <span className="font-medium text-foreground table-cell-text">
+        {assignment.directory?.name || "Unassigned"}
+      </span>
+    )
+  }
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger
+        onClick={(e) => e.stopPropagation()}
+        className="font-medium text-foreground table-cell-text hover:underline underline-offset-4 decoration-border outline-none transition-colors focus-visible:ring-1 focus-visible:ring-ring rounded-sm px-1 -ml-1 text-left"
+      >
+        {assignment.directory?.name || "Unassigned"}
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-56 p-1 bg-popover/95 backdrop-blur-md" onClick={(e) => e.stopPropagation()}>
+        <div className="px-2 pb-1.5 pt-1">
+          <Input
+            placeholder="Search assignee..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="h-8 text-[13px] bg-transparent border-border/50"
+            autoFocus
+          />
+        </div>
+        <div className="max-h-48 overflow-y-auto outline-none">
+          {filtered.length === 0 ? (
+            <p className="px-2.5 py-1.5 text-[13px] text-muted-foreground">No matches.</p>
+          ) : (
+            filtered.map((entry) => (
+              <button
+                key={entry.id}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onUpdateAssignee(assignment.id, entry.id)
+                  setOpen(false)
+                  setSearch("")
+                }}
+                className={cn(
+                  "flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-[13px] transition-colors",
+                  assignment.directory?.id === entry.id
+                    ? "bg-accent/60 text-accent-foreground font-medium"
+                    : "text-foreground hover:bg-accent hover:text-accent-foreground"
+                )}
+              >
+                <span className="inline-flex h-3 w-3 items-center justify-center shrink-0">
+                  {assignment.directory?.id === entry.id && <Check className="h-3 w-3" />}
+                </span>
+                <span className="truncate">{entry.name}</span>
+              </button>
+            ))
+          )}
+        </div>
+      </PopoverContent>
+    </Popover>
+  )
 }
 
 function toTitleCase(value: string) {
@@ -74,6 +221,10 @@ export function AssignmentsTable({
   onToggleAllRows,
   onOpenAssignment,
   onDelete,
+  onUpdateStatus,
+  onUpdateAssignee,
+  onUpdateTopic,
+  directoryEntries = [],
 }: AssignmentsTableProps) {
   const [deleteTarget, setDeleteTarget] = useState<AssignmentRecord | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
@@ -117,7 +268,7 @@ export function AssignmentsTable({
               {!hiddenColumns.has("assignment") && (
                 <SortableTableHeader
                   sortKey="assignment"
-                  label="Assignment"
+                  label="Topic"
                   defaultDirection="asc"
                   sortConfig={sortConfig}
                   onSort={onSort}
@@ -222,11 +373,22 @@ export function AssignmentsTable({
                     }
                   >
                     {!hiddenColumns.has("assignee") && (
-                      <TableCell className="table-cell-title">{assignment.directory?.name || "Unknown"}</TableCell>
+                      <TableCell className="table-cell-title">
+                        <AssigneeCell
+                          assignment={assignment}
+                          directoryEntries={directoryEntries}
+                          onUpdateAssignee={onUpdateAssignee}
+                        />
+                      </TableCell>
                     )}
 
                     {!hiddenColumns.has("assignment") && (
-                      <TableCell className="table-cell-title">{assignmentTitle}</TableCell>
+                      <TableCell className="table-cell-title">
+                        <TopicCell 
+                          assignment={assignment} 
+                          onUpdateTopic={onUpdateTopic} 
+                        />
+                      </TableCell>
                     )}
 
                     {!hiddenColumns.has("type") && (
@@ -237,11 +399,48 @@ export function AssignmentsTable({
 
                     {!hiddenColumns.has("status") && (
                       <TableCell className="table-cell-meta !px-2">
-                        <StatusIndicator
-                          label={assignment.is_confirmed ? "Confirmed" : "Pending"}
-                          tone={assignment.is_confirmed ? "success" : "warning"}
-                          className="text-[11.5px] text-foreground/66"
-                        />
+                        {onUpdateStatus ? (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger
+                              onClick={(e) => e.stopPropagation()}
+                              className="flex h-7 items-center gap-1.5 rounded-full px-2 hover:bg-black/5 dark:hover:bg-white/10 outline-none transition-colors focus-visible:ring-1 focus-visible:ring-ring"
+                            >
+                              {assignment.is_confirmed ? (
+                                <CircleCheckBig className="h-3.5 w-3.5 text-green-600 dark:text-green-500 shrink-0" />
+                              ) : (
+                                <CircleDashed className="h-3.5 w-3.5 text-orange-500 shrink-0" />
+                              )}
+                              <span className="text-[11.5px] font-medium text-foreground/66">
+                                {assignment.is_confirmed ? "Confirmed" : "Pending"}
+                              </span>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="start" className="w-36">
+                              <DropdownMenuItem 
+                                onClick={(e) => { e.stopPropagation(); onUpdateStatus(assignment.id, false) }} 
+                                className="gap-2 text-[13px]"
+                              >
+                                <CircleDashed className="h-3.5 w-3.5" /> Pending
+                              </DropdownMenuItem>
+                              <DropdownMenuItem 
+                                onClick={(e) => { e.stopPropagation(); onUpdateStatus(assignment.id, true) }} 
+                                className="gap-2 text-[13px]"
+                              >
+                                <CircleCheckBig className="h-3.5 w-3.5" /> Confirmed
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        ) : (
+                          <div className="flex items-center gap-1.5 h-7 px-2">
+                            {assignment.is_confirmed ? (
+                              <CircleCheckBig className="h-3.5 w-3.5 text-green-600 dark:text-green-500 shrink-0" />
+                            ) : (
+                              <CircleDashed className="h-3.5 w-3.5 text-orange-500 shrink-0" />
+                            )}
+                            <span className="text-[11.5px] font-medium text-foreground/66">
+                              {assignment.is_confirmed ? "Confirmed" : "Pending"}
+                            </span>
+                          </div>
+                        )}
                       </TableCell>
                     )}
 
