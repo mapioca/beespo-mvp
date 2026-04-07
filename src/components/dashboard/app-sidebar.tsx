@@ -151,7 +151,7 @@ export function AppSidebar({
       <div
         className={cn(
           "shrink-0 h-full relative",
-          forceExpanded ? "w-52" : (isPinned ? "w-52" : "w-[44px]"),
+          forceExpanded ? "w-52" : (isPinned ? "w-52" : "w-[42px]"),
           className
         )}
         style={{ transition: `width 280ms ${DRAWER_EASING}` }}
@@ -222,6 +222,7 @@ export function AppSidebar({
                   section={section}
                   pathname={pathname}
                   isCollapsed={false}
+                  sidebarExpanded={isExpanded}
                   isGroupExpanded={isGroupExpanded}
                   toggleGroup={toggleGroup}
                   isFirst={index === 0}
@@ -231,12 +232,14 @@ export function AppSidebar({
                 title="Favorites"
                 items={favorites}
                 isCollapsed={false}
+                sidebarExpanded={isExpanded}
                 itemType="favorites"
               />
               <SidebarSavedItemsSection
                 title="Recent"
                 items={recents}
                 isCollapsed={false}
+                sidebarExpanded={isExpanded}
                 itemType="recents"
               />
             </nav>

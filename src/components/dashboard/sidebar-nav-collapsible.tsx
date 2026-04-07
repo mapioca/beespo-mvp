@@ -23,6 +23,7 @@ interface SidebarNavCollapsibleProps {
   onToggle: () => void
   pathname: string
   isCollapsed: boolean
+  sidebarExpanded?: boolean
 }
 
 export function SidebarNavCollapsible({
@@ -31,6 +32,7 @@ export function SidebarNavCollapsible({
   onToggle,
   pathname,
   isCollapsed,
+  sidebarExpanded = true,
 }: SidebarNavCollapsibleProps) {
   const Icon = item.icon
   const groupId = `nav-group-${item.label.toLowerCase().replace(/\s+/g, "-")}`
@@ -142,6 +144,7 @@ export function SidebarNavCollapsible({
                 item={child}
                 isCollapsed={isCollapsed}
                 isActive={isActive}
+                sidebarExpanded={sidebarExpanded}
               />
             )
           })}

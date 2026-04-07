@@ -9,6 +9,7 @@ interface SidebarNavSectionProps {
   section: NavSection
   pathname: string
   isCollapsed: boolean
+  sidebarExpanded?: boolean
   isGroupExpanded: (groupId: string, defaultOpen?: boolean) => boolean
   toggleGroup: (groupId: string) => void
   isFirst?: boolean
@@ -18,6 +19,7 @@ export function SidebarNavSection({
   section,
   pathname,
   isCollapsed,
+  sidebarExpanded = true,
   isGroupExpanded,
   toggleGroup,
   isFirst = false,
@@ -44,6 +46,7 @@ export function SidebarNavSection({
                   onToggle={() => toggleGroup(groupId)}
                   pathname={pathname}
                   isCollapsed={isCollapsed}
+                  sidebarExpanded={sidebarExpanded}
                 />
               </div>
             )
@@ -59,6 +62,7 @@ export function SidebarNavSection({
                 item={item}
                 isCollapsed={isCollapsed}
                 isActive={isActive}
+                sidebarExpanded={sidebarExpanded}
               />
             </div>
           )

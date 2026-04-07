@@ -52,6 +52,7 @@ interface SidebarSavedItemsSectionProps {
   title: string;
   items: SavedItem[];
   isCollapsed: boolean;
+  sidebarExpanded?: boolean;
   itemType: "favorites" | "recents";
 }
 
@@ -68,11 +69,13 @@ function SavedItemRow({
   item,
   isActive,
   itemType,
+  sidebarExpanded = true,
   onMenuOpen,
 }: {
   item: SavedItem;
   isActive: boolean;
   itemType: "favorites" | "recents";
+  sidebarExpanded?: boolean;
   onMenuOpen?: (open: boolean) => void;
 }) {
   const applyFavoriteToggle = useNavigationStore((state) => state.applyFavoriteToggle);
@@ -110,9 +113,9 @@ function SavedItemRow({
     <div
       className={cn(
         "group flex items-center rounded-md transition-[background-color,color,box-shadow]",
-        isActive
+        sidebarExpanded && isActive
           ? "bg-nav-selected shadow-[inset_0_0_0_1px_hsl(var(--nav-active-border))]"
-          : "hover:bg-nav-hover"
+          : !isActive && "hover:bg-nav-hover"
       )}
     >
       <Link
@@ -122,7 +125,17 @@ function SavedItemRow({
           isActive ? "text-nav-strong font-semibold" : "text-nav hover:text-nav-strong"
         )}
       >
-        <Icon className="h-[18px] w-[18px] shrink-0 stroke-[1.6]" />
+        {/* Icon wrapper — gets its own active state when sidebar is collapsed */}
+        <span
+          className={cn(
+            "flex items-center justify-center shrink-0 rounded-md transition-[background-color,box-shadow] duration-150 ease-out",
+            !sidebarExpanded && isActive
+              ? "h-[26px] w-[26px] bg-nav-selected shadow-[inset_0_0_0_1px_hsl(var(--nav-active-border))]"
+              : "h-auto w-auto"
+          )}
+        >
+          <Icon className="h-[18px] w-[18px] shrink-0 stroke-[1.6]" />
+        </span>
         <div className="min-w-0">
           <p className="truncate text-[12.5px]">{item.title}</p>
           {item.parentTitle ? (
@@ -183,6 +196,7 @@ export function SidebarSavedItemsSection({
   title,
   items,
   isCollapsed,
+  sidebarExpanded = true,
   itemType,
 }: SidebarSavedItemsSectionProps) {
   const pathname = usePathname();
@@ -289,6 +303,7 @@ export function SidebarSavedItemsSection({
                 item={item}
                 itemType={itemType}
                 isActive={pathname === item.href}
+                sidebarExpanded={sidebarExpanded}
               />
             ))}
           </div>
