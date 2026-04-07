@@ -2,7 +2,6 @@
 
 import { useState, useMemo, useCallback, useTransition, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import Link from "next/link"
 import { createPortal } from "react-dom"
 import { Button } from "@/components/ui/button"
 import { Check, Columns3, Plus, SlidersHorizontal, X, MessageSquare } from "lucide-react"
@@ -17,6 +16,12 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog"
 import { createClient } from "@/lib/supabase/client"
 import { toast } from "@/lib/toast"
 import {
@@ -26,6 +31,7 @@ import {
     DiscussionPriority,
     DiscussionCategory,
 } from "./discussions-table"
+import { DiscussionForm, DiscussionFormData } from "./discussion-form"
 import { CreateViewDialog } from "@/components/common/create-view-dialog"
 import {
     DiscussionView,
@@ -174,6 +180,8 @@ export function DiscussionsClient({
     const [filtersOpen, setFiltersOpen] = useState(false)
     const [displayOptionsOpen, setDisplayOptionsOpen] = useState(false)
     const [createFilterDialogOpen, setCreateFilterDialogOpen] = useState(false)
+    const [newDiscussionModalOpen, setNewDiscussionModalOpen] = useState(false)
+    const [isCreating, setIsCreating] = useState(false)
 
     useEffect(() => {
         setMounted(true)
@@ -379,6 +387,66 @@ export function DiscussionsClient({
         router.push(`/meetings/discussions/${discussion.id}`)
     }
 
+    const handleCreateDiscussion = async (formData: DiscussionFormData) => {
+        setIsCreating(true)
+        const supabase = createClient()
+
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) {
+            toast.error("Not authenticated. Please log in again.")
+            setIsCreating(false)
+            return
+        }
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: profile } = await (supabase.from("profiles") as any)
+            .select("workspace_id, role")
+            .eq("id", user.id)
+            .single()
+
+        if (!profile || !["leader", "admin"].includes(profile.role)) {
+            toast.error("Only leaders and admins can create discussions.")
+            setIsCreating(false)
+            return
+        }
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: newDiscussion, error } = await (supabase.from("discussions") as any)
+            .insert({
+                title: formData.title,
+                description: formData.description,
+                priority: formData.priority,
+                category: formData.category,
+                status: "new",
+                workspace_id: profile.workspace_id,
+                created_by: user.id,
+            })
+            .select("id")
+            .single()
+
+        if (error || !newDiscussion) {
+            toast.error(error?.message || "Failed to create discussion.")
+            setIsCreating(false)
+            return
+        }
+
+        if (formData.templateIds.length > 0) {
+            for (const templateId of formData.templateIds) {
+                await (supabase
+                    .from("discussion_templates") as ReturnType<typeof supabase.from>)
+                    .insert({
+                        discussion_id: newDiscussion.id,
+                        template_id: templateId,
+                    })
+            }
+        }
+
+        toast.success("Discussion topic created successfully!")
+        setIsCreating(false)
+        setNewDiscussionModalOpen(false)
+        router.refresh()
+    }
+
     function handleViewCreated(view: TableView) {
         setViews((prev) => [...prev, view as DiscussionView])
         setActiveViewId(view.id)
@@ -452,15 +520,13 @@ export function DiscussionsClient({
                             emptyText="No matching discussions."
                         />
                         <Button
-                            asChild
                             variant="ghost"
                             size="sm"
+                            onClick={() => setNewDiscussionModalOpen(true)}
                             className="h-7 gap-1 rounded-full px-2.5 text-[length:var(--agenda-control-font-size)] text-nav transition-colors hover:bg-[hsl(var(--agenda-interactive-hover))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--agenda-interactive-focus-ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                         >
-                            <Link href="/meetings/discussions/new" className="flex items-center gap-1.5">
-                                <Plus className="h-3.5 w-3.5 stroke-[1.6]" />
-                                New discussion
-                            </Link>
+                            <Plus className="h-3.5 w-3.5 stroke-[1.6]" />
+                            New discussion
                         </Button>
                     </div>
                 }
@@ -817,6 +883,23 @@ export function DiscussionsClient({
                     onDelete={handleDelete}
                 />
             </div>
+
+            {/* New Discussion Modal */}
+            <Dialog open={newDiscussionModalOpen} onOpenChange={setNewDiscussionModalOpen}>
+                <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden p-0 gap-0">
+                    <DialogHeader className="px-5 py-4 space-y-3">
+                        <DialogTitle>New Discussion</DialogTitle>
+                        <p className="text-xs text-muted-foreground">
+                            Add a topic for ongoing discussion and decision tracking.
+                        </p>
+                    </DialogHeader>
+                    <DiscussionForm
+                        onSubmit={handleCreateDiscussion}
+                        isLoading={isCreating}
+                        onCancel={() => setNewDiscussionModalOpen(false)}
+                    />
+                </DialogContent>
+            </Dialog>
 
             {/* Bulk delete confirmation */}
             <AlertDialog open={showBulkDeleteDialog} onOpenChange={setShowBulkDeleteDialog}>
