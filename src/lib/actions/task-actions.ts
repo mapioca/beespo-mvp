@@ -259,6 +259,7 @@ export async function createTask(data: {
     assigned_to?: string;
     due_date?: string;
     priority?: 'low' | 'medium' | 'high';
+    status?: string;
     meeting_id?: string;
     agenda_item_id?: string;
     discussion_id?: string;
@@ -289,7 +290,7 @@ export async function createTask(data: {
             business_item_id: data.business_item_id,
             workspace_id: profile.workspace_id,
             created_by: user.id,
-            status: 'pending'
+            status: data.status || 'pending'
         })
         .select(`
             *,
