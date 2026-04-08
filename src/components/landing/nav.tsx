@@ -52,7 +52,12 @@ export function Nav() {
                 asChild
                 variant="ghost"
                 size="sm"
-                className={cn(active && "bg-accent text-accent-foreground")}
+                className={cn(
+                  "transition-colors",
+                  active
+                    ? "bg-foreground text-background hover:bg-foreground/90"
+                    : "hover:bg-accent hover:text-accent-foreground"
+                )}
               >
                 <Link href={item.href} aria-current={active ? "page" : undefined}>
                   {item.label}
@@ -78,7 +83,7 @@ export function Nav() {
               Primary site navigation links
             </SheetDescription>
             <div className="mt-10 flex flex-col gap-2">
-              {NAV_ITEMS.map((item) => {
+              {NAV_ITEMS.map((item, index) => {
                 const active = isNavItemActive(pathname, item.href);
                 return (
                   <SheetClose key={item.href} asChild>
@@ -86,9 +91,14 @@ export function Nav() {
                       asChild
                       variant="ghost"
                       className={cn(
-                        "h-11 justify-start px-3 text-sm",
-                        active && "bg-accent text-accent-foreground"
+                        "h-11 justify-start px-3 text-sm transition-all duration-200 motion-reduce:transition-none motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-right-2",
+                        active
+                          ? "bg-foreground text-background hover:bg-foreground/90"
+                          : "hover:bg-accent hover:text-accent-foreground"
                       )}
+                      style={{
+                        animationDelay: `${index * 45}ms`,
+                      }}
                     >
                       <Link href={item.href} aria-current={active ? "page" : undefined}>
                         {item.label}
