@@ -112,7 +112,7 @@ function SavedItemRow({
   return (
     <div
       className={cn(
-        "group flex items-center rounded-md transition-[background-color,color,box-shadow]",
+        "group flex items-center rounded-md transition-[background-color,color,box-shadow] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
         sidebarExpanded && isActive
           ? "bg-nav-selected shadow-[inset_0_0_0_1px_hsl(var(--nav-active-border))]"
           : !isActive && "hover:bg-nav-hover"
@@ -125,13 +125,12 @@ function SavedItemRow({
           isActive ? "text-nav-strong font-semibold" : "text-nav hover:text-nav-strong"
         )}
       >
-        {/* Icon wrapper — gets its own active state when sidebar is collapsed */}
+        {/* Icon wrapper — always 26x26 with -m-1 so it occupies 18px of layout space */}
         <span
           className={cn(
-            "flex items-center justify-center shrink-0 rounded-md transition-[background-color,box-shadow] duration-150 ease-out",
-            !sidebarExpanded && isActive
-              ? "h-[26px] w-[26px] bg-nav-selected shadow-[inset_0_0_0_1px_hsl(var(--nav-active-border))]"
-              : "h-auto w-auto"
+            "flex items-center justify-center shrink-0 h-[26px] w-[26px] -m-1 rounded-[6px]",
+            "transition-[background-color,box-shadow] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
+            !sidebarExpanded && isActive && "bg-nav-selected shadow-[inset_0_0_0_1px_hsl(var(--nav-active-border))]"
           )}
         >
           <Icon className="h-[18px] w-[18px] shrink-0 stroke-[1.6]" />

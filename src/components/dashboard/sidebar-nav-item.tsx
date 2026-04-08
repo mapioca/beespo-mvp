@@ -28,7 +28,7 @@ export function SidebarNavItem({
     <Link
       href={item.href}
       className={cn(
-        "flex h-[30px] items-center gap-2 rounded-md px-2 text-[12.5px] whitespace-nowrap transition-[background-color,color,box-shadow] duration-150 ease-out",
+        "flex h-[30px] items-center gap-2 rounded-md px-2 text-[12.5px] whitespace-nowrap transition-[background-color,color,box-shadow] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
         // Full-row active state — only when sidebar is expanded
         sidebarExpanded && isActive
@@ -39,13 +39,13 @@ export function SidebarNavItem({
         isCollapsed && "justify-center px-2",
       )}
     >
-      {/* Icon wrapper — gets its own active state when sidebar is collapsed */}
+      {/* Icon wrapper — always 26x26 with -m-1 so it occupies 18px of layout space.
+          Background only appears when sidebar is collapsed + active. */}
       <span
         className={cn(
-          "flex items-center justify-center shrink-0 rounded-md transition-[background-color,box-shadow] duration-150 ease-out",
-          !sidebarExpanded && isActive
-            ? "h-[26px] w-[26px] bg-nav-selected shadow-[inset_0_0_0_1px_hsl(var(--nav-active-border))]"
-            : "h-auto w-auto"
+          "flex items-center justify-center shrink-0 h-[26px] w-[26px] -m-1 rounded-[6px]",
+          "transition-[background-color,box-shadow] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
+          !sidebarExpanded && isActive && "bg-nav-selected shadow-[inset_0_0_0_1px_hsl(var(--nav-active-border))]"
         )}
       >
         <Icon className="h-[18px] w-[18px] shrink-0 stroke-[1.75]" />

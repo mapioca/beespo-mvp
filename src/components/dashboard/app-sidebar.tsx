@@ -122,6 +122,7 @@ export function AppSidebar({
   const isExpanded = forceExpanded || isPinned || isHovering
   const isOverlay = !isPinned && isHovering && !forceExpanded
 
+
   const clearHoverTimer = useCallback(() => {
     if (hoverTimerRef.current) {
       clearTimeout(hoverTimerRef.current)
