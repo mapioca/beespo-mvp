@@ -173,6 +173,11 @@
     --chart-3: 0 0% 20%;
     --chart-4: 0 0% 80%;
     --chart-5: 0 0% 50%;
+    --landing-nav-height: 4rem;
+    --landing-nav-horizontal-padding: 1rem;
+    --landing-nav-link-font-size: 0.875rem;
+    --landing-nav-logo-font-size: 1.25rem;
+    --landing-nav-mobile-panel-width: min(85vw, 20rem);
   }
 
   .dark {
@@ -323,6 +328,11 @@
     --border: 0 0% 15%;
     --input: 0 0% 15%;
     --ring: 0 0% 100%;
+    --landing-nav-height: 4rem;
+    --landing-nav-horizontal-padding: 1rem;
+    --landing-nav-link-font-size: 0.875rem;
+    --landing-nav-logo-font-size: 1.25rem;
+    --landing-nav-mobile-panel-width: min(85vw, 20rem);
   }
 }
 
@@ -352,6 +362,27 @@
    Uses dvh with vh fallback for older browsers
 ============================================ */
 @layer utilities {
+  .skip-link {
+    position: fixed;
+    left: 1rem;
+    top: 0.75rem;
+    z-index: 100;
+    border-radius: 0.5rem;
+    background: hsl(var(--foreground));
+    color: hsl(var(--background));
+    font-size: 0.875rem;
+    font-weight: 600;
+    padding: 0.5rem 0.75rem;
+    transform: translateY(-200%);
+    transition: transform 150ms ease;
+  }
+
+  .skip-link:focus-visible {
+    transform: translateY(0);
+    outline: 2px solid hsl(var(--background));
+    outline-offset: 2px;
+  }
+
   .bg-canvas {
     background-color: hsl(var(--panel));
   }

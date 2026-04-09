@@ -23,7 +23,7 @@ export default function Home() {
   return (
     <div className="min-h-screen flex flex-col">
       <Nav />
-      <main className="flex-1 pt-16">
+      <main id="main-content" className="flex-1 pt-[var(--landing-nav-height)]">
         <Hero />
         <BenefitGrid />
         <FeatureSection />
