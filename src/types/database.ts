@@ -24,6 +24,23 @@ export type OrganizationType =
 // User roles
 export type UserRole = 'admin' | 'leader' | 'guest';
 export type FavoriteEntityType = 'meeting' | 'table' | 'form' | 'discussion' | 'notebook' | 'note';
+export type MeetingPlanType = 'agenda' | 'program';
+export type PlanDocumentStatus = 'draft' | 'finalized' | 'archived';
+export type ProgramSegmentType =
+  | 'prayer'
+  | 'hymn'
+  | 'spiritual_thought'
+  | 'business'
+  | 'speaker'
+  | 'musical_number'
+  | 'rest_hymn'
+  | 'custom'
+  | 'sacrament'
+  | 'welcome'
+  | 'closing'
+  | 'announcement';
+export type AssigneeType = 'member' | 'participant' | 'speaker' | 'external';
+export type AssignableType = 'program_segment' | 'agenda_discussion_item';
 
 // Recurrence types for calendar events
 export type RecurrenceType = 'none' | 'daily' | 'weekly' | 'biweekly' | 'monthly' | 'yearly' | 'custom';
@@ -459,6 +476,20 @@ export type Database = {
           created_by: string | null;
           created_at: string;
           updated_at: string;
+          template_kind: 'agenda' | 'program' | 'event' | 'table' | 'form' | null;
+          template_schema_version: number | null;
+          visibility: 'workspace' | 'public' | 'private' | null;
+          source_entity_type: string | null;
+          source_entity_id: string | null;
+          version: number | null;
+          is_active: boolean | null;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          content: any | null;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          defaults: any | null;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          metadata: any | null;
+          updated_by: string | null;
         };
         Insert: {
           id?: string;
@@ -472,6 +503,20 @@ export type Database = {
           created_by?: string | null;
           created_at?: string;
           updated_at?: string;
+          template_kind?: 'agenda' | 'program' | 'event' | 'table' | 'form' | null;
+          template_schema_version?: number | null;
+          visibility?: 'workspace' | 'public' | 'private' | null;
+          source_entity_type?: string | null;
+          source_entity_id?: string | null;
+          version?: number | null;
+          is_active?: boolean | null;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          content?: any | null;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          defaults?: any | null;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          metadata?: any | null;
+          updated_by?: string | null;
         };
         Update: {
           id?: string;
@@ -485,6 +530,20 @@ export type Database = {
           created_by?: string | null;
           created_at?: string;
           updated_at?: string;
+          template_kind?: 'agenda' | 'program' | 'event' | 'table' | 'form' | null;
+          template_schema_version?: number | null;
+          visibility?: 'workspace' | 'public' | 'private' | null;
+          source_entity_type?: string | null;
+          source_entity_id?: string | null;
+          version?: number | null;
+          is_active?: boolean | null;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          content?: any | null;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          defaults?: any | null;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          metadata?: any | null;
+          updated_by?: string | null;
         };
       };
       template_items: {
@@ -557,6 +616,9 @@ export type Database = {
           zoom_passcode: string | null;
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           program_style: any | null;
+          event_id: string | null;
+          is_legacy: boolean;
+          plan_type: MeetingPlanType | null;
         };
         Insert: {
           id?: string;
@@ -586,6 +648,9 @@ export type Database = {
           zoom_passcode?: string | null;
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           program_style?: any | null;
+          event_id?: string | null;
+          is_legacy?: boolean;
+          plan_type?: MeetingPlanType | null;
         };
         Update: {
           id?: string;
@@ -615,6 +680,68 @@ export type Database = {
           zoom_passcode?: string | null;
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           program_style?: any | null;
+          event_id?: string | null;
+          is_legacy?: boolean;
+          plan_type?: MeetingPlanType | null;
+        };
+      };
+      catalog_items: {
+        Row: {
+          id: string;
+          workspace_id: string | null;
+          name: string;
+          description: string | null;
+          category: string;
+          default_duration_minutes: number | null;
+          icon: string | null;
+          is_core: boolean | null;
+          is_custom: boolean | null;
+          is_hymn: boolean | null;
+          hymn_number: number | null;
+          requires_assignee: boolean | null;
+          has_rich_text: boolean | null;
+          order_hint: number | null;
+          is_deprecated: boolean | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          workspace_id?: string | null;
+          name: string;
+          description?: string | null;
+          category?: string;
+          default_duration_minutes?: number | null;
+          icon?: string | null;
+          is_core?: boolean | null;
+          is_custom?: boolean | null;
+          is_hymn?: boolean | null;
+          hymn_number?: number | null;
+          requires_assignee?: boolean | null;
+          has_rich_text?: boolean | null;
+          order_hint?: number | null;
+          is_deprecated?: boolean | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          workspace_id?: string | null;
+          name?: string;
+          description?: string | null;
+          category?: string;
+          default_duration_minutes?: number | null;
+          icon?: string | null;
+          is_core?: boolean | null;
+          is_custom?: boolean | null;
+          is_hymn?: boolean | null;
+          hymn_number?: number | null;
+          requires_assignee?: boolean | null;
+          has_rich_text?: boolean | null;
+          order_hint?: number | null;
+          is_deprecated?: boolean | null;
+          created_at?: string;
+          updated_at?: string;
         };
       };
       agenda_items: {
@@ -2003,6 +2130,324 @@ export type Database = {
           in_app_enabled?: boolean;
           email_enabled?: boolean;
           email_frequency?: 'immediate' | 'daily_digest' | 'weekly_digest' | 'never';
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      agenda_documents: {
+        Row: {
+          id: string;
+          meeting_id: string;
+          workspace_id: string;
+          title: string;
+          description: string | null;
+          status: PlanDocumentStatus;
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          meeting_id: string;
+          workspace_id: string;
+          title: string;
+          description?: string | null;
+          status?: PlanDocumentStatus;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          meeting_id?: string;
+          workspace_id?: string;
+          title?: string;
+          description?: string | null;
+          status?: PlanDocumentStatus;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      agenda_objectives: {
+        Row: {
+          id: string;
+          agenda_document_id: string;
+          title: string;
+          description: string | null;
+          order_index: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          agenda_document_id: string;
+          title: string;
+          description?: string | null;
+          order_index?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          agenda_document_id?: string;
+          title?: string;
+          description?: string | null;
+          order_index?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      agenda_discussion_items: {
+        Row: {
+          id: string;
+          agenda_document_id: string;
+          topic: string;
+          estimated_time: number;
+          notes: string | null;
+          order_index: number;
+          status: 'pending' | 'in_progress' | 'completed' | 'deferred';
+          catalog_item_id: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          agenda_document_id: string;
+          topic: string;
+          estimated_time?: number;
+          notes?: string | null;
+          order_index?: number;
+          status?: 'pending' | 'in_progress' | 'completed' | 'deferred';
+          catalog_item_id?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          agenda_document_id?: string;
+          topic?: string;
+          estimated_time?: number;
+          notes?: string | null;
+          order_index?: number;
+          status?: 'pending' | 'in_progress' | 'completed' | 'deferred';
+          catalog_item_id?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      agenda_discussion_tasks: {
+        Row: {
+          agenda_discussion_item_id: string;
+          task_id: string;
+          created_at: string;
+        };
+        Insert: {
+          agenda_discussion_item_id: string;
+          task_id: string;
+          created_at?: string;
+        };
+        Update: {
+          agenda_discussion_item_id?: string;
+          task_id?: string;
+          created_at?: string;
+        };
+      };
+      program_documents: {
+        Row: {
+          id: string;
+          meeting_id: string;
+          workspace_id: string;
+          title: string;
+          description: string | null;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          style_config: any | null;
+          status: PlanDocumentStatus;
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          meeting_id: string;
+          workspace_id: string;
+          title: string;
+          description?: string | null;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          style_config?: any | null;
+          status?: PlanDocumentStatus;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          meeting_id?: string;
+          workspace_id?: string;
+          title?: string;
+          description?: string | null;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          style_config?: any | null;
+          status?: PlanDocumentStatus;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      program_segments: {
+        Row: {
+          id: string;
+          program_document_id: string;
+          title: string;
+          estimated_time: number;
+          description: string | null;
+          segment_type: ProgramSegmentType;
+          order_index: number;
+          catalog_item_id: string | null;
+          hymn_id: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          program_document_id: string;
+          title: string;
+          estimated_time?: number;
+          description?: string | null;
+          segment_type?: ProgramSegmentType;
+          order_index?: number;
+          catalog_item_id?: string | null;
+          hymn_id?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          program_document_id?: string;
+          title?: string;
+          estimated_time?: number;
+          description?: string | null;
+          segment_type?: ProgramSegmentType;
+          order_index?: number;
+          catalog_item_id?: string | null;
+          hymn_id?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      plan_assignments: {
+        Row: {
+          id: string;
+          workspace_id: string;
+          assignable_type: AssignableType;
+          assignable_id: string;
+          assignee_type: AssigneeType;
+          assignee_id: string | null;
+          assignee_name: string | null;
+          role: string | null;
+          is_confirmed: boolean | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          workspace_id: string;
+          assignable_type: AssignableType;
+          assignable_id: string;
+          assignee_type: AssigneeType;
+          assignee_id?: string | null;
+          assignee_name?: string | null;
+          role?: string | null;
+          is_confirmed?: boolean | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          workspace_id?: string;
+          assignable_type?: AssignableType;
+          assignable_id?: string;
+          assignee_type?: AssigneeType;
+          assignee_id?: string | null;
+          assignee_name?: string | null;
+          role?: string | null;
+          is_confirmed?: boolean | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      discussion_item_library: {
+        Row: {
+          id: string;
+          workspace_id: string;
+          topic: string;
+          estimated_time: number | null;
+          notes_template: string | null;
+          tags: string[] | null;
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          workspace_id: string;
+          topic: string;
+          estimated_time?: number | null;
+          notes_template?: string | null;
+          tags?: string[] | null;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          workspace_id?: string;
+          topic?: string;
+          estimated_time?: number | null;
+          notes_template?: string | null;
+          tags?: string[] | null;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      segment_library: {
+        Row: {
+          id: string;
+          workspace_id: string;
+          title: string;
+          estimated_time: number | null;
+          description: string | null;
+          segment_type: ProgramSegmentType | null;
+          catalog_item_id: string | null;
+          tags: string[] | null;
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          workspace_id: string;
+          title: string;
+          estimated_time?: number | null;
+          description?: string | null;
+          segment_type?: ProgramSegmentType | null;
+          catalog_item_id?: string | null;
+          tags?: string[] | null;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          workspace_id?: string;
+          title?: string;
+          estimated_time?: number | null;
+          description?: string | null;
+          segment_type?: ProgramSegmentType | null;
+          catalog_item_id?: string | null;
+          tags?: string[] | null;
+          created_by?: string | null;
           created_at?: string;
           updated_at?: string;
         };
