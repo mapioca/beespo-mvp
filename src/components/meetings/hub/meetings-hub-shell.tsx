@@ -1,13 +1,17 @@
 "use client"
 
+import { DomainShell } from "@/components/domain/domain-shell"
+
+import { meetingsNavItems } from "./meetings-nav"
+
 interface MeetingsHubShellProps {
   children: React.ReactNode
 }
 
 export function MeetingsHubShell({ children }: MeetingsHubShellProps) {
   return (
-    <div className="flex flex-col h-full w-full">
-      <div className="flex-1 overflow-auto">{children}</div>
-    </div>
+    <DomainShell title="Meetings" navLabel="Meetings navigation" items={meetingsNavItems}>
+      {children}
+    </DomainShell>
   )
 }

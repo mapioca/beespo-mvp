@@ -1,0 +1,88 @@
+"use client"
+
+import Link from "next/link"
+import { usePathname } from "next/navigation"
+import type { LucideIcon } from "lucide-react"
+
+import { cn } from "@/lib/utils"
+
+export interface DomainNavItem {
+  href: string
+  label: string
+  icon: LucideIcon
+  disabled?: boolean
+  matchMode?: "exact" | "prefix"
+}
+
+interface DomainShellProps {
+  title: string
+  navLabel: string
+  items: DomainNavItem[]
+  children: React.ReactNode
+}
+
+function isItemActive(pathname: string, item: DomainNavItem) {
+  if (item.matchMode === "exact") {
+    return pathname === item.href
+  }
+
+  return pathname === item.href || pathname.startsWith(`${item.href}/`)
+}
+
+export function DomainShell({ title, navLabel, items, children }: DomainShellProps) {
+  const pathname = usePathname()
+
+  return (
+    <div className="flex h-full min-h-0 flex-col md:flex-row">
+      <aside className="border-b border-border/60 bg-[hsl(var(--panel)/0.6)] md:w-64 md:shrink-0 md:border-b-0 md:border-r">
+        <div className="flex h-full flex-col">
+          <div className="hidden px-5 pb-3 pt-5 md:block">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+              {title}
+            </p>
+          </div>
+          <nav
+            aria-label={navLabel}
+            className="flex gap-2 overflow-x-auto px-3 py-3 scrollbar-hide md:flex-col md:gap-1 md:px-3 md:py-0"
+          >
+            {items.map((item) => {
+              const Icon = item.icon
+              const isActive = isItemActive(pathname, item)
+
+              const commonClassName = cn(
+                "group inline-flex min-w-fit items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition-colors",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                isActive
+                  ? "bg-primary/10 text-primary"
+                  : "text-muted-foreground hover:bg-accent hover:text-foreground",
+                item.disabled && "pointer-events-none opacity-50"
+              )
+
+              const content = (
+                <>
+                  <Icon className="h-4 w-4 shrink-0" />
+                  <span className="whitespace-nowrap">{item.label}</span>
+                </>
+              )
+
+              return item.disabled ? (
+                <span
+                  key={item.href}
+                  aria-disabled="true"
+                  className={commonClassName}
+                >
+                  {content}
+                </span>
+              ) : (
+                <Link key={item.href} href={item.href} className={commonClassName}>
+                  {content}
+                </Link>
+              )
+            })}
+          </nav>
+        </div>
+      </aside>
+      <div className="min-w-0 flex-1 overflow-auto">{children}</div>
+    </div>
+  )
+}

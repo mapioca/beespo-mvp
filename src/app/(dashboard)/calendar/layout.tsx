@@ -2,8 +2,8 @@ import { Metadata } from "next"
 import { CalendarHubShell } from "@/components/calendar/hub"
 
 export const metadata: Metadata = {
-    title: "Calendar | Beespo",
-    description: "Your calendar and events hub",
+    title: "Schedule | Beespo",
+    description: "Your schedule, events, and calendar settings hub",
 }
 
 interface CalendarLayoutProps {

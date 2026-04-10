@@ -14,12 +14,6 @@ import {
   HandHeart,
   ClipboardList,
   Table2,
-  MessagesSquare,
-  NotebookTabs,
-  BookUser,
-  Handshake,
-  Megaphone,
-  Library,
   Database,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -44,20 +38,8 @@ const navSections: NavSection[] = [
     title: "",
     items: [
       { href: "/dashboard", icon: Home, label: "Home" },
-      { href: "/calendar", icon: Calendar, label: "Calendar" },
-      {
-        icon: CalendarDays,
-        label: "Meetings",
-        children: [
-          { href: "/meetings/agendas", icon: NotebookTabs, label: "Agendas" },
-          { href: "/meetings/business", icon: Handshake, label: "Business" },
-          { href: "/meetings/announcements", icon: Megaphone, label: "Announcements" },
-          { href: "/meetings/discussions", icon: MessagesSquare, label: "Discussions" },
-          { href: "/meetings/directory", icon: BookUser, label: "Directory" },
-          { href: "/meetings/assignments", icon: ClipboardList, label: "Assignments" },
-          { href: "/templates/library", icon: Library, label: "Templates" },
-        ]
-      },
+      { href: "/calendar", icon: Calendar, label: "Schedule" },
+      { href: "/meetings", icon: CalendarDays, label: "Meetings" },
       { href: "/callings", icon: HandHeart, label: "Callings" },
       { href: "/tasks", icon: CheckSquare, label: "Tasks" },
       {

@@ -2,8 +2,8 @@ import { Metadata } from "next"
 import { MeetingsHubShell } from "@/components/meetings/hub"
 
 export const metadata: Metadata = {
-  title: "Meetings Hub | Beespo",
-  description: "Your central workspace for managing meetings and agendas",
+  title: "Meetings | Beespo",
+  description: "Your central workspace for meetings, plans, assignments, and announcements",
 }
 
 interface MeetingsLayoutProps {

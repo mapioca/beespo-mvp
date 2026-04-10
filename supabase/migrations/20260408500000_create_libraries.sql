@@ -1,3 +1,29 @@
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_type t
+    JOIN pg_namespace n ON n.oid = t.typnamespace
+    WHERE n.nspname = 'public'
+      AND t.typname = 'program_segment_type'
+  ) THEN
+    CREATE TYPE public.program_segment_type AS ENUM (
+      'prayer',
+      'hymn',
+      'spiritual_thought',
+      'business',
+      'speaker',
+      'musical_number',
+      'rest_hymn',
+      'custom',
+      'sacrament',
+      'welcome',
+      'closing',
+      'announcement'
+    );
+  END IF;
+END $$;
+
 CREATE TABLE public.discussion_item_library (
   id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
   workspace_id uuid NOT NULL REFERENCES public.workspaces(id) ON DELETE CASCADE,

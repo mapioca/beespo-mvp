@@ -61,39 +61,105 @@ CREATE POLICY "Leaders and admins can delete workspace catalog items"
     AND workspace_id = public.get_auth_workspace_id()
   );
 
-INSERT INTO public.catalog_items (
-  workspace_id,
-  name,
-  description,
-  category,
-  default_duration_minutes,
-  icon,
-  is_core,
-  is_custom,
-  is_hymn,
-  requires_assignee,
-  has_rich_text,
-  order_hint,
-  is_deprecated
-)
-SELECT
-  pit.workspace_id,
-  pit.name,
-  pit.description,
-  COALESCE(pit.category, 'other'),
-  pit.default_duration_minutes,
-  pit.icon,
-  COALESCE(pit.is_core, false),
-  COALESCE(pit.is_custom, false),
-  COALESCE(pit.is_hymn, false),
-  COALESCE(pit.requires_assignee, false),
-  COALESCE(pit.has_rich_text, false),
-  pit.order_hint,
-  COALESCE(pit.is_deprecated, false)
-FROM public.procedural_item_types pit
-WHERE NOT EXISTS (
-  SELECT 1
-  FROM public.catalog_items ci
-  WHERE ci.workspace_id IS NOT DISTINCT FROM pit.workspace_id
-    AND ci.name = pit.name
-);
+DO $$
+DECLARE
+  has_category boolean;
+  has_icon boolean;
+  has_is_core boolean;
+  has_is_custom boolean;
+  has_is_hymn boolean;
+  has_requires_assignee boolean;
+  has_has_rich_text boolean;
+  has_is_deprecated boolean;
+  sql text;
+BEGIN
+  SELECT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'procedural_item_types' AND column_name = 'category'
+  ) INTO has_category;
+
+  SELECT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'procedural_item_types' AND column_name = 'icon'
+  ) INTO has_icon;
+
+  SELECT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'procedural_item_types' AND column_name = 'is_core'
+  ) INTO has_is_core;
+
+  SELECT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'procedural_item_types' AND column_name = 'is_custom'
+  ) INTO has_is_custom;
+
+  SELECT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'procedural_item_types' AND column_name = 'is_hymn'
+  ) INTO has_is_hymn;
+
+  SELECT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'procedural_item_types' AND column_name = 'requires_assignee'
+  ) INTO has_requires_assignee;
+
+  SELECT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'procedural_item_types' AND column_name = 'has_rich_text'
+  ) INTO has_has_rich_text;
+
+  SELECT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'procedural_item_types' AND column_name = 'is_deprecated'
+  ) INTO has_is_deprecated;
+
+  sql := format($fmt$
+    INSERT INTO public.catalog_items (
+      workspace_id,
+      name,
+      description,
+      category,
+      default_duration_minutes,
+      icon,
+      is_core,
+      is_custom,
+      is_hymn,
+      requires_assignee,
+      has_rich_text,
+      order_hint,
+      is_deprecated
+    )
+    SELECT
+      pit.workspace_id,
+      pit.name,
+      pit.description,
+      %s,
+      pit.default_duration_minutes,
+      %s,
+      %s,
+      %s,
+      %s,
+      %s,
+      %s,
+      pit.order_hint,
+      %s
+    FROM public.procedural_item_types pit
+    WHERE NOT EXISTS (
+      SELECT 1
+      FROM public.catalog_items ci
+      WHERE ci.workspace_id IS NOT DISTINCT FROM pit.workspace_id
+        AND ci.name = pit.name
+    )
+  $fmt$,
+    CASE WHEN has_category THEN 'COALESCE(pit.category, ''other'')' ELSE '''other''' END,
+    CASE WHEN has_icon THEN 'pit.icon' ELSE 'NULL' END,
+    CASE WHEN has_is_core THEN 'COALESCE(pit.is_core, false)' ELSE 'false' END,
+    CASE WHEN has_is_custom THEN 'COALESCE(pit.is_custom, false)' ELSE 'false' END,
+    CASE WHEN has_is_hymn THEN 'COALESCE(pit.is_hymn, false)' ELSE 'false' END,
+    CASE WHEN has_requires_assignee THEN 'COALESCE(pit.requires_assignee, false)' ELSE 'false' END,
+    CASE WHEN has_has_rich_text THEN 'COALESCE(pit.has_rich_text, false)' ELSE 'false' END,
+    CASE WHEN has_is_deprecated THEN 'COALESCE(pit.is_deprecated, false)' ELSE 'false' END
+  );
+
+  EXECUTE sql;
+END $$;

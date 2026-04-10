@@ -70,7 +70,7 @@ SECURITY DEFINER
 SET search_path TO 'public'
 AS $$
 DECLARE
-  v_meeting public.meetings%ROWTYPE;
+  v_meeting record;
   v_doc_id uuid;
   v_item jsonb;
 BEGIN
@@ -173,7 +173,7 @@ SECURITY DEFINER
 SET search_path TO 'public'
 AS $$
 DECLARE
-  v_doc public.agenda_documents%ROWTYPE;
+  v_doc record;
   v_item jsonb;
   v_valid_ids uuid[] := ARRAY[]::uuid[];
 BEGIN
@@ -300,7 +300,7 @@ SECURITY DEFINER
 SET search_path TO 'public'
 AS $$
 DECLARE
-  v_meeting public.meetings%ROWTYPE;
+  v_meeting record;
   v_doc_id uuid;
   v_item jsonb;
 BEGIN
@@ -395,7 +395,7 @@ SECURITY DEFINER
 SET search_path TO 'public'
 AS $$
 DECLARE
-  v_doc public.program_documents%ROWTYPE;
+  v_doc record;
   v_item jsonb;
   v_valid_ids uuid[] := ARRAY[]::uuid[];
 BEGIN
