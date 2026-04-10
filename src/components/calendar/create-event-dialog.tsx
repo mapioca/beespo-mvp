@@ -17,6 +17,7 @@ import { FormRichTextEditor } from "@/components/ui/form-rich-text-editor";
 import { toast } from "@/lib/toast";
 import { parseAllDayDate } from "@/lib/calendar-helpers";
 import { DatePickerDialog } from "@/components/ui/date-picker-dialog";
+import { createClient } from "@/lib/supabase/client";
 import {
   Select,
   SelectContent,
@@ -24,6 +25,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   ModalForm,
   ModalFormBody,
@@ -31,9 +34,16 @@ import {
   ModalFormSection,
 } from "@/components/ui/modal-form-layout";
 import { cn } from "@/lib/utils";
-import { CalendarDays, Clock3, MapPin, Megaphone, SunMedium, Timer, X } from "lucide-react";
+import { CalendarDays, Clock3, Link2, MapPin, Megaphone, SunMedium, Timer, X } from "lucide-react";
 
 type EventType = "interview" | "meeting" | "activity";
+type TemplateKind = "agenda" | "program" | "unknown";
+
+interface TemplateOption {
+  id: string;
+  name: string;
+  kind: TemplateKind;
+}
 
 // Event type returned from API
 export interface CalendarEventData {
@@ -80,6 +90,22 @@ const EVENT_TYPE_HELP: Record<EventType, string> = {
   activity: "Activity is best for general events that do not need meeting tooling.",
 };
 
+function formatPillDate(value: string): string {
+  if (!value) return "TBD";
+  const date = new Date(`${value}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+}
+
+function formatPillTime(value: string): string {
+  if (!value) return "TBD";
+  const [h, m] = value.split(":").map(Number);
+  if (!Number.isFinite(h) || !Number.isFinite(m)) return value;
+  const date = new Date();
+  date.setHours(h, m, 0, 0);
+  return date.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+}
+
 function isRichTextEmpty(value: string): boolean {
   const plain = value
     .replace(/<[^>]*>/g, " ")
@@ -120,7 +146,12 @@ export function CreateEventDialog({
   const [isAllDay, setIsAllDay] = useState(false);
   const [description, setDescription] = useState("");
   const [promoteToAnnouncement, setPromoteToAnnouncement] = useState(false);
-  const [templateLinkIntent, setTemplateLinkIntent] = useState<"none" | "agenda" | "program">("none");
+  const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
+  const [templateTab, setTemplateTab] = useState<"agenda" | "program">("agenda");
+  const [templateOptions, setTemplateOptions] = useState<TemplateOption[]>([]);
+  const [loadingTemplates, setLoadingTemplates] = useState(false);
+  const [selectedAgendaTemplateIds, setSelectedAgendaTemplateIds] = useState<string[]>([]);
+  const [selectedProgramTemplateIds, setSelectedProgramTemplateIds] = useState<string[]>([]);
   const [dateDialogOpen, setDateDialogOpen] = useState(false);
   const [timeDialogOpen, setTimeDialogOpen] = useState(false);
   const [durationDialogOpen, setDurationDialogOpen] = useState(false);
@@ -142,7 +173,8 @@ export function CreateEventDialog({
       setTimeValue(eventToEdit.time_tbd ? "" : format(start, "HH:mm"));
       setDurationMinutes(eventToEdit.duration_mode === "minutes" ? String(eventToEdit.duration_minutes ?? minutes) : "");
       setPromoteToAnnouncement(false);
-      setTemplateLinkIntent("none");
+      setSelectedAgendaTemplateIds([]);
+      setSelectedProgramTemplateIds([]);
       return;
     }
 
@@ -168,7 +200,8 @@ export function CreateEventDialog({
       }
 
       setPromoteToAnnouncement(false);
-      setTemplateLinkIntent("none");
+      setSelectedAgendaTemplateIds([]);
+      setSelectedProgramTemplateIds([]);
       return;
     }
 
@@ -183,15 +216,80 @@ export function CreateEventDialog({
     setIsAllDay(false);
     setDescription("");
     setPromoteToAnnouncement(false);
-    setTemplateLinkIntent("none");
+    setSelectedAgendaTemplateIds([]);
+    setSelectedProgramTemplateIds([]);
   }, [eventToEdit, externalEvent, selectedDate, open]);
 
   useEffect(() => {
     if (eventType === "interview") {
       setPromoteToAnnouncement(false);
-      setTemplateLinkIntent("none");
+      setSelectedAgendaTemplateIds([]);
+      setSelectedProgramTemplateIds([]);
     }
   }, [eventType]);
+
+  useEffect(() => {
+    if (!templateDialogOpen || templateOptions.length > 0) return;
+
+    const fetchTemplates = async () => {
+      setLoadingTemplates(true);
+      const supabase = createClient();
+
+      const { data, error } = await (supabase
+        .from("templates") as ReturnType<typeof supabase.from>)
+        .select("id, name, template_kind")
+        .order("name");
+
+      if (!error && data) {
+        setTemplateOptions(
+          (data as Array<{ id: string; name: string; template_kind?: "agenda" | "program" | null }>)
+            .map((template) => ({
+              id: template.id,
+              name: template.name,
+              kind: template.template_kind === "program"
+                ? "program"
+                : template.template_kind === "agenda"
+                  ? "agenda"
+                  : "unknown",
+            }))
+        );
+        setLoadingTemplates(false);
+        return;
+      }
+
+      const { data: fallback, error: fallbackError } = await (supabase
+        .from("templates") as ReturnType<typeof supabase.from>)
+        .select("id, name")
+        .order("name");
+
+      if (!fallbackError && fallback) {
+        setTemplateOptions(
+          (fallback as Array<{ id: string; name: string }>).map((template) => ({
+            id: template.id,
+            name: template.name,
+            kind: "agenda",
+          }))
+        );
+      } else {
+        toast.error("Failed to load templates.");
+      }
+
+      setLoadingTemplates(false);
+    };
+
+    void fetchTemplates();
+  }, [templateDialogOpen, templateOptions.length]);
+
+  const linkedTemplateCount = selectedAgendaTemplateIds.length + selectedProgramTemplateIds.length;
+  const agendaTemplates = templateOptions.filter((template) => template.kind === "agenda" || template.kind === "unknown");
+  const programTemplates = templateOptions.filter((template) => template.kind === "program");
+
+  const scheduleSummary = [
+    `Date ${dateValue ? formatPillDate(dateValue) : "TBD"}`,
+    isAllDay ? "All-day" : `Time ${timeValue ? formatPillTime(timeValue) : "TBD"}`,
+    isAllDay ? "Duration all-day" : `Duration ${durationMinutes.trim() ? `${durationMinutes.trim()}m` : "TBD"}`,
+    eventType === "interview" ? null : `Announcement ${promoteToAnnouncement ? "On" : "Off"}`,
+  ].filter(Boolean).join(" • ");
 
   const resetForm = () => {
     setTitle("");
@@ -204,7 +302,20 @@ export function CreateEventDialog({
     setIsAllDay(false);
     setDescription("");
     setPromoteToAnnouncement(false);
-    setTemplateLinkIntent("none");
+    setSelectedAgendaTemplateIds([]);
+    setSelectedProgramTemplateIds([]);
+  };
+
+  const toggleAgendaTemplate = (templateId: string) => {
+    setSelectedAgendaTemplateIds((prev) =>
+      prev.includes(templateId) ? prev.filter((id) => id !== templateId) : [...prev, templateId]
+    );
+  };
+
+  const toggleProgramTemplate = (templateId: string) => {
+    setSelectedProgramTemplateIds((prev) =>
+      prev.includes(templateId) ? prev.filter((id) => id !== templateId) : [...prev, templateId]
+    );
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -289,11 +400,9 @@ export function CreateEventDialog({
         });
       }
 
-      if (promoteToAnnouncement && templateLinkIntent !== "none") {
-        toast.info("Template linking is not active yet", {
-          description: templateLinkIntent === "program"
-            ? "Program templates are coming soon."
-            : "Agenda templates are being redesigned.",
+      if (promoteToAnnouncement && linkedTemplateCount > 0) {
+        toast.info("Template linking will be connected soon", {
+          description: `${linkedTemplateCount} template${linkedTemplateCount === 1 ? "" : "s"} selected.`,
         });
       }
 
@@ -359,7 +468,7 @@ export function CreateEventDialog({
                   onValueChange={(value) => setEventType(value as EventType)}
                   disabled={isLoading || isEditing}
                 >
-                  <SelectTrigger id="event-type">
+                  <SelectTrigger id="event-type" className="w-full sm:w-[280px]">
                     <SelectValue placeholder="Select event type" />
                   </SelectTrigger>
                   <SelectContent>
@@ -386,7 +495,7 @@ export function CreateEventDialog({
                 >
                   <span className="inline-flex items-center gap-1.5 whitespace-nowrap leading-none">
                     <MapPin className="h-2.5 w-2.5 shrink-0" />
-                    {location ? `Location: ${location}` : "Set location"}
+                    {location ? `Location: ${location}` : "Location: TBD"}
                     {location && (
                       <span
                         role="button"
@@ -413,7 +522,7 @@ export function CreateEventDialog({
                 >
                   <span className="inline-flex items-center gap-1.5 whitespace-nowrap leading-none">
                     <CalendarDays className="h-2.5 w-2.5 shrink-0" />
-                    {dateValue ? `Set date: ${dateValue}` : "Set date"}
+                    {`Date: ${formatPillDate(dateValue)}`}
                     {dateValue && (
                       <span
                         role="button"
@@ -436,11 +545,11 @@ export function CreateEventDialog({
                   variant="outline"
                   onClick={() => setTimeDialogOpen(true)}
                   disabled={isLoading || isAllDay}
-                  className={pillClass(Boolean(timeValue))}
+                  className={pillClass(isAllDay ? true : Boolean(timeValue))}
                 >
                   <span className="inline-flex items-center gap-1.5 whitespace-nowrap leading-none">
                     <Clock3 className="h-2.5 w-2.5 shrink-0" />
-                    {timeValue ? `Set time: ${timeValue}` : "Set time"}
+                    {isAllDay ? "Time: all-day" : `Time: ${formatPillTime(timeValue)}`}
                     {timeValue && (
                       <span
                         role="button"
@@ -463,11 +572,11 @@ export function CreateEventDialog({
                   variant="outline"
                   onClick={() => setDurationDialogOpen(true)}
                   disabled={isLoading || isAllDay}
-                  className={pillClass(Boolean(durationMinutes))}
+                  className={pillClass(isAllDay ? true : Boolean(durationMinutes))}
                 >
                   <span className="inline-flex items-center gap-1.5 whitespace-nowrap leading-none">
                     <Timer className="h-2.5 w-2.5 shrink-0" />
-                    {durationMinutes ? `Set duration: ${durationMinutes} min` : "Set duration"}
+                    {isAllDay ? "Duration: all-day" : `Duration: ${durationMinutes.trim() ? `${durationMinutes.trim()} min` : "TBD"}`}
                     {durationMinutes && (
                       <span
                         role="button"
@@ -495,7 +604,37 @@ export function CreateEventDialog({
                   >
                     <span className="inline-flex items-center gap-1.5 whitespace-nowrap leading-none">
                       <Megaphone className="h-2.5 w-2.5 shrink-0" />
-                      Enable announcement
+                      {`Announcement: ${promoteToAnnouncement ? "On" : "Off"}`}
+                    </span>
+                  </Button>
+                )}
+
+                {eventType !== "interview" && promoteToAnnouncement && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setTemplateDialogOpen(true)}
+                    disabled={isLoading}
+                    className={pillClass(linkedTemplateCount > 0)}
+                  >
+                    <span className="inline-flex items-center gap-1.5 whitespace-nowrap leading-none">
+                      <Link2 className="h-2.5 w-2.5 shrink-0" />
+                      {linkedTemplateCount > 0 ? `Template: ${linkedTemplateCount} linked` : "Link to template"}
+                      {linkedTemplateCount > 0 && (
+                        <span
+                          role="button"
+                          tabIndex={-1}
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setSelectedAgendaTemplateIds([]);
+                            setSelectedProgramTemplateIds([]);
+                          }}
+                          className="ml-0.5 inline-flex h-3.5 w-3.5 items-center justify-center rounded-full hover:bg-black/10 dark:hover:bg-white/20"
+                        >
+                          <X className="h-2.5 w-2.5" />
+                        </span>
+                      )}
                     </span>
                   </Button>
                 )}
@@ -509,36 +648,15 @@ export function CreateEventDialog({
                 >
                   <span className="inline-flex items-center gap-1.5 whitespace-nowrap leading-none">
                     <SunMedium className="h-2.5 w-2.5 shrink-0" />
-                    Mark as all-day event
+                    {`All-day: ${isAllDay ? "On" : "Off"}`}
                   </span>
                 </Button>
               </div>
-            </ModalFormSection>
 
-            {eventType !== "interview" && promoteToAnnouncement && (
-              <ModalFormSection>
-                <div className="space-y-2">
-                  <Label htmlFor="template-intent">Template linkage</Label>
-                  <Select
-                    value={templateLinkIntent}
-                    onValueChange={(value) => setTemplateLinkIntent(value as "none" | "agenda" | "program")}
-                    disabled={isLoading}
-                  >
-                    <SelectTrigger id="template-intent">
-                      <SelectValue placeholder="Choose template linkage" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">No template link</SelectItem>
-                      <SelectItem value="agenda">Agenda template (redesign in progress)</SelectItem>
-                      <SelectItem value="program">Program template (coming soon)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <p className="text-xs text-muted-foreground">
-                    Agenda templates are being redesigned. Program templates are coming soon.
-                  </p>
-                </div>
-              </ModalFormSection>
-            )}
+              <p className="text-xs text-muted-foreground">
+                {scheduleSummary}
+              </p>
+            </ModalFormSection>
           </ModalFormBody>
 
           <ModalFormFooter>
@@ -657,6 +775,72 @@ export function CreateEventDialog({
             </Button>
             <Button type="button" onClick={() => setDurationDialogOpen(false)} disabled={isLoading}>
               Save duration
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={templateDialogOpen} onOpenChange={setTemplateDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Link to template</DialogTitle>
+            <DialogDescription>
+              Select one or more templates where this announcement should appear.
+            </DialogDescription>
+          </DialogHeader>
+
+          <Tabs value={templateTab} onValueChange={(value) => setTemplateTab(value as "agenda" | "program")}>
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="agenda">Agenda templates</TabsTrigger>
+              <TabsTrigger value="program">Program templates</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="agenda" className="space-y-2">
+              {loadingTemplates ? (
+                <p className="text-sm text-muted-foreground">Loading templates...</p>
+              ) : agendaTemplates.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No agenda templates available.</p>
+              ) : (
+                <div className="max-h-56 space-y-2 overflow-y-auto rounded-md border border-border/60 p-2">
+                  {agendaTemplates.map((template) => (
+                    <label key={template.id} className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 hover:bg-accent/40">
+                      <Checkbox
+                        checked={selectedAgendaTemplateIds.includes(template.id)}
+                        onCheckedChange={() => toggleAgendaTemplate(template.id)}
+                      />
+                      <span className="text-sm">{template.name}</span>
+                    </label>
+                  ))}
+                </div>
+              )}
+            </TabsContent>
+
+            <TabsContent value="program" className="space-y-2">
+              {loadingTemplates ? (
+                <p className="text-sm text-muted-foreground">Loading templates...</p>
+              ) : programTemplates.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  Program templates are coming soon.
+                </p>
+              ) : (
+                <div className="max-h-56 space-y-2 overflow-y-auto rounded-md border border-border/60 p-2">
+                  {programTemplates.map((template) => (
+                    <label key={template.id} className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 hover:bg-accent/40">
+                      <Checkbox
+                        checked={selectedProgramTemplateIds.includes(template.id)}
+                        onCheckedChange={() => toggleProgramTemplate(template.id)}
+                      />
+                      <span className="text-sm">{template.name}</span>
+                    </label>
+                  ))}
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
+
+          <DialogFooter>
+            <Button type="button" variant="ghost" onClick={() => setTemplateDialogOpen(false)}>
+              Done
             </Button>
           </DialogFooter>
         </DialogContent>
