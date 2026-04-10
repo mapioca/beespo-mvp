@@ -39,91 +39,89 @@ export default async function EventsPage() {
     const rangeStart = subMonths(startOfMonth(today), 3).toISOString()
     const rangeEnd = addMonths(endOfMonth(today), 6).toISOString()
 
-    // Fetch internal events
+    // Fetch internal events and any linked meeting layer
     const { data: events } = await (
         supabase.from("events") as ReturnType<typeof supabase.from>
     )
         .select(`
       id,
       title,
+      event_type,
       description,
       location,
       start_at,
       end_at,
       is_all_day,
+      date_tbd,
+      time_tbd,
+      duration_mode,
+      duration_minutes,
       workspace_event_id,
       external_source_id,
-      external_source_type
+      external_source_type,
+      meetings!event_id (
+        id,
+        title,
+        status,
+        plan_type
+      )
     `)
         .eq("workspace_id", profile.workspace_id)
         .gte("start_at", rangeStart)
         .lte("start_at", rangeEnd)
         .order("start_at", { ascending: true })
 
-    // Fetch meetings
-    const { data: meetings } = await (
-        supabase.from("meetings") as ReturnType<typeof supabase.from>
-    )
-        .select("id, title, scheduled_date, status")
-        .eq("workspace_id", profile.workspace_id)
-        .gte("scheduled_date", rangeStart)
-        .lte("scheduled_date", rangeEnd)
-        .neq("status", "cancelled")
-        .order("scheduled_date", { ascending: true })
-
     // Transform events to unified format
     const eventItems: EventListItem[] = (events || []).map((event: {
         id: string
         title: string
+        event_type?: "interview" | "meeting" | "activity"
         description: string | null
         location: string | null
         start_at: string
         end_at: string
         is_all_day: boolean
+        date_tbd?: boolean
+        time_tbd?: boolean
+        duration_mode?: "minutes" | "tbd" | "all_day"
+        duration_minutes?: number | null
         workspace_event_id: string | null
         external_source_id: string | null
         external_source_type: string | null
+        meetings?: Array<{
+            id: string
+            title: string
+            status: string
+            plan_type: "agenda" | "program" | null
+        }> | null
     }) => ({
         id: event.id,
         title: event.title,
+        event_type: event.event_type ?? "activity",
         description: event.description,
         location: event.location,
         start_at: event.start_at,
         end_at: event.end_at,
         is_all_day: event.is_all_day,
+        date_tbd: event.date_tbd ?? false,
+        time_tbd: event.time_tbd ?? false,
+        duration_mode: event.duration_mode ?? (event.is_all_day ? "all_day" : "minutes"),
+        duration_minutes: event.duration_minutes ?? null,
         workspace_event_id: event.workspace_event_id,
         external_source_id: event.external_source_id,
         external_source_type: event.external_source_type,
         source_type: "event" as const,
+        linkedMeeting: event.meetings?.[0]
+            ? {
+                id: event.meetings[0].id,
+                title: event.meetings[0].title,
+                status: event.meetings[0].status,
+                plan_type: event.meetings[0].plan_type,
+            }
+            : null,
     }))
-
-    // Transform meetings to unified format
-    const meetingItems: EventListItem[] = (meetings || []).map((meeting: {
-        id: string
-        title: string
-        scheduled_date: string
-        status: string
-    }) => ({
-        id: `meeting-${meeting.id}`,
-        title: meeting.title,
-        description: `Status: ${meeting.status}`,
-        location: null,
-        start_at: meeting.scheduled_date,
-        end_at: meeting.scheduled_date, // Meetings are typically single-day events
-        is_all_day: false,
-        workspace_event_id: null,
-        external_source_id: null,
-        external_source_type: null,
-        source_type: "meeting" as const,
-        source_id: meeting.id,
-    }))
-
-    // Combine and sort all events
-    const allEvents = [...eventItems, ...meetingItems].sort(
-        (a, b) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime()
-    )
 
     const canManageEvents = profile.role === "admin" || profile.role === "leader"
 
-    return <EventsListClient events={allEvents} canManageEvents={canManageEvents} />
+    return <EventsListClient events={eventItems} canManageEvents={canManageEvents} />
 }

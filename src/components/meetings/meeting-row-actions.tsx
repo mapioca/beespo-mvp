@@ -75,6 +75,7 @@ export function MeetingRowActions({
             : isProgramWorkspace
               ? `/${workspaceSlug}/program/${meeting.id}`
               : `/${workspaceSlug}/meeting/${meeting.id}`;
+    const canConductProgram = meeting.plan_type === "program" && meeting.status === "in_progress";
 
 
 
@@ -166,14 +167,14 @@ export function MeetingRowActions({
                     </DropdownMenuItem>
 
                     {/* Conduct - Only for in_progress meetings */}
-                    {meeting.status === "in_progress" && (
+                    {canConductProgram && (
                         <DropdownMenuItem asChild>
                             <Link
                                 href={`/meetings/${meeting.id}/conduct`}
                                 className="flex items-center"
                             >
                                 <Play className="mr-2 h-4 w-4" />
-                                Conduct
+                                Conduct program
                             </Link>
                         </DropdownMenuItem>
                     )}
@@ -189,7 +190,7 @@ export function MeetingRowActions({
                     </DropdownMenuItem>
 
                     {/* Public plan view */}
-                    {publicViewHref && (
+                    {publicViewHref && meeting.plan_type !== null && (
                         <DropdownMenuItem asChild>
                             <a href={publicViewHref} target="_blank" rel="noopener noreferrer" className="flex items-center cursor-pointer">
                                 <Smartphone className="mr-2 h-4 w-4" />

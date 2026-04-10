@@ -21,6 +21,8 @@ import {
     Palette,
     Pencil,
     Trash2,
+    Loader2,
+    ArrowRight,
 } from "lucide-react"
 import Link from "next/link"
 import { DesignInvitationModal } from "@/components/canva/design-invitation-modal"
@@ -66,6 +68,7 @@ export function EventDetailDrawer({
     const [showEditDialog, setShowEditDialog] = useState(false)
     const [showDeleteDialog, setShowDeleteDialog] = useState(false)
     const [isDeleting, setIsDeleting] = useState(false)
+    const [isEnablingMeeting, setIsEnablingMeeting] = useState(false)
     const isCanvaConnected = useIsCanvaConnected()
 
     useEffect(() => {
@@ -82,10 +85,13 @@ export function EventDetailDrawer({
     const endDate = event.is_all_day ? parseAllDayDate(event.end_at) : parseISO(event.end_at)
     const isMeeting = event.source_type === "meeting"
     const isStandaloneEvent = event.source_type === "event"
+    const linkedMeeting = event.linkedMeeting ?? null
 
     const eventData = {
-        date: format(startDate, "EEEE, MMMM d, yyyy"),
-        time: event.is_all_day
+        date: event.date_tbd ? "Date TBD" : format(startDate, "EEEE, MMMM d, yyyy"),
+        time: event.time_tbd
+            ? "Time TBD"
+            : event.is_all_day
             ? "All day"
             : `${format(startDate, "h:mm a")} - ${format(endDate, "h:mm a")}`,
         location: event.location || null,
@@ -100,6 +106,11 @@ export function EventDetailDrawer({
         start_at: event.start_at,
         end_at: event.end_at,
         is_all_day: event.is_all_day,
+        event_type: event.event_type,
+        date_tbd: event.date_tbd,
+        time_tbd: event.time_tbd,
+        duration_mode: event.duration_mode,
+        duration_minutes: event.duration_minutes,
         workspace_event_id: event.workspace_event_id,
         external_source_id: event.external_source_id,
         external_source_type: event.external_source_type,
@@ -133,6 +144,34 @@ export function EventDetailDrawer({
         }
     }
 
+    const handleEnableMeetingFeatures = async () => {
+        if (!isStandaloneEvent || !canManageEvents) return
+
+        setIsEnablingMeeting(true)
+        try {
+            const response = await fetch(`/api/events/${event.id}/meeting`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ title: event.title }),
+            })
+            const data = await response.json()
+
+            if (!response.ok) {
+                throw new Error(data.error || "Failed to enable meeting features")
+            }
+
+            toast.success("Meeting features enabled", {
+                description: "Continue by attaching the right plan.",
+            })
+            onOpenChange(false)
+            window.location.href = `/meetings/${data.meeting.id}?setup=plan`
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : "Failed to enable meeting features.")
+        } finally {
+            setIsEnablingMeeting(false)
+        }
+    }
+
     return (
         <>
             <Sheet open={open} onOpenChange={onOpenChange}>
@@ -162,14 +201,14 @@ export function EventDetailDrawer({
                                 </div>
                                 <div>
                                     <p className="font-medium">
-                                        {format(startDate, "EEEE, MMMM d, yyyy")}
+                                        {eventData.date}
                                     </p>
                                     {!event.is_all_day ? (
                                         <p className="text-sm text-muted-foreground">
-                                            {format(startDate, "h:mm a")} - {format(endDate, "h:mm a")}
+                                            {eventData.time}
                                         </p>
                                     ) : (
-                                        <p className="text-sm text-muted-foreground">All day</p>
+                                        <p className="text-sm text-muted-foreground">{eventData.time}</p>
                                     )}
                                 </div>
                             </div>
@@ -216,8 +255,67 @@ export function EventDetailDrawer({
                                         </Link>
                                     </Button>
                                     <p className="text-xs text-muted-foreground text-center">
-                                        View agenda, conduct meeting, and manage details
+                                        Manage meeting details and continue from the meeting workspace.
                                     </p>
+                                </div>
+                            </>
+                        )}
+
+                        {isStandaloneEvent && (
+                            <>
+                                <Separator />
+                                <div className="space-y-3">
+                                    <h4 className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+                                        Meeting Layer
+                                    </h4>
+                                    {linkedMeeting ? (
+                                        <div className="rounded-lg border border-border/60 bg-background/70 p-4">
+                                            <div className="flex items-start justify-between gap-3">
+                                                <div className="space-y-1">
+                                                    <p className="text-sm font-medium">{linkedMeeting.title}</p>
+                                                    <p className="text-xs text-muted-foreground">
+                                                        Meeting features are enabled for this event.
+                                                    </p>
+                                                </div>
+                                                <Badge variant="outline" className="capitalize">
+                                                    {linkedMeeting.plan_type ?? "No plan"}
+                                                </Badge>
+                                            </div>
+                                            <Button asChild variant="outline" className="mt-3 w-full gap-2 border-border/60 shadow-none">
+                                                <Link href={`/meetings/${linkedMeeting.id}`}>
+                                                    <CalendarDays className="h-4 w-4 stroke-[1.6]" />
+                                                    Open meeting
+                                                    <ArrowRight className="ml-auto h-4 w-4 stroke-[1.6]" />
+                                                </Link>
+                                            </Button>
+                                        </div>
+                                    ) : (
+                                        <div className="rounded-lg border border-dashed border-border/70 bg-background/50 p-4">
+                                            <p className="text-sm font-medium">No meeting linked yet</p>
+                                            <p className="mt-1 text-xs text-muted-foreground">
+                                                Enable meeting features if this event needs roles, notes, Zoom, and a linked agenda or program.
+                                            </p>
+                                            {canManageEvents ? (
+                                                <Button
+                                                    variant="outline"
+                                                    className="mt-3 w-full gap-2 border-border/60 shadow-none"
+                                                    onClick={handleEnableMeetingFeatures}
+                                                    disabled={isEnablingMeeting}
+                                                >
+                                                    {isEnablingMeeting ? (
+                                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                                    ) : (
+                                                        <CalendarDays className="h-4 w-4 stroke-[1.6]" />
+                                                    )}
+                                                    Enable meeting features
+                                                </Button>
+                                            ) : (
+                                                <p className="mt-3 text-xs text-muted-foreground">
+                                                    A workspace leader can enable meeting features for this event.
+                                                </p>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
                             </>
                         )}

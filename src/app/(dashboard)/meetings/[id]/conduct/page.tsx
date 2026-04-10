@@ -13,6 +13,7 @@ import { PrintView } from "@/components/conduct/print-view";
 import { useConductMeetingStore } from "@/stores/conduct-meeting-store";
 import { useGlobalTimer } from "@/hooks/use-timer";
 import { notesService } from "@/lib/conduct/notes-service";
+import { toast } from "@/lib/toast";
 import "./print.css";
 
 type AgendaItem = Database["public"]["Tables"]["agenda_items"]["Row"];
@@ -66,6 +67,12 @@ export default function ConductMeetingPage({ params }: ConductMeetingProps) {
         .order("order_index");
 
       if (m && i) {
+        if (m.plan_type !== "program") {
+          toast.error("Conduct is only available for programs.");
+          router.replace(`/meetings/${id}`);
+          return;
+        }
+
         setMeeting(m as Meeting);
         setItems(i as AgendaItem[]);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -176,7 +183,7 @@ export default function ConductMeetingPage({ params }: ConductMeetingProps) {
   if (isLoading || !meeting) {
     return (
       <div className="h-[calc(100vh-4rem)] flex items-center justify-center">
-        <div className="text-muted-foreground">Loading conductor...</div>
+        <div className="text-muted-foreground">Loading program conductor...</div>
       </div>
     );
   }
@@ -215,7 +222,7 @@ export default function ConductMeetingPage({ params }: ConductMeetingProps) {
               onClick={handleEndMeeting}
             >
               <StopCircle className="mr-2 h-4 w-4" />
-              End Meeting
+              End Program
             </Button>
         </div>
       </header>

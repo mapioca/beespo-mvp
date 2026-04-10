@@ -1,10 +1,21 @@
 "use client";
 
-import { Suspense, use } from "react";
+import { Suspense, use, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { MeetingBuilder } from "@/components/meetings/builder";
+import { toast } from "@/lib/toast";
 
 function MeetingBuilderContent({ meetingId }: { meetingId: string }) {
+    const searchParams = useSearchParams();
+
+    useEffect(() => {
+        if (searchParams.get("setup") !== "plan") return;
+        toast.info("Next step: choose a plan", {
+            description: "In Plan Layer, select Agenda for collaboration or Program for conducting.",
+        });
+    }, [searchParams]);
+
     return <MeetingBuilder initialMeetingId={meetingId} />;
 }
 

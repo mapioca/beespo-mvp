@@ -31,16 +31,27 @@ import { Button } from "@/components/ui/button"
 export interface EventListItem {
     id: string
     title: string
+    event_type?: "interview" | "meeting" | "activity"
     description: string | null
     location: string | null
     start_at: string
     end_at: string
     is_all_day: boolean
+    date_tbd?: boolean
+    time_tbd?: boolean
+    duration_mode?: "minutes" | "tbd" | "all_day"
+    duration_minutes?: number | null
     workspace_event_id: string | null
     external_source_id: string | null
     external_source_type: string | null
     source_type: "event" | "meeting" | "announcement" | "task"
     source_id?: string
+    linkedMeeting?: {
+        id: string
+        title: string
+        status: string
+        plan_type: "agenda" | "program" | null
+    } | null
 }
 
 interface EventsListClientProps {
@@ -92,23 +103,21 @@ function getStatusBadge(status: "upcoming" | "ongoing" | "past") {
     }
 }
 
-function getSourceBadge(sourceType: string) {
-    const isMeeting = sourceType === "meeting"
-
-    if (isMeeting) {
+function getSourceBadge(event: EventListItem) {
+    if (event.linkedMeeting) {
         return (
             <Badge
                 variant="outline"
                 className="bg-blue-50 text-blue-700 border-blue-300 dark:bg-blue-950 dark:text-blue-300 dark:border-blue-700 cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900 gap-1"
             >
                 <CalendarDays className="h-3 w-3" />
-                Meeting
+                {event.linkedMeeting.plan_type === "program" ? "Meeting + Program" : "Meeting"}
                 <ExternalLink className="h-3 w-3" />
             </Badge>
         )
     }
 
-    switch (sourceType) {
+    switch (event.source_type) {
         case "event":
             return (
                 <Badge variant="outline" className="bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950 dark:text-indigo-300">
@@ -179,7 +188,9 @@ export function EventsListClient({ events, canManageEvents = false }: EventsList
 
     const handleMeetingLinkClick = (e: React.MouseEvent, event: EventListItem) => {
         e.stopPropagation()
-        if (event.source_id) {
+        if (event.linkedMeeting?.id) {
+            router.push(`/meetings/${event.linkedMeeting.id}`)
+        } else if (event.source_id) {
             router.push(`/meetings/${event.source_id}`)
         }
     }
@@ -250,11 +261,9 @@ export function EventsListClient({ events, canManageEvents = false }: EventsList
                             {sortedEvents.map((event) => {
                                 const status = getEventStatus(event)
                                 const startDate = getStartDate(event)
-                                const isMeeting = event.source_type === "meeting"
-
                                 return (
                                     <TableRow
-                                        key={`${event.source_type}-${event.id}`}
+                                        key={event.id}
                                         className={cn(
                                             "cursor-pointer transition-colors hover:bg-[hsl(var(--table-row-hover))]",
                                             status === "past" && "opacity-60"
@@ -275,7 +284,7 @@ export function EventsListClient({ events, canManageEvents = false }: EventsList
                                             <div className="flex flex-col gap-0.5">
                                                 <div className="flex items-center gap-1.5 text-sm">
                                                     <Calendar className="h-3.5 w-3.5 text-muted-foreground stroke-[1.6]" />
-                                                    {format(startDate, "MMM d, yyyy")}
+                                                    {event.date_tbd ? "Date TBD" : format(startDate, "MMM d, yyyy")}
                                                     {isToday(startDate) && (
                                                         <Badge variant="secondary" className="text-xs py-0">
                                                             Today
@@ -285,7 +294,7 @@ export function EventsListClient({ events, canManageEvents = false }: EventsList
                                                 {!event.is_all_day && (
                                                     <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                                                         <Clock className="h-3 w-3 stroke-[1.6]" />
-                                                        {format(startDate, "h:mm a")}
+                                                        {event.time_tbd ? "Time TBD" : format(startDate, "h:mm a")}
                                                     </div>
                                                 )}
                                                 {event.is_all_day && (
@@ -304,12 +313,12 @@ export function EventsListClient({ events, canManageEvents = false }: EventsList
                                             )}
                                         </TableCell>
                                         <TableCell>
-                                            {isMeeting ? (
+                                            {event.linkedMeeting || event.source_type === "meeting" ? (
                                                 <div onClick={(e) => handleMeetingLinkClick(e, event)}>
-                                                    {getSourceBadge(event.source_type)}
+                                                    {getSourceBadge(event)}
                                                 </div>
                                             ) : (
-                                                getSourceBadge(event.source_type)
+                                                getSourceBadge(event)
                                             )}
                                         </TableCell>
                                         <TableCell>{getStatusBadge(status)}</TableCell>

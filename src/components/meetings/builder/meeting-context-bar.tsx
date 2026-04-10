@@ -56,6 +56,7 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { toast } from "@/lib/toast";
 import { FavoriteButton } from "@/components/navigation/favorite-button";
+import { MeetingLinkageStrip } from "./meeting-linkage-strip";
 import {
     generateMeetingPdf,
     generateMeetingDocx,
@@ -117,6 +118,29 @@ interface MeetingContextBarProps {
     lastAutosaveAt?: Date | null;
     /** Current autosave lifecycle status */
     autosaveStatus?: "idle" | "saving" | "saved" | "error";
+    /** Current attached plan type */
+    planType?: "agenda" | "program" | null;
+    /** Linked event summary */
+    linkedEvent?: {
+        id: string;
+        title: string;
+        start_at: string;
+        location: string | null;
+        workspace_event_id?: string | null;
+    } | null;
+    /** Current meeting status */
+    meetingStatus?: "draft" | "scheduled" | "in_progress" | "completed" | "cancelled" | null;
+    /** Callback when event/plan linkage changes */
+    onMeetingMetaChange?: (updates: {
+        planType?: "agenda" | "program" | null;
+        linkedEvent?: {
+            id: string;
+            title: string;
+            start_at: string;
+            location: string | null;
+            workspace_event_id?: string | null;
+        } | null;
+    }) => void;
 }
 
 export function MeetingContextBar({
@@ -145,6 +169,10 @@ export function MeetingContextBar({
     canEdit = true,
     lastAutosaveAt = null,
     autosaveStatus = "idle",
+    planType = null,
+    linkedEvent = null,
+    meetingStatus = null,
+    onMeetingMetaChange,
 }: MeetingContextBarProps) {
     const [saveAsNewOpen, setSaveAsNewOpen] = useState(false);
     const [newTitle, setNewTitle] = useState("");
@@ -462,15 +490,16 @@ export function MeetingContextBar({
 
     return (
         <>
-            <Breadcrumbs
-                items={[
-                    { label: "Agendas", href: "/meetings/agendas", icon: <ClipboardList className="h-4 w-4 stroke-[1.6]" /> },
-                    { label: title || "Untitled Agenda", icon: <FileText className="h-4 w-4 stroke-[1.6]" /> },
-                ]}
-                className="rounded-none bg-chrome px-4 py-0"
-                inlineAction={<div className="hidden sm:flex">{moreMenu}</div>}
-                action={
-                    <div className="flex flex-wrap items-center gap-1.5 sm:flex-nowrap">
+            <div className="bg-chrome">
+                <Breadcrumbs
+                    items={[
+                        { label: "Agendas", href: "/meetings/agendas", icon: <ClipboardList className="h-4 w-4 stroke-[1.6]" /> },
+                        { label: title || "Untitled Agenda", icon: <FileText className="h-4 w-4 stroke-[1.6]" /> },
+                    ]}
+                    className="rounded-none bg-chrome px-4 py-0"
+                    inlineAction={<div className="hidden sm:flex">{moreMenu}</div>}
+                    action={
+                        <div className="flex flex-wrap items-center gap-1.5 sm:flex-nowrap">
                         {initialMeetingId ? (
                             <FavoriteButton
                                 item={{
@@ -641,9 +670,22 @@ export function MeetingContextBar({
                         <span className="hidden sm:block whitespace-nowrap text-[11px] font-medium text-control">
                             {autosaveLabel}
                         </span>
-                    </div>
-                }
-            />
+                        </div>
+                    }
+                />
+
+                {onMeetingMetaChange && (
+                    <MeetingLinkageStrip
+                        meetingId={initialMeetingId}
+                        meetingTitle={title}
+                        meetingStatus={meetingStatus}
+                        planType={planType}
+                        linkedEvent={linkedEvent}
+                        canManage={Boolean(isLeader && canEdit)}
+                        onMeetingMetaChange={onMeetingMetaChange}
+                    />
+                )}
+            </div>
 
             {/* Save as New Meeting — dialog */}
             <Dialog open={saveAsNewOpen} onOpenChange={(o) => !isSavingAsNew && setSaveAsNewOpen(o)}>

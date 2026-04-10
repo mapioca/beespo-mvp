@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { format } from "date-fns";
+import { useEffect, useState } from "react";
+import { addMinutes, differenceInMinutes, format } from "date-fns";
 import {
   Dialog,
   DialogContent,
@@ -13,34 +13,46 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
+import { FormRichTextEditor } from "@/components/ui/form-rich-text-editor";
 import { toast } from "@/lib/toast";
-import { createClient } from "@/lib/supabase/client";
 import { parseAllDayDate } from "@/lib/calendar-helpers";
-import { Megaphone, CalendarDays, MapPin, X } from "lucide-react";
+import { DatePickerDialog } from "@/components/ui/date-picker-dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  ModalForm,
+  ModalFormBody,
+  ModalFormFooter,
+  ModalFormSection,
+} from "@/components/ui/modal-form-layout";
+import { cn } from "@/lib/utils";
+import { CalendarDays, Clock3, MapPin, Megaphone, SunMedium, Timer, X } from "lucide-react";
+
+type EventType = "interview" | "meeting" | "activity";
 
 // Event type returned from API
 export interface CalendarEventData {
   id: string;
   title: string;
+  event_type?: EventType;
   description: string | null;
   location: string | null;
   start_at: string;
   end_at: string;
   is_all_day: boolean;
+  date_tbd?: boolean;
+  time_tbd?: boolean;
+  duration_mode?: "minutes" | "tbd" | "all_day";
+  duration_minutes?: number | null;
   workspace_event_id: string | null;
   external_source_id: string | null;
   external_source_type: string | null;
   announcements?: Array<{ id: string; title: string; status: string }> | null;
-}
-
-interface TemplateStub {
-  id: string;
-  name: string;
 }
 
 interface CreateEventDialogProps {
@@ -50,7 +62,6 @@ interface CreateEventDialogProps {
   onCreated?: (event: CalendarEventData) => void;
   onUpdated?: (event: CalendarEventData) => void;
   eventToEdit?: CalendarEventData | null;
-  // For importing external events
   externalEvent?: {
     id: string;
     title: string;
@@ -63,6 +74,29 @@ interface CreateEventDialogProps {
   } | null;
 }
 
+const EVENT_TYPE_HELP: Record<EventType, string> = {
+  interview: "Interview is best for one-on-one scheduling without a full meeting workspace.",
+  meeting: "Meeting creates a linked meeting workspace so you can attach an agenda or program next.",
+  activity: "Activity is best for general events that do not need meeting tooling.",
+};
+
+function isRichTextEmpty(value: string): boolean {
+  const plain = value
+    .replace(/<[^>]*>/g, " ")
+    .replace(/&nbsp;/g, " ")
+    .trim();
+  return plain.length === 0;
+}
+
+function pillClass(active: boolean): string {
+  return cn(
+    "h-7 rounded-full px-2.5 text-[11px] font-medium shadow-sm transition-colors",
+    active
+      ? "border-transparent bg-[hsl(var(--chip-active-bg))] text-[hsl(var(--chip-active-text))]"
+      : "border-[hsl(var(--chip-border))] bg-background text-[hsl(var(--chip-text))] hover:bg-[hsl(var(--chip-hover-bg))]"
+  );
+}
+
 export function CreateEventDialog({
   open,
   onOpenChange,
@@ -73,207 +107,205 @@ export function CreateEventDialog({
   externalEvent,
 }: CreateEventDialogProps) {
   const [isLoading, setIsLoading] = useState(false);
-
-  // Form state
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [location, setLocation] = useState("");
-  const [startDate, setStartDate] = useState("");
-  const [startTime, setStartTime] = useState("09:00");
-  const [endDate, setEndDate] = useState("");
-  const [endTime, setEndTime] = useState("10:00");
-  const [isAllDay, setIsAllDay] = useState(false);
-
-  // Promotion state
-  const [promoteToAnnouncement, setPromoteToAnnouncement] = useState(false);
-  const [selectedTemplates, setSelectedTemplates] = useState<string[]>([]);
-  const [templates, setTemplates] = useState<TemplateStub[]>([]);
-  const [loadingTemplates, setLoadingTemplates] = useState(false);
   const isEditing = !!eventToEdit;
+  const isImporting = !!externalEvent;
 
-  // Initialize form when selectedDate or externalEvent changes
+  const [title, setTitle] = useState("");
+  const [eventType, setEventType] = useState<EventType>("activity");
+  const [location, setLocation] = useState("");
+  const [stagedLocation, setStagedLocation] = useState("");
+  const [dateValue, setDateValue] = useState("");
+  const [timeValue, setTimeValue] = useState("");
+  const [durationMinutes, setDurationMinutes] = useState("");
+  const [isAllDay, setIsAllDay] = useState(false);
+  const [description, setDescription] = useState("");
+  const [promoteToAnnouncement, setPromoteToAnnouncement] = useState(false);
+  const [templateLinkIntent, setTemplateLinkIntent] = useState<"none" | "agenda" | "program">("none");
+  const [dateDialogOpen, setDateDialogOpen] = useState(false);
+  const [timeDialogOpen, setTimeDialogOpen] = useState(false);
+  const [durationDialogOpen, setDurationDialogOpen] = useState(false);
+  const [locationDialogOpen, setLocationDialogOpen] = useState(false);
+
   useEffect(() => {
     if (eventToEdit) {
-      setTitle(eventToEdit.title);
-      setDescription(eventToEdit.description || "");
-      setLocation(eventToEdit.location || "");
-      setIsAllDay(eventToEdit.is_all_day);
-
       const start = new Date(eventToEdit.start_at);
       const end = new Date(eventToEdit.end_at);
-      setStartDate(format(start, "yyyy-MM-dd"));
-      setStartTime(format(start, "HH:mm"));
-      setEndDate(format(end, "yyyy-MM-dd"));
-      setEndTime(format(end, "HH:mm"));
-    } else if (externalEvent) {
-      // Pre-fill from external event
-      setTitle(externalEvent.title);
-      setDescription(externalEvent.description || "");
-      setLocation(externalEvent.location || "");
-      setIsAllDay(externalEvent.is_all_day);
+      const minutes = Math.max(15, differenceInMinutes(end, start));
 
+      setTitle(eventToEdit.title);
+      setEventType(eventToEdit.event_type ?? "activity");
+      setLocation(eventToEdit.location ?? "");
+      setStagedLocation(eventToEdit.location ?? "");
+      setDescription(eventToEdit.description ?? "");
+      setIsAllDay(eventToEdit.duration_mode === "all_day" || eventToEdit.is_all_day);
+      setDateValue(eventToEdit.date_tbd ? "" : format(start, "yyyy-MM-dd"));
+      setTimeValue(eventToEdit.time_tbd ? "" : format(start, "HH:mm"));
+      setDurationMinutes(eventToEdit.duration_mode === "minutes" ? String(eventToEdit.duration_minutes ?? minutes) : "");
+      setPromoteToAnnouncement(false);
+      setTemplateLinkIntent("none");
+      return;
+    }
+
+    if (externalEvent) {
       const start = externalEvent.is_all_day
         ? parseAllDayDate(externalEvent.start_date)
         : new Date(externalEvent.start_date);
-      setStartDate(format(start, "yyyy-MM-dd"));
-      setStartTime(format(start, "HH:mm"));
 
-      if (externalEvent.end_date) {
-        const end = externalEvent.is_all_day
-          ? parseAllDayDate(externalEvent.end_date)
-          : new Date(externalEvent.end_date);
-        setEndDate(format(end, "yyyy-MM-dd"));
-        setEndTime(format(end, "HH:mm"));
+      setTitle(externalEvent.title);
+      setEventType("activity");
+      setLocation(externalEvent.location ?? "");
+      setStagedLocation(externalEvent.location ?? "");
+      setDescription(externalEvent.description ?? "");
+      setDateValue(format(start, "yyyy-MM-dd"));
+      setTimeValue(externalEvent.is_all_day ? "" : format(start, "HH:mm"));
+      setIsAllDay(externalEvent.is_all_day);
+
+      if (!externalEvent.is_all_day && externalEvent.end_date) {
+        const end = new Date(externalEvent.end_date);
+        setDurationMinutes(String(Math.max(15, differenceInMinutes(end, start))));
       } else {
-        setEndDate(format(start, "yyyy-MM-dd"));
-        setEndTime(format(start, "HH:mm"));
+        setDurationMinutes("");
       }
-    } else if (selectedDate) {
-      // Initialize from selected date
-      const dateStr = format(selectedDate, "yyyy-MM-dd");
-      setStartDate(dateStr);
-      setEndDate(dateStr);
-      setTitle("");
-      setDescription("");
-      setLocation("");
-      setStartTime("09:00");
-      setEndTime("10:00");
-      setIsAllDay(false);
+
+      setPromoteToAnnouncement(false);
+      setTemplateLinkIntent("none");
+      return;
     }
-    setPromoteToAnnouncement(false);
-    setSelectedTemplates([]);
-  }, [selectedDate, externalEvent, eventToEdit, open]);
 
-  // Fetch templates when promotion is enabled
-  useEffect(() => {
-    const fetchTemplates = async () => {
-      if (!promoteToAnnouncement) return;
-
-      setLoadingTemplates(true);
-      const supabase = createClient();
-
-      const { data, error } = await supabase
-        .from("templates")
-        .select("id, name")
-        .order("name");
-
-      if (error) {
-        console.error("Error fetching templates:", error);
-      } else {
-        setTemplates(data || []);
-      }
-      setLoadingTemplates(false);
-    };
-
-    fetchTemplates();
-  }, [promoteToAnnouncement]);
-
-  // Reset form
-  const resetForm = () => {
-    const today = format(new Date(), "yyyy-MM-dd");
+    const baseDate = selectedDate ? format(selectedDate, "yyyy-MM-dd") : "";
     setTitle("");
-    setDescription("");
+    setEventType("activity");
     setLocation("");
-    setStartDate(today);
-    setStartTime("09:00");
-    setEndDate(today);
-    setEndTime("10:00");
+    setStagedLocation("");
+    setDateValue(baseDate);
+    setTimeValue("");
+    setDurationMinutes("");
     setIsAllDay(false);
+    setDescription("");
     setPromoteToAnnouncement(false);
-    setSelectedTemplates([]);
+    setTemplateLinkIntent("none");
+  }, [eventToEdit, externalEvent, selectedDate, open]);
+
+  useEffect(() => {
+    if (eventType === "interview") {
+      setPromoteToAnnouncement(false);
+      setTemplateLinkIntent("none");
+    }
+  }, [eventType]);
+
+  const resetForm = () => {
+    setTitle("");
+    setEventType("activity");
+    setLocation("");
+    setStagedLocation("");
+    setDateValue("");
+    setTimeValue("");
+    setDurationMinutes("");
+    setIsAllDay(false);
+    setDescription("");
+    setPromoteToAnnouncement(false);
+    setTemplateLinkIntent("none");
   };
 
-  // Handle template toggle
-  const toggleTemplate = (templateId: string) => {
-    setSelectedTemplates((prev) =>
-      prev.includes(templateId)
-        ? prev.filter((id) => id !== templateId)
-        : [...prev, templateId]
-    );
-  };
-
-  // Handle submit
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!title.trim()) return;
+
     setIsLoading(true);
-
-    // Construct start_at and end_at timestamps
-    const startAt = isAllDay
-      ? `${startDate}T00:00:00`
-      : `${startDate}T${startTime}:00`;
-    const endAt = isAllDay
-      ? `${endDate}T23:59:59`
-      : `${endDate}T${endTime}:00`;
-
-    const payload: Record<string, unknown> = {
-      title,
-      description: description || null,
-      location: location || null,
-      start_at: isAllDay ? startDate : new Date(startAt).toISOString(),
-      end_at: isAllDay ? endDate : new Date(endAt).toISOString(),
-      is_all_day: isAllDay,
-      promote_to_announcement: promoteToAnnouncement,
-    };
-
-    // Add external source info if importing
-    if (externalEvent?.external_uid) {
-      payload.external_source_id = externalEvent.external_uid;
-      payload.external_source_type = "ics"; // Default to ICS for now
-    }
-
     try {
+      const dateIsTbd = !dateValue;
+      const timeIsTbd = !isAllDay && !timeValue;
+      const durationIsTbd = !isAllDay && !durationMinutes.trim();
+
+      const fallbackDate = dateValue || format(selectedDate || new Date(), "yyyy-MM-dd");
+      const fallbackTime = timeValue || "09:00";
+
+      const start = new Date(`${fallbackDate}T${fallbackTime}:00`);
+      if (Number.isNaN(start.getTime())) {
+        throw new Error("Please provide a valid date/time or leave them blank for TBD.");
+      }
+
+      const parsedDuration = Number.parseInt(durationMinutes, 10);
+      const hasDuration = Number.isFinite(parsedDuration) && parsedDuration > 0;
+      if (!isAllDay && durationMinutes.trim() && !hasDuration) {
+        throw new Error("Duration must be a positive number of minutes.");
+      }
+
+      const end = isAllDay
+        ? new Date(`${fallbackDate}T23:59:59`)
+        : addMinutes(start, hasDuration ? parsedDuration : 60);
+
+      const payload: Record<string, unknown> = {
+        title: title.trim(),
+        event_type: eventType,
+        location: location.trim() || null,
+        description: isRichTextEmpty(description) ? null : description,
+        start_at: isAllDay ? new Date(`${fallbackDate}T00:00:00`).toISOString() : start.toISOString(),
+        end_at: end.toISOString(),
+        is_all_day: isAllDay,
+        date_tbd: dateIsTbd,
+        time_tbd: timeIsTbd,
+        duration_mode: isAllDay ? "all_day" : durationIsTbd ? "tbd" : "minutes",
+        duration_minutes: !isAllDay && hasDuration ? parsedDuration : null,
+        promote_to_announcement: promoteToAnnouncement,
+      };
+
+      if (!isEditing && eventType === "meeting") {
+        payload.meeting = {
+          title: title.trim() || null,
+          plan_type: null,
+          template_id: null,
+        };
+      }
+
+      if (externalEvent?.external_uid) {
+        payload.external_source_id = externalEvent.external_uid;
+        payload.external_source_type = "ics";
+      }
+
       const endpoint = isEditing ? `/api/events/${eventToEdit.id}` : "/api/events";
       const method = isEditing ? "PATCH" : "POST";
+
       const response = await fetch(endpoint, {
         method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-
       const data = await response.json();
 
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to save event");
-      }
-
-      // If promotion is enabled and templates selected, link to templates
-      if (!isEditing && promoteToAnnouncement && selectedTemplates.length > 0 && data.announcement) {
-        const supabase = createClient();
-
-        // Create announcement_templates entries
-        for (const templateId of selectedTemplates) {
-          await (supabase
-            .from("announcement_templates") as ReturnType<typeof supabase.from>)
-            .insert({
-              announcement_id: data.announcement.id,
-              template_id: templateId,
-            });
-        }
-      }
-
-      if (isEditing) {
-        toast.success("Event updated successfully.");
-      } else {
-        toast.success(externalEvent
-          ? "External event imported successfully."
-          : "Event created successfully.");
-      }
-
-      if (data.announcement) {
-        toast.success("Announcement Created", { description: `Event will be announced until it starts.${
-            selectedTemplates.length > 0
-              ? ` Linked to ${selectedTemplates.length} template(s).`
-              : ""
-          }` });
-      }
+      if (!response.ok) throw new Error(data.error || "Failed to save event");
 
       if (isEditing) {
         onUpdated?.(data.event);
+        toast.success("Event updated successfully.");
       } else {
         onCreated?.(data.event);
+        toast.success(isImporting ? "External event imported successfully." : "Event created successfully.");
       }
+
+      if (data.announcement) {
+        toast.success("Announcement created", {
+          description: "This event will be announced until it starts.",
+        });
+      }
+
+      if (promoteToAnnouncement && templateLinkIntent !== "none") {
+        toast.info("Template linking is not active yet", {
+          description: templateLinkIntent === "program"
+            ? "Program templates are coming soon."
+            : "Agenda templates are being redesigned.",
+        });
+      }
+
       onOpenChange(false);
       resetForm();
+
+      if (!isEditing && data.meeting_id) {
+        toast.success("Meeting workspace created", {
+          description: "Next, choose Agenda or Program.",
+        });
+        window.location.href = `/meetings/${data.meeting_id}?setup=plan`;
+      }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to save event.");
     } finally {
@@ -281,268 +313,354 @@ export function CreateEventDialog({
     }
   };
 
-  const isImporting = !!externalEvent;
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
-            <CalendarDays className="h-4 w-4 stroke-[1.6]" />
-            {isEditing ? "Edit Event" : isImporting ? "Import to Beespo" : "Create Event"}
-          </DialogTitle>
-          <DialogDescription>
-            {isEditing
-              ? "Update event details."
-              : isImporting
-              ? "Create a Beespo event from this external calendar entry."
-              : "Create a new calendar event for your workspace."}
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden p-0 gap-0">
+        <DialogHeader className="px-5 py-4 space-y-2">
+          <DialogTitle>{isEditing ? "Edit Event" : isImporting ? "Import Event" : "New Event"}</DialogTitle>
+          <DialogDescription className="text-xs text-muted-foreground">
+            Create a calendar event. Leave date/time/duration blank if details are still TBD.
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Title */}
-          <div className="space-y-2">
-            <Label htmlFor="title" className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
-              Title
-            </Label>
-            <Input
-              id="title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Event title"
-              maxLength={200}
-              required
-              disabled={isLoading}
-              className="bg-background border-border/60 focus-visible:ring-0 focus-visible:border-foreground/30"
-            />
-          </div>
-
-          {/* All Day Toggle */}
-          <div className="flex items-center justify-between">
-            <Label htmlFor="isAllDay" className="cursor-pointer text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
-              All-day event
-            </Label>
-            <Switch
-              id="isAllDay"
-              checked={isAllDay}
-              onCheckedChange={setIsAllDay}
-              disabled={isLoading}
-            />
-          </div>
-
-          {/* Start Date/Time */}
-          <div className={`grid gap-4 ${isAllDay ? "grid-cols-1" : "grid-cols-2"}`}>
-            <div className="space-y-2">
-              <Label htmlFor="startDate" className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
-                Start date
-              </Label>
-              <Input
-                id="startDate"
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                required
-                disabled={isLoading}
-                className="bg-background border-border/60 focus-visible:ring-0 focus-visible:border-foreground/30"
-              />
-            </div>
-            {!isAllDay && (
+        <ModalForm onSubmit={handleSubmit}>
+          <ModalFormBody className="space-y-4 pt-1 pb-2">
+            <ModalFormSection>
               <div className="space-y-2">
-                <Label htmlFor="startTime" className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
-                  Start time
-                </Label>
+                <Label htmlFor="event-title">Title*</Label>
                 <Input
-                  id="startTime"
-                  type="time"
-                  value={startTime}
-                  onChange={(e) => setStartTime(e.target.value)}
-                  required
+                  id="event-title"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="e.g., Ward Council"
+                  maxLength={200}
                   disabled={isLoading}
-                  className="bg-background border-border/60 focus-visible:ring-0 focus-visible:border-foreground/30"
                 />
               </div>
-            )}
-          </div>
 
-          {/* End Date/Time */}
-          <div className={`grid gap-4 ${isAllDay ? "grid-cols-1" : "grid-cols-2"}`}>
-            <div className="space-y-2">
-              <Label htmlFor="endDate" className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
-                End date
-              </Label>
-              <Input
-                id="endDate"
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                required
-                disabled={isLoading}
-                className="bg-background border-border/60 focus-visible:ring-0 focus-visible:border-foreground/30"
-              />
-            </div>
-            {!isAllDay && (
               <div className="space-y-2">
-                <Label htmlFor="endTime" className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
-                  End time
-                </Label>
-                <Input
-                  id="endTime"
-                  type="time"
-                  value={endTime}
-                  onChange={(e) => setEndTime(e.target.value)}
-                  required
+                <Label>Event description</Label>
+                <FormRichTextEditor
+                  value={description}
+                  onChange={setDescription}
+                  placeholder="Optional details..."
                   disabled={isLoading}
-                  className="bg-background border-border/60 focus-visible:ring-0 focus-visible:border-foreground/30"
+                  hasError={false}
+                  minHeight="8rem"
                 />
               </div>
-            )}
-          </div>
+            </ModalFormSection>
 
-          {/* Location */}
-          <div className="space-y-2">
-            <Label htmlFor="location" className="flex items-center gap-1.5 text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
-              <MapPin className="h-3.5 w-3.5 stroke-[1.6]" />
-              Location
-            </Label>
-            <Input
-              id="location"
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              placeholder="Event location"
-              disabled={isLoading}
-              className="bg-background border-border/60 focus-visible:ring-0 focus-visible:border-foreground/30"
-            />
-          </div>
-
-          {/* Description */}
-          <div className="space-y-2">
-            <Label htmlFor="description" className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
-              Description
-            </Label>
-            <Textarea
-              id="description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Event details..."
-              rows={3}
-              disabled={isLoading}
-              className="bg-background border-border/60 focus-visible:ring-0 focus-visible:border-foreground/30"
-            />
-          </div>
-
-          <Separator className="bg-border/60" />
-
-          {/* Announce in Meetings Section */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Megaphone className="h-4 w-4 text-amber-500 stroke-[1.6]" />
-                <Label htmlFor="promoteToAnnouncement" className="cursor-pointer text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
-                  Announce in Meetings
-                </Label>
+            <ModalFormSection>
+              <div className="space-y-2">
+                <Label htmlFor="event-type">Event type</Label>
+                <Select
+                  value={eventType}
+                  onValueChange={(value) => setEventType(value as EventType)}
+                  disabled={isLoading || isEditing}
+                >
+                  <SelectTrigger id="event-type">
+                    <SelectValue placeholder="Select event type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="interview">Interview</SelectItem>
+                    <SelectItem value="meeting">Meeting</SelectItem>
+                    <SelectItem value="activity">Activity</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">{EVENT_TYPE_HELP[eventType]}</p>
               </div>
-              <Switch
-                id="promoteToAnnouncement"
-                checked={promoteToAnnouncement}
-                onCheckedChange={setPromoteToAnnouncement}
-                disabled={isLoading}
-              />
-            </div>
+            </ModalFormSection>
 
-            {promoteToAnnouncement && (
-              <div className="space-y-3 pl-6 border-l-2 border-amber-200/80">
-                <p className="text-sm text-muted-foreground">
-                  An announcement will be created and displayed until the event starts.
-                </p>
+            <ModalFormSection>
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setStagedLocation(location);
+                    setLocationDialogOpen(true);
+                  }}
+                  disabled={isLoading}
+                  className={pillClass(Boolean(location))}
+                >
+                  <span className="inline-flex items-center gap-1.5 whitespace-nowrap leading-none">
+                    <MapPin className="h-2.5 w-2.5 shrink-0" />
+                    {location ? `Location: ${location}` : "Set location"}
+                    {location && (
+                      <span
+                        role="button"
+                        tabIndex={-1}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setLocation("");
+                        }}
+                        className="ml-0.5 inline-flex h-3.5 w-3.5 items-center justify-center rounded-full hover:bg-black/10 dark:hover:bg-white/20"
+                      >
+                        <X className="h-2.5 w-2.5" />
+                      </span>
+                    )}
+                  </span>
+                </Button>
 
-                {/* Template Selection */}
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setDateDialogOpen(true)}
+                  disabled={isLoading}
+                  className={pillClass(Boolean(dateValue))}
+                >
+                  <span className="inline-flex items-center gap-1.5 whitespace-nowrap leading-none">
+                    <CalendarDays className="h-2.5 w-2.5 shrink-0" />
+                    {dateValue ? `Set date: ${dateValue}` : "Set date"}
+                    {dateValue && (
+                      <span
+                        role="button"
+                        tabIndex={-1}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setDateValue("");
+                        }}
+                        className="ml-0.5 inline-flex h-3.5 w-3.5 items-center justify-center rounded-full hover:bg-black/10 dark:hover:bg-white/20"
+                      >
+                        <X className="h-2.5 w-2.5" />
+                      </span>
+                    )}
+                  </span>
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setTimeDialogOpen(true)}
+                  disabled={isLoading || isAllDay}
+                  className={pillClass(Boolean(timeValue))}
+                >
+                  <span className="inline-flex items-center gap-1.5 whitespace-nowrap leading-none">
+                    <Clock3 className="h-2.5 w-2.5 shrink-0" />
+                    {timeValue ? `Set time: ${timeValue}` : "Set time"}
+                    {timeValue && (
+                      <span
+                        role="button"
+                        tabIndex={-1}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setTimeValue("");
+                        }}
+                        className="ml-0.5 inline-flex h-3.5 w-3.5 items-center justify-center rounded-full hover:bg-black/10 dark:hover:bg-white/20"
+                      >
+                        <X className="h-2.5 w-2.5" />
+                      </span>
+                    )}
+                  </span>
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setDurationDialogOpen(true)}
+                  disabled={isLoading || isAllDay}
+                  className={pillClass(Boolean(durationMinutes))}
+                >
+                  <span className="inline-flex items-center gap-1.5 whitespace-nowrap leading-none">
+                    <Timer className="h-2.5 w-2.5 shrink-0" />
+                    {durationMinutes ? `Set duration: ${durationMinutes} min` : "Set duration"}
+                    {durationMinutes && (
+                      <span
+                        role="button"
+                        tabIndex={-1}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setDurationMinutes("");
+                        }}
+                        className="ml-0.5 inline-flex h-3.5 w-3.5 items-center justify-center rounded-full hover:bg-black/10 dark:hover:bg-white/20"
+                      >
+                        <X className="h-2.5 w-2.5" />
+                      </span>
+                    )}
+                  </span>
+                </Button>
+
+                {eventType !== "interview" && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setPromoteToAnnouncement((prev) => !prev)}
+                    disabled={isLoading}
+                    className={pillClass(promoteToAnnouncement)}
+                  >
+                    <span className="inline-flex items-center gap-1.5 whitespace-nowrap leading-none">
+                      <Megaphone className="h-2.5 w-2.5 shrink-0" />
+                      Enable announcement
+                    </span>
+                  </Button>
+                )}
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsAllDay((prev) => !prev)}
+                  disabled={isLoading}
+                  className={pillClass(isAllDay)}
+                >
+                  <span className="inline-flex items-center gap-1.5 whitespace-nowrap leading-none">
+                    <SunMedium className="h-2.5 w-2.5 shrink-0" />
+                    Mark as all-day event
+                  </span>
+                </Button>
+              </div>
+            </ModalFormSection>
+
+            {eventType !== "interview" && promoteToAnnouncement && (
+              <ModalFormSection>
                 <div className="space-y-2">
-                  <Label className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
-                    Applies to templates
-                  </Label>
+                  <Label htmlFor="template-intent">Template linkage</Label>
+                  <Select
+                    value={templateLinkIntent}
+                    onValueChange={(value) => setTemplateLinkIntent(value as "none" | "agenda" | "program")}
+                    disabled={isLoading}
+                  >
+                    <SelectTrigger id="template-intent">
+                      <SelectValue placeholder="Choose template linkage" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">No template link</SelectItem>
+                      <SelectItem value="agenda">Agenda template (redesign in progress)</SelectItem>
+                      <SelectItem value="program">Program template (coming soon)</SelectItem>
+                    </SelectContent>
+                  </Select>
                   <p className="text-xs text-muted-foreground">
-                    Select which meeting types should include this announcement.
+                    Agenda templates are being redesigned. Program templates are coming soon.
                   </p>
-
-                  {loadingTemplates ? (
-                    <p className="text-sm text-muted-foreground">Loading templates...</p>
-                  ) : templates.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">No templates available.</p>
-                  ) : (
-                    <div className="space-y-2">
-                      {/* Selected templates as badges */}
-                      {selectedTemplates.length > 0 && (
-                        <div className="flex flex-wrap gap-1.5 mb-2">
-                          {selectedTemplates.map((id) => {
-                            const template = templates.find((t) => t.id === id);
-                            return template ? (
-                              <Badge
-                                key={id}
-                                variant="secondary"
-                                className="cursor-pointer bg-[hsl(var(--accent-warm)/0.6)] text-slate-800 border border-border/50"
-                                onClick={() => toggleTemplate(id)}
-                              >
-                                {template.name}
-                                <X className="h-3 w-3 ml-1 stroke-[1.6]" />
-                              </Badge>
-                            ) : null;
-                          })}
-                        </div>
-                      )}
-
-                      {/* Template checkboxes */}
-                      <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto p-2 border border-border/50 rounded-md bg-muted/20">
-                        {templates.map((template) => (
-                          <div key={template.id} className="flex items-center space-x-2">
-                            <Checkbox
-                              id={`template-${template.id}`}
-                              checked={selectedTemplates.includes(template.id)}
-                              onCheckedChange={() => toggleTemplate(template.id)}
-                              disabled={isLoading}
-                            />
-                            <Label
-                              htmlFor={`template-${template.id}`}
-                              className="text-sm cursor-pointer"
-                            >
-                              {template.name}
-                            </Label>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
                 </div>
-              </div>
+              </ModalFormSection>
             )}
-          </div>
+          </ModalFormBody>
 
-          <DialogFooter className="gap-2 sm:gap-0">
+          <ModalFormFooter>
             <Button
               type="button"
-              variant="outline"
+              variant="ghost"
               onClick={() => onOpenChange(false)}
               disabled={isLoading}
-              className="border-border/60 hover:bg-[hsl(var(--accent-warm)/0.6)] shadow-none"
             >
               Cancel
             </Button>
-            <Button
-              type="submit"
-              disabled={isLoading || !title || !startDate || !endDate}
-              className="bg-[hsl(var(--accent-warm))] text-foreground hover:bg-[hsl(var(--accent-warm-hover))] shadow-none"
-            >
+            <Button type="submit" disabled={isLoading || !title.trim()}>
               {isLoading
                 ? isEditing ? "Saving..." : "Creating..."
-                : isEditing
-                  ? "Save Changes"
-                : isImporting
-                  ? "Import Event"
-                  : "Create Event"}
+                : isEditing ? "Save Changes" : isImporting ? "Import Event" : "Create Event"}
+            </Button>
+          </ModalFormFooter>
+        </ModalForm>
+      </DialogContent>
+
+      <DatePickerDialog
+        open={dateDialogOpen}
+        onOpenChange={setDateDialogOpen}
+        titleAccent="date"
+        description="Set the event date. Leave it blank to keep the event date as TBD."
+        saveLabel="Save date"
+        value={dateValue}
+        onSave={setDateValue}
+      />
+
+      <Dialog open={locationDialogOpen} onOpenChange={setLocationDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Set location</DialogTitle>
+            <DialogDescription>Add a location for this event.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="event-location-dialog">Location</Label>
+            <Input
+              id="event-location-dialog"
+              value={stagedLocation}
+              onChange={(e) => setStagedLocation(e.target.value)}
+              placeholder="e.g., Relief Society Room"
+              disabled={isLoading}
+            />
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="ghost" onClick={() => setLocationDialogOpen(false)} disabled={isLoading}>
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={() => {
+                setLocation(stagedLocation.trim());
+                setLocationDialogOpen(false);
+              }}
+              disabled={isLoading}
+            >
+              Save location
             </Button>
           </DialogFooter>
-        </form>
-      </DialogContent>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={timeDialogOpen} onOpenChange={setTimeDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Set time</DialogTitle>
+            <DialogDescription>Select a time for this event.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="event-time-dialog">Time</Label>
+            <Input
+              id="event-time-dialog"
+              type="time"
+              value={timeValue}
+              onChange={(e) => setTimeValue(e.target.value)}
+              disabled={isLoading}
+            />
+            <p className="text-xs text-muted-foreground">Clear the value to keep time as TBD.</p>
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="ghost" onClick={() => setTimeDialogOpen(false)} disabled={isLoading}>
+              Cancel
+            </Button>
+            <Button type="button" onClick={() => setTimeDialogOpen(false)} disabled={isLoading}>
+              Save time
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={durationDialogOpen} onOpenChange={setDurationDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Set duration</DialogTitle>
+            <DialogDescription>Set duration in minutes.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="event-duration-dialog">Duration (minutes)</Label>
+            <Input
+              id="event-duration-dialog"
+              type="number"
+              min={1}
+              max={1440}
+              value={durationMinutes}
+              onChange={(e) => setDurationMinutes(e.target.value)}
+              placeholder="e.g., 60"
+              disabled={isLoading}
+            />
+            <p className="text-xs text-muted-foreground">Leave empty to keep duration as TBD.</p>
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="ghost" onClick={() => setDurationDialogOpen(false)} disabled={isLoading}>
+              Cancel
+            </Button>
+            <Button type="button" onClick={() => setDurationDialogOpen(false)} disabled={isLoading}>
+              Save duration
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 }

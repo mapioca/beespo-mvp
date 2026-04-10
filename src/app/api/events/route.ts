@@ -117,11 +117,16 @@ export async function POST(request: NextRequest) {
     }
     const {
         title,
+        event_type = "activity",
         description,
         location,
         start_at,
         end_at,
         is_all_day = false,
+        date_tbd = false,
+        time_tbd = false,
+        duration_mode = is_all_day ? "all_day" : "minutes",
+        duration_minutes = null,
         promote_to_announcement = false,
         external_source_id = null,
         external_source_type = null,
@@ -146,6 +151,21 @@ export async function POST(request: NextRequest) {
 
         if (rpcError || !rpcData) {
             return NextResponse.json({ error: rpcError?.message ?? 'Failed to create linked event and meeting' }, { status: 500 });
+        }
+
+        const { error: metadataError } = await (supabase
+            .from('events') as ReturnType<typeof supabase.from>)
+            .update({
+                event_type,
+                date_tbd,
+                time_tbd,
+                duration_mode: is_all_day ? "all_day" : duration_mode,
+                duration_minutes: is_all_day ? null : duration_minutes,
+            })
+            .eq('id', rpcData.event_id);
+
+        if (metadataError) {
+            return NextResponse.json({ error: metadataError.message }, { status: 500 });
         }
 
         const { data: createdEvent, error: fetchError } = await (supabase
@@ -185,11 +205,16 @@ export async function POST(request: NextRequest) {
         .insert({
             workspace_id: profile.workspace_id,
             title,
+            event_type,
             description: description || null,
             location: location || null,
             start_at: normalizedTimes.start_at,
             end_at: normalizedTimes.end_at,
             is_all_day,
+            date_tbd,
+            time_tbd,
+            duration_mode: is_all_day ? "all_day" : duration_mode,
+            duration_minutes: is_all_day ? null : duration_minutes,
             external_source_id: external_source_id || null,
             external_source_type: external_source_type || null,
             created_by: user.id,

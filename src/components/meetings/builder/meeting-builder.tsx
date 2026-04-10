@@ -80,6 +80,7 @@ interface MeetingBuilderProps {
 
 type AutosaveStatus = "idle" | "saving" | "saved" | "error";
 type MeetingStatus = "draft" | "scheduled" | "in_progress" | "completed" | "cancelled";
+type PlanType = "agenda" | "program" | null;
 
 export function MeetingBuilder({
     initialTemplateId,
@@ -193,6 +194,14 @@ export function MeetingBuilder({
     const [lastAutosaveAt, setLastAutosaveAt] = useState<Date | null>(null);
     const [isMeetingLoaded, setIsMeetingLoaded] = useState(!initialMeetingId);
     const [meetingStatus, setMeetingStatus] = useState<MeetingStatus | null>(null);
+    const [planType, setPlanType] = useState<PlanType>(null);
+    const [linkedEvent, setLinkedEvent] = useState<{
+        id: string;
+        title: string;
+        start_at: string;
+        location: string | null;
+        workspace_event_id?: string | null;
+    } | null>(null);
     const draftHashRef = useRef<string>("");
     const serverHashRef = useRef<string>("");
 
@@ -361,7 +370,16 @@ export function MeetingBuilder({
             // Load meeting details
             const { data: meetingData, error: meetingError } = await supabase
                 .from("meetings")
-                .select("*")
+                .select(`
+                    *,
+                    event:events!event_id (
+                        id,
+                        title,
+                        start_at,
+                        location,
+                        workspace_event_id
+                    )
+                `)
                 .eq("id", initialMeetingId)
                 .single();
 
@@ -375,6 +393,18 @@ export function MeetingBuilder({
             }
 
             setMeetingStatus((meeting.status as MeetingStatus) || "scheduled");
+            setPlanType((meeting.plan_type as PlanType) ?? null);
+            setLinkedEvent(
+                meeting.event
+                    ? {
+                        id: meeting.event.id,
+                        title: meeting.event.title,
+                        start_at: meeting.event.start_at,
+                        location: meeting.event.location ?? null,
+                        workspace_event_id: meeting.event.workspace_event_id ?? null,
+                    }
+                    : null
+            );
             if (meeting.status === "draft") {
                 setBuilderMode("planning");
             }
@@ -2222,6 +2252,17 @@ export function MeetingBuilder({
                                 canEdit={canEdit}
                                 lastAutosaveAt={lastAutosaveAt}
                                 autosaveStatus={autosaveStatus}
+                                planType={planType}
+                                linkedEvent={linkedEvent}
+                                meetingStatus={meetingStatus}
+                                onMeetingMetaChange={(updates) => {
+                                    if (updates.planType !== undefined) {
+                                        setPlanType(updates.planType);
+                                    }
+                                    if (updates.linkedEvent !== undefined) {
+                                        setLinkedEvent(updates.linkedEvent);
+                                    }
+                                }}
                             />
                         </div>
 
