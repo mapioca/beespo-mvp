@@ -1,6 +1,6 @@
 import Link from "next/link"
 import type { Metadata } from "next"
-import { ArrowRight, BookUser, ClipboardList, Handshake, LayoutGrid, Library, Megaphone, MessagesSquare, NotebookPen, PanelsTopLeft, Users } from "lucide-react"
+import { ArrowRight, ClipboardList, LayoutGrid, Megaphone, NotebookPen, PanelsTopLeft, Plus } from "lucide-react"
 import { redirect } from "next/navigation"
 
 import { Breadcrumbs } from "@/components/dashboard/breadcrumbs"
@@ -10,7 +10,7 @@ import { createClient } from "@/lib/supabase/server"
 
 export const metadata: Metadata = {
   title: "Meetings Overview | Beespo",
-  description: "Navigate your meetings workspace and related legacy tools",
+  description: "Navigate the core Meetings workspace and its primary actions",
 }
 
 type OverviewCard = {
@@ -44,45 +44,6 @@ const canonicalCards: OverviewCard[] = [
     description: "Manage announcements independently from agenda and program content.",
     href: "/meetings/announcements",
     icon: Megaphone,
-  },
-]
-
-const legacyCards: OverviewCard[] = [
-  {
-    title: "Business",
-    description: "Continue using business items while they remain outside the new navigation model.",
-    href: "/meetings/business",
-    icon: Handshake,
-  },
-  {
-    title: "Discussions",
-    description: "Open the discussions workspace without keeping it in the domain nav.",
-    href: "/meetings/discussions",
-    icon: MessagesSquare,
-  },
-  {
-    title: "Directory",
-    description: "Reach the meetings directory surface directly from the overview.",
-    href: "/meetings/directory",
-    icon: BookUser,
-  },
-  {
-    title: "Participants",
-    description: "Access participant management from its existing route.",
-    href: "/meetings/participants",
-    icon: Users,
-  },
-  {
-    title: "Speakers",
-    description: "Open speaker management from the legacy meetings surface.",
-    href: "/meetings/speakers",
-    icon: Users,
-  },
-  {
-    title: "Templates",
-    description: "Browse reusable templates without promoting them into the new IA.",
-    href: "/templates/library",
-    icon: Library,
   },
 ]
 
@@ -145,9 +106,23 @@ export default async function MeetingsOverviewPage() {
               <div className="space-y-2">
                 <CardTitle className="text-2xl">Meetings overview</CardTitle>
                 <CardDescription className="max-w-2xl text-sm leading-6">
-                  Use this hub to move between the core Meetings surfaces while keeping older tools
-                  accessible without placing them in the new navigation model.
+                  Use this hub to move between the core Meetings surfaces without exposing
+                  transitional workflows in the main navigation experience.
                 </CardDescription>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button asChild>
+                  <Link href="/meetings/create">
+                    <Plus className="h-4 w-4" />
+                    Create
+                  </Link>
+                </Button>
+                <Button asChild variant="outline">
+                  <Link href="/calendar/events/new">
+                    Create event
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                </Button>
               </div>
             </CardHeader>
           </Card>
@@ -163,8 +138,8 @@ export default async function MeetingsOverviewPage() {
             <CardContent className="space-y-3 text-sm text-muted-foreground">
               <p>Agendas and programs should remain navigable even when nothing is linked yet.</p>
               <Button asChild variant="outline" className="w-full justify-between">
-                <Link href="/meetings/agendas">
-                  Open agenda workspace
+                <Link href="/meetings/create">
+                  Choose what to create
                   <ArrowRight className="h-4 w-4" />
                 </Link>
               </Button>
@@ -181,21 +156,6 @@ export default async function MeetingsOverviewPage() {
           </div>
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             {canonicalCards.map((item) => (
-              <OverviewLinkCard key={item.href} item={item} />
-            ))}
-          </div>
-        </section>
-
-        <section className="space-y-4">
-          <div className="space-y-1">
-            <h2 className="text-lg font-semibold">Legacy tools</h2>
-            <p className="text-sm text-muted-foreground">
-              These pages remain available directly while later phases decide whether to retire or
-              re-home them.
-            </p>
-          </div>
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {legacyCards.map((item) => (
               <OverviewLinkCard key={item.href} item={item} />
             ))}
           </div>

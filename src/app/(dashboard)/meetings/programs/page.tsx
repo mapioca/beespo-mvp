@@ -1,49 +1,160 @@
-import Link from "next/link"
-import type { Metadata } from "next"
-import { ArrowRight, PanelsTopLeft } from "lucide-react"
-
-import { Breadcrumbs } from "@/components/dashboard/breadcrumbs"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { createClient } from "@/lib/supabase/server"
+import { redirect } from "next/navigation"
+import { MeetingsClient } from "@/components/meetings/meetings-client"
+import { Metadata } from "next"
+import { AgendaFilter } from "@/lib/agenda-views"
 
 export const metadata: Metadata = {
   title: "Programs | Beespo",
-  description: "Programs workspace placeholder for Meetings v2",
+  description: "Manage audience-facing plans and conducting-ready program workspaces",
 }
 
-export default function ProgramsPage() {
+export const dynamic = "force-dynamic"
+
+export default async function ProgramsPage() {
+  const supabase = await createClient()
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) {
+    redirect("/login")
+  }
+
+  const { data: profile } = await (
+    supabase.from("profiles") as ReturnType<typeof supabase.from>
+  )
+    .select("role, workspace_id")
+    .eq("id", user.id)
+    .single()
+
+  if (!profile || !profile.workspace_id) {
+    redirect("/onboarding")
+  }
+
+  const isLeader = profile.role === "leader" || profile.role === "admin"
+
+  const { data: workspace } = await (
+    supabase.from("workspaces") as ReturnType<typeof supabase.from>
+  )
+    .select("slug")
+    .eq("id", profile.workspace_id)
+    .single()
+  const workspaceSlug: string | null = workspace?.slug || null
+
+  const { data: meetings, error } = await supabase
+    .from("meetings")
+    .select(
+      `*,
+      templates (
+        id,
+        name
+      )`
+    )
+    .eq("workspace_id", profile.workspace_id)
+    .eq("plan_type", "program")
+    .order("scheduled_date", { ascending: false })
+    .order("created_at", { ascending: false })
+
+  if (error) {
+    console.error("Programs query error:", error)
+    return <div className="p-8">Error loading programs. Please try again.</div>
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: inboundShareData } = await (supabase as any)
+    .from("meeting_shares")
+    .select(
+      `
+      id,
+      permission,
+      meeting_id,
+        meetings!meeting_id (
+        id, workspace_id, title, description, scheduled_date, status, is_publicly_shared,
+        created_by, notes, created_at, updated_at, plan_type, event_id, zoom_meeting_id, template_id,
+        templates (id, name),
+        workspaces (name, slug)
+      ),
+      shared_by_profile:shared_by (full_name)
+    `
+    )
+    .eq("recipient_user_id", user.id)
+    .eq("status", "active")
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: outboundShareData } = await (supabase as any)
+    .from("meeting_shares")
+    .select("meeting_id")
+    .eq("shared_by", user.id)
+    .eq("status", "active")
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const sharedMeetings = (inboundShareData || []).flatMap((share: any) => {
+    const m = share.meetings
+    if (!m || m.plan_type !== "program") return []
+    return [
+      {
+        ...m,
+        templates: m.templates || null,
+        _shareType: "shared_with_me" as const,
+        _sharePermission: share.permission,
+        _sharedByName: share.shared_by_profile?.full_name ?? undefined,
+        _sharedFromWorkspace: m.workspaces?.name ?? undefined,
+      },
+    ]
+  })
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const sharedOutwardIds: string[] = (outboundShareData || []).map((row: any) => row.meeting_id)
+
+  const { data: templates } = await (
+    supabase.from("templates") as ReturnType<typeof supabase.from>
+  )
+    .select("id, name")
+    .order("name")
+
+  const statusCounts: Record<string, number> = {
+    draft: 0,
+    scheduled: 0,
+    in_progress: 0,
+    completed: 0,
+    cancelled: 0,
+  }
+  const templateCounts: Record<string, number> = {
+    "no-template": 0,
+  }
+
+  meetings?.forEach((m: { status: string; template_id: string | null }) => {
+    if (m.status in statusCounts) statusCounts[m.status]++
+    if (m.template_id) {
+      templateCounts[m.template_id] = (templateCounts[m.template_id] || 0) + 1
+    } else {
+      templateCounts["no-template"]++
+    }
+  })
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: programFiltersData } = await (supabase.from("agenda_views") as any)
+    .select("*")
+    .eq("workspace_id", profile.workspace_id)
+    .eq("view_type", "programs")
+    .order("created_at", { ascending: true })
+
+  const initialFilters: AgendaFilter[] = programFiltersData ?? []
+
   return (
-    <div className="min-h-full">
-      <Breadcrumbs />
-      <div className="mx-auto flex w-full max-w-3xl px-4 py-6 sm:px-6 lg:px-8">
-        <Card className="w-full border-border/70">
-          <CardHeader className="space-y-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-              <PanelsTopLeft className="h-6 w-6" />
-            </div>
-            <div className="space-y-2">
-              <CardTitle className="text-2xl">Programs are being staged</CardTitle>
-              <CardDescription className="text-sm leading-6">
-                This route is live so the new Meetings navigation is complete, but the dedicated
-                programs workspace will arrive in a later phase.
-              </CardDescription>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4 text-sm text-muted-foreground">
-            <p>
-              Program planning should not assume a linked meeting or event up front. That linkage
-              can be added later when publishing, sharing, or another downstream workflow requires
-              it.
-            </p>
-            <Button asChild variant="outline">
-              <Link href="/meetings/overview">
-                Back to overview
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+    <MeetingsClient
+      meetings={meetings || []}
+      templates={templates || []}
+      workspaceSlug={workspaceSlug}
+      isLeader={isLeader}
+      statusCounts={statusCounts}
+      templateCounts={templateCounts}
+      sharedMeetings={sharedMeetings}
+      sharedOutwardIds={sharedOutwardIds}
+      initialFilters={initialFilters}
+      workspace="programs"
+    />
   )
 }

@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import Link from "next/link"
 import { format, parseISO, isPast, isFuture, isToday } from "date-fns"
 import { useRouter } from "next/navigation"
 import {
@@ -20,10 +21,12 @@ import {
     Search,
     CalendarDays,
     ExternalLink,
+    Plus,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { parseAllDayDate } from "@/lib/calendar-helpers"
 import { EventDetailDrawer } from "./event-detail-drawer"
+import { Button } from "@/components/ui/button"
 
 export interface EventListItem {
     id: string
@@ -210,6 +213,14 @@ export function EventsListClient({ events, canManageEvents = false }: EventsList
                 <div className="text-sm text-muted-foreground">
                     {filteredEvents.length} event{filteredEvents.length !== 1 ? "s" : ""}
                 </div>
+                {canManageEvents && (
+                    <Button asChild size="sm" className="ml-auto">
+                        <Link href="/calendar/events/new">
+                            <Plus className="h-4 w-4" />
+                            New event
+                        </Link>
+                    </Button>
+                )}
             </div>
 
             {/* Events Table */}

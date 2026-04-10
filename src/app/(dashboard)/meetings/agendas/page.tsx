@@ -44,7 +44,10 @@ export default async function AgendasPage() {
     .single()
   const workspaceSlug: string | null = workspace?.slug || null
 
-  // Fetch all meetings (no pagination — client handles filtering/scroll)
+  const isAgendaMeeting = (meeting: { plan_type?: string | null }) =>
+    meeting.plan_type === "agenda" || meeting.plan_type === null
+
+  // Fetch agenda-backed records (legacy null plan_type records still appear here)
   const { data: meetings, error } = await supabase
     .from("meetings")
     .select(
@@ -55,6 +58,7 @@ export default async function AgendasPage() {
       )`
     )
     .eq("workspace_id", profile.workspace_id)
+    .or("plan_type.eq.agenda,plan_type.is.null")
     .order("scheduled_date", { ascending: false })
     .order("created_at", { ascending: false })
 
@@ -98,7 +102,7 @@ export default async function AgendasPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const sharedMeetings = (inboundShareData || []).flatMap((share: any) => {
     const m = share.meetings
-    if (!m) return []
+    if (!m || !isAgendaMeeting(m)) return []
     return [
       {
         ...m,
@@ -168,6 +172,7 @@ export default async function AgendasPage() {
       sharedMeetings={sharedMeetings}
       sharedOutwardIds={sharedOutwardIds}
       initialFilters={initialFilters}
+      workspace="agendas"
     />
   )
 }

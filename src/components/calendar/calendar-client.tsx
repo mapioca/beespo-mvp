@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useCallback, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { addMonths, subMonths, addWeeks, subWeeks, addDays, subDays, parseISO } from "date-fns";
 import {
   CalendarEvent,
@@ -39,6 +40,7 @@ export function CalendarClient({
   initialEvents = [],
   userRole,
 }: CalendarClientProps) {
+  const searchParams = useSearchParams();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [view, setView] = useState<CalendarViewType>("month");
   const [visibility, setVisibility] = useState<CalendarVisibility>({
@@ -188,6 +190,15 @@ export function CalendarClient({
 
   // Check if user can create events
   const canCreateEvents = userRole === "admin" || userRole === "leader";
+
+  useEffect(() => {
+    if (!canCreateEvents) return;
+    if (searchParams.get("create") !== "event") return;
+
+    setSelectedDate(new Date());
+    setImportingEvent(null);
+    setCreateDialogOpen(true);
+  }, [canCreateEvents, searchParams]);
 
   // Get visible date range
   const dateRange = useMemo(

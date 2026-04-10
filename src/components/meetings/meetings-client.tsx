@@ -4,20 +4,11 @@ import { useState, useMemo, useCallback, useTransition, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { createPortal } from "react-dom"
+import { Check, ClipboardList, Columns3, PanelsTopLeft, Plus, SlidersHorizontal, X } from "lucide-react"
+import type { LucideIcon } from "lucide-react"
+
 import { Button } from "@/components/ui/button"
-import { Check, Plus, SlidersHorizontal, X } from "lucide-react"
-import { Columns3 } from "lucide-react"
-import { ToolbarIconButton } from "@/components/ui/toolbar-icon-button"
 import { BulkSelectionBar } from "@/components/ui/bulk-selection-bar"
-import {
-    StandardPopoverMenu,
-    StandardPopoverMenuContent,
-    StandardPopoverMenuItem,
-    StandardPopoverMenuSub,
-    StandardPopoverMenuSubContent,
-    StandardPopoverMenuSubTrigger,
-    StandardPopoverMenuTrigger,
-} from "@/components/ui/standard-popover-menu"
 import {
     AlertDialog,
     AlertDialogAction,
@@ -28,19 +19,80 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import {
+    StandardPopoverMenu,
+    StandardPopoverMenuContent,
+    StandardPopoverMenuItem,
+    StandardPopoverMenuSub,
+    StandardPopoverMenuSubContent,
+    StandardPopoverMenuSubTrigger,
+    StandardPopoverMenuTrigger,
+} from "@/components/ui/standard-popover-menu"
+import { ToolbarIconButton } from "@/components/ui/toolbar-icon-button"
+import { Breadcrumbs } from "@/components/dashboard/breadcrumbs"
+import { TopbarSearchAction } from "@/components/ui/topbar-search-action"
+import { CreateFilterDialog } from "./create-filter-dialog"
+import { MeetingsTable, Meeting, MeetingStatus, Template } from "./meetings-table"
 import { createClient } from "@/lib/supabase/client"
 import { toast } from "@/lib/toast"
-import {
-    MeetingsTable,
-    Meeting,
-    MeetingStatus,
-    Template,
-} from "./meetings-table"
-import { Breadcrumbs } from "@/components/dashboard/breadcrumbs"
-import { ClipboardList } from "lucide-react"
-import { AgendaFilter, deleteAgendaFilter } from "@/lib/agenda-views"
-import { CreateFilterDialog } from "./create-filter-dialog"
-import { TopbarSearchAction } from "@/components/ui/topbar-search-action"
+import { AgendaFilter, deleteSavedPlanFilter } from "@/lib/agenda-views"
+
+interface PlanWorkspaceConfig {
+    singularLabel: string
+    pluralLabel: string
+    breadcrumbLabel: string
+    searchPlaceholder: string
+    createLabel: string
+    createHref: string
+    viewType: string
+    path: string
+    emptyText: string
+    sharedEmptyText: string
+    icon: LucideIcon
+    tabLabels: {
+        mine: string
+        shared: string
+        all: string
+    }
+}
+
+const agendaWorkspaceConfig: PlanWorkspaceConfig = {
+    singularLabel: "agenda",
+    pluralLabel: "agendas",
+    breadcrumbLabel: "Agendas",
+    searchPlaceholder: "Search agendas...",
+    createLabel: "New agenda",
+    createHref: "/meetings/new?entry=agenda",
+    viewType: "agendas",
+    path: "/meetings/agendas",
+    emptyText: "No agendas found.",
+    sharedEmptyText: "No agendas shared with you yet.",
+    icon: ClipboardList,
+    tabLabels: {
+        mine: "My agendas",
+        shared: "Shared with me",
+        all: "All agendas",
+    },
+}
+
+const programWorkspaceConfig: PlanWorkspaceConfig = {
+    singularLabel: "program",
+    pluralLabel: "programs",
+    breadcrumbLabel: "Programs",
+    searchPlaceholder: "Search programs...",
+    createLabel: "New program",
+    createHref: "/meetings/new?entry=program",
+    viewType: "programs",
+    path: "/meetings/programs",
+    emptyText: "No programs found.",
+    sharedEmptyText: "No programs shared with you yet.",
+    icon: PanelsTopLeft,
+    tabLabels: {
+        mine: "My programs",
+        shared: "Shared with me",
+        all: "All programs",
+    },
+}
 
 interface MeetingsClientProps {
     meetings: Meeting[]
@@ -52,6 +104,7 @@ interface MeetingsClientProps {
     sharedMeetings?: Meeting[]
     sharedOutwardIds?: string[]
     initialFilters?: AgendaFilter[]
+    workspace?: "agendas" | "programs"
 }
 
 export function MeetingsClient({
@@ -64,39 +117,24 @@ export function MeetingsClient({
     sharedMeetings = [],
     sharedOutwardIds = [],
     initialFilters = [],
+    workspace = "agendas",
 }: MeetingsClientProps) {
     const router = useRouter()
     const [, startDeleteTransition] = useTransition()
     const [mounted, setMounted] = useState(false)
+    const workspaceConfig = workspace === "programs" ? programWorkspaceConfig : agendaWorkspaceConfig
+    const WorkspaceIcon = workspaceConfig.icon
 
-    // ── Saved filters state ─────────────────────────────────────────────────
     const [savedFilters, setSavedFilters] = useState<AgendaFilter[]>(initialFilters)
     const [activeFilterId, setActiveFilterId] = useState<string | null>(null)
     const [deletingFilterId, setDeletingFilterId] = useState<string | null>(null)
-
-    // Base scope filter (used when no saved filter is active)
     const [activeCategory, setActiveCategory] = useState<"mine" | "shared" | "all">("mine")
-
-    // Search
     const [search, setSearch] = useState("")
-
-    // Filters
     const [selectedStatuses, setSelectedStatuses] = useState<MeetingStatus[]>([])
     const [selectedTemplates, setSelectedTemplates] = useState<string[]>([])
-
-    // Sort
-    const [sortConfig, setSortConfig] = useState<{
-        key: string
-        direction: "asc" | "desc"
-    } | null>(null)
-
-    // Column visibility
+    const [sortConfig, setSortConfig] = useState<{ key: string; direction: "asc" | "desc" } | null>(null)
     const [hiddenColumns, setHiddenColumns] = useState<Set<string>>(new Set())
-
-    // Row selection
     const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set())
-
-    // Bulk delete
     const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false)
     const [isBulkDeleting, setIsBulkDeleting] = useState(false)
     const [savedFiltersOpen, setSavedFiltersOpen] = useState(false)
@@ -105,8 +143,6 @@ export function MeetingsClient({
     useEffect(() => {
         setMounted(true)
     }, [])
-
-    // ── Derived data ─────────────────────────────────────────────────────────
 
     const sharedOutwardSet = useMemo(
         () => new Set(sharedOutwardIds),
@@ -122,14 +158,12 @@ export function MeetingsClient({
         [meetings, sharedOutwardSet]
     )
 
-    // Resolve the active saved filter object
     const activeFilter = useMemo(
         () => savedFilters.find((filter) => filter.id === activeFilterId) ?? null,
         [savedFilters, activeFilterId]
     )
 
     const filteredMeetings = useMemo(() => {
-        // Determine which category to use
         const effectiveCategory = activeFilter?.filters.category ?? activeCategory
 
         let result: Meeting[] =
@@ -139,7 +173,6 @@ export function MeetingsClient({
                   ? sharedMeetings
                   : [...annotatedMeetings, ...sharedMeetings]
 
-        // Search (always applied, even in saved filters)
         if (search) {
             const q = search.toLowerCase()
             result = result.filter(
@@ -149,7 +182,6 @@ export function MeetingsClient({
             )
         }
 
-        // Status filter — use saved filter statuses if active, otherwise manual selection
         const effectiveStatuses =
             activeFilter?.filters.statuses && activeFilter.filters.statuses.length > 0
                 ? activeFilter.filters.statuses
@@ -161,7 +193,6 @@ export function MeetingsClient({
             )
         }
 
-        // Template filter — use saved filter templateIds if active, otherwise manual selection
         const effectiveTemplates =
             activeFilter?.filters.templateIds && activeFilter.filters.templateIds.length > 0
                 ? activeFilter.filters.templateIds
@@ -172,35 +203,27 @@ export function MeetingsClient({
             const templateIds = effectiveTemplates.filter((id) => id !== "no-template")
             result = result.filter((m) => {
                 if (hasNoTemplate && !m.template_id) return true
-                if (templateIds.length > 0 && m.template_id && templateIds.includes(m.template_id))
+                if (templateIds.length > 0 && m.template_id && templateIds.includes(m.template_id)) {
                     return true
+                }
                 return false
             })
         }
 
-        // Zoom filter (saved filter only)
         if (activeFilter?.filters.hasZoom) {
             result = result.filter((m) => !!m.zoom_meeting_id)
         }
 
-        // Sort
         if (sortConfig) {
             result = [...result].sort((a, b) => {
                 const { key, direction } = sortConfig
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const aValue: any =
-                    key === "template"
-                        ? a.templates?.name || ""
-                        : a[key as keyof Meeting]
+                const aValue: any = key === "template" ? a.templates?.name || "" : a[key as keyof Meeting]
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const bValue: any =
-                    key === "template"
-                        ? b.templates?.name || ""
-                        : b[key as keyof Meeting]
+                const bValue: any = key === "template" ? b.templates?.name || "" : b[key as keyof Meeting]
 
                 if (aValue === null || aValue === undefined) return 1
                 if (bValue === null || bValue === undefined) return -1
-
                 if (aValue < bValue) return direction === "asc" ? -1 : 1
                 if (aValue > bValue) return direction === "asc" ? 1 : -1
                 return 0
@@ -209,24 +232,19 @@ export function MeetingsClient({
 
         return result
     }, [
-        activeFilter,
         activeCategory,
+        activeFilter,
         annotatedMeetings,
-        sharedMeetings,
         search,
         selectedStatuses,
         selectedTemplates,
+        sharedMeetings,
         sortConfig,
     ])
 
-    // ── Handlers ─────────────────────────────────────────────────────────────
-
-    const handleSort = useCallback(
-        (key: string, direction: "asc" | "desc") => {
-            setSortConfig({ key, direction })
-        },
-        []
-    )
+    const handleSort = useCallback((key: string, direction: "asc" | "desc") => {
+        setSortConfig({ key, direction })
+    }, [])
 
     const handleStatusToggle = useCallback((status: string) => {
         setSelectedStatuses((prev) =>
@@ -253,7 +271,6 @@ export function MeetingsClient({
             const isVisible = !next.has(column)
 
             if (isVisible && visibleCount <= 1) return prev
-
             if (isVisible) next.add(column)
             else next.delete(column)
             return next
@@ -283,24 +300,21 @@ export function MeetingsClient({
         const ids = Array.from(selectedRows)
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await (supabase.from("agenda_items") as any)
-            .delete()
-            .in("meeting_id", ids)
+        await (supabase.from("agenda_items") as any).delete().in("meeting_id", ids)
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { error } = await (supabase.from("meetings") as any)
-            .delete()
-            .in("id", ids)
+        const { error } = await (supabase.from("meetings") as any).delete().in("id", ids)
 
         if (error) {
-            toast.error(error.message || "Failed to delete meetings")
+            toast.error(error.message || `Failed to delete ${workspaceConfig.pluralLabel}`)
         } else {
             toast.success(
-                `${ids.length} agenda${ids.length > 1 ? "s" : ""} deleted`
+                `${ids.length} ${workspaceConfig.singularLabel}${ids.length > 1 ? "s" : ""} deleted`
             )
             setSelectedRows(new Set())
             router.refresh()
         }
+
         setIsBulkDeleting(false)
         setShowBulkDeleteDialog(false)
     }
@@ -310,17 +324,13 @@ export function MeetingsClient({
         setActiveFilterId(filter.id)
     }
 
-    function handleDeleteFilter(filterId: string) {
-        setDeletingFilterId(filterId)
-    }
-
     async function confirmDeleteFilter() {
         if (!deletingFilterId) return
         const id = deletingFilterId
         setDeletingFilterId(null)
 
         startDeleteTransition(async () => {
-            const result = await deleteAgendaFilter(id)
+            const result = await deleteSavedPlanFilter(id, workspaceConfig.path)
             if (result.error) {
                 toast.error(result.error)
                 return
@@ -331,9 +341,6 @@ export function MeetingsClient({
         })
     }
 
-    // ── Active filter chips ───────────────────────────────────────────────────
-
-    // In saved-filter mode, manual filter chips are not relevant (filter owns the filters)
     const hasActiveFilters =
         !activeFilter &&
         (search.length > 0 ||
@@ -341,8 +348,8 @@ export function MeetingsClient({
             selectedTemplates.length > 0 ||
             hiddenColumns.size > 0)
 
-    function formatStatusLabel(s: string) {
-        return s.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())
+    function formatStatusLabel(status: string) {
+        return status.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())
     }
 
     function getTemplateName(id: string) {
@@ -379,15 +386,11 @@ export function MeetingsClient({
         })),
     ]
 
-
-    // ── Render ────────────────────────────────────────────────────────────────
-
     return (
-        <div className="flex flex-col h-full bg-muted/30">
-            {/* Breadcrumb */}
+        <div className="flex h-full flex-col bg-muted/30">
             <Breadcrumbs
                 items={[
-                    { label: "Agendas", icon: <ClipboardList className="h-3.5 w-3.5" /> },
+                    { label: workspaceConfig.breadcrumbLabel, icon: <WorkspaceIcon className="h-3.5 w-3.5" /> },
                 ]}
                 className="bg-transparent ring-0 border-b border-border/60 rounded-none px-4 py-1.5"
                 action={
@@ -395,14 +398,14 @@ export function MeetingsClient({
                         <TopbarSearchAction
                             value={search}
                             onChange={setSearch}
-                            placeholder="Search agendas..."
+                            placeholder={workspaceConfig.searchPlaceholder}
                             items={filteredMeetings.slice(0, 8).map((meeting) => ({
                                 id: meeting.id,
                                 label: meeting.title,
                                 actionLabel: "Open",
                             }))}
                             onSelect={(meetingId) => router.push(`/meetings/${meetingId}`)}
-                            emptyText="No matching agendas."
+                            emptyText={`No matching ${workspaceConfig.pluralLabel}.`}
                         />
                         {isLeader && (
                             <Button
@@ -411,9 +414,9 @@ export function MeetingsClient({
                                 size="sm"
                                 className="h-7 gap-1 rounded-full px-2.5 text-[length:var(--agenda-control-font-size)] text-nav transition-colors hover:bg-[hsl(var(--agenda-interactive-hover))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--agenda-interactive-focus-ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                             >
-                                <Link href="/meetings/new">
+                                <Link href={workspaceConfig.createHref}>
                                     <Plus className="h-3.5 w-3.5 stroke-[1.6]" />
-                                    New meeting
+                                    {workspaceConfig.createLabel}
                                 </Link>
                             </Button>
                         )}
@@ -421,41 +424,36 @@ export function MeetingsClient({
                 }
             />
 
-            {/* Action Bar + Tabs */}
-            <div className="flex items-center justify-between w-full px-6 pt-3.5 pb-3.5 shrink-0 flex-wrap gap-3">
-                <div className="flex items-center gap-2 flex-wrap min-h-8">
-                    {/* Built-in tabs */}
+            <div className="flex w-full shrink-0 flex-wrap items-center justify-between gap-3 px-6 pb-3.5 pt-3.5">
+                <div className="flex min-h-8 flex-wrap items-center gap-2">
                     {(
                         [
-                            { value: "mine", label: "My meetings" },
-                            { value: "shared", label: "Shared with me" },
-                            { value: "all", label: "All meetings" },
-                    ] as const
-                ).map(({ value, label }) => (
-                    <button
-                        key={value}
-                        onClick={() => {
-                            setActiveFilterId(null)
-                            setActiveCategory(value)
-                        }}
-                        className={
-                            activeFilterId === null && activeCategory === value
-                                ? "rounded-full border px-3.5 py-1.5 text-[length:var(--agenda-chip-font-size)] font-semibold leading-none border-[hsl(var(--chip-active-border))] bg-[hsl(var(--agenda-interactive-active))] text-[hsl(var(--chip-active-text))] transition-all shadow-[0_1px_0_rgba(15,23,42,0.1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--agenda-interactive-focus-ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-                                : "rounded-full border px-3.5 py-1.5 text-[length:var(--agenda-chip-font-size)] font-medium leading-none bg-[hsl(var(--chip-bg))] text-[hsl(var(--chip-text))] border-[hsl(var(--chip-border))] hover:bg-[hsl(var(--agenda-interactive-hover))] hover:text-[hsl(var(--chip-active-text))] active:bg-[hsl(var(--agenda-interactive-active))] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--agenda-interactive-focus-ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-                        }
-                        aria-pressed={activeFilterId === null && activeCategory === value}
-                        aria-label={`Filter agendas by ${label}`}
-                    >
-                        {label}
-                    </button>
-                ))}
+                            { value: "mine", label: workspaceConfig.tabLabels.mine },
+                            { value: "shared", label: workspaceConfig.tabLabels.shared },
+                            { value: "all", label: workspaceConfig.tabLabels.all },
+                        ] as const
+                    ).map(({ value, label }) => (
+                        <button
+                            key={value}
+                            onClick={() => {
+                                setActiveFilterId(null)
+                                setActiveCategory(value)
+                            }}
+                            className={
+                                activeFilterId === null && activeCategory === value
+                                    ? "rounded-full border px-3.5 py-1.5 text-[length:var(--agenda-chip-font-size)] font-semibold leading-none border-[hsl(var(--chip-active-border))] bg-[hsl(var(--agenda-interactive-active))] text-[hsl(var(--chip-active-text))] transition-all shadow-[0_1px_0_rgba(15,23,42,0.1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--agenda-interactive-focus-ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                                    : "rounded-full border px-3.5 py-1.5 text-[length:var(--agenda-chip-font-size)] font-medium leading-none bg-[hsl(var(--chip-bg))] text-[hsl(var(--chip-text))] border-[hsl(var(--chip-border))] hover:bg-[hsl(var(--agenda-interactive-hover))] hover:text-[hsl(var(--chip-active-text))] active:bg-[hsl(var(--agenda-interactive-active))] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--agenda-interactive-focus-ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                            }
+                            aria-pressed={activeFilterId === null && activeCategory === value}
+                            aria-label={`Filter ${workspaceConfig.pluralLabel} by ${label}`}
+                        >
+                            {label}
+                        </button>
+                    ))}
 
                     <StandardPopoverMenu open={savedFiltersOpen} onOpenChange={setSavedFiltersOpen}>
                         <StandardPopoverMenuTrigger asChild>
-                            <ToolbarIconButton
-                                title="Saved filters"
-                                aria-label="Open saved filters"
-                            >
+                            <ToolbarIconButton title="Saved filters" aria-label="Open saved filters">
                                 <SlidersHorizontal className="h-3.5 w-3.5" />
                             </ToolbarIconButton>
                         </StandardPopoverMenuTrigger>
@@ -522,14 +520,12 @@ export function MeetingsClient({
                                 </StandardPopoverMenuSubContent>
                             </StandardPopoverMenuSub>
 
-
-
                             {(selectedStatuses.length > 0 || selectedTemplates.length > 0) && !activeFilter && (
                                 <StandardPopoverMenuItem
                                     onSelect={() => {
                                         setSelectedStatuses([])
                                         setSelectedTemplates([])
-                                                                    }}
+                                    }}
                                     className="text-muted-foreground"
                                 >
                                     Clear filters
@@ -558,14 +554,12 @@ export function MeetingsClient({
                                                 }}
                                                 className="group"
                                             >
-                                                <span className="truncate">
-                                                    {filter.name}
-                                                </span>
+                                                <span className="truncate">{filter.name}</span>
                                                 <button
                                                     type="button"
                                                     onClick={(event) => {
                                                         event.stopPropagation()
-                                                        handleDeleteFilter(filter.id)
+                                                        setDeletingFilterId(filter.id)
                                                     }}
                                                     className="rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:text-foreground group-hover:opacity-100"
                                                     aria-label={`Delete filter ${filter.name}`}
@@ -579,6 +573,9 @@ export function MeetingsClient({
                                     <div className="my-1 h-px bg-[hsl(var(--menu-separator))]" />
                                     <CreateFilterDialog
                                         templates={templates}
+                                        viewType={workspaceConfig.viewType}
+                                        path={workspaceConfig.path}
+                                        entityLabelPlural={workspaceConfig.pluralLabel}
                                         onCreated={(filter) => {
                                             handleFilterCreated(filter)
                                             setSavedFiltersOpen(false)
@@ -604,10 +601,7 @@ export function MeetingsClient({
 
                     <StandardPopoverMenu open={displayOptionsOpen} onOpenChange={setDisplayOptionsOpen}>
                         <StandardPopoverMenuTrigger asChild>
-                            <ToolbarIconButton
-                                title="Display options"
-                                aria-label="Display options"
-                            >
+                            <ToolbarIconButton title="Display options" aria-label="Display options">
                                 <Columns3 className="h-3.5 w-3.5" />
                             </ToolbarIconButton>
                         </StandardPopoverMenuTrigger>
@@ -647,19 +641,17 @@ export function MeetingsClient({
                         </StandardPopoverMenuContent>
                     </StandardPopoverMenu>
                 </div>
-
             </div>
 
-            {/* Saved filter summary bar (shown when a saved filter is active) */}
             {activeFilter && (
-                <div className="flex items-center gap-2 px-6 pb-3 flex-wrap text-[length:var(--agenda-control-font-size)] text-muted-foreground">
+                <div className="flex flex-wrap items-center gap-2 px-6 pb-3 text-[length:var(--agenda-control-font-size)] text-muted-foreground">
                     <span className="font-medium text-foreground">Filters:</span>
                     <span className="rounded-full bg-[hsl(var(--chip-bg))] border border-[hsl(var(--chip-border))] px-2.5 py-1.5 capitalize text-[hsl(var(--chip-text))] leading-none">
-                        {activeFilter.filters.category ?? "all"} meetings
+                        {activeFilter.filters.category ?? "all"} {workspaceConfig.pluralLabel}
                     </span>
-                    {activeFilter.filters.statuses?.map((s) => (
-                        <span key={s} className="rounded-full bg-[hsl(var(--chip-bg))] border border-[hsl(var(--chip-border))] px-2.5 py-1.5 text-[hsl(var(--chip-text))] leading-none">
-                            {formatStatusLabel(s)}
+                    {activeFilter.filters.statuses?.map((status) => (
+                        <span key={status} className="rounded-full bg-[hsl(var(--chip-bg))] border border-[hsl(var(--chip-border))] px-2.5 py-1.5 text-[hsl(var(--chip-text))] leading-none">
+                            {formatStatusLabel(status)}
                         </span>
                     ))}
                     {activeFilter.filters.templateIds?.map((id) => (
@@ -673,10 +665,7 @@ export function MeetingsClient({
                     {search && (
                         <span className="inline-flex items-center gap-1.5 rounded-full bg-[hsl(var(--chip-bg))] border border-[hsl(var(--chip-border))] px-2.5 py-1.5 text-[hsl(var(--chip-text))] leading-none">
                             Search: &quot;{search}&quot;
-                            <button
-                                onClick={() => setSearch("")}
-                                className="ml-1 text-muted-foreground hover:text-foreground"
-                            >
+                            <button onClick={() => setSearch("")} className="ml-1 text-muted-foreground hover:text-foreground">
                                 <X className="h-3 w-3 inline stroke-[1.6]" />
                             </button>
                         </span>
@@ -690,28 +679,27 @@ export function MeetingsClient({
                 </div>
             )}
 
-            {/* Active filter chips — only in non-saved-filter mode */}
             {hasActiveFilters && selectedRows.size === 0 && (
-                <div className="flex items-center gap-2 px-6 pb-3 flex-wrap">
+                <div className="flex flex-wrap items-center gap-2 px-6 pb-3">
                     {search && (
                         <span className="inline-flex items-center gap-1.5 rounded-full bg-[hsl(var(--chip-bg))] border border-[hsl(var(--chip-border))] px-2.5 py-1.5 text-[length:var(--agenda-chip-font-size)] font-medium leading-none text-[hsl(var(--chip-text))]">
                             Search: &quot;{search}&quot;
                             <button
                                 onClick={() => setSearch("")}
-                            className="text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--agenda-interactive-focus-ring))] focus-visible:ring-offset-1 focus-visible:ring-offset-background rounded-sm"
+                                className="text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--agenda-interactive-focus-ring))] focus-visible:ring-offset-1 focus-visible:ring-offset-background rounded-sm"
                             >
                                 <X className="h-3 w-3 stroke-[1.6]" />
                             </button>
                         </span>
                     )}
-                    {selectedStatuses.map((s) => (
+                    {selectedStatuses.map((status) => (
                         <span
-                            key={s}
+                            key={status}
                             className="inline-flex items-center gap-1.5 rounded-full bg-[hsl(var(--chip-bg))] border border-[hsl(var(--chip-border))] px-2.5 py-1.5 text-[length:var(--agenda-chip-font-size)] font-medium leading-none text-[hsl(var(--chip-text))]"
                         >
-                            {formatStatusLabel(s)}
+                            {formatStatusLabel(status)}
                             <button
-                                onClick={() => handleStatusToggle(s)}
+                                onClick={() => handleStatusToggle(status)}
                                 className="text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--agenda-interactive-focus-ring))] focus-visible:ring-offset-1 focus-visible:ring-offset-background rounded-sm"
                             >
                                 <X className="h-3 w-3 stroke-[1.6]" />
@@ -749,12 +737,11 @@ export function MeetingsClient({
                 </div>
             )}
 
-            {/* Table */}
             <div className="flex-1 overflow-auto px-6 pb-6">
                 {activeCategory === "shared" && !activeFilter && sharedMeetings.length === 0 && !search ? (
-                    <div className="flex flex-col items-center justify-center h-48 text-center">
-                        <p className="text-muted-foreground text-sm">
-                            No meetings shared with you yet.
+                    <div className="flex h-48 flex-col items-center justify-center text-center">
+                        <p className="text-sm text-muted-foreground">
+                            {workspaceConfig.sharedEmptyText}
                         </p>
                     </div>
                 ) : (
@@ -768,31 +755,26 @@ export function MeetingsClient({
                         selectedRows={selectedRows}
                         onToggleRow={handleToggleRow}
                         onToggleAllRows={handleToggleAllRows}
+                        workspace={workspace}
+                        emptyText={workspaceConfig.emptyText}
                     />
                 )}
             </div>
 
-            {/* Bulk delete confirmation */}
-            <AlertDialog
-                open={showBulkDeleteDialog}
-                onOpenChange={setShowBulkDeleteDialog}
-            >
+            <AlertDialog open={showBulkDeleteDialog} onOpenChange={setShowBulkDeleteDialog}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle>
-                            Delete {selectedRows.size} agenda
+                            Delete {selectedRows.size} {workspaceConfig.singularLabel}
                             {selectedRows.size > 1 ? "s" : ""}
                         </AlertDialogTitle>
                         <AlertDialogDescription>
-                            This will permanently delete the selected agenda
-                            {selectedRows.size > 1 ? "s" : ""} and all their
-                            agenda items. This action cannot be undone.
+                            This will permanently delete the selected {workspaceConfig.singularLabel}
+                            {selectedRows.size > 1 ? "s" : ""} and all their plan content. This action cannot be undone.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel disabled={isBulkDeleting}>
-                            Cancel
-                        </AlertDialogCancel>
+                        <AlertDialogCancel disabled={isBulkDeleting}>Cancel</AlertDialogCancel>
                         <AlertDialogAction
                             onClick={handleBulkDelete}
                             disabled={isBulkDeleting}
@@ -804,23 +786,16 @@ export function MeetingsClient({
                 </AlertDialogContent>
             </AlertDialog>
 
-            {/* Delete filter confirmation */}
-            <AlertDialog
-                open={!!deletingFilterId}
-                onOpenChange={(o) => { if (!o) setDeletingFilterId(null) }}
-            >
+            <AlertDialog open={!!deletingFilterId} onOpenChange={(open) => { if (!open) setDeletingFilterId(null) }}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle>Delete this filter?</AlertDialogTitle>
                         <AlertDialogDescription>
-                            This filter will be removed for everyone in your workspace.
-                            This action cannot be undone.
+                            This filter will be removed for everyone in your workspace. This action cannot be undone.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel onClick={() => setDeletingFilterId(null)}>
-                            Cancel
-                        </AlertDialogCancel>
+                        <AlertDialogCancel onClick={() => setDeletingFilterId(null)}>Cancel</AlertDialogCancel>
                         <AlertDialogAction
                             onClick={confirmDeleteFilter}
                             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
@@ -831,9 +806,8 @@ export function MeetingsClient({
                 </AlertDialogContent>
             </AlertDialog>
 
-            {/* Floating bulk selection pill */}
             {mounted && selectedRows.size > 0 && createPortal(
-                <div className="fixed bottom-6 left-1/2 z-[95] flex -translate-x-1/2 pointer-events-none w-[90vw] sm:w-auto justify-center">
+                <div className="fixed bottom-6 left-1/2 z-[95] flex w-[90vw] -translate-x-1/2 justify-center pointer-events-none sm:w-auto">
                     <BulkSelectionBar
                         selectedCount={selectedRows.size}
                         onClear={() => setSelectedRows(new Set())}

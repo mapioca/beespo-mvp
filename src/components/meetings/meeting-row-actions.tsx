@@ -43,6 +43,7 @@ interface MeetingRowActionsProps {
     meeting: Meeting;
     workspaceSlug: string | null;
     isLeader: boolean;
+    workspace?: "agendas" | "programs";
     onDelete?: (meetingId: string) => void;
 }
 
@@ -50,6 +51,7 @@ export function MeetingRowActions({
     meeting,
     workspaceSlug,
     isLeader,
+    workspace = "agendas",
     onDelete,
 }: MeetingRowActionsProps) {
     const router = useRouter();
@@ -59,6 +61,20 @@ export function MeetingRowActions({
     const [isDeleting, setIsDeleting] = useState(false);
     const [activeShareCount, setActiveShareCount] = useState<number | null>(null);
     const [currentMeeting, setCurrentMeeting] = useState(meeting);
+
+    const isProgramWorkspace = workspace === "programs";
+    const entityLabel = isProgramWorkspace ? "program" : "agenda";
+    const entityLabelTitle = isProgramWorkspace ? "Program" : "Agenda";
+    const openLabel = isLeader ? `Open ${entityLabel}` : `View ${entityLabel}`;
+    const shareLabel = `Share ${entityLabel}`;
+    const deleteLabel = `Delete ${entityLabel}`;
+    const publicViewLabel = isProgramWorkspace ? "Program view" : "Agenda view";
+    const publicViewHref =
+        workspaceSlug == null
+            ? null
+            : isProgramWorkspace
+              ? `/${workspaceSlug}/program/${meeting.id}`
+              : `/${workspaceSlug}/meeting/${meeting.id}`;
 
 
 
@@ -108,13 +124,17 @@ export function MeetingRowActions({
 
             if (error) throw error;
 
-            toast.success("Meeting deleted", { description: "The meeting has been permanently deleted." });
+            toast.success(`${entityLabelTitle} deleted`, {
+                description: `The ${entityLabel} has been permanently deleted.`,
+            });
 
             onDelete?.(meeting.id);
             router.refresh();
         } catch (error) {
             console.error("Delete failed:", error);
-            toast.error("Delete failed", { description: "Could not delete meeting. Please try again." });
+            toast.error("Delete failed", {
+                description: `Could not delete ${entityLabel}. Please try again.`,
+            });
         } finally {
             setIsDeleting(false);
             setIsDeleteDialogOpen(false);
@@ -134,14 +154,14 @@ export function MeetingRowActions({
         <>
             <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
                 <DropdownMenuTrigger asChild>
-                    <TableRowActionTrigger label="Open meeting actions" />
+                    <TableRowActionTrigger label={`Open ${entityLabel} actions`} />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-[160px]">
                     {/* View/Edit - Goes to builder (mode depends on user role) */}
                     <DropdownMenuItem asChild>
                         <Link href={`/meetings/${meeting.id}`} className="flex items-center">
                             <Eye className="mr-2 h-4 w-4" />
-                            {isLeader ? "Open" : "View"}
+                            {openLabel}
                         </Link>
                     </DropdownMenuItem>
 
@@ -168,13 +188,15 @@ export function MeetingRowActions({
                         </a>
                     </DropdownMenuItem>
 
-                    {/* Program View */}
-                    <DropdownMenuItem asChild>
-                        <a href={`/${workspaceSlug}/program/${meeting.id}`} target="_blank" rel="noopener noreferrer" className="flex items-center cursor-pointer">
-                            <Smartphone className="mr-2 h-4 w-4" />
-                            Program
-                        </a>
-                    </DropdownMenuItem>
+                    {/* Public plan view */}
+                    {publicViewHref && (
+                        <DropdownMenuItem asChild>
+                            <a href={publicViewHref} target="_blank" rel="noopener noreferrer" className="flex items-center cursor-pointer">
+                                <Smartphone className="mr-2 h-4 w-4" />
+                                {publicViewLabel}
+                            </a>
+                        </DropdownMenuItem>
+                    )}
 
                     {/* Share */}
                     <DropdownMenuItem
@@ -182,7 +204,7 @@ export function MeetingRowActions({
                         className="flex items-center"
                     >
                         <Share2 className="mr-2 h-4 w-4" />
-                        Share
+                        {shareLabel}
                     </DropdownMenuItem>
 
                     {/* Delete - Only for leaders */}
@@ -194,7 +216,7 @@ export function MeetingRowActions({
                                 className="flex items-center text-destructive focus:text-destructive"
                             >
                                 <Trash2 className="mr-2 h-4 w-4" />
-                                Delete
+                                {deleteLabel}
                             </DropdownMenuItem>
                         </>
                     )}
@@ -215,14 +237,14 @@ export function MeetingRowActions({
             <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Delete Meeting</AlertDialogTitle>
+                        <AlertDialogTitle>{deleteLabel}</AlertDialogTitle>
                         <AlertDialogDescription>
                             Are you sure you want to delete &quot;{meeting.title}&quot;? This action
-                            cannot be undone. All agenda items and associated data will be
+                            cannot be undone. All plan items and associated data will be
                             permanently removed.
                             {activeShareCount !== null && activeShareCount > 0 && (
                                 <span className="block mt-2 font-medium text-destructive">
-                                    This meeting is currently shared with {activeShareCount}{" "}
+                                    This {entityLabel} is currently shared with {activeShareCount}{" "}
                                     {activeShareCount === 1 ? "person" : "people"}. Deleting it
                                     will remove their access immediately.
                                 </span>

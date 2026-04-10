@@ -75,19 +75,31 @@ type MeetingFormValues = z.infer<typeof meetingFormSchema>;
 interface MeetingBuilderProps {
     initialTemplateId?: string | null;
     initialMeetingId?: string;
+    initialEntryType?: "agenda" | "program" | "meeting";
 }
 
 type AutosaveStatus = "idle" | "saving" | "saved" | "error";
 type MeetingStatus = "draft" | "scheduled" | "in_progress" | "completed" | "cancelled";
 
-export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingBuilderProps) {
+export function MeetingBuilder({
+    initialTemplateId,
+    initialMeetingId,
+    initialEntryType = "agenda",
+}: MeetingBuilderProps) {
     const router = useRouter();
+    const defaultTitleByEntry = {
+        agenda: "Untitled Agenda",
+        program: "Untitled Program",
+        meeting: "Untitled Meeting",
+    } as const;
+    const defaultBuilderMode: BuilderMode =
+        initialMeetingId ? "print-preview" : initialEntryType === "program" ? "program" : "planning";
 
     // Form state
     const form = useForm<MeetingFormValues>({
         resolver: zodResolver(meetingFormSchema),
         defaultValues: {
-            title: "Untitled Meeting Agenda",
+            title: defaultTitleByEntry[initialEntryType],
             date: new Date(),
             time: "07:00",
             templateId: initialTemplateId || null,
@@ -137,7 +149,7 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
     const [isCreating, setIsCreating] = useState(false);
 
     // Builder mode state — default to print-preview when editing existing, planning when creating new
-    const [builderMode, setBuilderMode] = useState<BuilderMode>(initialMeetingId ? "print-preview" : "planning");
+    const [builderMode, setBuilderMode] = useState<BuilderMode>(defaultBuilderMode);
     const [programPreviewDevice, setProgramPreviewDevice] = useState<"phone" | "tablet" | "desktop">("phone");
     const [workspaceName, setWorkspaceName] = useState("");
     const [workspaceSlug, setWorkspaceSlug] = useState<string | null>(null);
@@ -199,8 +211,8 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
         () =>
             initialMeetingId
                 ? `beespo:meeting:draft:${initialMeetingId}`
-                : `beespo:meeting:draft:new:${initialTemplateId || "none"}`,
-        [initialMeetingId, initialTemplateId]
+                : `beespo:meeting:draft:new:${initialEntryType}:${initialTemplateId || "none"}`,
+        [initialMeetingId, initialEntryType, initialTemplateId]
     );
 
     // DnD sensors

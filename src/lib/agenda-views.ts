@@ -32,11 +32,9 @@ export type AgendaFilter = AgendaView
 
 // ── Server actions ────────────────────────────────────────────────────────────
 
-/**
- * Create a new saved agenda filter for the current user's workspace.
- * Saved filters are visible to all members of the same workspace.
- */
-export async function createAgendaView(
+export async function createSavedPlanFilter(
+  viewType: string,
+  path: string,
   name: string,
   filters: ViewFilters
 ): Promise<{ data?: AgendaView; error?: string }> {
@@ -60,6 +58,7 @@ export async function createAgendaView(
     .insert({
       name: name.trim(),
       filters,
+      view_type: viewType,
       workspace_id: profile.workspace_id,
       created_by: user.id,
     })
@@ -68,8 +67,36 @@ export async function createAgendaView(
 
   if (error) return { error: error.message }
 
-  revalidatePath("/meetings/agendas")
+  revalidatePath(path)
   return { data: data as AgendaView }
+}
+
+export async function deleteSavedPlanFilter(
+  id: string,
+  path: string
+): Promise<{ error?: string }> {
+  const supabase = await createClient()
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (supabase.from("agenda_views") as any)
+    .delete()
+    .eq("id", id)
+
+  if (error) return { error: error.message }
+
+  revalidatePath(path)
+  return {}
+}
+
+/**
+ * Create a new saved agenda filter for the current user's workspace.
+ * Saved filters are visible to all members of the same workspace.
+ */
+export async function createAgendaView(
+  name: string,
+  filters: ViewFilters
+): Promise<{ data?: AgendaView; error?: string }> {
+  return createSavedPlanFilter("agendas", "/meetings/agendas", name, filters)
 }
 
 export async function createAgendaFilter(
@@ -86,17 +113,7 @@ export async function createAgendaFilter(
 export async function deleteAgendaView(
   id: string
 ): Promise<{ error?: string }> {
-  const supabase = await createClient()
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error } = await (supabase.from("agenda_views") as any)
-    .delete()
-    .eq("id", id)
-
-  if (error) return { error: error.message }
-
-  revalidatePath("/meetings/agendas")
-  return {}
+  return deleteSavedPlanFilter(id, "/meetings/agendas")
 }
 
 export async function deleteAgendaFilter(

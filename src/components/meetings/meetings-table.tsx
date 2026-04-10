@@ -17,6 +17,7 @@ import { ShareDialog } from "@/components/conduct/share-dialog"
 import { ZoomIcon } from "@/components/ui/zoom-icon"
 import { Database } from "@/types/database"
 import { SortableTableHeader } from "@/components/ui/sortable-table-header"
+import { Badge } from "@/components/ui/badge"
 import {
     StandardActionsHeadCell,
     StandardSelectAllHeadCell,
@@ -74,6 +75,8 @@ interface MeetingsTableProps {
     meetings: Meeting[]
     workspaceSlug: string | null
     isLeader: boolean
+    workspace?: "agendas" | "programs"
+    emptyText?: string
     // Sort
     sortConfig?: { key: string; direction: "asc" | "desc" } | null
     onSort?: (key: string, direction: "asc" | "desc") => void
@@ -91,6 +94,8 @@ export function MeetingsTable({
     meetings,
     workspaceSlug,
     isLeader,
+    workspace = "agendas",
+    emptyText = "No plans found.",
     sortConfig,
     onSort,
     hiddenColumns = new Set(),
@@ -99,6 +104,7 @@ export function MeetingsTable({
     onToggleAllRows,
 }: MeetingsTableProps) {
     const [shareDialogMeeting, setShareDialogMeeting] = useState<Meeting | null>(null)
+    const planLabel = workspace === "programs" ? "Program" : "Agenda"
 
     const allSelected =
         meetings.length > 0 && selectedRows.size === meetings.length
@@ -195,7 +201,7 @@ export function MeetingsTable({
                             <div className="flex flex-col items-center justify-center py-4">
                                 <CalendarDays className="h-8 w-8 text-muted-foreground mb-2 stroke-[1.6]" />
                                 <p className="text-muted-foreground">
-                                    No agendas found.
+                                    {emptyText}
                                 </p>
                             </div>
                         </TableCell>
@@ -212,19 +218,21 @@ export function MeetingsTable({
                                     meeting={meeting}
                                     workspaceSlug={workspaceSlug}
                                     isLeader={isLeader}
+                                    workspace={workspace}
                                 />
                             }
                         >
                             {/* Title */}
                             {!hiddenColumns.has("title") && (
                         <TableCell className="table-cell-title">
-                            <div className="flex items-center gap-1.5">
-                                <Link
-                                    href={`/meetings/${meeting.id}`}
-                                    className="rounded-sm text-[length:var(--table-body-font-size)] font-semibold text-foreground/90 hover:text-foreground hover:underline underline-offset-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-                                >
-                                    {meeting.title}
-                                </Link>
+                            <div className="flex flex-col gap-1.5">
+                                <div className="flex items-center gap-1.5">
+                                    <Link
+                                        href={`/meetings/${meeting.id}`}
+                                        className="rounded-sm text-[length:var(--table-body-font-size)] font-semibold text-foreground/90 hover:text-foreground hover:underline underline-offset-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                                    >
+                                        {meeting.title}
+                                    </Link>
                                         {meeting.is_publicly_shared && (
                                             <span className="inline-flex items-center gap-1 text-[length:var(--table-micro-font-size)] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
                                                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
@@ -247,7 +255,22 @@ export function MeetingsTable({
                                         {meeting.zoom_meeting_id && (
                                             <ZoomIcon className="h-4 w-4 shrink-0" />
                                         )}
-                                    </div>
+                                </div>
+                                <div className="flex flex-wrap items-center gap-1.5">
+                                    <Badge variant="outline" className="text-[10px] uppercase tracking-[0.14em] border-border/60">
+                                        {planLabel}
+                                    </Badge>
+                                    {meeting.event_id ? (
+                                        <Badge variant="outline" className="text-[10px] bg-blue-50 text-blue-700 border-blue-200">
+                                            Linked event
+                                        </Badge>
+                                    ) : (
+                                        <Badge variant="outline" className="text-[10px] bg-amber-50 text-amber-700 border-amber-200">
+                                            No event link
+                                        </Badge>
+                                    )}
+                                </div>
+                            </div>
                                 </TableCell>
                             )}
 

@@ -36,9 +36,9 @@ export function UpcomingMeetingsWidget({
             You have no upcoming meetings scheduled. Create your first meeting to get started.
           </p>
           <Button asChild size="sm" className="w-full">
-            <Link href="/meetings/new">
+            <Link href="/meetings/create">
               <Plus className="h-3 w-3 mr-2" />
-              Schedule First Meeting
+              Create Something New
             </Link>
           </Button>
         </div>

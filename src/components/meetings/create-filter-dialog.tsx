@@ -14,14 +14,14 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { cn } from "@/lib/utils"
-import { createAgendaFilter, AgendaFilter, FilterCriteria } from "@/lib/agenda-views"
+import { AgendaFilter, FilterCriteria, createSavedPlanFilter } from "@/lib/agenda-views"
 import { toast } from "@/lib/toast"
 import { Template } from "./meetings-table"
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const CATEGORY_OPTIONS = [
-  { value: "mine", label: "My Meetings" },
+  { value: "mine", label: "Mine" },
   { value: "shared", label: "Shared with Me" },
   { value: "all", label: "All" },
 ] as const
@@ -76,11 +76,21 @@ interface CreateFilterDialogProps {
   templates: Template[]
   onCreated: (filter: AgendaFilter) => void
   renderTrigger?: (openDialog: () => void) => React.ReactNode
+  viewType?: string
+  path?: string
+  entityLabelPlural?: string
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
-export function CreateFilterDialog({ templates, onCreated, renderTrigger }: CreateFilterDialogProps) {
+export function CreateFilterDialog({
+  templates,
+  onCreated,
+  renderTrigger,
+  viewType = "agendas",
+  path = "/meetings/agendas",
+  entityLabelPlural = "meetings",
+}: CreateFilterDialogProps) {
   const [open, setOpen] = useState(false)
   const [isPending, startTransition] = useTransition()
 
@@ -123,7 +133,7 @@ export function CreateFilterDialog({ templates, onCreated, renderTrigger }: Crea
     }
 
     startTransition(async () => {
-      const result = await createAgendaFilter(name.trim(), filters)
+      const result = await createSavedPlanFilter(viewType, path, name.trim(), filters)
       if (result.error) {
         toast.error(result.error)
         return
@@ -180,7 +190,7 @@ export function CreateFilterDialog({ templates, onCreated, renderTrigger }: Crea
               <Label htmlFor="filter-name">Filter name</Label>
               <Input
                 id="filter-name"
-                placeholder="e.g. Youth Council Agendas"
+                placeholder={`e.g. Active ${entityLabelPlural}`}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
@@ -190,7 +200,7 @@ export function CreateFilterDialog({ templates, onCreated, renderTrigger }: Crea
 
             {/* Category */}
             <div>
-              <SectionLabel>Show meetings from</SectionLabel>
+              <SectionLabel>Show {entityLabelPlural} from</SectionLabel>
               <div className="flex flex-wrap gap-2">
                 {CATEGORY_OPTIONS.map(({ value, label }) => (
                   <ToggleChip

@@ -25,9 +25,9 @@ export function QuickActionsWidget({
         >
             <div className="space-y-2">
                 <Button asChild variant="outline" className="w-full justify-start h-11 bg-white">
-                    <Link href="/meetings/new">
+                    <Link href="/meetings/create">
                         <CalendarDays className="h-4 w-4 mr-3 text-primary" />
-                        New Meeting
+                        Create Plan or Meeting
                     </Link>
                 </Button>
                 <Button asChild variant="outline" className="w-full justify-start h-11 bg-white">
