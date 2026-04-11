@@ -42,6 +42,13 @@ const SOURCES = [
   { value: "all", label: "All Sources" },
 ];
 
+const KINDS = [
+  { value: null, label: "All Kinds" },
+  { value: "program", label: "Programs" },
+  { value: "agenda", label: "Agendas" },
+  { value: "form", label: "Forms" },
+] as const;
+
 const COMMUNITY_LIBRARY_URL = "https://www.beespo.com/templates";
 
 interface TemplateLibraryClientProps {
@@ -51,17 +58,22 @@ interface TemplateLibraryClientProps {
   initialKind?: "agenda" | "program" | "event" | "form" | null;
 }
 
-export function TemplateLibraryClient({ templates, workspaceId, currentUserId }: TemplateLibraryClientProps) {
+export function TemplateLibraryClient({ templates, workspaceId, currentUserId, initialKind }: TemplateLibraryClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const supabase = createClient();
   const [search, setSearch] = useState("");
   const [source, setSource] = useState(() => searchParams.get("tab") ?? "mine");
+  const [kind, setKind] = useState<"agenda" | "program" | "event" | "form" | null>(initialKind ?? null);
 
   // Sync source tab when URL param changes (e.g. after clone redirect)
   useEffect(() => {
     if (searchParams.get("tab") === "mine") setSource("mine");
   }, [searchParams]);
+
+  useEffect(() => {
+    setKind(initialKind ?? null);
+  }, [initialKind]);
   const [localTemplates, setLocalTemplates] = useState<LibraryTemplate[]>(templates);
   const [previewTemplate, setPreviewTemplate] = useState<LibraryTemplate | null>(null);
   const [cloningId, setCloningId] = useState<string | null>(null);
@@ -104,9 +116,11 @@ export function TemplateLibraryClient({ templates, workspaceId, currentUserId }:
           ? isMine
           : true;
 
-      return matchesSearch && matchesSource;
+      const matchesKind = !kind || t.template_kind === kind;
+
+      return matchesSearch && matchesSource && matchesKind;
     });
-  }, [localTemplates, search, source, workspaceId]);
+  }, [kind, localTemplates, search, source, workspaceId]);
 
   const handleClone = async (template: LibraryTemplate) => {
     setCloningId(template.id);
@@ -116,7 +130,7 @@ export function TemplateLibraryClient({ templates, workspaceId, currentUserId }:
         toast.success("Template imported", {
           description: "The template has been added to your workspace.",
         });
-        router.push("/templates/library?tab=mine");
+        router.push("/templates?tab=mine");
       } else {
         toast.error(result.error ?? "Failed to import template. Please try again.");
       }
@@ -149,7 +163,7 @@ export function TemplateLibraryClient({ templates, workspaceId, currentUserId }:
         setCloneName("");
         setCloneDescription("");
         setSource("mine");
-        router.push("/templates/library?tab=mine");
+        router.push("/templates?tab=mine");
         router.refresh();
       } else {
         toast.error(result.error ?? "Failed to clone template. Please try again.");
@@ -229,8 +243,47 @@ export function TemplateLibraryClient({ templates, workspaceId, currentUserId }:
     return isWorkspaceOwned || isCreatorOwnedOfficial;
   };
 
+  const getUseTemplateHref = (template: LibraryTemplate) => {
+    if (template.template_kind === "form") {
+      return `/forms/new?templateId=${template.id}`;
+    }
+
+    if (template.template_kind === "agenda" || template.template_kind === "program") {
+      return `/meetings/new?templateId=${template.id}&entry=${template.template_kind}`;
+    }
+
+    return `/meetings/new?templateId=${template.id}`;
+  };
+
+  const kindMeta = {
+    program: {
+      title: "Program Templates",
+      description: "Browse and use curated templates for meeting programs.",
+    },
+    agenda: {
+      title: "Agenda Templates",
+      description: "Browse and use agenda templates to plan your meeting flow.",
+    },
+    form: {
+      title: "Form Templates",
+      description: "Browse and use form templates for data collection.",
+    },
+    event: {
+      title: "Event Templates",
+      description: "Browse and use event templates for your meetings.",
+    },
+  } as const;
+
   const isMyTemplatesView = source === "mine";
   const isCommunityView = source === "community";
+
+  const headingTitle = initialKind ? kindMeta[initialKind].title : "Templates that feel curated, not crowded.";
+  const headingDescription = initialKind
+    ? kindMeta[initialKind].description
+    : isMyTemplatesView
+    ? "Your workspace templates."
+    : "Browse and import meeting templates for your organization.";
+  const showKindFilters = !initialKind;
 
   return (
     <div className="flex h-full flex-col bg-white">
@@ -247,32 +300,52 @@ export function TemplateLibraryClient({ templates, workspaceId, currentUserId }:
                 </span>
               </div>
               <h1 className="text-[30px] font-semibold tracking-[-0.04em] text-foreground sm:text-[36px]">
-                Templates that feel curated, not crowded.
+                {headingTitle}
               </h1>
               <p className="mt-3 max-w-xl text-[15px] leading-7 text-muted-foreground">
-                {isMyTemplatesView
-                  ? "Your workspace templates."
-                  : "Browse and import meeting templates for your organization."}
+                {headingDescription}
               </p>
           </div>
 
           <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-            <div className="flex flex-wrap items-center gap-2">
-              {SOURCES.map((s) => (
-                <Button
-                  key={s.value}
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setSource(s.value)}
-                  className={
-                    source === s.value
-                      ? "h-8 rounded-full bg-button-primary px-3.5 text-[12px] font-medium text-button-primary hover:bg-button-primary-hover hover:text-button-primary"
-                      : "h-8 rounded-full border border-border/60 bg-white px-3.5 text-[12px] font-medium text-foreground/68 hover:bg-control hover:text-foreground"
-                  }
-                >
-                  {s.label}
-                </Button>
-              ))}
+            <div className="flex flex-col gap-2">
+              <div className="flex flex-wrap items-center gap-2">
+                {SOURCES.map((s) => (
+                  <Button
+                    key={s.value}
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setSource(s.value)}
+                    className={
+                      source === s.value
+                        ? "h-8 rounded-full bg-button-primary px-3.5 text-[12px] font-medium text-button-primary hover:bg-button-primary-hover hover:text-button-primary"
+                        : "h-8 rounded-full border border-border/60 bg-white px-3.5 text-[12px] font-medium text-foreground/68 hover:bg-control hover:text-foreground"
+                    }
+                  >
+                    {s.label}
+                  </Button>
+                ))}
+              </div>
+
+              {showKindFilters && (
+                <div className="flex flex-wrap items-center gap-2">
+                  {KINDS.map((k) => (
+                    <Button
+                      key={k.label}
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setKind(k.value)}
+                      className={
+                        kind === k.value
+                          ? "h-8 rounded-full bg-button-primary px-3.5 text-[12px] font-medium text-button-primary hover:bg-button-primary-hover hover:text-button-primary"
+                          : "h-8 rounded-full border border-border/60 bg-white px-3.5 text-[12px] font-medium text-foreground/68 hover:bg-control hover:text-foreground"
+                      }
+                    >
+                      {k.label}
+                    </Button>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center xl:min-w-[520px] xl:max-w-[640px] xl:justify-end">
@@ -343,7 +416,7 @@ export function TemplateLibraryClient({ templates, workspaceId, currentUserId }:
                         onDelete={isOwned ? handleOpenDelete : undefined}
                         onEdit={isOwned ? handleEditTemplate : undefined}
                         onUse={shouldUseDirectly
-                          ? () => router.push(`/meetings/new?templateId=${template.id}`)
+                          ? () => router.push(getUseTemplateHref(template))
                           : handleClone
                         }
                         isCloning={cloningId === template.id}
