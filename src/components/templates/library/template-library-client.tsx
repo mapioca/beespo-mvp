@@ -48,6 +48,7 @@ interface TemplateLibraryClientProps {
   templates: LibraryTemplate[];
   workspaceId: string | null;
   currentUserId: string;
+  initialKind?: "agenda" | "program" | "event" | "form" | null;
 }
 
 export function TemplateLibraryClient({ templates, workspaceId, currentUserId }: TemplateLibraryClientProps) {
