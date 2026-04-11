@@ -1,4 +1,4 @@
-import { Briefcase, ClipboardList, LayoutGrid, Megaphone, MessageSquare, NotebookPen, PanelsTopLeft } from "lucide-react"
+import { ArrowUpRight, Briefcase, ClipboardList, LayoutGrid, Megaphone, MessageSquare, NotebookPen, PanelsTopLeft } from "lucide-react"
 
 import type { DomainNavItem } from "@/components/domain/domain-shell"
 
@@ -21,6 +21,12 @@ export const meetingsNavItems: DomainNavItem[] = [
         icon: MessageSquare,
         matchMode: "prefix",
       },
+      {
+        href: "/templates/agendas",
+        label: "Use a Template",
+        icon: ArrowUpRight,
+        matchMode: "exact",
+      },
     ],
   },
   {
@@ -34,6 +40,12 @@ export const meetingsNavItems: DomainNavItem[] = [
         label: "Business",
         icon: Briefcase,
         matchMode: "prefix",
+      },
+      {
+        href: "/templates/programs",
+        label: "Use a Template",
+        icon: ArrowUpRight,
+        matchMode: "exact",
       },
     ],
   },

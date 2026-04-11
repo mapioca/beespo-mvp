@@ -1,4 +1,4 @@
-import { BookOpen, ClipboardList, LayoutGrid, Table2 } from "lucide-react"
+import { ArrowUpRight, BookOpen, ClipboardList, LayoutGrid, Table2 } from "lucide-react"
 
 import type { DomainNavItem } from "@/components/domain/domain-shell"
 
@@ -14,6 +14,14 @@ export const dataNavItems: DomainNavItem[] = [
     label: "Forms",
     icon: ClipboardList,
     matchMode: "prefix",
+    children: [
+      {
+        href: "/templates/forms",
+        label: "Use a Template",
+        icon: ArrowUpRight,
+        matchMode: "exact",
+      },
+    ],
   },
   {
     href: "/tables",
