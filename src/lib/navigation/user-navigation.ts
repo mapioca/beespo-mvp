@@ -238,7 +238,7 @@ async function resolveCanonicalNavigationItem(
         id: discussion.id,
         entityType: "discussion",
         title: discussion.title,
-        href: `/meetings/discussions/${discussion.id}`,
+        href: `/meetings/agendas/discussions/${discussion.id}`,
         icon: "discussion",
         parentTitle: null,
       };

@@ -73,7 +73,7 @@ export function BusinessQuickActions({
       setIsLoading(false);
     } else {
       toast.success("Business item deleted!");
-      router.push("/business");
+      router.push("/meetings/program/business");
       router.refresh();
     }
   };

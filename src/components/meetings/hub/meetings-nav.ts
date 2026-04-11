@@ -1,4 +1,4 @@
-import { ClipboardList, LayoutGrid, Megaphone, NotebookPen, PanelsTopLeft } from "lucide-react"
+import { Briefcase, ClipboardList, LayoutGrid, Megaphone, MessageSquare, NotebookPen, PanelsTopLeft } from "lucide-react"
 
 import type { DomainNavItem } from "@/components/domain/domain-shell"
 
@@ -14,12 +14,28 @@ export const meetingsNavItems: DomainNavItem[] = [
     label: "Agendas",
     icon: NotebookPen,
     matchMode: "prefix",
+    children: [
+      {
+        href: "/meetings/agendas/discussions",
+        label: "Discussions",
+        icon: MessageSquare,
+        matchMode: "prefix",
+      },
+    ],
   },
   {
     href: "/meetings/programs",
     label: "Programs",
     icon: PanelsTopLeft,
     matchMode: "prefix",
+    children: [
+      {
+        href: "/meetings/program/business",
+        label: "Business",
+        icon: Briefcase,
+        matchMode: "prefix",
+      },
+    ],
   },
   {
     href: "/meetings/assignments",

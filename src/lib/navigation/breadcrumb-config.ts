@@ -61,12 +61,48 @@ export const breadcrumbConfigs: BreadcrumbConfig[] = [
     trail: [{ label: "Meetings", href: "/meetings/overview" }, { label: "Programs" }],
   },
   {
-    pattern: "/meetings/business",
-    trail: [{ label: "Meetings", href: "/meetings/overview" }, { label: "Business" }],
+    pattern: "/meetings/program/business",
+    trail: [
+      { label: "Meetings", href: "/meetings/overview" },
+      { label: "Programs", href: "/meetings/programs" },
+      { label: "Business" },
+    ],
   },
   {
-    pattern: "/meetings/discussions",
-    trail: [{ label: "Meetings", href: "/meetings/overview" }, { label: "Discussions" }],
+    pattern: "/meetings/program/business/new",
+    trail: [
+      { label: "Meetings", href: "/meetings/overview" },
+      { label: "Programs", href: "/meetings/programs" },
+      { label: "Business", href: "/meetings/program/business" },
+      { label: "New Business" },
+    ],
+  },
+  {
+    pattern: "/meetings/agendas/discussions",
+    trail: [
+      { label: "Meetings", href: "/meetings/overview" },
+      { label: "Agendas", href: "/meetings/agendas" },
+      { label: "Discussions" },
+    ],
+  },
+  {
+    pattern: "/meetings/agendas/discussions/new",
+    trail: [
+      { label: "Meetings", href: "/meetings/overview" },
+      { label: "Agendas", href: "/meetings/agendas" },
+      { label: "Discussions", href: "/meetings/agendas/discussions" },
+      { label: "New Discussion" },
+    ],
+  },
+  {
+    pattern: /^\/meetings\/agendas\/discussions\/[^/]+$/,
+    trail: [
+      { label: "Meetings", href: "/meetings/overview" },
+      { label: "Agendas", href: "/meetings/agendas" },
+      { label: "Discussions", href: "/meetings/agendas/discussions" },
+      { label: "Discussion Details" },
+    ],
+    dynamic: true,
   },
   {
     pattern: "/meetings/directory",

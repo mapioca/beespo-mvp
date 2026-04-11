@@ -120,7 +120,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // Protected routes - redirect to login if not authenticated
-  const protectedRoutes = ["/dashboard", "/templates", "/discussions", "/meetings", "/tasks", "/members", "/business", "/announcements", "/speakers", "/settings", "/schedule", "/data", "/forms", "/tables", "/callings", "/notebooks", "/apps"];
+  const protectedRoutes = ["/dashboard", "/templates", "/meetings", "/tasks", "/members", "/announcements", "/speakers", "/settings", "/schedule", "/data", "/forms", "/tables", "/callings", "/notebooks", "/apps"];
   const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route));
 
   if (!user && isProtectedRoute) {

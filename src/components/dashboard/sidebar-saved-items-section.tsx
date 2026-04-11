@@ -199,7 +199,7 @@ export function SidebarSavedItemsSection({
   itemType,
 }: SidebarSavedItemsSectionProps) {
   const pathname = usePathname();
-  const [isExpanded, setIsExpanded] = useState(true);
+  const [isExpanded, setIsExpanded] = useState(false);
   const [flyoutOpen, setFlyoutOpen] = useState(false);
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 

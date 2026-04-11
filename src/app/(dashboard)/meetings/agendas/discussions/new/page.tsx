@@ -145,7 +145,7 @@ export default function NewDiscussionPage() {
     );
 
     setIsLoading(false);
-    router.push("/meetings/discussions");
+    router.push("/meetings/agendas/discussions");
     router.refresh();
   };
 
@@ -153,7 +153,7 @@ export default function NewDiscussionPage() {
     <div className="container mx-auto p-6 max-w-4xl">
       <div className="mb-6">
         <Button variant="ghost" asChild>
-          <Link href="/meetings/discussions">
+          <Link href="/meetings/agendas/discussions">
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Discussions
           </Link>
@@ -305,7 +305,7 @@ export default function NewDiscussionPage() {
           <Button
             type="button"
             variant="outline"
-            onClick={() => router.push("/meetings/discussions")}
+            onClick={() => router.push("/meetings/agendas/discussions")}
             disabled={isLoading}
           >
             Cancel

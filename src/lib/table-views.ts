@@ -148,12 +148,12 @@ export async function createBusinessView(
   name: string,
   filters: BusinessViewFilters
 ): Promise<{ data?: BusinessView; error?: string }> {
-  const r = await _createView("business", name, filters, "/meetings/business")
+  const r = await _createView("business", name, filters, "/meetings/program/business")
   return r as { data?: BusinessView; error?: string }
 }
 
 export async function deleteBusinessView(id: string): Promise<{ error?: string }> {
-  return _deleteView(id, "/meetings/business")
+  return _deleteView(id, "/meetings/program/business")
 }
 
 // ── Discussion view actions ───────────────────────────────────────────────────
@@ -162,12 +162,12 @@ export async function createDiscussionView(
   name: string,
   filters: DiscussionViewFilters
 ): Promise<{ data?: DiscussionView; error?: string }> {
-  const r = await _createView("discussions", name, filters, "/meetings/discussions")
+  const r = await _createView("discussions", name, filters, "/meetings/agendas/discussions")
   return r as { data?: DiscussionView; error?: string }
 }
 
 export async function deleteDiscussionView(id: string): Promise<{ error?: string }> {
-  return _deleteView(id, "/meetings/discussions")
+  return _deleteView(id, "/meetings/agendas/discussions")
 }
 
 // ── Form view actions ─────────────────────────────────────────────────────────

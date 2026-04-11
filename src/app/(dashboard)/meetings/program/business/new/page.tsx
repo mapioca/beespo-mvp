@@ -89,7 +89,7 @@ export default function NewBusinessItemPage() {
     toast.success("Business item created successfully!");
 
     setIsLoading(false);
-    router.push("/meetings/business");
+    router.push("/meetings/program/business");
     router.refresh();
   };
 
@@ -97,7 +97,7 @@ export default function NewBusinessItemPage() {
     <div className="container mx-auto p-6 max-w-4xl">
       <div className="mb-6">
         <Button variant="ghost" asChild>
-          <Link href="/meetings/business">
+          <Link href="/meetings/program/business">
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Business Items
           </Link>

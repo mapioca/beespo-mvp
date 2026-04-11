@@ -2,7 +2,8 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import type { LucideIcon } from "lucide-react"
+import { ChevronDown, type LucideIcon } from "lucide-react"
+import { useEffect, useMemo, useState } from "react"
 
 import { cn } from "@/lib/utils"
 
@@ -12,6 +13,7 @@ export interface DomainNavItem {
   icon: LucideIcon
   disabled?: boolean
   matchMode?: "exact" | "prefix"
+  children?: DomainNavItem[]
 }
 
 interface DomainShellProps {
@@ -19,6 +21,7 @@ interface DomainShellProps {
   navLabel: string
   items: DomainNavItem[]
   children: React.ReactNode
+  singleExpandedGroup?: boolean
 }
 
 function isItemActive(pathname: string, item: DomainNavItem) {
@@ -29,8 +32,59 @@ function isItemActive(pathname: string, item: DomainNavItem) {
   return pathname === item.href || pathname.startsWith(`${item.href}/`)
 }
 
-export function DomainShell({ title, navLabel, items, children }: DomainShellProps) {
+export function DomainShell({
+  title,
+  navLabel,
+  items,
+  children,
+  singleExpandedGroup = false,
+}: DomainShellProps) {
   const pathname = usePathname()
+  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({})
+
+  const activeGroups = useMemo(() => {
+    const next: Record<string, boolean> = {}
+    for (const item of items) {
+      if (!item.children?.length) continue
+      next[item.href] = item.children.some((child) => isItemActive(pathname, child))
+    }
+    return next
+  }, [items, pathname])
+
+  useEffect(() => {
+    setExpandedGroups((prev) => {
+      if (singleExpandedGroup) {
+        const activeHref = Object.entries(activeGroups).find(([, isActive]) => isActive)?.[0]
+        if (!activeHref) return prev
+        return Object.keys(activeGroups).reduce<Record<string, boolean>>((acc, href) => {
+          acc[href] = href === activeHref
+          return acc
+        }, {})
+      }
+
+      const next = { ...prev }
+      for (const [href, isActive] of Object.entries(activeGroups)) {
+        if (isActive && next[href] !== true) {
+          next[href] = true
+        }
+      }
+      return next
+    })
+  }, [activeGroups, singleExpandedGroup])
+
+  const toggleGroup = (href: string) => {
+    setExpandedGroups((prev) => ({
+      ...(singleExpandedGroup
+        ? Object.keys(activeGroups).reduce<Record<string, boolean>>((acc, key) => {
+            acc[key] = false
+            return acc
+          }, {})
+        : prev),
+      [href]: singleExpandedGroup
+        ? !(prev[href] ?? activeGroups[href] ?? false)
+        : !(prev[href] ?? activeGroups[href] ?? false),
+    }))
+  }
 
   return (
     <div className="flex h-full min-h-0 flex-col md:flex-row">
@@ -47,7 +101,15 @@ export function DomainShell({ title, navLabel, items, children }: DomainShellPro
           >
             {items.map((item) => {
               const Icon = item.icon
-              const isActive = isItemActive(pathname, item)
+              const itemIsActive = isItemActive(pathname, item)
+              const hasChildren = Boolean(item.children?.length)
+              const hasActiveChild = hasChildren
+                ? item.children!.some((child) => isItemActive(pathname, child))
+                : false
+              const isActive = itemIsActive || hasActiveChild
+              const isExpanded = hasChildren
+                ? (expandedGroups[item.href] ?? hasActiveChild)
+                : false
 
               const commonClassName = cn(
                 "group inline-flex min-w-fit items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition-colors",
@@ -65,18 +127,65 @@ export function DomainShell({ title, navLabel, items, children }: DomainShellPro
                 </>
               )
 
-              return item.disabled ? (
-                <span
-                  key={item.href}
-                  aria-disabled="true"
-                  className={commonClassName}
-                >
-                  {content}
-                </span>
-              ) : (
-                <Link key={item.href} href={item.href} className={commonClassName}>
-                  {content}
-                </Link>
+              return (
+                <div key={item.href} className="flex min-w-fit flex-col md:min-w-0">
+                  <div className="flex items-center gap-1">
+                    {item.disabled ? (
+                      <span aria-disabled="true" className={cn(commonClassName, "flex-1")}>
+                        {content}
+                      </span>
+                    ) : (
+                      <Link href={item.href} className={cn(commonClassName, "flex-1")}>
+                        {content}
+                      </Link>
+                    )}
+                    {hasChildren && (
+                      <button
+                        type="button"
+                        onClick={() => toggleGroup(item.href)}
+                        aria-label={`${isExpanded ? "Collapse" : "Expand"} ${item.label}`}
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                      >
+                        <ChevronDown
+                          className={cn("h-4 w-4 transition-transform", isExpanded && "rotate-180")}
+                        />
+                      </button>
+                    )}
+                  </div>
+                  {hasChildren && isExpanded && (
+                    <div className="ml-5 mt-1 flex flex-col gap-1 border-l border-border/60 pl-2">
+                      {item.children!.map((child) => {
+                        const ChildIcon = child.icon
+                        const childIsActive = isItemActive(pathname, child)
+                        const childClassName = cn(
+                          "inline-flex min-w-fit items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm font-medium transition-colors",
+                          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                          childIsActive
+                            ? "bg-primary/10 text-primary"
+                            : "text-muted-foreground hover:bg-accent hover:text-foreground",
+                          child.disabled && "pointer-events-none opacity-50"
+                        )
+
+                        const childContent = (
+                          <>
+                            <ChildIcon className="h-4 w-4 shrink-0" />
+                            <span className="whitespace-nowrap">{child.label}</span>
+                          </>
+                        )
+
+                        return child.disabled ? (
+                          <span key={child.href} aria-disabled="true" className={childClassName}>
+                            {childContent}
+                          </span>
+                        ) : (
+                          <Link key={child.href} href={child.href} className={childClassName}>
+                            {childContent}
+                          </Link>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
               )
             })}
           </nav>

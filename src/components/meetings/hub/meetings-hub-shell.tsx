@@ -10,7 +10,12 @@ interface MeetingsHubShellProps {
 
 export function MeetingsHubShell({ children }: MeetingsHubShellProps) {
   return (
-    <DomainShell title="Meetings" navLabel="Meetings navigation" items={meetingsNavItems}>
+    <DomainShell
+      title="Meetings"
+      navLabel="Meetings navigation"
+      items={meetingsNavItems}
+      singleExpandedGroup
+    >
       {children}
     </DomainShell>
   )
