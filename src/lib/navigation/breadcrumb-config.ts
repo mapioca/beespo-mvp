@@ -31,20 +31,20 @@ export const breadcrumbConfigs: BreadcrumbConfig[] = [
 
   // Calendar section
   {
-    pattern: "/calendar",
-    trail: [{ label: "Schedule", href: "/calendar/view" }, { label: "Calendar" }],
+    pattern: "/schedule",
+    trail: [{ label: "Schedule", href: "/schedule/calendar" }, { label: "Calendar" }],
   },
   {
-    pattern: "/calendar/view",
-    trail: [{ label: "Schedule", href: "/calendar/view" }, { label: "Calendar" }],
+    pattern: "/schedule/calendar",
+    trail: [{ label: "Schedule", href: "/schedule/calendar" }, { label: "Calendar" }],
   },
   {
     pattern: "/schedule/events",
-    trail: [{ label: "Schedule", href: "/calendar/view" }, { label: "Events" }],
+    trail: [{ label: "Schedule", href: "/schedule/calendar" }, { label: "Events" }],
   },
   {
-    pattern: "/calendar/settings",
-    trail: [{ label: "Schedule", href: "/calendar/view" }, { label: "Settings" }],
+    pattern: "/schedule/settings",
+    trail: [{ label: "Schedule", href: "/schedule/calendar" }, { label: "Settings" }],
   },
 
   // Meetings Hub
@@ -126,17 +126,42 @@ export const breadcrumbConfigs: BreadcrumbConfig[] = [
 
   // Data section
   {
+    pattern: "/data",
+    trail: [{ label: "Data", href: "/data", iconType: "database" }, { label: "Overview" }],
+  },
+  {
+    pattern: "/forms",
+    trail: [{ label: "Data", href: "/data", iconType: "database" }, { label: "Forms" }],
+  },
+  {
+    pattern: "/forms/new",
+    trail: [
+      { label: "Data", href: "/data", iconType: "database" },
+      { label: "Forms", href: "/forms" },
+      { label: "New Form" },
+    ],
+  },
+  {
+    pattern: /^\/forms\/[^/]+$/,
+    trail: [
+      { label: "Data", href: "/data", iconType: "database" },
+      { label: "Forms", href: "/forms" },
+      { label: "Form Details" },
+    ],
+    dynamic: true,
+  },
+  {
     pattern: "/tables",
-    trail: [{ label: "Data", iconType: "database" }, { label: "Tables", iconType: "table" }],
+    trail: [{ label: "Data", href: "/data", iconType: "database" }, { label: "Tables", iconType: "table" }],
   },
   {
     pattern: "/tables/new",
-    trail: [{ label: "Data", iconType: "database" }, { label: "Tables", href: "/tables", iconType: "table" }, { label: "New Table" }],
+    trail: [{ label: "Data", href: "/data", iconType: "database" }, { label: "Tables", href: "/tables", iconType: "table" }, { label: "New Table" }],
   },
   {
     pattern: /^\/tables\/[^/]+$/,
     trail: [
-      { label: "Data", iconType: "database" },
+      { label: "Data", href: "/data", iconType: "database" },
       { label: "Tables", href: "/tables", iconType: "table" },
       { label: "Table", iconType: "table" },
     ],
@@ -146,16 +171,16 @@ export const breadcrumbConfigs: BreadcrumbConfig[] = [
   // Notebooks
   {
     pattern: "/notebooks",
-    trail: [{ label: "Data", iconType: "database" }, { label: "Notebooks", iconType: "notebook" }],
+    trail: [{ label: "Data", href: "/data", iconType: "database" }, { label: "Notebooks", iconType: "notebook" }],
   },
   {
     pattern: "/notebooks/new",
-    trail: [{ label: "Data", iconType: "database" }, { label: "Notebooks", href: "/notebooks", iconType: "notebook" }, { label: "New Notebook" }],
+    trail: [{ label: "Data", href: "/data", iconType: "database" }, { label: "Notebooks", href: "/notebooks", iconType: "notebook" }, { label: "New Notebook" }],
   },
   {
     pattern: /^\/notebooks\/[^/]+$/,
     trail: [
-      { label: "Data", iconType: "database" },
+      { label: "Data", href: "/data", iconType: "database" },
       { label: "Notebooks", href: "/notebooks", iconType: "notebook" },
       { label: "Notebook" },
     ],

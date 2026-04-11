@@ -8,12 +8,9 @@ import {
   Calendar,
   CalendarDays,
   CheckSquare,
-  BookOpen,
   Pin,
   PinOff,
   HandHeart,
-  ClipboardList,
-  Table2,
   Database,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -38,19 +35,11 @@ const navSections: NavSection[] = [
     title: "",
     items: [
       { href: "/dashboard", icon: Home, label: "Home" },
-      { href: "/calendar", icon: Calendar, label: "Schedule" },
+      { href: "/schedule/calendar", icon: Calendar, label: "Schedule" },
       { href: "/meetings", icon: CalendarDays, label: "Meetings" },
       { href: "/callings", icon: HandHeart, label: "Callings" },
       { href: "/tasks", icon: CheckSquare, label: "Tasks" },
-      {
-        icon: Database,
-        label: "Data",
-        children: [
-          { href: "/forms", icon: ClipboardList, label: "Forms" },
-          { href: "/tables", icon: Table2, label: "Tables" },
-          { href: "/notebooks", icon: BookOpen, label: "Notebooks" },
-        ],
-      },
+      { href: "/data", icon: Database, label: "Data" },
     ],
   },
 ]

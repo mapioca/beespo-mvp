@@ -6,10 +6,10 @@ export const metadata: Metadata = {
     description: "Your schedule, events, and calendar settings hub",
 }
 
-interface CalendarLayoutProps {
+interface ScheduleLayoutProps {
     children: React.ReactNode
 }
 
-export default function CalendarLayout({ children }: CalendarLayoutProps) {
+export default function ScheduleLayout({ children }: ScheduleLayoutProps) {
     return <CalendarHubShell>{children}</CalendarHubShell>
 }

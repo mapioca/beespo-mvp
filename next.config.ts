@@ -61,16 +61,6 @@ const nextConfig: NextConfig = {
     ];
   },
 
-  // Handle route redirects at the routing layer (before any component rendering)
-  async redirects() {
-    return [
-      {
-        source: '/calendar',
-        destination: '/calendar/view',
-        permanent: false,
-      },
-    ];
-  },
 };
 
 export default withSentryConfig(nextConfig, {

@@ -4,7 +4,7 @@ import type { DomainNavItem } from "@/components/domain/domain-shell"
 
 export const scheduleNavItems: DomainNavItem[] = [
   {
-    href: "/calendar/view",
+    href: "/schedule/calendar",
     label: "Calendar",
     icon: CalendarDays,
     matchMode: "prefix",
@@ -16,7 +16,7 @@ export const scheduleNavItems: DomainNavItem[] = [
     matchMode: "prefix",
   },
   {
-    href: "/calendar/settings",
+    href: "/schedule/settings",
     label: "Settings",
     icon: Settings2,
     matchMode: "prefix",

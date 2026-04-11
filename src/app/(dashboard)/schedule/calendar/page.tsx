@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 
 export const revalidate = 0;
 
-export default async function CalendarViewPage() {
+export default async function ScheduleCalendarPage() {
     const supabase = await createClient();
 
     const {

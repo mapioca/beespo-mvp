@@ -58,7 +58,7 @@ export default function ScheduleSettingsPage() {
 
         <div>
           <Button asChild variant="outline">
-            <Link href="/calendar/view">
+            <Link href="/schedule/calendar">
               Return to calendar
               <ArrowRight className="h-4 w-4" />
             </Link>
