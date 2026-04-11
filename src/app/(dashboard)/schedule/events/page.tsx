@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 
 export const revalidate = 0
 
-export default async function EventsPage() {
+export default async function ScheduleEventsPage() {
     const supabase = await createClient()
 
     const {
@@ -22,7 +22,6 @@ export default async function EventsPage() {
         redirect("/login")
     }
 
-    // Get user profile
     const { data: profile } = await (
         supabase.from("profiles") as ReturnType<typeof supabase.from>
     )
@@ -34,12 +33,10 @@ export default async function EventsPage() {
         redirect("/onboarding")
     }
 
-    // Fetch date range: 3 months back to 6 months forward for events list
     const today = new Date()
     const rangeStart = subMonths(startOfMonth(today), 3).toISOString()
     const rangeEnd = addMonths(endOfMonth(today), 6).toISOString()
 
-    // Fetch internal events and any linked meeting layer
     const { data: events } = await (
         supabase.from("events") as ReturnType<typeof supabase.from>
     )
@@ -71,7 +68,6 @@ export default async function EventsPage() {
         .lte("start_at", rangeEnd)
         .order("start_at", { ascending: true })
 
-    // Transform events to unified format
     const eventItems: EventListItem[] = (events || []).map((event: {
         id: string
         title: string

@@ -10,7 +10,7 @@ export const scheduleNavItems: DomainNavItem[] = [
     matchMode: "prefix",
   },
   {
-    href: "/calendar/events",
+    href: "/schedule/events",
     label: "Events",
     icon: List,
     matchMode: "prefix",

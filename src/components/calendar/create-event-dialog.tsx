@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { addMinutes, differenceInMinutes, format } from "date-fns";
 import {
   Dialog,
@@ -16,7 +16,6 @@ import { Label } from "@/components/ui/label";
 import { FormRichTextEditor } from "@/components/ui/form-rich-text-editor";
 import { toast } from "@/lib/toast";
 import { parseAllDayDate } from "@/lib/calendar-helpers";
-import { DatePickerDialog } from "@/components/ui/date-picker-dialog";
 import { createClient } from "@/lib/supabase/client";
 import {
   Select,
@@ -25,6 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -106,6 +106,18 @@ function formatPillTime(value: string): string {
   return date.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
 }
 
+function buildTimeOptions(stepMinutes = 15): string[] {
+  const options: string[] = [];
+  for (let hour = 0; hour < 24; hour += 1) {
+    for (let minute = 0; minute < 60; minute += stepMinutes) {
+      options.push(`${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`);
+    }
+  }
+  return options;
+}
+
+const TIME_OPTIONS = buildTimeOptions(15);
+
 function isRichTextEmpty(value: string): boolean {
   const plain = value
     .replace(/<[^>]*>/g, " ")
@@ -122,6 +134,8 @@ function pillClass(active: boolean): string {
       : "border-[hsl(var(--chip-border))] bg-background text-[hsl(var(--chip-text))] hover:bg-[hsl(var(--chip-hover-bg))]"
   );
 }
+
+const CREATE_ANOTHER_STORAGE_KEY = "beespo:create-event:create-another";
 
 export function CreateEventDialog({
   open,
@@ -154,8 +168,11 @@ export function CreateEventDialog({
   const [selectedProgramTemplateIds, setSelectedProgramTemplateIds] = useState<string[]>([]);
   const [dateDialogOpen, setDateDialogOpen] = useState(false);
   const [timeDialogOpen, setTimeDialogOpen] = useState(false);
+  const [timeDialogSelection, setTimeDialogSelection] = useState("09:00");
   const [durationDialogOpen, setDurationDialogOpen] = useState(false);
   const [locationDialogOpen, setLocationDialogOpen] = useState(false);
+  const [createAnother, setCreateAnother] = useState(false);
+  const batchCreatedEventIdsRef = useRef<string[]>([]);
 
   useEffect(() => {
     if (eventToEdit) {
@@ -221,6 +238,25 @@ export function CreateEventDialog({
   }, [eventToEdit, externalEvent, selectedDate, open]);
 
   useEffect(() => {
+    if (!timeDialogOpen) return;
+    setTimeDialogSelection(timeValue || "09:00");
+  }, [timeDialogOpen, timeValue]);
+
+  useEffect(() => {
+    if (!open || isEditing || isImporting) return;
+    if (typeof window === "undefined") return;
+    const stored = window.sessionStorage.getItem(CREATE_ANOTHER_STORAGE_KEY);
+    setCreateAnother(stored === "1");
+    batchCreatedEventIdsRef.current = [];
+    toast.dismiss("event-create-result");
+  }, [open, isEditing, isImporting]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.sessionStorage.setItem(CREATE_ANOTHER_STORAGE_KEY, createAnother ? "1" : "0");
+  }, [createAnother]);
+
+  useEffect(() => {
     if (eventType === "interview") {
       setPromoteToAnnouncement(false);
       setSelectedAgendaTemplateIds([]);
@@ -284,13 +320,6 @@ export function CreateEventDialog({
   const agendaTemplates = templateOptions.filter((template) => template.kind === "agenda" || template.kind === "unknown");
   const programTemplates = templateOptions.filter((template) => template.kind === "program");
 
-  const scheduleSummary = [
-    `Date ${dateValue ? formatPillDate(dateValue) : "TBD"}`,
-    isAllDay ? "All-day" : `Time ${timeValue ? formatPillTime(timeValue) : "TBD"}`,
-    isAllDay ? "Duration all-day" : `Duration ${durationMinutes.trim() ? `${durationMinutes.trim()}m` : "TBD"}`,
-    eventType === "interview" ? null : `Announcement ${promoteToAnnouncement ? "On" : "Off"}`,
-  ].filter(Boolean).join(" • ");
-
   const resetForm = () => {
     setTitle("");
     setEventType("activity");
@@ -304,6 +333,30 @@ export function CreateEventDialog({
     setPromoteToAnnouncement(false);
     setSelectedAgendaTemplateIds([]);
     setSelectedProgramTemplateIds([]);
+  };
+
+  const handleDialogOpenChange = (nextOpen: boolean) => {
+    if (!nextOpen && !isEditing && batchCreatedEventIdsRef.current.length > 0) {
+      const uniqueIds = Array.from(new Set(batchCreatedEventIdsRef.current));
+      const count = uniqueIds.length;
+      const createdParam = encodeURIComponent(uniqueIds.join(","));
+      toast.dismiss("event-create-result");
+              toast.success(`${count} event${count === 1 ? "" : "s"} created.`, {
+        id: "event-create-summary",
+        duration: 10000,
+        actions: [
+          {
+            label: `View ${count} event${count === 1 ? "" : "s"} created`,
+            onClick: () => {
+              toast.dismiss("event-create-summary");
+              window.location.href = `/schedule/events?created=${createdParam}`;
+            },
+          },
+        ],
+      });
+      batchCreatedEventIdsRef.current = [];
+    }
+    onOpenChange(nextOpen);
   };
 
   const toggleAgendaTemplate = (templateId: string) => {
@@ -385,35 +438,54 @@ export function CreateEventDialog({
       const data = await response.json();
 
       if (!response.ok) throw new Error(data.error || "Failed to save event");
+      const createdMeetingId = !isEditing ? (data.meeting_id as string | undefined) : undefined;
+      const keepsCreating = !isEditing && createAnother;
 
       if (isEditing) {
         onUpdated?.(data.event);
         toast.success("Event updated successfully.");
       } else {
         onCreated?.(data.event);
-        toast.success(isImporting ? "External event imported successfully." : "Event created successfully.");
+        const eventId = data.event?.id as string | undefined;
+        const eventTitle = (data.event?.title as string | undefined) ?? title.trim();
+        if (eventId) {
+          batchCreatedEventIdsRef.current = [...batchCreatedEventIdsRef.current, eventId];
+        }
+        const detailParts: string[] = [];
+        if (data.announcement) {
+          detailParts.push("Announcement enabled.");
+        }
+        if (promoteToAnnouncement && linkedTemplateCount > 0) {
+          detailParts.push(`Template linkage selected: ${linkedTemplateCount}.`);
+        }
+        if (createdMeetingId) {
+          detailParts.push("Meeting workspace linked.");
+        }
+        toast.info(`Created: "${eventTitle}".`, {
+          id: "event-create-result",
+          duration: 3000,
+          description: detailParts.join(" "),
+        });
       }
 
-      if (data.announcement) {
+      if (data.announcement && isEditing) {
         toast.success("Announcement created", {
           description: "This event will be announced until it starts.",
         });
       }
 
-      if (promoteToAnnouncement && linkedTemplateCount > 0) {
+      if (promoteToAnnouncement && linkedTemplateCount > 0 && isEditing) {
         toast.info("Template linking will be connected soon", {
           description: `${linkedTemplateCount} template${linkedTemplateCount === 1 ? "" : "s"} selected.`,
         });
       }
 
-      onOpenChange(false);
-      resetForm();
-
-      if (!isEditing && data.meeting_id) {
-        toast.success("Meeting workspace created", {
-          description: "Next, choose Agenda or Program.",
-        });
-        window.location.href = `/meetings/${data.meeting_id}?setup=plan`;
+      if (keepsCreating) {
+        setTitle("");
+        setDescription("");
+      } else {
+        handleDialogOpenChange(false);
+        resetForm();
       }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to save event.");
@@ -423,12 +495,12 @@ export function CreateEventDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleDialogOpenChange}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden p-0 gap-0">
         <DialogHeader className="px-5 py-4 space-y-2">
           <DialogTitle>{isEditing ? "Edit Event" : isImporting ? "Import Event" : "New Event"}</DialogTitle>
           <DialogDescription className="text-xs text-muted-foreground">
-            Create a calendar event. Leave date/time/duration blank if details are still TBD.
+            Create a calendar event.
           </DialogDescription>
         </DialogHeader>
 
@@ -483,116 +555,225 @@ export function CreateEventDialog({
 
             <ModalFormSection>
               <div className="flex flex-wrap items-center gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    setStagedLocation(location);
-                    setLocationDialogOpen(true);
-                  }}
-                  disabled={isLoading}
-                  className={pillClass(Boolean(location))}
-                >
-                  <span className="inline-flex items-center gap-1.5 whitespace-nowrap leading-none">
-                    <MapPin className="h-2.5 w-2.5 shrink-0" />
-                    {location ? `Location: ${location}` : "Location: TBD"}
-                    {location && (
-                      <span
-                        role="button"
-                        tabIndex={-1}
-                        onMouseDown={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          setLocation("");
-                        }}
-                        className="ml-0.5 inline-flex h-3.5 w-3.5 items-center justify-center rounded-full hover:bg-black/10 dark:hover:bg-white/20"
-                      >
-                        <X className="h-2.5 w-2.5" />
+                <Popover open={locationDialogOpen} onOpenChange={setLocationDialogOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setStagedLocation(location)}
+                      disabled={isLoading}
+                      className={pillClass(Boolean(location))}
+                    >
+                      <span className="inline-flex items-center gap-1.5 whitespace-nowrap leading-none">
+                        <MapPin className="h-2.5 w-2.5 shrink-0" />
+                        {location ? location : "Set location"}
+                        {location && (
+                          <span
+                            role="button"
+                            tabIndex={-1}
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setLocation("");
+                            }}
+                            className="ml-0.5 inline-flex h-3.5 w-3.5 items-center justify-center rounded-full hover:bg-black/10 dark:hover:bg-white/20"
+                          >
+                            <X className="h-2.5 w-2.5" />
+                          </span>
+                        )}
                       </span>
-                    )}
-                  </span>
-                </Button>
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[280px] p-3" align="start">
+                    <div className="space-y-2">
+                      <Label htmlFor="event-location-popover">Location</Label>
+                      <Input
+                        id="event-location-popover"
+                        value={stagedLocation}
+                        onChange={(e) => {
+                          const next = e.target.value;
+                          setStagedLocation(next);
+                          setLocation(next.trimStart());
+                        }}
+                        placeholder="e.g., Relief Society Room"
+                        disabled={isLoading}
+                      />
+                    </div>
+                  </PopoverContent>
+                </Popover>
 
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setDateDialogOpen(true)}
-                  disabled={isLoading}
-                  className={pillClass(Boolean(dateValue))}
-                >
-                  <span className="inline-flex items-center gap-1.5 whitespace-nowrap leading-none">
-                    <CalendarDays className="h-2.5 w-2.5 shrink-0" />
-                    {`Date: ${formatPillDate(dateValue)}`}
-                    {dateValue && (
-                      <span
-                        role="button"
-                        tabIndex={-1}
-                        onMouseDown={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          setDateValue("");
-                        }}
-                        className="ml-0.5 inline-flex h-3.5 w-3.5 items-center justify-center rounded-full hover:bg-black/10 dark:hover:bg-white/20"
-                      >
-                        <X className="h-2.5 w-2.5" />
+                <Popover open={dateDialogOpen} onOpenChange={setDateDialogOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={isLoading}
+                      className={pillClass(Boolean(dateValue))}
+                    >
+                      <span className="inline-flex items-center gap-1.5 whitespace-nowrap leading-none">
+                        <CalendarDays className="h-2.5 w-2.5 shrink-0" />
+                        {dateValue ? formatPillDate(dateValue) : "Set date"}
+                        {dateValue && (
+                          <span
+                            role="button"
+                            tabIndex={-1}
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setDateValue("");
+                            }}
+                            className="ml-0.5 inline-flex h-3.5 w-3.5 items-center justify-center rounded-full hover:bg-black/10 dark:hover:bg-white/20"
+                          >
+                            <X className="h-2.5 w-2.5" />
+                          </span>
+                        )}
                       </span>
-                    )}
-                  </span>
-                </Button>
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[240px] p-3" align="start">
+                    <div className="space-y-2">
+                      <Label htmlFor="event-date-popover">Date</Label>
+                      <Input
+                        id="event-date-popover"
+                        type="date"
+                        value={dateValue}
+                        onChange={(e) => setDateValue(e.target.value)}
+                        disabled={isLoading}
+                      />
+                      <div className="flex justify-end">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setDateValue("");
+                            setDateDialogOpen(false);
+                          }}
+                        >
+                          Clear
+                        </Button>
+                      </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
 
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setTimeDialogOpen(true)}
-                  disabled={isLoading || isAllDay}
-                  className={pillClass(isAllDay ? true : Boolean(timeValue))}
-                >
-                  <span className="inline-flex items-center gap-1.5 whitespace-nowrap leading-none">
-                    <Clock3 className="h-2.5 w-2.5 shrink-0" />
-                    {isAllDay ? "Time: all-day" : `Time: ${formatPillTime(timeValue)}`}
-                    {timeValue && (
-                      <span
-                        role="button"
-                        tabIndex={-1}
-                        onMouseDown={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          setTimeValue("");
-                        }}
-                        className="ml-0.5 inline-flex h-3.5 w-3.5 items-center justify-center rounded-full hover:bg-black/10 dark:hover:bg-white/20"
-                      >
-                        <X className="h-2.5 w-2.5" />
+                <Popover open={timeDialogOpen} onOpenChange={setTimeDialogOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setTimeDialogSelection(timeValue || "09:00")}
+                      disabled={isLoading || isAllDay}
+                      className={pillClass(isAllDay ? true : Boolean(timeValue))}
+                    >
+                      <span className="inline-flex items-center gap-1.5 whitespace-nowrap leading-none">
+                        <Clock3 className="h-2.5 w-2.5 shrink-0" />
+                        {isAllDay ? "All-day" : (timeValue ? formatPillTime(timeValue) : "Set time")}
+                        {timeValue && (
+                          <span
+                            role="button"
+                            tabIndex={-1}
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setTimeValue("");
+                            }}
+                            className="ml-0.5 inline-flex h-3.5 w-3.5 items-center justify-center rounded-full hover:bg-black/10 dark:hover:bg-white/20"
+                          >
+                            <X className="h-2.5 w-2.5" />
+                          </span>
+                        )}
                       </span>
-                    )}
-                  </span>
-                </Button>
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[260px] p-3" align="start">
+                    <div className="space-y-2">
+                      <Label>Time</Label>
+                      <Select
+                        value={timeDialogSelection}
+                        onValueChange={(next) => {
+                          setTimeDialogSelection(next);
+                          setTimeValue(next);
+                          setTimeDialogOpen(false);
+                        }}
+                      >
+                        <SelectTrigger className="h-9 w-full">
+                          <SelectValue placeholder="Select time">{formatPillTime(timeDialogSelection)}</SelectValue>
+                        </SelectTrigger>
+                        <SelectContent>
+                          {TIME_OPTIONS.map((option) => (
+                            <SelectItem key={option} value={option}>
+                              {formatPillTime(option)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </PopoverContent>
+                </Popover>
 
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setDurationDialogOpen(true)}
-                  disabled={isLoading || isAllDay}
-                  className={pillClass(isAllDay ? true : Boolean(durationMinutes))}
-                >
-                  <span className="inline-flex items-center gap-1.5 whitespace-nowrap leading-none">
-                    <Timer className="h-2.5 w-2.5 shrink-0" />
-                    {isAllDay ? "Duration: all-day" : `Duration: ${durationMinutes.trim() ? `${durationMinutes.trim()} min` : "TBD"}`}
-                    {durationMinutes && (
-                      <span
-                        role="button"
-                        tabIndex={-1}
-                        onMouseDown={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          setDurationMinutes("");
-                        }}
-                        className="ml-0.5 inline-flex h-3.5 w-3.5 items-center justify-center rounded-full hover:bg-black/10 dark:hover:bg-white/20"
-                      >
-                        <X className="h-2.5 w-2.5" />
+                <Popover open={durationDialogOpen} onOpenChange={setDurationDialogOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={isLoading || isAllDay}
+                      className={pillClass(isAllDay ? true : Boolean(durationMinutes))}
+                    >
+                      <span className="inline-flex items-center gap-1.5 whitespace-nowrap leading-none">
+                        <Timer className="h-2.5 w-2.5 shrink-0" />
+                        {isAllDay ? "All-day duration" : (durationMinutes.trim() ? `${durationMinutes.trim()} min` : "Set duration")}
+                        {durationMinutes && (
+                          <span
+                            role="button"
+                            tabIndex={-1}
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setDurationMinutes("");
+                            }}
+                            className="ml-0.5 inline-flex h-3.5 w-3.5 items-center justify-center rounded-full hover:bg-black/10 dark:hover:bg-white/20"
+                          >
+                            <X className="h-2.5 w-2.5" />
+                          </span>
+                        )}
                       </span>
-                    )}
-                  </span>
-                </Button>
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[240px] p-3" align="start">
+                    <div className="space-y-2">
+                      <Label htmlFor="event-duration-popover">Duration (minutes)</Label>
+                      <Input
+                        id="event-duration-popover"
+                        type="number"
+                        min={1}
+                        max={1440}
+                        value={durationMinutes}
+                        onChange={(e) => setDurationMinutes(e.target.value)}
+                        placeholder="e.g., 60"
+                        disabled={isLoading}
+                      />
+                      <div className="flex justify-between">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setDurationMinutes("")}
+                        >
+                          Clear
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setDurationDialogOpen(false)}
+                        >
+                          Done
+                        </Button>
+                      </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
 
                 {eventType !== "interview" && (
                   <Button
@@ -604,7 +785,7 @@ export function CreateEventDialog({
                   >
                     <span className="inline-flex items-center gap-1.5 whitespace-nowrap leading-none">
                       <Megaphone className="h-2.5 w-2.5 shrink-0" />
-                      {`Announcement: ${promoteToAnnouncement ? "On" : "Off"}`}
+                      {promoteToAnnouncement ? "Announcement on" : "Enable announcement"}
                     </span>
                   </Button>
                 )}
@@ -648,137 +829,43 @@ export function CreateEventDialog({
                 >
                   <span className="inline-flex items-center gap-1.5 whitespace-nowrap leading-none">
                     <SunMedium className="h-2.5 w-2.5 shrink-0" />
-                    {`All-day: ${isAllDay ? "On" : "Off"}`}
+                    {isAllDay ? "All-day on" : "Mark all-day"}
                   </span>
                 </Button>
               </div>
-
-              <p className="text-xs text-muted-foreground">
-                {scheduleSummary}
-              </p>
             </ModalFormSection>
           </ModalFormBody>
 
-          <ModalFormFooter>
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => onOpenChange(false)}
-              disabled={isLoading}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isLoading || !title.trim()}>
-              {isLoading
-                ? isEditing ? "Saving..." : "Creating..."
-                : isEditing ? "Save Changes" : isImporting ? "Import Event" : "Create Event"}
-            </Button>
+          <ModalFormFooter className="justify-between">
+            {!isEditing && (
+              <label className="inline-flex items-center gap-2 text-xs text-muted-foreground">
+                <Checkbox
+                  checked={createAnother}
+                  onCheckedChange={(checked) => setCreateAnother(Boolean(checked))}
+                  disabled={isLoading}
+                  className="rounded-[2px]"
+                />
+                Create another
+              </label>
+            )}
+            <div className="ml-auto flex items-center gap-2">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => handleDialogOpenChange(false)}
+                disabled={isLoading}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isLoading || !title.trim()}>
+                {isLoading
+                  ? isEditing ? "Saving..." : "Creating..."
+                  : isEditing ? "Save Changes" : isImporting ? "Import Event" : "Create Event"}
+              </Button>
+            </div>
           </ModalFormFooter>
         </ModalForm>
       </DialogContent>
-
-      <DatePickerDialog
-        open={dateDialogOpen}
-        onOpenChange={setDateDialogOpen}
-        titleAccent="date"
-        description="Set the event date. Leave it blank to keep the event date as TBD."
-        saveLabel="Save date"
-        value={dateValue}
-        onSave={setDateValue}
-      />
-
-      <Dialog open={locationDialogOpen} onOpenChange={setLocationDialogOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Set location</DialogTitle>
-            <DialogDescription>Add a location for this event.</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-2">
-            <Label htmlFor="event-location-dialog">Location</Label>
-            <Input
-              id="event-location-dialog"
-              value={stagedLocation}
-              onChange={(e) => setStagedLocation(e.target.value)}
-              placeholder="e.g., Relief Society Room"
-              disabled={isLoading}
-            />
-          </div>
-          <DialogFooter>
-            <Button type="button" variant="ghost" onClick={() => setLocationDialogOpen(false)} disabled={isLoading}>
-              Cancel
-            </Button>
-            <Button
-              type="button"
-              onClick={() => {
-                setLocation(stagedLocation.trim());
-                setLocationDialogOpen(false);
-              }}
-              disabled={isLoading}
-            >
-              Save location
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={timeDialogOpen} onOpenChange={setTimeDialogOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Set time</DialogTitle>
-            <DialogDescription>Select a time for this event.</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-2">
-            <Label htmlFor="event-time-dialog">Time</Label>
-            <Input
-              id="event-time-dialog"
-              type="time"
-              value={timeValue}
-              onChange={(e) => setTimeValue(e.target.value)}
-              disabled={isLoading}
-            />
-            <p className="text-xs text-muted-foreground">Clear the value to keep time as TBD.</p>
-          </div>
-          <DialogFooter>
-            <Button type="button" variant="ghost" onClick={() => setTimeDialogOpen(false)} disabled={isLoading}>
-              Cancel
-            </Button>
-            <Button type="button" onClick={() => setTimeDialogOpen(false)} disabled={isLoading}>
-              Save time
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={durationDialogOpen} onOpenChange={setDurationDialogOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Set duration</DialogTitle>
-            <DialogDescription>Set duration in minutes.</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-2">
-            <Label htmlFor="event-duration-dialog">Duration (minutes)</Label>
-            <Input
-              id="event-duration-dialog"
-              type="number"
-              min={1}
-              max={1440}
-              value={durationMinutes}
-              onChange={(e) => setDurationMinutes(e.target.value)}
-              placeholder="e.g., 60"
-              disabled={isLoading}
-            />
-            <p className="text-xs text-muted-foreground">Leave empty to keep duration as TBD.</p>
-          </div>
-          <DialogFooter>
-            <Button type="button" variant="ghost" onClick={() => setDurationDialogOpen(false)} disabled={isLoading}>
-              Cancel
-            </Button>
-            <Button type="button" onClick={() => setDurationDialogOpen(false)} disabled={isLoading}>
-              Save duration
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       <Dialog open={templateDialogOpen} onOpenChange={setTemplateDialogOpen}>
         <DialogContent className="max-w-lg">

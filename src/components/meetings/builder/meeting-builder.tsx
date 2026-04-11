@@ -76,6 +76,7 @@ interface MeetingBuilderProps {
     initialTemplateId?: string | null;
     initialMeetingId?: string;
     initialEntryType?: "agenda" | "program" | "meeting";
+    initialMode?: BuilderMode;
 }
 
 type AutosaveStatus = "idle" | "saving" | "saved" | "error";
@@ -86,6 +87,7 @@ export function MeetingBuilder({
     initialTemplateId,
     initialMeetingId,
     initialEntryType = "agenda",
+    initialMode,
 }: MeetingBuilderProps) {
     const router = useRouter();
     const defaultTitleByEntry = {
@@ -94,7 +96,7 @@ export function MeetingBuilder({
         meeting: "Untitled Meeting",
     } as const;
     const defaultBuilderMode: BuilderMode =
-        initialMeetingId ? "print-preview" : initialEntryType === "program" ? "program" : "planning";
+        initialMode ?? (initialMeetingId ? "print-preview" : initialEntryType === "program" ? "program" : "planning");
 
     // Form state
     const form = useForm<MeetingFormValues>({

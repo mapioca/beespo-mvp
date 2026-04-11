@@ -15,6 +15,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 import { toast } from "@/lib/toast";
 import { Event } from "./events-table";
 
@@ -23,6 +30,32 @@ interface EventDialogProps {
     onOpenChange: (open: boolean) => void;
     event?: Event | null;
     onSave: (event: Event, isNew: boolean) => void;
+}
+
+function parseTimeParts(value: string): { hour12: string; minute: string; period: "AM" | "PM" } {
+    const [h, m] = value.split(":").map(Number);
+    if (!Number.isFinite(h) || !Number.isFinite(m)) return { hour12: "9", minute: "00", period: "AM" };
+    return {
+        hour12: String(((h + 11) % 12) + 1),
+        minute: String(m).padStart(2, "0"),
+        period: h >= 12 ? "PM" : "AM",
+    };
+}
+
+function to24Hour(hour12: string, minute: string, period: "AM" | "PM"): string {
+    const safeHour12 = Math.max(1, Math.min(12, Number.parseInt(hour12, 10) || 9));
+    const safeMinute = Math.max(0, Math.min(59, Number.parseInt(minute, 10) || 0));
+    let hour = safeHour12 % 12;
+    if (period === "PM") hour += 12;
+    return `${String(hour).padStart(2, "0")}:${String(safeMinute).padStart(2, "0")}`;
+}
+
+function minuteOptions(currentMinute: string): string[] {
+    const defaults = Array.from({ length: 12 }, (_, i) => String(i * 5).padStart(2, "0"));
+    if (!defaults.includes(currentMinute)) {
+        return [...defaults, currentMinute].sort((a, b) => Number(a) - Number(b));
+    }
+    return defaults;
 }
 
 export function EventDialog({
@@ -223,14 +256,60 @@ export function EventDialog({
                         {!isAllDay && (
                             <div className="space-y-2">
                                 <Label htmlFor="startTime">Start Time *</Label>
-                                <Input
-                                    id="startTime"
-                                    type="time"
-                                    value={startTime}
-                                    onChange={(e) => setStartTime(e.target.value)}
-                                    required
-                                    disabled={isLoading}
-                                />
+                                {(() => {
+                                    const parts = parseTimeParts(startTime);
+                                    return (
+                                        <div id="startTime" className="grid grid-cols-[1fr_1fr_auto] gap-2">
+                                            <Select
+                                                value={parts.hour12}
+                                                onValueChange={(hour12) => setStartTime(to24Hour(hour12, parts.minute, parts.period))}
+                                                disabled={isLoading}
+                                            >
+                                                <SelectTrigger className="h-9">
+                                                    <SelectValue placeholder="Hour" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {Array.from({ length: 12 }, (_, i) => String(i + 1)).map((h) => (
+                                                        <SelectItem key={h} value={h}>{h}</SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+
+                                            <Select
+                                                value={parts.minute}
+                                                onValueChange={(minute) => setStartTime(to24Hour(parts.hour12, minute, parts.period))}
+                                                disabled={isLoading}
+                                            >
+                                                <SelectTrigger className="h-9">
+                                                    <SelectValue placeholder="Min" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {minuteOptions(parts.minute).map((m) => (
+                                                        <SelectItem key={m} value={m}>{m}</SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+
+                                            <div className="inline-flex rounded-md border border-input p-0.5">
+                                                {(["AM", "PM"] as const).map((option) => (
+                                                    <button
+                                                        key={option}
+                                                        type="button"
+                                                        onClick={() => setStartTime(to24Hour(parts.hour12, parts.minute, option))}
+                                                        className={`h-8 min-w-[44px] rounded-sm px-2 text-xs font-medium ${
+                                                            parts.period === option
+                                                                ? "bg-primary text-primary-foreground"
+                                                                : "text-muted-foreground hover:bg-accent"
+                                                        }`}
+                                                        disabled={isLoading}
+                                                    >
+                                                        {option}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    );
+                                })()}
                             </div>
                         )}
                     </div>
@@ -251,14 +330,60 @@ export function EventDialog({
                         {!isAllDay && (
                             <div className="space-y-2">
                                 <Label htmlFor="endTime">End Time *</Label>
-                                <Input
-                                    id="endTime"
-                                    type="time"
-                                    value={endTime}
-                                    onChange={(e) => setEndTime(e.target.value)}
-                                    required
-                                    disabled={isLoading}
-                                />
+                                {(() => {
+                                    const parts = parseTimeParts(endTime);
+                                    return (
+                                        <div id="endTime" className="grid grid-cols-[1fr_1fr_auto] gap-2">
+                                            <Select
+                                                value={parts.hour12}
+                                                onValueChange={(hour12) => setEndTime(to24Hour(hour12, parts.minute, parts.period))}
+                                                disabled={isLoading}
+                                            >
+                                                <SelectTrigger className="h-9">
+                                                    <SelectValue placeholder="Hour" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {Array.from({ length: 12 }, (_, i) => String(i + 1)).map((h) => (
+                                                        <SelectItem key={h} value={h}>{h}</SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+
+                                            <Select
+                                                value={parts.minute}
+                                                onValueChange={(minute) => setEndTime(to24Hour(parts.hour12, minute, parts.period))}
+                                                disabled={isLoading}
+                                            >
+                                                <SelectTrigger className="h-9">
+                                                    <SelectValue placeholder="Min" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {minuteOptions(parts.minute).map((m) => (
+                                                        <SelectItem key={m} value={m}>{m}</SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+
+                                            <div className="inline-flex rounded-md border border-input p-0.5">
+                                                {(["AM", "PM"] as const).map((option) => (
+                                                    <button
+                                                        key={option}
+                                                        type="button"
+                                                        onClick={() => setEndTime(to24Hour(parts.hour12, parts.minute, option))}
+                                                        className={`h-8 min-w-[44px] rounded-sm px-2 text-xs font-medium ${
+                                                            parts.period === option
+                                                                ? "bg-primary text-primary-foreground"
+                                                                : "text-muted-foreground hover:bg-accent"
+                                                        }`}
+                                                        disabled={isLoading}
+                                                    >
+                                                        {option}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    );
+                                })()}
                             </div>
                         )}
                     </div>

@@ -45,6 +45,7 @@ import {
 import { toast } from "@/lib/toast"
 import { CreateEventDialog, type CalendarEventData } from "@/components/calendar/create-event-dialog"
 import { parseAllDayDate } from "@/lib/calendar-helpers"
+import { sanitizeRichTextHtml } from "@/lib/rich-text"
 import type { EventListItem } from "./events-list-client"
 
 interface EventDetailDrawerProps {
@@ -160,11 +161,8 @@ export function EventDetailDrawer({
                 throw new Error(data.error || "Failed to enable meeting features")
             }
 
-            toast.success("Meeting features enabled", {
-                description: "Continue by attaching the right plan.",
-            })
             onOpenChange(false)
-            window.location.href = `/meetings/${data.meeting.id}?setup=plan`
+            window.location.href = `/meetings/${data.meeting.id}?setup=plan&created=meeting`
         } catch (error) {
             toast.error(error instanceof Error ? error.message : "Failed to enable meeting features.")
         } finally {
@@ -233,9 +231,10 @@ export function EventDetailDrawer({
                                     <h4 className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
                                         Description
                                     </h4>
-                                    <p className="text-sm leading-relaxed whitespace-pre-wrap">
-                                        {event.description}
-                                    </p>
+                                    <div
+                                        className="text-sm leading-relaxed whitespace-pre-wrap [&_p]:my-0 [&_ul]:my-1 [&_ol]:my-1 [&_li]:ml-5 [&_li]:list-item"
+                                        dangerouslySetInnerHTML={{ __html: sanitizeRichTextHtml(event.description) }}
+                                    />
                                 </div>
                             </>
                         )}

@@ -1,36 +1,57 @@
-"use client";
-
-import { Suspense, use, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
-import { Loader2 } from "lucide-react";
+import { notFound } from "next/navigation";
 import { MeetingBuilder } from "@/components/meetings/builder";
-import { toast } from "@/lib/toast";
+import { MeetingPlanSetup } from "@/components/meetings/meeting-plan-setup";
+import type { BuilderMode } from "@/components/meetings/builder";
+import { createClient } from "@/lib/supabase/server";
 
-function MeetingBuilderContent({ meetingId }: { meetingId: string }) {
-    const searchParams = useSearchParams();
-
-    useEffect(() => {
-        if (searchParams.get("setup") !== "plan") return;
-        toast.info("Next step: choose a plan", {
-            description: "In Plan Layer, select Agenda for collaboration or Program for conducting.",
-        });
-    }, [searchParams]);
-
-    return <MeetingBuilder initialMeetingId={meetingId} />;
+function parseMode(mode: string | undefined): BuilderMode | undefined {
+    if (mode === "planning" || mode === "print-preview" || mode === "program") {
+        return mode;
+    }
+    return undefined;
 }
 
-export default function MeetingPage({ params }: { params: Promise<{ id: string }> }) {
-    const { id } = use(params);
+export default async function MeetingPage({
+    params,
+    searchParams,
+}: {
+    params: Promise<{ id: string }>;
+    searchParams: Promise<{
+        setup?: string;
+        mode?: string;
+        created?: string;
+        announcement?: string;
+        templates?: string;
+    }>;
+}) {
+    const { id } = await params;
+    const query = await searchParams;
+    const supabase = await createClient();
 
-    return (
-        <Suspense
-            fallback={
-                <div className="h-screen flex items-center justify-center">
-                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                </div>
-            }
-        >
-            <MeetingBuilderContent meetingId={id} />
-        </Suspense>
-    );
+    const { data: meeting } = await (supabase.from("meetings") as ReturnType<typeof supabase.from>)
+        .select("id, title, plan_type")
+        .eq("id", id)
+        .single();
+
+    if (!meeting) {
+        notFound();
+    }
+
+    if (query.setup === "plan") {
+        return (
+            <MeetingPlanSetup
+                meetingId={id}
+                meetingTitle={meeting.title || "Untitled Meeting"}
+                currentPlanType={meeting.plan_type as "agenda" | "program" | null}
+                setupFeedback={{
+                    created: query.created,
+                    announcement: query.announcement === "1",
+                    templates: Number.parseInt(query.templates ?? "0", 10) || 0,
+                }}
+            />
+        );
+    }
+
+    const initialMode = parseMode(query.mode);
+    return <MeetingBuilder initialMeetingId={id} initialMode={initialMode} />;
 }

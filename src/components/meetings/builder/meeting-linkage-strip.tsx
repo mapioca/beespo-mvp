@@ -211,7 +211,7 @@ export function MeetingLinkageStrip({
                             </p>
                             <div className="mt-3 flex flex-wrap gap-2">
                                 <Button asChild variant="outline" size="sm" className="gap-2">
-                                    <Link href="/calendar/events">
+                                    <Link href="/schedule/events">
                                         <CalendarDays className="h-4 w-4" />
                                         Open events
                                     </Link>

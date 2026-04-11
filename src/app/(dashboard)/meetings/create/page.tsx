@@ -39,7 +39,7 @@ const createCards: CreateCard[] = [
   {
     title: "Event",
     description: "Create a schedule item independently, then link it to a meeting later if needed.",
-    href: "/calendar/events/new",
+    href: "/schedule/events?create=event",
     icon: Sparkles,
   },
 ]

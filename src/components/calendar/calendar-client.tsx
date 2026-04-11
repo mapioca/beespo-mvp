@@ -452,7 +452,6 @@ export function CalendarClient({
   const handleEventCreated = useCallback(
     (newEvent: CalendarEventData) => {
       setInternalEvents((prev) => [...prev, newEvent]);
-      setCreateDialogOpen(false);
       setImportingEvent(null);
     },
     []

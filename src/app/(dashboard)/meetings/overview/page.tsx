@@ -118,7 +118,7 @@ export default async function MeetingsOverviewPage() {
                   </Link>
                 </Button>
                 <Button asChild variant="outline">
-                  <Link href="/calendar/events/new">
+                  <Link href="/schedule/events?create=event">
                     Create event
                     <ArrowRight className="h-4 w-4" />
                   </Link>

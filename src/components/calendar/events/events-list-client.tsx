@@ -1,9 +1,8 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import Link from "next/link"
 import { format, parseISO, isPast, isFuture, isToday } from "date-fns"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import {
     Table,
     TableBody,
@@ -25,8 +24,10 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { parseAllDayDate } from "@/lib/calendar-helpers"
+import { richTextToPlainText } from "@/lib/rich-text"
 import { EventDetailDrawer } from "./event-detail-drawer"
 import { Button } from "@/components/ui/button"
+import { CreateEventDialog, type CalendarEventData } from "@/components/calendar/create-event-dialog"
 
 export interface EventListItem {
     id: string
@@ -143,23 +144,39 @@ function getSourceBadge(event: EventListItem) {
 
 export function EventsListClient({ events, canManageEvents = false }: EventsListClientProps) {
     const router = useRouter()
+    const searchParams = useSearchParams()
     const [searchQuery, setSearchQuery] = useState("")
     const [localEvents, setLocalEvents] = useState(events)
     const [selectedEvent, setSelectedEvent] = useState<EventListItem | null>(null)
     const [drawerOpen, setDrawerOpen] = useState(false)
+    const [createDialogOpen, setCreateDialogOpen] = useState(false)
 
     useEffect(() => {
         setLocalEvents(events)
     }, [events])
 
-    // Filter events by search query
+    const createdIdsParam = searchParams.get("created")
+    const createParam = searchParams.get("create")
+    const createdIds = createdIdsParam
+        ? createdIdsParam.split(",").map((id) => id.trim()).filter(Boolean)
+        : []
+
+    useEffect(() => {
+        if (!canManageEvents) return
+        if (createParam !== "event") return
+        setCreateDialogOpen(true)
+    }, [canManageEvents, createParam])
+
+    // Filter events by created session IDs first, then search query
     const filteredEvents = localEvents.filter((event) => {
+        if (createdIds.length > 0 && !createdIds.includes(event.id)) return false
         if (!searchQuery) return true
         const query = searchQuery.toLowerCase()
+        const descriptionText = event.description ? richTextToPlainText(event.description).toLowerCase() : ""
         return (
             event.title.toLowerCase().includes(query) ||
             event.location?.toLowerCase().includes(query) ||
-            event.description?.toLowerCase().includes(query)
+            descriptionText.includes(query)
         )
     })
 
@@ -208,8 +225,58 @@ export function EventsListClient({ events, canManageEvents = false }: EventsList
         setDrawerOpen(false)
     }
 
+    const mapCalendarEventToListItem = (event: CalendarEventData): EventListItem => ({
+        id: event.id,
+        title: event.title,
+        event_type: event.event_type ?? "activity",
+        description: event.description,
+        location: event.location,
+        start_at: event.start_at,
+        end_at: event.end_at,
+        is_all_day: event.is_all_day,
+        date_tbd: event.date_tbd ?? false,
+        time_tbd: event.time_tbd ?? false,
+        duration_mode: event.duration_mode ?? (event.is_all_day ? "all_day" : "minutes"),
+        duration_minutes: event.duration_minutes ?? null,
+        workspace_event_id: event.workspace_event_id,
+        external_source_id: event.external_source_id,
+        external_source_type: event.external_source_type,
+        source_type: "event",
+        linkedMeeting: null,
+    })
+
+    const handleCreated = (event: CalendarEventData) => {
+        const mapped = mapCalendarEventToListItem(event)
+        setLocalEvents((prev) => [mapped, ...prev.filter((item) => item.id !== mapped.id)])
+    }
+
+    const handleCreateDialogOpenChange = (open: boolean) => {
+        setCreateDialogOpen(open)
+        if (!open && createParam === "event") {
+            const params = new URLSearchParams(searchParams.toString())
+            params.delete("create")
+            const nextQuery = params.toString()
+            router.replace(nextQuery ? `/schedule/events?${nextQuery}` : "/schedule/events")
+        }
+    }
+
     return (
         <div className="p-6 space-y-6">
+            {createdIds.length > 0 && (
+                <div className="flex items-center justify-between gap-3 rounded-md border border-primary/30 bg-primary/5 px-3 py-2">
+                    <p className="text-sm text-muted-foreground">
+                        Showing only events created in your latest batch.
+                    </p>
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => router.push("/schedule/events")}
+                    >
+                        Clear filter
+                    </Button>
+                </div>
+            )}
             {/* Search Bar */}
             <div className="flex items-center gap-4">
                 <div className="relative flex-1 max-w-md">
@@ -225,11 +292,13 @@ export function EventsListClient({ events, canManageEvents = false }: EventsList
                     {filteredEvents.length} event{filteredEvents.length !== 1 ? "s" : ""}
                 </div>
                 {canManageEvents && (
-                    <Button asChild size="sm" className="ml-auto">
-                        <Link href="/calendar/events/new">
-                            <Plus className="h-4 w-4" />
-                            New event
-                        </Link>
+                    <Button
+                        size="sm"
+                        className="ml-auto"
+                        onClick={() => setCreateDialogOpen(true)}
+                    >
+                        <Plus className="h-4 w-4" />
+                        New event
                     </Button>
                 )}
             </div>
@@ -261,6 +330,9 @@ export function EventsListClient({ events, canManageEvents = false }: EventsList
                             {sortedEvents.map((event) => {
                                 const status = getEventStatus(event)
                                 const startDate = getStartDate(event)
+                                const descriptionPreview = event.description
+                                    ? richTextToPlainText(event.description)
+                                    : ""
                                 return (
                                     <TableRow
                                         key={event.id}
@@ -273,9 +345,9 @@ export function EventsListClient({ events, canManageEvents = false }: EventsList
                                         <TableCell className="font-medium text-[13px]">
                                             <div className="flex flex-col gap-1">
                                                 <span className="line-clamp-1">{event.title}</span>
-                                                {event.description && (
+                                                {descriptionPreview && (
                                                     <span className="text-[12px] text-muted-foreground line-clamp-1">
-                                                        {event.description}
+                                                        {descriptionPreview}
                                                     </span>
                                                 )}
                                             </div>
@@ -339,6 +411,14 @@ export function EventsListClient({ events, canManageEvents = false }: EventsList
                 onEventUpdated={handleEventUpdated}
                 onEventDeleted={handleEventDeleted}
             />
+            {canManageEvents && (
+                <CreateEventDialog
+                    open={createDialogOpen}
+                    onOpenChange={handleCreateDialogOpenChange}
+                    selectedDate={null}
+                    onCreated={handleCreated}
+                />
+            )}
         </div>
     )
 }
