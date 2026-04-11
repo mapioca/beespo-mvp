@@ -12,6 +12,7 @@ import {
   PinOff,
   HandHeart,
   Database,
+  LayoutTemplate,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { TooltipProvider } from "@/components/ui/tooltip"
@@ -37,6 +38,7 @@ const navSections: NavSection[] = [
       { href: "/dashboard", icon: Home, label: "Home" },
       { href: "/schedule/calendar", icon: Calendar, label: "Schedule" },
       { href: "/meetings", icon: CalendarDays, label: "Meetings" },
+      { href: "/templates", icon: LayoutTemplate, label: "Templates" },
       { href: "/callings", icon: HandHeart, label: "Callings" },
       { href: "/tasks", icon: CheckSquare, label: "Tasks" },
       { href: "/data", icon: Database, label: "Data" },
