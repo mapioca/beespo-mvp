@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { DirectoryClient } from "@/app/(dashboard)/participants/directory-client";
 import { Metadata } from "next";
 import { DirectoryView } from "@/lib/directory-views";
+import { getCachedUser, getProfile } from "@/lib/supabase/cached-queries";
 
 export const metadata: Metadata = {
     title: "Directory | Beespo",
@@ -16,23 +17,16 @@ interface DirectoryPageProps {
 }
 
 export default async function DirectoryPage({ searchParams }: DirectoryPageProps) {
-    const supabase = await createClient();
-
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await getCachedUser();
     if (!user) redirect("/login");
+
+    const profile = await getProfile(user.id);
+    if (!profile?.workspace_id) redirect("/onboarding");
+
+    const supabase = await createClient();
 
     const params = await searchParams;
     const searchQuery = typeof params?.search === "string" ? params.search : "";
-
-    // Get user's profile and workspace
-    const { data: profile } = await (supabase
-        .from("profiles")
-        .select("workspace_id, role")
-        .eq("id", user.id)
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .single() as any);
-
-    if (!profile?.workspace_id) redirect("/onboarding");
 
     // ── Query 1: directory + tags ───────────────────────────────────────────
     // Keep this simple (no deep nesting) — PostgREST can't resolve

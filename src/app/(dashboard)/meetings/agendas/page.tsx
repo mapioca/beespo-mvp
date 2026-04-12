@@ -3,6 +3,7 @@ import { redirect } from "next/navigation"
 import { MeetingsClient } from "@/components/meetings/meetings-client"
 import { Metadata } from "next"
 import { AgendaView } from "@/lib/agenda-views"
+import { getCachedUser, getProfile } from "@/lib/supabase/cached-queries"
 
 export const metadata: Metadata = {
   title: "Agendas | Beespo",
@@ -12,91 +13,95 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic"
 
 export default async function AgendasPage() {
-  const supabase = await createClient()
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const user = await getCachedUser()
 
   if (!user) {
     redirect("/login")
   }
 
-  const { data: profile } = await (
-    supabase.from("profiles") as ReturnType<typeof supabase.from>
-  )
-    .select("role, workspace_id")
-    .eq("id", user.id)
-    .single()
+  const profile = await getProfile(user.id)
 
   if (!profile || !profile.workspace_id) {
     redirect("/onboarding")
   }
 
+  const supabase = await createClient()
+
   const isLeader = profile.role === "leader" || profile.role === "admin"
 
-  // Fetch workspace slug
-  const { data: workspace } = await (
-    supabase.from("workspaces") as ReturnType<typeof supabase.from>
-  )
-    .select("slug")
-    .eq("id", profile.workspace_id)
-    .single()
+  // Fetch all required data in parallel
+  const [
+    workspaceResponse,
+    meetingsResponse,
+    inboundShareResponse,
+    outboundShareResponse,
+    templatesResponse,
+    agendaViewsResponse
+  ] = await Promise.all([
+    (supabase.from("workspaces") as ReturnType<typeof supabase.from>)
+      .select("slug")
+      .eq("id", profile.workspace_id)
+      .single(),
+    supabase
+      .from("meetings")
+      .select(
+        `id, title, description, scheduled_date, status, is_publicly_shared, created_by, template_id, created_at, updated_at,
+        templates (id, name)`
+      )
+      .eq("workspace_id", profile.workspace_id)
+      .order("scheduled_date", { ascending: false })
+      .order("created_at", { ascending: false }),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (supabase as any)
+      .from("meeting_shares")
+      .select(
+        `id, permission, meeting_id,
+          meetings!meeting_id (
+            id, workspace_id, title, description, scheduled_date, status, is_publicly_shared,
+            created_by, notes, created_at, updated_at,
+            templates (id, name),
+            workspaces (name, slug)
+          ),
+          shared_by_profile:shared_by (full_name)`
+      )
+      .eq("recipient_user_id", user.id)
+      .eq("status", "active"),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (supabase as any)
+      .from("meeting_shares")
+      .select("meeting_id")
+      .eq("shared_by", user.id)
+      .eq("status", "active"),
+    (supabase.from("templates") as ReturnType<typeof supabase.from>)
+      .select("id, name")
+      .order("name"),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (supabase.from("agenda_views") as any)
+      .select("id, name, view_type, config, is_system, created_at")
+      .eq("workspace_id", profile.workspace_id)
+      .eq("view_type", "agendas")
+      .order("created_at", { ascending: true })
+  ])
+
+  const { data: workspace } = workspaceResponse
+  const { data: meetings, error: meetingsError } = meetingsResponse
+  const { data: inboundShareData } = inboundShareResponse
+  const { data: outboundShareData } = outboundShareResponse
+  const { data: templates } = templatesResponse
+  const { data: agendaViewsData } = agendaViewsResponse
+
   const workspaceSlug: string | null = workspace?.slug || null
 
-  // Fetch all meetings (no pagination — client handles filtering/scroll)
-  const { data: meetings, error } = await supabase
-    .from("meetings")
-    .select(
-      `*,
-      templates (
-        id,
-        name
-      )`
-    )
-    .eq("workspace_id", profile.workspace_id)
-    .order("scheduled_date", { ascending: false })
-    .order("created_at", { ascending: false })
-
-  if (error) {
-    console.error("Meetings query error:", error)
+  if (meetingsError) {
+    console.error("Meetings query error:", meetingsError)
     return (
       <div className="p-8">Error loading agendas. Please try again.</div>
     )
   }
 
-  // Fetch meetings shared WITH the current user (cross-workspace)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: inboundShareData } = await (supabase as any)
-    .from("meeting_shares")
-    .select(
-      `
-      id,
-      permission,
-      meeting_id,
-        meetings!meeting_id (
-        id, workspace_id, title, description, scheduled_date, status, is_publicly_shared,
-        created_by, notes, created_at, updated_at,
-        templates (id, name),
-        workspaces (name, slug)
-      ),
-      shared_by_profile:shared_by (full_name)
-    `
-    )
-    .eq("recipient_user_id", user.id)
-    .eq("status", "active")
-
-  // Fetch meeting IDs that the current user has shared outward
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: outboundShareData } = await (supabase as any)
-    .from("meeting_shares")
-    .select("meeting_id")
-    .eq("shared_by", user.id)
-    .eq("status", "active")
-
   // Build annotated shared-with-me meeting list
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const sharedMeetings = (inboundShareData || []).flatMap((share: any) => {
+  const sharedMeetings = (inboundShareData || []).flatMap((share: { meetings: any, permission: any, shared_by_profile: any }) => {
     const m = share.meetings
     if (!m) return []
     return [
@@ -111,19 +116,10 @@ export default async function AgendasPage() {
     ]
   })
 
-  // Build Set of outward-shared meeting IDs (serialised as array for client)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // Build Set of outward-shared meeting IDs
   const sharedOutwardIds: string[] = (outboundShareData || []).map(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (row: any) => row.meeting_id
+    (row: { meeting_id: string }) => row.meeting_id
   )
-
-  // Fetch all templates for filter dropdown
-  const { data: templates } = await (
-    supabase.from("templates") as ReturnType<typeof supabase.from>
-  )
-    .select("id, name")
-    .order("name")
 
   // Compute counts for filter badges
   const statusCounts: Record<string, number> = {
@@ -146,15 +142,7 @@ export default async function AgendasPage() {
     }
   })
 
-  // Fetch workspace-scoped custom agenda views (RLS enforces workspace isolation)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: agendaViewsData } = await (supabase.from("agenda_views") as any)
-    .select("*")
-    .eq("workspace_id", profile.workspace_id)
-    .eq("view_type", "agendas")
-    .order("created_at", { ascending: true })
-
-  const initialViews: AgendaView[] = agendaViewsData ?? []
+  const initialViews: AgendaView[] = (agendaViewsData as AgendaView[]) ?? []
 
   return (
     <MeetingsClient

@@ -132,25 +132,6 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
-  // MFA enforcement for authenticated users on protected routes
-  if (user && isProtectedRoute) {
-    try {
-      const { data: aalData } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-
-      // User has MFA enrolled but hasn't verified this session
-      if (aalData?.nextLevel === "aal2" && aalData?.currentLevel !== "aal2") {
-        // Check for trusted device cookie before redirecting
-        const trustedDeviceToken = request.cookies.get("beespo_trusted_device")?.value;
-        if (!trustedDeviceToken) {
-          return NextResponse.redirect(new URL("/mfa/verify", request.url));
-        }
-        // If cookie exists, allow through — layout will validate the token against DB
-      }
-    } catch (error) {
-      console.error("Failed to check MFA level:", error);
-    }
-  }
-
   return supabaseResponse;
 }
 

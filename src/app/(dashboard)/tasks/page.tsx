@@ -3,6 +3,7 @@ import { redirect } from "next/navigation"
 import { TasksClient } from "./tasks-client"
 import { Metadata } from "next"
 import { TaskView } from "@/lib/table-views"
+import { getCachedUser, getProfile } from "@/lib/supabase/cached-queries"
 
 export const metadata: Metadata = {
     title: "Tasks | Beespo",
@@ -27,36 +28,41 @@ type TaskWithRelations = {
 }
 
 export default async function TasksPage() {
-    const supabase = await createClient()
-
-    const {
-        data: { user },
-    } = await supabase.auth.getUser()
+    const user = await getCachedUser()
 
     if (!user) {
         redirect("/login")
     }
 
-    const { data: profile } = await (
-        supabase.from("profiles") as ReturnType<typeof supabase.from>
-    )
-        .select("workspace_id, role")
-        .eq("id", user.id)
-        .single()
+    const profile = await getProfile(user.id)
 
     if (!profile || !profile.workspace_id) {
         redirect("/onboarding")
     }
 
-    // Fetch all tasks (no pagination — client handles filtering/scroll)
-    const { data: rawTasks, error } = await supabase
-        .from("tasks")
-        .select(
-            `*,
-            assignee:profiles!tasks_assigned_to_fkey(full_name, email),
-            labels:task_label_assignments(label:task_labels(id, name, color))`
-        )
-        .order("created_at", { ascending: false })
+    const supabase = await createClient()
+
+    // Run independent queries in parallel
+    const [tasksResponse, viewsResponse] = await Promise.all([
+        supabase
+            .from("tasks")
+            .select(
+                `id, title, description, status, priority, due_date, assigned_to, workspace_task_id, created_at, created_by,
+                assignee:profiles!tasks_assigned_to_fkey(full_name, email),
+                labels:task_label_assignments(label:task_labels(id, name, color))`
+            )
+            .eq("workspace_id", profile.workspace_id)
+            .order("created_at", { ascending: false }),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (supabase.from("agenda_views") as any)
+            .select("id, name, view_type, config, is_system, created_at")
+            .eq("workspace_id", profile.workspace_id)
+            .eq("view_type", "tasks")
+            .order("created_at", { ascending: true }),
+    ])
+
+    const { data: rawTasks, error } = tasksResponse
+    const { data: taskViewsData } = viewsResponse
 
     if (error) {
         console.error("Tasks query error:", error)
@@ -95,15 +101,7 @@ export default async function TasksPage() {
             priorityCounts[t.priority as keyof typeof priorityCounts]++
     })
 
-    // Fetch workspace-scoped task views
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: taskViewsData } = await (supabase.from("agenda_views") as any)
-        .select("*")
-        .eq("workspace_id", profile.workspace_id)
-        .eq("view_type", "tasks")
-        .order("created_at", { ascending: true })
-
-    const initialViews: TaskView[] = taskViewsData ?? []
+    const initialViews: TaskView[] = (taskViewsData as TaskView[]) ?? []
 
     return (
         <TasksClient
