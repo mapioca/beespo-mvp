@@ -4,12 +4,13 @@ import { Button } from "@/components/ui/button";
 import {
   ChevronLeft,
   ChevronRight,
-  Menu,
   Plus,
 } from "lucide-react";
 import { formatMonthYear, formatDayOfWeek, formatShortDate } from "@/lib/calendar-helpers";
-import type { CalendarViewType } from "./calendar-types";
+import type { CalendarViewType, CalendarVisibility } from "./calendar-types";
 import { cn } from "@/lib/utils";
+import { CalendarFilterPopover } from "./calendar-filter-popover";
+import type { UserRole } from "@/types/database";
 
 interface CalendarToolbarProps {
   currentDate: Date;
@@ -18,9 +19,13 @@ interface CalendarToolbarProps {
   onToday: () => void;
   onPrevious: () => void;
   onNext: () => void;
-  onToggleSidebar: () => void;
   canCreateEvents: boolean;
   onCreateEvent: () => void;
+  visibility: CalendarVisibility;
+  onToggleVisibility: (key: keyof CalendarVisibility) => void;
+  onToggleExternalSubscription: (subscriptionId: string) => void;
+  userRole: UserRole;
+  onSyncComplete?: () => void;
 }
 
 export function CalendarToolbar({
@@ -30,9 +35,13 @@ export function CalendarToolbar({
   onToday,
   onPrevious,
   onNext,
-  onToggleSidebar,
   canCreateEvents,
   onCreateEvent,
+  visibility,
+  onToggleVisibility,
+  onToggleExternalSubscription,
+  userRole,
+  onSyncComplete,
 }: CalendarToolbarProps) {
   // Format the date label based on current view
   const getDateLabel = () => {
@@ -49,16 +58,15 @@ export function CalendarToolbar({
 
   return (
     <div className="flex items-center justify-between px-4 py-3 border-b border-border/60 bg-transparent">
-      {/* Left section: sidebar toggle, navigation */}
+      {/* Left section: filter, navigation */}
       <div className="flex items-center gap-2">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={onToggleSidebar}
-          className="lg:hidden"
-        >
-          <Menu className="h-5 w-5 stroke-[1.6]" />
-        </Button>
+        <CalendarFilterPopover
+          visibility={visibility}
+          onToggleVisibility={onToggleVisibility}
+          onToggleExternalSubscription={onToggleExternalSubscription}
+          userRole={userRole}
+          onSyncComplete={onSyncComplete}
+        />
 
         <Button variant="outline" size="sm" onClick={onToday} className="border-border/60 hover:bg-[hsl(var(--accent-warm)/0.6)] shadow-none">
           Today

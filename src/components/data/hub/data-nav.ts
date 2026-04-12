@@ -16,7 +16,7 @@ export const dataNavItems: DomainNavItem[] = [
     matchMode: "prefix",
     children: [
       {
-        href: "/templates/forms",
+        href: "/library/forms",
         label: "Use a Template",
         icon: ArrowUpRight,
         matchMode: "exact",

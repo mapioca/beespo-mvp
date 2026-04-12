@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { TemplateLibraryCard } from "./template-library-card";
 import { TemplatePreviewDialog } from "./template-preview-dialog";
-import { cloneTemplateAction } from "@/app/(dashboard)/templates/library/actions";
+import { cloneTemplateAction } from "@/app/(dashboard)/library/actions";
 import { toast } from "@/lib/toast";
 import { LibraryTemplate } from "./types";
 import { createClient } from "@/lib/supabase/client";
@@ -72,6 +72,28 @@ export function TemplateLibraryClient({ templates, workspaceId, currentUserId, i
   }, [searchParams]);
 
   useEffect(() => {
+    const imported = searchParams.get("imported");
+    const importError = searchParams.get("importError");
+    if (!imported && !importError) return;
+
+    if (imported) {
+      toast.success("Template imported", {
+        description: "The template has been added to your workspace.",
+      });
+    } else if (importError) {
+      toast.error("Failed to import template. Please try again.");
+    }
+
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("imported");
+    params.delete("importError");
+    params.delete("use");
+
+    const next = params.toString();
+    router.replace(next ? `/library?${next}` : "/library");
+  }, [router, searchParams]);
+
+  useEffect(() => {
     setKind(initialKind ?? null);
   }, [initialKind]);
   const [localTemplates, setLocalTemplates] = useState<LibraryTemplate[]>(templates);
@@ -122,6 +144,29 @@ export function TemplateLibraryClient({ templates, workspaceId, currentUserId, i
     });
   }, [kind, localTemplates, search, source, workspaceId]);
 
+  const hasTemplatesInCurrentScope = useMemo(() => {
+    return localTemplates.some((t) => {
+      const isBeespo = t.workspace_id === null;
+      const isMine = workspaceId ? t.workspace_id === workspaceId : false;
+      const isCommunity = !isBeespo && !isMine;
+
+      const matchesSource =
+        source === "all"
+          ? isBeespo || isCommunity || isMine
+          : source === "beespo"
+          ? isBeespo
+          : source === "community"
+          ? isCommunity
+          : source === "mine"
+          ? isMine
+          : true;
+
+      const matchesKind = !kind || t.template_kind === kind;
+
+      return matchesSource && matchesKind;
+    });
+  }, [kind, localTemplates, source, workspaceId]);
+
   const handleClone = async (template: LibraryTemplate) => {
     setCloningId(template.id);
     try {
@@ -130,7 +175,7 @@ export function TemplateLibraryClient({ templates, workspaceId, currentUserId, i
         toast.success("Template imported", {
           description: "The template has been added to your workspace.",
         });
-        router.push("/templates?tab=mine");
+        router.push("/library?tab=mine");
       } else {
         toast.error(result.error ?? "Failed to import template. Please try again.");
       }
@@ -163,7 +208,7 @@ export function TemplateLibraryClient({ templates, workspaceId, currentUserId, i
         setCloneName("");
         setCloneDescription("");
         setSource("mine");
-        router.push("/templates?tab=mine");
+        router.push("/library?tab=mine");
         router.refresh();
       } else {
         toast.error(result.error ?? "Failed to clone template. Please try again.");
@@ -284,6 +329,23 @@ export function TemplateLibraryClient({ templates, workspaceId, currentUserId, i
     ? "Your workspace templates."
     : "Browse and import meeting templates for your organization.";
   const showKindFilters = !initialKind;
+  const returnPathByKind: Record<"agenda" | "program" | "form", string> = {
+    agenda: "/library/agendas",
+    program: "/library/programs",
+    form: "/library/forms",
+  };
+  const returnPath =
+    initialKind === "agenda" || initialKind === "program" || initialKind === "form"
+      ? returnPathByKind[initialKind]
+      : "/library";
+  const galleryParams = new URLSearchParams();
+  if (initialKind === "agenda" || initialKind === "program" || initialKind === "form") {
+    galleryParams.set("kind", initialKind);
+  }
+  galleryParams.set("redirect", returnPath);
+  const publicGalleryHref = `/templates?${galleryParams.toString()}`;
+  const showTopBrowseCta = hasTemplatesInCurrentScope && !isMyTemplatesView;
+  const showTopNewTemplateCta = isMyTemplatesView && hasTemplatesInCurrentScope;
 
   return (
     <div className="flex h-full flex-col bg-white">
@@ -349,12 +411,25 @@ export function TemplateLibraryClient({ templates, workspaceId, currentUserId, i
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center xl:min-w-[520px] xl:max-w-[640px] xl:justify-end">
-              {isMyTemplatesView && (
+              {showTopBrowseCta && (
+                <Button
+                  asChild
+                  variant="outline"
+                  className="h-10 shrink-0 whitespace-nowrap rounded-full px-[18px] text-[13px] font-semibold"
+                >
+                  <Link href={publicGalleryHref}>
+                    Browse Public Gallery
+                    <ArrowUpRight className="ml-1.5 h-4 w-4 stroke-[1.8]" />
+                  </Link>
+                </Button>
+              )}
+
+              {showTopNewTemplateCta && (
                 <Button
                   asChild
                   className="h-10 shrink-0 whitespace-nowrap rounded-full px-[18px] text-[13px] font-semibold shadow-[0_10px_24px_rgba(15,23,42,0.12)]"
                 >
-                  <Link href="/templates/new">
+                  <Link href="/library/new">
                     <Plus className="mr-1.5 h-4 w-4 stroke-[1.8]" />
                     New template
                   </Link>
@@ -434,9 +509,27 @@ export function TemplateLibraryClient({ templates, workspaceId, currentUserId, i
                     {search
                       ? "No templates match your search. Try a different keyword."
                       : isMyTemplatesView
-                      ? "You haven't created any templates yet. Go to Templates to create your first one."
+                      ? "You haven't created any templates yet. Create your first one to get started."
+                      : initialKind
+                      ? "No templates in your workspace for this category yet. Browse the Public Gallery and import one in seconds."
                       : "No templates in this category yet. Check back later or explore other categories."}
                   </p>
+                  {!search && isMyTemplatesView && (
+                    <Button asChild className="mt-5 rounded-full px-4">
+                      <Link href="/library/new">
+                        <Plus className="mr-1.5 h-4 w-4 stroke-[1.8]" />
+                        New template
+                      </Link>
+                    </Button>
+                  )}
+                  {!search && !isMyTemplatesView && initialKind && (
+                    <Button asChild className="mt-5 rounded-full px-4">
+                      <Link href={publicGalleryHref}>
+                        Browse Public Gallery
+                        <ArrowUpRight className="ml-1.5 h-4 w-4 stroke-[1.8]" />
+                      </Link>
+                    </Button>
+                  )}
                 </div>
               )}
             </div>

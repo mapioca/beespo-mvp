@@ -33,6 +33,12 @@ export function Footer() {
             Support
           </Link>
           <Link
+            href="/templates"
+            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Template Gallery
+          </Link>
+          <Link
             href="/login"
             className="text-sm text-muted-foreground hover:text-foreground transition-colors"
           >

@@ -101,7 +101,7 @@ export function TemplateMetadataHeader({
             <div className="flex items-center gap-4 px-6 py-4">
                 {/* Back Button */}
                 <Button variant="ghost" size="sm" asChild className="-ml-2">
-                    <Link href="/templates/library">
+                    <Link href="/library">
                         <ArrowLeft className="w-4 h-4 mr-2" />
                         Back
                     </Link>
@@ -129,7 +129,7 @@ export function TemplateMetadataHeader({
                 <div className="flex items-center gap-2">
                     <Button
                         variant="outline"
-                        onClick={() => router.push("/templates/library")}
+                        onClick={() => router.push("/library")}
                         disabled={isSaving}
                     >
                         Cancel

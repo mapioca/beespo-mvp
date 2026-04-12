@@ -1,7 +1,5 @@
-import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
-import { getProfile } from "@/lib/supabase/cached-queries";
 import { HomeGreeting } from "./home-greeting";
+import { getDashboardRequestContext } from "@/lib/dashboard/request-context";
 
 const quotes = [
   "Great meetings don't happen by accident — they're built with intention.",
@@ -17,18 +15,7 @@ function getDailyQuote(): string {
 }
 
 export default async function DashboardPage() {
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) redirect("/auth/login");
-
-  // Cache hit — layout already fetched this during the same request
-  const profile = await getProfile(user.id);
-
-  if (!profile?.workspace_id) redirect("/onboarding");
+  const { profile } = await getDashboardRequestContext();
 
   const firstName = profile.full_name?.split(" ")[0] ?? "there";
   const quote = getDailyQuote();

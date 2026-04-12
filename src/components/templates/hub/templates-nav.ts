@@ -4,25 +4,25 @@ import type { DomainNavItem } from "@/components/domain/domain-shell"
 
 export const templatesNavItems: DomainNavItem[] = [
   {
-    href: "/templates",
+    href: "/library",
     label: "All Templates",
     icon: LayoutGrid,
     matchMode: "exact",
   },
   {
-    href: "/templates/programs",
+    href: "/library/programs",
     label: "Programs",
     icon: PanelsTopLeft,
     matchMode: "prefix",
   },
   {
-    href: "/templates/agendas",
+    href: "/library/agendas",
     label: "Agendas",
     icon: NotebookPen,
     matchMode: "prefix",
   },
   {
-    href: "/templates/forms",
+    href: "/library/forms",
     label: "Forms",
     icon: ClipboardList,
     matchMode: "prefix",

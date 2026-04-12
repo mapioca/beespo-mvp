@@ -22,7 +22,7 @@ export const meetingsNavItems: DomainNavItem[] = [
         matchMode: "prefix",
       },
       {
-        href: "/templates/agendas",
+        href: "/library/agendas",
         label: "Use a Template",
         icon: ArrowUpRight,
         matchMode: "exact",
@@ -42,7 +42,7 @@ export const meetingsNavItems: DomainNavItem[] = [
         matchMode: "prefix",
       },
       {
-        href: "/templates/programs",
+        href: "/library/programs",
         label: "Use a Template",
         icon: ArrowUpRight,
         matchMode: "exact",

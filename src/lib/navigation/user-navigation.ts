@@ -57,8 +57,13 @@ function isMissingTableError(errorMessage: string | null | undefined, tableName:
 }
 
 async function getCurrentNavigationContext(
-  supabase: NavigationDbClient
+  supabase: NavigationDbClient,
+  providedContext?: UserNavigationContext
 ): Promise<UserNavigationContext | null> {
+  if (providedContext) {
+    return providedContext;
+  }
+
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -303,9 +308,11 @@ async function resolveCanonicalNavigationItem(
   }
 }
 
-export const getUserNavigationItems = cache(async (): Promise<UserNavigationItems> => {
+export const getUserNavigationItems = cache(async (
+  contextOverride?: UserNavigationContext
+): Promise<UserNavigationItems> => {
   const supabase = await createClient();
-  const context = await getCurrentNavigationContext(supabase);
+  const context = await getCurrentNavigationContext(supabase, contextOverride);
 
   if (!context) {
     return {
@@ -316,13 +323,13 @@ export const getUserNavigationItems = cache(async (): Promise<UserNavigationItem
 
   const [favoritesResult, recentsResult] = await Promise.all([
     fromTable(supabase, "user_favorites")
-      .select("*")
+      .select("entity_id, entity_type, title, href, parent_title, position")
       .eq("user_id", context.userId)
       .eq("workspace_id", context.workspaceId)
       .order("position", { ascending: true })
       .order("updated_at", { ascending: false }),
     fromTable(supabase, "user_recent_items")
-      .select("*")
+      .select("entity_id, entity_type, title, href, parent_title, last_viewed_at")
       .eq("user_id", context.userId)
       .eq("workspace_id", context.workspaceId)
       .order("last_viewed_at", { ascending: false }),

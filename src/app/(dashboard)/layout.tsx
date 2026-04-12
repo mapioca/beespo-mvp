@@ -1,33 +1,20 @@
-import { createClient } from "@/lib/supabase/server";
-import { redirect } from "next/navigation";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { CommandPalette } from "@/components/command-palette";
-import { getProfile } from "@/lib/supabase/cached-queries";
 import { checkTrustedDevice, checkWorkspaceMfaRequired } from "@/lib/mfa";
 import { getUserNavigationItems } from "@/lib/navigation/user-navigation";
+import { getDashboardRequestContext } from "@/lib/dashboard/request-context";
+import { createClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
 
 export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/login");
-  }
-
-  // getProfile() is memoised with React cache() — if a child page also calls
-  // getProfile(user.id) during the same request, only one DB query fires.
-  const profile = await getProfile(user.id);
-
-  if (!profile?.workspace_id) {
-    redirect("/onboarding");
-  }
+  const [{ user, profile }, supabase] = await Promise.all([
+    getDashboardRequestContext(),
+    createClient(),
+  ]);
 
   // Workspace MFA enforcement
   const workspaceRequiresMfa = await checkWorkspaceMfaRequired(profile.workspace_id);
@@ -51,7 +38,10 @@ export default async function DashboardLayout({
     }
   }
 
-  const initialNavigationItems = await getUserNavigationItems();
+  const initialNavigationItems = await getUserNavigationItems({
+    userId: user.id,
+    workspaceId: profile.workspace_id,
+  });
 
   return (
     <>

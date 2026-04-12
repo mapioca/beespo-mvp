@@ -1,8 +1,8 @@
 import { createClient } from "@/lib/supabase/server"
-import { redirect } from "next/navigation"
 import { AnnouncementsClient } from "@/components/announcements/announcements-client"
 import { Metadata } from "next"
 import { AnnouncementView } from "@/lib/table-views"
+import { getDashboardRequestContext } from "@/lib/dashboard/request-context"
 
 export const metadata: Metadata = {
   title: "Announcements | Beespo",
@@ -12,26 +12,10 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic"
 
 export default async function AnnouncementsPage() {
-  const supabase = await createClient()
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) {
-    redirect("/login")
-  }
-
-  const { data: profile } = await (
-    supabase.from("profiles") as ReturnType<typeof supabase.from>
-  )
-    .select("workspace_id, role")
-    .eq("id", user.id)
-    .single()
-
-  if (!profile || !profile.workspace_id) {
-    redirect("/onboarding")
-  }
+  const [{ profile }, supabase] = await Promise.all([
+    getDashboardRequestContext(),
+    createClient(),
+  ])
 
   // Fetch all announcements for this workspace (no pagination — client handles filtering/scroll)
   const {
@@ -75,7 +59,7 @@ export default async function AnnouncementsPage() {
   // Fetch workspace-scoped announcement views
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: announcementViewsData } = await (supabase.from("agenda_views") as any)
-    .select("*")
+    .select("id, workspace_id, created_by, name, view_type, filters, created_at, updated_at")
     .eq("workspace_id", profile.workspace_id)
     .eq("view_type", "announcements")
     .order("created_at", { ascending: true })

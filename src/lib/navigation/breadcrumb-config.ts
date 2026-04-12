@@ -125,17 +125,38 @@ export const breadcrumbConfigs: BreadcrumbConfig[] = [
     trail: [{ label: "Meetings", href: "/meetings/overview" }, { label: "Assignments" }],
   },
   {
-    pattern: "/templates/library",
+    pattern: "/library",
     trail: [
-      { label: "Templates", href: "/templates/library", iconType: "template" },
-      { label: "Library", iconType: "template" },
+      { label: "Templates", href: "/library", iconType: "template" },
+      { label: "All Templates", iconType: "template" },
     ],
   },
   {
-    pattern: "/templates/new",
+    pattern: "/library/programs",
     trail: [
-      { label: "Templates", href: "/templates/library", iconType: "template" },
-      { label: "Library", href: "/templates/library", iconType: "template" },
+      { label: "Templates", href: "/library", iconType: "template" },
+      { label: "Programs", iconType: "template" },
+    ],
+  },
+  {
+    pattern: "/library/agendas",
+    trail: [
+      { label: "Templates", href: "/library", iconType: "template" },
+      { label: "Agendas", iconType: "template" },
+    ],
+  },
+  {
+    pattern: "/library/forms",
+    trail: [
+      { label: "Templates", href: "/library", iconType: "template" },
+      { label: "Forms", iconType: "template" },
+    ],
+  },
+  {
+    pattern: "/library/new",
+    trail: [
+      { label: "Templates", href: "/library", iconType: "template" },
+      { label: "All Templates", href: "/library", iconType: "template" },
       { label: "New Template", iconType: "template" },
     ],
   },

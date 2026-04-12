@@ -19,10 +19,18 @@ import { toast } from "@/lib/toast";
 import { createClient } from "@/lib/supabase/client";
 import { GoogleOAuthButton } from "@/components/auth/google-oauth-button";
 
+function safeInternalPath(pathname: string | null, fallback: string) {
+  if (!pathname) return fallback;
+  if (!pathname.startsWith("/")) return fallback;
+  if (pathname.startsWith("//")) return fallback;
+  return pathname;
+}
+
 export default function LoginClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get("redirect");
+  const useTemplateId = searchParams.get("use");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -48,9 +56,15 @@ export default function LoginClient() {
           toast.error(error.message);
         }
       } else if (data.user) {
-        if (redirectTo) {
+        if (redirectTo || useTemplateId) {
+          const safeRedirect = safeInternalPath(redirectTo, "/library");
           toast.success("You've been logged in successfully.");
-          router.push(redirectTo);
+          if (useTemplateId) {
+            const importUrl = `/library/import?use=${encodeURIComponent(useTemplateId)}&redirect=${encodeURIComponent(safeRedirect)}`;
+            router.push(importUrl);
+          } else {
+            router.push(safeRedirect);
+          }
           router.refresh();
           return;
         }
@@ -158,7 +172,18 @@ export default function LoginClient() {
           <p className="text-center text-sm text-muted-foreground">
             Don&apos;t have an account?{" "}
             <Link
-              href="/signup"
+              href={
+                redirectTo || useTemplateId
+                  ? `/signup?${new URLSearchParams(
+                      Object.fromEntries(
+                        [
+                          ["redirect", safeInternalPath(redirectTo, "/library")],
+                          ["use", useTemplateId ?? ""],
+                        ].filter((entry) => entry[1].length > 0)
+                      )
+                    ).toString()}`
+                  : "/signup"
+              }
               className="font-medium underline underline-offset-4 hover:text-foreground"
             >
               Sign up

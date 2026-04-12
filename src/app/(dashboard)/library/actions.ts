@@ -99,7 +99,7 @@ export async function cloneTemplateAction(
     }
   }
 
-  revalidatePath("/templates/library");
+  revalidatePath("/library");
 
   return { success: true, id: newTemplate.id };
 }

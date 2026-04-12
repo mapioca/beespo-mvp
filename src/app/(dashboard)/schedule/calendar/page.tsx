@@ -1,8 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
-import { redirect } from "next/navigation";
 import { CalendarClient } from "@/components/calendar/calendar-client";
 import { startOfMonth, endOfMonth, addMonths, subMonths } from "date-fns";
 import { Metadata } from "next";
+import { getDashboardRequestContext } from "@/lib/dashboard/request-context";
+import type { UserRole } from "@/types/database";
 
 export const metadata: Metadata = {
     title: "Calendar View | Beespo",
@@ -12,26 +13,10 @@ export const metadata: Metadata = {
 export const revalidate = 0;
 
 export default async function ScheduleCalendarPage() {
-    const supabase = await createClient();
-
-    const {
-        data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-        redirect("/login");
-    }
-
-    // Get user profile
-    const { data: profile } = await (supabase
-        .from("profiles") as ReturnType<typeof supabase.from>)
-        .select("workspace_id, role")
-        .eq("id", user.id)
-        .single();
-
-    if (!profile || !profile.workspace_id) {
-        redirect("/onboarding");
-    }
+    const [{ profile }, supabase] = await Promise.all([
+        getDashboardRequestContext(),
+        createClient(),
+    ]);
 
     // Fetch date range for initial load (current month +/- 1 month buffer)
     const today = new Date();
@@ -102,7 +87,7 @@ export default async function ScheduleCalendarPage() {
             initialMeetings={meetings || []}
             initialTasks={tasks || []}
             initialEvents={events || []}
-            userRole={profile.role}
+            userRole={profile.role as UserRole}
         />
     );
 }

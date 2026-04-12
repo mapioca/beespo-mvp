@@ -1,31 +1,19 @@
 import { createClient } from "@/lib/supabase/server"
-import { redirect } from "next/navigation"
-import { getProfile } from "@/lib/supabase/cached-queries"
 import { TablesClient } from "./tables-client"
 import type { DynamicTable } from "@/types/table-types"
+import { getDashboardRequestContext } from "@/lib/dashboard/request-context"
 
 export const dynamic = "force-dynamic"
 
 export default async function TablesPage() {
-    const supabase = await createClient()
-
-    const {
-        data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-        redirect("/login")
-    }
-
-    const profile = await getProfile(user.id)
-
-    if (!profile?.workspace_id) {
-        redirect("/onboarding")
-    }
+    const [{ profile }, supabase] = await Promise.all([
+        getDashboardRequestContext(),
+        createClient(),
+    ])
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: tables } = await (supabase.from("dynamic_tables") as any)
-        .select("*")
+        .select("id, workspace_id, name, description, icon, slug, linked_form_id, created_by, created_at, updated_at")
         .eq("workspace_id", profile.workspace_id)
         .order("created_at", { ascending: false })
 

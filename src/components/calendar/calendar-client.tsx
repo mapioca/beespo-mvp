@@ -17,7 +17,6 @@ import {
   parseAllDayDate,
 } from "@/lib/calendar-helpers";
 import { CalendarToolbar } from "./calendar-toolbar";
-import { CalendarSidebar } from "./calendar-sidebar";
 import { MonthView } from "./views/month-view";
 import { WeekView } from "./views/week-view";
 import { DayView } from "./views/day-view";
@@ -51,7 +50,6 @@ export function CalendarClient({
     external: true,
     externalSubscriptions: {},
   });
-  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
@@ -521,11 +519,20 @@ export function CalendarClient({
   };
 
   return (
-    <div className="flex flex-col lg:flex-row h-[calc(100vh-4rem)]">
-      {/* Sidebar */}
-      <CalendarSidebar
-        isOpen={sidebarOpen}
-        onToggle={() => setSidebarOpen(!sidebarOpen)}
+    <div className="flex flex-col h-[calc(100vh-4rem)]">
+      <CalendarToolbar
+        currentDate={currentDate}
+        view={view}
+        onViewChange={setView}
+        onToday={goToToday}
+        onPrevious={goToPrevious}
+        onNext={goToNext}
+        canCreateEvents={canCreateEvents}
+        onCreateEvent={() => {
+          setSelectedDate(new Date());
+          setImportingEvent(null);
+          setCreateDialogOpen(true);
+        }}
         visibility={visibility}
         onToggleVisibility={toggleVisibility}
         onToggleExternalSubscription={toggleExternalSubscription}
@@ -533,26 +540,7 @@ export function CalendarClient({
         onSyncComplete={fetchExternalEvents}
       />
 
-      {/* Main content */}
-      <main className="flex-1 flex flex-col overflow-hidden">
-        <CalendarToolbar
-          currentDate={currentDate}
-          view={view}
-          onViewChange={setView}
-          onToday={goToToday}
-          onPrevious={goToPrevious}
-          onNext={goToNext}
-          onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
-          canCreateEvents={canCreateEvents}
-          onCreateEvent={() => {
-            setSelectedDate(new Date());
-            setImportingEvent(null);
-            setCreateDialogOpen(true);
-          }}
-        />
-
-        <div className="flex-1 overflow-auto p-4">{renderView()}</div>
-      </main>
+      <div className="flex-1 overflow-auto p-4">{renderView()}</div>
 
       {/* Create event dialog */}
       {canCreateEvents && (

@@ -24,12 +24,30 @@ import { createClient } from "@/lib/supabase/client";
 import { ShieldCheck, Loader2, Users, CheckCircle } from "lucide-react";
 import type { WorkspaceInvitationData } from "@/types/onboarding";
 
+function safeInternalPath(pathname: string | null, fallback: string) {
+  if (!pathname) return fallback;
+  if (!pathname.startsWith("/")) return fallback;
+  if (pathname.startsWith("//")) return fallback;
+  return pathname;
+}
+
 function SignupContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   // Check for workspace invitation token in URL
   const invitationToken = searchParams.get("invitation_token");
   const invitedEmail = searchParams.get("email");
+  const redirectTo = searchParams.get("redirect");
+  const useTemplateId = searchParams.get("use");
+  const safeRedirect = safeInternalPath(redirectTo, "/library");
+  const loginHref = `/login?${new URLSearchParams(
+    Object.fromEntries(
+      [
+        ["redirect", safeRedirect],
+        ["use", useTemplateId ?? ""],
+      ].filter((entry) => entry[1].length > 0)
+    )
+  ).toString()}`;
 
   // Workspace invitation state
   const [isWorkspaceInvite, setIsWorkspaceInvite] = useState(false);
@@ -213,7 +231,7 @@ function SignupContent() {
           if (signInError) {
             toast.error("This email is already registered. Please use the login page instead.");
             setTimeout(() => {
-              router.push("/login");
+              router.push(loginHref);
             }, 2000);
           } else if (signInData.user) {
             // Check if user has a profile
@@ -231,8 +249,14 @@ function SignupContent() {
               toast.info("Complete Setup", { description: "Please complete your profile setup." });
               router.push("/onboarding");
             } else {
-              // User has profile - redirect to dashboard
-              router.push("/dashboard");
+              if (useTemplateId) {
+                const importUrl = `/library/import?use=${encodeURIComponent(useTemplateId)}&redirect=${encodeURIComponent(safeRedirect)}`;
+                router.push(importUrl);
+              } else if (redirectTo) {
+                router.push(safeRedirect);
+              } else {
+                router.push("/dashboard");
+              }
             }
             router.refresh();
           }
@@ -550,7 +574,7 @@ function SignupContent() {
             <p className="text-center text-sm text-muted-foreground">
               Already have an account?{" "}
               <Link
-                href="/login"
+                href={loginHref}
                 className="font-medium underline underline-offset-4 hover:text-foreground"
               >
                 Sign in
@@ -565,7 +589,7 @@ function SignupContent() {
           <p className="text-center text-sm text-muted-foreground w-full">
             Already have an account?{" "}
             <Link
-              href="/login"
+              href={loginHref}
               className="font-medium underline underline-offset-4 hover:text-foreground"
             >
               Sign in
