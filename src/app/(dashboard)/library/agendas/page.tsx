@@ -9,8 +9,6 @@ export const metadata: Metadata = {
   description: "Browse and use agenda templates.",
 };
 
-export const revalidate = 0;
-
 export default async function AgendaTemplatesPage() {
   const { templates, workspaceId, userId } = await fetchLibraryTemplates();
 

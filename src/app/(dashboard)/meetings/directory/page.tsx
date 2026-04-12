@@ -1,38 +1,26 @@
 import { createClient } from "@/lib/supabase/server";
-import { redirect } from "next/navigation";
 import { DirectoryClient } from "@/app/(dashboard)/participants/directory-client";
 import { Metadata } from "next";
 import { DirectoryView } from "@/lib/directory-views";
+import { getDashboardRequestContext } from "@/lib/dashboard/request-context";
 
 export const metadata: Metadata = {
     title: "Directory | Beespo",
     description: "Manage people directory and assignments",
 };
 
-export const dynamic = "force-dynamic";
-
 interface DirectoryPageProps {
     searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
 export default async function DirectoryPage({ searchParams }: DirectoryPageProps) {
-    const supabase = await createClient();
-
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) redirect("/login");
+    const [{ profile }, supabase] = await Promise.all([
+        getDashboardRequestContext(),
+        createClient(),
+    ]);
 
     const params = await searchParams;
     const searchQuery = typeof params?.search === "string" ? params.search : "";
-
-    // Get user's profile and workspace
-    const { data: profile } = await (supabase
-        .from("profiles")
-        .select("workspace_id, role")
-        .eq("id", user.id)
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .single() as any);
-
-    if (!profile?.workspace_id) redirect("/onboarding");
 
     // ── Query 1: directory + tags ───────────────────────────────────────────
     // Keep this simple (no deep nesting) — PostgREST can't resolve
@@ -65,7 +53,7 @@ export default async function DirectoryPage({ searchParams }: DirectoryPageProps
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const viewsQueryPromise = (supabase.from("agenda_views") as any)
-        .select("*")
+        .select("id, workspace_id, created_by, name, view_type, filters, created_at, updated_at")
         .eq("workspace_id", profile.workspace_id)
         .eq("view_type", "directory")
         .order("created_at", { ascending: true });

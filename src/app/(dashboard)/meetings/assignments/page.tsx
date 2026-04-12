@@ -1,37 +1,20 @@
 import { Metadata } from "next"
-import { redirect } from "next/navigation"
 
 import { AssignmentsClient } from "@/components/assignments/assignments-client"
 import { createClient } from "@/lib/supabase/server"
 import { AssignmentView } from "@/lib/table-views"
+import { getDashboardRequestContext } from "@/lib/dashboard/request-context"
 
 export const metadata: Metadata = {
   title: "Assignments | Beespo",
   description: "Track meeting assignments across your workspace",
 }
 
-export const dynamic = "force-dynamic"
-
 export default async function AssignmentsPage() {
-  const supabase = await createClient()
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) {
-    redirect("/login")
-  }
-
-  const { data: profile } = await (
-    supabase.from("profiles") as ReturnType<typeof supabase.from>
-  )
-    .select("workspace_id")
-    .eq("id", user.id)
-    .single()
-
-  if (!profile?.workspace_id) {
-    redirect("/onboarding")
-  }
+  const [{ profile }, supabase] = await Promise.all([
+    getDashboardRequestContext(),
+    createClient(),
+  ])
 
   // Step 1: fetch raw assignment rows only (no nested joins).
   const { data: assignmentsData, error: assignmentsError } = await (
@@ -161,7 +144,7 @@ export default async function AssignmentsPage() {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: assignmentViewsData } = await (supabase.from("agenda_views") as any)
-    .select("*")
+    .select("id, workspace_id, created_by, name, view_type, filters, created_at, updated_at")
     .eq("workspace_id", profile.workspace_id)
     .eq("view_type", "assignments")
     .order("created_at", { ascending: true })

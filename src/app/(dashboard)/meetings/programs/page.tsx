@@ -1,37 +1,19 @@
 import { createClient } from "@/lib/supabase/server"
-import { redirect } from "next/navigation"
 import { MeetingsClient } from "@/components/meetings/meetings-client"
 import { Metadata } from "next"
 import { AgendaFilter } from "@/lib/agenda-views"
+import { getDashboardRequestContext } from "@/lib/dashboard/request-context"
 
 export const metadata: Metadata = {
   title: "Programs | Beespo",
   description: "Manage audience-facing plans and conducting-ready program workspaces",
 }
 
-export const dynamic = "force-dynamic"
-
 export default async function ProgramsPage() {
-  const supabase = await createClient()
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) {
-    redirect("/login")
-  }
-
-  const { data: profile } = await (
-    supabase.from("profiles") as ReturnType<typeof supabase.from>
-  )
-    .select("role, workspace_id")
-    .eq("id", user.id)
-    .single()
-
-  if (!profile || !profile.workspace_id) {
-    redirect("/onboarding")
-  }
+  const [{ user, profile }, supabase] = await Promise.all([
+    getDashboardRequestContext(),
+    createClient(),
+  ])
 
   const isLeader = profile.role === "leader" || profile.role === "admin"
 
@@ -136,7 +118,7 @@ export default async function ProgramsPage() {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: programFiltersData } = await (supabase.from("agenda_views") as any)
-    .select("*")
+    .select("id, workspace_id, created_by, name, view_type, filters, created_at, updated_at")
     .eq("workspace_id", profile.workspace_id)
     .eq("view_type", "programs")
     .order("created_at", { ascending: true })

@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { getProfile, type CachedProfile } from "@/lib/supabase/cached-queries";
+import { measureAsync } from "@/lib/performance/measure";
 
 export type DashboardRequestContext = {
   user: User;
@@ -13,27 +14,29 @@ export type DashboardRequestContext = {
 
 export const getDashboardRequestContext = cache(
   async (): Promise<DashboardRequestContext> => {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    return measureAsync("dashboard.request_context", async () => {
+      const supabase = await createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
 
-    if (!user) {
-      redirect("/login");
-    }
+      if (!user) {
+        redirect("/login");
+      }
 
-    const profile = await getProfile(user.id);
+      const profile = await getProfile(user.id);
 
-    if (!profile?.workspace_id) {
-      redirect("/onboarding");
-    }
+      if (!profile?.workspace_id) {
+        redirect("/onboarding");
+      }
 
-    return {
-      user,
-      profile: {
-        ...profile,
-        workspace_id: profile.workspace_id,
-      },
-    };
+      return {
+        user,
+        profile: {
+          ...profile,
+          workspace_id: profile.workspace_id,
+        },
+      };
+    }, { thresholdMs: 25 });
   }
 );

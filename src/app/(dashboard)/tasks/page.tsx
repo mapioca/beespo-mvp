@@ -9,8 +9,6 @@ export const metadata: Metadata = {
     description: "Manage your action items and assignments",
 }
 
-export const dynamic = "force-dynamic"
-
 type TaskWithRelations = {
     id: string
     title: string

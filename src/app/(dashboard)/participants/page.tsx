@@ -8,8 +8,6 @@ export const metadata: Metadata = {
     description: "Manage people directory and assignments",
 };
 
-export const dynamic = "force-dynamic";
-
 interface ParticipantsPageProps {
     searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }

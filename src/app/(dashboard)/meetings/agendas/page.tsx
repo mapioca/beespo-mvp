@@ -9,8 +9,6 @@ export const metadata: Metadata = {
   description: "Manage your meetings and agendas",
 }
 
-export const dynamic = "force-dynamic"
-
 export default async function AgendasPage() {
   const [{ user, profile }, supabase] = await Promise.all([
     getDashboardRequestContext(),

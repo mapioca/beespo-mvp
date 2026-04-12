@@ -10,8 +10,6 @@ export const metadata: Metadata = {
     description: "Create and manage feedback forms",
 }
 
-export const dynamic = "force-dynamic"
-
 export default async function FormsPage() {
     const [{ profile }, supabase] = await Promise.all([
         getDashboardRequestContext(),

@@ -1,37 +1,19 @@
 import { createClient } from "@/lib/supabase/server"
-import { redirect } from "next/navigation"
 import { Metadata } from "next"
 import { EventsListClient, type EventListItem } from "@/components/calendar/events"
 import { startOfMonth, endOfMonth, addMonths, subMonths } from "date-fns"
+import { getDashboardRequestContext } from "@/lib/dashboard/request-context"
 
 export const metadata: Metadata = {
     title: "Events | Beespo",
     description: "View and manage all your calendar events",
 }
 
-export const revalidate = 0
-
 export default async function ScheduleEventsPage() {
-    const supabase = await createClient()
-
-    const {
-        data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-        redirect("/login")
-    }
-
-    const { data: profile } = await (
-        supabase.from("profiles") as ReturnType<typeof supabase.from>
-    )
-        .select("workspace_id, role")
-        .eq("id", user.id)
-        .single()
-
-    if (!profile || !profile.workspace_id) {
-        redirect("/onboarding")
-    }
+    const [{ profile }, supabase] = await Promise.all([
+        getDashboardRequestContext(),
+        createClient(),
+    ])
 
     const today = new Date()
     const rangeStart = subMonths(startOfMonth(today), 3).toISOString()

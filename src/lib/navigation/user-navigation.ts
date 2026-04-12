@@ -1,6 +1,7 @@
 import { cache } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
+import { measureAsync } from "@/lib/performance/measure";
 import type { Database } from "@/types/database";
 import type {
   FavoriteEntityType,
@@ -311,52 +312,54 @@ async function resolveCanonicalNavigationItem(
 export const getUserNavigationItems = cache(async (
   contextOverride?: UserNavigationContext
 ): Promise<UserNavigationItems> => {
-  const supabase = await createClient();
-  const context = await getCurrentNavigationContext(supabase, contextOverride);
+  return measureAsync("dashboard.navigation_items", async () => {
+    const supabase = await createClient();
+    const context = await getCurrentNavigationContext(supabase, contextOverride);
 
-  if (!context) {
-    return {
-      favorites: [],
-      recents: [],
-    };
-  }
+    if (!context) {
+      return {
+        favorites: [],
+        recents: [],
+      };
+    }
 
-  const [favoritesResult, recentsResult] = await Promise.all([
-    fromTable(supabase, "user_favorites")
-      .select("entity_id, entity_type, title, href, parent_title, position")
-      .eq("user_id", context.userId)
-      .eq("workspace_id", context.workspaceId)
-      .order("position", { ascending: true })
-      .order("updated_at", { ascending: false }),
-    fromTable(supabase, "user_recent_items")
-      .select("entity_id, entity_type, title, href, parent_title, last_viewed_at")
-      .eq("user_id", context.userId)
-      .eq("workspace_id", context.workspaceId)
-      .order("last_viewed_at", { ascending: false }),
-  ]);
+    const [favoritesResult, recentsResult] = await Promise.all([
+      fromTable(supabase, "user_favorites")
+        .select("entity_id, entity_type, title, href, parent_title, position")
+        .eq("user_id", context.userId)
+        .eq("workspace_id", context.workspaceId)
+        .order("position", { ascending: true })
+        .order("updated_at", { ascending: false }),
+      fromTable(supabase, "user_recent_items")
+        .select("entity_id, entity_type, title, href, parent_title, last_viewed_at")
+        .eq("user_id", context.userId)
+        .eq("workspace_id", context.workspaceId)
+        .order("last_viewed_at", { ascending: false }),
+    ]);
 
-  const favoritesRows = (favoritesResult.data ?? []) as SavedFavoriteRow[];
-  const recentRows = (recentsResult.data ?? []) as SavedRecentRow[];
-  const validIds = await getValidEntityIds(supabase, context.workspaceId, [
-    ...favoritesRows,
-    ...recentRows,
-  ]);
+    const favoritesRows = (favoritesResult.data ?? []) as SavedFavoriteRow[];
+    const recentRows = (recentsResult.data ?? []) as SavedRecentRow[];
+    const validIds = await getValidEntityIds(supabase, context.workspaceId, [
+      ...favoritesRows,
+      ...recentRows,
+    ]);
 
-  const favorites: NavigationFavoriteItem[] = favoritesRows
-    .filter((row) => validIds.get(row.entity_type as FavoriteEntityType)?.has(row.entity_id))
-    .map((row) => ({
-      ...hydrateNavigationItem(row),
-      position: row.position,
-    }));
+    const favorites: NavigationFavoriteItem[] = favoritesRows
+      .filter((row) => validIds.get(row.entity_type as FavoriteEntityType)?.has(row.entity_id))
+      .map((row) => ({
+        ...hydrateNavigationItem(row),
+        position: row.position,
+      }));
 
-  const recents: NavigationRecentItem[] = recentRows
-    .filter((row) => validIds.get(row.entity_type as FavoriteEntityType)?.has(row.entity_id))
-    .map((row) => ({
-      ...hydrateNavigationItem(row),
-      lastViewedAt: row.last_viewed_at,
-    }));
+    const recents: NavigationRecentItem[] = recentRows
+      .filter((row) => validIds.get(row.entity_type as FavoriteEntityType)?.has(row.entity_id))
+      .map((row) => ({
+        ...hydrateNavigationItem(row),
+        lastViewedAt: row.last_viewed_at,
+      }));
 
-  return { favorites, recents };
+    return { favorites, recents };
+  }, { thresholdMs: 25 });
 });
 
 export async function isUserFavorite(

@@ -9,8 +9,6 @@ export const metadata: Metadata = {
   description: "Browse templates across programs, agendas, and forms.",
 };
 
-export const revalidate = 0;
-
 export default async function TemplatesPage() {
   const { templates, workspaceId, userId } = await fetchLibraryTemplates();
 

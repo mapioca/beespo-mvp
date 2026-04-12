@@ -9,8 +9,6 @@ export const metadata: Metadata = {
   description: "Manage time-based announcements for your organization",
 }
 
-export const dynamic = "force-dynamic"
-
 export default async function AnnouncementsPage() {
   const [{ profile }, supabase] = await Promise.all([
     getDashboardRequestContext(),

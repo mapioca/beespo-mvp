@@ -3,8 +3,6 @@ import { TablesClient } from "./tables-client"
 import type { DynamicTable } from "@/types/table-types"
 import { getDashboardRequestContext } from "@/lib/dashboard/request-context"
 
-export const dynamic = "force-dynamic"
-
 export default async function TablesPage() {
     const [{ profile }, supabase] = await Promise.all([
         getDashboardRequestContext(),

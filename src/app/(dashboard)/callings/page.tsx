@@ -1,32 +1,12 @@
 import { createClient } from "@/lib/supabase/server";
-import { redirect } from "next/navigation";
 import { CallingsPageClient } from "./callings-page-client";
-
-// Disable caching to ensure updates appear immediately
-export const revalidate = 0;
+import { getDashboardRequestContext } from "@/lib/dashboard/request-context";
 
 export default async function CallingsPage() {
-    const supabase = await createClient();
-
-    const {
-        data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-        redirect("/login");
-    }
-
-    // Get user profile to check role
-    const { data: profile } = await (supabase
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .from("profiles") as any)
-        .select("workspace_id, role")
-        .eq("id", user.id)
-        .single();
-
-    if (!profile || !profile.workspace_id) {
-        redirect("/onboarding");
-    }
+    const [{ profile }, supabase] = await Promise.all([
+        getDashboardRequestContext(),
+        createClient(),
+    ]);
 
     // Get all active processes with their callings for pipeline view
     const { data: processes, error: processesError } = await (supabase

@@ -10,8 +10,6 @@ export const metadata: Metadata = {
     description: "Your interactive calendar view",
 };
 
-export const revalidate = 0;
-
 export default async function ScheduleCalendarPage() {
     const [{ profile }, supabase] = await Promise.all([
         getDashboardRequestContext(),

@@ -37,6 +37,7 @@ interface SidebarUserProfileProps {
 export function SidebarUserProfile({ name, email, userId, roleTitle, avatarUrl, isCollapsed = false }: SidebarUserProfileProps) {
     const [supportModalOpen, setSupportModalOpen] = useState(false)
     const [unreadCount, setUnreadCount] = useState(0)
+    const [realtimeEnabled, setRealtimeEnabled] = useState(false)
 
     const initials = name
         ?.split(" ")
@@ -52,11 +53,35 @@ export function SidebarUserProfile({ name, email, userId, roleTitle, avatarUrl, 
     }, [])
 
     useEffect(() => {
-        fetchUnreadCount()
+        let timeoutId: ReturnType<typeof setTimeout> | null = null
+        let cancelled = false
+
+        const activate = async () => {
+            if (cancelled) return
+            await fetchUnreadCount()
+            if (!cancelled) {
+                setRealtimeEnabled(true)
+            }
+        }
+
+        timeoutId = setTimeout(() => {
+            void activate()
+        }, 1200)
+
+        return () => {
+            cancelled = true
+            if (timeoutId) {
+                clearTimeout(timeoutId)
+            }
+        }
     }, [fetchUnreadCount])
 
     // Supabase Realtime subscription for live unread count
     useEffect(() => {
+        if (!realtimeEnabled) {
+            return
+        }
+
         const supabase = createClient()
         const channel = supabase
             .channel(`sidebar-notifications-${userId}`)
@@ -90,7 +115,7 @@ export function SidebarUserProfile({ name, email, userId, roleTitle, avatarUrl, 
         return () => {
             supabase.removeChannel(channel)
         }
-    }, [userId, fetchUnreadCount])
+    }, [userId, fetchUnreadCount, realtimeEnabled])
 
     const avatarElement = (
         <Avatar className={cn("border shrink-0", isCollapsed ? "h-8 w-8" : "h-9 w-9")}>
@@ -103,7 +128,7 @@ export function SidebarUserProfile({ name, email, userId, roleTitle, avatarUrl, 
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
                 {isCollapsed ? (
-                    <button className="relative rounded-full focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
+                    <button className="relative rounded-full focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2" onMouseEnter={() => setRealtimeEnabled(true)} onFocus={() => setRealtimeEnabled(true)}>
                         {avatarElement}
                         {unreadCount > 0 && (
                             <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-0.5 text-[10px] font-bold text-primary-foreground">
@@ -112,7 +137,7 @@ export function SidebarUserProfile({ name, email, userId, roleTitle, avatarUrl, 
                         )}
                     </button>
                 ) : (
-                    <Button variant="ghost" size="icon" className="text-nav hover:text-nav-strong relative h-8 w-8 shrink-0">
+                    <Button variant="ghost" size="icon" className="text-nav hover:text-nav-strong relative h-8 w-8 shrink-0" onMouseEnter={() => setRealtimeEnabled(true)} onFocus={() => setRealtimeEnabled(true)}>
                         <MoreHorizontal className="h-4 w-4" />
                         {unreadCount > 0 && (
                             <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-0.5 text-[10px] font-bold text-primary-foreground">
