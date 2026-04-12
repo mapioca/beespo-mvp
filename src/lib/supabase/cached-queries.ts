@@ -1,6 +1,19 @@
 import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import type { FeatureTier } from "@/types/database";
+import type { User } from "@supabase/supabase-js";
+
+/**
+ * Fetches the current authenticated user.
+ * Wrapped in React cache() to prevent redundant auth service calls.
+ */
+export const getCachedUser = cache(async (): Promise<User | null> => {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  return user;
+});
 
 export type CachedProfile = {
   full_name: string;
