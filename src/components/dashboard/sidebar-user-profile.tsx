@@ -33,6 +33,7 @@ interface SidebarUserProfileProps {
     isCollapsed?: boolean
     isPinned?: boolean
     onTogglePinned?: () => void
+    onMenuOpenChange?: (open: boolean) => void
 }
 
 export function SidebarUserProfile({
@@ -43,8 +44,15 @@ export function SidebarUserProfile({
     avatarUrl,
     isCollapsed = false,
     isPinned = false,
-    onTogglePinned
+    onTogglePinned,
+    onMenuOpenChange
 }: SidebarUserProfileProps) {
+    const [dropdownOpen, setDropdownOpen] = useState(false)
+
+    const handleOpenChange = (open: boolean) => {
+        setDropdownOpen(open)
+        onMenuOpenChange?.(open)
+    }
     const [supportModalOpen, setSupportModalOpen] = useState(false)
     const [unreadCount, setUnreadCount] = useState(0)
     const [realtimeEnabled, setRealtimeEnabled] = useState(false)
@@ -135,7 +143,7 @@ export function SidebarUserProfile({
     )
 
     const dropdownMenu = (
-        <DropdownMenu>
+        <DropdownMenu open={dropdownOpen} onOpenChange={handleOpenChange}>
             <DropdownMenuTrigger asChild>
                 {isCollapsed ? (
                     <button className="relative rounded-full focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2" onMouseEnter={() => setRealtimeEnabled(true)} onFocus={() => setRealtimeEnabled(true)}>
@@ -199,11 +207,13 @@ export function SidebarUserProfile({
                             <>
                                 <PinOff className="mr-2 h-4 w-4" />
                                 <span>Unpin Sidebar</span>
+                                <span className="ml-auto text-[10px] opacity-50 font-sans tracking-widest">⌘B</span>
                             </>
                         ) : (
                             <>
                                 <Pin className="mr-2 h-4 w-4" />
                                 <span>Pin Sidebar</span>
+                                <span className="ml-auto text-[10px] opacity-50 font-sans tracking-widest">⌘B</span>
                             </>
                         )}
                     </DropdownMenuItem>

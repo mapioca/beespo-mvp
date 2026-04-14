@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback, useRef } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
@@ -10,9 +10,7 @@ import {
   CheckSquare,
   HandHeart,
   Database,
-  LayoutTemplate,
-  Pin,
-  PinOff,
+  LayoutTemplate
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { TooltipProvider } from "@/components/ui/tooltip"
@@ -79,10 +77,11 @@ export function AppSidebar({
   } = useSidebarState(defaultExpandedGroups)
 
   const [isHovering, setIsHovering] = useState(false)
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
   const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const sidebarRef = useRef<HTMLElement>(null)
 
-  const isExpanded = forceExpanded || isHovering// When not force-expanded (mobile/fixed shell), it behaves as an overlay drawer
+  const isExpanded = forceExpanded || isHovering || isMenuOpen // Stay open if hovered OR menu expanded
 
   const clearHoverTimer = useCallback(() => {
     if (hoverTimerRef.current) {
@@ -107,6 +106,18 @@ export function AppSidebar({
     }, HOVER_COLLAPSE_DELAY)
   }, [forceExpanded, clearHoverTimer])
 
+  // Keyboard shortcut: Cmd+B (Mac) or Ctrl+B (Windows/Linux)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "b") {
+        e.preventDefault()
+        togglePinned()
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown)
+    return () => window.removeEventListener("keydown", handleKeyDown)
+  }, [togglePinned])
+
   return (
     <TooltipProvider delayDuration={0}>
       {/* Outer wrapper — reserves layout space ONLY when forceExpanded (e.g. mobile sheet) */}
@@ -122,6 +133,10 @@ export function AppSidebar({
           ref={sidebarRef}
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
+          onDoubleClick={(e) => {
+            // Only trigger if double-clicking the sidebar itself, not buttons/links
+            if (e.target === e.currentTarget) togglePinned()
+          }}
           className={cn(
             "fixed transition-all duration-300 ease-out z-[100] flex flex-col group overflow-hidden",
             // Collapsed state: just an edge-hover trigger
@@ -138,10 +153,16 @@ export function AppSidebar({
         >
           {/* Inner content — always at full expanded width (w-52).
               The aside clips it; the drawer animation just reveals/hides. */}
-          <div className={cn(
-            "flex flex-col h-full w-full shrink-0 transition-all duration-200",
-            !isExpanded && !isPinned && "opacity-0 pointer-events-none"
-          )}>
+          <div 
+            onDoubleClick={(e) => {
+              // Toggle if clicking background or non-interactive areas
+              if (e.target === e.currentTarget) togglePinned()
+            }}
+            className={cn(
+              "flex flex-col h-full w-full shrink-0 transition-all duration-200",
+              !isExpanded && !isPinned && "opacity-0 pointer-events-none"
+            )}
+          >
 
             {/* Header — logo only (pin removed) */}
             <div className="flex h-[30px] items-center justify-between px-4 mt-2.5 mb-1">
@@ -158,21 +179,6 @@ export function AppSidebar({
                   Beespo
                 </span>
               </Link>
-              
-              <button
-                onClick={togglePinned}
-                className={cn(
-                  "p-1 rounded-md transition-all hover:bg-accent text-muted-foreground/60 hover:text-foreground",
-                  !isExpanded && "opacity-0 invisible"
-                )}
-                title={isPinned ? "Unpin navigation" : "Pin navigation"}
-              >
-                {isPinned ? (
-                  <PinOff className="h-3.5 w-3.5 rotate-45" />
-                ) : (
-                  <Pin className="h-3.5 w-3.5" />
-                )}
-              </button>
             </div>
 
             {/* Navigation — always rendered in expanded layout */}
@@ -215,6 +221,7 @@ export function AppSidebar({
               isCollapsed={!isExpanded}
               isPinned={isPinned}
               onTogglePinned={togglePinned}
+              onMenuOpenChange={setIsMenuOpen}
             />
           </div>
         </aside>

@@ -64,7 +64,7 @@ export function DomainShell({
 
       const next = { ...prev }
       for (const [href, isActive] of Object.entries(activeGroups)) {
-        if (isActive && next[href] !== true) {
+        if (isActive && !next[href]) {
           next[href] = true
         }
       }
@@ -89,7 +89,7 @@ export function DomainShell({
   return (
     <div className="flex h-full min-h-0 flex-col md:flex-row gap-1.5 md:gap-1 xl:gap-1.5 2xl:gap-1.5">
       <aside className="md:w-64 md:shrink-0 h-full flex flex-col">
-        <div className="flex-1 flex flex-col bg-app-island border border-app-island rounded-[16px] shadow-[var(--shadow-app-island)] overflow-hidden">
+        <div className="flex-1 flex flex-col bg-card/60 backdrop-blur-md border border-app-island rounded-[16px] shadow-[var(--shadow-app-island)] overflow-hidden">
           <div className="hidden px-5 pb-3 pt-5 md:block">
             <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground/80">
               {title}
