@@ -11,6 +11,8 @@ import {
   HandHeart,
   Database,
   LayoutTemplate,
+  Pin,
+  PinOff,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { TooltipProvider } from "@/components/ui/tooltip"
@@ -43,11 +45,9 @@ const defaultExpandedGroups: Record<string, boolean> = {
 }
 
 const HOVER_EXPAND_DELAY = 80
-const HOVER_COLLAPSE_DELAY = 250
+const HOVER_COLLAPSE_DELAY = 450
 
 // Smooth deceleration curve — starts fast, ends gently (drawer feel)
-const DRAWER_EASING = "cubic-bezier(0.32, 0.72, 0, 1)"
-
 interface AppSidebarProps {
   userName: string
   userEmail: string
@@ -72,6 +72,8 @@ export function AppSidebar({
   const recents = useNavigationStore((state) => state.recents)
 
   const {
+    isPinned,
+    togglePinned,
     isGroupExpanded,
     toggleGroup,
   } = useSidebarState(defaultExpandedGroups)
@@ -80,8 +82,7 @@ export function AppSidebar({
   const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const sidebarRef = useRef<HTMLElement>(null)
 
-  const isExpanded = forceExpanded || isHovering
-  const isOverlay = !forceExpanded // When not force-expanded (mobile/fixed shell), it behaves as an overlay drawer
+  const isExpanded = forceExpanded || isHovering// When not force-expanded (mobile/fixed shell), it behaves as an overlay drawer
 
   const clearHoverTimer = useCallback(() => {
     if (hoverTimerRef.current) {
@@ -111,8 +112,8 @@ export function AppSidebar({
       {/* Outer wrapper — reserves layout space ONLY when forceExpanded (e.g. mobile sheet) */}
       <div
         className={cn(
-          "relative z-40 shrink-0 h-full",
-          forceExpanded ? "w-64" : "w-0",
+          "relative z-40 shrink-0 h-full transition-[width] duration-300 ease-out",
+          forceExpanded ? "w-64" : (isPinned ? "w-14" : "w-0"),
           className
         )}
       >
@@ -124,9 +125,11 @@ export function AppSidebar({
           className={cn(
             "fixed transition-all duration-300 ease-out z-[100] flex flex-col group overflow-hidden",
             // Collapsed state: just an edge-hover trigger
-            !isExpanded && "top-0 left-0 h-screen w-2 bg-transparent pointer-events-auto",
+            !isExpanded && !isPinned && "top-0 left-0 h-screen w-2 bg-transparent pointer-events-auto",
+            // Pinned state (not expanded): narrow island strip
+            !isExpanded && isPinned && "top-1.5 bottom-1.5 left-0 w-14 rounded-r-[16px] bg-app-island border-y border-r border-app-island shadow-sm opacity-100",
             // Expanded state: a detached island card
-            isExpanded && "top-1.5 bottom-1.5 left-1.5 w-[240px] rounded-[16px] bg-app-island border border-app-island shadow-2xl opacity-100",
+            isExpanded && "top-1.5 bottom-1.5 left-0 w-[240px] rounded-r-[16px] bg-app-island border-y border-r border-app-island shadow-2xl opacity-100",
             // Dashboard layout interactions
             forceExpanded && "relative translate-x-0 w-64 border-r bg-background top-0 left-0 h-screen rounded-none border-none shadow-none",
             !forceExpanded && !isExpanded && "translate-x-0",
@@ -136,19 +139,40 @@ export function AppSidebar({
           {/* Inner content — always at full expanded width (w-52).
               The aside clips it; the drawer animation just reveals/hides. */}
           <div className={cn(
-            "flex flex-col h-full w-52 shrink-0 transition-opacity duration-200",
-            !isExpanded && "opacity-0 pointer-events-none"
+            "flex flex-col h-full w-full shrink-0 transition-all duration-200",
+            !isExpanded && !isPinned && "opacity-0 pointer-events-none"
           )}>
 
             {/* Header — logo only (pin removed) */}
-            <div className="flex h-[30px] items-center px-4 mt-2.5 mb-1">
+            <div className="flex h-[30px] items-center justify-between px-4 mt-2.5 mb-1">
               <Link
                 href="/dashboard"
                 className="flex items-center select-none text-foreground"
                 aria-label="Beespo home"
               >
                 <BeespoLogo className="h-5 w-5 shrink-0" />
+                <span className={cn(
+                  "ml-2.5 font-bold tracking-tight transition-all duration-200",
+                  !isExpanded && "opacity-0 invisible w-0"
+                )}>
+                  Beespo
+                </span>
               </Link>
+              
+              <button
+                onClick={togglePinned}
+                className={cn(
+                  "p-1 rounded-md transition-all hover:bg-accent text-muted-foreground/60 hover:text-foreground",
+                  !isExpanded && "opacity-0 invisible"
+                )}
+                title={isPinned ? "Unpin navigation" : "Pin navigation"}
+              >
+                {isPinned ? (
+                  <PinOff className="h-3.5 w-3.5 rotate-45" />
+                ) : (
+                  <Pin className="h-3.5 w-3.5" />
+                )}
+              </button>
             </div>
 
             {/* Navigation — always rendered in expanded layout */}
@@ -158,7 +182,7 @@ export function AppSidebar({
                   key={section.id}
                   section={section}
                   pathname={pathname}
-                  isCollapsed={false}
+                  isCollapsed={!isExpanded}
                   sidebarExpanded={isExpanded}
                   isGroupExpanded={isGroupExpanded}
                   toggleGroup={toggleGroup}
@@ -168,14 +192,14 @@ export function AppSidebar({
               <SidebarSavedItemsSection
                 title="Favorites"
                 items={favorites}
-                isCollapsed={false}
+                isCollapsed={!isExpanded}
                 sidebarExpanded={isExpanded}
                 itemType="favorites"
               />
               <SidebarSavedItemsSection
                 title="Recent"
                 items={recents}
-                isCollapsed={false}
+                isCollapsed={!isExpanded}
                 sidebarExpanded={isExpanded}
                 itemType="recents"
               />
@@ -188,7 +212,9 @@ export function AppSidebar({
               userId={userId}
               roleTitle={userRoleTitle}
               avatarUrl={userAvatarUrl}
-              isCollapsed={false}
+              isCollapsed={!isExpanded}
+              isPinned={isPinned}
+              onTogglePinned={togglePinned}
             />
           </div>
         </aside>

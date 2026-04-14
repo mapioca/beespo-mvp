@@ -36,7 +36,7 @@ export function SidebarNavItem({
           : !isActive && "text-nav hover:bg-nav-hover hover:text-nav-strong",
         // When collapsed + active, no bg on the row — the icon gets it instead
         !sidebarExpanded && isActive && "text-nav-strong",
-        isCollapsed && "justify-center px-2",
+        isCollapsed && "px-2",
       )}
     >
       {/* Icon wrapper — always 26x26 with -m-1 so it occupies 18px of layout space.

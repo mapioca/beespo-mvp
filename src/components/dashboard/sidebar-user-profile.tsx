@@ -6,13 +6,12 @@ import {
     DropdownMenuContent,
     DropdownMenuGroup,
     DropdownMenuItem,
-    DropdownMenuLabel,
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
-import { MoreHorizontal, User, CreditCard, Bell, Sparkles, LogOut, BookOpen, MessageSquare } from "lucide-react"
+import { MoreHorizontal, User, CreditCard, Bell, Sparkles, LogOut, BookOpen, MessageSquare, Pin, PinOff } from "lucide-react"
 import { signOutAction } from "@/lib/actions/auth-actions"
 import { getUnreadCount } from "@/lib/actions/notification-actions"
 import { createClient } from "@/lib/supabase/client"
@@ -32,9 +31,20 @@ interface SidebarUserProfileProps {
     roleTitle?: string
     avatarUrl?: string
     isCollapsed?: boolean
+    isPinned?: boolean
+    onTogglePinned?: () => void
 }
 
-export function SidebarUserProfile({ name, email, userId, roleTitle, avatarUrl, isCollapsed = false }: SidebarUserProfileProps) {
+export function SidebarUserProfile({
+    name,
+    email,
+    userId,
+    roleTitle,
+    avatarUrl,
+    isCollapsed = false,
+    isPinned = false,
+    onTogglePinned
+}: SidebarUserProfileProps) {
     const [supportModalOpen, setSupportModalOpen] = useState(false)
     const [unreadCount, setUnreadCount] = useState(0)
     const [realtimeEnabled, setRealtimeEnabled] = useState(false)
@@ -177,6 +187,26 @@ export function SidebarUserProfile({ name, email, userId, roleTitle, avatarUrl, 
                             <span>What&apos;s New</span>
                         </Link>
                     </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem 
+                        onClick={(e) => {
+                            e.preventDefault();
+                            onTogglePinned?.();
+                        }} 
+                        className="cursor-pointer"
+                    >
+                        {isPinned ? (
+                            <>
+                                <PinOff className="mr-2 h-4 w-4" />
+                                <span>Unpin Sidebar</span>
+                            </>
+                        ) : (
+                            <>
+                                <Pin className="mr-2 h-4 w-4" />
+                                <span>Pin Sidebar</span>
+                            </>
+                        )}
+                    </DropdownMenuItem>
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />
                 <DropdownMenuGroup>
@@ -210,7 +240,7 @@ export function SidebarUserProfile({ name, email, userId, roleTitle, avatarUrl, 
     if (isCollapsed) {
         return (
             <>
-                <div className="flex justify-center border-t border-border/70 p-2">
+                <div className="flex justify-start border-t border-border/70 p-2 pl-2.5">
                     <Tooltip>
                         <TooltipTrigger asChild>
                             {dropdownMenu}
