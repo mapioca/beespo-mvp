@@ -178,6 +178,30 @@
     --landing-nav-link-font-size: 0.875rem;
     --landing-nav-logo-font-size: 1.25rem;
     --landing-nav-mobile-panel-width: min(85vw, 20rem);
+    --settings-shell-max-width: 58rem;
+    --settings-shell-pad-x: 1.5rem;
+    --settings-shell-pad-y: 1.5rem;
+    --settings-title-size: 1.75rem;
+    --settings-description-size: 0.9rem;
+    --settings-label-size: 0.7rem;
+    --settings-label-tracking: 0.14em;
+    --settings-surface-bg: 0 0% 100%;
+    --settings-surface-border: 0 0% 89%;
+    --settings-surface-radius: 0.75rem;
+    --settings-row-min-height: 3.75rem;
+    --settings-row-padding-x: 1rem;
+    --settings-row-padding-y: 0.75rem;
+    --settings-row-hover: 0 0% 98%;
+    --settings-divider: 0 0% 91%;
+    --settings-input-bg: 0 0% 100%;
+    --settings-input-border: 0 0% 86%;
+    --settings-input-focus: 0 0% 18%;
+    --settings-meta-size: 0.75rem;
+    --settings-body-size: 0.875rem;
+    --settings-swatch-size: 1.15rem;
+    --settings-swatch-gap: 0.45rem;
+    --settings-swatch-border: 0 0% 84%;
+    --settings-swatch-ring: 0 0% 16%;
   }
 
   .dark {
@@ -333,6 +357,30 @@
     --landing-nav-link-font-size: 0.875rem;
     --landing-nav-logo-font-size: 1.25rem;
     --landing-nav-mobile-panel-width: min(85vw, 20rem);
+    --settings-shell-max-width: 58rem;
+    --settings-shell-pad-x: 1.5rem;
+    --settings-shell-pad-y: 1.5rem;
+    --settings-title-size: 1.75rem;
+    --settings-description-size: 0.9rem;
+    --settings-label-size: 0.7rem;
+    --settings-label-tracking: 0.14em;
+    --settings-surface-bg: 220 11% 10%;
+    --settings-surface-border: 220 10% 21%;
+    --settings-surface-radius: 0.75rem;
+    --settings-row-min-height: 3.75rem;
+    --settings-row-padding-x: 1rem;
+    --settings-row-padding-y: 0.75rem;
+    --settings-row-hover: 220 10% 13%;
+    --settings-divider: 220 9% 22%;
+    --settings-input-bg: 220 10% 12%;
+    --settings-input-border: 220 9% 25%;
+    --settings-input-focus: 0 0% 82%;
+    --settings-meta-size: 0.75rem;
+    --settings-body-size: 0.875rem;
+    --settings-swatch-size: 1.15rem;
+    --settings-swatch-gap: 0.45rem;
+    --settings-swatch-border: 220 10% 26%;
+    --settings-swatch-ring: 0 0% 88%;
   }
 }
 
