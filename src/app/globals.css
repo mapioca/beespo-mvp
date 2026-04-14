@@ -64,6 +64,7 @@
     --chrome-border: var(--cp-border); /* Subtle chrome dividers */
     --overlay: 0 0% 0% / 0.28; /* Modal overlay tint */
     --app-shell: var(--cp-canvas);
+    --app-main-card: 220 12% 99.5%;
     --app-island: var(--cp-surface);
     --app-island-border: var(--cp-border);
     --nav-hover: var(--cp-hover);
@@ -248,6 +249,8 @@
     --form-checkbox-checked-bg: 220 16% 21%;
     --form-checkbox-checked-border: 220 16% 21%;
     --form-checkbox-checked-check: 0 0% 100%;
+    --nav-secondary-hover-hsl: 220 10% 45%;
+    --app-main-card: 220 12% 99.5%;
   }
 
   .dark {
@@ -288,6 +291,7 @@
     --chrome-border: var(--cp-border);
     --overlay: 0 0% 0% / 0.6; /* Modal overlay tint */
     --app-shell: var(--cp-canvas);
+    --app-main-card: 220 12% 10.5%;
     --app-island: var(--cp-surface);
     --app-island-border: var(--cp-border);
     --nav-hover: 220 10% 14%;
@@ -451,6 +455,7 @@
     --form-checkbox-checked-bg: 220 12% 86%;
     --form-checkbox-checked-border: 220 12% 86%;
     --form-checkbox-checked-check: 220 14% 11%;
+    --nav-secondary-hover-hsl: 0 0% 100%;
   }
 }
 

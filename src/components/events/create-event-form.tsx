@@ -284,7 +284,7 @@ export function CreateEventForm({
 
   // ── Render ──────────────────────────────────────────────────────────────────
   return (
-    <form onSubmit={handleSubmit} className="flex h-full flex-col bg-[hsl(var(--settings-canvas))]">
+    <form onSubmit={handleSubmit} className="flex h-full flex-col">
       {/* Back link */}
       <div className="border-b border-border/60 px-6 py-3">
         <button
@@ -577,7 +577,7 @@ export function CreateEventForm({
       </div>
 
       {/* ── Sticky footer ────────────────────────────────────────────────── */}
-      <div className="border-t border-border/40 bg-[hsl(var(--settings-canvas))]/88 px-6 py-4 backdrop-blur supports-[backdrop-filter]:bg-[hsl(var(--settings-canvas))]/82">
+      <div className="border-t border-border/40 bg-app-main-card/88 px-6 py-4 backdrop-blur supports-[backdrop-filter]:bg-app-main-card/82">
         <div className="mx-auto flex w-full max-w-2xl items-center justify-end gap-3">
           <Button
             type="button"

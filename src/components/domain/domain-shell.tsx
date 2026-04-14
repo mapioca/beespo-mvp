@@ -116,7 +116,7 @@ export function DomainShell({
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                 isActive
                   ? "bg-primary/10 text-primary"
-                  : "text-muted-foreground hover:bg-accent hover:text-foreground",
+                  : "text-muted-foreground hover:bg-nav-secondary-hover/10 dark:hover:bg-nav-secondary-hover/5 hover:text-foreground",
                 item.disabled && "pointer-events-none opacity-50"
               )
 
@@ -162,7 +162,7 @@ export function DomainShell({
                           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                           childIsActive
                             ? "bg-primary/10 text-primary"
-                            : "text-muted-foreground hover:bg-accent hover:text-foreground",
+                            : "text-muted-foreground hover:bg-nav-secondary-hover/10 dark:hover:bg-nav-secondary-hover/5 hover:text-foreground",
                           child.disabled && "pointer-events-none opacity-50"
                         )
 
@@ -191,7 +191,7 @@ export function DomainShell({
           </nav>
         </div>
       </aside>
-      <div className="min-w-0 flex-1 overflow-auto bg-app-island border border-app-island rounded-[16px] shadow-[var(--shadow-app-island)]">
+      <div className="min-w-0 flex-1 overflow-auto bg-app-main-card border border-app-island-border rounded-[16px] shadow-[var(--shadow-app-island)]">
         {children}
       </div>
     </div>
