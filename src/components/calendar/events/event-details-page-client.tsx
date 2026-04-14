@@ -342,7 +342,7 @@ export function EventDetailsPageClient({
                 <Button asChild className="h-9 rounded-lg">
                   <Link href={`/meetings/${meeting.id}`}>
                     <ExternalLink className="mr-2 h-4 w-4" />
-                    Open {planType ? PLAN_TYPE_LABELS[planType].toLowerCase() : "meeting"}
+                    Open meeting
                   </Link>
                 </Button>
               </div>

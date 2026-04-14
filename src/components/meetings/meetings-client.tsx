@@ -404,7 +404,10 @@ export function MeetingsClient({
                                 label: meeting.title,
                                 actionLabel: "Open",
                             }))}
-                            onSelect={(meetingId) => router.push(`/meetings/${meetingId}`)}
+                            onSelect={(meetingId) => {
+                                const planRoute = workspace === "programs" ? "program" : "agenda";
+                                router.push(`/meetings/${planRoute}/${meetingId}`);
+                            }}
                             emptyText={`No matching ${workspaceConfig.pluralLabel}.`}
                         />
                         {isLeader && (

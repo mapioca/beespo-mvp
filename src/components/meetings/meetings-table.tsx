@@ -228,7 +228,13 @@ export function MeetingsTable({
                             <div className="flex flex-col gap-1.5">
                                 <div className="flex items-center gap-1.5">
                                     <Link
-                                        href={`/meetings/${meeting.id}`}
+                                        href={
+                                            meeting.plan_type === "program"
+                                                ? `/meetings/program/${meeting.id}`
+                                                : meeting.plan_type === "agenda"
+                                                    ? `/meetings/agenda/${meeting.id}`
+                                                    : `/meetings/${meeting.id}`
+                                        }
                                         className="rounded-sm text-[length:var(--table-body-font-size)] font-semibold text-foreground/90 hover:text-foreground hover:underline underline-offset-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                                     >
                                         {meeting.title}

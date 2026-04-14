@@ -22,20 +22,25 @@ export const createEventSchema = z.object({
 export const meetingModalitySchema = z.enum(["online", "in_person", "hybrid"]);
 export type MeetingModality = z.infer<typeof meetingModalitySchema>;
 
+export const meetingPlanTypeSchema = z.enum(["agenda", "program", "external"]);
+export type MeetingPlanType = z.infer<typeof meetingPlanTypeSchema>;
+
 export const createEventAndMeetingSchema = createEventSchema.extend({
   meeting: z.object({
     title: z.string().trim().optional().nullable(),
-    plan_type: z.enum(["agenda", "program"]).optional().nullable(),
+    plan_type: meetingPlanTypeSchema.optional().nullable(),
     template_id: uuidSchema.optional().nullable(),
     modality: meetingModalitySchema.optional().nullable(),
+    external_plan_url: z.string().trim().url().optional().nullable(),
   }).optional(),
 });
 
 export const linkMeetingToEventSchema = z.object({
   event_id: uuidSchema,
   title: z.string().trim().optional().nullable(),
-  plan_type: z.enum(["agenda", "program"]).optional().nullable(),
+  plan_type: meetingPlanTypeSchema.optional().nullable(),
   template_id: uuidSchema.optional().nullable(),
+  external_plan_url: z.string().trim().url().optional().nullable(),
 });
 
 export type CreateEventInput = z.infer<typeof createEventSchema>;

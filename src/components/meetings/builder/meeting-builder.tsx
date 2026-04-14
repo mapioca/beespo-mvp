@@ -46,6 +46,7 @@ import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription } from 
 import { List, Loader2, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { MeetingContextBar } from "./meeting-context-bar";
+import { MeetingPlanTopBar } from "./meeting-plan-top-bar";
 import {
     Dialog,
     DialogContent,
@@ -2270,6 +2271,32 @@ export function MeetingBuilder({
 
                         {builderMode === "planning" && (
                             <>
+                                {/* Unified plan top bar (inline essentials + role popover) */}
+                                <MeetingPlanTopBar
+                                    title={title}
+                                    onTitleChange={canEdit ? setTitle : () => {}}
+                                    date={date ?? null}
+                                    onDateChange={(d) => canEdit && form.setValue("date", d, { shouldValidate: true })}
+                                    time={time ?? ""}
+                                    onTimeChange={(t) => canEdit && form.setValue("time", t, { shouldValidate: true })}
+                                    presiding={presidingValue ?? ""}
+                                    onPresidingChange={(v) => canEdit && form.setValue("presiding", v, { shouldValidate: true })}
+                                    conducting={conductingValue ?? ""}
+                                    onConductingChange={(v) => canEdit && form.setValue("conducting", v, { shouldValidate: true })}
+                                    chorister={choristerValue ?? ""}
+                                    onChoristerChange={(v) => canEdit && form.setValue("chorister", v, { shouldValidate: true })}
+                                    organist={pianistOrganistValue ?? ""}
+                                    onOrganistChange={(v) => canEdit && form.setValue("pianistOrganist", v, { shouldValidate: true })}
+                                    location={linkedEvent?.location ?? null}
+                                    templates={templates}
+                                    templateId={selectedTemplateId === "none" ? null : selectedTemplateId}
+                                    onTemplateChange={(next) =>
+                                        canEdit && form.setValue("templateId", next, { shouldValidate: true })
+                                    }
+                                    canvasItemCount={canvasItems.length}
+                                    canEdit={canEdit}
+                                />
+
                                 {/* Mobile sheet toggle (hidden on lg+) — toolbox & properties */}
                                 <div className="lg:hidden flex items-center justify-between px-4 py-2 border-b bg-background shrink-0">
                                     <Sheet>
@@ -2317,23 +2344,8 @@ export function MeetingBuilder({
                                     </Sheet>
                                 </div>
 
-                                {/* 3-Column Workspace */}
+                                {/* 2-Column Workspace (canvas left, toolbox right) */}
                                 <div className="flex-1 flex overflow-hidden">
-                                    {/* Left Pane - Library */}
-                                    <div className="hidden lg:block w-64 h-full overflow-hidden shrink-0">
-                                        <ToolboxPane
-                                            onAddItem={canEdit ? handleAddCanvasItem : () => {}}
-                                            onItemsLoaded={setToolboxItems}
-                                            pinnedIds={pinnedToolboxIds}
-                                            recentIds={recentToolboxIds}
-                                            onTogglePin={togglePinnedToolboxItem}
-                                            outlineItems={canvasItems}
-                                            selectedItemId={selectedItemId}
-                                            onSelectItem={setSelectedItemId}
-                                            onDuplicateItem={canEdit ? handleDuplicateItem : undefined}
-                                        />
-                                    </div>
-
                                     {/* Center Pane - Canvas */}
                                     <div className="flex-1 h-full overflow-hidden min-w-0">
                                         <AgendaCanvas
@@ -2372,13 +2384,19 @@ export function MeetingBuilder({
                                         />
                                     </div>
 
-                                    {/* Right Pane - Properties */}
-                                    <div className="hidden lg:block w-[260px] h-full overflow-hidden shrink-0">
-                                        <PropertiesPane
-                                            templates={templates}
-                                            meetingNotes={meetingNotes}
-                                            onUpdateMeetingNotes={setMeetingNotes}
-                                            readOnly={!canEdit}
+                                    {/* Right Pane - Toolbox (Library) */}
+                                    <div className="hidden lg:block w-80 h-full overflow-hidden shrink-0 border-l border-border/60">
+                                        <ToolboxPane
+                                            onAddItem={canEdit ? handleAddCanvasItem : () => {}}
+                                            onItemsLoaded={setToolboxItems}
+                                            pinnedIds={pinnedToolboxIds}
+                                            recentIds={recentToolboxIds}
+                                            onTogglePin={togglePinnedToolboxItem}
+                                            outlineItems={canvasItems}
+                                            selectedItemId={selectedItemId}
+                                            onSelectItem={setSelectedItemId}
+                                            onDuplicateItem={canEdit ? handleDuplicateItem : undefined}
+                                            planType={initialEntryType === "program" ? "program" : "agenda"}
                                         />
                                     </div>
                                 </div>

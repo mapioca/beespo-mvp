@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { formatDistanceToNow } from "date-fns";
 import {
-    ArrowLeftRight,
     Link,
     Loader2,
     FileText,
@@ -56,7 +55,6 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { toast } from "@/lib/toast";
 import { FavoriteButton } from "@/components/navigation/favorite-button";
-import { MeetingLinkageStrip } from "./meeting-linkage-strip";
 import {
     generateMeetingPdf,
     generateMeetingDocx,
@@ -168,12 +166,8 @@ export function MeetingContextBar({
     onDelete,
     canEdit = true,
     lastAutosaveAt = null,
-    autosaveStatus = "idle",
-    planType = null,
-    linkedEvent = null,
-    meetingStatus = null,
-    onMeetingMetaChange,
-}: MeetingContextBarProps) {
+    autosaveStatus = "idle"
+    }: MeetingContextBarProps) {
     const [saveAsNewOpen, setSaveAsNewOpen] = useState(false);
     const [newTitle, setNewTitle] = useState("");
     const [isSavingAsNew, setIsSavingAsNew] = useState(false);
@@ -568,55 +562,6 @@ export function MeetingContextBar({
                             </DropdownMenu>
                         )}
 
-                        <StandardPopoverMenu>
-                            <StandardPopoverMenuTrigger asChild>
-                                <button
-                                    id="meeting-context-mode-switch-trigger"
-                                    type="button"
-                                    title="Switch mode"
-                                    className={cn(
-                                        "inline-flex h-8 w-8 items-center justify-center rounded-full sm:w-auto",
-                                        "border border-control bg-control text-foreground hover:bg-control-hover",
-                                        "px-0 sm:px-3.5 gap-2",
-                                        "transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                                    )}
-                                >
-                                    <ArrowLeftRight className="h-4 w-4 stroke-[1.6]" />
-                                    <span className="hidden sm:inline text-[12px] ml-1">Switch mode</span>
-                                    <span className="sr-only">Switch mode</span>
-                                </button>
-                            </StandardPopoverMenuTrigger>
-                            <StandardPopoverMenuContent align="end">
-                                <StandardPopoverMenuItem
-                                    onSelect={() => onModeChange("planning")}
-                                    active={mode === "planning"}
-                                >
-                                    Planning
-                                    <StandardPopoverMenuShortcut className="tabular-nums">
-                                        {modeShortcuts.planning}
-                                    </StandardPopoverMenuShortcut>
-                                </StandardPopoverMenuItem>
-                                <StandardPopoverMenuItem
-                                    onSelect={() => onModeChange("print-preview")}
-                                    active={mode === "print-preview"}
-                                >
-                                    Print Preview
-                                    <StandardPopoverMenuShortcut className="tabular-nums">
-                                        {modeShortcuts["print-preview"]}
-                                    </StandardPopoverMenuShortcut>
-                                </StandardPopoverMenuItem>
-                                <StandardPopoverMenuItem
-                                    onSelect={() => onModeChange("program")}
-                                    active={mode === "program"}
-                                >
-                                    Program
-                                    <StandardPopoverMenuShortcut className="tabular-nums">
-                                        {modeShortcuts.program}
-                                    </StandardPopoverMenuShortcut>
-                                </StandardPopoverMenuItem>
-                            </StandardPopoverMenuContent>
-                        </StandardPopoverMenu>
-
                         {isLeader && canEdit && (
                             <StandardPopoverMenu>
                                 <StandardPopoverMenuTrigger asChild>
@@ -678,17 +623,6 @@ export function MeetingContextBar({
                     }
                 />
 
-                {onMeetingMetaChange && (
-                    <MeetingLinkageStrip
-                        meetingId={initialMeetingId}
-                        meetingTitle={title}
-                        meetingStatus={meetingStatus}
-                        planType={planType}
-                        linkedEvent={linkedEvent}
-                        canManage={Boolean(isLeader && canEdit)}
-                        onMeetingMetaChange={onMeetingMetaChange}
-                    />
-                )}
             </div>
 
             {/* Save as New Meeting — dialog */}
