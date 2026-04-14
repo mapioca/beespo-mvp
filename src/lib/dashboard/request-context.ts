@@ -2,7 +2,7 @@ import { cache } from "react";
 import { redirect } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
-import { getProfile, type CachedProfile } from "@/lib/supabase/cached-queries";
+import type { CachedProfile } from "@/lib/supabase/cached-queries";
 import { measureAsync } from "@/lib/performance/measure";
 
 export type DashboardRequestContext = {
@@ -24,7 +24,14 @@ export const getDashboardRequestContext = cache(
         redirect("/login");
       }
 
-      const profile = await getProfile(user.id);
+      // Query profile on the same Supabase client used for auth in this request
+      // to avoid extra client/bootstrap overhead on the request hot path.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: profile } = await (supabase.from("profiles") as any)
+        .select("full_name, workspace_id, role, role_title, feature_tier, last_read_release_note_at, workspaces(name)")
+        .eq("id", user.id)
+        .eq("is_deleted", false)
+        .single();
 
       if (!profile?.workspace_id) {
         redirect("/onboarding");

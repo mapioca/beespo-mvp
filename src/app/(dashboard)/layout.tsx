@@ -16,8 +16,14 @@ export default async function DashboardLayout({
     createClient(),
   ]);
 
+  const initialNavigationItemsPromise = getUserNavigationItems({
+    userId: user.id,
+    workspaceId: profile.workspace_id,
+  });
+  const workspaceRequiresMfaPromise = checkWorkspaceMfaRequired(profile.workspace_id);
+
   // Workspace MFA enforcement
-  const workspaceRequiresMfa = await checkWorkspaceMfaRequired(profile.workspace_id);
+  const workspaceRequiresMfa = await workspaceRequiresMfaPromise;
   if (workspaceRequiresMfa) {
     const { data: factorsData } = await supabase.auth.mfa.listFactors();
     const hasVerifiedFactor = factorsData?.totp?.some(f => f.status === "verified");
@@ -38,10 +44,7 @@ export default async function DashboardLayout({
     }
   }
 
-  const initialNavigationItems = await getUserNavigationItems({
-    userId: user.id,
-    workspaceId: profile.workspace_id,
-  });
+  const initialNavigationItems = await initialNavigationItemsPromise;
 
   return (
     <>
