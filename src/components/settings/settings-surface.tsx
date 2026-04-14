@@ -5,6 +5,8 @@ interface SettingsPageShellProps {
   description?: string
   children: React.ReactNode
   className?: string
+  contentClassName?: string
+  headerClassName?: string
 }
 
 interface SettingsSectionProps {
@@ -14,6 +16,8 @@ interface SettingsSectionProps {
   children: React.ReactNode
   className?: string
   labelClassName?: string
+  titleClassName?: string
+  descriptionClassName?: string
 }
 
 interface SettingsGroupProps {
@@ -31,10 +35,13 @@ interface SettingsRowProps {
 
 interface SettingsFieldRowProps {
   label: string
+  labelClassName?: string
   hint?: string
   hintClassName?: string
   children: React.ReactNode
   className?: string
+  dividerStyle?: "full" | "inset" | "none"
+  align?: "start" | "center"
 }
 
 export const settingsInputClassName =
@@ -45,6 +52,8 @@ export function SettingsPageShell({
   description,
   children,
   className,
+  contentClassName,
+  headerClassName,
 }: SettingsPageShellProps) {
   return (
     <div className="min-h-full">
@@ -54,7 +63,7 @@ export function SettingsPageShell({
           className
         )}
       >
-        <header className="space-y-1 pb-6">
+        <header className={cn("space-y-1 pb-6", headerClassName)}>
           <h1 className="text-[length:var(--settings-title-size)] font-semibold leading-tight">{title}</h1>
           {description ? (
             <p className="max-w-[70ch] text-[length:var(--settings-description-size)] text-muted-foreground">
@@ -62,7 +71,7 @@ export function SettingsPageShell({
             </p>
           ) : null}
         </header>
-        <div className="space-y-8">{children}</div>
+        <div className={cn("space-y-8", contentClassName)}>{children}</div>
       </div>
     </div>
   )
@@ -75,6 +84,8 @@ export function SettingsSection({
   children,
   className,
   labelClassName,
+  titleClassName,
+  descriptionClassName,
 }: SettingsSectionProps) {
   return (
     <section className={cn("space-y-3", className)}>
@@ -89,9 +100,16 @@ export function SettingsSection({
             {label}
           </p>
         ) : null}
-        <h2 className="text-[length:var(--settings-body-size)] font-semibold">{title}</h2>
+        <h2 className={cn("text-[length:var(--settings-body-size)] font-semibold", titleClassName)}>{title}</h2>
         {description ? (
-          <p className="text-[length:var(--settings-body-size)] text-muted-foreground">{description}</p>
+          <p
+            className={cn(
+              "text-[length:var(--settings-body-size)] text-muted-foreground",
+              descriptionClassName
+            )}
+          >
+            {description}
+          </p>
         ) : null}
       </div>
       {children}
@@ -136,20 +154,26 @@ export function SettingsRow({ title, description, leading, trailing, className }
 
 export function SettingsFieldRow({
   label,
+  labelClassName,
   hint,
   hintClassName,
   children,
   className,
+  dividerStyle = "full",
+  align = "start",
 }: SettingsFieldRowProps) {
   return (
     <div
       className={cn(
-        "grid gap-2 border-b border-[hsl(var(--settings-divider))] px-[var(--settings-row-padding-x)] py-[var(--settings-row-padding-y)] last:border-b-0 md:grid-cols-[10rem_1fr]",
+        "grid gap-2 px-[var(--settings-row-padding-x)] py-[var(--settings-row-padding-y)] md:grid-cols-[10rem_1fr]",
+        dividerStyle === "full" && "border-b border-[hsl(var(--settings-divider))] last:border-b-0",
+        dividerStyle === "inset" &&
+          "relative border-b-0 after:absolute after:bottom-0 after:left-[var(--settings-row-padding-x)] after:right-[var(--settings-row-padding-x)] after:h-px after:bg-[hsl(var(--settings-divider)/0.35)] last:after:hidden",
         className
       )}
     >
-      <div className="pt-1">
-        <p className="text-[length:var(--settings-body-size)] font-medium">{label}</p>
+      <div className={cn(align === "center" ? "py-2" : "pt-1")}>
+        <p className={cn("text-[length:var(--settings-body-size)] font-medium", labelClassName)}>{label}</p>
         {hint ? (
           <p
             className={cn(

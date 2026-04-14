@@ -1,6 +1,6 @@
 import Link from "next/link"
 import type { Metadata } from "next"
-import { ArrowRight, CalendarDays, LayoutList, PanelsTopLeft, Sparkles } from "lucide-react"
+import { ArrowRight, CalendarDays, LayoutList, PanelsTopLeft } from "lucide-react"
 
 import { Breadcrumbs } from "@/components/dashboard/breadcrumbs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -14,33 +14,27 @@ type CreateCard = {
   title: string
   description: string
   href: string
-  icon: typeof Sparkles
+  icon: typeof CalendarDays
 }
 
 const createCards: CreateCard[] = [
   {
     title: "Agenda",
-    description: "Start a discussion-first plan without assuming a linked meeting or event yet.",
-    href: "/meetings/new?entry=agenda",
+    description: "Create an event and attach a discussion-first agenda workspace to it.",
+    href: "/events/new?plan=agenda",
     icon: LayoutList,
   },
   {
     title: "Program",
-    description: "Start an audience-facing plan and connect it later when publishing or sharing requires it.",
-    href: "/meetings/new?entry=program",
+    description: "Create an event and attach an audience-facing program workspace to it.",
+    href: "/events/new?plan=program",
     icon: PanelsTopLeft,
   },
   {
-    title: "Meeting",
-    description: "Create a meeting workspace first and attach time or plan details later as needed.",
-    href: "/meetings/new?entry=meeting",
-    icon: CalendarDays,
-  },
-  {
     title: "Event",
-    description: "Create a schedule item independently, then link it to a meeting later if needed.",
-    href: "/schedule/events?create=event",
-    icon: Sparkles,
+    description: "Create a standalone calendar event — activity, interview, or the start of a meeting.",
+    href: "/events/new",
+    icon: CalendarDays,
   },
 ]
 

@@ -19,11 +19,15 @@ export const createEventSchema = z.object({
   promote_to_announcement: z.boolean().optional().default(false),
 });
 
+export const meetingModalitySchema = z.enum(["online", "in_person", "hybrid"]);
+export type MeetingModality = z.infer<typeof meetingModalitySchema>;
+
 export const createEventAndMeetingSchema = createEventSchema.extend({
   meeting: z.object({
     title: z.string().trim().optional().nullable(),
     plan_type: z.enum(["agenda", "program"]).optional().nullable(),
     template_id: uuidSchema.optional().nullable(),
+    modality: meetingModalitySchema.optional().nullable(),
   }).optional(),
 });
 

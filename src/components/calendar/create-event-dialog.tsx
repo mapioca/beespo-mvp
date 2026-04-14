@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { addMinutes, differenceInMinutes, format } from "date-fns";
 import {
   Dialog,
@@ -146,6 +147,7 @@ export function CreateEventDialog({
   eventToEdit,
   externalEvent,
 }: CreateEventDialogProps) {
+  const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const isEditing = !!eventToEdit;
   const isImporting = !!externalEvent;
@@ -537,7 +539,16 @@ export function CreateEventDialog({
                 <Label htmlFor="event-type">Event type</Label>
                 <Select
                   value={eventType}
-                  onValueChange={(value) => setEventType(value as EventType)}
+                  onValueChange={(value) => {
+                    if (value === "meeting" && !isEditing) {
+                      // Route to the unified create page which handles meeting+plan setup
+                      onOpenChange(false);
+                      const dateParam = dateValue ? `&date=${dateValue}` : "";
+                      router.push(`/events/new?type=meeting${dateParam}`);
+                      return;
+                    }
+                    setEventType(value as EventType);
+                  }}
                   disabled={isLoading || isEditing}
                 >
                   <SelectTrigger id="event-type" className="w-full sm:w-[280px]">

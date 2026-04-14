@@ -28,6 +28,7 @@ export async function createEventAndMeeting(input: CreateEventAndMeetingInput) {
       p_meeting_title: payload.meeting?.title ?? null,
       p_meeting_plan_type: payload.meeting?.plan_type ?? null,
       p_template_id: payload.meeting?.template_id ?? null,
+      p_meeting_modality: payload.meeting?.modality ?? null,
     }
   );
 

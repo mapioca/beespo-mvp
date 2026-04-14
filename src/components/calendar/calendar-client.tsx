@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useCallback, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useSearchParams } from "next/navigation";
 import { addMonths, subMonths, addWeeks, subWeeks, addDays, subDays, parseISO } from "date-fns";
 import {
@@ -39,6 +40,7 @@ export function CalendarClient({
   initialEvents = [],
   userRole,
 }: CalendarClientProps) {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [view, setView] = useState<CalendarViewType>("month");
@@ -528,11 +530,7 @@ export function CalendarClient({
         onPrevious={goToPrevious}
         onNext={goToNext}
         canCreateEvents={canCreateEvents}
-        onCreateEvent={() => {
-          setSelectedDate(new Date());
-          setImportingEvent(null);
-          setCreateDialogOpen(true);
-        }}
+        onCreateEvent={() => router.push("/events/new")}
         visibility={visibility}
         onToggleVisibility={toggleVisibility}
         onToggleExternalSubscription={toggleExternalSubscription}

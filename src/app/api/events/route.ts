@@ -146,6 +146,7 @@ export async function POST(request: NextRequest) {
                 p_meeting_title: meeting.title ?? null,
                 p_meeting_plan_type: meeting.plan_type ?? null,
                 p_template_id: meeting.template_id ?? null,
+                p_meeting_modality: meeting.modality ?? null,
             }
         );
 

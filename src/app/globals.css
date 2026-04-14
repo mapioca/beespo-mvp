@@ -186,15 +186,16 @@
     --settings-label-size: 0.7rem;
     --settings-label-tracking: 0.14em;
     --settings-surface-bg: 0 0% 100%;
-    --settings-surface-border: 0 0% 89%;
+    --settings-surface-border: 220 12% 92.5%;
     --settings-surface-radius: 0.75rem;
+    --settings-canvas: 220 24% 98.4%;
     --settings-row-min-height: 3.75rem;
     --settings-row-padding-x: 1rem;
     --settings-row-padding-y: 0.75rem;
     --settings-row-hover: 0 0% 98%;
-    --settings-divider: 0 0% 91%;
+    --settings-divider: 220 12% 93.8%;
     --settings-input-bg: 0 0% 100%;
-    --settings-input-border: 0 0% 86%;
+    --settings-input-border: 220 12% 91.8%;
     --settings-input-focus: 0 0% 18%;
     --settings-meta-size: 0.75rem;
     --settings-body-size: 0.875rem;
@@ -367,6 +368,7 @@
     --settings-surface-bg: 220 11% 10%;
     --settings-surface-border: 220 10% 21%;
     --settings-surface-radius: 0.75rem;
+    --settings-canvas: 220 12% 8.5%;
     --settings-row-min-height: 3.75rem;
     --settings-row-padding-x: 1rem;
     --settings-row-padding-y: 0.75rem;
