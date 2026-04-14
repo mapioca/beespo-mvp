@@ -52,7 +52,7 @@ export function DirectoryMemberSelect({
     const supabase = createClient();
     try {
       // Fetch members from the directory table
-      const { data, error } = await (supabase.from("directory" as any) as any)
+      const { data, error } = await (supabase.from("directory") as ReturnType<typeof supabase.from>)
         .select("id, name")
         .order("name", { ascending: true });
 
