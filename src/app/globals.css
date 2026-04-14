@@ -4,33 +4,69 @@
 
 @layer base {
   :root {
-    /* Black & White Elegance Theme */
-    --canvas: 0 0% 96.5%; /* Back-compat */
-    --panel: 0 0% 96.5%; /* Base app surface (sidebar + shell canvas) */
-    --paper: 0 0% 99.2%; /* Document surface */
-    --background: 0 0% 100%; /* Pure white */
-    --foreground: 0 0% 0%; /* Pure black */
-    --card: 0 0% 100%;
-    --card-foreground: 0 0% 0%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 0%;
-    --primary: 0 0% 0%; /* Black */
-    --primary-foreground: 0 0% 100%; /* White */
-    --secondary: 0 0% 96%; /* Near white gray */
-    --secondary-foreground: 0 0% 0%;
-    --muted: 0 0% 96%;
-    --muted-foreground: 0 0% 40%;
-    --accent: 0 0% 96%;
-    --accent-foreground: 0 0% 0%;
+    /* Calm Precision */
+    --cp-canvas: 220 22% 98.7%;
+    --cp-surface: 0 0% 100%;
+    --cp-surface-2: 220 20% 99.2%;
+    --cp-text: 220 14% 12%;
+    --cp-text-muted: 220 8% 42%;
+    --cp-text-subtle: 220 8% 55%;
+    --cp-border: 220 14% 91.8%;
+    --cp-divider: 220 12% 93.8%;
+    --cp-hover: 220 18% 97%;
+    --cp-active: 220 14% 95.5%;
+    --cp-focus: 222 70% 56%;
+    --cp-primary: 220 14% 14%;
+    --cp-primary-foreground: 0 0% 100%;
+    --cp-danger: 0 75% 54%;
+    --cp-warning: 37 85% 52%;
+    --cp-success: 150 55% 40%;
+    --cp-font-title-size: 30px;
+    --cp-font-title-weight: 500;
+    --cp-font-section-size: 14px;
+    --cp-font-section-weight: 500;
+    --cp-font-label-size: 14px;
+    --cp-font-label-weight: 400;
+    --cp-font-body-size: 14px;
+    --cp-font-body-weight: 400;
+    --cp-font-meta-size: 12px;
+    --cp-font-meta-weight: 400;
+    --cp-radius-card: 12px;
+    --cp-radius-control: 10px;
+    --cp-section-gap: 24px;
+    --cp-heading-to-card: 10px;
+    --cp-row-py: 12px;
+    --cp-row-px: 16px;
+    --cp-control-height: 40px;
+    --cp-divider-inset: 16px;
+    --cp-divider-opacity: 0.35;
+
+    --canvas: var(--cp-canvas); /* Back-compat */
+    --panel: var(--cp-canvas); /* Base app surface (sidebar + shell canvas) */
+    --paper: var(--cp-surface-2); /* Document surface */
+    --background: var(--cp-surface);
+    --foreground: var(--cp-text);
+    --card: var(--cp-surface);
+    --card-foreground: var(--cp-text);
+    --popover: var(--cp-surface);
+    --popover-foreground: var(--cp-text);
+    --primary: var(--cp-primary);
+    --primary-foreground: var(--cp-primary-foreground);
+    --secondary: var(--cp-surface-2);
+    --secondary-foreground: var(--cp-text);
+    --muted: var(--cp-surface-2);
+    --muted-foreground: var(--cp-text-muted);
+    --accent: var(--cp-hover);
+    --accent-foreground: var(--cp-text);
     --accent-warm: 24 38% 91%; /* Warm peach-gray (#EFE7E1) */
     --accent-warm-hover: 24 27% 88%; /* Slightly deeper warm hover (#E6DDD6) */
-    --chrome: 0 0% 99.4%; /* App chrome surface (top bars, toolbars) */
-    --chrome-border: 0 0% 89%; /* Subtle chrome dividers */
+    --chrome: var(--cp-surface-2); /* App chrome surface (top bars, toolbars) */
+    --chrome-border: var(--cp-border); /* Subtle chrome dividers */
     --overlay: 0 0% 0% / 0.28; /* Modal overlay tint */
-    --app-shell: 0 0% 96.5%;
-    --app-island: 0 0% 100%;
-    --app-island-border: 0 0% 89%;
-    --nav-hover: 0 0% 94%;
+    --app-shell: var(--cp-canvas);
+    --app-island: var(--cp-surface);
+    --app-island-border: var(--cp-border);
+    --nav-hover: var(--cp-hover);
     --nav-hover-alpha: 1;
     --nav-selected: 0 0% 90%;
     --nav-selected-alpha: 1;
@@ -162,11 +198,11 @@
     --chip-active-bg: 0 0% 92%;
     --chip-active-border: 0 0% 82%;
     --chip-active-text: 0 0% 10%;
-    --destructive: 0 84% 60%; /* Error red - minimal color */
+    --destructive: var(--cp-danger);
     --destructive-foreground: 0 0% 100%;
-    --border: 0 0% 89%; /* Light gray for borders */
-    --input: 0 0% 89%;
-    --ring: 0 0% 0%;
+    --border: var(--cp-border);
+    --input: var(--cp-border);
+    --ring: var(--cp-focus);
     --radius: 0.875rem;
     --chart-1: 0 0% 60%;
     --chart-2: 0 0% 40%;
@@ -181,24 +217,24 @@
     --settings-shell-max-width: 58rem;
     --settings-shell-pad-x: 1.5rem;
     --settings-shell-pad-y: 1.5rem;
-    --settings-title-size: 1.75rem;
-    --settings-description-size: 0.9rem;
-    --settings-label-size: 0.7rem;
-    --settings-label-tracking: 0.14em;
-    --settings-surface-bg: 0 0% 100%;
-    --settings-surface-border: 220 12% 92.5%;
-    --settings-surface-radius: 0.75rem;
-    --settings-canvas: 220 24% 98.4%;
+    --settings-title-size: var(--cp-font-title-size);
+    --settings-description-size: 13px;
+    --settings-label-size: var(--cp-font-meta-size);
+    --settings-label-tracking: 0.02em;
+    --settings-surface-bg: var(--cp-surface);
+    --settings-surface-border: var(--cp-border);
+    --settings-surface-radius: var(--cp-radius-card);
+    --settings-canvas: var(--cp-canvas);
     --settings-row-min-height: 3.75rem;
-    --settings-row-padding-x: 1rem;
-    --settings-row-padding-y: 0.75rem;
-    --settings-row-hover: 0 0% 98%;
-    --settings-divider: 220 12% 93.8%;
-    --settings-input-bg: 0 0% 100%;
-    --settings-input-border: 220 12% 91.8%;
-    --settings-input-focus: 0 0% 18%;
-    --settings-meta-size: 0.75rem;
-    --settings-body-size: 0.875rem;
+    --settings-row-padding-x: var(--cp-row-px);
+    --settings-row-padding-y: var(--cp-row-py);
+    --settings-row-hover: var(--cp-hover);
+    --settings-divider: var(--cp-divider);
+    --settings-input-bg: var(--cp-surface);
+    --settings-input-border: var(--cp-border);
+    --settings-input-focus: var(--cp-focus);
+    --settings-meta-size: var(--cp-font-meta-size);
+    --settings-body-size: var(--cp-font-body-size);
     --settings-swatch-size: 1.15rem;
     --settings-swatch-gap: 0.45rem;
     --settings-swatch-border: 0 0% 84%;
@@ -206,31 +242,45 @@
   }
 
   .dark {
+    --cp-canvas: 220 14% 8.5%;
+    --cp-surface: 220 12% 10.5%;
+    --cp-surface-2: 220 11% 12.5%;
+    --cp-text: 220 14% 92%;
+    --cp-text-muted: 220 8% 68%;
+    --cp-text-subtle: 220 7% 58%;
+    --cp-border: 220 10% 20%;
+    --cp-divider: 220 10% 23%;
+    --cp-hover: 220 10% 14%;
+    --cp-active: 220 10% 17%;
+    --cp-focus: 222 75% 64%;
+    --cp-primary: 220 14% 92%;
+    --cp-primary-foreground: 220 14% 10%;
+
     --canvas: 24 18% 22%; /* Back-compat */
-    --panel: 0 0% 8%;
-    --paper: 0 0% 5%;
-    --background: 0 0% 0%;
-    --foreground: 0 0% 100%;
-    --card: 0 0% 5%;
-    --card-foreground: 0 0% 100%;
-    --popover: 0 0% 5%;
-    --popover-foreground: 0 0% 100%;
-    --primary: 0 0% 100%;
-    --primary-foreground: 0 0% 0%;
-    --secondary: 0 0% 10%;
-    --secondary-foreground: 0 0% 100%;
-    --muted: 0 0% 10%;
-    --muted-foreground: 0 0% 60%;
-    --accent: 0 0% 10%;
-    --accent-foreground: 0 0% 100%;
+    --panel: var(--cp-canvas);
+    --paper: var(--cp-surface-2);
+    --background: var(--cp-canvas);
+    --foreground: var(--cp-text);
+    --card: var(--cp-surface);
+    --card-foreground: var(--cp-text);
+    --popover: var(--cp-surface);
+    --popover-foreground: var(--cp-text);
+    --primary: var(--cp-primary);
+    --primary-foreground: var(--cp-primary-foreground);
+    --secondary: var(--cp-surface-2);
+    --secondary-foreground: var(--cp-text);
+    --muted: var(--cp-surface-2);
+    --muted-foreground: var(--cp-text-muted);
+    --accent: var(--cp-hover);
+    --accent-foreground: var(--cp-text);
     --accent-warm: 24 18% 22%;
     --accent-warm-hover: 24 20% 26%;
-    --chrome: 0 0% 8%;
-    --chrome-border: 0 0% 18%;
+    --chrome: var(--cp-surface-2);
+    --chrome-border: var(--cp-border);
     --overlay: 0 0% 0% / 0.6; /* Modal overlay tint */
-    --app-shell: 0 0% 8%;
-    --app-island: 0 0% 6%;
-    --app-island-border: 0 0% 20%;
+    --app-shell: var(--cp-canvas);
+    --app-island: var(--cp-surface);
+    --app-island-border: var(--cp-border);
     --nav-hover: 220 10% 14%;
     --nav-hover-alpha: 1;
     --nav-selected: 220 11% 17%;
@@ -348,11 +398,11 @@
     --chip-active-bg: 220 12% 22%;
     --chip-active-border: 220 10% 34%;
     --chip-active-text: 0 0% 98%;
-    --destructive: 0 84% 60%;
+    --destructive: var(--cp-danger);
     --destructive-foreground: 0 0% 0%;
-    --border: 0 0% 15%;
-    --input: 0 0% 15%;
-    --ring: 0 0% 100%;
+    --border: var(--cp-border);
+    --input: var(--cp-border);
+    --ring: var(--cp-focus);
     --landing-nav-height: 4rem;
     --landing-nav-horizontal-padding: 1rem;
     --landing-nav-link-font-size: 0.875rem;
@@ -361,24 +411,24 @@
     --settings-shell-max-width: 58rem;
     --settings-shell-pad-x: 1.5rem;
     --settings-shell-pad-y: 1.5rem;
-    --settings-title-size: 1.75rem;
-    --settings-description-size: 0.9rem;
-    --settings-label-size: 0.7rem;
-    --settings-label-tracking: 0.14em;
-    --settings-surface-bg: 220 11% 10%;
-    --settings-surface-border: 220 10% 21%;
-    --settings-surface-radius: 0.75rem;
-    --settings-canvas: 220 12% 8.5%;
+    --settings-title-size: var(--cp-font-title-size);
+    --settings-description-size: 13px;
+    --settings-label-size: var(--cp-font-meta-size);
+    --settings-label-tracking: 0.02em;
+    --settings-surface-bg: var(--cp-surface);
+    --settings-surface-border: var(--cp-border);
+    --settings-surface-radius: var(--cp-radius-card);
+    --settings-canvas: var(--cp-canvas);
     --settings-row-min-height: 3.75rem;
-    --settings-row-padding-x: 1rem;
-    --settings-row-padding-y: 0.75rem;
-    --settings-row-hover: 220 10% 13%;
-    --settings-divider: 220 9% 22%;
-    --settings-input-bg: 220 10% 12%;
-    --settings-input-border: 220 9% 25%;
-    --settings-input-focus: 0 0% 82%;
-    --settings-meta-size: 0.75rem;
-    --settings-body-size: 0.875rem;
+    --settings-row-padding-x: var(--cp-row-px);
+    --settings-row-padding-y: var(--cp-row-py);
+    --settings-row-hover: var(--cp-hover);
+    --settings-divider: var(--cp-divider);
+    --settings-input-bg: var(--cp-surface-2);
+    --settings-input-border: var(--cp-border);
+    --settings-input-focus: var(--cp-focus);
+    --settings-meta-size: var(--cp-font-meta-size);
+    --settings-body-size: var(--cp-font-body-size);
     --settings-swatch-size: 1.15rem;
     --settings-swatch-gap: 0.45rem;
     --settings-swatch-border: 220 10% 26%;

@@ -45,7 +45,7 @@ interface SettingsFieldRowProps {
 }
 
 export const settingsInputClassName =
-  "h-10 border-[hsl(var(--settings-input-border))] bg-[hsl(var(--settings-input-bg))] shadow-none focus-visible:border-[hsl(var(--settings-input-focus))] focus-visible:ring-0"
+  "h-10 border-[hsl(var(--settings-input-border))] bg-[hsl(var(--settings-input-bg))] text-sm placeholder:text-sm shadow-none focus-visible:border-[hsl(var(--settings-input-focus))] focus-visible:ring-0"
 
 export function SettingsPageShell({
   title,
