@@ -151,7 +151,7 @@ export function MeetingContextBar({
     onSaveAsNew,
     onSaveAsTemplate,
     mode,
-    onModeChange,
+    onModeChange: _onModeChange,
     isLeader,
     totalDuration,
     itemCount,
@@ -189,15 +189,6 @@ export function MeetingContextBar({
         const userAgent = navigator.userAgent || "";
         setIsMac(/Mac|iPhone|iPad|iPod/i.test(platform + userAgent));
     }, []);
-
-    const modeShortcuts = useMemo(
-        () => ({
-            planning: isMac ? "⌥⌘1" : "Ctrl+Alt+1",
-            "print-preview": isMac ? "⌥⌘2" : "Ctrl+Alt+2",
-            program: isMac ? "⌥⌘3" : "Ctrl+Alt+3",
-        }),
-        [isMac]
-    );
 
     const saveShortcuts = useMemo(
         () => ({
