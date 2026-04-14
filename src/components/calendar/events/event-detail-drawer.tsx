@@ -181,7 +181,7 @@ export function EventDetailDrawer({
                             </SheetTitle>
                             <Badge
                                 variant="outline"
-                                className="bg-[hsl(var(--accent-warm)/0.6)] text-slate-800 border border-border/50"
+                                className="bg-muted/40 text-foreground border border-border/50"
                             >
                                 {isMeeting ? "Meeting" : "Event"}
                             </Badge>
@@ -194,7 +194,7 @@ export function EventDetailDrawer({
                     <div className="mt-6 space-y-6">
                         <div className="space-y-3">
                             <div className="flex items-center gap-3">
-                                <div className="flex items-center justify-center w-10 h-10 rounded-lg border border-border/50 bg-[hsl(var(--accent-warm)/0.35)]">
+                                <div className="flex items-center justify-center w-10 h-10 rounded-lg border border-border/50 bg-muted/35">
                                     <Calendar className="h-5 w-5 text-muted-foreground stroke-[1.6]" />
                                 </div>
                                 <div>
@@ -213,7 +213,7 @@ export function EventDetailDrawer({
 
                             {event.location && (
                                 <div className="flex items-center gap-3">
-                                    <div className="flex items-center justify-center w-10 h-10 rounded-lg border border-border/50 bg-[hsl(var(--accent-warm)/0.35)]">
+                                    <div className="flex items-center justify-center w-10 h-10 rounded-lg border border-border/50 bg-muted/35">
                                         <MapPin className="h-5 w-5 text-muted-foreground stroke-[1.6]" />
                                     </div>
                                     <div>
@@ -246,7 +246,7 @@ export function EventDetailDrawer({
                                     <h4 className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
                                         Meeting Hub
                                     </h4>
-                                    <Button asChild variant="outline" className="w-full gap-2 border-border/60 hover:bg-[hsl(var(--accent-warm)/0.6)] shadow-none">
+                                    <Button asChild variant="outline" className="w-full gap-2 border-border/60 hover:bg-accent shadow-none">
                                         <Link href={`/meetings/${event.source_id}`}>
                                             <CalendarDays className="h-4 w-4 stroke-[1.6]" />
                                             Open in Meeting Hub
@@ -330,7 +330,7 @@ export function EventDetailDrawer({
                                         {isCanvaConnected ? (
                                             <Button
                                                 variant="outline"
-                                                className="w-full gap-2 border-border/60 hover:bg-[hsl(var(--accent-warm)/0.6)] shadow-none"
+                                                className="w-full gap-2 border-border/60 hover:bg-accent shadow-none"
                                                 onClick={() => setShowDesignModal(true)}
                                             >
                                                 <Palette className="h-4 w-4 stroke-[1.6]" />
@@ -371,7 +371,7 @@ export function EventDetailDrawer({
                                 <div className="grid grid-cols-2 gap-2">
                                     <Button
                                         variant="outline"
-                                        className="gap-2 border-border/60 hover:bg-[hsl(var(--accent-warm)/0.6)] shadow-none"
+                                        className="gap-2 border-border/60 hover:bg-accent shadow-none"
                                         onClick={() => setShowEditDialog(true)}
                                     >
                                         <Pencil className="h-4 w-4 stroke-[1.6]" />
@@ -392,7 +392,7 @@ export function EventDetailDrawer({
                         <Separator />
                         <Button
                             variant="secondary"
-                            className="w-full bg-[hsl(var(--accent-warm))] text-foreground hover:bg-[hsl(var(--accent-warm-hover))] shadow-none"
+                            className="w-full shadow-none"
                             onClick={() => onOpenChange(false)}
                         >
                             Close

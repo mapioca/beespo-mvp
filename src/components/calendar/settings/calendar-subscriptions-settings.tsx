@@ -247,7 +247,7 @@ export function CalendarSubscriptionsSettings({
     <>
       <SettingsPageShell
         title="Schedule settings"
-        description="Manage calendar subscriptions for schedule with reusable, tokenized settings primitives."
+        description="Add and manage external calendar feeds for your schedule. Create new subscriptions, sync updates, and remove calendars you no longer need."
       >
         <SettingsSection
           label="Subscriptions"
@@ -269,7 +269,7 @@ export function CalendarSubscriptionsSettings({
 
               <SettingsFieldRow
                 label="iCal URL"
-                hint={urlError ? urlError : "HTTPS .ics feed only"}
+                hint={urlError ? urlError : "Use an https .ics feed URL only."}
                 hintClassName={urlError ? "text-destructive" : undefined}
               >
                 <Input

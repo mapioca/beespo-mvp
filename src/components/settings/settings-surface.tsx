@@ -13,6 +13,7 @@ interface SettingsSectionProps {
   description?: string
   children: React.ReactNode
   className?: string
+  labelClassName?: string
 }
 
 interface SettingsGroupProps {
@@ -73,12 +74,18 @@ export function SettingsSection({
   description,
   children,
   className,
+  labelClassName,
 }: SettingsSectionProps) {
   return (
     <section className={cn("space-y-3", className)}>
       <div className="space-y-1">
         {label ? (
-          <p className="text-[length:var(--settings-label-size)] font-medium uppercase tracking-[var(--settings-label-tracking)] text-muted-foreground">
+          <p
+            className={cn(
+              "text-[length:var(--settings-label-size)] font-medium tracking-[0.02em] text-muted-foreground",
+              labelClassName
+            )}
+          >
             {label}
           </p>
         ) : null}

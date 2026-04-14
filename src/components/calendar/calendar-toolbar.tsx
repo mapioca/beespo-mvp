@@ -68,15 +68,15 @@ export function CalendarToolbar({
           onSyncComplete={onSyncComplete}
         />
 
-        <Button variant="outline" size="sm" onClick={onToday} className="border-border/60 hover:bg-[hsl(var(--accent-warm)/0.6)] shadow-none">
+        <Button variant="outline" size="sm" onClick={onToday} className="border-border/60 hover:bg-accent shadow-none">
           Today
         </Button>
 
         <div className="flex items-center">
-          <Button variant="ghost" size="icon" onClick={onPrevious} className="hover:bg-[hsl(var(--accent-warm)/0.6)]">
+          <Button variant="ghost" size="icon" onClick={onPrevious} className="hover:bg-accent">
             <ChevronLeft className="h-5 w-5 stroke-[1.6]" />
           </Button>
-          <Button variant="ghost" size="icon" onClick={onNext} className="hover:bg-[hsl(var(--accent-warm)/0.6)]">
+          <Button variant="ghost" size="icon" onClick={onNext} className="hover:bg-accent">
             <ChevronRight className="h-5 w-5 stroke-[1.6]" />
           </Button>
         </div>
@@ -98,8 +98,8 @@ export function CalendarToolbar({
                 className={cn(
                   "rounded-none first:rounded-l-full last:rounded-r-full capitalize px-3",
                   view === viewType
-                    ? "bg-[hsl(var(--accent-warm))] text-foreground"
-                    : "text-muted-foreground hover:bg-[hsl(var(--accent-warm)/0.6)] hover:text-foreground"
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-accent hover:text-foreground"
                 )}
               >
                 {viewType}
@@ -122,7 +122,7 @@ export function CalendarToolbar({
 
         {/* Create event button */}
         {canCreateEvents && (
-          <Button onClick={onCreateEvent} size="sm" className="bg-[hsl(var(--accent-warm))] text-foreground hover:bg-[hsl(var(--accent-warm-hover))] shadow-none">
+          <Button onClick={onCreateEvent} size="sm" className="shadow-none">
             <Plus className="h-4 w-4 mr-1 stroke-[1.6]" />
             <span className="hidden sm:inline">New Event</span>
           </Button>

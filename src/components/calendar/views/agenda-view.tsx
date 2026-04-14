@@ -20,43 +20,18 @@ interface AgendaViewProps {
   onEventClick: (event: CalendarEvent) => void;
 }
 
-// Notion-inspired color schemes
-function getNotionAgendaColors(source: EventSource): {
-  border: string;
-  bg: string;
-  text: string;
-} {
+function getAgendaAccent(source: EventSource): string {
   switch (source) {
     case "announcement":
-      return {
-        border: "border-l-amber-400",
-        bg: "bg-amber-50/80 dark:bg-amber-950/30",
-        text: "text-amber-900 dark:text-amber-100",
-      };
+      return "hsl(var(--chart-4))";
     case "meeting":
-      return {
-        border: "border-l-blue-400",
-        bg: "bg-blue-50/80 dark:bg-blue-950/30",
-        text: "text-blue-900 dark:text-blue-100",
-      };
+      return "hsl(var(--chart-2))";
     case "task":
-      return {
-        border: "border-l-green-400",
-        bg: "bg-green-50/80 dark:bg-green-950/30",
-        text: "text-green-900 dark:text-green-100",
-      };
+      return "hsl(var(--chart-5))";
     case "event":
-      return {
-        border: "border-l-indigo-400",
-        bg: "bg-indigo-50/80 dark:bg-indigo-950/30",
-        text: "text-indigo-900 dark:text-indigo-100",
-      };
+      return "hsl(var(--chart-1))";
     case "external":
-      return {
-        border: "border-l-purple-400",
-        bg: "bg-purple-50/80 dark:bg-purple-950/30",
-        text: "text-purple-900 dark:text-purple-100",
-      };
+      return "hsl(var(--chart-3))";
   }
 }
 
@@ -97,7 +72,6 @@ export function AgendaView({
 
         return (
           <div key={dateKey}>
-            {/* Date header - Notion style */}
             <div
               className={cn(
                 "flex items-center gap-4 pb-3 mb-3 border-b border-border/50 cursor-pointer group"
@@ -108,8 +82,8 @@ export function AgendaView({
                 className={cn(
                   "flex flex-col items-center justify-center w-16 h-16 rounded-xl transition-colors",
                   isCurrentDay
-                    ? "bg-[hsl(var(--accent-warm))] text-foreground shadow-sm"
-                    : "bg-[hsl(var(--accent-warm)/0.25)] group-hover:bg-[hsl(var(--accent-warm)/0.4)]"
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "bg-muted/30 group-hover:bg-accent"
                 )}
               >
                 <span className="text-[11px] font-semibold uppercase tracking-[0.2em] opacity-80">
@@ -123,25 +97,22 @@ export function AgendaView({
                   {format(day, "MMMM yyyy")}
                 </div>
               </div>
-              <div className="text-xs text-muted-foreground bg-[hsl(var(--accent-warm)/0.35)] px-3 py-1 rounded-full">
+              <div className="text-xs text-muted-foreground bg-muted/40 px-3 py-1 rounded-full">
                 {dayEvents.length} event{dayEvents.length !== 1 ? "s" : ""}
               </div>
             </div>
 
-            {/* Events list - Notion style cards */}
             <div className="space-y-3 pl-20">
               {dayEvents.map((event) => {
-                const colors = getNotionAgendaColors(event.source);
+                const accentColor = event.color || getAgendaAccent(event.source);
                 return (
                   <div
                     key={event.id}
                     className={cn(
-                      "p-4 rounded-lg border-l-[3px] cursor-pointer transition-all duration-150",
-                      "hover:shadow-sm hover:translate-x-0.5",
-                      colors.border,
-                      colors.bg
+                      "p-4 rounded-lg border-l-[3px] cursor-pointer transition-all duration-150 bg-background/80",
+                      "hover:shadow-sm hover:translate-x-0.5 hover:bg-[hsl(var(--table-row-hover))]"
                     )}
-                    style={event.color ? { borderLeftColor: event.color } : undefined}
+                    style={{ borderLeftColor: accentColor }}
                     onClick={() => onEventClick(event)}
                   >
                     <div className="flex items-start gap-3">
@@ -150,7 +121,7 @@ export function AgendaView({
                           {event.isRecurringInstance && (
                             <Repeat className="h-4 w-4 flex-shrink-0 opacity-60" />
                           )}
-                          <span className={cn("font-semibold text-base", colors.text)}>
+                          <span className="font-semibold text-base">
                             {event.title}
                           </span>
                         </div>
@@ -167,23 +138,15 @@ export function AgendaView({
                         )}
                       </div>
                       <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
-                        <span className={cn(
-                          "text-xs px-2.5 py-1 rounded-full font-medium capitalize",
-                          colors.bg,
-                          colors.text
-                        )}>
+                        <span className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full font-medium capitalize border border-border/60 bg-muted/30">
+                          <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: accentColor }} />
                           {event.source}
                         </span>
                         {event.priority && (
                           <span
                             className={cn(
                               "text-xs px-2.5 py-1 rounded-full font-medium capitalize",
-                              event.priority === "high" &&
-                                "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-200",
-                              event.priority === "medium" &&
-                                "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-200",
-                              event.priority === "low" &&
-                                "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-200"
+                              "border border-border/60 bg-muted/30"
                             )}
                           >
                             {event.priority}

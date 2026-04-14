@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -13,7 +14,6 @@ import {
 import { Filter, Settings, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { UserRole, CalendarSubscription } from "@/types/database";
-import { CalendarSettingsDialog } from "./calendar-settings-dialog";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "@/lib/toast";
 
@@ -35,7 +35,6 @@ export function CalendarFilterPopover({
   onSyncComplete,
 }: CalendarFilterPopoverProps) {
   const isAdmin = userRole === "admin";
-  const [settingsOpen, setSettingsOpen] = useState(false);
   const [subscriptions, setSubscriptions] = useState<CalendarSubscription[]>([]);
   const [isLoadingSubscriptions, setIsLoadingSubscriptions] = useState(true);
   const [isSyncingAll, setIsSyncingAll] = useState(false);
@@ -68,7 +67,7 @@ export function CalendarFilterPopover({
     };
 
     fetchSubscriptions();
-  }, [settingsOpen]);
+  }, []);
 
   const enabledSubscriptions = subscriptions.filter((s) => s.is_enabled);
 
@@ -121,7 +120,7 @@ export function CalendarFilterPopover({
           <Button
             variant="outline"
             size="sm"
-            className="border-border/60 hover:bg-[hsl(var(--accent-warm)/0.6)] shadow-none gap-1.5"
+            className="border-border/60 hover:bg-accent shadow-none gap-1.5"
           >
             <Filter className="h-4 w-4 stroke-[1.6]" />
             <span className="hidden sm:inline">Calendars</span>
@@ -211,7 +210,7 @@ export function CalendarFilterPopover({
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-6 w-6 text-muted-foreground hover:text-foreground hover:bg-[hsl(var(--accent-warm)/0.6)]"
+                    className="h-6 w-6 text-muted-foreground hover:text-foreground hover:bg-accent"
                     onClick={handleSyncAll}
                     disabled={isSyncingAll}
                     title="Sync All External Calendars"
@@ -223,8 +222,8 @@ export function CalendarFilterPopover({
 
               {isLoadingSubscriptions ? (
                 <div className="space-y-2">
-                  <div className="h-5 bg-[hsl(var(--accent-warm)/0.25)] rounded animate-pulse" />
-                  <div className="h-5 bg-[hsl(var(--accent-warm)/0.2)] rounded animate-pulse w-3/4" />
+                  <div className="h-5 bg-muted/50 rounded animate-pulse" />
+                  <div className="h-5 bg-muted/40 rounded animate-pulse w-3/4" />
                 </div>
               ) : enabledSubscriptions.length > 0 ? (
                 <div className="space-y-1.5">
@@ -284,28 +283,17 @@ export function CalendarFilterPopover({
             <>
               <Separator />
               <div className="p-2">
-                <Button
-                  variant="ghost"
-                  className="w-full justify-start text-sm h-8 hover:bg-[hsl(var(--accent-warm)/0.6)]"
-                  onClick={() => setSettingsOpen(true)}
-                >
-                  <Settings className="h-4 w-4 mr-2 stroke-[1.6]" />
-                  Manage Calendars
+                <Button asChild variant="ghost" className="w-full justify-start text-sm h-8 hover:bg-accent">
+                  <Link href="/schedule/settings?return=/schedule/calendar">
+                    <Settings className="h-4 w-4 mr-2 stroke-[1.6]" />
+                    Calendar settings
+                  </Link>
                 </Button>
               </div>
             </>
           )}
         </PopoverContent>
       </Popover>
-
-      {/* Settings Dialog */}
-      {isAdmin && (
-        <CalendarSettingsDialog
-          open={settingsOpen}
-          onOpenChange={setSettingsOpen}
-          onSyncComplete={onSyncComplete}
-        />
-      )}
     </>
   );
 }

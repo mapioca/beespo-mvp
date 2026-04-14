@@ -49,7 +49,7 @@ export function DayView({
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className={cn("p-4 border-b border-border/60 bg-background/60", isCurrentDay && "bg-[hsl(var(--accent-warm)/0.25)]")}>
+      <div className={cn("p-4 border-b border-border/60 bg-background/60", isCurrentDay && "bg-muted/40")}>
         <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
           {format(currentDate, "EEEE")}
         </div>
@@ -60,7 +60,7 @@ export function DayView({
 
       {/* All-day events */}
       {allDayEvents.length > 0 && (
-        <div className="p-3 border-b border-border/50 bg-[hsl(var(--accent-warm)/0.25)]">
+        <div className="p-3 border-b border-border/50 bg-muted/30">
           <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground mb-2">
             All-day events
           </div>
@@ -95,7 +95,7 @@ export function DayView({
             return (
               <div
                 key={hour}
-                className="flex min-h-20 hover:bg-[hsl(var(--accent-warm)/0.35)] cursor-pointer"
+                className="flex min-h-20 hover:bg-[hsl(var(--table-row-hover))] cursor-pointer"
                 onClick={() => onDateClick(setHours(currentDate, hour))}
               >
                 {/* Time label */}
