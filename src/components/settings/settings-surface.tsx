@@ -31,6 +31,7 @@ interface SettingsRowProps {
   leading?: React.ReactNode
   trailing?: React.ReactNode
   className?: string
+  dividerStyle?: "full" | "inset" | "none"
 }
 
 interface SettingsFieldRowProps {
@@ -130,11 +131,21 @@ export function SettingsGroup({ children, className }: SettingsGroupProps) {
   )
 }
 
-export function SettingsRow({ title, description, leading, trailing, className }: SettingsRowProps) {
+export function SettingsRow({
+  title,
+  description,
+  leading,
+  trailing,
+  className,
+  dividerStyle = "full",
+}: SettingsRowProps) {
   return (
     <div
       className={cn(
-        "grid min-h-[var(--settings-row-min-height)] grid-cols-[auto_1fr_auto] items-center gap-3 border-b border-[hsl(var(--settings-divider))] px-[var(--settings-row-padding-x)] py-[var(--settings-row-padding-y)] transition-colors last:border-b-0 hover:bg-[hsl(var(--settings-row-hover))]",
+        "grid min-h-[var(--settings-row-min-height)] grid-cols-[auto_1fr_auto] items-center gap-3 px-[var(--settings-row-padding-x)] py-[var(--settings-row-padding-y)] transition-colors hover:bg-[hsl(var(--settings-row-hover))]",
+        dividerStyle === "full" && "border-b border-[hsl(var(--settings-divider))] last:border-b-0",
+        dividerStyle === "inset" &&
+          "relative border-b-0 after:absolute after:bottom-0 after:left-[var(--settings-row-padding-x)] after:right-[var(--settings-row-padding-x)] after:h-px after:bg-[hsl(var(--settings-divider)/0.35)] last:after:hidden",
         className
       )}
     >

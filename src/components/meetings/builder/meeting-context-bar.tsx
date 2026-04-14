@@ -367,7 +367,7 @@ export function MeetingContextBar({
         desktop: { label: "Desktop", icon: Monitor },
     } as const;
     const CurrentDeviceIcon = deviceOptions[programPreviewDevice].icon;
-    const moreMenu = (
+    const renderMoreMenu = () => (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
                 <button
@@ -497,7 +497,7 @@ export function MeetingContextBar({
                         { label: title || "Untitled Agenda", icon: <FileText className="h-4 w-4 stroke-[1.6]" /> },
                     ]}
                     className="rounded-none bg-chrome px-4 py-0"
-                    inlineAction={<div className="hidden sm:flex">{moreMenu}</div>}
+                    inlineAction={<div className="hidden sm:flex">{renderMoreMenu()}</div>}
                     action={
                         <div className="flex flex-wrap items-center gap-1.5 sm:flex-nowrap">
                         {initialMeetingId ? (
@@ -659,7 +659,7 @@ export function MeetingContextBar({
                         )}
 
                         <div className="sm:hidden">
-                            {moreMenu}
+                            {renderMoreMenu()}
                         </div>
 
                         <div className="hidden sm:block h-4 w-px bg-border/60" />

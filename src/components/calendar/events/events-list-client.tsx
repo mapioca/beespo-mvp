@@ -25,7 +25,6 @@ import {
 import { cn } from "@/lib/utils"
 import { parseAllDayDate } from "@/lib/calendar-helpers"
 import { richTextToPlainText } from "@/lib/rich-text"
-import { EventDetailDrawer } from "./event-detail-drawer"
 import { Button } from "@/components/ui/button"
 import { CreateEventDialog, type CalendarEventData } from "@/components/calendar/create-event-dialog"
 
@@ -147,8 +146,6 @@ export function EventsListClient({ events, canManageEvents = false }: EventsList
     const searchParams = useSearchParams()
     const [searchQuery, setSearchQuery] = useState("")
     const [localEvents, setLocalEvents] = useState(events)
-    const [selectedEvent, setSelectedEvent] = useState<EventListItem | null>(null)
-    const [drawerOpen, setDrawerOpen] = useState(false)
     const [createDialogOpen, setCreateDialogOpen] = useState(false)
 
     useEffect(() => {
@@ -198,8 +195,7 @@ export function EventsListClient({ events, canManageEvents = false }: EventsList
         if (event.source_type === "meeting" && event.source_id) {
             router.push(`/meetings/${event.source_id}`)
         } else {
-            setSelectedEvent(event)
-            setDrawerOpen(true)
+            router.push(`/schedule/events/${event.id}`)
         }
     }
 
@@ -210,19 +206,6 @@ export function EventsListClient({ events, canManageEvents = false }: EventsList
         } else if (event.source_id) {
             router.push(`/meetings/${event.source_id}`)
         }
-    }
-
-    const handleEventUpdated = (updatedEvent: EventListItem) => {
-        setLocalEvents((prev) =>
-            prev.map((item) => (item.id === updatedEvent.id ? { ...item, ...updatedEvent } : item))
-        )
-        setSelectedEvent(updatedEvent)
-    }
-
-    const handleEventDeleted = (eventId: string) => {
-        setLocalEvents((prev) => prev.filter((item) => item.id !== eventId))
-        setSelectedEvent((prev) => (prev?.id === eventId ? null : prev))
-        setDrawerOpen(false)
     }
 
     const mapCalendarEventToListItem = (event: CalendarEventData): EventListItem => ({
@@ -402,15 +385,6 @@ export function EventsListClient({ events, canManageEvents = false }: EventsList
                 </div>
             )}
 
-            {/* Event Detail Drawer */}
-            <EventDetailDrawer
-                event={selectedEvent}
-                open={drawerOpen}
-                onOpenChange={setDrawerOpen}
-                canManageEvents={canManageEvents}
-                onEventUpdated={handleEventUpdated}
-                onEventDeleted={handleEventDeleted}
-            />
             {canManageEvents && (
                 <CreateEventDialog
                     open={createDialogOpen}

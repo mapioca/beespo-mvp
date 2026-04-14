@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { addMinutes, format } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -12,18 +12,42 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Calendar as DateCalendar } from "@/components/ui/calendar";
+import {
   SettingsPageShell,
   SettingsSection,
   SettingsGroup,
   SettingsFieldRow,
   settingsInputClassName,
 } from "@/components/settings/settings-surface";
+import {
+  SettingsSegmentedControl,
+  type SettingsSegmentedOption,
+} from "@/components/settings/settings-segmented-control";
+import { createClient } from "@/lib/supabase/client";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type EventType = "activity" | "interview" | "meeting";
 type PlanType = "agenda" | "program";
 type Modality = "online" | "in_person" | "hybrid";
+
+interface TemplateOption {
+  id: string;
+  name: string;
+  kind: PlanType;
+}
 
 export interface CreateEventFormProps {
   /** Pre-fills the event type from the URL preset. */
@@ -48,46 +72,6 @@ function buildTimeOptions(stepMinutes = 15): string[] {
 const TIME_OPTIONS = buildTimeOptions(15);
 
 // ─── Sub-components ────────────────────────────────────────────────────────────
-
-interface SegmentedOption<T extends string> {
-  value: T;
-  label: string;
-  description?: string;
-}
-
-function SegmentedControl<T extends string>({
-  value,
-  onChange,
-  options,
-  disabled,
-}: {
-  value: T;
-  onChange: (v: T) => void;
-  options: SegmentedOption<T>[];
-  disabled?: boolean;
-}) {
-  return (
-    <div className="inline-flex h-10 rounded-lg border border-[hsl(var(--settings-input-border))] bg-muted/20 p-1 gap-1">
-      {options.map((opt) => (
-        <button
-          key={opt.value}
-          type="button"
-          disabled={disabled}
-          onClick={() => onChange(opt.value)}
-          className={cn(
-            "h-8 rounded-md px-3 text-sm font-normal transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-            value === opt.value
-              ? "bg-background text-foreground"
-              : "text-muted-foreground hover:text-foreground hover:bg-background/35",
-            disabled && "cursor-not-allowed opacity-50"
-          )}
-        >
-          {opt.label}
-        </button>
-      ))}
-    </div>
-  );
-}
 
 function PlanTypeCard({
   type,
@@ -134,13 +118,13 @@ function PlanTypeCard({
 
 // ─── Main component ────────────────────────────────────────────────────────────
 
-const EVENT_TYPE_OPTIONS: SegmentedOption<EventType>[] = [
+const EVENT_TYPE_OPTIONS: SettingsSegmentedOption<EventType>[] = [
   { value: "activity", label: "Activity" },
   { value: "interview", label: "Interview" },
   { value: "meeting", label: "Meeting" },
 ];
 
-const MODALITY_OPTIONS: SegmentedOption<Modality>[] = [
+const MODALITY_OPTIONS: SettingsSegmentedOption<Modality>[] = [
   { value: "in_person", label: "In person" },
   { value: "online", label: "Online" },
   { value: "hybrid", label: "Hybrid" },
@@ -167,14 +151,70 @@ export function CreateEventForm({
   // Meeting-specific
   const [modality, setModality] = useState<Modality>("in_person");
   const [planType, setPlanType] = useState<PlanType | null>(initialPlanType ?? null);
+  const [promoteToAnnouncement, setPromoteToAnnouncement] = useState(false);
+  const [announcementTemplateKind, setAnnouncementTemplateKind] = useState<PlanType>("agenda");
+  const [announcementTemplateId, setAnnouncementTemplateId] = useState<string>("");
+  const [templateOptions, setTemplateOptions] = useState<TemplateOption[]>([]);
+  const [isLoadingTemplates, setIsLoadingTemplates] = useState(false);
 
   const isMeeting = eventType === "meeting";
   const isSubmitting = isPending;
+  const availableTemplates = useMemo(
+    () => templateOptions.filter((template) => template.kind === announcementTemplateKind),
+    [templateOptions, announcementTemplateKind]
+  );
+
+  useEffect(() => {
+    if (isMeeting) return;
+    setPromoteToAnnouncement(false);
+    setAnnouncementTemplateId("");
+  }, [isMeeting]);
+
+  useEffect(() => {
+    if (!isMeeting || !promoteToAnnouncement || templateOptions.length > 0) return;
+
+    const fetchTemplates = async () => {
+      setIsLoadingTemplates(true);
+      const supabase = createClient();
+
+      const { data, error } = await (supabase
+        .from("templates") as ReturnType<typeof supabase.from>)
+        .select("id, name, template_kind")
+        .order("name");
+
+      if (!error && data) {
+        const mapped = (data as Array<{ id: string; name: string; template_kind?: "agenda" | "program" | null }>)
+          .map((template) => ({
+            id: template.id,
+            name: template.name,
+            kind: template.template_kind === "program" ? "program" : "agenda",
+          }));
+        setTemplateOptions(mapped);
+        setIsLoadingTemplates(false);
+        return;
+      }
+
+      const { data: fallback } = await (supabase
+        .from("templates") as ReturnType<typeof supabase.from>)
+        .select("id, name")
+        .order("name");
+
+      setTemplateOptions(
+        (fallback as Array<{ id: string; name: string }> | null)?.map((template) => ({
+          id: template.id,
+          name: template.name,
+          kind: "agenda",
+        })) ?? []
+      );
+      setIsLoadingTemplates(false);
+    };
+
+    void fetchTemplates();
+  }, [isMeeting, promoteToAnnouncement, templateOptions.length]);
 
   // ── Validation ──────────────────────────────────────────────────────────────
   function validate(): string | null {
     if (!title.trim()) return "Title is required.";
-    if (isMeeting && !planType) return "Please select a plan type (agenda or program).";
     return null;
   }
 
@@ -209,14 +249,14 @@ export function CreateEventForm({
       time_tbd: !isAllDay && !time,
       duration_mode: isAllDay ? "all_day" : hasDuration ? "minutes" : "tbd",
       duration_minutes: !isAllDay && hasDuration ? parsedDuration : null,
-      promote_to_announcement: false,
+      promote_to_announcement: isMeeting ? promoteToAnnouncement : false,
     };
 
     if (isMeeting) {
       payload.meeting = {
         title: title.trim(),
         plan_type: planType,
-        template_id: null,
+        template_id: promoteToAnnouncement && announcementTemplateId ? announcementTemplateId : null,
         modality,
       };
     }
@@ -286,7 +326,7 @@ export function CreateEventForm({
               </SettingsFieldRow>
 
               <SettingsFieldRow label="Type" labelClassName="font-normal text-foreground/80" dividerStyle="inset" align="center">
-                <SegmentedControl
+                <SettingsSegmentedControl
                   value={eventType}
                   onChange={(v) => {
                     setEventType(v);
@@ -331,18 +371,42 @@ export function CreateEventForm({
             <SettingsGroup className="[&>div]:md:grid-cols-[11rem_minmax(0,1fr)]">
               <SettingsFieldRow label="Date" labelClassName="font-normal text-foreground/80" dividerStyle="inset" align="center">
                 <div className="flex items-center gap-2">
-                  <div className="relative flex-1 max-w-[200px]">
-                    <CalendarDays className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input
-                      type="date"
-                      value={date}
-                      onChange={(e) => setDate(e.target.value)}
-                      disabled={isSubmitting}
-                      className={cn(settingsInputClassName, "pl-9")}
-                    />
-                  </div>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        disabled={isSubmitting}
+                        className={cn(
+                          settingsInputClassName,
+                          "w-[200px] justify-start pl-3 pr-3 font-normal"
+                        )}
+                      >
+                        <CalendarDays className="mr-2 h-4 w-4 text-muted-foreground" />
+                        {date
+                          ? new Date(`${date}T00:00:00`).toLocaleDateString("en-US", {
+                              month: "2-digit",
+                              day: "2-digit",
+                              year: "numeric",
+                            })
+                          : "Select date"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <DateCalendar
+                        mode="single"
+                        selected={date ? new Date(`${date}T00:00:00`) : undefined}
+                        onSelect={(selected) => {
+                          if (!selected) return;
+                          setDate(format(selected, "yyyy-MM-dd"));
+                        }}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
                   <div className="flex items-center gap-2 pl-1">
                     <Checkbox
+                      variant="form"
                       id="all-day"
                       checked={isAllDay}
                       onCheckedChange={(checked) => setIsAllDay(checked === true)}
@@ -360,27 +424,24 @@ export function CreateEventForm({
                   <SettingsFieldRow label="Start time" labelClassName="font-normal text-foreground/80" dividerStyle="inset" align="center">
                     <div className="relative max-w-[160px]">
                       <Clock3 className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                      <select
-                        value={time}
-                        onChange={(e) => setTime(e.target.value)}
-                        disabled={isSubmitting}
-                        className={cn(
-                          settingsInputClassName,
-                          "h-10 w-full appearance-none rounded-md border pl-9 pr-3 text-sm bg-[hsl(var(--settings-input-bg))] focus:outline-none"
-                        )}
-                      >
-                        {TIME_OPTIONS.map((t) => {
-                          const [h, m] = t.split(":").map(Number);
-                          const d = new Date();
-                          d.setHours(h, m, 0, 0);
-                          const label = d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
-                          return (
-                            <option key={t} value={t}>
-                              {label}
-                            </option>
-                          );
-                        })}
-                      </select>
+                      <Select value={time} onValueChange={setTime} disabled={isSubmitting}>
+                        <SelectTrigger className={cn(settingsInputClassName, "w-full pl-9 pr-3")}>
+                          <SelectValue placeholder="Select time" />
+                        </SelectTrigger>
+                        <SelectContent className="max-h-[11.5rem]">
+                          {TIME_OPTIONS.map((t) => {
+                            const [h, m] = t.split(":").map(Number);
+                            const d = new Date();
+                            d.setHours(h, m, 0, 0);
+                            const label = d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+                            return (
+                              <SelectItem key={t} value={t}>
+                                {label}
+                              </SelectItem>
+                            );
+                          })}
+                        </SelectContent>
+                      </Select>
                     </div>
                   </SettingsFieldRow>
 
@@ -409,7 +470,7 @@ export function CreateEventForm({
             >
               <SettingsGroup className="[&>div]:md:grid-cols-[11rem_minmax(0,1fr)]">
                 <SettingsFieldRow label="Format" labelClassName="font-normal text-foreground/80" dividerStyle="none" align="center">
-                  <SegmentedControl
+                  <SettingsSegmentedControl
                     value={modality}
                     onChange={setModality}
                     options={MODALITY_OPTIONS}
@@ -418,23 +479,95 @@ export function CreateEventForm({
                 </SettingsFieldRow>
               </SettingsGroup>
 
+              <SettingsGroup className="[&>div]:md:grid-cols-[11rem_minmax(0,1fr)]">
+                <SettingsFieldRow
+                  label="Announcement"
+                  labelClassName="font-normal text-foreground/80"
+                  dividerStyle={promoteToAnnouncement ? "inset" : "none"}
+                  align="center"
+                >
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      variant="form"
+                      id="meeting-announcement"
+                      checked={promoteToAnnouncement}
+                      onCheckedChange={(checked) => setPromoteToAnnouncement(checked === true)}
+                      disabled={isSubmitting}
+                    />
+                    <Label htmlFor="meeting-announcement" className="text-sm font-normal text-muted-foreground">
+                      Enable announcement for this event
+                    </Label>
+                  </div>
+                </SettingsFieldRow>
+
+                {promoteToAnnouncement && (
+                  <SettingsFieldRow
+                    label="Template"
+                    labelClassName="font-normal text-foreground/80"
+                    dividerStyle="none"
+                    align="center"
+                  >
+                    <div className="space-y-2">
+                      <SettingsSegmentedControl
+                        value={announcementTemplateKind}
+                        onChange={(kind) => {
+                          setAnnouncementTemplateKind(kind);
+                          setAnnouncementTemplateId("");
+                        }}
+                        options={[
+                          { value: "agenda", label: "Meeting" },
+                          { value: "program", label: "Program" },
+                        ]}
+                        disabled={isSubmitting || isLoadingTemplates}
+                      />
+                      <div className="max-w-[320px]">
+                        <Select
+                          value={announcementTemplateId || undefined}
+                          onValueChange={setAnnouncementTemplateId}
+                          disabled={isSubmitting || isLoadingTemplates || availableTemplates.length === 0}
+                        >
+                          <SelectTrigger className={settingsInputClassName}>
+                            <SelectValue
+                              placeholder={
+                                isLoadingTemplates
+                                  ? "Loading templates..."
+                                  : availableTemplates.length === 0
+                                  ? "No templates available"
+                                  : "Select template (placeholder)"
+                              }
+                            />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {availableTemplates.map((template) => (
+                              <SelectItem key={template.id} value={template.id}>
+                                {template.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </SettingsFieldRow>
+                )}
+              </SettingsGroup>
+
               <div className="space-y-1">
                 <p className="text-[14px] font-medium text-foreground/85">Plan type</p>
                 <p className="text-[12px] text-muted-foreground">
-                  Choose a plan type. This cannot be changed later.
+                  Optional. Select a plan if you want to build the meeting in Beespo.
                 </p>
               </div>
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 <PlanTypeCard
                   type="agenda"
                   selected={planType === "agenda"}
-                  onSelect={() => setPlanType("agenda")}
+                  onSelect={() => setPlanType((current) => (current === "agenda" ? null : "agenda"))}
                   disabled={isSubmitting}
                 />
                 <PlanTypeCard
                   type="program"
                   selected={planType === "program"}
-                  onSelect={() => setPlanType("program")}
+                  onSelect={() => setPlanType((current) => (current === "program" ? null : "program"))}
                   disabled={isSubmitting}
                 />
               </div>

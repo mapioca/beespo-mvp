@@ -239,6 +239,15 @@
     --settings-swatch-gap: 0.45rem;
     --settings-swatch-border: 0 0% 84%;
     --settings-swatch-ring: 0 0% 16%;
+    --form-checkbox-size: 18px;
+    --form-checkbox-radius: 6px;
+    --form-checkbox-bg: var(--cp-surface);
+    --form-checkbox-border: var(--cp-border);
+    --form-checkbox-focus: var(--cp-focus);
+    --form-checkbox-check: var(--cp-primary);
+    --form-checkbox-checked-bg: 220 16% 21%;
+    --form-checkbox-checked-border: 220 16% 21%;
+    --form-checkbox-checked-check: 0 0% 100%;
   }
 
   .dark {
@@ -433,6 +442,15 @@
     --settings-swatch-gap: 0.45rem;
     --settings-swatch-border: 220 10% 26%;
     --settings-swatch-ring: 0 0% 88%;
+    --form-checkbox-size: 18px;
+    --form-checkbox-radius: 6px;
+    --form-checkbox-bg: var(--cp-surface-2);
+    --form-checkbox-border: var(--cp-border);
+    --form-checkbox-focus: var(--cp-focus);
+    --form-checkbox-check: var(--cp-primary);
+    --form-checkbox-checked-bg: 220 12% 86%;
+    --form-checkbox-checked-border: 220 12% 86%;
+    --form-checkbox-checked-check: 220 14% 11%;
   }
 }
 

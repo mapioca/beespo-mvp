@@ -47,9 +47,10 @@ function PanelCard({
             <div className="shrink-0 flex items-center justify-between px-4 py-1.5 bg-app-island gap-2">
                 <div className="flex items-center gap-1.5 min-w-0">
                     <Button
+                        type="button"
                         variant="ghost"
                         size="icon"
-                        className="h-7 w-7 text-muted-foreground hover:text-foreground shrink-0 -ml-1.5"
+                        className="relative z-10 h-7 w-7 shrink-0 text-muted-foreground hover:text-foreground"
                         onClick={onClose}
                     >
                         <PanelRightClose className="h-4 w-4" />
@@ -58,9 +59,10 @@ function PanelCard({
                 </div>
                 {onDelete && (
                     <Button
+                        type="button"
                         variant="ghost"
                         size="icon"
-                        className="h-7 w-7 text-muted-foreground hover:text-destructive shrink-0 -mr-1.5"
+                        className="relative z-10 h-7 w-7 shrink-0 text-muted-foreground hover:text-destructive"
                         onClick={onDelete}
                     >
                         <Trash2 className="h-4 w-4" />
@@ -142,9 +144,10 @@ export function DetailsPanel({
                 <div className="shrink-0 flex items-center justify-between px-4 py-1.5 gap-2">
                     <div className="flex items-center gap-1.5 min-w-0">
                         <Button
+                            type="button"
                             variant="ghost"
                             size="icon"
-                            className="h-7 w-7 text-muted-foreground hover:text-foreground shrink-0 -ml-1.5"
+                            className="relative z-10 h-7 w-7 shrink-0 text-muted-foreground hover:text-foreground"
                             onClick={handleClose}
                         >
                             <PanelRightClose className="h-4 w-4" />
@@ -153,9 +156,10 @@ export function DetailsPanel({
                     </div>
                     {onDelete && (
                         <Button
+                            type="button"
                             variant="ghost"
                             size="icon"
-                            className="h-7 w-7 text-muted-foreground hover:text-destructive shrink-0 -mr-1.5"
+                            className="relative z-10 h-7 w-7 shrink-0 text-muted-foreground hover:text-destructive"
                             onClick={onDelete}
                         >
                             <Trash2 className="h-4 w-4" />

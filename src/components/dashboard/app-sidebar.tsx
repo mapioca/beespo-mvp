@@ -129,8 +129,6 @@ export function AppSidebar({
           className
         )}
         style={{ transition: `width 280ms ${DRAWER_EASING}` }}
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
       >
         {/* Aside — the drawer. Animates width to clip/reveal content. */}
         <aside
@@ -142,6 +140,8 @@ export function AppSidebar({
             width: isExpanded ? 208 : 42, // w-52 / w-[44px]
             transition: `width 280ms ${DRAWER_EASING}, box-shadow 280ms ${DRAWER_EASING}, border-color 280ms ${DRAWER_EASING}`,
           }}
+          onMouseEnter={handleMouseEnter}
+          onMouseLeave={handleMouseLeave}
         >
           {/* Inner content — always at full expanded width (w-52).
               The aside clips it; the drawer animation just reveals/hides. */}
@@ -163,9 +163,13 @@ export function AppSidebar({
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={togglePinned}
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        togglePinned()
+                      }}
+                      onPointerDown={(event) => event.stopPropagation()}
                       className={cn(
-                        "h-7 w-7 shrink-0",
+                        "relative z-20 h-7 w-7 shrink-0 pointer-events-auto hover:bg-accent",
                         isPinned
                           ? "text-nav-strong hover:text-nav"
                           : "text-nav hover:text-nav-strong",
