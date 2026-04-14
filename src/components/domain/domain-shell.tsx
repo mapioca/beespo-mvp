@@ -87,11 +87,11 @@ export function DomainShell({
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col md:flex-row">
-      <aside className="border-b border-border/60 bg-[hsl(var(--panel)/0.6)] md:w-64 md:shrink-0 md:border-b-0 md:border-r">
-        <div className="flex h-full flex-col">
+    <div className="flex h-full min-h-0 flex-col md:flex-row gap-1.5 md:gap-1 xl:gap-1.5 2xl:gap-1.5">
+      <aside className="md:w-64 md:shrink-0 h-full flex flex-col">
+        <div className="flex-1 flex flex-col bg-app-island border border-app-island rounded-[16px] shadow-[var(--shadow-app-island)] overflow-hidden">
           <div className="hidden px-5 pb-3 pt-5 md:block">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground/80">
               {title}
             </p>
           </div>
@@ -191,7 +191,9 @@ export function DomainShell({
           </nav>
         </div>
       </aside>
-      <div className="min-w-0 flex-1 overflow-auto">{children}</div>
+      <div className="min-w-0 flex-1 overflow-auto bg-app-island border border-app-island rounded-[16px] shadow-[var(--shadow-app-island)]">
+        {children}
+      </div>
     </div>
   )
 }

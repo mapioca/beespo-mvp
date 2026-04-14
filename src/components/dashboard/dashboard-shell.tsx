@@ -11,7 +11,6 @@ import type { UserNavigationItems } from "@/lib/navigation/types";
 
 interface DashboardShellProps {
     children: React.ReactNode;
-    workspaceName: string;
     userName: string;
     userEmail: string;
     userId: string;
@@ -21,7 +20,6 @@ interface DashboardShellProps {
 
 export function DashboardShell({
     children,
-    workspaceName,
     userName,
     userEmail,
     userId,
@@ -41,9 +39,8 @@ export function DashboardShell({
             <DetailsPanelContext.Provider value={{ portalEl, reportOpen }}>
                 <NavigationStoreHydrator initialItems={initialNavigationItems} />
                 <div className="flex h-screen-dynamic overflow-hidden overscroll-none bg-app-shell">
-                <div className="hidden lg:flex">
+                <div className="relative z-20 hidden lg:flex">
                     <AppSidebar
-                        workspaceName={workspaceName}
                         userName={userName}
                         userEmail={userEmail}
                         userId={userId}
@@ -56,21 +53,19 @@ export function DashboardShell({
                         <SheetTitle className="sr-only">Navigation</SheetTitle>
                         <SheetDescription className="sr-only">Workspace navigation drawer</SheetDescription>
                         <AppSidebar
-                            workspaceName={workspaceName}
                             userName={userName}
                             userEmail={userEmail}
                             userId={userId}
                             userRoleTitle={userRoleTitle}
                             className="w-full"
                             forceExpanded
-                            hidePinToggle
                         />
                     </SheetContent>
                 </Sheet>
 
                 {/* Content area: main island + optional details panel island side by side */}
                 <div className="flex-1 min-w-0 min-h-0 flex items-stretch bg-app-shell p-0 sm:p-1.5 sm:gap-1 xl:p-2 xl:gap-1.5 2xl:p-2.5 2xl:gap-1.5">
-                    <main className="flex-1 min-w-0 h-full min-h-0 overflow-hidden rounded-none border-0 bg-app-island shadow-none sm:rounded-[16px] sm:border sm:border-app-island sm:shadow-[var(--shadow-app-island)]">
+                    <main className="relative z-0 flex-1 min-w-0 h-full min-h-0 overflow-hidden">
                         {children}
                     </main>
                     {/* Portal target for DetailsPanel — hidden on mobile, sized by panel open state on desktop */}

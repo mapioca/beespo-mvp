@@ -149,16 +149,6 @@ export function SidebarUserProfile({ name, email, userId, roleTitle, avatarUrl, 
                 )}
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-56" align={isCollapsed ? "center" : "end"} side="right" forceMount>
-                <DropdownMenuLabel className="font-normal">
-                    <div className="flex flex-col space-y-1">
-                        <p className="text-sm font-medium leading-none">{name}</p>
-                        {roleTitle && (
-                            <p className="text-xs leading-none text-muted-foreground">{roleTitle}</p>
-                        )}
-                        <p className="text-xs leading-none text-muted-foreground">{email}</p>
-                    </div>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
                 <DropdownMenuGroup>
                     <DropdownMenuItem asChild>
                         <Link href="/settings" className="cursor-pointer">

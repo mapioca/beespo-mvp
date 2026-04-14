@@ -367,10 +367,11 @@ export function MeetingContextBar({
         desktop: { label: "Desktop", icon: Monitor },
     } as const;
     const CurrentDeviceIcon = deviceOptions[programPreviewDevice].icon;
-    const renderMoreMenu = () => (
+    const renderMoreMenu = (triggerId: string) => (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
                 <button
+                    id={triggerId}
                     type="button"
                     title="More options"
                     className={cn(
@@ -497,7 +498,7 @@ export function MeetingContextBar({
                         { label: title || "Untitled Agenda", icon: <FileText className="h-4 w-4 stroke-[1.6]" /> },
                     ]}
                     className="rounded-none bg-chrome px-4 py-0"
-                    inlineAction={<div className="hidden sm:flex">{renderMoreMenu()}</div>}
+                    inlineAction={<div className="hidden sm:flex">{renderMoreMenu("meeting-context-more-desktop")}</div>}
                     action={
                         <div className="flex flex-wrap items-center gap-1.5 sm:flex-nowrap">
                         {initialMeetingId ? (
@@ -523,10 +524,11 @@ export function MeetingContextBar({
                             <DropdownMenu open={deviceMenuOpen} onOpenChange={setDeviceMenuOpen}>
                                 <DropdownMenuTrigger asChild>
                                     <button
+                                        id="meeting-context-device-menu-trigger"
                                         type="button"
                                         title="Preview device"
                                         className={cn(
-                                            "inline-flex h-8 w-8 items-center justify-center rounded-full sm:w-auto",
+                                            "inline-flex h-8 w-8 select-none items-center justify-center rounded-full sm:w-auto [&>*]:pointer-events-none",
                                             "border border-control bg-control text-foreground hover:bg-control-hover",
                                             "px-0 sm:px-3.5 gap-2",
                                             "transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
@@ -569,6 +571,7 @@ export function MeetingContextBar({
                         <StandardPopoverMenu>
                             <StandardPopoverMenuTrigger asChild>
                                 <button
+                                    id="meeting-context-mode-switch-trigger"
                                     type="button"
                                     title="Switch mode"
                                     className={cn(
@@ -618,6 +621,7 @@ export function MeetingContextBar({
                             <StandardPopoverMenu>
                                 <StandardPopoverMenuTrigger asChild>
                                     <button
+                                        id="meeting-context-save-menu-trigger"
                                         type="button"
                                         title="Save options"
                                         className={cn(
@@ -659,7 +663,7 @@ export function MeetingContextBar({
                         )}
 
                         <div className="sm:hidden">
-                            {renderMoreMenu()}
+                            {renderMoreMenu("meeting-context-more-mobile")}
                         </div>
 
                         <div className="hidden sm:block h-4 w-px bg-border/60" />

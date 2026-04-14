@@ -1,5 +1,6 @@
 import { HomeGreeting } from "./home-greeting";
 import { getDashboardRequestContext } from "@/lib/dashboard/request-context";
+import { DashboardIsland } from "@/components/ui/dashboard-island";
 
 const quotes = [
   "Great meetings don't happen by accident — they're built with intention.",
@@ -21,7 +22,7 @@ export default async function DashboardPage() {
   const quote = getDailyQuote();
 
   return (
-    <div className="flex h-full items-center justify-center bg-white">
+    <DashboardIsland className="flex items-center justify-center">
       <div className="max-w-lg px-8 text-center">
         {/* Greeting — rendered client-side to use browser local time */}
         <HomeGreeting firstName={firstName} />
@@ -39,6 +40,6 @@ export default async function DashboardPage() {
           Use the sidebar to navigate to your meetings, templates, and more.
         </p>
       </div>
-    </div>
+    </DashboardIsland>
   );
 }

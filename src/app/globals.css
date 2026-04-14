@@ -5,7 +5,7 @@
 @layer base {
   :root {
     /* Calm Precision */
-    --cp-canvas: 220 22% 98.7%;
+    --cp-canvas: 0 0% 94.5%;
     --cp-surface: 0 0% 100%;
     --cp-surface-2: 220 20% 99.2%;
     --cp-text: 220 14% 12%;
@@ -251,7 +251,7 @@
   }
 
   .dark {
-    --cp-canvas: 220 14% 8.5%;
+    --cp-canvas: 0 0% 7%;
     --cp-surface: 220 12% 10.5%;
     --cp-surface-2: 220 11% 12.5%;
     --cp-text: 220 14% 92%;

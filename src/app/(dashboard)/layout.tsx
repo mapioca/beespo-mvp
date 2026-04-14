@@ -49,7 +49,6 @@ export default async function DashboardLayout({
   return (
     <>
       <DashboardShell
-        workspaceName={profile?.workspaces?.name || "Workspace"}
         userName={profile?.full_name || ""}
         userEmail={user?.email || ""}
         userId={user.id}

@@ -8,22 +8,14 @@ import {
   Calendar,
   CalendarDays,
   CheckSquare,
-  Pin,
-  PinOff,
   HandHeart,
   Database,
   LayoutTemplate,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { TooltipProvider } from "@/components/ui/tooltip"
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
 import { SidebarUserProfile } from "@/components/dashboard/sidebar-user-profile"
 import { BeespoLogo } from "@/components/ui/beespo-logo"
-import { Button } from "@/components/ui/button"
 import { NavSection } from "./sidebar-types"
 import { SidebarNavSection } from "./sidebar-nav-section"
 import { SidebarSavedItemsSection } from "./sidebar-saved-items-section"
@@ -57,7 +49,6 @@ const HOVER_COLLAPSE_DELAY = 250
 const DRAWER_EASING = "cubic-bezier(0.32, 0.72, 0, 1)"
 
 interface AppSidebarProps {
-  workspaceName: string
   userName: string
   userEmail: string
   userId: string
@@ -65,7 +56,6 @@ interface AppSidebarProps {
   userRoleTitle?: string
   className?: string
   forceExpanded?: boolean
-  hidePinToggle?: boolean
 }
 
 export function AppSidebar({
@@ -76,25 +66,22 @@ export function AppSidebar({
   userRoleTitle,
   className,
   forceExpanded,
-  hidePinToggle,
 }: AppSidebarProps) {
   const pathname = usePathname()
   const favorites = useNavigationStore((state) => state.favorites)
   const recents = useNavigationStore((state) => state.recents)
 
   const {
-    isPinned,
-    togglePinned,
     isGroupExpanded,
     toggleGroup,
   } = useSidebarState(defaultExpandedGroups)
 
   const [isHovering, setIsHovering] = useState(false)
   const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const sidebarRef = useRef<HTMLElement>(null)
 
-  const isExpanded = forceExpanded || isPinned || isHovering
-  const isOverlay = !isPinned && isHovering && !forceExpanded
-
+  const isExpanded = forceExpanded || isHovering
+  const isOverlay = !forceExpanded // When not force-expanded (mobile/fixed shell), it behaves as an overlay drawer
 
   const clearHoverTimer = useCallback(() => {
     if (hoverTimerRef.current) {
@@ -104,51 +91,57 @@ export function AppSidebar({
   }, [])
 
   const handleMouseEnter = useCallback(() => {
-    if (isPinned || forceExpanded) return
+    if (forceExpanded) return
     clearHoverTimer()
     hoverTimerRef.current = setTimeout(() => {
       setIsHovering(true)
     }, HOVER_EXPAND_DELAY)
-  }, [isPinned, forceExpanded, clearHoverTimer])
+  }, [forceExpanded, clearHoverTimer])
 
   const handleMouseLeave = useCallback(() => {
-    if (isPinned || forceExpanded) return
+    if (forceExpanded) return
     clearHoverTimer()
     hoverTimerRef.current = setTimeout(() => {
       setIsHovering(false)
     }, HOVER_COLLAPSE_DELAY)
-  }, [isPinned, forceExpanded, clearHoverTimer])
+  }, [forceExpanded, clearHoverTimer])
 
   return (
     <TooltipProvider delayDuration={0}>
-      {/* Outer wrapper — reserves layout space */}
+      {/* Outer wrapper — reserves layout space ONLY when forceExpanded (e.g. mobile sheet) */}
       <div
         className={cn(
-          "shrink-0 h-full relative",
-          forceExpanded ? "w-52" : (isPinned ? "w-52" : "w-[42px]"),
+          "relative z-40 shrink-0 h-full",
+          forceExpanded ? "w-64" : "w-0",
           className
         )}
-        style={{ transition: `width 280ms ${DRAWER_EASING}` }}
       >
-        {/* Aside — the drawer. Animates width to clip/reveal content. */}
+        {/* Aside — the drawer. Animates width to reveal content. */}
         <aside
-          className={cn(
-            "h-full overflow-hidden bg-app-shell",
-            isOverlay && "fixed inset-y-0 left-0 z-[100] rounded-r-2xl border-r border-y border-app-island shadow-[var(--shadow-app-island)]",
-          )}
-          style={{
-            width: isExpanded ? 208 : 42, // w-52 / w-[44px]
-            transition: `width 280ms ${DRAWER_EASING}, box-shadow 280ms ${DRAWER_EASING}, border-color 280ms ${DRAWER_EASING}`,
-          }}
+          ref={sidebarRef}
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
+          className={cn(
+            "fixed transition-all duration-300 ease-out z-[100] flex flex-col group overflow-hidden",
+            // Collapsed state: just an edge-hover trigger
+            !isExpanded && "top-0 left-0 h-screen w-2 bg-transparent pointer-events-auto",
+            // Expanded state: a detached island card
+            isExpanded && "top-1.5 bottom-1.5 left-1.5 w-[240px] rounded-[16px] bg-app-island border border-app-island shadow-2xl opacity-100",
+            // Dashboard layout interactions
+            forceExpanded && "relative translate-x-0 w-64 border-r bg-background top-0 left-0 h-screen rounded-none border-none shadow-none",
+            !forceExpanded && !isExpanded && "translate-x-0",
+            !forceExpanded && isExpanded && "translate-x-0"
+          )}
         >
           {/* Inner content — always at full expanded width (w-52).
               The aside clips it; the drawer animation just reveals/hides. */}
-          <div className="flex flex-col h-full w-52 shrink-0">
+          <div className={cn(
+            "flex flex-col h-full w-52 shrink-0 transition-opacity duration-200",
+            !isExpanded && "opacity-0 pointer-events-none"
+          )}>
 
-            {/* Header — logo + pin toggle */}
-            <div className="flex items-center h-[30px] justify-between px-4 mt-2.5 mb-1">
+            {/* Header — logo only (pin removed) */}
+            <div className="flex h-[30px] items-center px-4 mt-2.5 mb-1">
               <Link
                 href="/dashboard"
                 className="flex items-center select-none text-foreground"
@@ -156,40 +149,6 @@ export function AppSidebar({
               >
                 <BeespoLogo className="h-5 w-5 shrink-0" />
               </Link>
-
-              {!hidePinToggle && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={(event) => {
-                        event.stopPropagation()
-                        togglePinned()
-                      }}
-                      onPointerDown={(event) => event.stopPropagation()}
-                      className={cn(
-                        "relative z-20 h-7 w-7 shrink-0 pointer-events-auto hover:bg-accent",
-                        isPinned
-                          ? "text-nav-strong hover:text-nav"
-                          : "text-nav hover:text-nav-strong",
-                      )}
-                    >
-                      {isPinned ? (
-                        <Pin className="h-3.5 w-3.5 stroke-[1.8]" />
-                      ) : (
-                        <PinOff className="h-3.5 w-3.5 stroke-[1.8]" />
-                      )}
-                      <span className="sr-only">
-                        {isPinned ? "Unpin sidebar" : "Pin sidebar"}
-                      </span>
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="right">
-                    {isPinned ? "Unpin sidebar" : "Pin sidebar"}
-                  </TooltipContent>
-                </Tooltip>
-              )}
             </div>
 
             {/* Navigation — always rendered in expanded layout */}

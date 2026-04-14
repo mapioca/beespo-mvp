@@ -20,7 +20,7 @@ export const IconCircleButton = React.forwardRef<
       ref={ref}
       type={type}
       className={cn(
-        "inline-flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground ring-offset-background transition-colors",
+        "inline-flex h-8 w-8 select-none items-center justify-center rounded-full text-muted-foreground ring-offset-background transition-colors [&>*]:pointer-events-none",
         "hover:bg-[hsl(var(--table-filter-hover))] hover:text-foreground",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
         "disabled:pointer-events-none disabled:opacity-50",
