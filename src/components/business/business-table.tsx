@@ -36,6 +36,11 @@ import {
     StandardSelectableRow,
     StandardTableShell,
 } from "@/components/ui/standard-data-table"
+import {
+    standardTableHeaderRowVariants,
+    standardTableHeaderVariants,
+    standardTableVariants,
+} from "@/components/ui/table-standard"
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -131,14 +136,14 @@ export function BusinessTable({
 
     return (
         <>
-            <StandardTableShell className="overflow-hidden">
-            <Table className="text-[13px]">
-                <TableHeader>
-                    <TableRow className="table-header-row-standard">
+            <StandardTableShell variant="app" className="overflow-hidden">
+            <Table className={standardTableVariants({ density: "compact", dividers: "subtle" })}>
+                <TableHeader className={standardTableHeaderVariants({ sticky: true, variant: "app" })}>
+                    <TableRow className={standardTableHeaderRowVariants({ variant: "app" })}>
                         <StandardSelectAllHeadCell
                             checked={allSelected}
                             onToggle={() => onToggleAllRows?.()}
-                            className="w-10 table-cell-check static px-[var(--table-cell-px)] py-[var(--table-row-py)] backdrop-blur-none"
+                            variant="app"
                         />
 
                         {/* Member */}
@@ -149,6 +154,7 @@ export function BusinessTable({
                                 defaultDirection="asc"
                                 sortConfig={sortConfig}
                                 onSort={onSort}
+                                variant="app"
                                 className="min-w-[200px]"
                             />
                         )}
@@ -161,6 +167,7 @@ export function BusinessTable({
                                 defaultDirection="asc"
                                 sortConfig={sortConfig}
                                 onSort={onSort}
+                                variant="app"
                             />
                         )}
 
@@ -172,6 +179,7 @@ export function BusinessTable({
                                 defaultDirection="asc"
                                 sortConfig={sortConfig}
                                 onSort={onSort}
+                                variant="app"
                                 className="w-[140px]"
                             />
                         )}
@@ -184,6 +192,7 @@ export function BusinessTable({
                                 defaultDirection="asc"
                                 sortConfig={sortConfig}
                                 onSort={onSort}
+                                variant="app"
                                 className="w-[120px]"
                             />
                         )}
@@ -196,11 +205,12 @@ export function BusinessTable({
                                 defaultDirection="desc"
                                 sortConfig={sortConfig}
                                 onSort={onSort}
+                                variant="app"
                                 className="w-[130px]"
                             />
                         )}
 
-                        <StandardActionsHeadCell className="static backdrop-blur-none" />
+                        <StandardActionsHeadCell variant="app" />
                     </TableRow>
                 </TableHeader>
 

@@ -37,6 +37,11 @@ import {
     StandardSelectableRow,
     StandardTableShell,
 } from "@/components/ui/standard-data-table"
+import {
+    standardTableHeaderRowVariants,
+    standardTableHeaderVariants,
+    standardTableVariants,
+} from "@/components/ui/table-standard"
 import { toggleFavorite } from "@/lib/actions/navigation-actions"
 import { useNavigationStore } from "@/stores/navigation-store"
 import { toast } from "@/lib/toast"
@@ -154,14 +159,14 @@ export function DiscussionsTable({
 
     return (
         <>
-            <StandardTableShell className="overflow-hidden">
-            <Table className="text-[13px]">
-                <TableHeader>
-                    <TableRow className="table-header-row-standard">
+            <StandardTableShell variant="app" className="overflow-hidden">
+            <Table className={standardTableVariants({ density: "compact", dividers: "subtle" })}>
+                <TableHeader className={standardTableHeaderVariants({ sticky: true, variant: "app" })}>
+                    <TableRow className={standardTableHeaderRowVariants({ variant: "app" })}>
                         <StandardSelectAllHeadCell
                             checked={allSelected}
                             onToggle={() => onToggleAllRows?.()}
-                            className="w-10 table-cell-check static px-[var(--table-cell-px)] py-[var(--table-row-py)] backdrop-blur-none"
+                            variant="app"
                         />
 
                         {/* Title */}
@@ -172,6 +177,7 @@ export function DiscussionsTable({
                                 defaultDirection="asc"
                                 sortConfig={sortConfig}
                                 onSort={onSort}
+                                variant="app"
                                 className="min-w-[250px]"
                             />
                         )}
@@ -184,6 +190,7 @@ export function DiscussionsTable({
                                 defaultDirection="asc"
                                 sortConfig={sortConfig}
                                 onSort={onSort}
+                                variant="app"
                                 className="w-[180px]"
                             />
                         )}
@@ -196,6 +203,7 @@ export function DiscussionsTable({
                                 defaultDirection="asc"
                                 sortConfig={sortConfig}
                                 onSort={onSort}
+                                variant="app"
                                 className="w-[160px]"
                             />
                         )}
@@ -208,6 +216,7 @@ export function DiscussionsTable({
                                 defaultDirection="asc"
                                 sortConfig={sortConfig}
                                 onSort={onSort}
+                                variant="app"
                                 className="w-[120px]"
                             />
                         )}
@@ -220,11 +229,12 @@ export function DiscussionsTable({
                                 defaultDirection="desc"
                                 sortConfig={sortConfig}
                                 onSort={onSort}
+                                variant="app"
                                 className="w-[130px]"
                             />
                         )}
 
-                        <StandardActionsHeadCell className="static backdrop-blur-none" />
+                        <StandardActionsHeadCell variant="app" />
                     </TableRow>
                 </TableHeader>
 

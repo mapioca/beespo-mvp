@@ -577,7 +577,9 @@ export function DiscussionsClient({
                             Clear view
                         </button>
                     )}
+                </div>
 
+                <div className="flex items-center gap-2">
                     <StandardPopoverMenu open={filtersOpen} onOpenChange={setFiltersOpen}>
                         <StandardPopoverMenuTrigger asChild>
                             <ToolbarIconButton
@@ -730,7 +732,7 @@ export function DiscussionsClient({
                                         className="flex w-full items-center justify-start gap-2 rounded-md px-2.5 py-1.5 text-[length:var(--menu-item-font-size)] text-[hsl(var(--menu-text))] hover:bg-[hsl(var(--menu-hover))]"
                                     >
                                         <Plus className="h-3.5 w-3.5" />
-                                        Create new filter
+                                Create new filter
                                     </button>
                                 </StandardPopoverMenuSubContent>
                             </StandardPopoverMenuSub>

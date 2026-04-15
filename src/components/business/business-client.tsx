@@ -527,7 +527,9 @@ export function BusinessClient({ items, initialViews = [] }: BusinessClientProps
                             Clear view
                         </button>
                     )}
+                </div>
 
+                <div className="flex items-center gap-2">
                     <StandardPopoverMenu open={filtersOpen} onOpenChange={setFiltersOpen}>
                         <StandardPopoverMenuTrigger asChild>
                             <ToolbarIconButton

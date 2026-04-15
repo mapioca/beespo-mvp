@@ -4,38 +4,51 @@ import * as React from "react"
 
 import { Checkbox } from "@/components/ui/checkbox"
 import { TableCell, TableHead, TableRow } from "@/components/ui/table"
+import {
+  standardTableShellVariants,
+  standardStickyHeadCellVariants,
+} from "@/components/ui/table-standard"
 import { cn } from "@/lib/utils"
 
 interface StandardTableShellProps {
   children: React.ReactNode
   className?: string
+  variant?: "default" | "app"
 }
 
-export function StandardTableShell({ children, className }: StandardTableShellProps) {
-  return <div className={cn("table-shell-standard !overflow-visible", className)}>{children}</div>
+export function StandardTableShell({
+  children,
+  className,
+  variant = "default",
+}: StandardTableShellProps) {
+  return <div className={cn(standardTableShellVariants({ variant }), className)}>{children}</div>
 }
 
 interface StandardSelectAllHeadCellProps {
   checked: boolean
   onToggle: () => void
   className?: string
+  variant?: "default" | "app"
 }
 
 export function StandardSelectAllHeadCell({
   checked,
   onToggle,
   className,
+  variant = "default",
 }: StandardSelectAllHeadCellProps) {
   return (
     <TableHead
       className={cn(
         "sticky top-0 z-20 w-10 bg-gray-100 px-3 py-2",
+        variant === "app" && standardStickyHeadCellVariants({ variant, kind: "select" }),
         className
       )}
     >
       <Checkbox
         checked={checked}
         onCheckedChange={onToggle}
+        variant="table"
         className="opacity-0 transition-opacity hover:opacity-100 focus-visible:opacity-100 data-[state=checked]:opacity-100"
       />
     </TableHead>
@@ -44,13 +57,18 @@ export function StandardSelectAllHeadCell({
 
 interface StandardActionsHeadCellProps {
   className?: string
+  variant?: "default" | "app"
 }
 
-export function StandardActionsHeadCell({ className }: StandardActionsHeadCellProps) {
+export function StandardActionsHeadCell({
+  className,
+  variant = "default",
+}: StandardActionsHeadCellProps) {
   return (
     <TableHead
       className={cn(
         "sticky top-0 z-20 w-[52px] bg-gray-100",
+        variant === "app" && standardStickyHeadCellVariants({ variant, kind: "actions" }),
         className
       )}
     >
@@ -109,6 +127,7 @@ export function StandardSelectableRow({
       <TableCell className="px-3 py-2.5">
         <Checkbox
           checked={selected}
+          variant="table"
           className="opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100 data-[state=checked]:opacity-100"
           onCheckedChange={() => onToggle?.(id)}
         />

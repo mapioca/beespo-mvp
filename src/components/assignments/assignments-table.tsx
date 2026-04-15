@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { SortableTableHeader } from "@/components/ui/sortable-table-header"
 import { StandardTableShell, StandardSelectAllHeadCell, StandardActionsHeadCell, StandardSelectableRow } from "@/components/ui/standard-data-table"
+import { standardTableHeaderRowVariants, standardTableHeaderVariants, standardTableVariants } from "@/components/ui/table-standard"
 import { Table, TableBody, TableCell, TableHeader, TableRow } from "@/components/ui/table"
 import { TableRowActionTrigger } from "@/components/ui/table-row-action-trigger"
 
@@ -243,14 +244,14 @@ export function AssignmentsTable({
 
   return (
     <>
-      <StandardTableShell className="overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableRow className="table-header-row-standard">
+      <StandardTableShell variant="app" className="overflow-hidden">
+        <Table className={standardTableVariants({ density: "compact", dividers: "subtle" })}>
+          <TableHeader className={standardTableHeaderVariants({ sticky: true, variant: "app" })}>
+            <TableRow className={standardTableHeaderRowVariants({ variant: "app" })}>
               <StandardSelectAllHeadCell
                 checked={allSelected}
                 onToggle={() => onToggleAllRows?.()}
-                className="w-10 table-cell-check static px-[var(--table-cell-px)] py-[var(--table-row-py)] backdrop-blur-none"
+                variant="app"
               />
 
               {!hiddenColumns.has("assignee") && (
@@ -260,6 +261,7 @@ export function AssignmentsTable({
                   defaultDirection="asc"
                   sortConfig={sortConfig}
                   onSort={onSort}
+                  variant="app"
                   className="min-w-[220px]"
                 />
               )}
@@ -271,6 +273,7 @@ export function AssignmentsTable({
                   defaultDirection="asc"
                   sortConfig={sortConfig}
                   onSort={onSort}
+                  variant="app"
                   className="min-w-[220px]"
                 />
               )}
@@ -282,6 +285,7 @@ export function AssignmentsTable({
                   defaultDirection="asc"
                   sortConfig={sortConfig}
                   onSort={onSort}
+                  variant="app"
                   className="w-[130px]"
                 />
               )}
@@ -293,6 +297,7 @@ export function AssignmentsTable({
                   defaultDirection="asc"
                   sortConfig={sortConfig}
                   onSort={onSort}
+                  variant="app"
                   className="w-[120px]"
                 />
               )}
@@ -304,6 +309,7 @@ export function AssignmentsTable({
                   defaultDirection="asc"
                   sortConfig={sortConfig}
                   onSort={onSort}
+                  variant="app"
                   className="w-[210px]"
                 />
               )}
@@ -315,11 +321,12 @@ export function AssignmentsTable({
                   defaultDirection="desc"
                   sortConfig={sortConfig}
                   onSort={onSort}
+                  variant="app"
                   className="w-[170px]"
                 />
               )}
 
-              <StandardActionsHeadCell className="static backdrop-blur-none" />
+              <StandardActionsHeadCell variant="app" />
             </TableRow>
           </TableHeader>
 
@@ -484,4 +491,3 @@ export function AssignmentsTable({
     </>
   )
 }
-

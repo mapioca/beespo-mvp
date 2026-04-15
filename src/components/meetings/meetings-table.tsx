@@ -21,6 +21,11 @@ import {
     StandardSelectableRow,
     StandardTableShell,
 } from "@/components/ui/standard-data-table"
+import {
+    standardTableHeaderRowVariants,
+    standardTableHeaderVariants,
+    standardTableVariants,
+} from "@/components/ui/table-standard"
 import {useRouter} from "next/navigation";
 
 // ── Types ───────────────────────────────────────────────────────────────────
@@ -106,17 +111,20 @@ export function MeetingsTable({
 
     return (
         <>
-        <StandardTableShell>
+        <StandardTableShell variant="app">
         <Table
             containerClassName="overflow-visible"
-            className="text-[length:var(--table-body-font-size)] [--table-row-py:0.5rem] [&_tr]:border-0"
+            className={standardTableVariants({
+                density: "compact",
+                dividers: "subtle",
+            })}
         >
-            <TableHeader className="sticky top-0 z-30 bg-white">
-                <TableRow className="table-header-row-standard hover:!bg-transparent [&>th:first-child]:rounded-tl-md [&>th:last-child]:rounded-tr-md">
+            <TableHeader className={standardTableHeaderVariants({ sticky: true, variant: "app" })}>
+                <TableRow className={standardTableHeaderRowVariants({ variant: "app" })}>
                     <StandardSelectAllHeadCell
                         checked={allSelected}
                         onToggle={() => onToggleAllRows?.()}
-                        className="bg-white"
+                        variant="app"
                     />
 
                     {/* Title */}
@@ -127,7 +135,8 @@ export function MeetingsTable({
                             defaultDirection="asc"
                             sortConfig={sortConfig}
                             onSort={onSort}
-                            className="sticky top-0 z-20 min-w-[250px] bg-[hsl(var(--table-header-bg)/0.98)] backdrop-blur-sm"
+                            variant="app"
+                            className="min-w-[240px]"
                         />
                     )}
 
@@ -139,7 +148,8 @@ export function MeetingsTable({
                             defaultDirection="asc"
                             sortConfig={sortConfig}
                             onSort={onSort}
-                            className="sticky top-0 z-20 w-[200px] bg-[hsl(var(--table-header-bg)/0.98)] backdrop-blur-sm"
+                            variant="app"
+                            className="w-[168px]"
                         />
                     )}
 
@@ -151,7 +161,8 @@ export function MeetingsTable({
                             defaultDirection="asc"
                             sortConfig={sortConfig}
                             onSort={onSort}
-                            className="sticky top-0 z-20 w-[148px] bg-[hsl(var(--table-header-bg)/0.98)] backdrop-blur-sm"
+                            variant="app"
+                            className="w-[128px]"
                         />
                     )}
 
@@ -163,7 +174,8 @@ export function MeetingsTable({
                             defaultDirection="desc"
                             sortConfig={sortConfig}
                             onSort={onSort}
-                            className="sticky top-0 z-20 w-[140px] bg-[hsl(var(--table-header-bg)/0.98)] backdrop-blur-sm"
+                            variant="app"
+                            className="w-[104px]"
                         />
                     )}
 
@@ -175,11 +187,12 @@ export function MeetingsTable({
                             defaultDirection="desc"
                             sortConfig={sortConfig}
                             onSort={onSort}
-                            className="sticky top-0 z-20 w-[100px] bg-[hsl(var(--table-header-bg)/0.98)] backdrop-blur-sm"
+                            variant="app"
+                            className="w-[96px]"
                         />
                     )}
 
-                    <StandardActionsHeadCell className="bg-white" />
+                    <StandardActionsHeadCell variant="app" />
                 </TableRow>
             </TableHeader>
 
@@ -218,12 +231,12 @@ export function MeetingsTable({
                         >
                             {/* Title */}
                             {!hiddenColumns.has("title") && (
-                        <TableCell className="table-cell-title">
+                        <TableCell className="table-cell-title pr-4">
                             <div className="flex flex-col gap-1.5">
                                 <div className="flex items-center gap-1.5">
                                     <Link
                                         href={getMeetingHref(meeting)}
-                                        className="rounded-sm text-[length:var(--table-body-font-size)] font-semibold text-foreground/90 hover:text-foreground hover:underline underline-offset-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                                        className="rounded-sm text-[13px] font-medium text-foreground/88 hover:text-foreground hover:underline underline-offset-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                                     >
                                         {meeting.title}
                                     </Link>
@@ -235,14 +248,14 @@ export function MeetingsTable({
 
                             {/* Template */}
                             {!hiddenColumns.has("template") && (
-                        <TableCell className="table-cell-meta text-[length:var(--table-meta-font-size)] text-foreground/58">
+                        <TableCell className="table-cell-meta text-[length:var(--table-meta-font-size)] text-foreground/54">
                             {meeting.templates?.name}
                         </TableCell>
                             )}
 
                             {/* Status */}
                             {!hiddenColumns.has("status") && (
-                        <TableCell className="table-cell-meta">
+                        <TableCell className="table-cell-meta whitespace-nowrap">
                             {(() => {
                                 const statusIcons: Record<string, React.ElementType> = {
                                     draft: CalendarCog,
@@ -254,8 +267,8 @@ export function MeetingsTable({
                                 const Icon = statusIcons[meeting.status] ?? CalendarDays;
                                 return (
                                     <span className="inline-flex items-center gap-1.5">
-                                        <Icon className="h-3.5 w-3.5 shrink-0 text-foreground/40" />
-                                        <span className="text-[length:var(--table-meta-font-size)] font-medium text-foreground/66 capitalize">
+                                        <Icon className="h-3.5 w-3.5 shrink-0 text-foreground/38" />
+                                        <span className="text-[length:var(--table-meta-font-size)] font-medium text-foreground/68 capitalize">
                                             {formatLabel(meeting.status)}
                                         </span>
                                     </span>
@@ -266,11 +279,11 @@ export function MeetingsTable({
 
                             {/* Scheduled Date */}
                             {!hiddenColumns.has("scheduled_date") && (
-                        <TableCell className="table-cell-meta">
+                        <TableCell className="table-cell-meta whitespace-nowrap tabular-nums">
                             {meeting.scheduled_date ? (
                                 <span className="inline-flex items-center gap-1.5">
-                                    <Calendar className="h-3.5 w-3.5 shrink-0 text-foreground/40" />
-                                    <span className="text-[length:var(--table-meta-font-size)] font-medium text-foreground/66">
+                                    <Calendar className="h-3.5 w-3.5 shrink-0 text-foreground/38" />
+                                    <span className="text-[length:var(--table-meta-font-size)] font-medium text-foreground/64">
                                         {format(new Date(meeting.scheduled_date), "MMM d")}
                                     </span>
                                 </span>
@@ -280,9 +293,9 @@ export function MeetingsTable({
 
                             {/* Scheduled Time */}
                             {!hiddenColumns.has("scheduled_time") && (
-                        <TableCell className="table-cell-meta">
+                        <TableCell className="table-cell-meta whitespace-nowrap tabular-nums">
                             {meeting.scheduled_date ? (
-                                <span className="text-[length:var(--table-meta-font-size)] font-medium text-foreground/66">
+                                <span className="text-[length:var(--table-meta-font-size)] font-medium text-foreground/64">
                                     {format(new Date(meeting.scheduled_date), "h:mm a")}
                                 </span>
                             ) : null}

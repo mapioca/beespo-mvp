@@ -412,7 +412,7 @@ export function MeetingsClient({
                 items={[
                     { label: workspaceConfig.breadcrumbLabel, icon: <WorkspaceIcon className="h-3.5 w-3.5" /> },
                 ]}
-                className="bg-transparent ring-0 rounded-none px-4 py-1.5"
+                className="bg-transparent ring-0 rounded-none border-b border-border/45 px-4 py-1.5"
                 action={
                     <div className="hidden items-center gap-1 sm:flex">
                         <TopbarSearchAction
@@ -447,36 +447,54 @@ export function MeetingsClient({
                 }
             />
 
-            <div className="flex w-full shrink-0 flex-wrap items-center justify-between gap-3 px-6 pb-3.5 pt-3.5">
+            <div className="flex w-full shrink-0 flex-wrap items-center justify-between gap-3 px-5 pb-2 pt-2.5">
                 <div className="flex min-h-8 flex-wrap items-center gap-2">
-                    {(
-                        [
-                            { value: "mine", label: workspaceConfig.tabLabels.mine },
-                            { value: "shared", label: workspaceConfig.tabLabels.shared },
-                            { value: "all", label: workspaceConfig.tabLabels.all },
-                        ] as const
-                    ).map(({ value, label }) => (
-                        <button
-                            key={value}
-                            onClick={() => {
-                                setActiveFilterId(null)
-                                setActiveCategory(value)
-                            }}
-                            className={
-                                activeFilterId === null && activeCategory === value
-                                    ? "rounded-full border px-3.5 py-1.5 text-[length:var(--agenda-chip-font-size)] font-semibold leading-none border-[hsl(var(--chip-active-border))] bg-[hsl(var(--agenda-interactive-active))] text-[hsl(var(--chip-active-text))] transition-all shadow-[0_1px_0_rgba(15,23,42,0.1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--agenda-interactive-focus-ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-                                    : "rounded-full border px-3.5 py-1.5 text-[length:var(--agenda-chip-font-size)] font-medium leading-none bg-[hsl(var(--chip-bg))] text-[hsl(var(--chip-text))] border-[hsl(var(--chip-border))] hover:bg-[hsl(var(--agenda-interactive-hover))] hover:text-[hsl(var(--chip-active-text))] active:bg-[hsl(var(--agenda-interactive-active))] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--agenda-interactive-focus-ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-                            }
-                            aria-pressed={activeFilterId === null && activeCategory === value}
-                            aria-label={`Filter ${workspaceConfig.pluralLabel} by ${label}`}
-                        >
-                            {label}
-                        </button>
-                    ))}
+                    <div
+                        role="tablist"
+                        aria-label={`${workspaceConfig.pluralLabel} views`}
+                        className="inline-flex h-8 items-center gap-1 rounded-full border border-[hsl(var(--chip-border)/0.75)] bg-white px-1 py-1"
+                    >
+                        {(
+                            [
+                                { value: "mine", label: workspaceConfig.tabLabels.mine },
+                                { value: "shared", label: workspaceConfig.tabLabels.shared },
+                                { value: "all", label: workspaceConfig.tabLabels.all },
+                            ] as const
+                        ).map(({ value, label }) => {
+                            const isActive = activeFilterId === null && activeCategory === value
 
+                            return (
+                                <button
+                                    key={value}
+                                    role="tab"
+                                    aria-selected={isActive}
+                                    onClick={() => {
+                                        setActiveFilterId(null)
+                                        setActiveCategory(value)
+                                    }}
+                                    className={
+                                        isActive
+                                            ? "inline-flex h-6 items-center rounded-full px-3 text-[12px] font-semibold leading-none text-[hsl(var(--chip-active-text))] bg-[hsl(var(--chip-active-bg)/0.72)]"
+                                            : "inline-flex h-6 items-center rounded-full px-3 text-[12px] font-medium leading-none text-[hsl(var(--chip-text))] hover:bg-[hsl(var(--chip-hover-bg)/0.85)] hover:text-[hsl(var(--chip-active-text))]"
+                                    }
+                                    aria-label={`Filter ${workspaceConfig.pluralLabel} by ${label}`}
+                                >
+                                    {label}
+                                </button>
+                            )
+                        })}
+                    </div>
+
+                </div>
+
+                <div className="flex items-center gap-2">
                     <StandardPopoverMenu open={savedFiltersOpen} onOpenChange={setSavedFiltersOpen}>
                         <StandardPopoverMenuTrigger asChild>
-                            <ToolbarIconButton title="Saved filters" aria-label="Open saved filters">
+                            <ToolbarIconButton
+                                title="Saved filters"
+                                aria-label="Open saved filters"
+                                className="h-8 w-8 border-[hsl(var(--chip-border)/0.9)] bg-white text-foreground/58 hover:border-[hsl(var(--chip-border))] hover:bg-[hsl(var(--chip-hover-bg))] hover:text-foreground/78 data-[state=open]:border-[hsl(var(--chip-active-border)/0.85)] data-[state=open]:bg-[hsl(var(--chip-active-bg)/0.72)] data-[state=open]:text-foreground/78"
+                            >
                                 <SlidersHorizontal className="h-3.5 w-3.5" />
                             </ToolbarIconButton>
                         </StandardPopoverMenuTrigger>
@@ -624,7 +642,11 @@ export function MeetingsClient({
 
                     <StandardPopoverMenu open={displayOptionsOpen} onOpenChange={setDisplayOptionsOpen}>
                         <StandardPopoverMenuTrigger asChild>
-                            <ToolbarIconButton title="Display options" aria-label="Display options">
+                            <ToolbarIconButton
+                                title="Display options"
+                                aria-label="Display options"
+                                className="h-8 w-8 border-[hsl(var(--chip-border)/0.9)] bg-white text-foreground/58 hover:border-[hsl(var(--chip-border))] hover:bg-[hsl(var(--chip-hover-bg))] hover:text-foreground/78 data-[state=open]:border-[hsl(var(--chip-active-border)/0.85)] data-[state=open]:bg-[hsl(var(--chip-active-bg)/0.72)] data-[state=open]:text-foreground/78"
+                            >
                                 <Columns3 className="h-3.5 w-3.5" />
                             </ToolbarIconButton>
                         </StandardPopoverMenuTrigger>
@@ -760,7 +782,7 @@ export function MeetingsClient({
                 </div>
             )}
 
-            <div className="flex-1 overflow-auto px-6 pb-6">
+            <div className="flex-1 overflow-auto px-5 pb-5">
                 {activeCategory === "shared" && !activeFilter && sharedMeetings.length === 0 && !search ? (
                     <div className="flex h-48 flex-col items-center justify-center text-center">
                         <p className="text-sm text-muted-foreground">

@@ -472,7 +472,9 @@ export function AssignmentsClient({ assignments, initialViews = [] }: Assignment
               Clear filter
             </button>
           )}
+        </div>
 
+        <div className="flex items-center gap-2">
           <StandardPopoverMenu open={filtersOpen} onOpenChange={setFiltersOpen}>
             <StandardPopoverMenuTrigger asChild>
               <ToolbarIconButton title="Filters" aria-label="Open filters">
