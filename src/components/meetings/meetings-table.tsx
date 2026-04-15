@@ -12,9 +12,7 @@ import {
 import { Calendar, CalendarDays, CalendarClock, CalendarCheck2, CalendarCog } from "lucide-react"
 import { format } from "date-fns"
 import { MeetingRowActions } from "./meeting-row-actions"
-import { MeetingShareBadge } from "./meeting-share-badge"
 import { ShareDialog } from "@/components/conduct/share-dialog"
-import { ZoomIcon } from "@/components/ui/zoom-icon"
 import { Database } from "@/types/database"
 import { SortableTableHeader } from "@/components/ui/sortable-table-header"
 import {
@@ -23,7 +21,7 @@ import {
     StandardSelectableRow,
     StandardTableShell,
 } from "@/components/ui/standard-data-table"
-import {router} from "next/client";
+import {useRouter} from "next/navigation";
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -87,6 +85,7 @@ export function MeetingsTable({
     onToggleRow,
     onToggleAllRows,
 }: MeetingsTableProps) {
+    const router = useRouter()
     const [shareDialogMeeting, setShareDialogMeeting] = useState<Meeting | null>(null)
     const allSelected =
         meetings.length > 0 && selectedRows.size === meetings.length
@@ -110,13 +109,14 @@ export function MeetingsTable({
         <StandardTableShell>
         <Table
             containerClassName="overflow-visible"
-            className="text-[length:var(--table-body-font-size)] [--table-row-py:0.5rem]"
+            className="text-[length:var(--table-body-font-size)] [--table-row-py:0.5rem] [&_tr]:border-0"
         >
-            <TableHeader className="sticky top-0 z-30">
-                <TableRow className="table-header-row-standard !bg-transparent hover:!bg-transparent [&>th:first-child]:rounded-tl-md [&>th:last-child]:rounded-tr-md">
+            <TableHeader className="sticky top-0 z-30 bg-white">
+                <TableRow className="table-header-row-standard hover:!bg-transparent [&>th:first-child]:rounded-tl-md [&>th:last-child]:rounded-tr-md">
                     <StandardSelectAllHeadCell
                         checked={allSelected}
                         onToggle={() => onToggleAllRows?.()}
+                        className="bg-white"
                     />
 
                     {/* Title */}
@@ -179,7 +179,7 @@ export function MeetingsTable({
                         />
                     )}
 
-                    <StandardActionsHeadCell />
+                    <StandardActionsHeadCell className="bg-white" />
                 </TableRow>
             </TableHeader>
 
@@ -227,28 +227,6 @@ export function MeetingsTable({
                                     >
                                         {meeting.title}
                                     </Link>
-                                        {meeting.is_publicly_shared && (
-                                            <span className="inline-flex items-center gap-1 text-[length:var(--table-micro-font-size)] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
-                                                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                                                Live
-                                            </span>
-                                        )}
-                                        {meeting._shareType === "shared_with_me" && (
-                                            <MeetingShareBadge
-                                                type="shared_with_me"
-                                                sharedBy={meeting._sharedByName}
-                                                fromWorkspace={meeting._sharedFromWorkspace}
-                                            />
-                                        )}
-                                        {meeting._isSharedOutward && meeting._shareType !== "shared_with_me" && (
-                                            <MeetingShareBadge
-                                                type="shared_outward"
-                                                onClick={() => setShareDialogMeeting(meeting)}
-                                            />
-                                        )}
-                                        {meeting.zoom_meeting_id && (
-                                            <ZoomIcon className="h-4 w-4 shrink-0" />
-                                        )}
                                 </div>
 
                             </div>

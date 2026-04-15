@@ -412,7 +412,7 @@ export function MeetingsClient({
                 items={[
                     { label: workspaceConfig.breadcrumbLabel, icon: <WorkspaceIcon className="h-3.5 w-3.5" /> },
                 ]}
-                className="bg-transparent ring-0 border-b border-border/60 rounded-none px-4 py-1.5"
+                className="bg-transparent ring-0 rounded-none px-4 py-1.5"
                 action={
                     <div className="hidden items-center gap-1 sm:flex">
                         <TopbarSearchAction

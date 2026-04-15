@@ -39,16 +39,16 @@ export function SortableTableHeader({
   }
 
   return (
-    <TableHead className={className}>
+    <TableHead className={cn("bg-gray-100", className)}>
       <button
         type="button"
         onClick={handleSort}
         className={cn(
           "group inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 -mx-1.5",
-          "transition-colors hover:bg-[hsl(var(--agenda-interactive-hover))]",
+          "transition-colors hover:bg-gray-200",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--agenda-interactive-focus-ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-background",
           isActive
-            ? "bg-[hsl(var(--agenda-interactive-active))] text-foreground/85"
+            ? "bg-gray-200 text-foreground/85"
             : "text-foreground/55 hover:text-foreground/80"
         )}
         aria-label={`Sort by ${label}`}

@@ -700,8 +700,7 @@
 
   .table-shell-standard {
     border-radius: 0.75rem;
-    border-top: 1px solid hsl(var(--table-shell-border) / 0.6);
-    border-bottom: 1px solid hsl(var(--table-shell-border) / 0.6);
+    border: 0;
     background-color: hsl(var(--table-shell-bg) / 0.8);
     box-shadow: var(--table-shell-shadow);
     overflow: hidden;
@@ -729,12 +728,12 @@
   }
 
   .table-header-row-standard {
-    background-color: hsl(var(--table-header-bg) / 0.25);
+    background-color: hsl(var(--table-header-bg) / 0.5);
     border-bottom: 1px solid hsl(var(--table-header-border) / 0.6);
   }
 
   .table-header-row-standard:hover {
-    background-color: hsl(var(--table-header-bg) / 0.25);
+    background-color: hsl(var(--table-header-bg) / 0.5);
   }
 
   .table-cell-check {

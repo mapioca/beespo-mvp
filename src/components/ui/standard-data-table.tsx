@@ -29,11 +29,15 @@ export function StandardSelectAllHeadCell({
   return (
     <TableHead
       className={cn(
-        "sticky top-0 z-20 w-10 bg-[hsl(var(--table-header-bg)/0.98)] px-3 py-2 backdrop-blur-sm",
+        "sticky top-0 z-20 w-10 bg-gray-100 px-3 py-2",
         className
       )}
     >
-      <Checkbox checked={checked} onCheckedChange={onToggle} />
+      <Checkbox
+        checked={checked}
+        onCheckedChange={onToggle}
+        className="opacity-0 transition-opacity hover:opacity-100 focus-visible:opacity-100 data-[state=checked]:opacity-100"
+      />
     </TableHead>
   )
 }
@@ -46,7 +50,7 @@ export function StandardActionsHeadCell({ className }: StandardActionsHeadCellPr
   return (
     <TableHead
       className={cn(
-        "sticky top-0 z-20 w-[52px] bg-[hsl(var(--table-header-bg)/0.98)] backdrop-blur-sm",
+        "sticky top-0 z-20 w-[52px] bg-gray-100",
         className
       )}
     >
@@ -89,7 +93,7 @@ export function StandardSelectableRow({
     <TableRow
       data-state={selected ? "selected" : undefined}
       className={cn(
-        "group transition-[background-color,box-shadow] duration-150 ease-out hover:bg-[hsl(var(--table-row-hover))] hover:shadow-[inset_0_0_0_1px_hsl(var(--table-shell-border)/0.28)] focus-within:bg-[hsl(var(--table-row-hover))] focus-within:shadow-[inset_0_0_0_2px_hsl(var(--ring)/0.4)] data-[state=selected]:bg-[hsl(var(--table-row-selected))] data-[state=selected]:shadow-[inset_0_0_0_1px_hsl(var(--table-shell-border)/0.4)]",
+        "group transition-[background-color,box-shadow] duration-150 ease-out hover:bg-[hsl(var(--table-row-hover))] focus-within:bg-[hsl(var(--table-row-hover))] data-[state=selected]:bg-[hsl(var(--table-row-selected))]",
         onRowClick && "cursor-pointer",
         className
       )}
