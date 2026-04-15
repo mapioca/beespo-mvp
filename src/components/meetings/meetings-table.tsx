@@ -23,6 +23,7 @@ import {
     StandardSelectableRow,
     StandardTableShell,
 } from "@/components/ui/standard-data-table"
+import {router} from "next/client";
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -205,6 +206,7 @@ export function MeetingsTable({
                             selected={selectedRows.has(meeting.id)}
                             onToggle={onToggleRow}
                             selectOnRowClick={false}
+                            onRowClick={() => router.push(getMeetingHref(meeting))}
                             actions={
                                 <MeetingRowActions
                                     meeting={meeting}
