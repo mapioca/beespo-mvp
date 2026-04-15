@@ -128,7 +128,7 @@ export function StandardSelectableRow({
         <Checkbox
           checked={selected}
           variant="table"
-          className="opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100 data-[state=checked]:opacity-100"
+          className="opacity-100 transition-opacity focus-visible:opacity-100 data-[state=checked]:opacity-100"
           onCheckedChange={() => onToggle?.(id)}
         />
       </TableCell>

@@ -28,7 +28,7 @@ export const standardTableVariants = cva("text-[length:var(--table-body-font-siz
       subtle: [
         "[&_thead_tr]:border-0",
         "[&_tbody_tr]:border-b",
-        "[&_tbody_tr]:border-[hsl(var(--table-row-divider)/0.38)]",
+        "[&_tbody_tr]:border-[hsl(var(--table-row-divider)/0.72)]",
         "[&_tbody_tr:last-child]:border-0",
       ].join(" "),
     },
@@ -43,11 +43,11 @@ export const standardTableHeaderVariants = cva("", {
   variants: {
     sticky: {
       false: "",
-      true: "sticky top-0 z-30",
+      true: "sticky top-0 z-30 border-t border-[hsl(var(--table-row-divider)/0.72)]",
     },
     variant: {
       default: "",
-      app: "bg-white",
+      app: "border-b border-[hsl(var(--table-row-divider)/0.72)]",
     },
   },
   defaultVariants: {
@@ -60,7 +60,7 @@ export const standardTableHeaderRowVariants = cva("table-header-row-standard", {
   variants: {
     variant: {
       default: "",
-      app: "hover:!bg-transparent [&>th:first-child]:rounded-tl-md [&>th:last-child]:rounded-tr-md",
+      app: "hover:!bg-transparent [&>th:first-child]:rounded-tl-md [&>th:last-child]:rounded-tr-md border-t border-[hsl(var(--table-row-divider)/0.72)]",
     },
   },
   defaultVariants: {

@@ -9,7 +9,7 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
-import { CalendarDays } from "lucide-react"
+import { CalendarDays, ArrowUp, ArrowDown } from "lucide-react"
 import { format } from "date-fns"
 import { MeetingRowActions } from "./meeting-row-actions"
 import { ShareDialog } from "@/components/conduct/share-dialog"
@@ -75,6 +75,30 @@ interface MeetingsTableProps {
     onToggleAllRows?: () => void
 }
 
+// ── Share Status Cell Component ──────────────────────────────────────────────
+
+function ShareStatusCell({ meeting }: { meeting: Meeting }) {
+    if (meeting._shareType === "shared_with_me") {
+        return (
+            <span className="text-[11.5px] text-foreground/66">
+                Shared with me
+            </span>
+        )
+    }
+    if (meeting._isSharedOutward) {
+        return (
+            <span className="text-[11.5px] text-foreground/66">
+                Shared by me
+            </span>
+        )
+    }
+    return (
+        <span className="text-[11.5px] text-foreground/66">
+            Private
+        </span>
+    )
+}
+
 // ── Component ───────────────────────────────────────────────────────────────
 
 export function MeetingsTable({
@@ -96,7 +120,7 @@ export function MeetingsTable({
         meetings.length > 0 && selectedRows.size === meetings.length
 
     const visibleColumns =
-        ["title", "template", "status", "scheduled_date", "scheduled_time"]
+        ["title", "template", "status", "scheduled_date", "scheduled_time", "share_status"]
             .filter((c) => !hiddenColumns.has(c)).length + 2 // +2 for checkbox + actions
 
     const getMeetingHref = (meeting: Meeting) => {
@@ -192,6 +216,19 @@ export function MeetingsTable({
                         />
                     )}
 
+                    {/* Share Status */}
+                    {!hiddenColumns.has("share_status") && (
+                        <SortableTableHeader
+                            sortKey="share_status"
+                            label="Share Status"
+                            defaultDirection="asc"
+                            sortConfig={sortConfig}
+                            onSort={onSort}
+                            variant="app"
+                            className="w-[140px]"
+                        />
+                    )}
+
                     <StandardActionsHeadCell variant="app" />
                 </TableRow>
             </TableHeader>
@@ -281,6 +318,13 @@ export function MeetingsTable({
                                     {format(new Date(meeting.scheduled_date), "h:mm a")}
                                 </span>
                             ) : null}
+                                </TableCell>
+                            )}
+
+                            {/* Share Status */}
+                            {!hiddenColumns.has("share_status") && (
+                                <TableCell className="table-cell-meta !px-2 text-[11.5px] text-foreground/66">
+                                    <ShareStatusCell meeting={meeting} />
                                 </TableCell>
                             )}
                         </StandardSelectableRow>

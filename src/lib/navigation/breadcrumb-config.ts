@@ -180,6 +180,15 @@ export const breadcrumbConfigs: BreadcrumbConfig[] = [
     ],
     dynamic: true,
   },
+  {
+    pattern: /^\/meetings\/agenda\/[^/]+$/,
+    trail: [
+      { label: "Meetings", href: "/meetings/overview" },
+      { label: "Agendas", href: "/meetings/agendas" },
+      { label: "Agenda" },
+    ],
+    dynamic: true,
+  },
 
   // Data section
   {

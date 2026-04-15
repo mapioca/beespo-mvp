@@ -174,7 +174,7 @@
     --table-shell-bg: 0 0% 100%;
     --table-shell-border: 0 0% 89%;
     --table-shell-shadow: 0 1px 0 rgba(15,23,42,0.04);
-    --table-row-divider: 0 0% 91%;
+    --table-row-divider: 220 13% 91%;
     --table-header-bg: 0 0% 100%;
     --table-header-border: 0 0% 89%;
     --table-head-height: 2.5rem;
@@ -396,7 +396,7 @@
     --table-shell-bg: 220 12% 10%;
     --table-shell-border: 220 10% 20%;
     --table-shell-shadow: 0 1px 0 rgba(0,0,0,0.35);
-    --table-row-divider: 220 10% 20%;
+    --table-row-divider: 220 13% 91%;
     --table-header-bg: 220 10% 13%;
     --table-header-border: 220 10% 20%;
     --table-head-height: 2.5rem;
@@ -747,7 +747,8 @@
 
   .table-header-row-standard {
     background-color: hsl(var(--table-header-bg) / 0.5);
-    border-bottom: 1px solid hsl(var(--table-header-border) / 0.6);
+    border-top: 1px solid hsl(var(--table-row-divider) / 0.38);
+    border-bottom: 1px solid hsl(var(--table-row-divider) / 0.38);
   }
 
   .table-header-row-standard:hover {

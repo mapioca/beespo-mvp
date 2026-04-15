@@ -4,9 +4,10 @@ import { useState, useMemo, useCallback, useTransition, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { createPortal } from "react-dom"
-import { Check, ClipboardList, Columns3, PanelsTopLeft, Plus, SlidersHorizontal, X } from "lucide-react"
+import { Check, ClipboardList, Columns3, PanelsTopLeft, Plus, SlidersHorizontal, X, ArrowUp, ArrowDown } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 
+import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { BulkSelectionBar } from "@/components/ui/bulk-selection-bar"
 import {
@@ -130,7 +131,6 @@ export function MeetingsClient({
         }
     }, [meetings])
     const workspaceConfig = workspace === "programs" ? programWorkspaceConfig : agendaWorkspaceConfig
-    const WorkspaceIcon = workspaceConfig.icon
 
     const [savedFilters, setSavedFilters] = useState<AgendaFilter[]>(initialFilters)
     const [activeFilterId, setActiveFilterId] = useState<string | null>(null)
@@ -410,7 +410,8 @@ export function MeetingsClient({
         <div className="flex h-full flex-col bg-muted/30">
             <Breadcrumbs
                 items={[
-                    { label: workspaceConfig.breadcrumbLabel, icon: <WorkspaceIcon className="h-3.5 w-3.5" /> },
+                    { label: "Meetings", href: "/meetings/overview" },
+                    { label: workspaceConfig.breadcrumbLabel },
                 ]}
                 className="bg-transparent ring-0 rounded-none border-b border-border/45 px-4 py-1.5"
                 action={
@@ -449,42 +450,6 @@ export function MeetingsClient({
 
             <div className="flex w-full shrink-0 flex-wrap items-center justify-between gap-3 px-5 pb-2 pt-2.5">
                 <div className="flex min-h-8 flex-wrap items-center gap-2">
-                    <div
-                        role="tablist"
-                        aria-label={`${workspaceConfig.pluralLabel} views`}
-                        className="inline-flex h-8 items-center gap-1 rounded-full border border-[hsl(var(--chip-border)/0.75)] bg-white px-1 py-1"
-                    >
-                        {(
-                            [
-                                { value: "mine", label: workspaceConfig.tabLabels.mine },
-                                { value: "shared", label: workspaceConfig.tabLabels.shared },
-                                { value: "all", label: workspaceConfig.tabLabels.all },
-                            ] as const
-                        ).map(({ value, label }) => {
-                            const isActive = activeFilterId === null && activeCategory === value
-
-                            return (
-                                <button
-                                    key={value}
-                                    role="tab"
-                                    aria-selected={isActive}
-                                    onClick={() => {
-                                        setActiveFilterId(null)
-                                        setActiveCategory(value)
-                                    }}
-                                    className={
-                                        isActive
-                                            ? "inline-flex h-6 items-center rounded-full px-3 text-[12px] font-semibold leading-none text-[hsl(var(--chip-active-text))] bg-[hsl(var(--chip-active-bg)/0.72)]"
-                                            : "inline-flex h-6 items-center rounded-full px-3 text-[12px] font-medium leading-none text-[hsl(var(--chip-text))] hover:bg-[hsl(var(--chip-hover-bg)/0.85)] hover:text-[hsl(var(--chip-active-text))]"
-                                    }
-                                    aria-label={`Filter ${workspaceConfig.pluralLabel} by ${label}`}
-                                >
-                                    {label}
-                                </button>
-                            )
-                        })}
-                    </div>
-
                 </div>
 
                 <div className="flex items-center gap-2">
@@ -657,6 +622,7 @@ export function MeetingsClient({
                                 { key: "status", label: "Status" },
                                 { key: "scheduled_date", label: "Date" },
                                 { key: "scheduled_time", label: "Time" },
+                                { key: "share_status", label: "Share Status" },
                             ].map((column) => {
                                 const visible = !hiddenColumns.has(column.key)
                                 return (
@@ -782,7 +748,7 @@ export function MeetingsClient({
                 </div>
             )}
 
-            <div className="flex-1 overflow-auto px-5 pb-5">
+            <div className="flex-1 overflow-auto pb-5">
                 {activeCategory === "shared" && !activeFilter && sharedMeetings.length === 0 && !search ? (
                     <div className="flex h-48 flex-col items-center justify-center text-center">
                         <p className="text-sm text-muted-foreground">
