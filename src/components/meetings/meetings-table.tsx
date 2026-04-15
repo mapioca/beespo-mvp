@@ -17,7 +17,6 @@ import { ShareDialog } from "@/components/conduct/share-dialog"
 import { ZoomIcon } from "@/components/ui/zoom-icon"
 import { Database } from "@/types/database"
 import { SortableTableHeader } from "@/components/ui/sortable-table-header"
-import { Badge } from "@/components/ui/badge"
 import {
     StandardActionsHeadCell,
     StandardSelectAllHeadCell,
@@ -51,22 +50,6 @@ export interface Meeting extends MeetingRow {
 
 function formatLabel(value: string): string {
     return value.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())
-}
-
-const STATUS_TONES: Record<string, "neutral" | "info" | "success" | "warning" | "danger"> = {
-    draft: "warning",
-    scheduled: "info",
-    in_progress: "success",
-    completed: "neutral",
-    cancelled: "danger",
-}
-
-const STATUS_ICONS: Record<string, React.ElementType> = {
-    draft: CalendarCog,
-    scheduled: CalendarClock,
-    in_progress: CalendarDays,
-    completed: CalendarCheck2,
-    cancelled: CalendarDays,
 }
 
 // ── Props ───────────────────────────────────────────────────────────────────
@@ -104,14 +87,22 @@ export function MeetingsTable({
     onToggleAllRows,
 }: MeetingsTableProps) {
     const [shareDialogMeeting, setShareDialogMeeting] = useState<Meeting | null>(null)
-    const planLabel = workspace === "programs" ? "Program" : "Agenda"
-
     const allSelected =
         meetings.length > 0 && selectedRows.size === meetings.length
 
     const visibleColumns =
         ["title", "template", "status", "scheduled_date", "scheduled_time"]
             .filter((c) => !hiddenColumns.has(c)).length + 2 // +2 for checkbox + actions
+
+    const getMeetingHref = (meeting: Meeting) => {
+        if (meeting.plan_type === "program") {
+            return `/meetings/program/${meeting.id}`
+        }
+        if (meeting.plan_type === "agenda") {
+            return `/meetings/agenda/${meeting.id}`
+        }
+        return `/meetings/${meeting.id}`
+    }
 
     return (
         <>
@@ -213,6 +204,7 @@ export function MeetingsTable({
                             id={meeting.id}
                             selected={selectedRows.has(meeting.id)}
                             onToggle={onToggleRow}
+                            selectOnRowClick={false}
                             actions={
                                 <MeetingRowActions
                                     meeting={meeting}
@@ -228,13 +220,7 @@ export function MeetingsTable({
                             <div className="flex flex-col gap-1.5">
                                 <div className="flex items-center gap-1.5">
                                     <Link
-                                        href={
-                                            meeting.plan_type === "program"
-                                                ? `/meetings/program/${meeting.id}`
-                                                : meeting.plan_type === "agenda"
-                                                    ? `/meetings/agenda/${meeting.id}`
-                                                    : `/meetings/${meeting.id}`
-                                        }
+                                        href={getMeetingHref(meeting)}
                                         className="rounded-sm text-[length:var(--table-body-font-size)] font-semibold text-foreground/90 hover:text-foreground hover:underline underline-offset-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                                     >
                                         {meeting.title}
@@ -262,20 +248,7 @@ export function MeetingsTable({
                                             <ZoomIcon className="h-4 w-4 shrink-0" />
                                         )}
                                 </div>
-                                <div className="flex flex-wrap items-center gap-1.5">
-                                    <Badge variant="outline" className="text-[10px] uppercase tracking-[0.14em] border-border/60">
-                                        {planLabel}
-                                    </Badge>
-                                    {meeting.event_id ? (
-                                        <Badge variant="outline" className="text-[10px] bg-blue-50 text-blue-700 border-blue-200">
-                                            Linked event
-                                        </Badge>
-                                    ) : (
-                                        <Badge variant="outline" className="text-[10px] bg-amber-50 text-amber-700 border-amber-200">
-                                            No event link
-                                        </Badge>
-                                    )}
-                                </div>
+
                             </div>
                                 </TableCell>
                             )}
@@ -291,18 +264,17 @@ export function MeetingsTable({
                             {!hiddenColumns.has("status") && (
                         <TableCell className="table-cell-meta">
                             {(() => {
-                                const Icon = STATUS_ICONS[meeting.status] ?? CalendarDays;
-                                const tone = STATUS_TONES[meeting.status] ?? "neutral";
-                                const iconClass = {
-                                    neutral: "text-zinc-400/70",
-                                    warning: "text-amber-500/80",
-                                    success: "text-emerald-500/80",
-                                    info: "text-blue-400/80",
-                                    danger: "text-rose-500/80",
-                                }[tone];
+                                const statusIcons: Record<string, React.ElementType> = {
+                                    draft: CalendarCog,
+                                    scheduled: CalendarClock,
+                                    in_progress: CalendarDays,
+                                    completed: CalendarCheck2,
+                                    cancelled: CalendarDays,
+                                };
+                                const Icon = statusIcons[meeting.status] ?? CalendarDays;
                                 return (
                                     <span className="inline-flex items-center gap-1.5">
-                                        <Icon className={`h-3.5 w-3.5 shrink-0 ${iconClass}`} />
+                                        <Icon className="h-3.5 w-3.5 shrink-0 text-foreground/40" />
                                         <span className="text-[length:var(--table-meta-font-size)] font-medium text-foreground/66 capitalize">
                                             {formatLabel(meeting.status)}
                                         </span>
@@ -319,7 +291,7 @@ export function MeetingsTable({
                                 <span className="inline-flex items-center gap-1.5">
                                     <Calendar className="h-3.5 w-3.5 shrink-0 text-foreground/40" />
                                     <span className="text-[length:var(--table-meta-font-size)] font-medium text-foreground/66">
-                                        {format(new Date(meeting.scheduled_date), "MMM d, yyyy")}
+                                        {format(new Date(meeting.scheduled_date), "MMM d")}
                                     </span>
                                 </span>
                             ) : null}

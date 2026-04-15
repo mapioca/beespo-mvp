@@ -45,16 +45,16 @@ export async function createSavedPlanFilter(
   } = await supabase.auth.getUser()
   if (!user) return { error: "Not authenticated" }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: profile } = await (supabase.from("profiles") as any)
+  const { data: profile } = await supabase
+    .from("profiles")
     .select("workspace_id")
     .eq("id", user.id)
     .single()
 
   if (!profile?.workspace_id) return { error: "No workspace found" }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, error } = await (supabase.from("agenda_views") as any)
+  const { data, error } = await supabase
+    .from("agenda_views")
     .insert({
       name: name.trim(),
       filters,
@@ -77,8 +77,8 @@ export async function deleteSavedPlanFilter(
 ): Promise<{ error?: string }> {
   const supabase = await createClient()
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error } = await (supabase.from("agenda_views") as any)
+  const { error } = await supabase
+    .from("agenda_views")
     .delete()
     .eq("id", id)
 

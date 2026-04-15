@@ -97,7 +97,7 @@ export default async function MeetingsOverviewPage() {
     <div className="min-h-full">
       <Breadcrumbs />
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-6 sm:px-6 lg:px-8">
-        <section className="grid gap-6 lg:grid-cols-[minmax(0,1.5fr)_minmax(260px,0.9fr)]">
+        <section className="grid gap-6">
           <Card className="border-border/70 bg-gradient-to-br from-background via-background to-primary/5">
             <CardHeader className="space-y-4">
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
@@ -125,25 +125,6 @@ export default async function MeetingsOverviewPage() {
                 </Button>
               </div>
             </CardHeader>
-          </Card>
-
-          <Card className="border-border/70">
-            <CardHeader>
-              <CardTitle className="text-base">Linkage rules</CardTitle>
-              <CardDescription>
-                Plans can exist before meetings, and meetings can exist before events. Link them
-                later only when a downstream action requires it.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3 text-sm text-muted-foreground">
-              <p>Agendas and programs should remain navigable even when nothing is linked yet.</p>
-              <Button asChild variant="outline" className="w-full justify-between">
-                <Link href="/meetings/create">
-                  Choose what to create
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-              </Button>
-            </CardContent>
           </Card>
         </section>
 

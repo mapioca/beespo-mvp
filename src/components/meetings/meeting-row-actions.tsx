@@ -7,7 +7,6 @@ import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
-    DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -21,9 +20,8 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
-    Eye,
     Play,
-    Download,
+    Printer,
     Share2,
     Trash2,
     Loader2,
@@ -65,9 +63,8 @@ export function MeetingRowActions({
     const isProgramWorkspace = workspace === "programs";
     const entityLabel = isProgramWorkspace ? "program" : "agenda";
     const entityLabelTitle = isProgramWorkspace ? "Program" : "Agenda";
-    const openLabel = isLeader ? `Open ${entityLabel}` : `View ${entityLabel}`;
-    const shareLabel = `Share ${entityLabel}`;
-    const deleteLabel = `Delete ${entityLabel}`;
+    const shareLabel = "Share";
+    const deleteLabel = "Delete";
     const publicViewLabel = isProgramWorkspace ? "Program view" : "Agenda view";
     const publicViewHref =
         workspaceSlug == null
@@ -157,15 +154,7 @@ export function MeetingRowActions({
                 <DropdownMenuTrigger asChild>
                     <TableRowActionTrigger label={`Open ${entityLabel} actions`} />
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-[160px]">
-                    {/* View/Edit - Goes to builder (mode depends on user role) */}
-                    <DropdownMenuItem asChild>
-                        <Link href={`/meetings/${meeting.id}`} className="flex items-center">
-                            <Eye className="mr-2 h-4 w-4" />
-                            {openLabel}
-                        </Link>
-                    </DropdownMenuItem>
-
+                <DropdownMenuContent align="end" className="w-[220px]">
                     {/* Conduct - Only for in_progress meetings */}
                     {canConductProgram && (
                         <DropdownMenuItem asChild>
@@ -179,12 +168,10 @@ export function MeetingRowActions({
                         </DropdownMenuItem>
                     )}
 
-                    <DropdownMenuSeparator />
-
                     {/* Print */}
                     <DropdownMenuItem asChild>
                         <a href={`/meetings/${meeting.id}/print`} target="_blank" rel="noopener noreferrer" className="flex items-center cursor-pointer">
-                            <Download className="mr-2 h-4 w-4" />
+                            <Printer className="mr-2 h-4 w-4" />
                             Print
                         </a>
                     </DropdownMenuItem>
@@ -210,16 +197,13 @@ export function MeetingRowActions({
 
                     {/* Delete - Only for leaders */}
                     {isLeader && (
-                        <>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                                onClick={handleOpenDeleteDialog}
-                                className="flex items-center text-destructive focus:text-destructive"
-                            >
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                {deleteLabel}
-                            </DropdownMenuItem>
-                        </>
+                        <DropdownMenuItem
+                            onClick={handleOpenDeleteDialog}
+                            className="flex items-center"
+                        >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            {deleteLabel}
+                        </DropdownMenuItem>
                     )}
                 </DropdownMenuContent>
             </DropdownMenu>

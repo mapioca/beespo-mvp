@@ -99,15 +99,17 @@ export function DetailsPanel({
     const { portalEl, reportOpen } = useDetailsPanelContext();
     const isDesktop = useIsDesktop();
 
-    // Tell the shell whether to expand the panel slot
+    // Tell the shell whether to expand the panel slot.
+    // Only signal open=true when this panel is actually open; signal false on
+    // close or unmount so sibling panels that are never opened don't collapse
+    // the slot prematurely.
     useEffect(() => {
-        reportOpen(isDesktop ? open : false);
+        if (!isDesktop) return;
+        if (open) {
+            reportOpen(true);
+            return () => reportOpen(false);
+        }
     }, [open, isDesktop, reportOpen]);
-
-    // Reset slot on unmount (e.g. page navigation)
-    useEffect(() => {
-        return () => reportOpen(false);
-    }, [reportOpen]);
 
     // Keyboard close
     useEffect(() => {
@@ -214,11 +216,11 @@ export function DetailsPanelField({
     className,
 }: DetailsPanelFieldProps) {
     return (
-        <div className={cn("flex items-center gap-3 min-h-[28px]", className)}>
-            <span className="text-drawer-label font-medium text-muted-foreground shrink-0 w-[110px] leading-none">
+        <div className={cn("space-y-1.5", className)}>
+            <span className="text-drawer-label font-medium text-muted-foreground leading-none">
                 {label}
             </span>
-            <div className="flex-1 min-w-0 text-drawer-value font-medium leading-none">
+            <div className="text-drawer-value font-medium leading-none">
                 {children}
             </div>
         </div>

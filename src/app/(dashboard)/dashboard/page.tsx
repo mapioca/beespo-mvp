@@ -1,45 +1,94 @@
-import { HomeGreeting } from "./home-greeting";
+import type { ElementType } from "react";
+import { Clock, CalendarDays, LayoutTemplate, BookOpen, Zap, MessageSquare } from "lucide-react";
 import { getDashboardRequestContext } from "@/lib/dashboard/request-context";
-import { DashboardIsland } from "@/components/ui/dashboard-island";
+import { createClient } from "@/lib/supabase/server";
+import { fetchHomePageData } from "@/lib/dashboard/home-data-fetchers";
+import { HomeGreeting } from "./home-greeting";
+import { HomeRecentsCarousel } from "@/components/dashboard/home/home-recents-carousel";
+import { HomeDiscussionsCarousel } from "@/components/dashboard/home/home-discussions-carousel";
+import { HomeWeekCalendar } from "@/components/dashboard/home/home-week-calendar";
+import { HomeLearnSection } from "@/components/dashboard/home/home-learn-section";
+import { HomeFeaturedTemplates } from "@/components/dashboard/home/home-featured-templates";
+import { HomeQuickActions } from "@/components/dashboard/home/home-quick-actions";
 
-const quotes = [
-  "Great meetings don't happen by accident — they're built with intention.",
-  "The agenda is ready when you are.",
-  "Every gathering is an opportunity to move something forward.",
-  "Preparation is the quiet side of leadership.",
-  "Small meetings, thoughtfully run, change the world.",
-];
-
-function getDailyQuote(): string {
-  const day = new Date().getDay();
-  return quotes[day % quotes.length];
+function SectionHeader({
+  icon: Icon,
+  label,
+}: {
+  icon: ElementType;
+  label: string;
+}) {
+  return (
+    <div className="flex items-center gap-1.5 mb-3">
+      <Icon className="h-3.5 w-3.5 text-muted-foreground/60" strokeWidth={1.8} />
+      <span className="text-[12px] font-medium text-muted-foreground/70 tracking-wide">
+        {label}
+      </span>
+    </div>
+  );
 }
 
 export default async function DashboardPage() {
-  const { profile } = await getDashboardRequestContext();
+  // getDashboardRequestContext uses React.cache — no double fetch vs the layout
+  const [{ profile }, supabase] = await Promise.all([
+    getDashboardRequestContext(),
+    createClient(),
+  ]);
 
   const firstName = profile.full_name?.split(" ")[0] ?? "there";
-  const quote = getDailyQuote();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const workspaceName = (profile as any).workspaces?.name as string | undefined;
+
+  // Single parallelised fetch — only home-specific data
+  const { weekMeetings, featuredTemplates, discussions } = await fetchHomePageData(
+    supabase,
+    profile.workspace_id
+  );
 
   return (
-    <DashboardIsland className="flex items-center justify-center">
-      <div className="max-w-lg px-8 text-center">
-        {/* Greeting — rendered client-side to use browser local time */}
-        <HomeGreeting firstName={firstName} />
+    <div className="h-full w-full overflow-y-auto bg-background rounded-[var(--radius)] border border-border shadow-sm">
+      <div className="mx-auto max-w-3xl px-6 pt-16 pb-24 flex flex-col gap-10">
 
-        {/* Divider */}
-        <div className="mx-auto my-8 h-px w-16 bg-gray-200" />
+        {/* ── Greeting ─────────────────────────────────────────────────── */}
+        <HomeGreeting firstName={firstName} workspaceName={workspaceName} />
 
-        {/* Daily quote */}
-        <p className="text-base leading-relaxed text-gray-500 italic">
-          &ldquo;{quote}&rdquo;
-        </p>
+        {/* ── Quick Actions ─────────────────────────────────────────────── */}
+        <section>
+          <SectionHeader icon={Zap} label="Quick actions" />
+          <HomeQuickActions />
+        </section>
 
-        {/* Subtle CTA */}
-        <p className="mt-10 text-sm text-gray-400">
-          Use the sidebar to navigate to your meetings, templates, and more.
-        </p>
+        {/* ── Recents ──────────────────────────────────────────────────── */}
+        <section>
+          <SectionHeader icon={Clock} label="Recently visited" />
+          <HomeRecentsCarousel />
+        </section>
+
+        {/* ── This Week ────────────────────────────────────────────────── */}
+        <section>
+          <SectionHeader icon={CalendarDays} label="Upcoming events" />
+          <HomeWeekCalendar meetings={weekMeetings} />
+        </section>
+
+        {/* ── Open Discussions ─────────────────────────────────────────── */}
+        <section>
+          <SectionHeader icon={MessageSquare} label="Open discussions" />
+          <HomeDiscussionsCarousel discussions={discussions} />
+        </section>
+
+        {/* ── Featured Templates ───────────────────────────────────────── */}
+        <section>
+          <SectionHeader icon={LayoutTemplate} label="Featured templates" />
+          <HomeFeaturedTemplates templates={featuredTemplates} />
+        </section>
+
+        {/* ── Learn ─────────────────────────────────────────────────────── */}
+        <section>
+          <SectionHeader icon={BookOpen} label="Learn" />
+          <HomeLearnSection />
+        </section>
+
       </div>
-    </DashboardIsland>
+    </div>
   );
 }
