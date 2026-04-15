@@ -122,6 +122,13 @@ export function MeetingsClient({
     const router = useRouter()
     const [, startDeleteTransition] = useTransition()
     const [mounted, setMounted] = useState(false)
+    const [isLoading, setIsLoading] = useState(true)
+
+    useEffect(() => {
+        if (meetings.length > 0) {
+            setIsLoading(false)
+        }
+    }, [meetings])
     const workspaceConfig = workspace === "programs" ? programWorkspaceConfig : agendaWorkspaceConfig
     const WorkspaceIcon = workspaceConfig.icon
 
@@ -385,6 +392,19 @@ export function MeetingsClient({
             count: templateCounts?.[t.id] || 0,
         })),
     ]
+
+    if (isLoading) {
+        return (
+            <div className="flex h-full flex-col bg-muted/30">
+                <div className="flex items-center justify-center min-h-[calc(100vh-4rem)]">
+                    <div className="flex flex-col items-center gap-4">
+                        <div className="h-8 w-8 animate-spin rounded-full border-4 border-border border-t-foreground" />
+                        <p className="text-sm text-muted-foreground">Loading agendas...</p>
+                    </div>
+                </div>
+            </div>
+        )
+    }
 
     return (
         <div className="flex h-full flex-col bg-muted/30">

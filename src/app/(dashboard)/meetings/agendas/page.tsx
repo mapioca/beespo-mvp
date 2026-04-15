@@ -40,6 +40,7 @@ export default async function AgendasPage() {
     meeting.plan_type === "agenda" || meeting.plan_type === null
 
   // Fetch agenda-backed records (legacy null plan_type records still appear here)
+  // Limit to 30 for initial load (pagination handled client-side)
   const { data: meetings, error } = await supabase
     .from("meetings")
     .select(`
@@ -53,6 +54,17 @@ export default async function AgendasPage() {
     .or("plan_type.eq.agenda,plan_type.is.null")
     .order("scheduled_date", { ascending: false })
     .order("created_at", { ascending: false })
+    .limit(30)
+
+  // Build templates map from nested data
+  const templatesMap = new Map<string, { id: string; name: string }>()
+  if (meetings) {
+    meetings.forEach((m: { templates?: { id: string; name: string } | null }) => {
+      if (m.templates) {
+        templatesMap.set(m.templates.id, m.templates)
+      }
+    })
+  }
 
   if (error) {
     console.error("Meetings query error:", error)
@@ -147,7 +159,7 @@ export default async function AgendasPage() {
   return (
     <MeetingsClient
       meetings={meetings || []}
-      templates={templates || []}
+      templates={templates}
       workspaceSlug={workspaceSlug}
       isLeader={isLeader}
       statusCounts={statusCounts}
