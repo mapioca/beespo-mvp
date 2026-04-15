@@ -25,7 +25,7 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { Eye, Trash2, Briefcase, CircleDashed, CircleCheck, CalendarCheck } from "lucide-react"
+import { Eye, Trash2, Briefcase, CircleDashed, CircleCheck } from "lucide-react"
 import { format } from "date-fns"
 import type { BusinessItemDetails } from "@/lib/business-script-generator"
 import { TableRowActionTrigger } from "@/components/ui/table-row-action-trigger"
@@ -314,14 +314,7 @@ export function BusinessTable({
                                                 info: "text-blue-400/80",
                                                 danger: "text-rose-500/80",
                                             }[tone];
-                                            return (
-                                                <span className="inline-flex items-center gap-1.5">
-                                                    <Icon className={`h-3.5 w-3.5 shrink-0 ${iconClass}`} />
-                                                    <span className="text-[11.5px] font-medium text-foreground/66 capitalize">
-                                                        {item.status}
-                                                    </span>
-                                                </span>
-                                            );
+                                            return <Icon className={`h-3.5 w-3.5 shrink-0 ${iconClass}`} />;
                                         })()}
                                     </TableCell>
                                 )}
@@ -330,11 +323,8 @@ export function BusinessTable({
                                 {!hiddenColumns.has("action_date") && (
                                     <TableCell className="table-cell-meta">
                                         {item.action_date ? (
-                                            <span className="inline-flex items-center gap-1.5">
-                                                <CalendarCheck className="h-3.5 w-3.5 shrink-0 text-foreground/40" />
-                                                <span className="text-[11.5px] font-medium text-foreground/66">
-                                                    {format(new Date(item.action_date), "MMM d, yyyy")}
-                                                </span>
+                                            <span className="text-[11.5px] font-medium text-foreground/66">
+                                                {format(new Date(item.action_date), "MMM d, yyyy")}
                                             </span>
                                         ) : null}
                                     </TableCell>

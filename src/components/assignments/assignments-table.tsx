@@ -150,7 +150,7 @@ function AssigneeCell({
 
   if (!onUpdateAssignee || !directoryEntries || directoryEntries.length === 0) {
     return (
-      <span className="table-cell-meta text-[11.5px] text-foreground font-medium">
+      <span className="table-cell-link rounded-sm">
         {assignment.directory?.name || "Unassigned"}
       </span>
     )
@@ -160,7 +160,7 @@ function AssigneeCell({
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger
         onClick={(e) => e.stopPropagation()}
-        className="table-cell-meta text-[11.5px] text-foreground font-medium hover:underline underline-offset-4 decoration-border outline-none transition-colors focus-visible:ring-1 focus-visible:ring-ring rounded-sm px-1 -ml-1 text-left"
+        className="table-cell-link rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background text-left"
       >
         {assignment.directory?.name || "Unassigned"}
       </PopoverTrigger>

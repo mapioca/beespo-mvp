@@ -28,8 +28,86 @@ import {
 import { Megaphone, Eye, Trash2 } from "lucide-react"
 import { format } from "date-fns"
 import { TableRowActionTrigger } from "@/components/ui/table-row-action-trigger"
-import { StatusIndicator } from "@/components/ui/status-indicator"
+import { cn } from "@/lib/utils"
 import { SortableTableHeader } from "@/components/ui/sortable-table-header"
+
+// ── Priority Bars Component ──────────────────────────────────────────────────
+
+function PriorityBars({ priority }: { priority: string }) {
+    const level = priority === "high" ? 3 : priority === "medium" ? 2 : 1
+
+    return (
+        <span
+            className="inline-flex items-end gap-0.5 text-foreground/58"
+            aria-label={formatLabel(priority)}
+            title={formatLabel(priority)}
+        >
+            {[0, 1, 2].map((index) => (
+                <span
+                    key={index}
+                    className={cn(
+                        "w-1 rounded-full bg-current transition-opacity",
+                        index === 0 && "h-2",
+                        index === 1 && "h-3",
+                        index === 2 && "h-4",
+                        index < level ? "opacity-100" : "opacity-20"
+                    )}
+                />
+            ))}
+        </span>
+    )
+}
+
+// ── Editable Priority Cell ───────────────────────────────────────────────────
+
+function PriorityCell({
+    priority,
+    onUpdatePriority,
+    announcementId,
+}: {
+    priority: string
+    onUpdatePriority?: (id: string, priority: string) => Promise<void>
+    announcementId: string
+}) {
+    const [open, setOpen] = useState(false)
+
+    const priorityOptions = [
+        { value: "low", label: "Low" },
+        { value: "medium", label: "Medium" },
+        { value: "high", label: "High" },
+    ]
+
+    if (!onUpdatePriority) {
+        return <PriorityBars priority={priority} />
+    }
+
+    return (
+        <DropdownMenu open={open} onOpenChange={setOpen}>
+            <DropdownMenuTrigger
+                onClick={(e) => e.stopPropagation()}
+                className="flex h-7 items-center justify-center gap-1.5 rounded-full px-2 hover:bg-black/5 dark:hover:bg-white/10 outline-none transition-colors focus-visible:ring-1 focus-visible:ring-ring"
+            >
+                <PriorityBars priority={priority} />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-36">
+                {priorityOptions.map((opt) => (
+                    <DropdownMenuItem
+                        key={opt.value}
+                        onClick={(e) => {
+                            e.stopPropagation()
+                            onUpdatePriority(announcementId, opt.value)
+                            setOpen(false)
+                        }}
+                        className="gap-2 text-[13px]"
+                    >
+                        <PriorityBars priority={opt.value} />
+                        {opt.label}
+                    </DropdownMenuItem>
+                ))}
+            </DropdownMenuContent>
+        </DropdownMenu>
+    )
+}
 import {
     StandardActionsHeadCell,
     StandardSelectAllHeadCell,
@@ -64,15 +142,13 @@ export interface Announcement {
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
+function formatLabel(value: string): string {
+    return value.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())
+}
+
 function formatStatus(status: string): string {
     return status.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())
 }
-const STATUS_TONES: Record<string, "neutral" | "info" | "success" | "warning" | "danger"> = {
-    draft: "neutral",
-    active: "success",
-    stopped: "danger",
-}
-
 // ── Props ───────────────────────────────────────────────────────────────────
 
 interface AnnouncementsTableProps {
@@ -89,6 +165,7 @@ interface AnnouncementsTableProps {
     // Actions
     onViewAnnouncement?: (announcement: Announcement) => void
     onDelete?: (id: string) => Promise<void>
+    onUpdatePriority?: (id: string, priority: string) => Promise<void>
 }
 
 // ── Component ───────────────────────────────────────────────────────────────
@@ -103,6 +180,7 @@ export function AnnouncementsTable({
     onToggleAllRows,
     onViewAnnouncement,
     onDelete,
+    onUpdatePriority,
 }: AnnouncementsTableProps) {
     const [deleteTarget, setDeleteTarget] = useState<Announcement | null>(null)
     const [isDeleting, setIsDeleting] = useState(false)
@@ -158,7 +236,7 @@ export function AnnouncementsTable({
                                 sortConfig={sortConfig}
                                 onSort={onSort}
                                 variant="app"
-                                className="w-[120px]"
+                                className="w-[120px] text-center"
                             />
                         )}
 
@@ -171,7 +249,7 @@ export function AnnouncementsTable({
                                 sortConfig={sortConfig}
                                 onSort={onSort}
                                 variant="app"
-                                className="w-[120px]"
+                                className="w-[120px] text-center"
                             />
                         )}
 
@@ -179,12 +257,12 @@ export function AnnouncementsTable({
                         {!hiddenColumns.has("deadline") && (
                             <SortableTableHeader
                                 sortKey="deadline"
-                                label="Deadline"
+                                label="Announce Until"
                                 defaultDirection="desc"
                                 sortConfig={sortConfig}
                                 onSort={onSort}
                                 variant="app"
-                                className="w-[130px]"
+                                className="w-[130px] text-center"
                             />
                         )}
 
@@ -269,33 +347,33 @@ export function AnnouncementsTable({
 
                                 {/* Priority */}
                                 {!hiddenColumns.has("priority") && (
-                                    <TableCell className="table-cell-meta text-[11.5px] text-foreground/56 capitalize">
-                                        {announcement.priority}
+                                    <TableCell className="table-cell-meta text-[11.5px] text-foreground/56 capitalize text-center">
+                                        <PriorityCell
+                                            priority={announcement.priority}
+                                            onUpdatePriority={onUpdatePriority}
+                                            announcementId={announcement.id}
+                                        />
                                     </TableCell>
                                 )}
 
                                 {/* Status */}
                                 {!hiddenColumns.has("status") && (
-                                    <TableCell className="table-cell-meta !px-2 capitalize">
-                                        <StatusIndicator
-                                            label={formatStatus(announcement.status)}
-                                            tone={STATUS_TONES[announcement.status] || "neutral"}
-                                            className="text-[11.5px] text-foreground/66"
-                                        />
+                                    <TableCell className="table-cell-meta !px-2 capitalize text-[11.5px] text-foreground/66 text-center">
+                                        {formatStatus(announcement.status)}
                                     </TableCell>
                                 )}
 
                                 {/* Deadline */}
                                 {!hiddenColumns.has("deadline") && (
-                                    <TableCell className="table-cell-meta !px-2 text-[11.5px] text-foreground/56">
+                                    <TableCell className="table-cell-meta !px-2 text-[11.5px] text-foreground/56 text-center">
                                         {announcement.deadline
                                             ? format(
                                                   new Date(
                                                       announcement.deadline
                                                   ),
-                                                  "MMM d, yyyy"
+                                                  "MMM d"
                                               )
-                                            : "—"}
+                                            : ""}
                                     </TableCell>
                                 )}
                             </StandardSelectableRow>
