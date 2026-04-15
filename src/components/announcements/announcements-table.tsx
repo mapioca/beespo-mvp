@@ -67,12 +67,6 @@ export interface Announcement {
 function formatStatus(status: string): string {
     return status.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())
 }
-
-/** Strip HTML tags and collapse whitespace for plain-text preview. */
-function stripHtml(html: string): string {
-    return html.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim()
-}
-
 const STATUS_TONES: Record<string, "neutral" | "info" | "success" | "warning" | "danger"> = {
     draft: "neutral",
     active: "success",
@@ -266,18 +260,9 @@ export function AnnouncementsTable({
                                                     announcement
                                                 )
                                             }
-                                            className="hover:underline text-left"
+                                            className="table-cell-link text-left"
                                         >
-                                            <div className="flex flex-col">
-                                                <span>
-                                                    {announcement.title}
-                                                </span>
-                                                {announcement.content && (
-                                                    <span className="text-[12px] text-muted-foreground/80 truncate max-w-[280px]">
-                                                        {stripHtml(announcement.content)}
-                                                    </span>
-                                                )}
-                                            </div>
+                                            <span>{announcement.title}</span>
                                         </button>
                                     </TableCell>
                                 )}

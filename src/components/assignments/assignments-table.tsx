@@ -96,7 +96,7 @@ function TopicCell({
   const displayText = assignment.topic || assignment.agenda_item?.title || toTitleCase(assignment.assignment_type)
 
   if (!onUpdateTopic) {
-    return <span className="table-cell-title">{displayText}</span>
+    return <span className="table-cell-meta text-[11.5px] text-foreground/56">{displayText}</span>
   }
 
   return (
@@ -106,7 +106,7 @@ function TopicCell({
     }}>
       <PopoverTrigger
         onClick={(e) => e.stopPropagation()}
-        className="font-medium text-foreground table-cell-text hover:underline underline-offset-4 decoration-border outline-none transition-colors focus-visible:ring-1 focus-visible:ring-ring rounded-sm px-1 -ml-1 text-left"
+        className="table-cell-meta text-[11.5px] text-foreground/56 hover:underline underline-offset-4 decoration-border outline-none transition-colors focus-visible:ring-1 focus-visible:ring-ring rounded-sm px-1 -ml-1 text-left"
       >
         {displayText}
       </PopoverTrigger>
@@ -150,7 +150,7 @@ function AssigneeCell({
 
   if (!onUpdateAssignee || !directoryEntries || directoryEntries.length === 0) {
     return (
-      <span className="font-medium text-foreground table-cell-text">
+      <span className="table-cell-meta text-[11.5px] text-foreground font-medium">
         {assignment.directory?.name || "Unassigned"}
       </span>
     )
@@ -160,7 +160,7 @@ function AssigneeCell({
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger
         onClick={(e) => e.stopPropagation()}
-        className="font-medium text-foreground table-cell-text hover:underline underline-offset-4 decoration-border outline-none transition-colors focus-visible:ring-1 focus-visible:ring-ring rounded-sm px-1 -ml-1 text-left"
+        className="table-cell-meta text-[11.5px] text-foreground font-medium hover:underline underline-offset-4 decoration-border outline-none transition-colors focus-visible:ring-1 focus-visible:ring-ring rounded-sm px-1 -ml-1 text-left"
       >
         {assignment.directory?.name || "Unassigned"}
       </PopoverTrigger>
@@ -342,7 +342,7 @@ export function AssignmentsTable({
               </TableRow>
             ) : (
               assignments.map((assignment) => {
-                const meetingTitle = assignment.agenda_item?.meeting?.title || "—"
+                const meetingTitle = assignment.agenda_item?.meeting?.title || ""
                 const scheduledDate = assignment.agenda_item?.meeting?.scheduled_date
                 return (
                   <StandardSelectableRow
@@ -413,11 +413,8 @@ export function AssignmentsTable({
                               {assignment.is_confirmed ? (
                                 <CircleCheckBig className="h-3.5 w-3.5 text-green-600 dark:text-green-500 shrink-0" />
                               ) : (
-                                <CircleDashed className="h-3.5 w-3.5 text-orange-500 shrink-0" />
+                                <CircleDashed className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                               )}
-                              <span className="text-[11.5px] font-medium text-foreground/66">
-                                {assignment.is_confirmed ? "Confirmed" : "Pending"}
-                              </span>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="start" className="w-36">
                               <DropdownMenuItem 
@@ -439,11 +436,8 @@ export function AssignmentsTable({
                             {assignment.is_confirmed ? (
                               <CircleCheckBig className="h-3.5 w-3.5 text-green-600 dark:text-green-500 shrink-0" />
                             ) : (
-                              <CircleDashed className="h-3.5 w-3.5 text-orange-500 shrink-0" />
+                              <CircleDashed className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                             )}
-                            <span className="text-[11.5px] font-medium text-foreground/66">
-                              {assignment.is_confirmed ? "Confirmed" : "Pending"}
-                            </span>
                           </div>
                         )}
                       </TableCell>
@@ -457,7 +451,7 @@ export function AssignmentsTable({
 
                     {!hiddenColumns.has("date") && (
                       <TableCell className="table-cell-meta text-[11.5px] text-foreground/56">
-                        {scheduledDate ? format(new Date(scheduledDate), "MMM d, yyyy h:mm a") : "—"}
+                        {scheduledDate ? format(new Date(scheduledDate), "MMM d") : ""}
                       </TableCell>
                     )}
                   </StandardSelectableRow>

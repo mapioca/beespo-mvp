@@ -533,7 +533,7 @@ export function DiscussionsClient({
             />
 
             {/* Action Bar + View Tabs */}
-            <div className="flex items-center justify-between w-full px-6 pt-3.5 pb-3.5 shrink-0 flex-wrap gap-3 border-b border-border/45">
+            <div className="flex items-center justify-between w-full px-6 pt-3.5 pb-3.5 shrink-0 flex-wrap gap-3">
                 <div className="flex items-center gap-2 flex-wrap min-h-8">
                     {/* Custom view tabs */}
                     {views.map((view) => (

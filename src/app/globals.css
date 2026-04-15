@@ -770,6 +770,20 @@
     font-weight: 500;
   }
 
+  .table-cell-link {
+    font-size: var(--table-meta-font-size);
+    font-weight: 600;
+    color: hsl(var(--foreground) / 0.84);
+    text-decoration-line: none;
+    text-underline-offset: 2px;
+    transition: color 150ms ease;
+  }
+
+  .table-cell-link:hover {
+    color: hsl(var(--foreground));
+    text-decoration-line: underline;
+  }
+
   .table-cell-meta {
     padding-left: var(--table-cell-px);
     padding-right: var(--table-cell-px);

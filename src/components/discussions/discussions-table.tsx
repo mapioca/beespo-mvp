@@ -29,7 +29,6 @@ import { Eye, Trash2, MessagesSquare, Star, StarOff } from "lucide-react"
 import { format } from "date-fns"
 import Link from "next/link"
 import { TableRowActionTrigger } from "@/components/ui/table-row-action-trigger"
-import { StatusIndicator } from "@/components/ui/status-indicator"
 import { SortableTableHeader } from "@/components/ui/sortable-table-header"
 import {
     StandardActionsHeadCell,
@@ -45,6 +44,7 @@ import {
 import { toggleFavorite } from "@/lib/actions/navigation-actions"
 import { useNavigationStore } from "@/stores/navigation-store"
 import { toast } from "@/lib/toast"
+import { cn } from "@/lib/utils"
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -71,14 +71,29 @@ export interface Discussion {
 function formatLabel(value: string): string {
     return value.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())
 }
+function PriorityBars({ priority }: { priority: string }) {
+    const level = priority === "high" ? 3 : priority === "medium" ? 2 : 1
 
-const STATUS_TONES: Record<string, "neutral" | "info" | "success" | "warning" | "danger"> = {
-    new: "info",
-    active: "success",
-    decision_required: "warning",
-    monitoring: "info",
-    resolved: "neutral",
-    deferred: "neutral",
+    return (
+        <span
+            className="inline-flex items-end gap-0.5 text-foreground/58"
+            aria-label={formatLabel(priority)}
+            title={formatLabel(priority)}
+        >
+            {[0, 1, 2].map((index) => (
+                <span
+                    key={index}
+                    className={cn(
+                        "w-1 rounded-full bg-current transition-opacity",
+                        index === 0 && "h-2",
+                        index === 1 && "h-3",
+                        index === 2 && "h-4",
+                        index < level ? "opacity-100" : "opacity-20"
+                    )}
+                />
+            ))}
+        </span>
+    )
 }
 
 // ── Props ───────────────────────────────────────────────────────────────────
@@ -312,18 +327,9 @@ export function DiscussionsTable({
                                     <TableCell className="table-cell-title">
                                         <Link
                                             href={`/meetings/agendas/discussions/${discussion.id}`}
-                                            className="hover:underline text-left"
+                                            className="table-cell-link text-left"
                                         >
-                                            <div className="flex flex-col">
-                                                <span>
-                                                    {discussion.title}
-                                                </span>
-                                                {discussion.description && (
-                                                    <span className="text-[12px] text-muted-foreground/80 line-clamp-1">
-                                                        {discussion.description}
-                                                    </span>
-                                                )}
-                                            </div>
+                                            <span>{discussion.title}</span>
                                         </Link>
                                     </TableCell>
                                 )}
@@ -337,19 +343,15 @@ export function DiscussionsTable({
 
                                 {/* Status */}
                                 {!hiddenColumns.has("status") && (
-                                    <TableCell className="table-cell-meta !px-2 capitalize">
-                                        <StatusIndicator
-                                            label={formatLabel(discussion.status)}
-                                            tone={STATUS_TONES[discussion.status] || "neutral"}
-                                            className="text-[11.5px] text-foreground/66"
-                                        />
+                                    <TableCell className="table-cell-meta !px-2 capitalize text-[11.5px] text-foreground/66">
+                                        {formatLabel(discussion.status)}
                                     </TableCell>
                                 )}
 
                                 {/* Priority */}
                                 {!hiddenColumns.has("priority") && (
                                     <TableCell className="table-cell-meta text-[11.5px] text-foreground/56 capitalize">
-                                        {formatLabel(discussion.priority)}
+                                        <PriorityBars priority={discussion.priority} />
                                     </TableCell>
                                 )}
 
@@ -359,9 +361,9 @@ export function DiscussionsTable({
                                         {discussion.due_date
                                             ? format(
                                                   new Date(discussion.due_date),
-                                                  "MMM d, yyyy"
+                                                  "MMM d"
                                               )
-                                            : "—"}
+                                            : null}
                                     </TableCell>
                                 )}
                             </StandardSelectableRow>

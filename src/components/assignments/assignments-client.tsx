@@ -431,7 +431,7 @@ export function AssignmentsClient({ assignments, initialViews = [] }: Assignment
         }
       />
 
-      <div className="flex w-full shrink-0 flex-wrap items-center justify-between gap-3 border-b border-border/45 px-6 pb-3.5 pt-3.5">
+      <div className="flex w-full shrink-0 flex-wrap items-center justify-between gap-3 px-6 pb-3.5 pt-3.5">
         <div className="flex min-h-8 flex-wrap items-center gap-2">
           {views.map((view) => (
             <span key={view.id} className="group/view relative inline-flex items-center">

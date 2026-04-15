@@ -9,7 +9,7 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
-import { Calendar, CalendarDays, CalendarClock, CalendarCheck2, CalendarCog } from "lucide-react"
+import { CalendarDays } from "lucide-react"
 import { format } from "date-fns"
 import { MeetingRowActions } from "./meeting-row-actions"
 import { ShareDialog } from "@/components/conduct/share-dialog"
@@ -236,7 +236,7 @@ export function MeetingsTable({
                                 <div className="flex items-center gap-1.5">
                                     <Link
                                         href={getMeetingHref(meeting)}
-                                        className="rounded-sm text-[13px] font-medium text-foreground/88 hover:text-foreground hover:underline underline-offset-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                                        className="table-cell-link rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                                     >
                                         {meeting.title}
                                     </Link>
@@ -256,24 +256,9 @@ export function MeetingsTable({
                             {/* Status */}
                             {!hiddenColumns.has("status") && (
                         <TableCell className="table-cell-meta whitespace-nowrap">
-                            {(() => {
-                                const statusIcons: Record<string, React.ElementType> = {
-                                    draft: CalendarCog,
-                                    scheduled: CalendarClock,
-                                    in_progress: CalendarDays,
-                                    completed: CalendarCheck2,
-                                    cancelled: CalendarDays,
-                                };
-                                const Icon = statusIcons[meeting.status] ?? CalendarDays;
-                                return (
-                                    <span className="inline-flex items-center gap-1.5">
-                                        <Icon className="h-3.5 w-3.5 shrink-0 text-foreground/38" />
-                                        <span className="text-[length:var(--table-meta-font-size)] font-medium text-foreground/68 capitalize">
-                                            {formatLabel(meeting.status)}
-                                        </span>
-                                    </span>
-                                );
-                            })()}
+                            <span className="text-[length:var(--table-meta-font-size)] font-medium text-foreground/68 capitalize">
+                                {formatLabel(meeting.status)}
+                            </span>
                         </TableCell>
                             )}
 
@@ -281,11 +266,8 @@ export function MeetingsTable({
                             {!hiddenColumns.has("scheduled_date") && (
                         <TableCell className="table-cell-meta whitespace-nowrap tabular-nums">
                             {meeting.scheduled_date ? (
-                                <span className="inline-flex items-center gap-1.5">
-                                    <Calendar className="h-3.5 w-3.5 shrink-0 text-foreground/38" />
-                                    <span className="text-[length:var(--table-meta-font-size)] font-medium text-foreground/64">
-                                        {format(new Date(meeting.scheduled_date), "MMM d")}
-                                    </span>
+                                <span className="text-[length:var(--table-meta-font-size)] font-medium text-foreground/64">
+                                    {format(new Date(meeting.scheduled_date), "MMM d")}
                                 </span>
                             ) : null}
                                 </TableCell>

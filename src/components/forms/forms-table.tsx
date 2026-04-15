@@ -285,19 +285,12 @@ export function FormsTable({
                                     {/* Title */}
                                     {!hiddenColumns.has("title") && (
                                         <TableCell className="table-cell-title">
-                                            <div className="flex flex-col">
-                                                <Link
-                                                    href={`/forms/${form.id}`}
-                                                    className="hover:underline"
-                                                >
-                                                    {form.title}
-                                                </Link>
-                                                {form.description && (
-                                                    <span className="text-[12px] text-muted-foreground/80 line-clamp-2">
-                                                        {form.description}
-                                                    </span>
-                                                )}
-                                            </div>
+                                            <Link
+                                                href={`/forms/${form.id}`}
+                                                className="table-cell-link"
+                                            >
+                                                {form.title}
+                                            </Link>
                                         </TableCell>
                                     )}
 

@@ -242,24 +242,17 @@ export function TablesListTable({
                                 {/* Name */}
                                 {!hiddenColumns.has("name") && (
                                     <TableCell className="table-cell-title">
-                                        <div className="flex flex-col">
-                                            <Link
-                                                href={`/tables/${table.id}`}
-                                                className="flex items-center gap-2 hover:underline"
-                                            >
-                                                {table.icon ? (
-                                                    <span className="text-base leading-none">{table.icon}</span>
-                                                ) : (
-                                                    <Table2 className="h-4 w-4 text-muted-foreground shrink-0 stroke-[1.6]" />
-                                                )}
-                                                {table.name}
-                                            </Link>
-                                            {table.description && (
-                                                <span className="text-[12px] text-muted-foreground/80 line-clamp-2 mt-0.5 ml-6">
-                                                    {table.description}
-                                                </span>
+                                        <Link
+                                            href={`/tables/${table.id}`}
+                                            className="table-cell-link flex items-center gap-2"
+                                        >
+                                            {table.icon ? (
+                                                <span className="text-base leading-none">{table.icon}</span>
+                                            ) : (
+                                                <Table2 className="h-4 w-4 text-muted-foreground shrink-0 stroke-[1.6]" />
                                             )}
-                                        </div>
+                                            {table.name}
+                                        </Link>
                                     </TableCell>
                                 )}
 

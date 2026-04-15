@@ -101,12 +101,11 @@ export function DomainShell({
           >
             {items.map((item) => {
               const Icon = item.icon
-              const itemIsActive = isItemActive(pathname, item)
               const hasChildren = Boolean(item.children?.length)
               const hasActiveChild = hasChildren
                 ? item.children!.some((child) => isItemActive(pathname, child))
                 : false
-              const isActive = itemIsActive || hasActiveChild
+              const itemIsDirectlyActive = isItemActive(pathname, item) && !hasActiveChild
               const isExpanded = hasChildren
                 ? (expandedGroups[item.href] ?? hasActiveChild)
                 : false
@@ -114,7 +113,7 @@ export function DomainShell({
               const commonClassName = cn(
                 "group inline-flex min-w-fit items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition-colors",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                isActive
+                itemIsDirectlyActive
                   ? "bg-primary/10 text-primary"
                   : "text-muted-foreground hover:bg-nav-secondary-hover/10 dark:hover:bg-nav-secondary-hover/5 hover:text-foreground",
                 item.disabled && "pointer-events-none opacity-50"

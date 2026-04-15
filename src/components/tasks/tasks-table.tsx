@@ -320,16 +320,9 @@ export function TasksTable({
                                     <TableCell className="table-cell-title">
                                         <button
                                             onClick={() => onViewTask?.(task)}
-                                            className="hover:underline text-left"
+                                            className="table-cell-link text-left"
                                         >
-                                            <div className="flex flex-col">
-                                                <span>{task.title}</span>
-                                                {task.description && (
-                                                    <span className="text-xs text-muted-foreground line-clamp-1">
-                                                        {task.description}
-                                                    </span>
-                                                )}
-                                            </div>
+                                            <span>{task.title}</span>
                                         </button>
                                     </TableCell>
                                 )}

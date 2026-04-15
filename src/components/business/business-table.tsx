@@ -280,7 +280,7 @@ export function BusinessTable({
                                             onClick={() =>
                                                 onViewItem?.(item)
                                             }
-                                            className="hover:underline text-left"
+                                            className="table-cell-link text-left"
                                         >
                                             {item.person_name}
                                         </button>

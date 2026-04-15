@@ -36,6 +36,15 @@ export function SidebarNavCollapsible({
 }: SidebarNavCollapsibleProps) {
   const Icon = item.icon
   const groupId = `nav-group-${item.label.toLowerCase().replace(/\s+/g, "-")}`
+  const parentIsDirectlyActive =
+    pathname === item.href ||
+    (item.matchMode === "prefix" &&
+      pathname.startsWith(item.href) &&
+      !item.children.some(
+        (child) =>
+          pathname === child.href ||
+          (child.matchMode === "prefix" && pathname.startsWith(child.href))
+      ))
 
   // Flyout hover state — shows children in a popover when the group is collapsed
   const [flyoutOpen, setFlyoutOpen] = useState(false)
@@ -68,22 +77,45 @@ export function SidebarNavCollapsible({
         <PopoverAnchor asChild>
           {/* Section-header style trigger — icons align with nav items */}
           <CollapsibleTrigger
-            className="group flex h-[30px] w-full items-center gap-2 rounded-md px-2 transition-colors hover:bg-nav-hover"
+            className={cn(
+              "group flex h-[30px] w-full items-center gap-2 rounded-md px-2 transition-colors",
+              parentIsDirectlyActive
+                ? "bg-nav-selected text-nav-strong shadow-[inset_0_0_0_1px_hsl(var(--nav-active-border))]"
+                : "hover:bg-nav-hover"
+            )}
             aria-expanded={isExpanded}
             aria-controls={groupId}
             onMouseEnter={openFlyout}
             onMouseLeave={scheduleFlyoutClose}
           >
-            <Icon className="h-[18px] w-[18px] shrink-0 stroke-[1.75] text-nav-muted" />
-            <span className="flex-1 text-left text-[11px] font-semibold tracking-[0.02em] text-nav-muted whitespace-nowrap">
+            <Icon
+              className={cn(
+                "h-[18px] w-[18px] shrink-0 stroke-[1.75]",
+                parentIsDirectlyActive ? "text-nav-strong" : "text-nav-muted"
+              )}
+            />
+            <span
+              className={cn(
+                "flex-1 text-left text-[11px] tracking-[0.02em] whitespace-nowrap",
+                parentIsDirectlyActive
+                  ? "font-semibold text-nav-strong"
+                  : "font-semibold text-nav-muted"
+              )}
+            >
               {item.label}
             </span>
-            <span className="rounded-full bg-control px-1.5 py-0.5 text-[10px] font-medium text-nav-muted shrink-0">
+            <span
+              className={cn(
+                "rounded-full bg-control px-1.5 py-0.5 text-[10px] font-medium shrink-0",
+                parentIsDirectlyActive ? "text-nav-strong" : "text-nav-muted"
+              )}
+            >
               {item.children.length}
             </span>
             <ChevronRight
               className={cn(
-                "h-3 w-3 shrink-0 stroke-[1.6] text-muted-foreground/50 transition-transform duration-200",
+                "h-3 w-3 shrink-0 stroke-[1.6] transition-transform duration-200",
+                parentIsDirectlyActive ? "text-nav-strong/70" : "text-muted-foreground/50",
                 "opacity-0 group-hover:opacity-100",
                 isExpanded && "rotate-90 opacity-100"
               )}
