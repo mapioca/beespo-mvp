@@ -31,6 +31,56 @@ interface DirectoryMemberSelectProps {
   disabled?: boolean;
 }
 
+export function DirectoryMemberSearch({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (name: string) => void;
+}) {
+  const [members, setMembers] = useState<DirectoryMember[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    setIsLoading(true);
+    const supabase = createClient();
+    (supabase.from("directory") as ReturnType<typeof supabase.from>)
+      .select("id, name")
+      .order("name", { ascending: true })
+      .then(({ data, error }) => {
+        if (!error) setMembers(data || []);
+        setIsLoading(false);
+      });
+  }, []);
+
+  return (
+    <Command>
+      <CommandInput placeholder="Search name..." className="h-8" />
+      <CommandList className="max-h-[200px]">
+        <CommandEmpty>No one found.</CommandEmpty>
+        <CommandGroup>
+          {isLoading ? (
+            <div className="flex items-center justify-center py-6">
+              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+            </div>
+          ) : (
+            members.map((member) => (
+              <CommandItem
+                key={member.id}
+                value={member.name}
+                onSelect={() => onChange(member.name)}
+                className="text-[13px]"
+              >
+                {member.name}
+              </CommandItem>
+            ))
+          )}
+        </CommandGroup>
+      </CommandList>
+    </Command>
+  );
+}
+
 export function DirectoryMemberSelect({
   value,
   onChange,

@@ -1,12 +1,11 @@
 "use client";
 
+import React, { useEffect, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { format } from "date-fns";
-import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "@/lib/toast";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import {
@@ -36,16 +35,14 @@ import {
 } from "@/components/settings/settings-surface";
 import { ZoomMeetingSheet } from "@/components/meetings/zoom-meeting-sheet";
 import { FormRichTextEditor } from "@/components/ui/form-rich-text-editor";
-import { DirectoryMemberSelect } from "@/components/meetings/directory-member-select";
+import { DirectoryMemberSelect, DirectoryMemberSearch } from "@/components/meetings/directory-member-select";
 import type { Database } from "@/types/database";
 import {
   CalendarDays,
   ClipboardList,
   ExternalLink,
   Loader2,
-  MapPin,
   PanelsTopLeft,
-  Users,
   Video,
 } from "lucide-react";
 
@@ -100,6 +97,182 @@ function buildTimeOptions(stepMinutes = 15): string[] {
   return options;
 }
 const TIME_OPTIONS = buildTimeOptions(15);
+
+// ─── InlineModalityEditor ──────────────────────────────────────────────────────
+function InlineModalityEditor({ value, onSave }: { value: Modality; onSave: (v: Modality) => void }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button type="button" className="text-[13px] text-muted-foreground hover:text-foreground transition-colors hover:underline underline-offset-2">
+          {MODALITY_LABELS[value] ?? "In person"}
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[160px] p-1.5" align="start" sideOffset={4}>
+        {(["in_person", "online", "hybrid"] as Modality[]).map((m) => (
+          <button
+            key={m}
+            type="button"
+            onClick={() => { onSave(m); setOpen(false); }}
+            className={`w-full rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-[#f9f7f5] ${value === m ? "text-[#1c1917] font-medium" : "text-[#78716c]"}`}
+          >
+            {MODALITY_LABELS[m]}
+          </button>
+        ))}
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+// ─── InlineDateTimeEditor ──────────────────────────────────────────────────────
+function InlineDateTimeEditor({
+  date,
+  time,
+  onSave,
+}: {
+  date: string;
+  time: string;
+  onSave: (date: string, time: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [draftDate, setDraftDate] = useState(date);
+  const [draftTime, setDraftTime] = useState(time);
+
+  useEffect(() => { setDraftDate(date); setDraftTime(time); }, [date, time]);
+
+  const label = useMemo(() => {
+    if (!draftDate) return "Not scheduled";
+    const d = new Date(`${draftDate}T${draftTime}:00`);
+    return format(d, "MMMM d, yyyy · h:mm a");
+  }, [draftDate, draftTime]);
+
+  function commit() {
+    setOpen(false);
+    onSave(draftDate, draftTime);
+  }
+
+  return (
+    <Popover open={open} onOpenChange={(o) => { if (!o) commit(); else setOpen(true); }}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className="text-[13px] text-muted-foreground hover:text-foreground transition-colors underline-offset-2 hover:underline"
+        >
+          {label}
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-auto p-3 space-y-3" align="start" sideOffset={4}>
+        <DateCalendar
+          mode="single"
+          selected={draftDate ? new Date(`${draftDate}T00:00:00`) : undefined}
+          onSelect={(d) => { if (d) setDraftDate(format(d, "yyyy-MM-dd")); }}
+          initialFocus
+        />
+        <Select value={draftTime} onValueChange={setDraftTime}>
+          <SelectTrigger className="h-9 text-sm">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent className="max-h-[11rem]">
+            {TIME_OPTIONS.map((t) => {
+              const [h, m] = t.split(":").map(Number);
+              const d = new Date(); d.setHours(h, m, 0, 0);
+              return <SelectItem key={t} value={t}>{d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}</SelectItem>;
+            })}
+          </SelectContent>
+        </Select>
+        <Button size="sm" className="w-full h-8 bg-[var(--color-accent-600)] text-white hover:bg-[var(--color-accent-600)]/90" onClick={commit}>
+          Save
+        </Button>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+// ─── InlineTitleEditor ─────────────────────────────────────────────────────────
+function InlineTitleEditor({ value, onSave }: { value: string; onSave: (v: string) => void }) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(value);
+  const inputRef = React.useRef<HTMLInputElement>(null);
+
+  useEffect(() => { setDraft(value); }, [value]);
+  useEffect(() => { if (editing) inputRef.current?.select(); }, [editing]);
+
+  function commit() {
+    setEditing(false);
+    onSave(draft);
+  }
+
+  if (editing) {
+    return (
+      <input
+        ref={inputRef}
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => { if (e.key === "Enter") commit(); if (e.key === "Escape") { setDraft(value); setEditing(false); } }}
+        className="w-full bg-transparent text-[17px] font-medium tracking-[-0.01em] text-foreground/90 outline-none border-b border-[#d6d3d1] pb-0.5"
+        autoFocus
+      />
+    );
+  }
+
+  return (
+    <h1
+      onClick={() => setEditing(true)}
+      className="cursor-text text-[17px] font-medium tracking-[-0.01em] text-foreground/90 hover:text-foreground transition-colors"
+      title="Click to edit"
+    >
+      {value || "Untitled meeting"}
+    </h1>
+  );
+}
+
+// ─── InlineRoleRow ─────────────────────────────────────────────────────────────
+function InlineRoleRow({
+  label,
+  value,
+  onChange,
+  disabled,
+}: {
+  label: string;
+  value: string;
+  onChange: (name: string) => void;
+  disabled?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="group inline-flex items-center gap-3 rounded-md px-2.5 py-1.5 -ml-2.5 transition-colors hover:bg-[#f9f7f5]">
+      <span className="w-[110px] shrink-0 text-sm text-[#1c1917]">{label}</span>
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <button
+            type="button"
+            disabled={disabled}
+            className="flex shrink-0 items-center gap-2 disabled:pointer-events-none disabled:opacity-50"
+          >
+            {value ? (
+              <span className="flex items-center gap-2 text-sm text-[#1c1917]">
+                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#e7e5e4] text-[10px] font-medium text-[#78716c]">
+                  {value.charAt(0).toUpperCase()}
+                </span>
+                {value}
+                <span className="ml-1 hidden text-xs text-[#78716c] group-hover:inline">change</span>
+              </span>
+            ) : (
+              <span className="text-sm text-[#a8a29e] hover:text-[#b45309] transition-colors">Add person</span>
+            )}
+          </button>
+        </PopoverTrigger>
+        <PopoverContent className="w-[220px] p-0" align="start" sideOffset={4}>
+          <DirectoryMemberSearch
+            value={value}
+            onChange={(name) => { onChange(name); setOpen(false); }}
+          />
+        </PopoverContent>
+      </Popover>
+    </div>
+  );
+}
 
 export function MeetingDetailsPageClient({
   meeting,
@@ -249,12 +422,69 @@ export function MeetingDetailsPageClient({
     <>
       <div className="flex-1 overflow-y-auto">
         <SettingsPageShell
-          title={localMeeting.title ?? "Untitled meeting"}
-          description={planType ? `${when} · ${PLAN_TYPE_LABELS[planType]}` : when}
+          title=""
           className="max-w-2xl"
           contentClassName="space-y-6"
-          headerClassName="pb-4 [&>h1]:font-medium [&>h1]:tracking-[-0.01em] [&>h1]:text-foreground/90 [&>p]:text-[13px] [&>p]:text-muted-foreground"
+          headerClassName="hidden"
         >
+          {/* Inline-editable header */}
+          <div className="-mt-2 space-y-1">
+            <InlineTitleEditor
+              value={localMeeting.title ?? ""}
+              onSave={async (next) => {
+                if (!next.trim() || next === localMeeting.title) return;
+                try {
+                  const res = await fetch(`/api/meetings/${meeting.id}`, {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ title: next.trim() }),
+                  });
+                  const data = await res.json() as { meeting?: MeetingRow; error?: string };
+                  if (!res.ok) throw new Error(data.error);
+                  if (data.meeting) setLocalMeeting(data.meeting);
+                } catch { toast.error("Failed to update title."); }
+              }}
+            />
+            <div className="flex items-center gap-2">
+              <InlineDateTimeEditor
+                date={date}
+                time={time}
+                onSave={async (newDate, newTime) => {
+                  const scheduled = new Date(`${newDate}T${newTime}:00`);
+                  try {
+                    const res = await fetch(`/api/meetings/${meeting.id}`, {
+                      method: "PATCH",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ scheduled_date: scheduled.toISOString() }),
+                    });
+                    const data = await res.json() as { meeting?: MeetingRow; error?: string };
+                    if (!res.ok) throw new Error(data.error);
+                    if (data.meeting) setLocalMeeting(data.meeting);
+                    setDate(newDate);
+                    setTime(newTime);
+                  } catch { toast.error("Failed to update date."); }
+                }}
+              />
+              <span className="text-[#d6d3d1]">·</span>
+              <InlineModalityEditor
+                value={modality}
+                onSave={async (next) => {
+                  setModality(next);
+                  try {
+                    const res = await fetch(`/api/meetings/${meeting.id}`, {
+                      method: "PATCH",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ modality: next }),
+                    });
+                    const data = await res.json() as { meeting?: MeetingRow; error?: string };
+                    if (!res.ok) throw new Error(data.error);
+                    if (data.meeting) setLocalMeeting(data.meeting);
+                  } catch { toast.error("Failed to update format."); }
+                }}
+              />
+            </div>
+          </div>
+
           <div className="flex justify-end gap-2">
             {planHref && (
               <Button asChild className="h-8 rounded-lg px-3 text-xs font-medium">
@@ -281,6 +511,40 @@ export function MeetingDetailsPageClient({
             </Button>
           </div>
 
+          <SettingsSection
+            title="Roles"
+            titleClassName="text-[14px] font-medium text-foreground/85"
+          >
+            <div className="flex flex-col items-start">
+              {(["presiding", "conducting", "chorister", "organist"] as const).map((role) => {
+                const nameKey = `${role}_name` as keyof typeof localMeeting;
+                const currentName = (localMeeting[nameKey] as string | null) ?? "";
+                return (
+                  <InlineRoleRow
+                    key={role}
+                    label={role.charAt(0).toUpperCase() + role.slice(1)}
+                    value={currentName}
+                    disabled={isSaving}
+                    onChange={async (name) => {
+                      try {
+                        const response = await fetch(`/api/meetings/${meeting.id}`, {
+                          method: "PATCH",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ [`${role}_name`]: name || null }),
+                        });
+                        const data = await response.json() as { meeting?: MeetingRow; error?: string };
+                        if (!response.ok) throw new Error(data.error ?? "Failed to update");
+                        if (data.meeting) setLocalMeeting(data.meeting);
+                      } catch {
+                        toast.error("Failed to update role.");
+                      }
+                    }}
+                  />
+                );
+              })}
+            </div>
+          </SettingsSection>
+
           {!planType && (
             <SettingsSection
               title="Plan"
@@ -288,35 +552,41 @@ export function MeetingDetailsPageClient({
               titleClassName="text-[14px] font-medium text-foreground/85"
               descriptionClassName="text-[13px]"
             >
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  variant="outline"
-                  className="h-9 rounded-lg"
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
                   onClick={() => setPlanType("agenda")}
                   disabled={isSaving}
+                  className="group flex flex-col gap-2 rounded-xl border border-[#e7e5e4] bg-white p-4 text-left transition-colors hover:border-[#d6d3d1] hover:bg-[#fcfcfa] disabled:pointer-events-none disabled:opacity-50"
                 >
-                  <ClipboardList className="mr-2 h-4 w-4" />
-                  Create agenda
-                </Button>
-                <Button
-                  variant="outline"
-                  className="h-9 rounded-lg"
+                  <ClipboardList className="h-5 w-5 text-[#78716c]" />
+                  <div>
+                    <p className="text-sm font-medium text-[#1c1917]">Create agenda</p>
+                    <p className="mt-0.5 text-xs text-[#78716c] leading-relaxed">For activities, interviews, and council meetings</p>
+                  </div>
+                </button>
+                <button
+                  type="button"
                   onClick={() => setPlanType("program")}
                   disabled={isSaving}
+                  className="group flex flex-col gap-2 rounded-xl border border-[#e7e5e4] bg-white p-4 text-left transition-colors hover:border-[#d6d3d1] hover:bg-[#fcfcfa] disabled:pointer-events-none disabled:opacity-50"
                 >
-                  <PanelsTopLeft className="mr-2 h-4 w-4" />
-                  Create program
-                </Button>
-                <Button
-                  variant="outline"
-                  className="h-9 rounded-lg"
-                  onClick={handleSetExternalPlan}
-                  disabled={isSaving}
-                >
-                  <ExternalLink className="mr-2 h-4 w-4" />
-                  Link external plan
-                </Button>
+                  <PanelsTopLeft className="h-5 w-5 text-[#78716c]" />
+                  <div>
+                    <p className="text-sm font-medium text-[#1c1917]">Create program</p>
+                    <p className="mt-0.5 text-xs text-[#78716c] leading-relaxed">For sacrament meetings and conferences</p>
+                  </div>
+                </button>
               </div>
+              <button
+                type="button"
+                onClick={handleSetExternalPlan}
+                disabled={isSaving}
+                className="inline-flex items-center gap-1.5 text-xs text-[#78716c] hover:text-[#1c1917] transition-colors disabled:pointer-events-none disabled:opacity-50"
+              >
+                <ExternalLink className="h-3.5 w-3.5" />
+                Link an external plan
+              </button>
             </SettingsSection>
           )}
 
@@ -350,95 +620,28 @@ export function MeetingDetailsPageClient({
           )}
 
           <SettingsSection
-            title="Meeting details"
+            title="Notes"
             titleClassName="text-[14px] font-medium text-foreground/85"
           >
-            <SettingsGroup>
-              <SettingsRow
-                dividerStyle="inset"
-                className={detailsRowClassName}
-                leading={<CalendarDays className="h-3.5 w-3.5 text-muted-foreground" />}
-                title="When"
-                description={when}
-              />
-              {event?.location && (
-                <SettingsRow
-                  dividerStyle="inset"
-                  className={detailsRowClassName}
-                  leading={<MapPin className="h-3.5 w-3.5 text-muted-foreground" />}
-                  title="Location"
-                  description={event.location}
-                />
-              )}
-              {modalityValue && (
-                <SettingsRow
-                  dividerStyle="inset"
-                  className={detailsRowClassName}
-                  leading={<Users className="h-3.5 w-3.5 text-muted-foreground" />}
-                  title="Format"
-                  description={MODALITY_LABELS[modalityValue]}
-                  trailing={
-                    <Badge
-                      variant="outline"
-                      className="h-6 rounded-full border-[hsl(var(--settings-divider))] bg-[hsl(var(--settings-input-bg))] px-2.5 text-[11px] font-medium text-muted-foreground"
-                    >
-                      {STATUS_LABELS[localMeeting.status] ?? localMeeting.status}
-                    </Badge>
-                  }
-                />
-              )}
-            </SettingsGroup>
-          </SettingsSection>
-
-          <SettingsSection
-            title="Roles"
-            titleClassName="text-[14px] font-medium text-foreground/85"
-          >
-            <SettingsGroup>
-              {localMeeting.presiding_name && (
-                <SettingsRow
-                  dividerStyle="inset"
-                  className={detailsRowClassName}
-                  title="Presiding"
-                  description={localMeeting.presiding_name}
-                />
-              )}
-              {localMeeting.conducting_name && (
-                <SettingsRow
-                  dividerStyle="inset"
-                  className={detailsRowClassName}
-                  title="Conducting"
-                  description={localMeeting.conducting_name}
-                />
-              )}
-              {localMeeting.chorister_name && (
-                <SettingsRow
-                  dividerStyle="inset"
-                  className={detailsRowClassName}
-                  title="Chorister"
-                  description={localMeeting.chorister_name}
-                />
-              )}
-              {localMeeting.organist_name && (
-                <SettingsRow
-                  dividerStyle="inset"
-                  className={detailsRowClassName}
-                  title="Organist"
-                  description={localMeeting.organist_name}
-                />
-              )}
-              {!localMeeting.presiding_name &&
-                !localMeeting.conducting_name &&
-                !localMeeting.chorister_name &&
-                !localMeeting.organist_name && (
-                  <SettingsRow
-                    dividerStyle="inset"
-                    className={detailsRowClassName}
-                    title="No roles assigned"
-                    description="Add presiding, conducting, and music roles from the edit panel."
-                  />
-                )}
-            </SettingsGroup>
+            <FormRichTextEditor
+              value={description}
+              onChange={setDescription}
+              onBlur={async () => {
+                if (description === (localMeeting.description ?? "")) return;
+                try {
+                  const res = await fetch(`/api/meetings/${meeting.id}`, {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ description: description.trim() || null }),
+                  });
+                  const data = await res.json() as { meeting?: MeetingRow; error?: string };
+                  if (!res.ok) throw new Error(data.error);
+                  if (data.meeting) setLocalMeeting(data.meeting);
+                } catch { toast.error("Failed to save notes."); }
+              }}
+              placeholder="Add notes..."
+              minHeight="120px"
+            />
           </SettingsSection>
 
           {event && (
@@ -477,28 +680,6 @@ export function MeetingDetailsPageClient({
             </SettingsSection>
           )}
 
-          {localMeeting.description && (
-            <SettingsSection
-              title="Notes"
-              titleClassName="text-[14px] font-medium text-foreground/85"
-            >
-              <div className="rounded-[var(--settings-surface-radius)] border border-[hsl(var(--settings-surface-border))] bg-[hsl(var(--settings-surface-bg))] px-[var(--settings-row-padding-x)] py-[var(--settings-row-padding-y)]">
-                <div
-                  className={cn(
-                    "prose-sm max-w-none text-sm leading-relaxed text-foreground/85",
-                    "[&_p]:my-1 [&_p:first-child]:mt-0 [&_p:last-child]:mb-0",
-                    "[&_ul]:list-disc [&_ul]:ml-4 [&_ul]:my-1",
-                    "[&_ol]:list-decimal [&_ol]:ml-4 [&_ol]:my-1",
-                    "[&_li]:my-0.5",
-                    "[&_strong]:font-semibold",
-                    "[&_em]:italic",
-                    "[&_s]:line-through"
-                  )}
-                  dangerouslySetInnerHTML={{ __html: localMeeting.description ?? "" }}
-                />
-              </div>
-            </SettingsSection>
-          )}
         </SettingsPageShell>
       </div>
 
