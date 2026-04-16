@@ -2,9 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight, LayoutList, Loader2, PanelsTopLeft } from "lucide-react";
+import { ArrowRight, LayoutList, Loader2, PanelsTopLeft, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { toast } from "@/lib/toast";
 
 type PlanType = "agenda" | "program";
@@ -50,7 +51,9 @@ export function MeetingPlanSetup({
   setupFeedback,
 }: MeetingPlanSetupProps) {
   const router = useRouter();
-  const [pendingType, setPendingType] = useState<PlanType | null>(null);
+  const [expandedType, setExpandedType] = useState<PlanType | null>(null);
+  const [planName, setPlanName] = useState("");
+  const [isCreating, setIsCreating] = useState(false);
   const didShowFeedbackToast = useRef(false);
 
   useEffect(() => {
@@ -78,19 +81,31 @@ export function MeetingPlanSetup({
     didShowFeedbackToast.current = true;
   }, [meetingId, setupFeedback]);
 
-  const handleSelectPlanType = async (type: PlanType) => {
-    setPendingType(type);
+  const handleExpand = (type: PlanType) => {
+    setExpandedType(type);
+    setPlanName(`${meetingTitle} ${type === "agenda" ? "Agenda" : "Program"}`);
+  };
+
+  const handleCollapse = () => {
+    setExpandedType(null);
+    setPlanName("");
+  };
+
+  const handleCreate = async () => {
+    if (!expandedType || !planName.trim()) return;
+
+    setIsCreating(true);
     try {
-      if (currentPlanType === type) {
-        const mode = type === "program" ? "program" : "planning";
+      if (currentPlanType === expandedType) {
+        const mode = expandedType === "program" ? "program" : "planning";
         router.replace(`/meetings/${meetingId}?mode=${mode}`);
         return;
       }
 
-      const payload =
-        type === "program"
-          ? { type: "program", title: `${meetingTitle} Program` }
-          : { type: "agenda", title: `${meetingTitle} Agenda` };
+      const payload = {
+        type: expandedType,
+        title: planName.trim(),
+      };
 
       const response = await fetch(`/api/meetings/${meetingId}/plan`, {
         method: "POST",
@@ -103,11 +118,11 @@ export function MeetingPlanSetup({
         throw new Error(result.error || "Failed to create plan");
       }
 
-      const mode = type === "program" ? "program" : "planning";
+      const mode = expandedType === "program" ? "program" : "planning";
       router.replace(`/meetings/${meetingId}?mode=${mode}`);
     } catch (error) {
-      setPendingType(null);
-      toast.error(error instanceof Error ? error.message : "Failed to set plan type.");
+      setIsCreating(false);
+      toast.error(error instanceof Error ? error.message : "Failed to create plan.");
     }
   };
 
@@ -123,8 +138,8 @@ export function MeetingPlanSetup({
       <section className="grid gap-4 md:grid-cols-2">
         {PLAN_CHOICES.map((option) => {
           const Icon = option.icon;
-          const isPending = pendingType === option.type;
-          const isDisabled = pendingType !== null;
+          const isExpanded = expandedType === option.type;
+          const isOtherExpanded = expandedType !== null && !isExpanded;
 
           return (
             <Card
@@ -142,24 +157,64 @@ export function MeetingPlanSetup({
               </CardHeader>
               <CardContent className="space-y-4">
                 <p className="text-sm text-muted-foreground">{option.supportText}</p>
-                <Button
-                  type="button"
-                  onClick={() => void handleSelectPlanType(option.type)}
-                  disabled={isDisabled}
-                  className="w-full justify-center gap-2"
-                >
-                  {isPending ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Setting up
-                    </>
-                  ) : (
-                    <>
-                      Use {option.title}
-                      <ArrowRight className="h-4 w-4" />
-                    </>
-                  )}
-                </Button>
+                
+                {isExpanded ? (
+                  <div className="space-y-3 rounded-lg border border-border bg-muted/30 p-4">
+                    <div className="flex items-center justify-between">
+                      <label htmlFor={`name-${option.type}`} className="text-sm font-medium">
+                        Name
+                      </label>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleCollapse}
+                        disabled={isCreating}
+                        className="h-6 w-6 p-0"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <Input
+                      id={`name-${option.type}`}
+                      value={planName}
+                      onChange={(e) => setPlanName(e.target.value)}
+                      disabled={isCreating}
+                      placeholder={`${meetingTitle} ${option.title}`}
+                      className="bg-background"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && planName.trim()) {
+                          void handleCreate();
+                        }
+                      }}
+                    />
+                    <Button
+                      type="button"
+                      onClick={() => void handleCreate()}
+                      disabled={isCreating || !planName.trim()}
+                      className="w-full"
+                    >
+                      {isCreating ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Creating
+                        </>
+                      ) : (
+                        "Create"
+                      )}
+                    </Button>
+                  </div>
+                ) : (
+                  <Button
+                    type="button"
+                    onClick={() => handleExpand(option.type)}
+                    disabled={isOtherExpanded}
+                    className="w-full justify-center gap-2"
+                  >
+                    New {option.title}
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
+                )}
               </CardContent>
             </Card>
           );

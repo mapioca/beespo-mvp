@@ -106,8 +106,7 @@ export default async function MeetingsOverviewPage() {
               <div className="space-y-2">
                 <CardTitle className="text-2xl">Meetings overview</CardTitle>
                 <CardDescription className="max-w-2xl text-sm leading-6">
-                  Use this hub to move between the core Meetings surfaces without exposing
-                  transitional workflows in the main navigation experience.
+                  Plan agendas, programs, and assignments for your organization.
                 </CardDescription>
               </div>
               <div className="flex flex-wrap gap-2">

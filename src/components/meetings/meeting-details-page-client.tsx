@@ -6,8 +6,6 @@ import { format } from "date-fns";
 import { useRouter } from "next/navigation";
 import { toast } from "@/lib/toast";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
 import {
   Popover,
   PopoverContent,
@@ -22,26 +20,19 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  DetailsPanel,
-  DetailsPanelField,
-  DetailsPanelSection,
-} from "@/components/ui/details-panel";
-import {
   SettingsPageShell,
   SettingsSection,
   SettingsGroup,
   SettingsRow,
-  settingsInputClassName,
 } from "@/components/settings/settings-surface";
 import { ZoomMeetingSheet } from "@/components/meetings/zoom-meeting-sheet";
 import { FormRichTextEditor } from "@/components/ui/form-rich-text-editor";
-import { DirectoryMemberSelect, DirectoryMemberSearch } from "@/components/meetings/directory-member-select";
+import { DirectoryMemberSearch } from "@/components/meetings/directory-member-select";
 import type { Database } from "@/types/database";
 import {
   CalendarDays,
   ClipboardList,
   ExternalLink,
-  Loader2,
   PanelsTopLeft,
   Video,
 } from "lucide-react";
@@ -71,20 +62,6 @@ const MODALITY_LABELS: Record<Modality, string> = {
   online: "Online",
   hybrid: "Hybrid",
 };
-
-const PLAN_TYPE_LABELS: Record<PlanType, string> = {
-  agenda: "Agenda",
-  program: "Program",
-  external: "External plan",
-};
-
-const STATUS_LABELS: Record<string, string> = {
-  scheduled: "Scheduled",
-  in_progress: "In progress",
-  completed: "Completed",
-  cancelled: "Cancelled",
-};
-
 const detailsRowClassName = "min-h-[3.5rem] hover:bg-transparent";
 
 function buildTimeOptions(stepMinutes = 15): string[] {
@@ -241,25 +218,25 @@ function InlineRoleRow({
 }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className="group inline-flex items-center gap-3 rounded-md px-2.5 py-1.5 -ml-2.5 transition-colors hover:bg-[#f9f7f5]">
-      <span className="w-[110px] shrink-0 text-sm text-[#1c1917]">{label}</span>
+    <div className="grid items-center h-9" style={{ gridTemplateColumns: "120px 240px" }}>
+      <span className="text-sm text-[#1c1917]">{label}</span>
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <button
             type="button"
             disabled={disabled}
-            className="flex shrink-0 items-center gap-2 disabled:pointer-events-none disabled:opacity-50"
+            className="inline-flex items-center gap-2 h-7 px-2 rounded-md min-w-[200px] text-[14px] font-normal transition-colors hover:bg-[#f9f7f5] disabled:pointer-events-none disabled:opacity-50"
           >
             {value ? (
-              <span className="flex items-center gap-2 text-sm text-[#1c1917]">
+              <>
                 <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#e7e5e4] text-[10px] font-medium text-[#78716c]">
-                  {value.charAt(0).toUpperCase()}
+                  {value.split(" ").filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join("")}
                 </span>
-                {value}
-                <span className="ml-1 hidden text-xs text-[#78716c] group-hover:inline">change</span>
-              </span>
+                <span className="text-[#1c1917]">{value}</span>
+                <span className="ml-auto hidden text-xs text-[#78716c] group-hover:inline">change</span>
+              </>
             ) : (
-              <span className="text-sm text-[#a8a29e] hover:text-[#b45309] transition-colors">Add person</span>
+              <span className="text-[#78716c]">Add person</span>
             )}
           </button>
         </PopoverTrigger>
@@ -282,7 +259,6 @@ export function MeetingDetailsPageClient({
 }: MeetingDetailsPageClientProps) {
   const router = useRouter();
   const [isSaving, startTransition] = useTransition();
-  const [isEditOpen, setIsEditOpen] = useState(false);
   const [isZoomOpen, setIsZoomOpen] = useState(false);
   const [localMeeting, setLocalMeeting] = useState(meeting);
 
@@ -293,116 +269,53 @@ export function MeetingDetailsPageClient({
     ? format(new Date(meeting.scheduled_date), "HH:mm")
     : "09:00";
 
-  const [title, setTitle] = useState(meeting.title ?? "");
   const [date, setDate] = useState(initialDate);
   const [time, setTime] = useState(initialTime);
   const [modality, setModality] = useState<Modality>(
     (meeting.modality as Modality | null) ?? "in_person"
   );
-  const [presiding, setPresiding] = useState(meeting.presiding_name ?? "");
-  const [conducting, setConducting] = useState(meeting.conducting_name ?? "");
-  const [chorister, setChorister] = useState(meeting.chorister_name ?? "");
-  const [organist, setOrganist] = useState(meeting.organist_name ?? "");
   const [description, setDescription] = useState(meeting.description ?? "");
-
-  useEffect(() => {
-    if (!isEditOpen) return;
-    setTitle(localMeeting.title ?? "");
-    setDate(
-      localMeeting.scheduled_date
-        ? format(new Date(localMeeting.scheduled_date), "yyyy-MM-dd")
-        : format(new Date(), "yyyy-MM-dd")
-    );
-    setTime(
-      localMeeting.scheduled_date
-        ? format(new Date(localMeeting.scheduled_date), "HH:mm")
-        : "09:00"
-    );
-    setModality(
-      ((localMeeting as { modality?: Modality | null }).modality) ?? "in_person"
-    );
-    setPresiding(localMeeting.presiding_name ?? "");
-    setConducting(localMeeting.conducting_name ?? "");
-    setChorister(localMeeting.chorister_name ?? "");
-    setOrganist(localMeeting.organist_name ?? "");
-    setDescription(localMeeting.description ?? "");
-  }, [localMeeting, isEditOpen]);
+  const [expandedPlanType, setExpandedPlanType] = useState<"agenda" | "program" | null>(null);
+  const [planName, setPlanName] = useState("");
 
   const planType = (localMeeting.plan_type as PlanType | null) ?? null;
-  const when = useMemo(() => {
-    if (!localMeeting.scheduled_date) return "Not scheduled";
-    return format(new Date(localMeeting.scheduled_date), "MMMM d, yyyy · h:mm a");
-  }, [localMeeting.scheduled_date]);
 
   const modalityValue = (localMeeting as { modality?: Modality | null }).modality ?? null;
   const canUseZoom = modalityValue === "online" || modalityValue === "hybrid";
 
-  function handleSave() {
-    if (!title.trim()) {
-      toast.error("Title is required.");
-      return;
-    }
-
-    const scheduled = new Date(`${date}T${time}:00`);
-
-    startTransition(async () => {
-      try {
-        const response = await fetch(`/api/meetings/${meeting.id}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            title: title.trim(),
-            scheduled_date: scheduled.toISOString(),
-            modality,
-            presiding_name: presiding.trim() || null,
-            conducting_name: conducting.trim() || null,
-            chorister_name: chorister.trim() || null,
-            organist_name: organist.trim() || null,
-            description: description.trim() || null,
-          }),
-        });
-
-        const data = (await response.json()) as {
-          meeting?: MeetingRow;
-          error?: string;
-        };
-        if (!response.ok) throw new Error(data.error ?? "Failed to update meeting");
-
-        if (data.meeting) setLocalMeeting(data.meeting);
-        toast.success("Meeting updated.");
-        setIsEditOpen(false);
-        router.refresh();
-      } catch (error) {
-        toast.error(error instanceof Error ? error.message : "Failed to update meeting.");
-      }
-    });
-  }
-
-  const planHref =
-    planType === "program"
-      ? `/meetings/program/${meeting.id}`
-      : planType === "agenda"
-        ? `/meetings/agenda/${meeting.id}`
-        : null;
-
   const externalPlanUrl = (localMeeting as { external_plan_url?: string | null }).external_plan_url ?? null;
 
-  function setPlanType(nextType: "agenda" | "program" | "external", url?: string | null) {
+  function setPlanType(nextType: "agenda" | "program" | "external", nameOrUrl?: string | null) {
     startTransition(async () => {
       try {
-        const body: Record<string, unknown> = { plan_type: nextType };
-        if (nextType === "external") body.external_plan_url = url ?? null;
-        const response = await fetch(`/api/meetings/${meeting.id}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        });
-        const data = (await response.json()) as { meeting?: MeetingRow; error?: string };
-        if (!response.ok) throw new Error(data.error ?? "Failed to set plan");
-        if (data.meeting) setLocalMeeting(data.meeting);
-        if (nextType === "agenda") router.push(`/meetings/agenda/${meeting.id}`);
-        else if (nextType === "program") router.push(`/meetings/program/${meeting.id}`);
-        else toast.success("External plan saved.");
+        if (nextType === "external") {
+          const body: Record<string, unknown> = { plan_type: nextType, external_plan_url: nameOrUrl ?? null };
+          const response = await fetch(`/api/meetings/${meeting.id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+          });
+          const data = (await response.json()) as { meeting?: MeetingRow; error?: string };
+          if (!response.ok) throw new Error(data.error ?? "Failed to set plan");
+          if (data.meeting) setLocalMeeting(data.meeting);
+          toast.success("External plan saved.");
+        } else {
+          // Create agenda or program via POST
+          const payload = {
+            type: nextType,
+            title: nameOrUrl?.trim() || `${meeting.title} ${nextType === "agenda" ? "Agenda" : "Program"}`,
+          };
+          const response = await fetch(`/api/meetings/${meeting.id}/plan`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+          const result = await response.json();
+          if (!response.ok) throw new Error(result.error || "Failed to create plan");
+          
+          if (nextType === "agenda") router.push(`/meetings/agenda/${meeting.id}`);
+          else if (nextType === "program") router.push(`/meetings/program/${meeting.id}`);
+        }
       } catch (error) {
         toast.error(error instanceof Error ? error.message : "Failed to set plan.");
       }
@@ -423,12 +336,12 @@ export function MeetingDetailsPageClient({
       <div className="flex-1 overflow-y-auto">
         <SettingsPageShell
           title=""
-          className="max-w-2xl"
-          contentClassName="space-y-6"
+          className="max-w-3xl [&>div]:mx-0 [&>div]:max-w-[720px]"
+          contentClassName="space-y-10"
           headerClassName="hidden"
         >
           {/* Inline-editable header */}
-          <div className="-mt-2 space-y-1">
+          <div className="-mt-2 space-y-1 mb-8">
             <InlineTitleEditor
               value={localMeeting.title ?? ""}
               onSave={async (next) => {
@@ -485,37 +398,12 @@ export function MeetingDetailsPageClient({
             </div>
           </div>
 
-          <div className="flex justify-end gap-2">
-            {planHref && (
-              <Button asChild className="h-8 rounded-lg px-3 text-xs font-medium">
-                <Link href={planHref}>
-                  <ExternalLink className="mr-1.5 h-3.5 w-3.5" />
-                  Open {planType === "program" ? "program" : "agenda"}
-                </Link>
-              </Button>
-            )}
-            {planType === "external" && externalPlanUrl && (
-              <Button asChild className="h-8 rounded-lg px-3 text-xs font-medium">
-                <a href={externalPlanUrl} target="_blank" rel="noopener noreferrer">
-                  <ExternalLink className="mr-1.5 h-3.5 w-3.5" />
-                  Open external plan
-                </a>
-              </Button>
-            )}
-            <Button
-              variant="outline"
-              className="h-8 rounded-lg px-3 text-xs font-medium"
-              onClick={() => setIsEditOpen(true)}
-            >
-              Edit details
-            </Button>
-          </div>
 
           <SettingsSection
             title="Roles"
-            titleClassName="text-[14px] font-medium text-foreground/85"
+            titleClassName="text-[12px] font-medium uppercase tracking-[0.5px] text-[#57534e]"
           >
-            <div className="flex flex-col items-start">
+            <div className="flex flex-col">
               {(["presiding", "conducting", "chorister", "organist"] as const).map((role) => {
                 const nameKey = `${role}_name` as keyof typeof localMeeting;
                 const currentName = (localMeeting[nameKey] as string | null) ?? "";
@@ -549,34 +437,118 @@ export function MeetingDetailsPageClient({
             <SettingsSection
               title="Plan"
               description="Attach an agenda, program, or external plan to this meeting. You can add one now or later."
-              titleClassName="text-[14px] font-medium text-foreground/85"
+              titleClassName="text-[12px] font-medium uppercase tracking-[0.5px] text-[#57534e]"
               descriptionClassName="text-[13px]"
             >
               <div className="grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() => setPlanType("agenda")}
-                  disabled={isSaving}
-                  className="group flex flex-col gap-2 rounded-xl border border-[#e7e5e4] bg-white p-4 text-left transition-colors hover:border-[#d6d3d1] hover:bg-[#fcfcfa] disabled:pointer-events-none disabled:opacity-50"
-                >
+                <div className="flex flex-col gap-2 rounded-xl border border-[#e7e5e4] bg-white p-4 transition-colors hover:border-[#d6d3d1] hover:bg-[#fcfcfa]">
                   <ClipboardList className="h-5 w-5 text-[#78716c]" />
                   <div>
-                    <p className="text-sm font-medium text-[#1c1917]">Create agenda</p>
+                    <p className="text-sm font-medium text-[#1c1917]">New agenda</p>
                     <p className="mt-0.5 text-xs text-[#78716c] leading-relaxed">For activities, interviews, and council meetings</p>
                   </div>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPlanType("program")}
-                  disabled={isSaving}
-                  className="group flex flex-col gap-2 rounded-xl border border-[#e7e5e4] bg-white p-4 text-left transition-colors hover:border-[#d6d3d1] hover:bg-[#fcfcfa] disabled:pointer-events-none disabled:opacity-50"
-                >
+                  {expandedPlanType === "agenda" ? (
+                    <div className="mt-2 space-y-2">
+                      <input
+                        type="text"
+                        value={planName}
+                        onChange={(e) => setPlanName(e.target.value)}
+                        placeholder={`${meeting.title} Agenda`}
+                        disabled={isSaving}
+                        className="w-full rounded-md border border-[#e7e5e4] bg-white px-3 py-1.5 text-sm focus:border-[#1c1917] focus:outline-none focus:ring-1 focus:ring-[#1c1917]"
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && planName.trim()) {
+                            setPlanType("agenda", planName);
+                          }
+                        }}
+                      />
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setPlanType("agenda", planName)}
+                          disabled={isSaving || !planName.trim()}
+                          className="flex-1 rounded-md bg-[#b45309] px-3 py-1.5 text-xs font-medium text-white hover:bg-[#92400e] disabled:opacity-50"
+                        >
+                          {isSaving ? "Creating..." : "Create"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => { setExpandedPlanType(null); setPlanName(""); }}
+                          disabled={isSaving}
+                          className="rounded-md border border-[#e7e5e4] px-3 py-1.5 text-xs font-medium hover:bg-[#fcfcfa]"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setExpandedPlanType("agenda");
+                        setPlanName(`${meeting.title} Agenda`);
+                      }}
+                      disabled={isSaving || expandedPlanType === "program"}
+                      className="mt-2 w-full rounded-md border border-[#e7e5e4] px-3 py-1.5 text-xs font-medium hover:bg-[#fcfcfa] disabled:opacity-50"
+                    >
+                      Continue
+                    </button>
+                  )}
+                </div>
+                <div className="flex flex-col gap-2 rounded-xl border border-[#e7e5e4] bg-white p-4 transition-colors hover:border-[#d6d3d1] hover:bg-[#fcfcfa]">
                   <PanelsTopLeft className="h-5 w-5 text-[#78716c]" />
                   <div>
-                    <p className="text-sm font-medium text-[#1c1917]">Create program</p>
+                    <p className="text-sm font-medium text-[#1c1917]">New program</p>
                     <p className="mt-0.5 text-xs text-[#78716c] leading-relaxed">For sacrament meetings and conferences</p>
                   </div>
-                </button>
+                  {expandedPlanType === "program" ? (
+                    <div className="mt-2 space-y-2">
+                      <input
+                        type="text"
+                        value={planName}
+                        onChange={(e) => setPlanName(e.target.value)}
+                        placeholder={`${meeting.title} Program`}
+                        disabled={isSaving}
+                        className="w-full rounded-md border border-[#e7e5e4] bg-white px-3 py-1.5 text-sm focus:border-[#1c1917] focus:outline-none focus:ring-1 focus:ring-[#1c1917]"
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && planName.trim()) {
+                            setPlanType("program", planName);
+                          }
+                        }}
+                      />
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setPlanType("program", planName)}
+                          disabled={isSaving || !planName.trim()}
+                          className="flex-1 rounded-md bg-[#b45309] px-3 py-1.5 text-xs font-medium text-white hover:bg-[#92400e] disabled:opacity-50"
+                        >
+                          {isSaving ? "Creating..." : "Create"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => { setExpandedPlanType(null); setPlanName(""); }}
+                          disabled={isSaving}
+                          className="rounded-md border border-[#e7e5e4] px-3 py-1.5 text-xs font-medium hover:bg-[#fcfcfa]"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setExpandedPlanType("program");
+                        setPlanName(`${meeting.title} Program`);
+                      }}
+                      disabled={isSaving || expandedPlanType === "agenda"}
+                      className="mt-2 w-full rounded-md border border-[#e7e5e4] px-3 py-1.5 text-xs font-medium hover:bg-[#fcfcfa] disabled:opacity-50"
+                    >
+                      Continue
+                    </button>
+                  )}
+                </div>
               </div>
               <button
                 type="button"
@@ -594,7 +566,7 @@ export function MeetingDetailsPageClient({
             <SettingsSection
               title="External plan"
               description="This meeting uses a plan stored outside Beespo."
-              titleClassName="text-[14px] font-medium text-foreground/85"
+              titleClassName="text-[12px] font-medium uppercase tracking-[0.5px] text-[#57534e]"
               descriptionClassName="text-[13px]"
             >
               <SettingsGroup>
@@ -621,7 +593,7 @@ export function MeetingDetailsPageClient({
 
           <SettingsSection
             title="Notes"
-            titleClassName="text-[14px] font-medium text-foreground/85"
+            titleClassName="text-[12px] font-medium uppercase tracking-[0.5px] text-[#57534e]"
           >
             <FormRichTextEditor
               value={description}
@@ -648,7 +620,7 @@ export function MeetingDetailsPageClient({
             <SettingsSection
               title="Event"
               description="The calendar event this meeting is attached to."
-              titleClassName="text-[14px] font-medium text-foreground/85"
+              titleClassName="text-[12px] font-medium uppercase tracking-[0.5px] text-[#57534e]"
               descriptionClassName="text-[13px]"
             >
               <Button asChild variant="outline" className="h-9 rounded-lg">
@@ -664,7 +636,7 @@ export function MeetingDetailsPageClient({
             <SettingsSection
               title="Zoom"
               description="Host or share the online session for this meeting."
-              titleClassName="text-[14px] font-medium text-foreground/85"
+              titleClassName="text-[12px] font-medium uppercase tracking-[0.5px] text-[#57534e]"
               descriptionClassName="text-[13px]"
             >
               <Button
@@ -683,166 +655,6 @@ export function MeetingDetailsPageClient({
         </SettingsPageShell>
       </div>
 
-      <DetailsPanel
-        open={isEditOpen}
-        onOpenChange={setIsEditOpen}
-        title="Edit meeting"
-      >
-        <DetailsPanelSection title="Meeting details">
-          <DetailsPanelField label="Title">
-            <Input
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className={settingsInputClassName}
-              placeholder="Meeting title"
-              disabled={isSaving}
-            />
-          </DetailsPanelField>
-
-          <DetailsPanelField label="Date">
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  type="button"
-                  variant="outline"
-                  disabled={isSaving}
-                  className={`${settingsInputClassName} w-full justify-start pl-3 pr-3 font-normal`}
-                >
-                  <CalendarDays className="mr-2 h-4 w-4 text-muted-foreground" />
-                  {new Date(`${date}T00:00:00`).toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                    year: "numeric",
-                  })}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <DateCalendar
-                  mode="single"
-                  selected={new Date(`${date}T00:00:00`)}
-                  onSelect={(selected) => {
-                    if (!selected) return;
-                    setDate(format(selected, "yyyy-MM-dd"));
-                  }}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
-          </DetailsPanelField>
-
-          <DetailsPanelField label="Time">
-            <div className="max-w-[160px]">
-              <Select value={time} onValueChange={setTime} disabled={isSaving}>
-                <SelectTrigger className={settingsInputClassName}>
-                  <SelectValue placeholder="Select time" />
-                </SelectTrigger>
-                <SelectContent className="max-h-[10rem]">
-                  {TIME_OPTIONS.map((opt) => {
-                    const [hour, minute] = opt.split(":").map(Number);
-                    const dt = new Date();
-                    dt.setHours(hour, minute, 0, 0);
-                    return (
-                      <SelectItem key={opt} value={opt}>
-                        {dt.toLocaleTimeString("en-US", {
-                          hour: "numeric",
-                          minute: "2-digit",
-                        })}
-                      </SelectItem>
-                    );
-                  })}
-                </SelectContent>
-              </Select>
-            </div>
-          </DetailsPanelField>
-
-          <DetailsPanelField label="Format">
-            <Select
-              value={modality}
-              onValueChange={(val) => setModality(val as Modality)}
-              disabled={isSaving}
-            >
-              <SelectTrigger className={cn(settingsInputClassName, "h-8 text-[13px]")}>
-                <SelectValue placeholder="Select format" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="in_person">In person</SelectItem>
-                <SelectItem value="online">Online</SelectItem>
-                <SelectItem value="hybrid">Hybrid</SelectItem>
-              </SelectContent>
-            </Select>
-          </DetailsPanelField>
-        </DetailsPanelSection>
-
-        <DetailsPanelSection title="Roles">
-          <DetailsPanelField label="Presiding">
-            <DirectoryMemberSelect
-              value={presiding}
-              onChange={setPresiding}
-              disabled={isSaving}
-              placeholder="Select presiding..."
-            />
-          </DetailsPanelField>
-          <DetailsPanelField label="Conducting">
-            <DirectoryMemberSelect
-              value={conducting}
-              onChange={setConducting}
-              disabled={isSaving}
-              placeholder="Select conducting..."
-            />
-          </DetailsPanelField>
-          <DetailsPanelField label="Chorister">
-            <DirectoryMemberSelect
-              value={chorister}
-              onChange={setChorister}
-              disabled={isSaving}
-              placeholder="Select chorister..."
-            />
-          </DetailsPanelField>
-          <DetailsPanelField label="Organist">
-            <DirectoryMemberSelect
-              value={organist}
-              onChange={setOrganist}
-              disabled={isSaving}
-              placeholder="Select organist..."
-            />
-          </DetailsPanelField>
-        </DetailsPanelSection>
-
-        <DetailsPanelSection title="Notes">
-          <FormRichTextEditor
-            value={description}
-            onChange={setDescription}
-            placeholder="Add notes"
-            disabled={isSaving}
-            minHeight="120px"
-          />
-        </DetailsPanelSection>
-
-        <DetailsPanelSection className="pt-2 space-y-0 flex items-center justify-end gap-2">
-          <Button
-            variant="ghost"
-            onClick={() => setIsEditOpen(false)}
-            disabled={isSaving}
-            className="h-10 rounded-[14px] px-8 text-sm font-medium leading-none text-foreground/80 bg-[hsl(var(--settings-surface-bg))] hover:bg-[hsl(var(--settings-row-hover))] hover:text-foreground"
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={handleSave}
-            disabled={isSaving || !title.trim()}
-            className="h-10 rounded-[14px] px-8 text-sm font-medium leading-none"
-          >
-            {isSaving ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Saving...
-              </>
-            ) : (
-              "Save changes"
-            )}
-          </Button>
-        </DetailsPanelSection>
-      </DetailsPanel>
 
       {canUseZoom && (
         <ZoomMeetingSheet
