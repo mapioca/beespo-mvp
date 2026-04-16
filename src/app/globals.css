@@ -4,14 +4,37 @@
 
 @layer base {
   :root {
+    /* Neutrals */
+    --color-stone-50: #fafaf9;
+    --color-stone-100: #f5f5f4;
+    --color-stone-200: #e7e5e4;
+    --color-stone-300: #d6d3d1;
+    --color-stone-500: #78716c;
+    --color-stone-600: #57534e;
+    --color-stone-900: #1c1917;
+
+    /* Accent - Terracotta */
+    --color-accent-50: #fef3e7;
+    --color-accent-600: #b45309;
+    --color-accent-700: #92400e;
+    --color-accent-800: #7c2d12;
+
+    /* Semantic */
+    --color-bg-app: #ffffff;
+    --color-text-primary: #1c1917;
+    --color-text-secondary: #57534e;
+    --color-text-tertiary: #78716c;
+    --color-border: #e7e5e4;
+    --color-focus-ring: rgba(180, 83, 9, 0.3);
+
     /* Calm Precision */
     --cp-canvas: 0 0% 94.5%;
     --cp-surface: 0 0% 100%;
     --cp-surface-2: 220 20% 99.2%;
-    --cp-text: 220 14% 12%;
-    --cp-text-muted: 220 8% 42%;
-    --cp-text-subtle: 220 8% 55%;
-    --cp-border: 220 14% 91.8%;
+    --cp-text: 24 10% 10%;
+    --cp-text-muted: 25 5% 45%;
+    --cp-text-subtle: 25 5% 55%;
+    --cp-border: 20 6% 90%;
     --cp-divider: 220 12% 93.8%;
     --cp-hover: 220 18% 97%;
     --cp-active: 220 14% 95.5%;
@@ -50,8 +73,8 @@
     --card-foreground: var(--cp-text);
     --popover: var(--cp-surface);
     --popover-foreground: var(--cp-text);
-    --primary: var(--cp-primary);
-    --primary-foreground: var(--cp-primary-foreground);
+    --primary: var(--brand);
+    --primary-foreground: var(--brand-foreground);
     --secondary: var(--cp-surface-2);
     --secondary-foreground: var(--cp-text);
     --muted: var(--cp-surface-2);
@@ -63,19 +86,19 @@
     --chrome: var(--cp-surface-2); /* App chrome surface (top bars, toolbars) */
     --chrome-border: var(--cp-border); /* Subtle chrome dividers */
     --overlay: 0 0% 0% / 0.28; /* Modal overlay tint */
-    --app-shell: 0 0% 94.5%; /* Rail - canvas gray */
-    --app-main-card: 220 12% 99.5%; /* Main content - near-white (lightest) */
-    --app-sidebar: 220 10% 96%; /* Sidebar - darker gray */
+    --app-shell: 60 9% 98%; /* Rail - Stone & Sage: Alabaster (#fafaf9) */
+    --app-main-card: 0 0% 100%; /* Main content - Stone & Sage: Pure white */
+    --app-sidebar: 0 0% 100%; /* Sidebar - Stone & Sage: Pure white */
     --app-island: 210 20% 98%; /* Secondary pane - #f9fafb (lighter) */
     --app-island-border: var(--cp-border);
-    --nav-hover: var(--cp-hover);
+    --nav-hover: 60 5% 96%; /* Stone & Sage: stone-100 hover on white */
     --nav-hover-alpha: 1;
-    --nav-selected: 0 0% 90%;
+    --nav-selected: 60 9% 95%; /* Stone & Sage: subtle stone tint on white */
     --nav-selected-alpha: 1;
-    --nav-text: 0 0% 38%;
-    --nav-text-strong: 0 0% 10%;
-    --nav-text-muted: 0 0% 46%;
-    --nav-active-border: 0 0% 82%;
+    --nav-text: 25 5% 45%;
+    --nav-text-strong: 24 10% 10%;
+    --nav-text-muted: 25 5% 50%;
+    --nav-active-border: 20 6% 90%; /* Stone & Sage: stone-200 */
     --program-stage-bg: 220 14% 95.6%;
     --program-control-panel-bg: 0 0% 100%;
     --program-control-panel-border: 220 10% 90.5%;
@@ -169,7 +192,7 @@
     --menu-item-font-size: 12px;
     --menu-shortcut-font-size: 11px;
     --table-row-hover: 0 0% 97.8%;
-    --table-row-selected: 0 0% 97.3%;
+    --table-row-selected: var(--brand-bg);
     --table-filter-hover: 0 0% 94%;
     --table-filter-active: 0 0% 92%;
     --table-shell-bg: 0 0% 100%;
@@ -213,7 +236,7 @@
     --destructive-foreground: 0 0% 100%;
     --border: var(--cp-border);
     --input: var(--cp-border);
-    --ring: var(--cp-focus);
+    --ring: var(--brand);
     --radius: 0.875rem;
     --chart-1: 0 0% 60%;
     --chart-2: 0 0% 40%;
@@ -260,17 +283,42 @@
     --form-checkbox-checked-border: 220 16% 21%;
     --form-checkbox-checked-check: 0 0% 100%;
     --nav-secondary-hover-hsl: 220 10% 45%;
-    --app-main-card: 220 12% 99.5%;
+    --app-main-card: 0 0% 100%;
+    --brand: 26 91% 37%; /* Accent: #b45309 */
+    --brand-foreground: 0 0% 100%;
+    --brand-bg: 31 92% 95%; /* Accent bg: #fef3e7 */
+    --brand-hover: 22 83% 31%; /* Accent hover: #92400e */
+    --brand-active: 15 75% 28%; /* Accent active: #7c2d12 */
   }
 
   .dark {
+    --color-stone-50: #0c0a09;
+    --color-stone-100: #1c1917;
+    --color-stone-200: #292524;
+    --color-stone-300: #44403c;
+    --color-stone-500: #a8a29e;
+    --color-stone-600: #d6d3d1;
+    --color-stone-900: #fafaf9;
+
+    --color-accent-50: #1f1409;
+    --color-accent-600: #ea580c;
+    --color-accent-700: #f97316;
+    --color-accent-800: #fb923c;
+
+    --color-bg-app: #0c0a09;
+    --color-text-primary: #fafaf9;
+    --color-text-secondary: #d6d3d1;
+    --color-text-tertiary: #a8a29e;
+    --color-border: #292524;
+    --color-focus-ring: rgba(234, 88, 12, 0.3);
+
     --cp-canvas: 0 0% 7%;
     --cp-surface: 220 12% 10.5%;
     --cp-surface-2: 220 11% 12.5%;
-    --cp-text: 220 14% 92%;
-    --cp-text-muted: 220 8% 68%;
-    --cp-text-subtle: 220 7% 58%;
-    --cp-border: 220 10% 20%;
+    --cp-text: 60 9% 98%;
+    --cp-text-muted: 24 5% 64%;
+    --cp-text-subtle: 24 5% 56%;
+    --cp-border: 30 6% 25%;
     --cp-divider: 220 10% 23%;
     --cp-hover: 220 10% 14%;
     --cp-active: 220 10% 17%;
@@ -287,8 +335,8 @@
     --card-foreground: var(--cp-text);
     --popover: var(--cp-surface);
     --popover-foreground: var(--cp-text);
-    --primary: var(--cp-primary);
-    --primary-foreground: var(--cp-primary-foreground);
+    --primary: var(--brand);
+    --primary-foreground: var(--brand-foreground);
     --secondary: var(--cp-surface-2);
     --secondary-foreground: var(--cp-text);
     --muted: var(--cp-surface-2);
@@ -300,18 +348,19 @@
     --chrome: var(--cp-surface-2);
     --chrome-border: var(--cp-border);
     --overlay: 0 0% 0% / 0.6; /* Modal overlay tint */
-    --app-shell: var(--cp-canvas);
-    --app-main-card: 220 12% 10.5%;
+    --app-shell: 24 10% 10%; /* Stone & Sage: Stone 900 (#1c1917) - rail */
+    --app-sidebar: 12 6% 15%; /* Stone & Sage: Stone 800 (#292524) - sidebar = main */
+    --app-main-card: 12 6% 15%; /* Stone & Sage: Stone 800 (#292524) */
     --app-island: var(--cp-surface);
     --app-island-border: var(--cp-border);
-    --nav-hover: 220 10% 14%;
+    --nav-hover: 24 8% 18%;
     --nav-hover-alpha: 1;
-    --nav-selected: 220 11% 17%;
+    --nav-selected: 24 8% 20%; /* Stone & Sage: subtle stone tint on stone-800 sidebar */
     --nav-selected-alpha: 1;
-    --nav-text: 220 8% 72%;
-    --nav-text-strong: 220 12% 94%;
-    --nav-text-muted: 220 8% 66%;
-    --nav-active-border: 220 12% 24%;
+    --nav-text: 24 5% 70%;
+    --nav-text-strong: 60 9% 98%;
+    --nav-text-muted: 24 5% 64%;
+    --nav-active-border: 30 6% 25%; /* Stone & Sage: stone-700 cutout edge */
     --program-stage-bg: 220 10% 10%;
     --program-control-panel-bg: 220 8% 8%;
     --program-control-panel-border: 220 9% 18%;
@@ -391,7 +440,7 @@
     --menu-hover: 0 0% 16%;
     --menu-separator: 0 0% 22%;
     --table-row-hover: 220 10% 12.5%;
-    --table-row-selected: 220 10% 20%;
+    --table-row-selected: var(--brand-bg);
     --table-filter-hover: 220 10% 14%;
     --table-filter-active: 220 10% 18%;
     --table-shell-bg: 220 12% 10%;
@@ -434,7 +483,7 @@
     --destructive-foreground: 0 0% 0%;
     --border: var(--cp-border);
     --input: var(--cp-border);
-    --ring: var(--cp-focus);
+    --ring: var(--brand);
     --landing-nav-height: 4rem;
     --landing-nav-horizontal-padding: 1rem;
     --landing-nav-link-font-size: 0.875rem;
@@ -475,6 +524,11 @@
     --form-checkbox-checked-border: 220 12% 86%;
     --form-checkbox-checked-check: 220 14% 11%;
     --nav-secondary-hover-hsl: 0 0% 100%;
+    --brand: 26 91% 37%; /* Accent: #b45309 */
+    --brand-foreground: 0 0% 100%;
+    --brand-bg: 26 50% 18%; /* Accent bg (dark amber tint) */
+    --brand-hover: 22 83% 31%;
+    --brand-active: 15 75% 28%;
   }
 }
 

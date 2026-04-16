@@ -129,12 +129,17 @@ export function DomainShell({
                 : false
 
               const baseItemClass =
-                "inline-flex min-w-fit items-center gap-2 rounded px-2.5 py-1.5 text-[13px] font-medium transition-colors w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                "group relative inline-flex min-w-fit items-center gap-2 rounded-md px-2.5 py-1.5 text-[13px] font-medium transition-colors duration-150 ease-out w-full focus-visible:outline-none focus-visible:bg-[#f5f5f4] focus-visible:text-[#1c1917] focus-visible:ring-2 focus-visible:ring-[#3f5e4b]/30 focus-visible:ring-offset-2"
               const baseChildClass =
-                "inline-flex min-w-fit items-center gap-2 rounded px-2.5 py-1.5 text-[12.5px] font-medium transition-colors w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-              const activeClass = "bg-primary/10 text-primary"
+                "group relative inline-flex min-w-fit items-center gap-2 rounded-md px-2.5 py-1.5 text-[12.5px] font-medium transition-colors duration-150 ease-out w-full focus-visible:outline-none focus-visible:bg-[#f5f5f4] focus-visible:text-[#1c1917] focus-visible:ring-2 focus-visible:ring-[#3f5e4b]/30 focus-visible:ring-offset-2"
+              const activeClass =
+                "bg-white text-[#1c1917] before:absolute before:left-0 before:top-1.5 before:bottom-1.5 before:w-[3px] before:rounded-r-full before:bg-[#3f5e4b]"
               const inactiveClass =
-                "text-muted-foreground hover:bg-nav-secondary-hover/10 dark:hover:bg-nav-secondary-hover/5 hover:text-foreground"
+                "text-[#57534e] hover:bg-[#f5f5f4] hover:text-[#1c1917]"
+              const disabledClass = "text-[#a8a29e] cursor-not-allowed pointer-events-none"
+              const iconClass = "h-3.5 w-3.5 shrink-0 text-[#78716c] group-hover:text-[#1c1917]"
+              const iconActiveClass = "h-3.5 w-3.5 shrink-0 text-[#1c1917]"
+              const iconDisabledClass = "h-3.5 w-3.5 shrink-0 text-[#a8a29e]"
 
               if (hasChildren) {
                 return (
@@ -145,10 +150,10 @@ export function DomainShell({
                       aria-label={`${isExpanded ? "Collapse" : "Expand"} ${item.label}`}
                       className={cn(
                         baseItemClass,
-                        hasActiveChild ? "text-foreground" : inactiveClass
+                        hasActiveChild ? "text-[#1c1917]" : inactiveClass
                       )}
                     >
-                      <Icon className="h-3.5 w-3.5 shrink-0" />
+                      <Icon className={hasActiveChild ? iconActiveClass : iconClass} />
                       <span className="flex-1 whitespace-nowrap text-left">{item.label}</span>
                       <ChevronRight
                         className={cn("h-3 w-3 shrink-0 transition-transform", isExpanded && "rotate-90")}
@@ -160,7 +165,7 @@ export function DomainShell({
                           href={item.href}
                           className={cn(baseChildClass, itemIsDirectlyActive ? activeClass : inactiveClass)}
                         >
-                          <Icon className="h-3.5 w-3.5 shrink-0" />
+                          <Icon className={itemIsDirectlyActive ? iconActiveClass : iconClass} />
                           <span className="whitespace-nowrap">All {item.label}</span>
                         </Link>
                         {item.children!.map((child) => {
@@ -171,9 +176,9 @@ export function DomainShell({
                             <span
                               key={child.href}
                               aria-disabled="true"
-                              className={cn(baseChildClass, inactiveClass, "pointer-events-none opacity-50")}
+                              className={cn(baseChildClass, disabledClass)}
                             >
-                              <ChildIcon className="h-3.5 w-3.5 shrink-0" />
+                              <ChildIcon className={iconDisabledClass} />
                               <span className="whitespace-nowrap">{child.label}</span>
                             </span>
                           ) : (
@@ -182,7 +187,7 @@ export function DomainShell({
                               href={child.href}
                               className={cn(baseChildClass, childIsActive ? activeClass : inactiveClass)}
                             >
-                              <ChildIcon className="h-3.5 w-3.5 shrink-0" />
+                              <ChildIcon className={childIsActive ? iconActiveClass : iconClass} />
                               <span className="whitespace-nowrap">{child.label}</span>
                             </Link>
                           )
@@ -198,9 +203,9 @@ export function DomainShell({
                   {item.disabled ? (
                     <span
                       aria-disabled="true"
-                      className={cn(baseItemClass, inactiveClass, "pointer-events-none opacity-50")}
+                      className={cn(baseItemClass, disabledClass)}
                     >
-                      <Icon className="h-3.5 w-3.5 shrink-0" />
+                      <Icon className={iconDisabledClass} />
                       <span className="whitespace-nowrap">{item.label}</span>
                     </span>
                   ) : (
@@ -208,7 +213,7 @@ export function DomainShell({
                       href={item.href}
                       className={cn(baseItemClass, itemIsDirectlyActive ? activeClass : inactiveClass)}
                     >
-                      <Icon className="h-3.5 w-3.5 shrink-0" />
+                      <Icon className={itemIsDirectlyActive ? iconActiveClass : iconClass} />
                       <span className="whitespace-nowrap">{item.label}</span>
                     </Link>
                   )}

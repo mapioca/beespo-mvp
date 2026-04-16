@@ -61,7 +61,7 @@ export function AppRail({ userName, userId }: AppRailProps) {
   }
 
   return (
-    <div className="w-[52px] h-full bg-app-shell border-r border-app-island-border flex flex-col">
+    <div className="w-[56px] h-full bg-app-shell border-r border-app-island-border flex flex-col">
       {/* Logo */}
       <div className="flex h-[44px] items-center justify-center shrink-0">
         <Link href="/dashboard" aria-label="Beespo home">
@@ -74,20 +74,21 @@ export function AppRail({ userName, userId }: AppRailProps) {
         {navItems.map((item) => {
           const Icon = item.icon
           const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`)
-          
+
           return (
             <Link
               key={item.href}
               href={item.href}
               aria-label={item.label}
               className={cn(
-                "flex items-center justify-center h-[36px] w-full rounded-md mb-0.5 transition-colors",
+                "flex items-center justify-center h-[36px] w-full rounded-lg mb-0.5 transition-colors duration-150 ease-out",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--brand))]/30 focus-visible:ring-offset-2 focus-visible:bg-[#f3f2f0] focus-visible:text-[#1c1917]",
                 isActive
-                  ? "bg-nav-selected text-nav-text-strong"
-                  : "text-nav hover:bg-nav-hover hover:text-nav-strong"
+                  ? "bg-[hsl(var(--brand-bg))] text-[hsl(var(--brand))]"
+                  : "text-[#78716c]/60 hover:bg-[#f3f2f0] hover:text-[#1c1917]"
               )}
             >
-              <Icon className="h-[18px] w-[18px] stroke-[1.75]" />
+              <Icon className="h-5 w-5 stroke-[1.75]" />
             </Link>
           )
         })}
@@ -99,9 +100,9 @@ export function AppRail({ userName, userId }: AppRailProps) {
           type="button"
           onClick={toggleCommandPalette}
           aria-label="Open command palette"
-          className="flex items-center justify-center h-[30px] w-full rounded-md text-nav hover:bg-nav-hover hover:text-nav-strong transition-colors"
+          className="flex items-center justify-center h-[30px] w-full rounded-lg text-[#78716c]/60 hover:bg-[#f3f2f0] hover:text-[#1c1917] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--brand))]/30 focus-visible:ring-offset-2 focus-visible:bg-[#f3f2f0] focus-visible:text-[#1c1917] transition-colors duration-150 ease-out disabled:cursor-not-allowed disabled:text-[#78716c]/30 disabled:hover:bg-transparent"
         >
-          <Search className="h-[18px] w-[18px] stroke-[1.75]" />
+          <Search className="h-5 w-5 stroke-[1.75]" />
         </button>
       </div>
 
