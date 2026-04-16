@@ -136,7 +136,7 @@ export function SidebarUserProfile({
     }, [userId, fetchUnreadCount, realtimeEnabled])
 
     const avatarElement = (
-        <Avatar className={cn("border shrink-0", isCollapsed ? "h-8 w-8" : "h-9 w-9")}>
+        <Avatar className={cn("shrink-0", isCollapsed ? "h-8 w-8" : "h-9 w-9")}>
             <AvatarImage src={avatarUrl} alt={name || "User"} />
             <AvatarFallback>{initials}</AvatarFallback>
         </Avatar>
@@ -146,7 +146,7 @@ export function SidebarUserProfile({
         <DropdownMenu open={dropdownOpen} onOpenChange={handleOpenChange}>
             <DropdownMenuTrigger asChild>
                 {isCollapsed ? (
-                    <button className="relative rounded-full focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2" onMouseEnter={() => setRealtimeEnabled(true)} onFocus={() => setRealtimeEnabled(true)}>
+                    <button className="relative rounded-full focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 h-8 w-8" onMouseEnter={() => setRealtimeEnabled(true)} onFocus={() => setRealtimeEnabled(true)}>
                         {avatarElement}
                         {unreadCount > 0 && (
                             <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-0.5 text-[10px] font-bold text-primary-foreground">

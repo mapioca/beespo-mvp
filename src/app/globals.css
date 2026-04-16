@@ -63,9 +63,10 @@
     --chrome: var(--cp-surface-2); /* App chrome surface (top bars, toolbars) */
     --chrome-border: var(--cp-border); /* Subtle chrome dividers */
     --overlay: 0 0% 0% / 0.28; /* Modal overlay tint */
-    --app-shell: var(--cp-canvas);
-    --app-main-card: 220 12% 99.5%;
-    --app-island: var(--cp-surface);
+    --app-shell: 0 0% 94.5%; /* Rail - canvas gray */
+    --app-main-card: 220 12% 99.5%; /* Main content - near-white (lightest) */
+    --app-sidebar: 220 10% 96%; /* Sidebar - darker gray */
+    --app-island: 210 20% 98%; /* Secondary pane - #f9fafb (lighter) */
     --app-island-border: var(--cp-border);
     --nav-hover: var(--cp-hover);
     --nav-hover-alpha: 1;
@@ -538,6 +539,10 @@
 
   .bg-app-island {
     background-color: hsl(var(--app-island));
+  }
+
+  .bg-app-sidebar {
+    background-color: hsl(var(--app-sidebar));
   }
 
   .bg-builder-canvas {

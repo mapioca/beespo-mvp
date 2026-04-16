@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { AppSidebar } from "@/components/dashboard/app-sidebar";
+import { AppRail } from "@/components/dashboard/app-rail";
 import { NavigationStoreHydrator } from "@/components/dashboard/navigation-store-hydrator";
 import { WorkspaceStoreHydrator } from "@/components/dashboard/workspace-store-hydrator";
 import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
@@ -23,9 +23,7 @@ interface DashboardShellProps {
 export function DashboardShell({
     children,
     userName,
-    userEmail,
     userId,
-    userRoleTitle,
     workspaceName,
     initialNavigationItems,
 }: DashboardShellProps) {
@@ -44,26 +42,14 @@ export function DashboardShell({
                 {workspaceName && <WorkspaceStoreHydrator workspaceName={workspaceName} />}
                 <div className="flex h-screen-dynamic overflow-hidden overscroll-none bg-app-shell">
                 <div className="relative z-20 hidden lg:flex">
-                    <AppSidebar
-                        userName={userName}
-                        userEmail={userEmail}
-                        userId={userId}
-                        userRoleTitle={userRoleTitle}
-                    />
+                    <AppRail userName={userName} userId={userId} />
                 </div>
 
                 <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
                     <SheetContent side="left" className="w-[300px] p-0">
                         <SheetTitle className="sr-only">Navigation</SheetTitle>
                         <SheetDescription className="sr-only">Workspace navigation drawer</SheetDescription>
-                        <AppSidebar
-                            userName={userName}
-                            userEmail={userEmail}
-                            userId={userId}
-                            userRoleTitle={userRoleTitle}
-                            className="w-full"
-                            forceExpanded
-                        />
+                        <AppRail userName={userName} userId={userId} />
                     </SheetContent>
                 </Sheet>
 

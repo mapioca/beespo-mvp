@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { ChevronDown, type LucideIcon } from "lucide-react"
+import { ChevronRight, type LucideIcon } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
 
 import { cn } from "@/lib/utils"
@@ -42,7 +42,7 @@ function WorkspaceHeader({ sectionTitle }: { sectionTitle: string }) {
   return (
     <div className="flex h-14 items-center justify-between px-4 border-b border-app-island-border">
       <div className="flex items-center gap-2.5 min-w-0">
-        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[7px] bg-primary text-[13px] font-semibold text-primary-foreground select-none">
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-[11px] font-semibold text-primary-foreground select-none">
           {initial}
         </span>
         <div className="min-w-0">
@@ -110,12 +110,12 @@ export function DomainShell({
 
   return (
     <div className="flex h-full min-h-0 flex-col md:flex-row">
-      <aside className="md:w-60 md:shrink-0 h-full flex flex-col border-b border-app-island-border bg-app-island md:border-b-0 md:border-r">
+      <aside className="md:w-60 md:shrink-0 h-full flex flex-col border-b border-app-island-border bg-app-sidebar md:border-b-0 md:border-r">
         <div className="flex-1 flex flex-col overflow-hidden">
           <WorkspaceHeader sectionTitle={title} />
           <nav
             aria-label={navLabel}
-            className="flex gap-2 overflow-x-auto px-3 py-3 scrollbar-hide md:flex-col md:gap-1 md:px-3 md:py-0"
+            className="flex gap-1 overflow-x-auto px-2 py-2 scrollbar-hide md:flex-col md:gap-0.5 md:px-2 md:py-2"
           >
             {items.map((item) => {
               const Icon = item.icon
@@ -128,79 +128,89 @@ export function DomainShell({
                 ? (expandedGroups[item.href] ?? hasActiveChild)
                 : false
 
-              const commonClassName = cn(
-                "group inline-flex min-w-fit items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition-colors",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                itemIsDirectlyActive
-                  ? "bg-primary/10 text-primary"
-                  : "text-muted-foreground hover:bg-nav-secondary-hover/10 dark:hover:bg-nav-secondary-hover/5 hover:text-foreground",
-                item.disabled && "pointer-events-none opacity-50"
-              )
+              const baseItemClass =
+                "inline-flex min-w-fit items-center gap-2 rounded px-2.5 py-1.5 text-[13px] font-medium transition-colors w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              const baseChildClass =
+                "inline-flex min-w-fit items-center gap-2 rounded px-2.5 py-1.5 text-[12.5px] font-medium transition-colors w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              const activeClass = "bg-primary/10 text-primary"
+              const inactiveClass =
+                "text-muted-foreground hover:bg-nav-secondary-hover/10 dark:hover:bg-nav-secondary-hover/5 hover:text-foreground"
 
-              const content = (
-                <>
-                  <Icon className="h-4 w-4 shrink-0" />
-                  <span className="whitespace-nowrap">{item.label}</span>
-                </>
-              )
+              if (hasChildren) {
+                return (
+                  <div key={item.href} className="flex min-w-fit flex-col md:min-w-0">
+                    <button
+                      type="button"
+                      onClick={() => toggleGroup(item.href)}
+                      aria-label={`${isExpanded ? "Collapse" : "Expand"} ${item.label}`}
+                      className={cn(
+                        baseItemClass,
+                        hasActiveChild ? "text-foreground" : inactiveClass
+                      )}
+                    >
+                      <Icon className="h-3.5 w-3.5 shrink-0" />
+                      <span className="flex-1 whitespace-nowrap text-left">{item.label}</span>
+                      <ChevronRight
+                        className={cn("h-3 w-3 shrink-0 transition-transform", isExpanded && "rotate-90")}
+                      />
+                    </button>
+                    {isExpanded && (
+                      <div className="ml-4 mt-0.5 flex flex-col gap-0.5 border-l border-border/60 pl-2">
+                        <Link
+                          href={item.href}
+                          className={cn(baseChildClass, itemIsDirectlyActive ? activeClass : inactiveClass)}
+                        >
+                          <Icon className="h-3.5 w-3.5 shrink-0" />
+                          <span className="whitespace-nowrap">All {item.label}</span>
+                        </Link>
+                        {item.children!.map((child) => {
+                          const ChildIcon = child.icon
+                          const childIsActive = isItemActive(pathname, child)
+
+                          return child.disabled ? (
+                            <span
+                              key={child.href}
+                              aria-disabled="true"
+                              className={cn(baseChildClass, inactiveClass, "pointer-events-none opacity-50")}
+                            >
+                              <ChildIcon className="h-3.5 w-3.5 shrink-0" />
+                              <span className="whitespace-nowrap">{child.label}</span>
+                            </span>
+                          ) : (
+                            <Link
+                              key={child.href}
+                              href={child.href}
+                              className={cn(baseChildClass, childIsActive ? activeClass : inactiveClass)}
+                            >
+                              <ChildIcon className="h-3.5 w-3.5 shrink-0" />
+                              <span className="whitespace-nowrap">{child.label}</span>
+                            </Link>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )
+              }
 
               return (
                 <div key={item.href} className="flex min-w-fit flex-col md:min-w-0">
-                  <div className="flex items-center gap-1">
-                    {item.disabled ? (
-                      <span aria-disabled="true" className={cn(commonClassName, "flex-1")}>
-                        {content}
-                      </span>
-                    ) : (
-                      <Link href={item.href} className={cn(commonClassName, "flex-1")}>
-                        {content}
-                      </Link>
-                    )}
-                    {hasChildren && (
-                      <button
-                        type="button"
-                        onClick={() => toggleGroup(item.href)}
-                        aria-label={`${isExpanded ? "Collapse" : "Expand"} ${item.label}`}
-                        className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-                      >
-                        <ChevronDown
-                          className={cn("h-4 w-4 transition-transform", isExpanded && "rotate-180")}
-                        />
-                      </button>
-                    )}
-                  </div>
-                  {hasChildren && isExpanded && (
-                    <div className="ml-5 mt-1 flex flex-col gap-1 border-l border-border/60 pl-2">
-                      {item.children!.map((child) => {
-                        const ChildIcon = child.icon
-                        const childIsActive = isItemActive(pathname, child)
-                        const childClassName = cn(
-                          "inline-flex min-w-fit items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm font-medium transition-colors",
-                          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                          childIsActive
-                            ? "bg-primary/10 text-primary"
-                            : "text-muted-foreground hover:bg-nav-secondary-hover/10 dark:hover:bg-nav-secondary-hover/5 hover:text-foreground",
-                          child.disabled && "pointer-events-none opacity-50"
-                        )
-
-                        const childContent = (
-                          <>
-                            <ChildIcon className="h-4 w-4 shrink-0" />
-                            <span className="whitespace-nowrap">{child.label}</span>
-                          </>
-                        )
-
-                        return child.disabled ? (
-                          <span key={child.href} aria-disabled="true" className={childClassName}>
-                            {childContent}
-                          </span>
-                        ) : (
-                          <Link key={child.href} href={child.href} className={childClassName}>
-                            {childContent}
-                          </Link>
-                        )
-                      })}
-                    </div>
+                  {item.disabled ? (
+                    <span
+                      aria-disabled="true"
+                      className={cn(baseItemClass, inactiveClass, "pointer-events-none opacity-50")}
+                    >
+                      <Icon className="h-3.5 w-3.5 shrink-0" />
+                      <span className="whitespace-nowrap">{item.label}</span>
+                    </span>
+                  ) : (
+                    <Link
+                      href={item.href}
+                      className={cn(baseItemClass, itemIsDirectlyActive ? activeClass : inactiveClass)}
+                    >
+                      <Icon className="h-3.5 w-3.5 shrink-0" />
+                      <span className="whitespace-nowrap">{item.label}</span>
+                    </Link>
                   )}
                 </div>
               )
