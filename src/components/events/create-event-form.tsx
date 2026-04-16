@@ -25,12 +25,11 @@ import {
 } from "@/components/ui/select";
 import { Calendar as DateCalendar } from "@/components/ui/calendar";
 import {
-  SettingsPageShell,
-  SettingsSection,
-  SettingsGroup,
-  SettingsFieldRow,
-  settingsInputClassName,
-} from "@/components/settings/settings-surface";
+  FormShell,
+  FormSection,
+  FormField,
+  formInputClassName,
+} from "@/components/ui/form-surface";
 import {
   SettingsSegmentedControl,
   type SettingsSegmentedOption,
@@ -299,281 +298,244 @@ export function CreateEventForm({
 
       {/* Scrollable content */}
       <div className="flex-1 overflow-y-auto">
-        <SettingsPageShell
-          title="Create event"
-          description="Capture the details for this event."
-          className="max-w-2xl"
-          contentClassName="space-y-6"
-          headerClassName="pb-4 [&>h1]:font-medium [&>h1]:tracking-[-0.01em] [&>h1]:text-foreground/90 [&>p]:text-[13px] [&>p]:text-muted-foreground"
-        >
+        <FormShell title="Create event" description="Capture the details for this event.">
+
           {/* ── Section 1: Event details ───────────────────────────────── */}
-          <SettingsSection
-            title="Event details"
-            titleClassName="text-[14px] font-medium text-foreground/85"
-            descriptionClassName="text-[13px]"
-          >
-            <SettingsGroup className="[&>div]:md:grid-cols-[11rem_minmax(0,1fr)]">
-              <SettingsFieldRow label="Title" labelClassName="font-normal text-foreground/80" dividerStyle="inset" align="center">
+          <FormSection>
+            <FormField label="Title" htmlFor="title">
+              <Input
+                id="title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="e.g., Ward Council"
+                maxLength={200}
+                disabled={isSubmitting}
+                className={formInputClassName}
+                autoFocus
+              />
+            </FormField>
+
+            <FormField label="Type" htmlFor="event-type">
+              <SettingsSegmentedControl
+                value={eventType}
+                onChange={(v) => {
+                  setEventType(v);
+                  if (v !== "meeting") setPlanType(null);
+                }}
+                options={EVENT_TYPE_OPTIONS}
+                disabled={isSubmitting}
+              />
+            </FormField>
+
+            <FormField label="Location" htmlFor="location">
+              <div className="relative">
+                <MapPin className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="e.g., Ward Council"
+                  id="location"
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  placeholder="e.g., Relief Society Room"
                   maxLength={200}
                   disabled={isSubmitting}
-                  className={settingsInputClassName}
-                  autoFocus
+                  className={cn(formInputClassName, "pl-9")}
                 />
-              </SettingsFieldRow>
+              </div>
+            </FormField>
 
-              <SettingsFieldRow label="Type" labelClassName="font-normal text-foreground/80" dividerStyle="inset" align="center">
-                <SettingsSegmentedControl
-                  value={eventType}
-                  onChange={(v) => {
-                    setEventType(v);
-                    if (v !== "meeting") setPlanType(null);
-                  }}
-                  options={EVENT_TYPE_OPTIONS}
-                  disabled={isSubmitting}
-                />
-              </SettingsFieldRow>
-
-              <SettingsFieldRow label="Location" labelClassName="font-normal text-foreground/80" dividerStyle="inset" align="center">
-                <div className="relative">
-                  <MapPin className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    value={location}
-                    onChange={(e) => setLocation(e.target.value)}
-                    placeholder="e.g., Relief Society Room"
-                    maxLength={200}
-                    disabled={isSubmitting}
-                    className={cn(settingsInputClassName, "pl-9")}
-                  />
-                </div>
-              </SettingsFieldRow>
-
-              <SettingsFieldRow label="Description" labelClassName="font-normal text-foreground/80" dividerStyle="none" align="start">
-                <Textarea
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Add any relevant details..."
-                  disabled={isSubmitting}
-                    className={cn(
-                      settingsInputClassName,
-                      "min-h-[96px] resize-none"
-                    )}
-                />
-              </SettingsFieldRow>
-            </SettingsGroup>
-          </SettingsSection>
+            <FormField label="Description" htmlFor="description">
+              <Textarea
+                id="description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Add any relevant details..."
+                disabled={isSubmitting}
+                className={cn(formInputClassName, "h-auto min-h-[96px] resize-none py-2.5")}
+              />
+            </FormField>
+          </FormSection>
 
           {/* ── Section 2: When ────────────────────────────────────────── */}
-          <SettingsSection title="When" titleClassName="text-[14px] font-medium text-foreground/85">
-            <SettingsGroup className="[&>div]:md:grid-cols-[11rem_minmax(0,1fr)]">
-              <SettingsFieldRow label="Date" labelClassName="font-normal text-foreground/80" dividerStyle="inset" align="center">
+          <FormSection title="When">
+            <FormField label="Date" htmlFor="date">
+              <div className="flex items-center gap-3">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={isSubmitting}
+                      className={cn(formInputClassName, "w-[200px] justify-start pl-3 pr-3 font-normal")}
+                    >
+                      <CalendarDays className="mr-2 h-4 w-4 text-muted-foreground" />
+                      {date
+                        ? new Date(`${date}T00:00:00`).toLocaleDateString("en-US", {
+                            month: "2-digit",
+                            day: "2-digit",
+                            year: "numeric",
+                          })
+                        : "Select date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <DateCalendar
+                      mode="single"
+                      selected={date ? new Date(`${date}T00:00:00`) : undefined}
+                      onSelect={(selected) => {
+                        if (!selected) return;
+                        setDate(format(selected, "yyyy-MM-dd"));
+                      }}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
                 <div className="flex items-center gap-2">
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        disabled={isSubmitting}
-                        className={cn(
-                          settingsInputClassName,
-                          "w-[200px] justify-start pl-3 pr-3 font-normal"
-                        )}
-                      >
-                        <CalendarDays className="mr-2 h-4 w-4 text-muted-foreground" />
-                        {date
-                          ? new Date(`${date}T00:00:00`).toLocaleDateString("en-US", {
-                              month: "2-digit",
-                              day: "2-digit",
-                              year: "numeric",
-                            })
-                          : "Select date"}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <DateCalendar
-                        mode="single"
-                        selected={date ? new Date(`${date}T00:00:00`) : undefined}
-                        onSelect={(selected) => {
-                          if (!selected) return;
-                          setDate(format(selected, "yyyy-MM-dd"));
-                        }}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
-                  <div className="flex items-center gap-2 pl-1">
-                    <Checkbox
-                      variant="form"
-                      id="all-day"
-                      checked={isAllDay}
-                      onCheckedChange={(checked) => setIsAllDay(checked === true)}
-                      disabled={isSubmitting}
-                    />
-                    <Label htmlFor="all-day" className="text-sm font-normal text-muted-foreground">
-                      All day
-                    </Label>
-                  </div>
+                  <Checkbox
+                    variant="form"
+                    id="all-day"
+                    checked={isAllDay}
+                    onCheckedChange={(checked) => setIsAllDay(checked === true)}
+                    disabled={isSubmitting}
+                  />
+                  <Label htmlFor="all-day" className="text-sm font-normal text-muted-foreground">
+                    All day
+                  </Label>
                 </div>
-              </SettingsFieldRow>
+              </div>
+            </FormField>
 
-              {!isAllDay && (
-                <>
-                  <SettingsFieldRow label="Start time" labelClassName="font-normal text-foreground/80" dividerStyle="inset" align="center">
-                    <div className="relative max-w-[160px]">
-                      <Clock3 className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                      <Select value={time} onValueChange={setTime} disabled={isSubmitting}>
-                        <SelectTrigger className={cn(settingsInputClassName, "w-full pl-9 pr-3")}>
-                          <SelectValue placeholder="Select time" />
-                        </SelectTrigger>
-                        <SelectContent className="max-h-[11.5rem]">
-                          {TIME_OPTIONS.map((t) => {
-                            const [h, m] = t.split(":").map(Number);
-                            const d = new Date();
-                            d.setHours(h, m, 0, 0);
-                            const label = d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
-                            return (
-                              <SelectItem key={t} value={t}>
-                                {label}
-                              </SelectItem>
-                            );
-                          })}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </SettingsFieldRow>
+            {!isAllDay && (
+              <div className="flex gap-4">
+                <FormField label="Start time" htmlFor="start-time" className="w-[160px]">
+                  <div className="relative">
+                    <Clock3 className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Select value={time} onValueChange={setTime} disabled={isSubmitting}>
+                      <SelectTrigger id="start-time" className={cn(formInputClassName, "w-full pl-9 pr-3")}>
+                        <SelectValue placeholder="Select time" />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-[11.5rem]">
+                        {TIME_OPTIONS.map((t) => {
+                          const [h, m] = t.split(":").map(Number);
+                          const d = new Date();
+                          d.setHours(h, m, 0, 0);
+                          const label = d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+                          return (
+                            <SelectItem key={t} value={t}>
+                              {label}
+                            </SelectItem>
+                          );
+                        })}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </FormField>
 
-                  <SettingsFieldRow label="Duration (min)" labelClassName="font-normal text-foreground/80" dividerStyle="none" align="center">
-                    <Input
-                      type="number"
-                      value={durationMinutes}
-                      onChange={(e) => setDurationMinutes(e.target.value)}
-                      placeholder="60"
-                      min={1}
-                      max={1440}
-                      disabled={isSubmitting}
-                      className={cn(settingsInputClassName, "max-w-[120px]")}
-                    />
-                  </SettingsFieldRow>
-                </>
-              )}
-            </SettingsGroup>
-          </SettingsSection>
+                <FormField label="Duration (min)" htmlFor="duration" className="w-[120px]">
+                  <Input
+                    id="duration"
+                    type="number"
+                    value={durationMinutes}
+                    onChange={(e) => setDurationMinutes(e.target.value)}
+                    placeholder="60"
+                    min={1}
+                    max={1440}
+                    disabled={isSubmitting}
+                    className={formInputClassName}
+                  />
+                </FormField>
+              </div>
+            )}
+          </FormSection>
 
           {/* ── Section 3: Meeting (conditional) ──────────────────────── */}
           {isMeeting && (
-            <SettingsSection
-              title="Meeting"
-              titleClassName="text-[14px] font-medium text-foreground/85"
-            >
-              <SettingsGroup className="[&>div]:md:grid-cols-[11rem_minmax(0,1fr)]">
-                <SettingsFieldRow label="Format" labelClassName="font-normal text-foreground/80" dividerStyle="none" align="center">
-                  <SettingsSegmentedControl
-                    value={modality}
-                    onChange={setModality}
-                    options={MODALITY_OPTIONS}
+            <FormSection title="Meeting">
+              <FormField label="Format">
+                <SettingsSegmentedControl
+                  value={modality}
+                  onChange={setModality}
+                  options={MODALITY_OPTIONS}
+                  disabled={isSubmitting}
+                />
+              </FormField>
+
+              <FormField label="Announcement">
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    variant="form"
+                    id="meeting-announcement"
+                    checked={promoteToAnnouncement}
+                    onCheckedChange={(checked) => setPromoteToAnnouncement(checked === true)}
                     disabled={isSubmitting}
                   />
-                </SettingsFieldRow>
-              </SettingsGroup>
+                  <Label htmlFor="meeting-announcement" className="text-sm font-normal text-muted-foreground">
+                    Enable announcement for this event
+                  </Label>
+                </div>
+              </FormField>
 
-              <SettingsGroup className="[&>div]:md:grid-cols-[11rem_minmax(0,1fr)]">
-                <SettingsFieldRow
-                  label="Announcement"
-                  labelClassName="font-normal text-foreground/80"
-                  dividerStyle={promoteToAnnouncement ? "inset" : "none"}
-                  align="center"
-                >
-                  <div className="flex items-center gap-2">
-                    <Checkbox
-                      variant="form"
-                      id="meeting-announcement"
-                      checked={promoteToAnnouncement}
-                      onCheckedChange={(checked) => setPromoteToAnnouncement(checked === true)}
-                      disabled={isSubmitting}
+              {promoteToAnnouncement && (
+                <FormField label="Template" htmlFor="template">
+                  <div className="space-y-2">
+                    <SettingsSegmentedControl
+                      value={announcementTemplateKind}
+                      onChange={(kind) => {
+                        setAnnouncementTemplateKind(kind);
+                        setAnnouncementTemplateId("");
+                      }}
+                      options={[
+                        { value: "agenda", label: "Meeting" },
+                        { value: "program", label: "Program" },
+                      ]}
+                      disabled={isSubmitting || isLoadingTemplates}
                     />
-                    <Label htmlFor="meeting-announcement" className="text-sm font-normal text-muted-foreground">
-                      Enable announcement for this event
-                    </Label>
+                    <Select
+                      value={announcementTemplateId || undefined}
+                      onValueChange={setAnnouncementTemplateId}
+                      disabled={isSubmitting || isLoadingTemplates || availableTemplates.length === 0}
+                    >
+                      <SelectTrigger id="template" className={cn(formInputClassName, "max-w-[320px]")}>
+                        <SelectValue
+                          placeholder={
+                            isLoadingTemplates
+                              ? "Loading templates..."
+                              : availableTemplates.length === 0
+                              ? "No templates available"
+                              : "Select template"
+                          }
+                        />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {availableTemplates.map((template) => (
+                          <SelectItem key={template.id} value={template.id}>
+                            {template.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
-                </SettingsFieldRow>
+                </FormField>
+              )}
 
-                {promoteToAnnouncement && (
-                  <SettingsFieldRow
-                    label="Template"
-                    labelClassName="font-normal text-foreground/80"
-                    dividerStyle="none"
-                    align="center"
-                  >
-                    <div className="space-y-2">
-                      <SettingsSegmentedControl
-                        value={announcementTemplateKind}
-                        onChange={(kind) => {
-                          setAnnouncementTemplateKind(kind);
-                          setAnnouncementTemplateId("");
-                        }}
-                        options={[
-                          { value: "agenda", label: "Meeting" },
-                          { value: "program", label: "Program" },
-                        ]}
-                        disabled={isSubmitting || isLoadingTemplates}
-                      />
-                      <div className="max-w-[320px]">
-                        <Select
-                          value={announcementTemplateId || undefined}
-                          onValueChange={setAnnouncementTemplateId}
-                          disabled={isSubmitting || isLoadingTemplates || availableTemplates.length === 0}
-                        >
-                          <SelectTrigger className={settingsInputClassName}>
-                            <SelectValue
-                              placeholder={
-                                isLoadingTemplates
-                                  ? "Loading templates..."
-                                  : availableTemplates.length === 0
-                                  ? "No templates available"
-                                  : "Select template (placeholder)"
-                              }
-                            />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {availableTemplates.map((template) => (
-                              <SelectItem key={template.id} value={template.id}>
-                                {template.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                  </SettingsFieldRow>
-                )}
-              </SettingsGroup>
-
-              <div className="space-y-1">
-                <p className="text-[14px] font-medium text-foreground/85">Plan type</p>
-                <p className="text-[12px] text-muted-foreground">
-                  Optional. Select a plan if you want to build the meeting in Beespo.
-                </p>
-              </div>
-              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                <PlanTypeCard
-                  type="agenda"
-                  selected={planType === "agenda"}
-                  onSelect={() => setPlanType((current) => (current === "agenda" ? null : "agenda"))}
-                  disabled={isSubmitting}
-                />
-                <PlanTypeCard
-                  type="program"
-                  selected={planType === "program"}
-                  onSelect={() => setPlanType((current) => (current === "program" ? null : "program"))}
-                  disabled={isSubmitting}
-                />
-              </div>
-            </SettingsSection>
+              <FormField label="Plan type" hint="Optional. Select a plan if you want to build the meeting in Beespo.">
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  <PlanTypeCard
+                    type="agenda"
+                    selected={planType === "agenda"}
+                    onSelect={() => setPlanType((current) => (current === "agenda" ? null : "agenda"))}
+                    disabled={isSubmitting}
+                  />
+                  <PlanTypeCard
+                    type="program"
+                    selected={planType === "program"}
+                    onSelect={() => setPlanType((current) => (current === "program" ? null : "program"))}
+                    disabled={isSubmitting}
+                  />
+                </div>
+              </FormField>
+            </FormSection>
           )}
-        </SettingsPageShell>
+
+        </FormShell>
       </div>
 
       {/* ── Sticky footer ────────────────────────────────────────────────── */}
@@ -587,7 +549,7 @@ export function CreateEventForm({
           >
             Cancel
           </Button>
-          <Button type="submit" disabled={isSubmitting || !title.trim()}>
+          <Button type="submit" disabled={isSubmitting || !title.trim()} className="h-10 bg-[var(--color-accent-600)] text-white hover:bg-[var(--color-accent-600)]/90">
             {isSubmitting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />

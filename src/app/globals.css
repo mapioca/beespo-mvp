@@ -305,7 +305,7 @@
     --destructive: var(--cp-danger);
     --destructive-foreground: 0 0% 100%;
     --border: var(--cp-border);
-    --input: var(--cp-border);
+    --input: 20 6% 82%; /* stone-300 #d6d3d1 */
     --ring: var(--brand);
     --radius: 0.875rem;
     --chart-1: 0 0% 60%;
@@ -343,14 +343,25 @@
     --settings-swatch-gap: 0.45rem;
     --settings-swatch-border: 0 0% 84%;
     --settings-swatch-ring: 0 0% 16%;
+    /* --- form-surface tokens --- */
+    --form-label-size: 12px;
+    --form-label-color: var(--color-text-secondary);
+    --form-section-header-size: 12px;
+    --form-section-header-color: var(--color-text-secondary);
+    --form-section-header-spacing: 0.5px;
+    --form-section-gap: 40px;
+    --form-field-gap: 20px;
+    --form-input-height: 40px;
+    --form-input-border: var(--color-stone-300);
+    --form-input-radius: 8px;
     --form-checkbox-size: 18px;
     --form-checkbox-radius: 6px;
     --form-checkbox-bg: var(--cp-surface);
     --form-checkbox-border: var(--cp-border);
     --form-checkbox-focus: var(--cp-focus);
     --form-checkbox-check: var(--cp-primary);
-    --form-checkbox-checked-bg: 220 16% 21%;
-    --form-checkbox-checked-border: 220 16% 21%;
+    --form-checkbox-checked-bg: 28 93% 36%; /* accent-600 #b45309 */
+    --form-checkbox-checked-border: 28 93% 36%;
     --form-checkbox-checked-check: 0 0% 100%;
     --nav-secondary-hover-hsl: 220 10% 45%;
     --app-main-card: 0 0% 100%;
@@ -359,6 +370,9 @@
     --brand-bg: 31 92% 95%; /* Accent bg: #fef3e7 */
     --brand-hover: 22 83% 31%; /* Accent hover: #92400e */
     --brand-active: 15 75% 28%; /* Accent active: #7c2d12 */
+    --btn-primary-bg-disabled: #f5f5f4;
+    --btn-primary-text-disabled: #a8a29e;
+    --btn-primary-border-disabled: #e7e5e4;
   }
 
   .dark {
