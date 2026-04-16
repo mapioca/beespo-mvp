@@ -15,6 +15,7 @@
 
     /* Accent - Terracotta */
     --color-accent-50: #fef3e7;
+    --color-accent-200: #fcd9a0;
     --color-accent-600: #b45309;
     --color-accent-700: #92400e;
     --color-accent-800: #7c2d12;
@@ -240,7 +241,7 @@
     --table-filter-active: 0 0% 92%;
     --table-shell-bg: 0 0% 100%;
     --table-shell-border: 0 0% 89%;
-    --table-shell-shadow: 0 1px 0 rgba(15,23,42,0.04);
+    --table-shell-shadow: none;
     --table-row-divider: 220 13% 91%;
     --table-header-bg: 0 0% 100%;
     --table-header-border: 0 0% 89%;
@@ -253,8 +254,9 @@
     --table-header-weight: 500;
     --table-row-height: 36px;
     --table-row-padding-x: 16px;
-    --table-row-bg-hover: var(--color-stone-50);
-    --table-row-bg-selected: var(--color-accent-50);
+    --table-row-bg-hover: #fcfcfa;
+    --table-row-bg-selected: #f9f7f5;
+    --table-row-bg-selected-hover: #f5f1ed;
     --table-row-border: 1px solid var(--color-border);
     --table-cell-text: var(--color-text-primary);
     --table-cell-text-secondary: var(--color-text-secondary);
@@ -850,6 +852,20 @@
     box-shadow: var(--table-shell-shadow);
     overflow: hidden;
     padding: 0 16px;
+  }
+
+  /* Grouped multi-select: consecutive selected rows merge into one card */
+  .table-shell-standard tr[data-state="selected"]:not(:has(+ tr[data-state="selected"])) td:first-child {
+    border-bottom-left-radius: 8px;
+  }
+  .table-shell-standard tr[data-state="selected"]:not(:has(+ tr[data-state="selected"])) td:last-child {
+    border-bottom-right-radius: 8px;
+  }
+  .table-shell-standard tr[data-state="selected"]:not(tr[data-state="selected"] + tr[data-state="selected"]) td:first-child {
+    border-top-left-radius: 8px;
+  }
+  .table-shell-standard tr[data-state="selected"]:not(tr[data-state="selected"] + tr[data-state="selected"]) td:last-child {
+    border-top-right-radius: 8px;
   }
 
   .table-shell-minimal {

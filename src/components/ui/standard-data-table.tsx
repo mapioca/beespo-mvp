@@ -111,7 +111,7 @@ export function StandardSelectableRow({
     <TableRow
       data-state={selected ? "selected" : undefined}
       className={cn(
-        "group transition-[background-color,box-shadow] duration-150 ease-out hover:bg-[var(--table-row-bg-hover)] focus-within:bg-[var(--table-row-bg-hover)] data-[state=selected]:bg-[var(--table-row-bg-selected)]",
+        "group transition-[background-color,box-shadow] duration-150 ease-out hover:bg-[var(--table-row-bg-hover)] focus-within:bg-[var(--table-row-bg-hover)] data-[state=selected]:bg-[var(--table-row-bg-selected)] data-[state=selected]:hover:bg-[var(--table-row-bg-selected-hover)] data-[state=selected]:focus-within:bg-[var(--table-row-bg-selected-hover)]",
         onRowClick && "cursor-pointer",
         className
       )}
