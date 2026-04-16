@@ -61,6 +61,15 @@
     --sidebar-icon-hover: var(--color-text-primary);
     --sidebar-icon-active: var(--color-text-primary);
 
+    /* Topbar */
+    --topbar-height: 56px;
+    --topbar-bg: var(--color-bg-app);
+    --topbar-border: 1px solid var(--color-border);
+    --topbar-padding-x: 16px;
+    --topbar-title-size: 12px;
+    --topbar-title-weight: 500;
+    --topbar-title-color: var(--color-text-primary);
+
     /* Calm Precision */
     --cp-canvas: 0 0% 94.5%;
     --cp-surface: 0 0% 100%;

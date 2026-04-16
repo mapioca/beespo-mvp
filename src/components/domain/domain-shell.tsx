@@ -40,13 +40,31 @@ function WorkspaceHeader({ sectionTitle }: { sectionTitle: string }) {
   const initial = workspaceName.charAt(0).toUpperCase()
 
   return (
-    <div className="flex h-14 items-center justify-between px-4 border-b border-app-island-border">
+    <div 
+      className="flex items-center justify-between border-b"
+      style={{
+        height: 'var(--topbar-height)',
+        backgroundColor: 'var(--topbar-bg)',
+        borderBottom: 'var(--topbar-border)',
+        paddingLeft: 'var(--topbar-padding-x)',
+        paddingRight: 'var(--topbar-padding-x)',
+      }}
+    >
       <div className="flex items-center gap-2.5 min-w-0">
         <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-primary text-[10px] font-semibold text-primary-foreground select-none">
           {initial}
         </span>
         <div className="min-w-0">
-          <p className="text-[13px] font-semibold text-foreground truncate leading-tight">{workspaceName}</p>
+          <p 
+            className="font-semibold truncate leading-tight"
+            style={{
+              fontSize: 'var(--topbar-title-size)',
+              fontWeight: 'var(--topbar-title-weight)',
+              color: 'var(--topbar-title-color)',
+            }}
+          >
+            {workspaceName}
+          </p>
           <p className="text-[11px] text-muted-foreground leading-tight">{sectionTitle}</p>
         </div>
       </div>
