@@ -129,11 +129,11 @@ export function DomainShell({
                 : false
 
               const baseItemClass =
-                "group relative inline-flex min-w-fit items-center gap-2 rounded-md px-2.5 py-1.5 text-[13px] font-medium transition-colors duration-150 ease-out w-full focus-visible:outline-none focus-visible:bg-[#f5f5f4] focus-visible:text-[#1c1917] focus-visible:ring-2 focus-visible:ring-[#3f5e4b]/30 focus-visible:ring-offset-2"
+                "group relative inline-flex min-w-fit items-center gap-2 rounded-md px-2.5 py-1.5 text-[13px] font-medium transition-colors duration-150 ease-out w-full focus-visible:outline-none focus-visible:bg-[#f5f5f4] focus-visible:text-[#1c1917] focus-visible:ring-2 focus-visible:ring-[#b45309]/30 focus-visible:ring-offset-2"
               const baseChildClass =
-                "group relative inline-flex min-w-fit items-center gap-2 rounded-md px-2.5 py-1.5 text-[12.5px] font-medium transition-colors duration-150 ease-out w-full focus-visible:outline-none focus-visible:bg-[#f5f5f4] focus-visible:text-[#1c1917] focus-visible:ring-2 focus-visible:ring-[#3f5e4b]/30 focus-visible:ring-offset-2"
+                "group relative inline-flex min-w-fit items-center gap-2 rounded-md px-2.5 py-1.5 text-[12.5px] font-medium transition-colors duration-150 ease-out w-full focus-visible:outline-none focus-visible:bg-[#f5f5f4] focus-visible:text-[#1c1917] focus-visible:ring-2 focus-visible:ring-[#b45309]/30 focus-visible:ring-offset-2"
               const activeClass =
-                "bg-white text-[#1c1917] before:absolute before:left-0 before:top-1.5 before:bottom-1.5 before:w-[3px] before:rounded-r-full before:bg-[#3f5e4b]"
+                "bg-white text-[#1c1917] before:absolute before:left-0 before:top-1.5 before:bottom-1.5 before:w-[3px] before:rounded-r-full before:bg-[#b45309]"
               const inactiveClass =
                 "text-[#57534e] hover:bg-[#f5f5f4] hover:text-[#1c1917]"
               const disabledClass = "text-[#a8a29e] cursor-not-allowed pointer-events-none"

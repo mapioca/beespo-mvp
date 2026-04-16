@@ -27,6 +27,40 @@
     --color-border: #e7e5e4;
     --color-focus-ring: rgba(180, 83, 9, 0.3);
 
+    /* App Rail - 56px narrow left */
+    --rail-width: 56px;
+    --rail-bg: var(--color-stone-50);
+    --rail-border: 1px solid var(--color-border);
+    --rail-item-size: 32px;
+    --rail-item-radius: 8px;
+    --rail-item-gap: 4px;
+    --rail-icon-inactive: var(--color-text-tertiary);
+    --rail-icon-inactive-opacity: 0.6;
+    --rail-icon-hover: var(--color-text-primary);
+    --rail-icon-hover-opacity: 1;
+    --rail-icon-active: var(--color-accent-600);
+    --rail-bg-hover: var(--color-stone-100);
+    --rail-bg-active: var(--color-accent-50);
+
+    /* Sidebar - 240px */
+    --sidebar-width: 240px;
+    --sidebar-bg: var(--color-bg-app);
+    --sidebar-padding: 12px;
+    --sidebar-item-height: 32px;
+    --sidebar-item-radius: 6px;
+    --sidebar-item-padding-x: 12px;
+    --sidebar-item-gap: 12px;
+    --sidebar-bg-hover: var(--color-stone-100);
+    --sidebar-bg-active: var(--color-bg-app);
+    --sidebar-border-active: 3px solid var(--color-accent-600);
+    --sidebar-text-inactive: var(--color-text-secondary);
+    --sidebar-text-hover: var(--color-text-primary);
+    --sidebar-text-active: var(--color-text-primary);
+    --sidebar-text-active-weight: 500;
+    --sidebar-icon-inactive: var(--color-text-tertiary);
+    --sidebar-icon-hover: var(--color-text-primary);
+    --sidebar-icon-active: var(--color-text-primary);
+
     /* Calm Precision */
     --cp-canvas: 0 0% 94.5%;
     --cp-surface: 0 0% 100%;

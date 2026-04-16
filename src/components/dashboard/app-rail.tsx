@@ -14,7 +14,6 @@ import {
   LogOut,
   Settings,
 } from "lucide-react"
-import { cn } from "@/lib/utils"
 import { BeespoLogo } from "@/components/ui/beespo-logo"
 import { useCommandPaletteStore } from "@/stores/command-palette-store"
 import {
@@ -61,7 +60,14 @@ export function AppRail({ userName, userId }: AppRailProps) {
   }
 
   return (
-    <div className="w-[56px] h-full bg-app-shell border-r border-app-island-border flex flex-col">
+    <div 
+      className="h-full flex flex-col"
+      style={{ 
+        width: 'var(--rail-width)',
+        backgroundColor: 'var(--rail-bg)',
+        borderRight: 'var(--rail-border)'
+      }}
+    >
       {/* Logo */}
       <div className="flex h-[44px] items-center justify-center shrink-0">
         <Link href="/dashboard" aria-label="Beespo home">
@@ -70,7 +76,10 @@ export function AppRail({ userName, userId }: AppRailProps) {
       </div>
 
       {/* Nav icons */}
-      <nav className="flex-1 overflow-y-auto py-1 px-1">
+      <nav 
+        className="flex-1 overflow-y-auto px-1"
+        style={{ paddingTop: 'var(--rail-item-gap)', paddingBottom: 'var(--rail-item-gap)' }}
+      >
         {navItems.map((item) => {
           const Icon = item.icon
           const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`)
@@ -80,13 +89,29 @@ export function AppRail({ userName, userId }: AppRailProps) {
               key={item.href}
               href={item.href}
               aria-label={item.label}
-              className={cn(
-                "flex items-center justify-center h-[36px] w-full rounded-lg mb-0.5 transition-colors duration-150 ease-out",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--brand))]/30 focus-visible:ring-offset-2 focus-visible:bg-[#f3f2f0] focus-visible:text-[#1c1917]",
-                isActive
-                  ? "bg-[hsl(var(--brand-bg))] text-[hsl(var(--brand))]"
-                  : "text-[#78716c]/60 hover:bg-[#f3f2f0] hover:text-[#1c1917]"
-              )}
+              className="flex items-center justify-center w-full transition-all"
+              style={{
+                height: 'var(--rail-item-size)',
+                borderRadius: 'var(--rail-item-radius)',
+                marginBottom: 'var(--rail-item-gap)',
+                backgroundColor: isActive ? 'var(--rail-bg-active)' : 'transparent',
+                color: isActive ? 'var(--rail-icon-active)' : 'var(--rail-icon-inactive)',
+                opacity: isActive ? 'var(--rail-icon-hover-opacity)' : 'var(--rail-icon-inactive-opacity)',
+              }}
+              onMouseEnter={(e) => {
+                if (!isActive) {
+                  e.currentTarget.style.backgroundColor = 'var(--rail-bg-hover)'
+                  e.currentTarget.style.color = 'var(--rail-icon-hover)'
+                  e.currentTarget.style.opacity = 'var(--rail-icon-hover-opacity)'
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isActive) {
+                  e.currentTarget.style.backgroundColor = 'transparent'
+                  e.currentTarget.style.color = 'var(--rail-icon-inactive)'
+                  e.currentTarget.style.opacity = 'var(--rail-icon-inactive-opacity)'
+                }
+              }}
             >
               <Icon className="h-5 w-5 stroke-[1.75]" />
             </Link>
@@ -100,7 +125,23 @@ export function AppRail({ userName, userId }: AppRailProps) {
           type="button"
           onClick={toggleCommandPalette}
           aria-label="Open command palette"
-          className="flex items-center justify-center h-[30px] w-full rounded-lg text-[#78716c]/60 hover:bg-[#f3f2f0] hover:text-[#1c1917] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--brand))]/30 focus-visible:ring-offset-2 focus-visible:bg-[#f3f2f0] focus-visible:text-[#1c1917] transition-colors duration-150 ease-out disabled:cursor-not-allowed disabled:text-[#78716c]/30 disabled:hover:bg-transparent"
+          className="flex items-center justify-center w-full transition-all"
+          style={{
+            height: 'var(--rail-item-size)',
+            borderRadius: 'var(--rail-item-radius)',
+            color: 'var(--rail-icon-inactive)',
+            opacity: 'var(--rail-icon-inactive-opacity)',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = 'var(--rail-bg-hover)'
+            e.currentTarget.style.color = 'var(--rail-icon-hover)'
+            e.currentTarget.style.opacity = 'var(--rail-icon-hover-opacity)'
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = 'transparent'
+            e.currentTarget.style.color = 'var(--rail-icon-inactive)'
+            e.currentTarget.style.opacity = 'var(--rail-icon-inactive-opacity)'
+          }}
         >
           <Search className="h-5 w-5 stroke-[1.75]" />
         </button>
@@ -113,7 +154,8 @@ export function AppRail({ userName, userId }: AppRailProps) {
             <button
               type="button"
               aria-label="User menu"
-              className="flex items-center justify-center h-[32px] w-[32px] rounded-full bg-primary text-primary-foreground text-[11px] font-semibold hover:bg-primary/90 transition-colors mx-auto"
+              className="flex items-center justify-center rounded-full bg-primary text-primary-foreground text-[11px] font-semibold hover:bg-primary/90 transition-colors mx-auto"
+              style={{ height: 'var(--rail-item-size)', width: 'var(--rail-item-size)' }}
             >
               {initials}
             </button>
