@@ -276,6 +276,16 @@
     --table-checkbox-checked-bg: 220 10% 24%;
     --table-checkbox-checked-border: 220 10% 24%;
     --table-checkbox-checked-check: 0 0% 100%;
+    /* --- new checkbox design tokens --- */
+    --checkbox-size: 16px;
+    --checkbox-radius: 4px;
+    --checkbox-border: 1.5px solid var(--color-stone-300);
+    --checkbox-border-hover: 1.5px solid var(--color-stone-500);
+    --checkbox-border-color: var(--color-stone-300);
+    --checkbox-border-color-hover: var(--color-stone-500);
+    --checkbox-border-width: 1.5px;
+    --checkbox-bg-checked: var(--color-accent-600);
+    --checkbox-icon-checked: #ffffff;
     --agenda-control-font-size: 12px;
     --agenda-chip-font-size: 12px;
     --agenda-icon-control-size: 30px;
@@ -839,6 +849,7 @@
     background-color: hsl(var(--table-shell-bg) / 0.8);
     box-shadow: var(--table-shell-shadow);
     overflow: hidden;
+    padding: 0 16px;
   }
 
   .table-shell-minimal {
