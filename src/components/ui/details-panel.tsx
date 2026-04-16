@@ -42,7 +42,7 @@ function PanelCard({
     children: React.ReactNode;
 }) {
     return (
-        <div className="h-full flex flex-col rounded-[16px] border border-app-island bg-app-island shadow-[var(--shadow-app-island)] min-w-[320px] overflow-hidden">
+        <div className="h-full flex flex-col bg-app-island min-w-[320px] overflow-hidden">
             {/* Header — always visible, body scrolls beneath it */}
             <div className="shrink-0 flex items-center justify-between px-4 py-1.5 bg-app-island gap-2">
                 <div className="flex items-center gap-1.5 min-w-0">

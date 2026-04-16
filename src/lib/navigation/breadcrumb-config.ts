@@ -6,22 +6,14 @@
 export interface BreadcrumbItem {
   label: string
   href?: string
-  iconType?: "database" | "table" | "notebook" | "template"
 }
 
 export interface BreadcrumbConfig {
   pattern: string | RegExp
   trail: BreadcrumbItem[]
-  /**
-   * Optional function to dynamically generate the trail
-   * Useful for routes with dynamic segments like [id]
-   */
   dynamic?: boolean
 }
 
-/**
- * Static breadcrumb configurations for routes
- */
 export const breadcrumbConfigs: BreadcrumbConfig[] = [
   // Dashboard
   {
@@ -127,37 +119,37 @@ export const breadcrumbConfigs: BreadcrumbConfig[] = [
   {
     pattern: "/library",
     trail: [
-      { label: "Templates", href: "/library", iconType: "template" },
-      { label: "All Templates", iconType: "template" },
+      { label: "Templates", href: "/library" },
+      { label: "All Templates" },
     ],
   },
   {
     pattern: "/library/programs",
     trail: [
-      { label: "Templates", href: "/library", iconType: "template" },
-      { label: "Programs", iconType: "template" },
+      { label: "Templates", href: "/library" },
+      { label: "Programs" },
     ],
   },
   {
     pattern: "/library/agendas",
     trail: [
-      { label: "Templates", href: "/library", iconType: "template" },
-      { label: "Agendas", iconType: "template" },
+      { label: "Templates", href: "/library" },
+      { label: "Agendas" },
     ],
   },
   {
     pattern: "/library/forms",
     trail: [
-      { label: "Templates", href: "/library", iconType: "template" },
-      { label: "Forms", iconType: "template" },
+      { label: "Templates", href: "/library" },
+      { label: "Forms" },
     ],
   },
   {
     pattern: "/library/new",
     trail: [
-      { label: "Templates", href: "/library", iconType: "template" },
-      { label: "All Templates", href: "/library", iconType: "template" },
-      { label: "New Template", iconType: "template" },
+      { label: "Templates", href: "/library" },
+      { label: "All Templates", href: "/library" },
+      { label: "New Template" },
     ],
   },
   {
@@ -193,16 +185,16 @@ export const breadcrumbConfigs: BreadcrumbConfig[] = [
   // Data section
   {
     pattern: "/data",
-    trail: [{ label: "Data", href: "/data", iconType: "database" }, { label: "Overview" }],
+    trail: [{ label: "Data", href: "/data" }, { label: "Overview" }],
   },
   {
     pattern: "/forms",
-    trail: [{ label: "Data", href: "/data", iconType: "database" }, { label: "Forms" }],
+    trail: [{ label: "Data", href: "/data" }, { label: "Forms" }],
   },
   {
     pattern: "/forms/new",
     trail: [
-      { label: "Data", href: "/data", iconType: "database" },
+      { label: "Data", href: "/data" },
       { label: "Forms", href: "/forms" },
       { label: "New Form" },
     ],
@@ -210,7 +202,7 @@ export const breadcrumbConfigs: BreadcrumbConfig[] = [
   {
     pattern: /^\/forms\/[^/]+$/,
     trail: [
-      { label: "Data", href: "/data", iconType: "database" },
+      { label: "Data", href: "/data" },
       { label: "Forms", href: "/forms" },
       { label: "Form Details" },
     ],
@@ -218,18 +210,18 @@ export const breadcrumbConfigs: BreadcrumbConfig[] = [
   },
   {
     pattern: "/tables",
-    trail: [{ label: "Data", href: "/data", iconType: "database" }, { label: "Tables", iconType: "table" }],
+    trail: [{ label: "Data", href: "/data" }, { label: "Tables" }],
   },
   {
     pattern: "/tables/new",
-    trail: [{ label: "Data", href: "/data", iconType: "database" }, { label: "Tables", href: "/tables", iconType: "table" }, { label: "New Table" }],
+    trail: [{ label: "Data", href: "/data" }, { label: "Tables", href: "/tables" }, { label: "New Table" }],
   },
   {
     pattern: /^\/tables\/[^/]+$/,
     trail: [
-      { label: "Data", href: "/data", iconType: "database" },
-      { label: "Tables", href: "/tables", iconType: "table" },
-      { label: "Table", iconType: "table" },
+      { label: "Data", href: "/data" },
+      { label: "Tables", href: "/tables" },
+      { label: "Table" },
     ],
     dynamic: true,
   },
@@ -237,23 +229,23 @@ export const breadcrumbConfigs: BreadcrumbConfig[] = [
   // Notebooks
   {
     pattern: "/notebooks",
-    trail: [{ label: "Data", href: "/data", iconType: "database" }, { label: "Notebooks", iconType: "notebook" }],
+    trail: [{ label: "Data", href: "/data" }, { label: "Notebooks" }],
   },
   {
     pattern: "/notebooks/new",
-    trail: [{ label: "Data", href: "/data", iconType: "database" }, { label: "Notebooks", href: "/notebooks", iconType: "notebook" }, { label: "New Notebook" }],
+    trail: [{ label: "Data", href: "/data" }, { label: "Notebooks", href: "/notebooks" }, { label: "New Notebook" }],
   },
   {
     pattern: /^\/notebooks\/[^/]+$/,
     trail: [
-      { label: "Data", href: "/data", iconType: "database" },
-      { label: "Notebooks", href: "/notebooks", iconType: "notebook" },
+      { label: "Data", href: "/data" },
+      { label: "Notebooks", href: "/notebooks" },
       { label: "Notebook" },
     ],
     dynamic: true,
   },
 
-  // Directory section (consolidated)
+  // Directory section
   {
     pattern: "/directory",
     trail: [{ label: "Directory" }],
@@ -299,9 +291,6 @@ export const breadcrumbConfigs: BreadcrumbConfig[] = [
   },
 ]
 
-/**
- * Get the breadcrumb trail for a given pathname
- */
 export function getBreadcrumbTrail(pathname: string): BreadcrumbItem[] {
   for (const config of breadcrumbConfigs) {
     if (typeof config.pattern === "string") {
@@ -313,6 +302,5 @@ export function getBreadcrumbTrail(pathname: string): BreadcrumbItem[] {
     }
   }
 
-  // Default: return empty trail
   return []
 }

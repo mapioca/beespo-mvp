@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback, useRef } from "react"
+import { useState, useCallback, useRef } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
@@ -10,7 +10,8 @@ import {
   CheckSquare,
   HandHeart,
   Database,
-  LayoutTemplate
+  LayoutTemplate,
+  Search,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { TooltipProvider } from "@/components/ui/tooltip"
@@ -19,8 +20,8 @@ import { BeespoLogo } from "@/components/ui/beespo-logo"
 import { NavSection } from "./sidebar-types"
 import { SidebarNavSection } from "./sidebar-nav-section"
 import { SidebarSavedItemsSection } from "./sidebar-saved-items-section"
-import { useSidebarState } from "@/hooks/use-sidebar-state"
 import { useNavigationStore } from "@/stores/navigation-store"
+import { useCommandPaletteStore } from "@/stores/command-palette-store"
 
 const navSections: NavSection[] = [
   {
@@ -38,14 +39,11 @@ const navSections: NavSection[] = [
   },
 ]
 
-const defaultExpandedGroups: Record<string, boolean> = {
-  "management-agenda": true,
-}
-
 const HOVER_EXPAND_DELAY = 80
-const HOVER_COLLAPSE_DELAY = 450
+const HOVER_COLLAPSE_DELAY = 300
+const RAIL_WIDTH = 52
+const EXPANDED_WIDTH = 232
 
-// Smooth deceleration curve — starts fast, ends gently (drawer feel)
 interface AppSidebarProps {
   userName: string
   userEmail: string
@@ -68,20 +66,13 @@ export function AppSidebar({
   const pathname = usePathname()
   const favorites = useNavigationStore((state) => state.favorites)
   const recents = useNavigationStore((state) => state.recents)
-
-  const {
-    isPinned,
-    togglePinned,
-    isGroupExpanded,
-    toggleGroup,
-  } = useSidebarState(defaultExpandedGroups)
+  const toggleCommandPalette = useCommandPaletteStore((state) => state.toggle)
 
   const [isHovering, setIsHovering] = useState(false)
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const sidebarRef = useRef<HTMLElement>(null)
 
-  const isExpanded = forceExpanded || isHovering || isMenuOpen // Stay open if hovered OR menu expanded
+  const isExpanded = forceExpanded || isHovering || isMenuOpen
 
   const clearHoverTimer = useCallback(() => {
     if (hoverTimerRef.current) {
@@ -93,96 +84,57 @@ export function AppSidebar({
   const handleMouseEnter = useCallback(() => {
     if (forceExpanded) return
     clearHoverTimer()
-    hoverTimerRef.current = setTimeout(() => {
-      setIsHovering(true)
-    }, HOVER_EXPAND_DELAY)
+    hoverTimerRef.current = setTimeout(() => setIsHovering(true), HOVER_EXPAND_DELAY)
   }, [forceExpanded, clearHoverTimer])
 
   const handleMouseLeave = useCallback(() => {
     if (forceExpanded) return
     clearHoverTimer()
-    hoverTimerRef.current = setTimeout(() => {
-      setIsHovering(false)
-    }, HOVER_COLLAPSE_DELAY)
+    hoverTimerRef.current = setTimeout(() => setIsHovering(false), HOVER_COLLAPSE_DELAY)
   }, [forceExpanded, clearHoverTimer])
-
-  // Keyboard shortcut: Cmd+B (Mac) or Ctrl+B (Windows/Linux)
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "b") {
-        e.preventDefault()
-        togglePinned()
-      }
-    }
-    window.addEventListener("keydown", handleKeyDown)
-    return () => window.removeEventListener("keydown", handleKeyDown)
-  }, [togglePinned])
 
   return (
     <TooltipProvider delayDuration={0}>
-      {/* Outer wrapper — reserves layout space ONLY when forceExpanded (e.g. mobile sheet) */}
+      {/* Layout reservation — always RAIL_WIDTH so content doesn't shift */}
       <div
-        className={cn(
-          "relative z-40 shrink-0 h-full transition-[width] duration-300 ease-out",
-          forceExpanded ? "w-64" : (isPinned ? "w-14" : "w-0"),
-          className
-        )}
+        className={cn("relative shrink-0 h-full", className)}
+        style={{ width: forceExpanded ? EXPANDED_WIDTH : RAIL_WIDTH }}
       >
-        {/* Aside — the drawer. Animates width to reveal content. */}
         <aside
-          ref={sidebarRef}
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
-          onDoubleClick={(e) => {
-            // Only trigger if double-clicking the sidebar itself, not buttons/links
-            if (e.target === e.currentTarget) togglePinned()
-          }}
           className={cn(
-            "fixed transition-all duration-300 ease-out z-[100] flex flex-col group overflow-hidden",
-            // Collapsed state: just an edge-hover trigger
-            !isExpanded && !isPinned && "top-0 left-0 h-screen w-2 bg-transparent pointer-events-auto",
-            // Pinned state (not expanded): narrow island strip
-            !isExpanded && isPinned && "top-1.5 bottom-1.5 left-0 w-14 rounded-r-[16px] bg-app-island border-y border-r border-app-island shadow-sm opacity-100",
-            // Expanded state: a detached island card
-            isExpanded && "top-1.5 bottom-1.5 left-0 w-[240px] rounded-r-[16px] bg-app-island border-y border-r border-app-island shadow-2xl opacity-100",
-            // Dashboard layout interactions
-            forceExpanded && "relative translate-x-0 w-64 border-r bg-background top-0 left-0 h-screen rounded-none border-none shadow-none",
-            !forceExpanded && !isExpanded && "translate-x-0",
-            !forceExpanded && isExpanded && "translate-x-0"
+            "absolute top-0 bottom-0 left-0 z-[100] flex flex-col overflow-hidden",
+            "bg-app-island border-r border-app-island-border",
+            "transition-[width] duration-200 ease-out",
+            forceExpanded && "relative"
           )}
+          style={{
+            width: isExpanded ? EXPANDED_WIDTH : RAIL_WIDTH,
+          }}
         >
-          {/* Inner content — always at full expanded width (w-52).
-              The aside clips it; the drawer animation just reveals/hides. */}
-          <div 
-            onDoubleClick={(e) => {
-              // Toggle if clicking background or non-interactive areas
-              if (e.target === e.currentTarget) togglePinned()
-            }}
-            className={cn(
-              "flex flex-col h-full w-full shrink-0 transition-all duration-200",
-              !isExpanded && !isPinned && "opacity-0 pointer-events-none"
-            )}
-          >
-
-            {/* Header — logo only (pin removed) */}
-            <div className="flex h-[30px] items-center justify-between px-4 mt-2.5 mb-1">
+          <div className="flex flex-col h-full w-full" style={{ width: EXPANDED_WIDTH }}>
+            {/* Header — logo */}
+            <div className="flex h-[44px] items-center px-[14px] shrink-0">
               <Link
                 href="/dashboard"
                 className="flex items-center select-none text-foreground"
                 aria-label="Beespo home"
               >
                 <BeespoLogo className="h-5 w-5 shrink-0" />
-                <span className={cn(
-                  "ml-2.5 font-bold tracking-tight transition-all duration-200",
-                  !isExpanded && "opacity-0 invisible w-0"
-                )}>
+                <span
+                  className={cn(
+                    "ml-2.5 text-[14px] font-semibold tracking-tight transition-opacity duration-150",
+                    !isExpanded && "opacity-0"
+                  )}
+                >
                   Beespo
                 </span>
               </Link>
             </div>
 
-            {/* Navigation — always rendered in expanded layout */}
-            <nav className="flex-1 overflow-y-auto py-2.5">
+            {/* Navigation */}
+            <nav className="flex-1 overflow-y-auto overflow-x-hidden py-1">
               {navSections.map((section, index) => (
                 <SidebarNavSection
                   key={section.id}
@@ -190,26 +142,63 @@ export function AppSidebar({
                   pathname={pathname}
                   isCollapsed={!isExpanded}
                   sidebarExpanded={isExpanded}
-                  isGroupExpanded={isGroupExpanded}
-                  toggleGroup={toggleGroup}
+                  isGroupExpanded={() => false}
+                  toggleGroup={() => {}}
                   isFirst={index === 0}
                 />
               ))}
-              <SidebarSavedItemsSection
-                title="Favorites"
-                items={favorites}
-                isCollapsed={!isExpanded}
-                sidebarExpanded={isExpanded}
-                itemType="favorites"
-              />
-              <SidebarSavedItemsSection
-                title="Recent"
-                items={recents}
-                isCollapsed={!isExpanded}
-                sidebarExpanded={isExpanded}
-                itemType="recents"
-              />
+              {isExpanded && (
+                <>
+                  <SidebarSavedItemsSection
+                    title="Favorites"
+                    items={favorites}
+                    isCollapsed={false}
+                    sidebarExpanded
+                    itemType="favorites"
+                  />
+                  <SidebarSavedItemsSection
+                    title="Recent"
+                    items={recents}
+                    isCollapsed={false}
+                    sidebarExpanded
+                    itemType="recents"
+                  />
+                </>
+              )}
             </nav>
+
+            {/* Cmd+K trigger */}
+            <div className="shrink-0 px-2 pb-1.5">
+              <button
+                type="button"
+                onClick={toggleCommandPalette}
+                className={cn(
+                  "flex w-full items-center gap-2 rounded-md h-[30px] px-2 text-[12.5px]",
+                  "text-nav hover:bg-nav-hover hover:text-nav-strong transition-colors"
+                )}
+                aria-label="Open command palette"
+              >
+                <span className="flex items-center justify-center shrink-0 h-[26px] w-[26px] -m-1 rounded-[6px]">
+                  <Search className="h-[18px] w-[18px] stroke-[1.75]" />
+                </span>
+                <span
+                  className={cn(
+                    "flex-1 text-left font-medium transition-opacity duration-150",
+                    !isExpanded && "opacity-0"
+                  )}
+                >
+                  Search
+                </span>
+                <kbd
+                  className={cn(
+                    "ml-auto inline-flex items-center gap-0.5 rounded border border-app-island-border bg-background/40 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground transition-opacity duration-150",
+                    !isExpanded && "opacity-0"
+                  )}
+                >
+                  ⌘K
+                </kbd>
+              </button>
+            </div>
 
             {/* User Profile */}
             <SidebarUserProfile
@@ -219,8 +208,8 @@ export function AppSidebar({
               roleTitle={userRoleTitle}
               avatarUrl={userAvatarUrl}
               isCollapsed={!isExpanded}
-              isPinned={isPinned}
-              onTogglePinned={togglePinned}
+              isPinned
+              onTogglePinned={() => {}}
               onMenuOpenChange={setIsMenuOpen}
             />
           </div>

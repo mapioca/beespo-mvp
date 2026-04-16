@@ -3,6 +3,7 @@
 import { useState, useCallback } from "react";
 import { AppSidebar } from "@/components/dashboard/app-sidebar";
 import { NavigationStoreHydrator } from "@/components/dashboard/navigation-store-hydrator";
+import { WorkspaceStoreHydrator } from "@/components/dashboard/workspace-store-hydrator";
 import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { MobileNavContext } from "@/components/dashboard/mobile-nav-context";
 import { DetailsPanelContext } from "@/components/ui/details-panel-context";
@@ -15,6 +16,7 @@ interface DashboardShellProps {
     userEmail: string;
     userId: string;
     userRoleTitle?: string;
+    workspaceName?: string;
     initialNavigationItems: UserNavigationItems;
 }
 
@@ -24,6 +26,7 @@ export function DashboardShell({
     userEmail,
     userId,
     userRoleTitle,
+    workspaceName,
     initialNavigationItems,
 }: DashboardShellProps) {
     const [mobileOpen, setMobileOpen] = useState(false);
@@ -38,6 +41,7 @@ export function DashboardShell({
         <MobileNavContext.Provider value={{ mobileOpen, setMobileOpen }}>
             <DetailsPanelContext.Provider value={{ portalEl, reportOpen }}>
                 <NavigationStoreHydrator initialItems={initialNavigationItems} />
+                {workspaceName && <WorkspaceStoreHydrator workspaceName={workspaceName} />}
                 <div className="flex h-screen-dynamic overflow-hidden overscroll-none bg-app-shell">
                 <div className="relative z-20 hidden lg:flex">
                     <AppSidebar
@@ -63,17 +67,17 @@ export function DashboardShell({
                     </SheetContent>
                 </Sheet>
 
-                {/* Content area: main island + optional details panel island side by side */}
-                <div className="flex-1 min-w-0 min-h-0 flex items-stretch bg-app-shell p-0 sm:p-1.5 sm:gap-1 xl:p-2 xl:gap-1.5 2xl:p-2.5 2xl:gap-1.5">
-                    <main className="relative z-0 flex-1 min-w-0 h-full min-h-0 overflow-hidden">
+                {/* Content area: full-bleed main + optional details pane */}
+                <div className="flex-1 min-w-0 min-h-0 flex items-stretch bg-app-shell">
+                    <main className="relative z-0 flex-1 min-w-0 h-full min-h-0 overflow-hidden bg-app-main-card">
                         {children}
                     </main>
                     {/* Portal target for DetailsPanel — hidden on mobile, sized by panel open state on desktop */}
                     <div
                         ref={setPortalEl}
                         className={cn(
-                            "hidden lg:block shrink-0 transition-[width] duration-200 ease-in-out",
-                            panelVisible ? "w-[320px]" : "w-0"
+                            "hidden lg:block shrink-0 border-l border-app-island-border transition-[width] duration-200 ease-in-out",
+                            panelVisible ? "w-[320px]" : "w-0 border-l-0"
                         )}
                     />
                 </div>

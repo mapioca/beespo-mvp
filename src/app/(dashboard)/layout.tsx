@@ -46,6 +46,9 @@ export default async function DashboardLayout({
 
   const initialNavigationItems = await initialNavigationItemsPromise;
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const workspaceName = (profile as any).workspaces?.name as string | undefined;
+
   return (
     <>
       <DashboardShell
@@ -53,6 +56,7 @@ export default async function DashboardLayout({
         userEmail={user?.email || ""}
         userId={user.id}
         userRoleTitle={profile?.role_title || ""}
+        workspaceName={workspaceName}
         initialNavigationItems={initialNavigationItems}
       >
         {children}

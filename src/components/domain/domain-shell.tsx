@@ -6,6 +6,7 @@ import { ChevronDown, type LucideIcon } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
 
 import { cn } from "@/lib/utils"
+import { useWorkspaceStore } from "@/stores/workspace-store"
 
 export interface DomainNavItem {
   href: string
@@ -30,6 +31,27 @@ function isItemActive(pathname: string, item: DomainNavItem) {
   }
 
   return pathname === item.href || pathname.startsWith(`${item.href}/`)
+}
+
+function WorkspaceHeader({ sectionTitle }: { sectionTitle: string }) {
+  const workspaceName = useWorkspaceStore((s) => s.workspaceName)
+  if (!workspaceName) return null
+
+  const initial = workspaceName.charAt(0).toUpperCase()
+
+  return (
+    <div className="flex h-14 items-center justify-between px-4 border-b border-app-island-border">
+      <div className="flex items-center gap-2.5 min-w-0">
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[7px] bg-primary text-[13px] font-semibold text-primary-foreground select-none">
+          {initial}
+        </span>
+        <div className="min-w-0">
+          <p className="text-[13px] font-semibold text-foreground truncate leading-tight">{workspaceName}</p>
+          <p className="text-[11px] text-muted-foreground leading-tight">{sectionTitle}</p>
+        </div>
+      </div>
+    </div>
+  )
 }
 
 export function DomainShell({
@@ -87,14 +109,10 @@ export function DomainShell({
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col md:flex-row gap-1.5 md:gap-1 xl:gap-1.5 2xl:gap-1.5">
-      <aside className="md:w-64 md:shrink-0 h-full flex flex-col">
-        <div className="flex-1 flex flex-col bg-card/60 backdrop-blur-md border border-app-island rounded-[16px] shadow-[var(--shadow-app-island)] overflow-hidden">
-          <div className="hidden px-5 pb-3 pt-5 md:block">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground/80">
-              {title}
-            </p>
-          </div>
+    <div className="flex h-full min-h-0 flex-col md:flex-row">
+      <aside className="md:w-60 md:shrink-0 h-full flex flex-col border-b border-app-island-border bg-app-island md:border-b-0 md:border-r">
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <WorkspaceHeader sectionTitle={title} />
           <nav
             aria-label={navLabel}
             className="flex gap-2 overflow-x-auto px-3 py-3 scrollbar-hide md:flex-col md:gap-1 md:px-3 md:py-0"
@@ -190,7 +208,7 @@ export function DomainShell({
           </nav>
         </div>
       </aside>
-      <div className="min-w-0 flex-1 overflow-auto bg-app-main-card border border-app-island-border rounded-[16px] shadow-[var(--shadow-app-island)]">
+      <div className="min-w-0 flex-1 overflow-auto bg-app-main-card">
         {children}
       </div>
     </div>
