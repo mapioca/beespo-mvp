@@ -26,7 +26,7 @@ const TableHeader = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <thead
     ref={ref}
-    className={cn("[&_tr]:border-0 bg-gray-100", className)}
+    className={cn("[&_tr]:border-0 bg-[hsl(var(--table-header-bg))]", className)}
     {...props}
   />
 ))
@@ -66,7 +66,7 @@ const TableRow = React.forwardRef<
   <tr
     ref={ref}
     className={cn(
-      "border-b border-[hsl(var(--table-row-divider)/0.6)] transition-colors hover:bg-[hsl(var(--table-row-hover))] data-[state=selected]:bg-[hsl(var(--table-row-selected))]",
+      "border-b border-[var(--color-border)] transition-colors hover:bg-[var(--table-row-bg-hover)] data-[state=selected]:bg-[var(--table-row-bg-selected)]",
       className
     )}
     {...props}
@@ -81,7 +81,7 @@ const TableHead = React.forwardRef<
   <th
     ref={ref}
     className={cn(
-      "h-[var(--table-head-height)] px-[var(--table-cell-px)] text-left align-middle text-[length:var(--table-header-font-size)] font-semibold text-muted-foreground [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
+      "h-[var(--table-header-height)] px-[var(--table-row-padding-x)] text-left align-middle text-[length:var(--table-header-text-size)] font-[var(--table-header-weight)] tracking-[var(--table-header-text-spacing)] uppercase text-[var(--table-header-color)] [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
       className
     )}
     {...props}
@@ -96,7 +96,7 @@ const TableCell = React.forwardRef<
   <td
     ref={ref}
     className={cn(
-      "px-[var(--table-cell-px)] py-[var(--table-row-py)] align-middle text-[length:var(--table-meta-font-size)] [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
+      "h-[var(--table-row-height)] px-[var(--table-row-padding-x)] align-middle text-[var(--table-cell-text)] text-[length:var(--table-meta-font-size)] [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
       className
     )}
     {...props}

@@ -40,7 +40,7 @@ export function StandardSelectAllHeadCell({
   return (
     <TableHead
       className={cn(
-        "sticky top-0 z-20 w-10 bg-gray-100 px-3 py-2",
+        "sticky top-0 z-20 w-10 bg-[hsl(var(--table-header-bg))] px-[var(--table-row-padding-x)] py-2",
         variant === "app" && standardStickyHeadCellVariants({ variant, kind: "select" }),
         className
       )}
@@ -67,7 +67,7 @@ export function StandardActionsHeadCell({
   return (
     <TableHead
       className={cn(
-        "sticky top-0 z-20 w-[52px] bg-gray-100",
+        "sticky top-0 z-20 w-[52px] bg-[hsl(var(--table-header-bg))]",
         variant === "app" && standardStickyHeadCellVariants({ variant, kind: "actions" }),
         className
       )}
@@ -111,7 +111,7 @@ export function StandardSelectableRow({
     <TableRow
       data-state={selected ? "selected" : undefined}
       className={cn(
-        "group transition-[background-color,box-shadow] duration-150 ease-out hover:bg-[hsl(var(--table-row-hover))] focus-within:bg-[hsl(var(--table-row-hover))] data-[state=selected]:bg-[hsl(var(--table-row-selected))]",
+        "group transition-[background-color,box-shadow] duration-150 ease-out hover:bg-[var(--table-row-bg-hover)] focus-within:bg-[var(--table-row-bg-hover)] data-[state=selected]:bg-[var(--table-row-bg-selected)]",
         onRowClick && "cursor-pointer",
         className
       )}
@@ -124,7 +124,7 @@ export function StandardSelectableRow({
         if (selectOnRowClick) onToggle?.(id)
       }}
     >
-      <TableCell className="px-3 py-2.5">
+      <TableCell className="px-[var(--table-row-padding-x)] py-0">
         <Checkbox
           checked={selected}
           variant="table"

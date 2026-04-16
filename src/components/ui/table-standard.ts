@@ -17,9 +17,9 @@ export const standardTableVariants = cva("text-[length:var(--table-body-font-siz
     density: {
       default: "",
       compact: [
-        "[--table-head-height:2.25rem]",
-        "[--table-cell-px:0.625rem]",
-        "[--table-row-py:0.4rem]",
+        "[--table-header-height:2.25rem]",
+        "[--table-row-padding-x:0.625rem]",
+        "[--table-row-height:2rem]",
         "[--table-meta-font-size:11.5px]",
       ].join(" "),
     },
@@ -72,19 +72,19 @@ export const standardStickyHeadCellVariants = cva("", {
   variants: {
     variant: {
       default: "",
-      app: "bg-white",
+      app: "bg-[hsl(var(--table-header-bg))]",
     },
     kind: {
-      select: "w-9 px-2.5",
+      select: "w-9 px-[var(--table-row-padding-x)]",
       actions: "w-11",
-      data: "sticky top-0 z-20 bg-[hsl(var(--table-header-bg)/0.98)] text-foreground/60 backdrop-blur-sm",
+      data: "sticky top-0 z-20 bg-[hsl(var(--table-header-bg)/0.98)] text-[var(--table-header-color)] backdrop-blur-sm",
     },
   },
   compoundVariants: [
     {
       variant: "app",
       kind: "data",
-      className: "bg-[hsl(var(--table-header-bg)/0.98)] text-foreground/60",
+      className: "bg-[hsl(var(--table-header-bg)/0.98)] text-[var(--table-header-color)]",
     },
   ],
   defaultVariants: {
