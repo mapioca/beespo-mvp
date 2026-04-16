@@ -42,7 +42,7 @@ function WorkspaceHeader({ sectionTitle }: { sectionTitle: string }) {
   return (
     <div className="flex h-14 items-center justify-between px-4 border-b border-app-island-border">
       <div className="flex items-center gap-2.5 min-w-0">
-        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-[11px] font-semibold text-primary-foreground select-none">
+        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-primary text-[10px] font-semibold text-primary-foreground select-none">
           {initial}
         </span>
         <div className="min-w-0">
