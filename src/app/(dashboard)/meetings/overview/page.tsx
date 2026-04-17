@@ -1,23 +1,23 @@
 import Link from "next/link"
 import type { Metadata } from "next"
-import { ArrowRight, ClipboardList, LayoutGrid, Megaphone, NotebookPen, PanelsTopLeft, Plus } from "lucide-react"
+import { ArrowRight, ClipboardList, Megaphone, NotebookPen, PanelsTopLeft } from "lucide-react"
 import { redirect } from "next/navigation"
 
 import { Breadcrumbs } from "@/components/dashboard/breadcrumbs"
-import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { QuickCreateMeetingButton } from "@/components/meetings/quick-create-meeting-button"
 import { createClient } from "@/lib/supabase/server"
 
 export const metadata: Metadata = {
-  title: "Meetings Overview | Beespo",
-  description: "Navigate the core Meetings workspace and its primary actions",
+  title: "Meetings | Beespo",
+  description: "Plan and manage your ward's meetings",
 }
 
 type OverviewCard = {
   title: string
   description: string
   href: string
-  icon: typeof LayoutGrid
+  icon: typeof NotebookPen
 }
 
 const canonicalCards: OverviewCard[] = [
@@ -29,7 +29,7 @@ const canonicalCards: OverviewCard[] = [
   },
   {
     title: "Programs",
-    description: "Track audience-facing plans and conducting flows as they come online.",
+    description: "Track audience-facing plans and conducting flows.",
     href: "/meetings/programs",
     icon: PanelsTopLeft,
   },
@@ -41,7 +41,7 @@ const canonicalCards: OverviewCard[] = [
   },
   {
     title: "Announcements",
-    description: "Manage announcements independently from agenda and program content.",
+    description: "Manage announcements independently from meeting content.",
     href: "/meetings/announcements",
     icon: Megaphone,
   },
@@ -52,7 +52,7 @@ function OverviewLinkCard({ item }: { item: OverviewCard }) {
 
   return (
     <Link href={item.href} className="group block">
-      <Card className="h-full border-border/70 transition-colors hover:border-primary/40 hover:bg-accent/30">
+      <Card className="flex h-full flex-col border-border/70 transition-colors hover:border-primary/40 hover:bg-accent/30">
         <CardHeader className="space-y-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
             <Icon className="h-5 w-5" />
@@ -62,7 +62,7 @@ function OverviewLinkCard({ item }: { item: OverviewCard }) {
             <CardDescription>{item.description}</CardDescription>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="mt-auto">
           <div className="inline-flex items-center gap-2 text-sm font-medium text-primary">
             Open
             <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
@@ -97,43 +97,15 @@ export default async function MeetingsOverviewPage() {
     <div className="min-h-full">
       <Breadcrumbs />
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-6 sm:px-6 lg:px-8">
-        <section className="grid gap-6">
-          <Card className="border-border/70 bg-gradient-to-br from-background via-background to-primary/5">
-            <CardHeader className="space-y-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                <LayoutGrid className="h-6 w-6" />
-              </div>
-              <div className="space-y-2">
-                <CardTitle className="text-2xl">Meetings overview</CardTitle>
-                <CardDescription className="max-w-2xl text-sm leading-6">
-                  Plan agendas, programs, and assignments for your organization.
-                </CardDescription>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <Button asChild>
-                  <Link href="/meetings/create">
-                    <Plus className="h-4 w-4" />
-                    Create
-                  </Link>
-                </Button>
-                <Button asChild variant="outline">
-                  <Link href="/schedule/events?create=event">
-                    Create event
-                    <ArrowRight className="h-4 w-4" />
-                  </Link>
-                </Button>
-              </div>
-            </CardHeader>
-          </Card>
+        <section className="flex items-center justify-between gap-4">
+          <div className="space-y-1">
+            <h1 className="text-2xl font-semibold tracking-tight">Meetings</h1>
+            <p className="text-sm text-muted-foreground">Plan and manage your ward&apos;s meetings.</p>
+          </div>
+          <QuickCreateMeetingButton />
         </section>
 
-        <section className="space-y-4">
-          <div className="space-y-1">
-            <h2 className="text-lg font-semibold">Core Meetings surfaces</h2>
-            <p className="text-sm text-muted-foreground">
-              These destinations define the new secondary navigation for Meetings.
-            </p>
-          </div>
+        <section>
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             {canonicalCards.map((item) => (
               <OverviewLinkCard key={item.href} item={item} />

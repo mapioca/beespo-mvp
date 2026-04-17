@@ -1,5 +1,6 @@
 "use server";
 
+import { addHours, format, startOfHour } from "date-fns";
 import { createClient } from "@/lib/supabase/server";
 import {
   createEventAndMeetingSchema,
@@ -7,6 +8,72 @@ import {
   type CreateEventAndMeetingInput,
   type LinkMeetingToEventInput,
 } from "@/lib/validations/event-meeting";
+
+export async function quickCreateMeeting(): Promise<
+  { meetingId: string } | { error: string }
+> {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+  if (authError || !user) return { error: "Unauthorized" };
+
+  const { data: profile } = await (supabase.from("profiles") as ReturnType<typeof supabase.from>)
+    .select("workspace_id, role")
+    .eq("id", user.id)
+    .single();
+
+  if (!profile?.workspace_id) return { error: "No workspace found" };
+  if (!["admin", "leader"].includes((profile as { role: string }).role)) {
+    return { error: "Only admins and leaders can create meetings" };
+  }
+
+  const now = new Date();
+  const start = addHours(startOfHour(now), 1);
+  const end = addHours(start, 1);
+  const title = `Meeting - ${format(now, "MMM d, yyyy")}`;
+
+  const { data: rpcData, error: rpcError } = await (
+    supabase.rpc as unknown as (
+      name: string,
+      args: Record<string, unknown>
+    ) => Promise<{
+      data: { event_id: string; meeting_id: string } | null;
+      error: { message: string } | null;
+    }>
+  )("create_event_and_meeting", {
+    p_event_title: title,
+    p_event_start_at: start.toISOString(),
+    p_event_end_at: end.toISOString(),
+    p_event_description: null,
+    p_event_location: null,
+    p_event_is_all_day: false,
+    p_meeting_title: title,
+    p_meeting_plan_type: null,
+    p_template_id: null,
+    p_meeting_modality: null,
+  });
+
+  if (rpcError || !rpcData) {
+    return { error: rpcError?.message ?? "Failed to create meeting" };
+  }
+
+  const { error: metadataError } = await (supabase.from("events") as ReturnType<typeof supabase.from>)
+    .update({
+      event_type: "meeting",
+      date_tbd: true,
+      time_tbd: true,
+      duration_mode: "tbd",
+      duration_minutes: null,
+    })
+    .eq("id", rpcData.event_id);
+
+  if (metadataError) return { error: metadataError.message };
+
+  return { meetingId: rpcData.meeting_id };
+}
 
 export async function createEventAndMeeting(input: CreateEventAndMeetingInput) {
   const parsed = createEventAndMeetingSchema.safeParse(input);
