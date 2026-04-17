@@ -9,7 +9,6 @@ export const metadata: Metadata = {
   description: "Manage business items for your organization",
 }
 
-// Disable caching to ensure new business items appear immediately
 export const revalidate = 0
 
 export default async function BusinessPage() {
@@ -23,7 +22,6 @@ export default async function BusinessPage() {
     redirect("/login")
   }
 
-  // Get user profile to check role
   const { data: profile } = await (
     supabase.from("profiles") as ReturnType<typeof supabase.from>
   )
@@ -35,10 +33,8 @@ export default async function BusinessPage() {
     redirect("/onboarding")
   }
 
-  // Pagination settings
   const ITEMS_PER_PAGE = 50
 
-  // Get business items with specific columns only
   const { data: businessItems, error } = await (
     supabase.from("business_items") as ReturnType<typeof supabase.from>
   )
@@ -53,7 +49,6 @@ export default async function BusinessPage() {
     console.error("Business items query error:", error)
   }
 
-  // Fetch workspace-scoped business views
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: businessViewsData } = await (supabase.from("agenda_views") as any)
     .select("*")

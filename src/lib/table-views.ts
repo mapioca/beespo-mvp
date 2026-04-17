@@ -148,12 +148,12 @@ export async function createBusinessView(
   name: string,
   filters: BusinessViewFilters
 ): Promise<{ data?: BusinessView; error?: string }> {
-  const r = await _createView("business", name, filters, "/meetings/program/business")
+  const r = await _createView("business", name, filters, "/meetings/sacrament-meeting/business")
   return r as { data?: BusinessView; error?: string }
 }
 
 export async function deleteBusinessView(id: string): Promise<{ error?: string }> {
-  return _deleteView(id, "/meetings/program/business")
+  return _deleteView(id, "/meetings/sacrament-meeting/business")
 }
 
 // ── Discussion view actions ───────────────────────────────────────────────────

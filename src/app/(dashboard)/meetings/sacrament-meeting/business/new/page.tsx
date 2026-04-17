@@ -18,7 +18,6 @@ export default function NewBusinessItemPage() {
 
     const supabase = createClient();
 
-    // Get current user
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -29,7 +28,6 @@ export default function NewBusinessItemPage() {
       return;
     }
 
-    // Get user profile
     const { data: profile } = await (supabase
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .from("profiles") as any)
@@ -43,7 +41,6 @@ export default function NewBusinessItemPage() {
       return;
     }
 
-    // Create business item
     const { data: businessItem, error: createError } = await (supabase
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .from("business_items") as any)
@@ -67,7 +64,6 @@ export default function NewBusinessItemPage() {
       return;
     }
 
-    // Link to template(s) if selected
     if (formData.templateIds.length > 0) {
       const { error: linkError } = await (supabase
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -81,7 +77,6 @@ export default function NewBusinessItemPage() {
 
       if (linkError) {
         console.error("Error linking business item to template:", linkError);
-        // We notify but don't stop since the item was created successfully
         toast.warning("Created, but could not link to template.");
       }
     }
@@ -89,7 +84,7 @@ export default function NewBusinessItemPage() {
     toast.success("Business item created successfully!");
 
     setIsLoading(false);
-    router.push("/meetings/program/business");
+    router.push("/meetings/sacrament-meeting/business");
     router.refresh();
   };
 
@@ -97,7 +92,7 @@ export default function NewBusinessItemPage() {
     <div className="container mx-auto p-6 max-w-4xl">
       <div className="mb-6">
         <Button variant="ghost" asChild>
-          <Link href="/meetings/program/business">
+          <Link href="/meetings/sacrament-meeting/business">
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Business Items
           </Link>

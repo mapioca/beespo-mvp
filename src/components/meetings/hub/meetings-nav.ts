@@ -37,6 +37,12 @@ export function getMeetingsNavItems(isBishopric: boolean): DomainNavItem[] {
                 icon: Landmark,
                 matchMode: "prefix",
               },
+              {
+                href: "/meetings/sacrament-meeting/business",
+                label: "Business",
+                icon: Briefcase,
+                matchMode: "prefix",
+              },
             ],
           },
         ]
@@ -67,12 +73,6 @@ export function getMeetingsNavItems(isBishopric: boolean): DomainNavItem[] {
       icon: PanelsTopLeft,
       matchMode: "prefix",
       children: [
-        {
-          href: "/meetings/program/business",
-          label: "Business",
-          icon: Briefcase,
-          matchMode: "prefix",
-        },
         {
           href: "/library/programs",
           label: "Use a Template",

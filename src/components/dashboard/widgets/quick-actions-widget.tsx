@@ -31,7 +31,7 @@ export function QuickActionsWidget({
                     </Link>
                 </Button>
                 <Button asChild variant="outline" className="w-full justify-start h-11 bg-white">
-                    <Link href="/meetings/program/business/new">
+                    <Link href="/meetings/sacrament-meeting/business/new">
                         <Briefcase className="h-4 w-4 mr-3 text-blue-600" />
                         Add Business Item
                     </Link>
