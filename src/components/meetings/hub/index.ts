@@ -1,2 +1,2 @@
 export { MeetingsHubShell } from "./meetings-hub-shell"
-export { meetingsNavItems } from "./meetings-nav"
+export { getMeetingsNavItems } from "./meetings-nav"

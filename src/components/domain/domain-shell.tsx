@@ -14,6 +14,7 @@ export interface DomainNavItem {
   icon: LucideIcon
   disabled?: boolean
   matchMode?: "exact" | "prefix"
+  showOverviewLink?: boolean
   children?: DomainNavItem[]
 }
 
@@ -179,13 +180,15 @@ export function DomainShell({
                     </button>
                     {isExpanded && (
                       <div className="ml-4 mt-0.5 flex flex-col gap-0.5 border-l border-border/60 pl-2">
-                        <Link
-                          href={item.href}
-                          className={cn(baseChildClass, itemIsDirectlyActive ? activeClass : inactiveClass)}
-                        >
-                          <Icon className={itemIsDirectlyActive ? iconActiveClass : iconClass} />
-                          <span className="whitespace-nowrap">All {item.label}</span>
-                        </Link>
+                        {item.showOverviewLink !== false ? (
+                          <Link
+                            href={item.href}
+                            className={cn(baseChildClass, itemIsDirectlyActive ? activeClass : inactiveClass)}
+                          >
+                            <Icon className={itemIsDirectlyActive ? iconActiveClass : iconClass} />
+                            <span className="whitespace-nowrap">All {item.label}</span>
+                          </Link>
+                        ) : null}
                         {item.children!.map((child) => {
                           const ChildIcon = child.icon
                           const childIsActive = isItemActive(pathname, child)

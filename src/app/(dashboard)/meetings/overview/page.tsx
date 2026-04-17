@@ -1,11 +1,12 @@
-import Link from "next/link"
 import type { Metadata } from "next"
-import { ArrowRight, ClipboardList, Megaphone, NotebookPen, PanelsTopLeft } from "lucide-react"
-import { redirect } from "next/navigation"
+import Link from "next/link"
+import { ArrowRight, ClipboardList, Landmark, Megaphone, NotebookPen, PanelsTopLeft } from "lucide-react"
 
 import { Breadcrumbs } from "@/components/dashboard/breadcrumbs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { QuickCreateMeetingButton } from "@/components/meetings/quick-create-meeting-button"
+import { getDashboardRequestContext } from "@/lib/dashboard/request-context"
+import { getWorkspaceOrganizationType, isBishopricOrganization } from "@/lib/meetings/access"
 import { createClient } from "@/lib/supabase/server"
 
 export const metadata: Metadata = {
@@ -21,6 +22,12 @@ type OverviewCard = {
 }
 
 const canonicalCards: OverviewCard[] = [
+  {
+    title: "Sacrament Meeting",
+    description: "Coordinate sacrament meeting planning in the bishopric workspace.",
+    href: "/meetings/sacrament-meeting/planner",
+    icon: Landmark,
+  },
   {
     title: "Agendas",
     description: "Manage discussion-first plans and collaboration artifacts.",
@@ -74,24 +81,15 @@ function OverviewLinkCard({ item }: { item: OverviewCard }) {
 }
 
 export default async function MeetingsOverviewPage() {
-  const supabase = await createClient()
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) {
-    redirect("/login")
-  }
-
-  const { data: profile } = await (supabase.from("profiles") as ReturnType<typeof supabase.from>)
-    .select("workspace_id")
-    .eq("id", user.id)
-    .single()
-
-  if (!profile?.workspace_id) {
-    redirect("/onboarding")
-  }
+  const [{ profile }, supabase] = await Promise.all([
+    getDashboardRequestContext(),
+    createClient(),
+  ])
+  const organizationType = await getWorkspaceOrganizationType(supabase, profile.workspace_id)
+  const isBishopric = isBishopricOrganization(organizationType)
+  const visibleCards = isBishopric
+    ? canonicalCards
+    : canonicalCards.filter((item) => item.href !== "/meetings/sacrament-meeting")
 
   return (
     <div className="min-h-full">
@@ -107,7 +105,7 @@ export default async function MeetingsOverviewPage() {
 
         <section>
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            {canonicalCards.map((item) => (
+            {visibleCards.map((item) => (
               <OverviewLinkCard key={item.href} item={item} />
             ))}
           </div>
