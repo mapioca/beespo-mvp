@@ -1,13 +1,22 @@
 "use client"
 
+import { DomainShell } from "@/components/domain/domain-shell"
+import { getMeetingsNavItems } from "./meetings-nav"
+
 interface MeetingsHubShellProps {
   children: React.ReactNode
+  isBishopric: boolean
 }
 
-export function MeetingsHubShell({ children }: MeetingsHubShellProps) {
+export function MeetingsHubShell({ children, isBishopric }: MeetingsHubShellProps) {
   return (
-    <div className="flex flex-col h-full w-full">
-      <div className="flex-1 overflow-auto">{children}</div>
-    </div>
+    <DomainShell
+      title="Meetings"
+      navLabel="Meetings navigation"
+      items={getMeetingsNavItems(isBishopric)}
+      singleExpandedGroup
+    >
+      {children}
+    </DomainShell>
   )
 }

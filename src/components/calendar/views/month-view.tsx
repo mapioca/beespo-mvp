@@ -87,7 +87,7 @@ export function MonthView({
                   key={dateKey}
                   className={cn(
                     "p-2 cursor-pointer transition-colors overflow-hidden",
-                    "hover:bg-[hsl(var(--accent-warm)/0.35)]",
+                    "hover:bg-[hsl(var(--table-row-hover))]",
                     !isCurrentMonth && "bg-muted/10",
                     dayIndex !== 6 && "border-r border-border/30"
                   )}
@@ -99,9 +99,9 @@ export function MonthView({
                       className={cn(
                         "inline-flex items-center justify-center w-7 h-7 text-sm rounded-full transition-colors",
                         isCurrentDay
-                          ? "bg-[hsl(var(--accent-warm))] text-foreground font-bold"
+                          ? "bg-primary text-primary-foreground font-bold"
                           : isCurrentMonth
-                            ? "font-medium text-foreground hover:bg-[hsl(var(--accent-warm)/0.5)]"
+                            ? "font-medium text-foreground hover:bg-accent"
                             : "text-muted-foreground/60"
                       )}
                     >

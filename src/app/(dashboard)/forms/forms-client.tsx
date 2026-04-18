@@ -5,7 +5,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { createPortal } from "react-dom"
 import { Button } from "@/components/ui/button"
-import { Plus, X, Trash2, ClipboardList, Database } from "lucide-react"
+import { Check, Columns3, Plus, SlidersHorizontal, X, ClipboardList } from "lucide-react"
 import { Breadcrumbs } from "@/components/dashboard/breadcrumbs"
 import {
     AlertDialog,
@@ -29,6 +29,18 @@ import {
     TableView,
 } from "@/lib/table-views"
 import { cn } from "@/lib/utils"
+import { TopbarSearchAction } from "@/components/ui/topbar-search-action"
+import {
+    StandardPopoverMenu,
+    StandardPopoverMenuContent,
+    StandardPopoverMenuItem,
+    StandardPopoverMenuSub,
+    StandardPopoverMenuSubContent,
+    StandardPopoverMenuSubTrigger,
+    StandardPopoverMenuTrigger,
+} from "@/components/ui/standard-popover-menu"
+import { ToolbarIconButton } from "@/components/ui/toolbar-icon-button"
+import { BulkSelectionBar } from "@/components/ui/bulk-selection-bar"
 
 // ── Filter sections config ────────────────────────────────────────────────────
 
@@ -83,6 +95,9 @@ export function FormsClient({ forms, statusCounts, initialViews = [] }: FormsCli
     // Bulk delete
     const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false)
     const [isBulkDeleting, setIsBulkDeleting] = useState(false)
+    const [filtersOpen, setFiltersOpen] = useState(false)
+    const [displayOptionsOpen, setDisplayOptionsOpen] = useState(false)
+    const [createFilterDialogOpen, setCreateFilterDialogOpen] = useState(false)
 
     useEffect(() => {
         setMounted(true)
@@ -160,10 +175,17 @@ export function FormsClient({ forms, statusCounts, initialViews = [] }: FormsCli
         )
     }, [])
 
-    const handleHideColumn = useCallback((column: string) => {
+    const handleToggleColumnVisibility = useCallback((column: string) => {
         setHiddenColumns((prev) => {
             const next = new Set(prev)
-            next.add(column)
+            const visibleCount = ["title", "status", "views", "responses", "created_at"].filter(
+                (c) => !next.has(c)
+            ).length
+            const isVisible = !next.has(column)
+
+            if (isVisible && visibleCount <= 1) return prev
+            if (isVisible) next.add(column)
+            else next.delete(column)
             return next
         })
     }, [])
@@ -257,10 +279,36 @@ export function FormsClient({ forms, statusCounts, initialViews = [] }: FormsCli
             {/* Breadcrumb */}
             <Breadcrumbs
                 items={[
-                    { label: "Data", icon: <Database className="h-4 w-4 stroke-[1.6]" /> },
                     { label: "Forms", icon: <ClipboardList className="h-4 w-4 stroke-[1.6]" /> },
                 ]}
                 className="bg-transparent ring-0 border-b border-border/60 rounded-none px-4 py-1.5"
+                action={
+                    <div className="hidden items-center gap-1 sm:flex">
+                        <TopbarSearchAction
+                            value={search}
+                            onChange={setSearch}
+                            placeholder="Search forms..."
+                            items={filteredForms.slice(0, 8).map((form) => ({
+                                id: form.id,
+                                label: form.title,
+                                actionLabel: "Open",
+                            }))}
+                            onSelect={(formId) => router.push(`/forms/${formId}`)}
+                            emptyText="No matching forms."
+                        />
+                        <Button
+                            asChild
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 gap-1 rounded-full px-2.5 text-[length:var(--agenda-control-font-size)] text-nav transition-colors hover:bg-[hsl(var(--agenda-interactive-hover))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--agenda-interactive-focus-ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                        >
+                            <Link href="/forms/new" className="flex items-center gap-1">
+                                <Plus className="h-3.5 w-3.5 stroke-[1.6]" />
+                                New form
+                            </Link>
+                        </Button>
+                    </div>
+                }
             />
 
             {/* Action Bar + View Tabs */}
@@ -309,19 +357,139 @@ export function FormsClient({ forms, statusCounts, initialViews = [] }: FormsCli
                         </button>
                     )}
 
-                    <CreateViewDialog
-                        filterSections={FORM_FILTER_SECTIONS}
-                        onSave={handleSaveView}
-                        onCreated={handleViewCreated}
-                    />
-                </div>
+                    <StandardPopoverMenu open={filtersOpen} onOpenChange={setFiltersOpen}>
+                        <StandardPopoverMenuTrigger asChild>
+                            <ToolbarIconButton title="Filters" aria-label="Open filters">
+                                <SlidersHorizontal className="h-3.5 w-3.5" />
+                            </ToolbarIconButton>
+                        </StandardPopoverMenuTrigger>
+                        <StandardPopoverMenuContent align="start" className="w-64">
+                            <StandardPopoverMenuSub>
+                                <StandardPopoverMenuSubTrigger active={selectedStatuses.length > 0} disabled={!!activeView}>
+                                    Status
+                                </StandardPopoverMenuSubTrigger>
+                                <StandardPopoverMenuSubContent>
+                                    {[
+                                        { value: "published", label: "Published" },
+                                        { value: "draft", label: "Draft" },
+                                    ].map((opt) => {
+                                        const selected = selectedStatuses.includes(opt.value as FormStatus)
+                                        return (
+                                            <StandardPopoverMenuItem
+                                                key={opt.value}
+                                                active={selected}
+                                                onSelect={() => handleStatusToggle(opt.value)}
+                                            >
+                                                <span className="flex items-center gap-2">
+                                                    <span className="inline-flex h-4 w-4 items-center justify-center rounded-sm border border-border/60">
+                                                        {selected ? <Check className="h-3 w-3" /> : null}
+                                                    </span>
+                                                    {opt.label}
+                                                </span>
+                                                <span className="ml-auto text-[length:var(--table-header-font-size)] text-muted-foreground">
+                                                    {statusCounts?.[opt.value] || 0}
+                                                </span>
+                                            </StandardPopoverMenuItem>
+                                        )
+                                    })}
+                                </StandardPopoverMenuSubContent>
+                            </StandardPopoverMenuSub>
 
-                <Button asChild size="sm" className="h-8 rounded-full px-3.5 text-[11px] font-semibold shadow-sm">
-                    <Link href="/forms/new" className="flex items-center gap-1.5">
-                        <Plus className="h-3.5 w-3.5 stroke-[1.6]" />
-                        New
-                    </Link>
-                </Button>
+                            {selectedStatuses.length > 0 && !activeView && (
+                                <StandardPopoverMenuItem
+                                    onSelect={() => setSelectedStatuses([])}
+                                    className="text-muted-foreground"
+                                >
+                                    Clear filters
+                                </StandardPopoverMenuItem>
+                            )}
+
+                            <div className="my-1 h-px bg-[hsl(var(--menu-separator))]" />
+
+                            <StandardPopoverMenuSub>
+                                <StandardPopoverMenuSubTrigger active={!!activeView}>
+                                    Advanced filters
+                                </StandardPopoverMenuSubTrigger>
+                                <StandardPopoverMenuSubContent className="w-64">
+                                    {views.length === 0 ? (
+                                        <p className="px-2 py-1.5 text-xs text-muted-foreground">
+                                            No saved filters yet.
+                                        </p>
+                                    ) : (
+                                        views.map((view) => (
+                                            <StandardPopoverMenuItem
+                                                key={view.id}
+                                                active={activeViewId === view.id}
+                                                onSelect={() => {
+                                                    setActiveViewId(view.id)
+                                                    setFiltersOpen(false)
+                                                }}
+                                            >
+                                                <span className="truncate">{view.name}</span>
+                                            </StandardPopoverMenuItem>
+                                        ))
+                                    )}
+
+                                    <div className="my-1 h-px bg-[hsl(var(--menu-separator))]" />
+
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setFiltersOpen(false)
+                                            setCreateFilterDialogOpen(true)
+                                        }}
+                                        className="flex w-full items-center justify-start gap-2 rounded-md px-2.5 py-1.5 text-[length:var(--menu-item-font-size)] text-[hsl(var(--menu-text))] hover:bg-[hsl(var(--menu-hover))]"
+                                    >
+                                        <Plus className="h-3.5 w-3.5" />
+                                        Create new filter
+                                    </button>
+                                </StandardPopoverMenuSubContent>
+                            </StandardPopoverMenuSub>
+                        </StandardPopoverMenuContent>
+                    </StandardPopoverMenu>
+
+                    <StandardPopoverMenu open={displayOptionsOpen} onOpenChange={setDisplayOptionsOpen}>
+                        <StandardPopoverMenuTrigger asChild>
+                            <ToolbarIconButton title="Display options" aria-label="Display options">
+                                <Columns3 className="h-3.5 w-3.5" />
+                            </ToolbarIconButton>
+                        </StandardPopoverMenuTrigger>
+                        <StandardPopoverMenuContent align="start" className="w-56">
+                            {[
+                                { key: "title", label: "Title" },
+                                { key: "status", label: "Status" },
+                                { key: "views", label: "Views" },
+                                { key: "responses", label: "Responses" },
+                                { key: "created_at", label: "Created" },
+                            ].map((column) => {
+                                const visible = !hiddenColumns.has(column.key)
+                                return (
+                                    <StandardPopoverMenuItem
+                                        key={column.key}
+                                        onSelect={() => handleToggleColumnVisibility(column.key)}
+                                        className="gap-2"
+                                    >
+                                        <span className="inline-flex h-4 w-4 items-center justify-center rounded-sm border border-border/60">
+                                            {visible ? <Check className="h-3 w-3" /> : null}
+                                        </span>
+                                        <span>{column.label}</span>
+                                    </StandardPopoverMenuItem>
+                                )
+                            })}
+                            {hiddenColumns.size > 0 && (
+                                <>
+                                    <div className="my-1 h-px bg-[hsl(var(--menu-separator))]" />
+                                    <StandardPopoverMenuItem
+                                        onSelect={() => setHiddenColumns(new Set())}
+                                        className="text-muted-foreground"
+                                    >
+                                        Show all columns
+                                    </StandardPopoverMenuItem>
+                                </>
+                            )}
+                        </StandardPopoverMenuContent>
+                    </StandardPopoverMenu>
+                </div>
             </div>
 
             {/* View filter summary bar */}
@@ -387,13 +555,7 @@ export function FormsClient({ forms, statusCounts, initialViews = [] }: FormsCli
                     forms={filteredForms}
                     sortConfig={sortConfig}
                     onSort={handleSort}
-                    searchValue={search}
-                    onSearchChange={setSearch}
-                    selectedStatuses={activeView?.filters.statuses as FormStatus[] ?? selectedStatuses}
-                    statusCounts={statusCounts}
-                    onStatusToggle={activeView ? undefined : handleStatusToggle}
                     hiddenColumns={hiddenColumns}
-                    onHideColumn={handleHideColumn}
                     selectedRows={selectedRows}
                     onToggleRow={handleToggleRow}
                     onToggleAllRows={handleToggleAllRows}
@@ -425,6 +587,15 @@ export function FormsClient({ forms, statusCounts, initialViews = [] }: FormsCli
                 </AlertDialogContent>
             </AlertDialog>
 
+            <CreateViewDialog
+                filterSections={FORM_FILTER_SECTIONS}
+                onSave={handleSaveView}
+                onCreated={handleViewCreated}
+                open={createFilterDialogOpen}
+                onOpenChange={setCreateFilterDialogOpen}
+                hideTrigger
+            />
+
             {/* Delete view confirmation */}
             <AlertDialog open={!!deletingViewId} onOpenChange={(o) => { if (!o) setDeletingViewId(null) }}>
                 <AlertDialogContent>
@@ -449,25 +620,12 @@ export function FormsClient({ forms, statusCounts, initialViews = [] }: FormsCli
             {/* Floating bulk selection pill */}
             {mounted && selectedRows.size > 0 && createPortal(
                 <div className="fixed bottom-6 left-1/2 z-[95] flex -translate-x-1/2 pointer-events-none w-[90vw] sm:w-auto justify-center">
-                    <div className="pointer-events-auto inline-flex items-center gap-2 rounded-full border border-border/80 bg-background/96 px-2.5 py-2 text-foreground shadow-[0_10px_30px_rgba(15,23,42,0.12)] backdrop-blur-sm">
-                        <span className="inline-flex items-center rounded-full border border-border/70 bg-muted/55 px-2.5 py-1 text-[11px] font-semibold tabular-nums text-foreground/85">
-                            {selectedRows.size} selected
-                        </span>
-                        <span className="h-4 w-px bg-border/70" aria-hidden />
-                        <button
-                            onClick={() => setSelectedRows(new Set())}
-                            className="rounded-full px-2.5 py-1 text-[11px] font-medium text-foreground/70 hover:text-foreground hover:bg-muted/55 transition-colors"
-                        >
-                            Deselect
-                        </button>
-                        <button
-                            onClick={() => setShowBulkDeleteDialog(true)}
-                            className="inline-flex items-center gap-1.5 rounded-full border border-rose-200 bg-rose-50/70 px-2.5 py-1 text-[11px] font-semibold text-rose-700 hover:bg-rose-100/75 transition-colors"
-                        >
-                            <Trash2 className="h-3 w-3 stroke-[1.7]" />
-                            Delete
-                        </button>
-                    </div>
+                    <BulkSelectionBar
+                        selectedCount={selectedRows.size}
+                        onClear={() => setSelectedRows(new Set())}
+                        onDelete={() => setShowBulkDeleteDialog(true)}
+                        isDeleting={isBulkDeleting}
+                    />
                 </div>,
                 document.body
             )}

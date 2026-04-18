@@ -1,42 +1,25 @@
 import { createClient } from "@/lib/supabase/server";
-import { redirect } from "next/navigation";
 import { DirectoryClient } from "./directory-client";
 import { Metadata } from "next";
+import { getDashboardRequestContext } from "@/lib/dashboard/request-context";
 
 export const metadata: Metadata = {
     title: "Directory | Beespo",
     description: "Manage people directory and assignments",
 };
 
-export const dynamic = "force-dynamic";
-
 interface ParticipantsPageProps {
     searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
 export default async function ParticipantsPage({ searchParams }: ParticipantsPageProps) {
-    const supabase = await createClient();
-
-    const { data: { user } } = await supabase.auth.getUser();
-
-    if (!user) {
-        redirect("/login");
-    }
+    const [{ profile }, supabase] = await Promise.all([
+        getDashboardRequestContext(),
+        createClient(),
+    ]);
 
     const params = await searchParams;
     const searchQuery = typeof params?.search === "string" ? params.search : "";
-
-    // Get user's profile and workspace
-    const { data: profile } = await (supabase
-        .from("profiles")
-        .select("workspace_id, role")
-        .eq("id", user.id)
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .single() as any);
-
-    if (!profile?.workspace_id) {
-        redirect("/onboarding");
-    }
 
     // Build query against directory table
     let query = supabase

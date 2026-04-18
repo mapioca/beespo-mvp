@@ -1,15 +1,13 @@
 "use client"
 
-import { useState } from "react"
+import React, { useState } from "react"
 import {
     Table,
     TableBody,
     TableCell,
-    TableHead,
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
-import { Checkbox } from "@/components/ui/checkbox"
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -27,12 +25,22 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { Eye, Trash2, Briefcase } from "lucide-react"
+import { Eye, Trash2, Briefcase, CircleDashed, CircleCheck } from "lucide-react"
 import { format } from "date-fns"
-import { DataTableColumnHeader } from "@/components/ui/data-table-header"
 import type { BusinessItemDetails } from "@/lib/business-script-generator"
 import { TableRowActionTrigger } from "@/components/ui/table-row-action-trigger"
-import { StatusIndicator } from "@/components/ui/status-indicator"
+import { SortableTableHeader } from "@/components/ui/sortable-table-header"
+import {
+    StandardActionsHeadCell,
+    StandardSelectAllHeadCell,
+    StandardSelectableRow,
+    StandardTableShell,
+} from "@/components/ui/standard-data-table"
+import {
+    standardTableHeaderRowVariants,
+    standardTableHeaderVariants,
+    standardTableVariants,
+} from "@/components/ui/table-standard"
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -60,22 +68,6 @@ export interface BusinessItem {
     creator?: { full_name?: string | null } | null
 }
 
-// ── Filter option data ──────────────────────────────────────────────────────
-
-const STATUS_OPTIONS = [
-    { value: "pending", label: "Pending" },
-    { value: "completed", label: "Completed" },
-]
-
-const CATEGORY_OPTIONS = [
-    { value: "sustaining", label: "Sustaining" },
-    { value: "release", label: "Release" },
-    { value: "confirmation", label: "Confirmation" },
-    { value: "ordination", label: "Ordination" },
-    { value: "setting_apart", label: "Setting Apart" },
-    { value: "other", label: "Other" },
-]
-
 // ── Badge helpers ───────────────────────────────────────────────────────────
 
 function formatCategory(category: string): string {
@@ -87,6 +79,11 @@ const STATUS_TONES: Record<string, "neutral" | "info" | "success" | "warning" | 
     completed: "neutral",
 }
 
+const STATUS_ICONS: Record<string, React.ElementType> = {
+    pending: CircleDashed,
+    completed: CircleCheck,
+}
+
 // ── Props ───────────────────────────────────────────────────────────────────
 
 interface BusinessTableProps {
@@ -94,20 +91,8 @@ interface BusinessTableProps {
     // Sort
     sortConfig?: { key: string; direction: "asc" | "desc" } | null
     onSort?: (key: string, direction: "asc" | "desc") => void
-    // Search (applied from Person Name header)
-    searchValue?: string
-    onSearchChange?: (value: string) => void
-    // Status filter
-    selectedStatuses?: BusinessStatus[]
-    statusCounts?: Record<string, number>
-    onStatusToggle?: (status: string) => void
-    // Category filter
-    selectedCategories?: BusinessCategory[]
-    categoryCounts?: Record<string, number>
-    onCategoryToggle?: (category: string) => void
     // Column visibility
     hiddenColumns?: Set<string>
-    onHideColumn?: (column: string) => void
     // Row selection
     selectedRows?: Set<string>
     onToggleRow?: (id: string) => void
@@ -123,16 +108,7 @@ export function BusinessTable({
     items,
     sortConfig,
     onSort,
-    searchValue,
-    onSearchChange,
-    selectedStatuses = [],
-    statusCounts,
-    onStatusToggle,
-    selectedCategories = [],
-    categoryCounts,
-    onCategoryToggle,
     hiddenColumns = new Set(),
-    onHideColumn,
     selectedRows = new Set(),
     onToggleRow,
     onToggleAllRows,
@@ -160,130 +136,81 @@ export function BusinessTable({
 
     return (
         <>
-            <div className="table-shell-standard">
-            <Table className="text-[13px]">
-                <TableHeader>
-                    <TableRow className="table-header-row-standard">
-                        {/* Checkbox */}
-                        <TableHead className="w-10 table-cell-check">
-                            <Checkbox
-                                checked={allSelected}
-                                onCheckedChange={() => onToggleAllRows?.()}
-                            />
-                        </TableHead>
+            <StandardTableShell variant="app" className="overflow-hidden">
+            <Table className={standardTableVariants({ density: "compact", dividers: "subtle" })}>
+                <TableHeader className={standardTableHeaderVariants({ sticky: true, variant: "app" })}>
+                    <TableRow className={standardTableHeaderRowVariants({ variant: "app" })}>
+                        <StandardSelectAllHeadCell
+                            checked={allSelected}
+                            onToggle={() => onToggleAllRows?.()}
+                            variant="app"
+                        />
 
-                        {/* Person Name */}
+                        {/* Member */}
                         {!hiddenColumns.has("person_name") && (
-                            <DataTableColumnHeader
-                                label="Person Name"
-                                sortActive={
-                                    sortConfig?.key === "person_name"
-                                }
-                                sortDirection={sortConfig?.direction}
-                                onSortAsc={() =>
-                                    onSort?.("person_name", "asc")
-                                }
-                                onSortDesc={() =>
-                                    onSort?.("person_name", "desc")
-                                }
-                                searchable
-                                searchValue={searchValue}
-                                onSearchChange={onSearchChange}
-                                searchPlaceholder="Search names..."
-                                onHide={() => onHideColumn?.("person_name")}
+                            <SortableTableHeader
+                                sortKey="person_name"
+                                label="Member"
+                                defaultDirection="asc"
+                                sortConfig={sortConfig}
+                                onSort={onSort}
+                                variant="app"
                                 className="min-w-[200px]"
                             />
                         )}
 
-                        {/* Position/Calling */}
+                        {/* Calling */}
                         {!hiddenColumns.has("position_calling") && (
-                            <DataTableColumnHeader
-                                label="Position / Calling"
-                                sortActive={
-                                    sortConfig?.key === "position_calling"
-                                }
-                                sortDirection={sortConfig?.direction}
-                                onSortAsc={() =>
-                                    onSort?.("position_calling", "asc")
-                                }
-                                onSortDesc={() =>
-                                    onSort?.("position_calling", "desc")
-                                }
-                                onHide={() =>
-                                    onHideColumn?.("position_calling")
-                                }
+                            <SortableTableHeader
+                                sortKey="position_calling"
+                                label="Calling"
+                                defaultDirection="asc"
+                                sortConfig={sortConfig}
+                                onSort={onSort}
+                                variant="app"
                             />
                         )}
 
                         {/* Category */}
                         {!hiddenColumns.has("category") && (
-                            <DataTableColumnHeader
+                            <SortableTableHeader
+                                sortKey="category"
                                 label="Category"
-                                sortActive={sortConfig?.key === "category"}
-                                sortDirection={sortConfig?.direction}
-                                onSortAsc={() =>
-                                    onSort?.("category", "asc")
-                                }
-                                onSortDesc={() =>
-                                    onSort?.("category", "desc")
-                                }
-                                filterOptions={CATEGORY_OPTIONS.map((opt) => ({
-                                    ...opt,
-                                    count: categoryCounts?.[opt.value] || 0,
-                                }))}
-                                selectedFilters={selectedCategories}
-                                onFilterToggle={onCategoryToggle}
-                                onHide={() => onHideColumn?.("category")}
+                                defaultDirection="asc"
+                                sortConfig={sortConfig}
+                                onSort={onSort}
+                                variant="app"
                                 className="w-[140px]"
                             />
                         )}
 
                         {/* Status */}
                         {!hiddenColumns.has("status") && (
-                            <DataTableColumnHeader
+                            <SortableTableHeader
+                                sortKey="status"
                                 label="Status"
-                                sortActive={sortConfig?.key === "status"}
-                                sortDirection={sortConfig?.direction}
-                                onSortAsc={() =>
-                                    onSort?.("status", "asc")
-                                }
-                                onSortDesc={() =>
-                                    onSort?.("status", "desc")
-                                }
-                                filterOptions={STATUS_OPTIONS.map((opt) => ({
-                                    ...opt,
-                                    count: statusCounts?.[opt.value] || 0,
-                                }))}
-                                selectedFilters={selectedStatuses}
-                                onFilterToggle={onStatusToggle}
-                                onHide={() => onHideColumn?.("status")}
+                                defaultDirection="asc"
+                                sortConfig={sortConfig}
+                                onSort={onSort}
+                                variant="app"
                                 className="w-[120px]"
                             />
                         )}
 
                         {/* Action Date */}
                         {!hiddenColumns.has("action_date") && (
-                            <DataTableColumnHeader
+                            <SortableTableHeader
+                                sortKey="action_date"
                                 label="Action Date"
-                                sortActive={
-                                    sortConfig?.key === "action_date"
-                                }
-                                sortDirection={sortConfig?.direction}
-                                onSortAsc={() =>
-                                    onSort?.("action_date", "asc")
-                                }
-                                onSortDesc={() =>
-                                    onSort?.("action_date", "desc")
-                                }
-                                onHide={() => onHideColumn?.("action_date")}
+                                defaultDirection="desc"
+                                sortConfig={sortConfig}
+                                onSort={onSort}
+                                variant="app"
                                 className="w-[130px]"
                             />
                         )}
 
-                        {/* Actions (screen-reader only label) */}
-                        <TableHead className="w-[52px]">
-                            <span className="sr-only">Actions</span>
-                        </TableHead>
+                        <StandardActionsHeadCell variant="app" />
                     </TableRow>
                 </TableHeader>
 
@@ -304,75 +231,15 @@ export function BusinessTable({
                         </TableRow>
                     ) : (
                         items.map((item) => (
-                            <TableRow
+                            <StandardSelectableRow
                                 key={item.id}
-                                data-state={selectedRows.has(item.id) ? "selected" : undefined}
-                                className="group transition-[background-color,box-shadow] duration-150 ease-out hover:bg-[hsl(var(--table-row-hover))] hover:shadow-[inset_0_0_0_1px_hsl(var(--table-shell-border)/0.28)] data-[state=selected]:bg-[hsl(var(--table-row-selected))] data-[state=selected]:shadow-[inset_0_0_0_1px_hsl(var(--table-shell-border)/0.4)]"
-                            >
-                                {/* Checkbox */}
-                                <TableCell className="table-cell-check">
-                                    <Checkbox
-                                        checked={selectedRows.has(item.id)}
-                                        className="opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100 data-[state=checked]:opacity-100"
-                                        onCheckedChange={() =>
-                                            onToggleRow?.(item.id)
-                                        }
-                                    />
-                                </TableCell>
-
-                                {/* Person Name */}
-                                {!hiddenColumns.has("person_name") && (
-                                    <TableCell className="table-cell-title">
-                                        <button
-                                            onClick={() =>
-                                                onViewItem?.(item)
-                                            }
-                                            className="hover:underline text-left"
-                                        >
-                                            {item.person_name}
-                                        </button>
-                                    </TableCell>
-                                )}
-
-                                {/* Position/Calling */}
-                                {!hiddenColumns.has("position_calling") && (
-                                    <TableCell className="table-cell-meta">
-                                        {item.position_calling || "—"}
-                                    </TableCell>
-                                )}
-
-                                {/* Category */}
-                                {!hiddenColumns.has("category") && (
-                                    <TableCell className="table-cell-meta capitalize">
-                                        {formatCategory(item.category)}
-                                    </TableCell>
-                                )}
-
-                                {/* Status */}
-                                {!hiddenColumns.has("status") && (
-                                    <TableCell className="table-cell-meta !px-2 capitalize">
-                                        <StatusIndicator
-                                            label={item.status === "pending" ? "Pending" : "Completed"}
-                                            tone={STATUS_TONES[item.status] || "neutral"}
-                                            className="text-[11.5px] text-foreground/66"
-                                        />
-                                    </TableCell>
-                                )}
-
-                                {/* Action Date */}
-                                {!hiddenColumns.has("action_date") && (
-                                    <TableCell className="table-cell-meta !px-2 text-[11.5px] text-foreground/56">
-                                        {item.action_date
-                                            ? format(
-                                                  new Date(item.action_date),
-                                                  "MMM d, yyyy"
-                                              )
-                                            : "—"}
-                                    </TableCell>
-                                )}
-
-                                {/* Actions */}
-                                <TableCell className="table-cell-actions">
+                                id={item.id}
+                                selected={selectedRows.has(item.id)}
+                                onToggle={onToggleRow}
+                                onRowClick={onViewItem ? () => onViewItem(item) : undefined}
+                                selectOnRowClick={false}
+                                className="focus-within:bg-transparent focus-within:shadow-none"
+                                actions={
                                     <DropdownMenu>
                                         <DropdownMenuTrigger asChild>
                                             <TableRowActionTrigger />
@@ -404,13 +271,70 @@ export function BusinessTable({
                                             )}
                                         </DropdownMenuContent>
                                     </DropdownMenu>
-                                </TableCell>
-                            </TableRow>
+                                }
+                            >
+                                {/* Person Name */}
+                                {!hiddenColumns.has("person_name") && (
+                                    <TableCell className="table-cell-title">
+                                        <button
+                                            onClick={() =>
+                                                onViewItem?.(item)
+                                            }
+                                            className="table-cell-link text-left"
+                                        >
+                                            {item.person_name}
+                                        </button>
+                                    </TableCell>
+                                )}
+
+                                {/* Position/Calling */}
+                                {!hiddenColumns.has("position_calling") && (
+                                    <TableCell className="table-cell-meta">
+                                        {item.position_calling || "—"}
+                                    </TableCell>
+                                )}
+
+                                {/* Category */}
+                                {!hiddenColumns.has("category") && (
+                                    <TableCell className="table-cell-meta capitalize">
+                                        {formatCategory(item.category)}
+                                    </TableCell>
+                                )}
+
+                                {/* Status */}
+                                {!hiddenColumns.has("status") && (
+                                    <TableCell className="table-cell-meta">
+                                        {(() => {
+                                            const Icon = STATUS_ICONS[item.status] ?? CircleDashed;
+                                            const tone = STATUS_TONES[item.status] ?? "neutral";
+                                            const iconClass = {
+                                                neutral: "text-zinc-400/70",
+                                                warning: "text-amber-500/80",
+                                                success: "text-emerald-500/80",
+                                                info: "text-blue-400/80",
+                                                danger: "text-rose-500/80",
+                                            }[tone];
+                                            return <Icon className={`h-3.5 w-3.5 shrink-0 ${iconClass}`} />;
+                                        })()}
+                                    </TableCell>
+                                )}
+
+                                {/* Action Date */}
+                                {!hiddenColumns.has("action_date") && (
+                                    <TableCell className="table-cell-meta">
+                                        {item.action_date ? (
+                                            <span className="text-[11.5px] font-medium text-foreground/66">
+                                                {format(new Date(item.action_date), "MMM d, yyyy")}
+                                            </span>
+                                        ) : null}
+                                    </TableCell>
+                                )}
+                            </StandardSelectableRow>
                         ))
                     )}
                 </TableBody>
             </Table>
-            </div>
+            </StandardTableShell>
 
             {/* Delete confirmation dialog */}
             <AlertDialog

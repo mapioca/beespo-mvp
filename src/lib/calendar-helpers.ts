@@ -18,6 +18,7 @@ import {
   getDay,
 } from "date-fns";
 import { RecurrenceType, RecurrenceConfig } from "@/types/database";
+import type { MeetingPlanType } from "@/types/database";
 
 // Calendar event source types
 export type EventSource = "announcement" | "meeting" | "task" | "external" | "event";
@@ -60,6 +61,9 @@ export interface CalendarMeeting {
   title: string;
   scheduled_date: string;
   status: "draft" | "scheduled" | "in_progress" | "completed" | "cancelled";
+  event_id?: string | null;
+  is_legacy?: boolean;
+  plan_type?: MeetingPlanType | null;
 }
 
 // Task type for calendar
@@ -76,15 +80,29 @@ export interface CalendarTask {
 export interface CalendarInternalEvent {
   id: string;
   title: string;
+  event_type?: "interview" | "meeting" | "activity";
   description: string | null;
   location: string | null;
   start_at: string;
   end_at: string;
   is_all_day: boolean;
+  date_tbd?: boolean;
+  time_tbd?: boolean;
+  duration_mode?: "minutes" | "tbd" | "all_day";
+  duration_minutes?: number | null;
   workspace_event_id: string | null;
   external_source_id: string | null;
   external_source_type: string | null;
   announcements?: Array<{ id: string; title: string; status: string }> | null;
+  meetings?: Array<{
+    id: string;
+    title: string;
+    status: string;
+    workspace_meeting_id?: string | null;
+    event_id?: string | null;
+    is_legacy?: boolean;
+    plan_type?: MeetingPlanType | null;
+  }> | null;
 }
 
 export function parseAllDayDate(dateString: string): Date {

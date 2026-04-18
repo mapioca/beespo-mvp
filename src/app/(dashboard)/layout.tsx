@@ -1,36 +1,29 @@
-import { createClient } from "@/lib/supabase/server";
-import { redirect } from "next/navigation";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { CommandPalette } from "@/components/command-palette";
-import { getProfile } from "@/lib/supabase/cached-queries";
 import { checkTrustedDevice, checkWorkspaceMfaRequired } from "@/lib/mfa";
 import { getUserNavigationItems } from "@/lib/navigation/user-navigation";
+import { getDashboardRequestContext } from "@/lib/dashboard/request-context";
+import { createClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
 
 export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = await createClient();
+  const [{ user, profile }, supabase] = await Promise.all([
+    getDashboardRequestContext(),
+    createClient(),
+  ]);
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/login");
-  }
-
-  // getProfile() is memoised with React cache() — if a child page also calls
-  // getProfile(user.id) during the same request, only one DB query fires.
-  const profile = await getProfile(user.id);
-
-  if (!profile?.workspace_id) {
-    redirect("/onboarding");
-  }
+  const initialNavigationItemsPromise = getUserNavigationItems({
+    userId: user.id,
+    workspaceId: profile.workspace_id,
+  });
+  const workspaceRequiresMfaPromise = checkWorkspaceMfaRequired(profile.workspace_id);
 
   // Workspace MFA enforcement
-  const workspaceRequiresMfa = await checkWorkspaceMfaRequired(profile.workspace_id);
+  const workspaceRequiresMfa = await workspaceRequiresMfaPromise;
   if (workspaceRequiresMfa) {
     const { data: factorsData } = await supabase.auth.mfa.listFactors();
     const hasVerifiedFactor = factorsData?.totp?.some(f => f.status === "verified");
@@ -51,16 +44,19 @@ export default async function DashboardLayout({
     }
   }
 
-  const initialNavigationItems = await getUserNavigationItems();
+  const initialNavigationItems = await initialNavigationItemsPromise;
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const workspaceName = (profile as any).workspaces?.name as string | undefined;
 
   return (
     <>
       <DashboardShell
-        workspaceName={profile?.workspaces?.name || "Workspace"}
         userName={profile?.full_name || ""}
         userEmail={user?.email || ""}
         userId={user.id}
         userRoleTitle={profile?.role_title || ""}
+        workspaceName={workspaceName}
         initialNavigationItems={initialNavigationItems}
       >
         {children}

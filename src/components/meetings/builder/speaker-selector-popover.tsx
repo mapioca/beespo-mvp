@@ -49,6 +49,7 @@ export function SpeakerSelectorPopover({
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [newName, setNewName] = useState("");
     const [newTopic, setNewTopic] = useState("");
+    const [newGender, setNewGender] = useState<"male" | "female" | null>(null);
 
     const loadSpeakers = useCallback(async () => {
         setIsLoading(true);
@@ -169,6 +170,7 @@ export function SpeakerSelectorPopover({
             const { data: newDir, error: dirError } = await (supabase.from("directory") as any)
                 .insert({
                     name: newName.trim(),
+                    gender: newGender,
                     workspace_id: profile.workspace_id,
                     created_by: user.id,
                 })
@@ -211,6 +213,7 @@ export function SpeakerSelectorPopover({
             setIsCreating(false);
             setNewName("");
             setNewTopic("");
+            setNewGender(null);
             setOpen(false);
         } else if (error) {
             toast.error("Failed to create speaker.", { description: error.message });
@@ -228,6 +231,7 @@ export function SpeakerSelectorPopover({
                     setIsCreating(false);
                     setNewName("");
                     setNewTopic("");
+                    setNewGender(null);
                     setSearch("");
                 }
             }}
@@ -283,6 +287,32 @@ export function SpeakerSelectorPopover({
                                     if (e.key === "Escape") setIsCreating(false);
                                 }}
                             />
+                            <div className="flex gap-1">
+                                <button
+                                    type="button"
+                                    onClick={() => setNewGender(newGender === "male" ? null : "male")}
+                                    className={cn(
+                                        "flex-1 rounded px-2 py-1 text-xs border transition-colors",
+                                        newGender === "male"
+                                            ? "bg-primary text-primary-foreground border-primary"
+                                            : "border-border/60 text-muted-foreground hover:border-border hover:text-foreground"
+                                    )}
+                                >
+                                    Male
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setNewGender(newGender === "female" ? null : "female")}
+                                    className={cn(
+                                        "flex-1 rounded px-2 py-1 text-xs border transition-colors",
+                                        newGender === "female"
+                                            ? "bg-primary text-primary-foreground border-primary"
+                                            : "border-border/60 text-muted-foreground hover:border-border hover:text-foreground"
+                                    )}
+                                >
+                                    Female
+                                </button>
+                            </div>
                             <div className="flex gap-2">
                                 <Button
                                     size="sm"

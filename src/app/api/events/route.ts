@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { createEventAndMeetingSchema } from '@/lib/validations/event-meeting';
 import { NextRequest, NextResponse } from 'next/server';
 
 // Helper: Normalize All-Day event times
@@ -53,6 +54,15 @@ export async function GET(request: NextRequest) {
                 id,
                 title,
                 status
+            ),
+            meetings!event_id (
+                id,
+                title,
+                status,
+                plan_type,
+                workspace_meeting_id,
+                event_id,
+                is_legacy
             )
         `)
         .eq('workspace_id', profile.workspace_id)
@@ -101,21 +111,90 @@ export async function POST(request: NextRequest) {
 
     // Parse request body
     const body = await request.json();
+    const parsed = createEventAndMeetingSchema.safeParse(body);
+    if (!parsed.success) {
+        return NextResponse.json({ error: 'Validation failed', details: parsed.error.issues }, { status: 400 });
+    }
     const {
         title,
+        event_type = "activity",
         description,
         location,
         start_at,
         end_at,
         is_all_day = false,
+        date_tbd = false,
+        time_tbd = false,
+        duration_mode = is_all_day ? "all_day" : "minutes",
+        duration_minutes = null,
         promote_to_announcement = false,
         external_source_id = null,
         external_source_type = null,
-    } = body;
+        meeting,
+    } = parsed.data;
 
-    // Validate required fields
-    if (!title || !start_at || !end_at) {
-        return NextResponse.json({ error: 'Title, start_at, and end_at are required' }, { status: 400 });
+    if (meeting) {
+        const { data: rpcData, error: rpcError } = await (supabase.rpc as unknown as (name: string, args: Record<string, unknown>) => Promise<{ data: { event_id: string; meeting_id: string } | null; error: { message: string } | null }>)(
+            'create_event_and_meeting',
+            {
+                p_event_title: title,
+                p_event_start_at: start_at,
+                p_event_end_at: end_at,
+                p_event_description: description ?? null,
+                p_event_location: location ?? null,
+                p_event_is_all_day: is_all_day,
+                p_meeting_title: meeting.title ?? null,
+                p_meeting_plan_type: meeting.plan_type ?? null,
+                p_template_id: meeting.template_id ?? null,
+                p_meeting_modality: meeting.modality ?? null,
+            }
+        );
+
+        if (rpcError || !rpcData) {
+            return NextResponse.json({ error: rpcError?.message ?? 'Failed to create linked event and meeting' }, { status: 500 });
+        }
+
+        const { error: metadataError } = await (supabase
+            .from('events') as ReturnType<typeof supabase.from>)
+            .update({
+                event_type,
+                date_tbd,
+                time_tbd,
+                duration_mode: is_all_day ? "all_day" : duration_mode,
+                duration_minutes: is_all_day ? null : duration_minutes,
+            })
+            .eq('id', rpcData.event_id);
+
+        if (metadataError) {
+            return NextResponse.json({ error: metadataError.message }, { status: 500 });
+        }
+
+        const { data: createdEvent, error: fetchError } = await (supabase
+            .from('events') as ReturnType<typeof supabase.from>)
+            .select(`
+                *,
+                meetings!event_id (
+                    id,
+                    title,
+                    status,
+                    plan_type,
+                    workspace_meeting_id,
+                    event_id,
+                    is_legacy
+                )
+            `)
+            .eq('id', rpcData.event_id)
+            .single();
+
+        if (fetchError) {
+            return NextResponse.json({ error: fetchError.message }, { status: 500 });
+        }
+
+        return NextResponse.json({
+            event: createdEvent,
+            meeting_id: rpcData.meeting_id,
+            announcement: null,
+        }, { status: 201 });
     }
 
     // Normalize times for All-Day events
@@ -127,11 +206,16 @@ export async function POST(request: NextRequest) {
         .insert({
             workspace_id: profile.workspace_id,
             title,
+            event_type,
             description: description || null,
             location: location || null,
             start_at: normalizedTimes.start_at,
             end_at: normalizedTimes.end_at,
             is_all_day,
+            date_tbd,
+            time_tbd,
+            duration_mode: is_all_day ? "all_day" : duration_mode,
+            duration_minutes: is_all_day ? null : duration_minutes,
             external_source_id: external_source_id || null,
             external_source_type: external_source_type || null,
             created_by: user.id,

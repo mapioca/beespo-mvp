@@ -46,6 +46,7 @@ import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription } from 
 import { List, Loader2, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { MeetingContextBar } from "./meeting-context-bar";
+import { MeetingPlanTopBar } from "./meeting-plan-top-bar";
 import {
     Dialog,
     DialogContent,
@@ -75,19 +76,34 @@ type MeetingFormValues = z.infer<typeof meetingFormSchema>;
 interface MeetingBuilderProps {
     initialTemplateId?: string | null;
     initialMeetingId?: string;
+    initialEntryType?: "agenda" | "program" | "meeting";
+    initialMode?: BuilderMode;
 }
 
 type AutosaveStatus = "idle" | "saving" | "saved" | "error";
 type MeetingStatus = "draft" | "scheduled" | "in_progress" | "completed" | "cancelled";
+type PlanType = "agenda" | "program" | null;
 
-export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingBuilderProps) {
+export function MeetingBuilder({
+    initialTemplateId,
+    initialMeetingId,
+    initialEntryType = "agenda",
+    initialMode,
+}: MeetingBuilderProps) {
     const router = useRouter();
+    const defaultTitleByEntry = {
+        agenda: "Untitled Agenda",
+        program: "Untitled Program",
+        meeting: "Untitled Meeting",
+    } as const;
+    const defaultBuilderMode: BuilderMode =
+        initialMode ?? (initialMeetingId ? "print-preview" : initialEntryType === "program" ? "program" : "planning");
 
     // Form state
     const form = useForm<MeetingFormValues>({
         resolver: zodResolver(meetingFormSchema),
         defaultValues: {
-            title: "Untitled Meeting Agenda",
+            title: defaultTitleByEntry[initialEntryType],
             date: new Date(),
             time: "07:00",
             templateId: initialTemplateId || null,
@@ -137,7 +153,7 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
     const [isCreating, setIsCreating] = useState(false);
 
     // Builder mode state — default to print-preview when editing existing, planning when creating new
-    const [builderMode, setBuilderMode] = useState<BuilderMode>(initialMeetingId ? "print-preview" : "planning");
+    const [builderMode, setBuilderMode] = useState<BuilderMode>(defaultBuilderMode);
     const [programPreviewDevice, setProgramPreviewDevice] = useState<"phone" | "tablet" | "desktop">("phone");
     const [workspaceName, setWorkspaceName] = useState("");
     const [workspaceSlug, setWorkspaceSlug] = useState<string | null>(null);
@@ -181,6 +197,14 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
     const [lastAutosaveAt, setLastAutosaveAt] = useState<Date | null>(null);
     const [isMeetingLoaded, setIsMeetingLoaded] = useState(!initialMeetingId);
     const [meetingStatus, setMeetingStatus] = useState<MeetingStatus | null>(null);
+    const [planType, setPlanType] = useState<PlanType>(null);
+    const [linkedEvent, setLinkedEvent] = useState<{
+        id: string;
+        title: string;
+        start_at: string;
+        location: string | null;
+        workspace_event_id?: string | null;
+    } | null>(null);
     const draftHashRef = useRef<string>("");
     const serverHashRef = useRef<string>("");
 
@@ -199,8 +223,8 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
         () =>
             initialMeetingId
                 ? `beespo:meeting:draft:${initialMeetingId}`
-                : `beespo:meeting:draft:new:${initialTemplateId || "none"}`,
-        [initialMeetingId, initialTemplateId]
+                : `beespo:meeting:draft:new:${initialEntryType}:${initialTemplateId || "none"}`,
+        [initialMeetingId, initialEntryType, initialTemplateId]
     );
 
     // DnD sensors
@@ -349,7 +373,16 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
             // Load meeting details
             const { data: meetingData, error: meetingError } = await supabase
                 .from("meetings")
-                .select("*")
+                .select(`
+                    *,
+                    event:events!event_id (
+                        id,
+                        title,
+                        start_at,
+                        location,
+                        workspace_event_id
+                    )
+                `)
                 .eq("id", initialMeetingId)
                 .single();
 
@@ -363,6 +396,18 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
             }
 
             setMeetingStatus((meeting.status as MeetingStatus) || "scheduled");
+            setPlanType((meeting.plan_type as PlanType) ?? null);
+            setLinkedEvent(
+                meeting.event
+                    ? {
+                        id: meeting.event.id,
+                        title: meeting.event.title,
+                        start_at: meeting.event.start_at,
+                        location: meeting.event.location ?? null,
+                        workspace_event_id: meeting.event.workspace_event_id ?? null,
+                    }
+                    : null
+            );
             if (meeting.status === "draft") {
                 setBuilderMode("planning");
             }
@@ -838,7 +883,7 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
 
             const { data: linkedAnnouncements } = await (supabase
                 .from("announcement_templates") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
-                .select("announcement_id, announcements(id, title, content, status, priority)")
+                .select("announcement_id, announcements(id, title, content, status, priority, display_start, display_until)")
                 .eq("template_id", templateId);
 
             // Build canvas items
@@ -2210,11 +2255,48 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                                 canEdit={canEdit}
                                 lastAutosaveAt={lastAutosaveAt}
                                 autosaveStatus={autosaveStatus}
+                                planType={planType}
+                                linkedEvent={linkedEvent}
+                                meetingStatus={meetingStatus}
+                                onMeetingMetaChange={(updates) => {
+                                    if (updates.planType !== undefined) {
+                                        setPlanType(updates.planType);
+                                    }
+                                    if (updates.linkedEvent !== undefined) {
+                                        setLinkedEvent(updates.linkedEvent);
+                                    }
+                                }}
                             />
                         </div>
 
                         {builderMode === "planning" && (
                             <>
+                                {/* Unified plan top bar (inline essentials + role popover) */}
+                                <MeetingPlanTopBar
+                                    title={title}
+                                    onTitleChange={canEdit ? setTitle : () => {}}
+                                    date={date ?? null}
+                                    onDateChange={(d) => canEdit && form.setValue("date", d, { shouldValidate: true })}
+                                    time={time ?? ""}
+                                    onTimeChange={(t) => canEdit && form.setValue("time", t, { shouldValidate: true })}
+                                    presiding={presidingValue ?? ""}
+                                    onPresidingChange={(v) => canEdit && form.setValue("presiding", v, { shouldValidate: true })}
+                                    conducting={conductingValue ?? ""}
+                                    onConductingChange={(v) => canEdit && form.setValue("conducting", v, { shouldValidate: true })}
+                                    chorister={choristerValue ?? ""}
+                                    onChoristerChange={(v) => canEdit && form.setValue("chorister", v, { shouldValidate: true })}
+                                    organist={pianistOrganistValue ?? ""}
+                                    onOrganistChange={(v) => canEdit && form.setValue("pianistOrganist", v, { shouldValidate: true })}
+                                    location={linkedEvent?.location ?? null}
+                                    templates={templates}
+                                    templateId={selectedTemplateId === "none" ? null : selectedTemplateId}
+                                    onTemplateChange={(next) =>
+                                        canEdit && form.setValue("templateId", next, { shouldValidate: true })
+                                    }
+                                    canvasItemCount={canvasItems.length}
+                                    canEdit={canEdit}
+                                />
+
                                 {/* Mobile sheet toggle (hidden on lg+) — toolbox & properties */}
                                 <div className="lg:hidden flex items-center justify-between px-4 py-2 border-b bg-background shrink-0">
                                     <Sheet>
@@ -2262,23 +2344,8 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                                     </Sheet>
                                 </div>
 
-                                {/* 3-Column Workspace */}
+                                {/* 2-Column Workspace (canvas left, toolbox right) */}
                                 <div className="flex-1 flex overflow-hidden">
-                                    {/* Left Pane - Library */}
-                                    <div className="hidden lg:block w-64 h-full overflow-hidden shrink-0">
-                                        <ToolboxPane
-                                            onAddItem={canEdit ? handleAddCanvasItem : () => {}}
-                                            onItemsLoaded={setToolboxItems}
-                                            pinnedIds={pinnedToolboxIds}
-                                            recentIds={recentToolboxIds}
-                                            onTogglePin={togglePinnedToolboxItem}
-                                            outlineItems={canvasItems}
-                                            selectedItemId={selectedItemId}
-                                            onSelectItem={setSelectedItemId}
-                                            onDuplicateItem={canEdit ? handleDuplicateItem : undefined}
-                                        />
-                                    </div>
-
                                     {/* Center Pane - Canvas */}
                                     <div className="flex-1 h-full overflow-hidden min-w-0">
                                         <AgendaCanvas
@@ -2317,13 +2384,19 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                                         />
                                     </div>
 
-                                    {/* Right Pane - Properties */}
-                                    <div className="hidden lg:block w-[260px] h-full overflow-hidden shrink-0">
-                                        <PropertiesPane
-                                            templates={templates}
-                                            meetingNotes={meetingNotes}
-                                            onUpdateMeetingNotes={setMeetingNotes}
-                                            readOnly={!canEdit}
+                                    {/* Right Pane - Toolbox (Library) */}
+                                    <div className="hidden lg:block w-80 h-full overflow-hidden shrink-0 border-l border-border/60">
+                                        <ToolboxPane
+                                            onAddItem={canEdit ? handleAddCanvasItem : () => {}}
+                                            onItemsLoaded={setToolboxItems}
+                                            pinnedIds={pinnedToolboxIds}
+                                            recentIds={recentToolboxIds}
+                                            onTogglePin={togglePinnedToolboxItem}
+                                            outlineItems={canvasItems}
+                                            selectedItemId={selectedItemId}
+                                            onSelectItem={setSelectedItemId}
+                                            onDuplicateItem={canEdit ? handleDuplicateItem : undefined}
+                                            planType={initialEntryType === "program" ? "program" : "agenda"}
                                         />
                                     </div>
                                 </div>

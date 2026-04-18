@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useMemo, useCallback, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { addMonths, subMonths, addWeeks, subWeeks, addDays, subDays, parseISO } from "date-fns";
 import {
   CalendarEvent,
@@ -16,7 +18,6 @@ import {
   parseAllDayDate,
 } from "@/lib/calendar-helpers";
 import { CalendarToolbar } from "./calendar-toolbar";
-import { CalendarSidebar } from "./calendar-sidebar";
 import { MonthView } from "./views/month-view";
 import { WeekView } from "./views/week-view";
 import { DayView } from "./views/day-view";
@@ -39,6 +40,8 @@ export function CalendarClient({
   initialEvents = [],
   userRole,
 }: CalendarClientProps) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [view, setView] = useState<CalendarViewType>("month");
   const [visibility, setVisibility] = useState<CalendarVisibility>({
@@ -49,7 +52,6 @@ export function CalendarClient({
     external: true,
     externalSubscriptions: {},
   });
-  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
@@ -162,11 +164,16 @@ export function CalendarClient({
         .select(`
           id,
           title,
+          event_type,
           description,
           location,
           start_at,
           end_at,
           is_all_day,
+          date_tbd,
+          time_tbd,
+          duration_mode,
+          duration_minutes,
           workspace_event_id,
           external_source_id,
           external_source_type,
@@ -188,6 +195,15 @@ export function CalendarClient({
 
   // Check if user can create events
   const canCreateEvents = userRole === "admin" || userRole === "leader";
+
+  useEffect(() => {
+    if (!canCreateEvents) return;
+    if (searchParams.get("create") !== "event") return;
+
+    setSelectedDate(new Date());
+    setImportingEvent(null);
+    setCreateDialogOpen(true);
+  }, [canCreateEvents, searchParams]);
 
   // Get visible date range
   const dateRange = useMemo(
@@ -364,11 +380,16 @@ export function CalendarClient({
         setSelectedInternalEvent({
           id: matchingEvent.id,
           title: matchingEvent.title,
+          event_type: matchingEvent.event_type,
           description: matchingEvent.description,
           location: matchingEvent.location,
           start_at: matchingEvent.start_at,
           end_at: matchingEvent.end_at,
           is_all_day: matchingEvent.is_all_day,
+          date_tbd: matchingEvent.date_tbd,
+          time_tbd: matchingEvent.time_tbd,
+          duration_mode: matchingEvent.duration_mode,
+          duration_minutes: matchingEvent.duration_minutes,
           workspace_event_id: matchingEvent.workspace_event_id,
           external_source_id: matchingEvent.external_source_id,
           external_source_type: matchingEvent.external_source_type,
@@ -431,7 +452,6 @@ export function CalendarClient({
   const handleEventCreated = useCallback(
     (newEvent: CalendarEventData) => {
       setInternalEvents((prev) => [...prev, newEvent]);
-      setCreateDialogOpen(false);
       setImportingEvent(null);
     },
     []
@@ -452,11 +472,16 @@ export function CalendarClient({
           ? {
             ...event,
             title: updatedEvent.title,
+            event_type: updatedEvent.event_type ?? event.event_type,
             description: updatedEvent.description,
             location: updatedEvent.location,
             start_at: updatedEvent.start_at,
             end_at: updatedEvent.end_at,
             is_all_day: updatedEvent.is_all_day,
+            date_tbd: updatedEvent.date_tbd ?? event.date_tbd,
+            time_tbd: updatedEvent.time_tbd ?? event.time_tbd,
+            duration_mode: updatedEvent.duration_mode ?? event.duration_mode,
+            duration_minutes: updatedEvent.duration_minutes ?? event.duration_minutes,
             workspace_event_id: updatedEvent.workspace_event_id,
             external_source_id: updatedEvent.external_source_id,
             external_source_type: updatedEvent.external_source_type,
@@ -496,11 +521,16 @@ export function CalendarClient({
   };
 
   return (
-    <div className="flex flex-col lg:flex-row h-[calc(100vh-4rem)]">
-      {/* Sidebar */}
-      <CalendarSidebar
-        isOpen={sidebarOpen}
-        onToggle={() => setSidebarOpen(!sidebarOpen)}
+    <div className="flex flex-col h-[calc(100vh-4rem)]">
+      <CalendarToolbar
+        currentDate={currentDate}
+        view={view}
+        onViewChange={setView}
+        onToday={goToToday}
+        onPrevious={goToPrevious}
+        onNext={goToNext}
+        canCreateEvents={canCreateEvents}
+        onCreateEvent={() => router.push("/events/new")}
         visibility={visibility}
         onToggleVisibility={toggleVisibility}
         onToggleExternalSubscription={toggleExternalSubscription}
@@ -508,26 +538,7 @@ export function CalendarClient({
         onSyncComplete={fetchExternalEvents}
       />
 
-      {/* Main content */}
-      <main className="flex-1 flex flex-col overflow-hidden">
-        <CalendarToolbar
-          currentDate={currentDate}
-          view={view}
-          onViewChange={setView}
-          onToday={goToToday}
-          onPrevious={goToPrevious}
-          onNext={goToNext}
-          onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
-          canCreateEvents={canCreateEvents}
-          onCreateEvent={() => {
-            setSelectedDate(new Date());
-            setImportingEvent(null);
-            setCreateDialogOpen(true);
-          }}
-        />
-
-        <div className="flex-1 overflow-auto p-4">{renderView()}</div>
-      </main>
+      <div className="flex-1 overflow-auto p-4">{renderView()}</div>
 
       {/* Create event dialog */}
       {canCreateEvents && (

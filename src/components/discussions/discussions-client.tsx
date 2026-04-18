@@ -2,10 +2,9 @@
 
 import { useState, useMemo, useCallback, useTransition, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import Link from "next/link"
 import { createPortal } from "react-dom"
 import { Button } from "@/components/ui/button"
-import { Plus, X, Trash2, CalendarDays, MessageSquare } from "lucide-react"
+import { Check, Columns3, Plus, SlidersHorizontal, X, MessageSquare } from "lucide-react"
 import { Breadcrumbs } from "@/components/dashboard/breadcrumbs"
 import {
     AlertDialog,
@@ -17,6 +16,12 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog"
 import { createClient } from "@/lib/supabase/client"
 import { toast } from "@/lib/toast"
 import {
@@ -26,6 +31,7 @@ import {
     DiscussionPriority,
     DiscussionCategory,
 } from "./discussions-table"
+import { DiscussionForm, DiscussionFormData } from "./discussion-form"
 import { CreateViewDialog } from "@/components/common/create-view-dialog"
 import {
     DiscussionView,
@@ -35,6 +41,18 @@ import {
     TableView,
 } from "@/lib/table-views"
 import { cn } from "@/lib/utils"
+import {
+    StandardPopoverMenu,
+    StandardPopoverMenuContent,
+    StandardPopoverMenuItem,
+    StandardPopoverMenuSub,
+    StandardPopoverMenuSubContent,
+    StandardPopoverMenuSubTrigger,
+    StandardPopoverMenuTrigger,
+} from "@/components/ui/standard-popover-menu"
+import { ToolbarIconButton } from "@/components/ui/toolbar-icon-button"
+import { BulkSelectionBar } from "@/components/ui/bulk-selection-bar"
+import { TopbarSearchAction } from "@/components/ui/topbar-search-action"
 
 // ── Filter sections config ────────────────────────────────────────────────────
 
@@ -78,6 +96,32 @@ const DISCUSSION_FILTER_SECTIONS = [
         ],
     },
 ]
+
+const STATUS_FILTER_OPTIONS = [
+    { value: "new", label: "New" },
+    { value: "active", label: "Active" },
+    { value: "decision_required", label: "Decision Required" },
+    { value: "monitoring", label: "Monitoring" },
+    { value: "resolved", label: "Resolved" },
+    { value: "deferred", label: "Deferred" },
+] as const
+
+const PRIORITY_FILTER_OPTIONS = [
+    { value: "high", label: "High" },
+    { value: "medium", label: "Medium" },
+    { value: "low", label: "Low" },
+] as const
+
+const CATEGORY_FILTER_OPTIONS = [
+    { value: "general", label: "General" },
+    { value: "budget", label: "Budget" },
+    { value: "personnel", label: "Personnel" },
+    { value: "programs", label: "Programs" },
+    { value: "facilities", label: "Facilities" },
+    { value: "welfare", label: "Welfare" },
+    { value: "youth", label: "Youth" },
+    { value: "activities", label: "Activities" },
+] as const
 
 // ── Props ─────────────────────────────────────────────────────────────────────
 
@@ -133,6 +177,11 @@ export function DiscussionsClient({
     // Bulk delete
     const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false)
     const [isBulkDeleting, setIsBulkDeleting] = useState(false)
+    const [filtersOpen, setFiltersOpen] = useState(false)
+    const [displayOptionsOpen, setDisplayOptionsOpen] = useState(false)
+    const [createFilterDialogOpen, setCreateFilterDialogOpen] = useState(false)
+    const [newDiscussionModalOpen, setNewDiscussionModalOpen] = useState(false)
+    const [isCreating, setIsCreating] = useState(false)
 
     useEffect(() => {
         setMounted(true)
@@ -264,10 +313,18 @@ export function DiscussionsClient({
         )
     }, [])
 
-    const handleHideColumn = useCallback((column: string) => {
+    const handleToggleColumnVisibility = useCallback((column: string) => {
         setHiddenColumns((prev) => {
             const next = new Set(prev)
-            next.add(column)
+            const visibleCount = ["title", "category", "status", "priority", "due_date"].filter(
+                (c) => !next.has(c)
+            ).length
+            const isVisible = !next.has(column)
+
+            if (isVisible && visibleCount <= 1) return prev
+
+            if (isVisible) next.add(column)
+            else next.delete(column)
             return next
         })
     }, [])
@@ -327,7 +384,67 @@ export function DiscussionsClient({
     }
 
     const handleViewDiscussion = (discussion: Discussion) => {
-        router.push(`/meetings/discussions/${discussion.id}`)
+        router.push(`/meetings/agendas/discussions/${discussion.id}`)
+    }
+
+    const handleCreateDiscussion = async (formData: DiscussionFormData) => {
+        setIsCreating(true)
+        const supabase = createClient()
+
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) {
+            toast.error("Not authenticated. Please log in again.")
+            setIsCreating(false)
+            return
+        }
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: profile } = await (supabase.from("profiles") as any)
+            .select("workspace_id, role")
+            .eq("id", user.id)
+            .single()
+
+        if (!profile || !["leader", "admin"].includes(profile.role)) {
+            toast.error("Only leaders and admins can create discussions.")
+            setIsCreating(false)
+            return
+        }
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: newDiscussion, error } = await (supabase.from("discussions") as any)
+            .insert({
+                title: formData.title,
+                description: formData.description,
+                priority: formData.priority,
+                category: formData.category,
+                status: "new",
+                workspace_id: profile.workspace_id,
+                created_by: user.id,
+            })
+            .select("id")
+            .single()
+
+        if (error || !newDiscussion) {
+            toast.error(error?.message || "Failed to create discussion.")
+            setIsCreating(false)
+            return
+        }
+
+        if (formData.templateIds.length > 0) {
+            for (const templateId of formData.templateIds) {
+                await (supabase
+                    .from("discussion_templates") as ReturnType<typeof supabase.from>)
+                    .insert({
+                        discussion_id: newDiscussion.id,
+                        template_id: templateId,
+                    })
+            }
+        }
+
+        toast.success("Discussion topic created successfully!")
+        setIsCreating(false)
+        setNewDiscussionModalOpen(false)
+        router.refresh()
     }
 
     function handleViewCreated(view: TableView) {
@@ -385,14 +502,38 @@ export function DiscussionsClient({
             {/* Breadcrumb */}
             <Breadcrumbs
                 items={[
-                    { label: "Meetings", href: "/meetings/agendas", icon: <CalendarDays className="h-4 w-4 stroke-[1.6]" /> },
                     { label: "Discussions", icon: <MessageSquare className="h-4 w-4 stroke-[1.6]" /> },
                 ]}
                 className="bg-transparent ring-0 border-b border-border/60 rounded-none px-4 py-1.5"
+                action={
+                    <div className="hidden items-center gap-1 sm:flex">
+                        <TopbarSearchAction
+                            value={search}
+                            onChange={setSearch}
+                            placeholder="Search discussions..."
+                            items={filteredDiscussions.slice(0, 8).map((discussion) => ({
+                                id: discussion.id,
+                                label: discussion.title,
+                                actionLabel: "Open",
+                            }))}
+                            onSelect={(discussionId) => router.push(`/meetings/agendas/discussions/${discussionId}`)}
+                            emptyText="No matching discussions."
+                        />
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setNewDiscussionModalOpen(true)}
+                            className="h-7 gap-1 rounded-full px-2.5 text-[length:var(--agenda-control-font-size)] text-nav transition-colors hover:bg-[hsl(var(--agenda-interactive-hover))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--agenda-interactive-focus-ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                        >
+                            <Plus className="h-3.5 w-3.5 stroke-[1.6]" />
+                            New discussion
+                        </Button>
+                    </div>
+                }
             />
 
             {/* Action Bar + View Tabs */}
-            <div className="flex items-center justify-between w-full px-6 pt-3.5 pb-3.5 shrink-0 flex-wrap gap-3 border-b border-border/45">
+            <div className="flex items-center justify-between w-full px-6 pt-3.5 pb-3.5 shrink-0 flex-wrap gap-3">
                 <div className="flex items-center gap-2 flex-wrap min-h-8">
                     {/* Custom view tabs */}
                     {views.map((view) => (
@@ -436,20 +577,213 @@ export function DiscussionsClient({
                             Clear view
                         </button>
                     )}
-
-                    <CreateViewDialog
-                        filterSections={DISCUSSION_FILTER_SECTIONS}
-                        onSave={handleSaveView}
-                        onCreated={handleViewCreated}
-                    />
                 </div>
 
-                <Button asChild size="sm" className="h-8 rounded-full px-3.5 text-[11px] font-semibold shadow-sm">
-                    <Link href="/meetings/discussions/new" className="flex items-center gap-1.5">
-                        <Plus className="h-3.5 w-3.5 stroke-[1.6]" />
-                        New
-                    </Link>
-                </Button>
+                <div className="flex items-center gap-2">
+                    <StandardPopoverMenu open={filtersOpen} onOpenChange={setFiltersOpen}>
+                        <StandardPopoverMenuTrigger asChild>
+                            <ToolbarIconButton
+                                title="Filters"
+                                aria-label="Open filters"
+                            >
+                                <SlidersHorizontal className="h-3.5 w-3.5" />
+                            </ToolbarIconButton>
+                        </StandardPopoverMenuTrigger>
+                        <StandardPopoverMenuContent align="start" className="w-64">
+                            <StandardPopoverMenuSub>
+                                <StandardPopoverMenuSubTrigger
+                                    active={selectedStatuses.length > 0}
+                                    disabled={!!activeView}
+                                >
+                                    Status
+                                </StandardPopoverMenuSubTrigger>
+                                <StandardPopoverMenuSubContent>
+                                    {STATUS_FILTER_OPTIONS.map((opt) => {
+                                        const selected = selectedStatuses.includes(opt.value as DiscussionStatus)
+                                        return (
+                                            <StandardPopoverMenuItem
+                                                key={opt.value}
+                                                active={selected}
+                                                onSelect={() => handleStatusToggle(opt.value)}
+                                            >
+                                                <span className="flex items-center gap-2">
+                                                    <span className="inline-flex h-4 w-4 items-center justify-center rounded-sm border border-border/60">
+                                                        {selected ? <Check className="h-3 w-3" /> : null}
+                                                    </span>
+                                                    {opt.label}
+                                                </span>
+                                                <span className="ml-auto text-[length:var(--table-header-font-size)] text-muted-foreground">
+                                                    {statusCounts?.[opt.value] || 0}
+                                                </span>
+                                            </StandardPopoverMenuItem>
+                                        )
+                                    })}
+                                </StandardPopoverMenuSubContent>
+                            </StandardPopoverMenuSub>
+
+                            <StandardPopoverMenuSub>
+                                <StandardPopoverMenuSubTrigger
+                                    active={selectedPriorities.length > 0}
+                                    disabled={!!activeView}
+                                >
+                                    Priority
+                                </StandardPopoverMenuSubTrigger>
+                                <StandardPopoverMenuSubContent>
+                                    {PRIORITY_FILTER_OPTIONS.map((opt) => {
+                                        const selected = selectedPriorities.includes(opt.value as DiscussionPriority)
+                                        return (
+                                            <StandardPopoverMenuItem
+                                                key={opt.value}
+                                                active={selected}
+                                                onSelect={() => handlePriorityToggle(opt.value)}
+                                            >
+                                                <span className="flex items-center gap-2">
+                                                    <span className="inline-flex h-4 w-4 items-center justify-center rounded-sm border border-border/60">
+                                                        {selected ? <Check className="h-3 w-3" /> : null}
+                                                    </span>
+                                                    {opt.label}
+                                                </span>
+                                                <span className="ml-auto text-[length:var(--table-header-font-size)] text-muted-foreground">
+                                                    {priorityCounts?.[opt.value] || 0}
+                                                </span>
+                                            </StandardPopoverMenuItem>
+                                        )
+                                    })}
+                                </StandardPopoverMenuSubContent>
+                            </StandardPopoverMenuSub>
+
+                            <StandardPopoverMenuSub>
+                                <StandardPopoverMenuSubTrigger
+                                    active={selectedCategories.length > 0}
+                                    disabled={!!activeView}
+                                >
+                                    Category
+                                </StandardPopoverMenuSubTrigger>
+                                <StandardPopoverMenuSubContent>
+                                    {CATEGORY_FILTER_OPTIONS.map((opt) => {
+                                        const selected = selectedCategories.includes(opt.value as DiscussionCategory)
+                                        return (
+                                            <StandardPopoverMenuItem
+                                                key={opt.value}
+                                                active={selected}
+                                                onSelect={() => handleCategoryToggle(opt.value)}
+                                            >
+                                                <span className="flex items-center gap-2">
+                                                    <span className="inline-flex h-4 w-4 items-center justify-center rounded-sm border border-border/60">
+                                                        {selected ? <Check className="h-3 w-3" /> : null}
+                                                    </span>
+                                                    {opt.label}
+                                                </span>
+                                                <span className="ml-auto text-[length:var(--table-header-font-size)] text-muted-foreground">
+                                                    {categoryCounts?.[opt.value] || 0}
+                                                </span>
+                                            </StandardPopoverMenuItem>
+                                        )
+                                    })}
+                                </StandardPopoverMenuSubContent>
+                            </StandardPopoverMenuSub>
+
+                            {(selectedStatuses.length > 0 || selectedPriorities.length > 0 || selectedCategories.length > 0) && !activeView && (
+                                <StandardPopoverMenuItem
+                                    onSelect={() => {
+                                        setSelectedStatuses([])
+                                        setSelectedPriorities([])
+                                        setSelectedCategories([])
+                                    }}
+                                    className="text-muted-foreground"
+                                >
+                                    Clear filters
+                                </StandardPopoverMenuItem>
+                            )}
+
+                            <div className="my-1 h-px bg-[hsl(var(--menu-separator))]" />
+
+                            <StandardPopoverMenuSub>
+                                <StandardPopoverMenuSubTrigger active={!!activeView}>
+                                    Advanced filters
+                                </StandardPopoverMenuSubTrigger>
+                                <StandardPopoverMenuSubContent className="w-64">
+                                    {views.length === 0 ? (
+                                        <p className="px-2 py-1.5 text-xs text-muted-foreground">
+                                            No saved filters yet.
+                                        </p>
+                                    ) : (
+                                        views.map((view) => (
+                                            <StandardPopoverMenuItem
+                                                key={view.id}
+                                                active={activeViewId === view.id}
+                                                onSelect={() => {
+                                                    setActiveViewId(view.id)
+                                                    setFiltersOpen(false)
+                                                }}
+                                            >
+                                                <span className="truncate">{view.name}</span>
+                                            </StandardPopoverMenuItem>
+                                        ))
+                                    )}
+
+                                    <div className="my-1 h-px bg-[hsl(var(--menu-separator))]" />
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setFiltersOpen(false)
+                                            setCreateFilterDialogOpen(true)
+                                        }}
+                                        className="flex w-full items-center justify-start gap-2 rounded-md px-2.5 py-1.5 text-[length:var(--menu-item-font-size)] text-[hsl(var(--menu-text))] hover:bg-[hsl(var(--menu-hover))]"
+                                    >
+                                        <Plus className="h-3.5 w-3.5" />
+                                Create new filter
+                                    </button>
+                                </StandardPopoverMenuSubContent>
+                            </StandardPopoverMenuSub>
+                        </StandardPopoverMenuContent>
+                    </StandardPopoverMenu>
+
+                    <StandardPopoverMenu open={displayOptionsOpen} onOpenChange={setDisplayOptionsOpen}>
+                        <StandardPopoverMenuTrigger asChild>
+                            <ToolbarIconButton
+                                title="Display options"
+                                aria-label="Display options"
+                            >
+                                <Columns3 className="h-3.5 w-3.5" />
+                            </ToolbarIconButton>
+                        </StandardPopoverMenuTrigger>
+                        <StandardPopoverMenuContent align="start" className="w-56">
+                            {[
+                                { key: "title", label: "Title" },
+                                { key: "category", label: "Category" },
+                                { key: "status", label: "Status" },
+                                { key: "priority", label: "Priority" },
+                                { key: "due_date", label: "Due Date" },
+                            ].map((column) => {
+                                const visible = !hiddenColumns.has(column.key)
+                                return (
+                                    <StandardPopoverMenuItem
+                                        key={column.key}
+                                        onSelect={() => handleToggleColumnVisibility(column.key)}
+                                        className="gap-2"
+                                    >
+                                        <span className="inline-flex h-4 w-4 items-center justify-center rounded-sm border border-border/60">
+                                            {visible ? <Check className="h-3 w-3" /> : null}
+                                        </span>
+                                        <span>{column.label}</span>
+                                    </StandardPopoverMenuItem>
+                                )
+                            })}
+                            {hiddenColumns.size > 0 && (
+                                <>
+                                    <div className="my-1 h-px bg-[hsl(var(--menu-separator))]" />
+                                    <StandardPopoverMenuItem
+                                        onSelect={() => setHiddenColumns(new Set())}
+                                        className="text-muted-foreground"
+                                    >
+                                        Show all columns
+                                    </StandardPopoverMenuItem>
+                                </>
+                            )}
+                        </StandardPopoverMenuContent>
+                    </StandardPopoverMenu>
+                </div>
             </div>
 
             {/* View filter summary bar */}
@@ -543,19 +877,7 @@ export function DiscussionsClient({
                     discussions={filteredDiscussions}
                     sortConfig={sortConfig}
                     onSort={handleSort}
-                    searchValue={search}
-                    onSearchChange={setSearch}
-                    selectedStatuses={activeView?.filters.statuses as DiscussionStatus[] ?? selectedStatuses}
-                    statusCounts={statusCounts}
-                    onStatusToggle={activeView ? undefined : handleStatusToggle}
-                    selectedPriorities={activeView?.filters.priorities as DiscussionPriority[] ?? selectedPriorities}
-                    priorityCounts={priorityCounts}
-                    onPriorityToggle={activeView ? undefined : handlePriorityToggle}
-                    selectedCategories={activeView?.filters.categories as DiscussionCategory[] ?? selectedCategories}
-                    categoryCounts={categoryCounts}
-                    onCategoryToggle={activeView ? undefined : handleCategoryToggle}
                     hiddenColumns={hiddenColumns}
-                    onHideColumn={handleHideColumn}
                     selectedRows={selectedRows}
                     onToggleRow={handleToggleRow}
                     onToggleAllRows={handleToggleAllRows}
@@ -563,6 +885,23 @@ export function DiscussionsClient({
                     onDelete={handleDelete}
                 />
             </div>
+
+            {/* New Discussion Modal */}
+            <Dialog open={newDiscussionModalOpen} onOpenChange={setNewDiscussionModalOpen}>
+                <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden p-0 gap-0">
+                    <DialogHeader className="px-5 py-4 space-y-3">
+                        <DialogTitle>New Discussion</DialogTitle>
+                        <p className="text-xs text-muted-foreground">
+                            Add a topic for ongoing discussion and decision tracking.
+                        </p>
+                    </DialogHeader>
+                    <DiscussionForm
+                        onSubmit={handleCreateDiscussion}
+                        isLoading={isCreating}
+                        onCancel={() => setNewDiscussionModalOpen(false)}
+                    />
+                </DialogContent>
+            </Dialog>
 
             {/* Bulk delete confirmation */}
             <AlertDialog open={showBulkDeleteDialog} onOpenChange={setShowBulkDeleteDialog}>
@@ -588,6 +927,15 @@ export function DiscussionsClient({
                 </AlertDialogContent>
             </AlertDialog>
 
+            <CreateViewDialog
+                filterSections={DISCUSSION_FILTER_SECTIONS}
+                onSave={handleSaveView}
+                onCreated={handleViewCreated}
+                open={createFilterDialogOpen}
+                onOpenChange={setCreateFilterDialogOpen}
+                hideTrigger
+            />
+
             {/* Delete view confirmation */}
             <AlertDialog open={!!deletingViewId} onOpenChange={(o) => { if (!o) setDeletingViewId(null) }}>
                 <AlertDialogContent>
@@ -612,25 +960,12 @@ export function DiscussionsClient({
             {/* Floating bulk selection pill */}
             {mounted && selectedRows.size > 0 && createPortal(
                 <div className="fixed bottom-6 left-1/2 z-[95] flex -translate-x-1/2 pointer-events-none w-[90vw] sm:w-auto justify-center">
-                    <div className="pointer-events-auto inline-flex items-center gap-2 rounded-full border border-border/80 bg-background/96 px-2.5 py-2 text-foreground shadow-[0_10px_30px_rgba(15,23,42,0.12)] backdrop-blur-sm">
-                        <span className="inline-flex items-center rounded-full border border-border/70 bg-muted/55 px-2.5 py-1 text-[11px] font-semibold tabular-nums text-foreground/85">
-                            {selectedRows.size} selected
-                        </span>
-                        <span className="h-4 w-px bg-border/70" aria-hidden />
-                        <button
-                            onClick={() => setSelectedRows(new Set())}
-                            className="rounded-full px-2.5 py-1 text-[11px] font-medium text-foreground/70 hover:text-foreground hover:bg-muted/55 transition-colors"
-                        >
-                            Deselect
-                        </button>
-                        <button
-                            onClick={() => setShowBulkDeleteDialog(true)}
-                            className="inline-flex items-center gap-1.5 rounded-full border border-rose-200 bg-rose-50/70 px-2.5 py-1 text-[11px] font-semibold text-rose-700 hover:bg-rose-100/75 transition-colors"
-                        >
-                            <Trash2 className="h-3 w-3 stroke-[1.7]" />
-                            Delete
-                        </button>
-                    </div>
+                    <BulkSelectionBar
+                        selectedCount={selectedRows.size}
+                        onClear={() => setSelectedRows(new Set())}
+                        onDelete={() => setShowBulkDeleteDialog(true)}
+                        isDeleting={isBulkDeleting}
+                    />
                 </div>,
                 document.body
             )}

@@ -19,7 +19,7 @@ import { type ToastItem, removeToast, pauseToast, resumeToast } from "@/lib/toas
 // ---------------------------------------------------------------------------
 
 const pillVariants = cva(
-  "relative flex items-center gap-2.5 rounded-full px-4 py-2.5 shadow-lg text-sm font-medium pointer-events-auto select-none",
+  "relative flex items-center gap-2.5 rounded-2xl px-4 py-2.5 shadow-lg text-sm font-medium pointer-events-auto select-none",
   {
     variants: {
       variant: {
@@ -123,6 +123,20 @@ export function ToastPill({ item }: ToastPillProps) {
           <span className="text-xs opacity-70 truncate leading-tight">
             {item.description}
           </span>
+        )}
+        {item.actions && item.actions.length > 0 && (
+          <div className="mt-1 flex flex-wrap items-center gap-1.5">
+            {item.actions.map((action) => (
+              <button
+                key={action.label}
+                type="button"
+                onClick={action.onClick}
+                className="rounded-md border border-white/30 px-2 py-0.5 text-[11px] font-medium opacity-90 transition-opacity hover:opacity-100 dark:border-zinc-900/20"
+              >
+                {action.label}
+              </button>
+            ))}
+          </div>
         )}
       </div>
 

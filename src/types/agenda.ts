@@ -2,6 +2,7 @@ import { Database } from './database';
 
 // Type aliases for convenience
 type TemplateItem = Database['public']['Tables']['template_items']['Row'];
+// Legacy-only agenda item type. Event-first meetings should use src/types/plans.ts.
 type AgendaItem = Database['public']['Tables']['agenda_items']['Row'];
 
 // Helper types for procedural items

@@ -178,7 +178,7 @@ export function TaskDetailsSheet({
             );
             setPriority(task.priority ?? "medium");
             setAssignee(task.assigned_to || "unassigned");
-            setDueDate(task.due_date ? new Date(task.due_date) : undefined);
+            setDueDate(task.due_date ? new Date(task.due_date + "T00:00:00") : undefined);
         }
     }, [task]);
 

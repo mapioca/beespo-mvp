@@ -2,6 +2,32 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function middleware(request: NextRequest) {
+  const pathname = request.nextUrl.pathname;
+  const host = request.headers.get("host") || "";
+  const adminHost = process.env.NEXT_PUBLIC_ADMIN_HOST || "admin.localhost:3000";
+  const isAdminSubdomain = host === adminHost || host.startsWith("admin.");
+
+  if (!isAdminSubdomain) {
+    const publicRoutes = ["/shared"];
+    const isMfaPage = pathname.startsWith("/mfa/setup") || pathname.startsWith("/mfa/verify");
+    const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route)) || isMfaPage;
+    const protectedRoutes = ["/dashboard", "/library", "/meetings", "/tasks", "/members", "/announcements", "/speakers", "/settings", "/schedule", "/data", "/forms", "/tables", "/callings", "/notebooks", "/apps"];
+    const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route));
+    const isAuthPage = pathname === "/login" || pathname === "/signup";
+
+    if (!isProtectedRoute && !isAuthPage) {
+      return NextResponse.next({
+        request,
+      });
+    }
+
+    if (isPublicRoute) {
+      return NextResponse.next({
+        request,
+      });
+    }
+  }
+
   let supabaseResponse = NextResponse.next({
     request,
   });
@@ -32,10 +58,6 @@ export async function middleware(request: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-
-  const host = request.headers.get("host") || "";
-  const adminHost = process.env.NEXT_PUBLIC_ADMIN_HOST || "admin.localhost:3000";
-  const isAdminSubdomain = host === adminHost || host.startsWith("admin.");
 
   // =====================================================
   // ADMIN SUBDOMAIN FLOW
@@ -71,25 +93,6 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(url);
     }
 
-    // For authenticated users accessing dashboard or other protected routes, enforce MFA
-    if (user && !isAdminPublicRoute && !isAdminLoginPage) {
-      try {
-        const { data: aalData } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-        if (aalData?.currentLevel !== 'aal2') {
-          // MFA not verified - redirect to MFA verify
-          const url = request.nextUrl.clone();
-          url.pathname = "/mfa/verify";
-          return NextResponse.redirect(url);
-        }
-      } catch (error) {
-        // If we can't check AAL level, redirect to MFA verify for safety
-        console.error('Failed to verify AAL level:', error);
-        const url = request.nextUrl.clone();
-        url.pathname = "/mfa/verify";
-        return NextResponse.redirect(url);
-      }
-    }
-
     // Rewrite admin subdomain requests to /admin/* route group internally
     if (!pathname.startsWith("/admin")) {
       const url = request.nextUrl.clone();
@@ -109,18 +112,8 @@ export async function middleware(request: NextRequest) {
   // MAIN APP FLOW
   // =====================================================
 
-  const pathname = request.nextUrl.pathname;
-
-  // Public routes that never require authentication
-  const publicRoutes = ["/shared"];
-  const isMfaPage = pathname.startsWith("/mfa/setup") || pathname.startsWith("/mfa/verify");
-  const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route)) || isMfaPage;
-  if (isPublicRoute) {
-    return supabaseResponse;
-  }
-
   // Protected routes - redirect to login if not authenticated
-  const protectedRoutes = ["/dashboard", "/templates", "/discussions", "/meetings", "/tasks", "/members", "/business", "/announcements", "/speakers", "/settings", "/calendar", "/callings", "/notebooks", "/apps"];
+  const protectedRoutes = ["/dashboard", "/library", "/meetings", "/tasks", "/members", "/announcements", "/speakers", "/settings", "/schedule", "/data", "/forms", "/tables", "/callings", "/notebooks", "/apps"];
   const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route));
 
   if (!user && isProtectedRoute) {
@@ -130,25 +123,6 @@ export async function middleware(request: NextRequest) {
   // Redirect authenticated users away from auth pages (layout will handle setup redirect)
   if (user && (pathname === "/login" || pathname === "/signup")) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
-  }
-
-  // MFA enforcement for authenticated users on protected routes
-  if (user && isProtectedRoute) {
-    try {
-      const { data: aalData } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-
-      // User has MFA enrolled but hasn't verified this session
-      if (aalData?.nextLevel === "aal2" && aalData?.currentLevel !== "aal2") {
-        // Check for trusted device cookie before redirecting
-        const trustedDeviceToken = request.cookies.get("beespo_trusted_device")?.value;
-        if (!trustedDeviceToken) {
-          return NextResponse.redirect(new URL("/mfa/verify", request.url));
-        }
-        // If cookie exists, allow through — layout will validate the token against DB
-      }
-    } catch (error) {
-      console.error("Failed to check MFA level:", error);
-    }
   }
 
   return supabaseResponse;

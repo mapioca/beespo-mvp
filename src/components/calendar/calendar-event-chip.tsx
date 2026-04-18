@@ -10,59 +10,19 @@ interface CalendarEventChipProps {
   compact?: boolean;
 }
 
-// Notion-inspired color schemes for events
-function getNotionColors(source: EventSource, customColor?: string): {
-  border: string;
-  bg: string;
-  text: string;
-  hoverBg: string;
-} {
-  // If custom color provided (for external events), use it
-  if (customColor) {
-    return {
-      border: `border-l-[${customColor}]`,
-      bg: "bg-purple-50 dark:bg-purple-950/30",
-      text: "text-purple-900 dark:text-purple-100",
-      hoverBg: "hover:bg-purple-100 dark:hover:bg-purple-900/40",
-    };
-  }
-
+function getSourceAccent(source: EventSource, customColor?: string): string {
+  if (customColor) return customColor;
   switch (source) {
     case "announcement":
-      return {
-        border: "border-l-amber-400",
-        bg: "bg-amber-50/60 dark:bg-amber-950/20",
-        text: "text-amber-800 dark:text-amber-100",
-        hoverBg: "hover:bg-amber-100/60 dark:hover:bg-amber-900/30",
-      };
+      return "hsl(var(--chart-4))";
     case "meeting":
-      return {
-        border: "border-l-blue-400",
-        bg: "bg-blue-50/60 dark:bg-blue-950/20",
-        text: "text-blue-800 dark:text-blue-100",
-        hoverBg: "hover:bg-blue-100/60 dark:hover:bg-blue-900/30",
-      };
+      return "hsl(var(--chart-2))";
     case "task":
-      return {
-        border: "border-l-green-400",
-        bg: "bg-green-50/60 dark:bg-green-950/20",
-        text: "text-green-800 dark:text-green-100",
-        hoverBg: "hover:bg-green-100/60 dark:hover:bg-green-900/30",
-      };
+      return "hsl(var(--chart-5))";
     case "event":
-      return {
-        border: "border-l-indigo-400",
-        bg: "bg-indigo-50/60 dark:bg-indigo-950/20",
-        text: "text-indigo-800 dark:text-indigo-100",
-        hoverBg: "hover:bg-indigo-100/60 dark:hover:bg-indigo-900/30",
-      };
+      return "hsl(var(--chart-1))";
     case "external":
-      return {
-        border: "border-l-purple-400",
-        bg: "bg-purple-50/60 dark:bg-purple-950/20",
-        text: "text-purple-800 dark:text-purple-100",
-        hoverBg: "hover:bg-purple-100/60 dark:hover:bg-purple-900/30",
-      };
+      return "hsl(var(--chart-3))";
   }
 }
 
@@ -71,7 +31,7 @@ export function CalendarEventChip({
   onClick,
   compact = false,
 }: CalendarEventChipProps) {
-  const colors = getNotionColors(event.source, event.color);
+  const accentColor = getSourceAccent(event.source, event.color);
 
   return (
     <button
@@ -81,14 +41,10 @@ export function CalendarEventChip({
       }}
       className={cn(
         "w-full text-left rounded-md border-l-[3px] transition-all duration-150",
-        "shadow-none hover:shadow-sm",
-        colors.border,
-        colors.bg,
-        colors.text,
-        colors.hoverBg,
+        "shadow-none hover:shadow-sm bg-muted/25 text-foreground hover:bg-[hsl(var(--table-row-hover))]",
         compact ? "px-1.5 py-0.5 text-[11px]" : "px-2 py-1.5 text-sm"
       )}
-      style={event.color ? { borderLeftColor: event.color } : undefined}
+      style={{ borderLeftColor: accentColor }}
     >
       <div className="flex items-center gap-1.5 min-w-0">
         {event.isRecurringInstance && (

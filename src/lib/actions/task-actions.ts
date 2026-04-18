@@ -140,19 +140,21 @@ export async function updateTask(taskId: string, data: {
     due_date?: string | null;
     priority?: 'low' | 'medium' | 'high';
     status?: string;
+    tags?: string[];
 }) {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { error: "Unauthorized" };
 
     try {
-        const updateData: Record<string, string | null> = { updated_at: new Date().toISOString() };
+        const updateData: Partial<Database["public"]["Tables"]["tasks"]["Update"]> = { updated_at: new Date().toISOString() };
         if (data.title !== undefined) updateData.title = data.title;
         if (data.description !== undefined) updateData.description = data.description;
         if (data.assigned_to !== undefined) updateData.assigned_to = data.assigned_to;
         if (data.due_date !== undefined) updateData.due_date = data.due_date;
         if (data.priority !== undefined) updateData.priority = data.priority;
         if (data.status !== undefined) updateData.status = data.status;
+        if (data.tags !== undefined) updateData.tags = data.tags;
 
         // 1. Fetch current task to check for changes
         const { data: currentTask } = await tasksTable(supabase)
@@ -171,12 +173,15 @@ export async function updateTask(taskId: string, data: {
 
         // 2. Log status change activity if changed
         if (data.status && currentTask && currentTask.status !== data.status) {
-            fromTable(supabase, "task_activities").insert({ 
+            // Fire and forget activity logging
+            fromTable(supabase, "task_activities").insert({
                 task_id: taskId,
                 user_id: user.id,
                 activity_type: 'status_change',
                 details: { from: currentTask.status, to: data.status }
-            }).catch((err: unknown) => console.error("Error logging status activity:", err));
+            }).then((result: { error: unknown } | null) => {
+                if (result?.error) console.error("Error logging status activity:", result.error);
+            });
         }
 
         revalidatePath("/tasks");
@@ -259,6 +264,8 @@ export async function createTask(data: {
     assigned_to?: string;
     due_date?: string;
     priority?: 'low' | 'medium' | 'high';
+    status?: string;
+    tags?: string[];
     meeting_id?: string;
     agenda_item_id?: string;
     discussion_id?: string;
@@ -289,7 +296,8 @@ export async function createTask(data: {
             business_item_id: data.business_item_id,
             workspace_id: profile.workspace_id,
             created_by: user.id,
-            status: 'pending'
+            status: data.status || 'pending',
+            tags: data.tags
         })
         .select(`
             *,

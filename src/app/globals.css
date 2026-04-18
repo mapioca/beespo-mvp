@@ -4,40 +4,145 @@
 
 @layer base {
   :root {
-    /* Black & White Elegance Theme */
-    --canvas: 0 0% 96.5%; /* Back-compat */
-    --panel: 0 0% 96.5%; /* Base app surface (sidebar + shell canvas) */
-    --paper: 0 0% 99.2%; /* Document surface */
-    --background: 0 0% 100%; /* Pure white */
-    --foreground: 0 0% 0%; /* Pure black */
-    --card: 0 0% 100%;
-    --card-foreground: 0 0% 0%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 0%;
-    --primary: 0 0% 0%; /* Black */
-    --primary-foreground: 0 0% 100%; /* White */
-    --secondary: 0 0% 96%; /* Near white gray */
-    --secondary-foreground: 0 0% 0%;
-    --muted: 0 0% 96%;
-    --muted-foreground: 0 0% 40%;
-    --accent: 0 0% 96%;
-    --accent-foreground: 0 0% 0%;
+    /* Neutrals */
+    --color-stone-50: #fafaf9;
+    --color-stone-100: #f5f5f4;
+    --color-stone-200: #e7e5e4;
+    --color-stone-300: #d6d3d1;
+    --color-stone-500: #78716c;
+    --color-stone-600: #57534e;
+    --color-stone-900: #1c1917;
+
+    /* Accent - Terracotta */
+    --color-accent-50: #fef3e7;
+    --color-accent-200: #fcd9a0;
+    --color-accent-600: #b45309;
+    --color-accent-700: #92400e;
+    --color-accent-800: #7c2d12;
+
+    /* Semantic */
+    --color-bg-app: #ffffff;
+    --color-text-primary: #1c1917;
+    --color-text-secondary: #57534e;
+    --color-text-tertiary: #78716c;
+    --color-border: #e7e5e4;
+    --color-focus-ring: rgba(180, 83, 9, 0.3);
+
+    /* App Rail - 56px narrow left */
+    --rail-width: 56px;
+    --rail-bg: var(--color-stone-50);
+    --rail-border: 1px solid var(--color-border);
+    --rail-item-size: 32px;
+    --rail-item-radius: 8px;
+    --rail-item-gap: 4px;
+    --rail-icon-inactive: var(--color-text-tertiary);
+    --rail-icon-inactive-opacity: 0.6;
+    --rail-icon-hover: var(--color-text-primary);
+    --rail-icon-hover-opacity: 1;
+    --rail-icon-active: var(--color-accent-600);
+    --rail-bg-hover: var(--color-stone-100);
+    --rail-bg-active: var(--color-accent-50);
+
+    /* Sidebar - 240px */
+    --sidebar-width: 240px;
+    --sidebar-bg: var(--color-bg-app);
+    --sidebar-padding: 12px;
+    --sidebar-item-height: 32px;
+    --sidebar-item-radius: 6px;
+    --sidebar-item-padding-x: 12px;
+    --sidebar-item-gap: 12px;
+    --sidebar-bg-hover: var(--color-stone-100);
+    --sidebar-bg-active: var(--color-bg-app);
+    --sidebar-border-active: 3px solid var(--color-accent-600);
+    --sidebar-text-inactive: var(--color-text-secondary);
+    --sidebar-text-hover: var(--color-text-primary);
+    --sidebar-text-active: var(--color-text-primary);
+    --sidebar-text-active-weight: 500;
+    --sidebar-icon-inactive: var(--color-text-tertiary);
+    --sidebar-icon-hover: var(--color-text-primary);
+    --sidebar-icon-active: var(--color-text-primary);
+
+    /* Topbar */
+    --topbar-height: 56px;
+    --topbar-bg: var(--color-bg-app);
+    --topbar-border: 1px solid var(--color-border);
+    --topbar-padding-x: 16px;
+    --topbar-title-size: 12px;
+    --topbar-title-weight: 500;
+    --topbar-title-color: var(--color-text-primary);
+
+    /* Calm Precision */
+    --cp-canvas: 0 0% 94.5%;
+    --cp-surface: 0 0% 100%;
+    --cp-surface-2: 220 20% 99.2%;
+    --cp-text: 24 10% 10%;
+    --cp-text-muted: 25 5% 45%;
+    --cp-text-subtle: 25 5% 55%;
+    --cp-border: 20 6% 90%;
+    --cp-divider: 220 12% 93.8%;
+    --cp-hover: 220 18% 97%;
+    --cp-active: 220 14% 95.5%;
+    --cp-focus: 222 70% 56%;
+    --cp-primary: 220 14% 14%;
+    --cp-primary-foreground: 0 0% 100%;
+    --cp-danger: 0 75% 54%;
+    --cp-warning: 37 85% 52%;
+    --cp-success: 150 55% 40%;
+    --cp-font-title-size: 30px;
+    --cp-font-title-weight: 500;
+    --cp-font-section-size: 14px;
+    --cp-font-section-weight: 500;
+    --cp-font-label-size: 14px;
+    --cp-font-label-weight: 400;
+    --cp-font-body-size: 14px;
+    --cp-font-body-weight: 400;
+    --cp-font-meta-size: 12px;
+    --cp-font-meta-weight: 400;
+    --cp-radius-card: 12px;
+    --cp-radius-control: 10px;
+    --cp-section-gap: 24px;
+    --cp-heading-to-card: 10px;
+    --cp-row-py: 12px;
+    --cp-row-px: 16px;
+    --cp-control-height: 40px;
+    --cp-divider-inset: 16px;
+    --cp-divider-opacity: 0.35;
+
+    --canvas: var(--cp-canvas); /* Back-compat */
+    --panel: var(--cp-canvas); /* Base app surface (sidebar + shell canvas) */
+    --paper: var(--cp-surface-2); /* Document surface */
+    --background: var(--cp-surface);
+    --foreground: var(--cp-text);
+    --card: var(--cp-surface);
+    --card-foreground: var(--cp-text);
+    --popover: var(--cp-surface);
+    --popover-foreground: var(--cp-text);
+    --primary: var(--brand);
+    --primary-foreground: var(--brand-foreground);
+    --secondary: var(--cp-surface-2);
+    --secondary-foreground: var(--cp-text);
+    --muted: var(--cp-surface-2);
+    --muted-foreground: var(--cp-text-muted);
+    --accent: var(--cp-hover);
+    --accent-foreground: var(--cp-text);
     --accent-warm: 24 38% 91%; /* Warm peach-gray (#EFE7E1) */
     --accent-warm-hover: 24 27% 88%; /* Slightly deeper warm hover (#E6DDD6) */
-    --chrome: 0 0% 99.4%; /* App chrome surface (top bars, toolbars) */
-    --chrome-border: 0 0% 89%; /* Subtle chrome dividers */
+    --chrome: var(--cp-surface-2); /* App chrome surface (top bars, toolbars) */
+    --chrome-border: var(--cp-border); /* Subtle chrome dividers */
     --overlay: 0 0% 0% / 0.28; /* Modal overlay tint */
-    --app-shell: 0 0% 96.5%;
-    --app-island: 0 0% 100%;
-    --app-island-border: 0 0% 89%;
-    --nav-hover: 0 0% 94%;
+    --app-shell: 60 9% 98%; /* Rail - Stone & Sage: Alabaster (#fafaf9) */
+    --app-main-card: 0 0% 100%; /* Main content - Stone & Sage: Pure white */
+    --app-sidebar: 0 0% 100%; /* Sidebar - Stone & Sage: Pure white */
+    --app-island: 210 20% 98%; /* Secondary pane - #f9fafb (lighter) */
+    --app-island-border: var(--cp-border);
+    --nav-hover: 60 5% 96%; /* Stone & Sage: stone-100 hover on white */
     --nav-hover-alpha: 1;
-    --nav-selected: 0 0% 90%;
+    --nav-selected: 60 9% 95%; /* Stone & Sage: subtle stone tint on white */
     --nav-selected-alpha: 1;
-    --nav-text: 0 0% 38%;
-    --nav-text-strong: 0 0% 10%;
-    --nav-text-muted: 0 0% 46%;
-    --nav-active-border: 0 0% 82%;
+    --nav-text: 25 5% 45%;
+    --nav-text-strong: 24 10% 10%;
+    --nav-text-muted: 25 5% 50%;
+    --nav-active-border: 20 6% 90%; /* Stone & Sage: stone-200 */
     --program-stage-bg: 220 14% 95.6%;
     --program-control-panel-bg: 0 0% 100%;
     --program-control-panel-border: 220 10% 90.5%;
@@ -128,22 +233,68 @@
     --menu-icon: 0 0% 40%;
     --menu-hover: 0 0% 96%;
     --menu-separator: 0 0% 92%;
+    --menu-item-font-size: 12px;
+    --menu-shortcut-font-size: 11px;
     --table-row-hover: 0 0% 97.8%;
-    --table-row-selected: 0 0% 97.3%;
+    --table-row-selected: var(--brand-bg);
     --table-filter-hover: 0 0% 94%;
     --table-filter-active: 0 0% 92%;
     --table-shell-bg: 0 0% 100%;
     --table-shell-border: 0 0% 89%;
-    --table-shell-shadow: 0 1px 0 rgba(15,23,42,0.04);
-    --table-row-divider: 0 0% 91%;
-    --table-header-bg: 0 0% 95%;
+    --table-shell-shadow: none;
+    --table-row-divider: 220 13% 91%;
+    --table-header-bg: 0 0% 100%;
     --table-header-border: 0 0% 89%;
-    --table-head-height: 2.5rem;
-    --table-cell-px: 0.75rem;
+    /* --- new design tokens --- */
+    --table-header-height: 32px;
+    --table-header-text-size: 11px;
+    --table-header-text-transform: uppercase;
+    --table-header-text-spacing: 0.5px;
+    --table-header-color: var(--color-text-tertiary);
+    --table-header-weight: 500;
+    --table-row-height: 36px;
+    --table-row-padding-x: 16px;
+    --table-row-bg-hover: #fcfcfa;
+    --table-row-bg-selected: #f9f7f5;
+    --table-row-bg-selected-hover: #f5f1ed;
+    --table-row-border: 1px solid var(--color-border);
+    --table-cell-text: var(--color-text-primary);
+    --table-cell-text-secondary: var(--color-text-secondary);
+    /* --- legacy (kept for back-compat) --- */
+    --table-head-height: var(--table-header-height);
+    --table-cell-px: var(--table-row-padding-x);
     --table-row-py: 0.625rem;
-    --table-header-font-size: 11px;
+    --table-header-font-size: var(--table-header-text-size);
+    --table-header-letter-spacing: var(--table-header-text-spacing);
     --table-body-font-size: 13px;
     --table-meta-font-size: 12px;
+    --table-micro-font-size: 10px;
+    --table-checkbox-bg: 0 0% 100%;
+    --table-checkbox-border: 0 0% 84%;
+    --table-checkbox-hover-bg: 0 0% 98%;
+    --table-checkbox-hover-border: 0 0% 72%;
+    --table-checkbox-check: 0 0% 100%;
+    --table-checkbox-focus: var(--cp-focus);
+    --table-checkbox-checked-bg: 220 10% 24%;
+    --table-checkbox-checked-border: 220 10% 24%;
+    --table-checkbox-checked-check: 0 0% 100%;
+    /* --- new checkbox design tokens --- */
+    --checkbox-size: 16px;
+    --checkbox-radius: 4px;
+    --checkbox-border: 1.5px solid var(--color-stone-300);
+    --checkbox-border-hover: 1.5px solid var(--color-stone-500);
+    --checkbox-border-color: var(--color-stone-300);
+    --checkbox-border-color-hover: var(--color-stone-500);
+    --checkbox-border-width: 1.5px;
+    --checkbox-bg-checked: var(--color-accent-600);
+    --checkbox-icon-checked: #ffffff;
+    --agenda-control-font-size: 12px;
+    --agenda-chip-font-size: 12px;
+    --agenda-icon-control-size: 30px;
+    --agenda-interactive-hover: 0 0% 94%;
+    --agenda-interactive-active: 0 0% 92%;
+    --agenda-interactive-focus-ring: 0 0% 0%;
+    --agenda-interactive-disabled-opacity: 0.5;
     --chip-bg: 0 0% 98.8%;
     --chip-border: 0 0% 90%;
     --chip-text: 0 0% 22%;
@@ -151,53 +302,149 @@
     --chip-active-bg: 0 0% 92%;
     --chip-active-border: 0 0% 82%;
     --chip-active-text: 0 0% 10%;
-    --destructive: 0 84% 60%; /* Error red - minimal color */
+    --destructive: var(--cp-danger);
     --destructive-foreground: 0 0% 100%;
-    --border: 0 0% 89%; /* Light gray for borders */
-    --input: 0 0% 89%;
-    --ring: 0 0% 0%;
+    --border: var(--cp-border);
+    --input: 20 6% 82%; /* stone-300 #d6d3d1 */
+    --ring: var(--brand);
     --radius: 0.875rem;
     --chart-1: 0 0% 60%;
     --chart-2: 0 0% 40%;
     --chart-3: 0 0% 20%;
     --chart-4: 0 0% 80%;
     --chart-5: 0 0% 50%;
+    --landing-nav-height: 4rem;
+    --landing-nav-horizontal-padding: 1rem;
+    --landing-nav-link-font-size: 0.875rem;
+    --landing-nav-logo-font-size: 1.25rem;
+    --landing-nav-mobile-panel-width: min(85vw, 20rem);
+    --settings-shell-max-width: 58rem;
+    --settings-shell-pad-x: 1.5rem;
+    --settings-shell-pad-y: 1.5rem;
+    --settings-title-size: var(--cp-font-title-size);
+    --settings-description-size: 13px;
+    --settings-label-size: var(--cp-font-meta-size);
+    --settings-label-tracking: 0.02em;
+    --settings-surface-bg: var(--cp-surface);
+    --settings-surface-border: var(--cp-border);
+    --settings-surface-radius: var(--cp-radius-card);
+    --settings-canvas: var(--cp-canvas);
+    --settings-row-min-height: 3.75rem;
+    --settings-row-padding-x: var(--cp-row-px);
+    --settings-row-padding-y: var(--cp-row-py);
+    --settings-row-hover: var(--cp-hover);
+    --settings-divider: var(--cp-divider);
+    --settings-input-bg: var(--cp-surface);
+    --settings-input-border: var(--cp-border);
+    --settings-input-focus: var(--cp-focus);
+    --settings-meta-size: var(--cp-font-meta-size);
+    --settings-body-size: var(--cp-font-body-size);
+    --settings-swatch-size: 1.15rem;
+    --settings-swatch-gap: 0.45rem;
+    --settings-swatch-border: 0 0% 84%;
+    --settings-swatch-ring: 0 0% 16%;
+    /* --- form-surface tokens --- */
+    --form-label-size: 12px;
+    --form-label-color: var(--color-text-secondary);
+    --form-section-header-size: 12px;
+    --form-section-header-color: var(--color-text-secondary);
+    --form-section-header-spacing: 0.5px;
+    --form-section-gap: 40px;
+    --form-field-gap: 20px;
+    --form-input-height: 40px;
+    --form-input-border: var(--color-stone-300);
+    --form-input-radius: 8px;
+    --form-checkbox-size: 18px;
+    --form-checkbox-radius: 6px;
+    --form-checkbox-bg: var(--cp-surface);
+    --form-checkbox-border: var(--cp-border);
+    --form-checkbox-focus: var(--cp-focus);
+    --form-checkbox-check: var(--cp-primary);
+    --form-checkbox-checked-bg: 28 93% 36%; /* accent-600 #b45309 */
+    --form-checkbox-checked-border: 28 93% 36%;
+    --form-checkbox-checked-check: 0 0% 100%;
+    --nav-secondary-hover-hsl: 220 10% 45%;
+    --app-main-card: 0 0% 100%;
+    --brand: 26 91% 37%; /* Accent: #b45309 */
+    --brand-foreground: 0 0% 100%;
+    --brand-bg: 31 92% 95%; /* Accent bg: #fef3e7 */
+    --brand-hover: 22 83% 31%; /* Accent hover: #92400e */
+    --brand-active: 15 75% 28%; /* Accent active: #7c2d12 */
+    --btn-primary-bg-disabled: #f5f5f4;
+    --btn-primary-text-disabled: #a8a29e;
+    --btn-primary-border-disabled: #e7e5e4;
   }
 
   .dark {
+    --color-stone-50: #0c0a09;
+    --color-stone-100: #1c1917;
+    --color-stone-200: #292524;
+    --color-stone-300: #44403c;
+    --color-stone-500: #a8a29e;
+    --color-stone-600: #d6d3d1;
+    --color-stone-900: #fafaf9;
+
+    --color-accent-50: #1f1409;
+    --color-accent-600: #ea580c;
+    --color-accent-700: #f97316;
+    --color-accent-800: #fb923c;
+
+    --color-bg-app: #0c0a09;
+    --color-text-primary: #fafaf9;
+    --color-text-secondary: #d6d3d1;
+    --color-text-tertiary: #a8a29e;
+    --color-border: #292524;
+    --color-focus-ring: rgba(234, 88, 12, 0.3);
+
+    --cp-canvas: 0 0% 7%;
+    --cp-surface: 220 12% 10.5%;
+    --cp-surface-2: 220 11% 12.5%;
+    --cp-text: 60 9% 98%;
+    --cp-text-muted: 24 5% 64%;
+    --cp-text-subtle: 24 5% 56%;
+    --cp-border: 30 6% 25%;
+    --cp-divider: 220 10% 23%;
+    --cp-hover: 220 10% 14%;
+    --cp-active: 220 10% 17%;
+    --cp-focus: 222 75% 64%;
+    --cp-primary: 220 14% 92%;
+    --cp-primary-foreground: 220 14% 10%;
+
     --canvas: 24 18% 22%; /* Back-compat */
-    --panel: 0 0% 8%;
-    --paper: 0 0% 5%;
-    --background: 0 0% 0%;
-    --foreground: 0 0% 100%;
-    --card: 0 0% 5%;
-    --card-foreground: 0 0% 100%;
-    --popover: 0 0% 5%;
-    --popover-foreground: 0 0% 100%;
-    --primary: 0 0% 100%;
-    --primary-foreground: 0 0% 0%;
-    --secondary: 0 0% 10%;
-    --secondary-foreground: 0 0% 100%;
-    --muted: 0 0% 10%;
-    --muted-foreground: 0 0% 60%;
-    --accent: 0 0% 10%;
-    --accent-foreground: 0 0% 100%;
+    --panel: var(--cp-canvas);
+    --paper: var(--cp-surface-2);
+    --background: var(--cp-canvas);
+    --foreground: var(--cp-text);
+    --card: var(--cp-surface);
+    --card-foreground: var(--cp-text);
+    --popover: var(--cp-surface);
+    --popover-foreground: var(--cp-text);
+    --primary: var(--brand);
+    --primary-foreground: var(--brand-foreground);
+    --secondary: var(--cp-surface-2);
+    --secondary-foreground: var(--cp-text);
+    --muted: var(--cp-surface-2);
+    --muted-foreground: var(--cp-text-muted);
+    --accent: var(--cp-hover);
+    --accent-foreground: var(--cp-text);
     --accent-warm: 24 18% 22%;
     --accent-warm-hover: 24 20% 26%;
-    --chrome: 0 0% 8%;
-    --chrome-border: 0 0% 18%;
+    --chrome: var(--cp-surface-2);
+    --chrome-border: var(--cp-border);
     --overlay: 0 0% 0% / 0.6; /* Modal overlay tint */
-    --app-shell: 0 0% 8%;
-    --app-island: 0 0% 6%;
-    --app-island-border: 0 0% 20%;
-    --nav-hover: 220 10% 14%;
+    --app-shell: 24 10% 10%; /* Stone & Sage: Stone 900 (#1c1917) - rail */
+    --app-sidebar: 12 6% 15%; /* Stone & Sage: Stone 800 (#292524) - sidebar = main */
+    --app-main-card: 12 6% 15%; /* Stone & Sage: Stone 800 (#292524) */
+    --app-island: var(--cp-surface);
+    --app-island-border: var(--cp-border);
+    --nav-hover: 24 8% 18%;
     --nav-hover-alpha: 1;
-    --nav-selected: 220 11% 17%;
+    --nav-selected: 24 8% 20%; /* Stone & Sage: subtle stone tint on stone-800 sidebar */
     --nav-selected-alpha: 1;
-    --nav-text: 220 8% 72%;
-    --nav-text-strong: 220 12% 94%;
-    --nav-text-muted: 220 8% 66%;
-    --nav-active-border: 220 12% 24%;
+    --nav-text: 24 5% 70%;
+    --nav-text-strong: 60 9% 98%;
+    --nav-text-muted: 24 5% 64%;
+    --nav-active-border: 30 6% 25%; /* Stone & Sage: stone-700 cutout edge */
     --program-stage-bg: 220 10% 10%;
     --program-control-panel-bg: 220 8% 8%;
     --program-control-panel-border: 220 9% 18%;
@@ -277,21 +524,38 @@
     --menu-hover: 0 0% 16%;
     --menu-separator: 0 0% 22%;
     --table-row-hover: 220 10% 12.5%;
-    --table-row-selected: 220 10% 20%;
+    --table-row-selected: var(--brand-bg);
     --table-filter-hover: 220 10% 14%;
     --table-filter-active: 220 10% 18%;
     --table-shell-bg: 220 12% 10%;
     --table-shell-border: 220 10% 20%;
     --table-shell-shadow: 0 1px 0 rgba(0,0,0,0.35);
-    --table-row-divider: 220 10% 20%;
+    --table-row-divider: 220 13% 91%;
     --table-header-bg: 220 10% 13%;
     --table-header-border: 220 10% 20%;
     --table-head-height: 2.5rem;
     --table-cell-px: 0.75rem;
     --table-row-py: 0.625rem;
     --table-header-font-size: 11px;
+    --table-header-letter-spacing: 0.01em;
     --table-body-font-size: 13px;
     --table-meta-font-size: 12px;
+    --table-micro-font-size: 10px;
+    --table-checkbox-bg: var(--cp-surface-2);
+    --table-checkbox-border: 220 8% 52%;
+    --table-checkbox-hover-bg: 220 10% 22%;
+    --table-checkbox-hover-border: 220 8% 68%;
+    --table-checkbox-check: 220 14% 11%;
+    --table-checkbox-focus: var(--cp-focus);
+    --table-checkbox-checked-bg: 220 12% 84%;
+    --table-checkbox-checked-border: 220 12% 84%;
+    --table-checkbox-checked-check: 220 14% 11%;
+    --agenda-control-font-size: 12px;
+    --agenda-chip-font-size: 12px;
+    --agenda-interactive-hover: 220 10% 14%;
+    --agenda-interactive-active: 220 10% 18%;
+    --agenda-interactive-focus-ring: 0 0% 100%;
+    --agenda-interactive-disabled-opacity: 0.5;
     --chip-bg: 220 10% 14%;
     --chip-border: 220 10% 24%;
     --chip-text: 220 12% 88%;
@@ -299,11 +563,56 @@
     --chip-active-bg: 220 12% 22%;
     --chip-active-border: 220 10% 34%;
     --chip-active-text: 0 0% 98%;
-    --destructive: 0 84% 60%;
+    --destructive: var(--cp-danger);
     --destructive-foreground: 0 0% 0%;
-    --border: 0 0% 15%;
-    --input: 0 0% 15%;
-    --ring: 0 0% 100%;
+    --border: var(--cp-border);
+    --input: var(--cp-border);
+    --ring: var(--brand);
+    --landing-nav-height: 4rem;
+    --landing-nav-horizontal-padding: 1rem;
+    --landing-nav-link-font-size: 0.875rem;
+    --landing-nav-logo-font-size: 1.25rem;
+    --landing-nav-mobile-panel-width: min(85vw, 20rem);
+    --settings-shell-max-width: 58rem;
+    --settings-shell-pad-x: 1.5rem;
+    --settings-shell-pad-y: 1.5rem;
+    --settings-title-size: var(--cp-font-title-size);
+    --settings-description-size: 13px;
+    --settings-label-size: var(--cp-font-meta-size);
+    --settings-label-tracking: 0.02em;
+    --settings-surface-bg: var(--cp-surface);
+    --settings-surface-border: var(--cp-border);
+    --settings-surface-radius: var(--cp-radius-card);
+    --settings-canvas: var(--cp-canvas);
+    --settings-row-min-height: 3.75rem;
+    --settings-row-padding-x: var(--cp-row-px);
+    --settings-row-padding-y: var(--cp-row-py);
+    --settings-row-hover: var(--cp-hover);
+    --settings-divider: var(--cp-divider);
+    --settings-input-bg: var(--cp-surface-2);
+    --settings-input-border: var(--cp-border);
+    --settings-input-focus: var(--cp-focus);
+    --settings-meta-size: var(--cp-font-meta-size);
+    --settings-body-size: var(--cp-font-body-size);
+    --settings-swatch-size: 1.15rem;
+    --settings-swatch-gap: 0.45rem;
+    --settings-swatch-border: 220 10% 26%;
+    --settings-swatch-ring: 0 0% 88%;
+    --form-checkbox-size: 18px;
+    --form-checkbox-radius: 6px;
+    --form-checkbox-bg: var(--cp-surface-2);
+    --form-checkbox-border: var(--cp-border);
+    --form-checkbox-focus: var(--cp-focus);
+    --form-checkbox-check: var(--cp-primary);
+    --form-checkbox-checked-bg: 220 12% 86%;
+    --form-checkbox-checked-border: 220 12% 86%;
+    --form-checkbox-checked-check: 220 14% 11%;
+    --nav-secondary-hover-hsl: 0 0% 100%;
+    --brand: 26 91% 37%; /* Accent: #b45309 */
+    --brand-foreground: 0 0% 100%;
+    --brand-bg: 26 50% 18%; /* Accent bg (dark amber tint) */
+    --brand-hover: 22 83% 31%;
+    --brand-active: 15 75% 28%;
   }
 }
 
@@ -333,6 +642,27 @@
    Uses dvh with vh fallback for older browsers
 ============================================ */
 @layer utilities {
+  .skip-link {
+    position: fixed;
+    left: 1rem;
+    top: 0.75rem;
+    z-index: 100;
+    border-radius: 0.5rem;
+    background: hsl(var(--foreground));
+    color: hsl(var(--background));
+    font-size: 0.875rem;
+    font-weight: 600;
+    padding: 0.5rem 0.75rem;
+    transform: translateY(-200%);
+    transition: transform 150ms ease;
+  }
+
+  .skip-link:focus-visible {
+    transform: translateY(0);
+    outline: 2px solid hsl(var(--background));
+    outline-offset: 2px;
+  }
+
   .bg-canvas {
     background-color: hsl(var(--panel));
   }
@@ -347,6 +677,10 @@
 
   .bg-app-island {
     background-color: hsl(var(--app-island));
+  }
+
+  .bg-app-sidebar {
+    background-color: hsl(var(--app-sidebar));
   }
 
   .bg-builder-canvas {
@@ -527,11 +861,25 @@
 
   .table-shell-standard {
     border-radius: 0.75rem;
-    border-top: 1px solid hsl(var(--table-shell-border) / 0.6);
-    border-bottom: 1px solid hsl(var(--table-shell-border) / 0.6);
+    border: 0;
     background-color: hsl(var(--table-shell-bg) / 0.8);
     box-shadow: var(--table-shell-shadow);
     overflow: hidden;
+    padding: 0 16px;
+  }
+
+  /* Grouped multi-select: consecutive selected rows merge into one card */
+  .table-shell-standard tr[data-state="selected"]:not(:has(+ tr[data-state="selected"])) td:first-child {
+    border-bottom-left-radius: 8px;
+  }
+  .table-shell-standard tr[data-state="selected"]:not(:has(+ tr[data-state="selected"])) td:last-child {
+    border-bottom-right-radius: 8px;
+  }
+  .table-shell-standard tr[data-state="selected"]:not(tr[data-state="selected"] + tr[data-state="selected"]) td:first-child {
+    border-top-left-radius: 8px;
+  }
+  .table-shell-standard tr[data-state="selected"]:not(tr[data-state="selected"] + tr[data-state="selected"]) td:last-child {
+    border-top-right-radius: 8px;
   }
 
   .table-shell-minimal {
@@ -556,12 +904,13 @@
   }
 
   .table-header-row-standard {
-    background-color: hsl(var(--table-header-bg) / 0.25);
-    border-bottom: 1px solid hsl(var(--table-header-border) / 0.6);
+    background-color: hsl(var(--table-header-bg) / 0.5);
+    border-top: 1px solid hsl(var(--table-row-divider) / 0.38);
+    border-bottom: 1px solid hsl(var(--table-row-divider) / 0.38);
   }
 
   .table-header-row-standard:hover {
-    background-color: hsl(var(--table-header-bg) / 0.25);
+    background-color: hsl(var(--table-header-bg) / 0.5);
   }
 
   .table-cell-check {
@@ -578,6 +927,20 @@
     padding-bottom: var(--table-row-py);
     font-size: var(--table-body-font-size);
     font-weight: 500;
+  }
+
+  .table-cell-link {
+    font-size: var(--table-meta-font-size);
+    font-weight: 600;
+    color: hsl(var(--foreground) / 0.84);
+    text-decoration-line: none;
+    text-underline-offset: 2px;
+    transition: color 150ms ease;
+  }
+
+  .table-cell-link:hover {
+    color: hsl(var(--foreground));
+    text-decoration-line: underline;
   }
 
   .table-cell-meta {

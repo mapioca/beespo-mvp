@@ -25,13 +25,13 @@ export function QuickActionsWidget({
         >
             <div className="space-y-2">
                 <Button asChild variant="outline" className="w-full justify-start h-11 bg-white">
-                    <Link href="/meetings/new">
+                    <Link href="/meetings/create">
                         <CalendarDays className="h-4 w-4 mr-3 text-primary" />
-                        New Meeting
+                        Create Plan or Meeting
                     </Link>
                 </Button>
                 <Button asChild variant="outline" className="w-full justify-start h-11 bg-white">
-                    <Link href="/meetings/business/new">
+                    <Link href="/meetings/sacrament-meeting/business/new">
                         <Briefcase className="h-4 w-4 mr-3 text-blue-600" />
                         Add Business Item
                     </Link>
@@ -43,7 +43,7 @@ export function QuickActionsWidget({
                     </Link>
                 </Button>
                 <Button asChild variant="outline" className="w-full justify-start h-11 bg-white">
-                    <Link href="/templates/library">
+                    <Link href="/library">
                         <FileText className="h-4 w-4 mr-3 text-purple-600" />
                         Template Library
                     </Link>

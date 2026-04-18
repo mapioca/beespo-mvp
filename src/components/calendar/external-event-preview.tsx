@@ -150,7 +150,7 @@ export function ExternalEventPreview({
 
         <Separator className="bg-border/60" />
 
-        <div className="bg-[hsl(var(--accent-warm)/0.35)] rounded-lg p-3 text-sm border border-border/50">
+        <div className="bg-muted/35 rounded-lg p-3 text-sm border border-border/50">
           <p className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground mb-1">
             Want to enrich this event?
           </p>
@@ -164,11 +164,11 @@ export function ExternalEventPreview({
             type="button"
             variant="outline"
             onClick={() => onOpenChange(false)}
-            className="border-border/60 hover:bg-[hsl(var(--accent-warm)/0.6)] shadow-none"
+            className="border-border/60 hover:bg-accent shadow-none"
           >
             Close
           </Button>
-          <Button onClick={handleImport} className="bg-[hsl(var(--accent-warm))] text-foreground hover:bg-[hsl(var(--accent-warm-hover))] shadow-none">
+          <Button onClick={handleImport} className="shadow-none">
             <Import className="h-4 w-4 mr-2 stroke-[1.6]" />
             Import to Beespo
           </Button>

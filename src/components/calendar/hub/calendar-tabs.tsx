@@ -22,8 +22,10 @@ export function CalendarTabs() {
     // Determine active tab from pathname
     const getActiveTab = () => {
         const segments = pathname.split("/")
-        // /calendar/view -> view
-        // /calendar/events -> events
+        // /schedule/calendar -> view
+        // /schedule/events -> events
+        if (pathname.startsWith("/schedule/events")) return "events"
+        if (pathname.startsWith("/schedule/calendar")) return "view"
         const tabSlug = segments[2]
         return CALENDAR_TABS.find((tab) => tab.slug === tabSlug)?.slug || "view"
     }
@@ -43,7 +45,7 @@ export function CalendarTabs() {
                     return (
                         <Link
                             key={tab.slug}
-                            href={`/calendar/${tab.slug}`}
+                            href={tab.slug === "events" ? "/schedule/events" : "/schedule/calendar"}
                             className={cn(
                                 "flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors min-w-[44px]",
                                 isActive

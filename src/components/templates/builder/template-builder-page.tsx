@@ -249,7 +249,7 @@ export function TemplateBuilderPage() {
             setIsRedirecting(true);
             await new Promise((resolve) => setTimeout(resolve, 500));
 
-            router.push("/templates/library");
+            router.push("/library");
             router.refresh();
         } catch {
             toast.error("An unexpected error occurred.");

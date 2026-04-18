@@ -102,11 +102,16 @@ export async function PATCH(
     const body = await request.json();
     const {
         title,
+        event_type,
         description,
         location,
         start_at,
         end_at,
         is_all_day,
+        date_tbd,
+        time_tbd,
+        duration_mode,
+        duration_minutes,
         promote_to_announcement = false,
     } = body;
 
@@ -114,9 +119,14 @@ export async function PATCH(
     const updateData: Record<string, unknown> = {};
 
     if (title !== undefined) updateData.title = title;
+    if (event_type !== undefined) updateData.event_type = event_type;
     if (description !== undefined) updateData.description = description;
     if (location !== undefined) updateData.location = location;
     if (is_all_day !== undefined) updateData.is_all_day = is_all_day;
+    if (date_tbd !== undefined) updateData.date_tbd = date_tbd;
+    if (time_tbd !== undefined) updateData.time_tbd = time_tbd;
+    if (duration_mode !== undefined) updateData.duration_mode = duration_mode;
+    if (duration_minutes !== undefined) updateData.duration_minutes = duration_minutes;
 
     // Handle date normalization for All-Day events
     if (start_at !== undefined && end_at !== undefined) {

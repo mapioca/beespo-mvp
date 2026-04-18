@@ -1,25 +1,32 @@
 "use client"
 
-import { useState } from "react"
+import React, { useState } from "react"
 import Link from "next/link"
 import {
     Table,
     TableBody,
     TableCell,
-    TableHead,
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
-import { Checkbox } from "@/components/ui/checkbox"
-import { CalendarDays } from "lucide-react"
+import { CalendarDays, ArrowUp, ArrowDown } from "lucide-react"
 import { format } from "date-fns"
-import { DataTableColumnHeader } from "@/components/ui/data-table-header"
 import { MeetingRowActions } from "./meeting-row-actions"
-import { MeetingShareBadge } from "./meeting-share-badge"
 import { ShareDialog } from "@/components/conduct/share-dialog"
-import { ZoomIcon } from "@/components/ui/zoom-icon"
-import { StatusIndicator } from "@/components/ui/status-indicator"
 import { Database } from "@/types/database"
+import { SortableTableHeader } from "@/components/ui/sortable-table-header"
+import {
+    StandardActionsHeadCell,
+    StandardSelectAllHeadCell,
+    StandardSelectableRow,
+    StandardTableShell,
+} from "@/components/ui/standard-data-table"
+import {
+    standardTableHeaderRowVariants,
+    standardTableHeaderVariants,
+    standardTableVariants,
+} from "@/components/ui/table-standard"
+import {useRouter} from "next/navigation";
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -43,188 +50,186 @@ export interface Meeting extends MeetingRow {
     _isSharedOutward?: boolean
 }
 
-// ── Filter option data ──────────────────────────────────────────────────────
-
-const STATUS_OPTIONS = [
-    { value: "draft", label: "Draft" },
-    { value: "scheduled", label: "Scheduled" },
-    { value: "in_progress", label: "In Progress" },
-    { value: "completed", label: "Completed" },
-    { value: "cancelled", label: "Cancelled" },
-]
-
 // ── Badge helpers ───────────────────────────────────────────────────────────
 
 function formatLabel(value: string): string {
     return value.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())
 }
 
-const STATUS_TONES: Record<string, "neutral" | "info" | "success" | "warning" | "danger"> = {
-    draft: "warning",
-    scheduled: "info",
-    in_progress: "success",
-    completed: "neutral",
-    cancelled: "danger",
-}
-
 // ── Props ───────────────────────────────────────────────────────────────────
 
 interface MeetingsTableProps {
     meetings: Meeting[]
-    templates: Template[]
     workspaceSlug: string | null
     isLeader: boolean
+    workspace?: "agendas" | "programs"
+    emptyText?: string
     // Sort
     sortConfig?: { key: string; direction: "asc" | "desc" } | null
     onSort?: (key: string, direction: "asc" | "desc") => void
-    // Search (applied from Title header)
-    searchValue?: string
-    onSearchChange?: (value: string) => void
-    // Status filter
-    selectedStatuses?: MeetingStatus[]
-    statusCounts?: Record<string, number>
-    onStatusToggle?: (status: string) => void
-    // Template filter
-    selectedTemplates?: string[]
-    templateCounts?: Record<string, number>
-    onTemplateToggle?: (templateId: string) => void
     // Column visibility
     hiddenColumns?: Set<string>
-    onHideColumn?: (column: string) => void
     // Row selection
     selectedRows?: Set<string>
     onToggleRow?: (id: string) => void
     onToggleAllRows?: () => void
 }
 
+// ── Share Status Cell Component ──────────────────────────────────────────────
+
+function ShareStatusCell({ meeting }: { meeting: Meeting }) {
+    if (meeting._shareType === "shared_with_me") {
+        return (
+            <span className="text-[11.5px] text-foreground/66">
+                Shared with me
+            </span>
+        )
+    }
+    if (meeting._isSharedOutward) {
+        return (
+            <span className="text-[11.5px] text-foreground/66">
+                Shared by me
+            </span>
+        )
+    }
+    return (
+        <span className="text-[11.5px] text-foreground/66">
+            Private
+        </span>
+    )
+}
+
 // ── Component ───────────────────────────────────────────────────────────────
 
 export function MeetingsTable({
     meetings,
-    templates,
     workspaceSlug,
     isLeader,
+    workspace = "agendas",
+    emptyText = "No plans found.",
     sortConfig,
     onSort,
-    searchValue,
-    onSearchChange,
-    selectedStatuses = [],
-    statusCounts,
-    onStatusToggle,
-    selectedTemplates = [],
-    templateCounts,
-    onTemplateToggle,
     hiddenColumns = new Set(),
-    onHideColumn,
     selectedRows = new Set(),
     onToggleRow,
     onToggleAllRows,
 }: MeetingsTableProps) {
+    const router = useRouter()
     const [shareDialogMeeting, setShareDialogMeeting] = useState<Meeting | null>(null)
-
     const allSelected =
         meetings.length > 0 && selectedRows.size === meetings.length
 
-    const templateFilterOptions = [
-        {
-            value: "no-template",
-            label: "No Template",
-            count: templateCounts?.["no-template"] || 0,
-        },
-        ...templates.map((t) => ({
-            value: t.id,
-            label: t.name,
-            count: templateCounts?.[t.id] || 0,
-        })),
-    ]
-
     const visibleColumns =
-        ["title", "template", "status", "scheduled_date"]
+        ["title", "template", "status", "scheduled_date", "scheduled_time", "share_status"]
             .filter((c) => !hiddenColumns.has(c)).length + 2 // +2 for checkbox + actions
+
+    const getMeetingHref = (meeting: Meeting) => {
+        if (meeting.plan_type === "program") {
+            return `/meetings/program/${meeting.id}`
+        }
+        if (meeting.plan_type === "agenda") {
+            return `/meetings/agenda/${meeting.id}`
+        }
+        return `/meetings/${meeting.id}`
+    }
 
     return (
         <>
-        <div className="table-shell-standard">
-        <Table className="text-[13px]">
-            <TableHeader>
-                <TableRow className="table-header-row-standard">
-                    {/* Checkbox */}
-                    <TableHead className="w-10 px-3 py-2">
-                        <Checkbox
-                            checked={allSelected}
-                            onCheckedChange={() => onToggleAllRows?.()}
-                        />
-                    </TableHead>
+        <StandardTableShell variant="app">
+        <Table
+            containerClassName="overflow-visible"
+            className={standardTableVariants({
+                density: "compact",
+                dividers: "subtle",
+            })}
+        >
+            <TableHeader className={standardTableHeaderVariants({ sticky: true, variant: "app" })}>
+                <TableRow className={standardTableHeaderRowVariants({ variant: "app" })}>
+                    <StandardSelectAllHeadCell
+                        checked={allSelected}
+                        onToggle={() => onToggleAllRows?.()}
+                        variant="app"
+                    />
 
                     {/* Title */}
                     {!hiddenColumns.has("title") && (
-                        <DataTableColumnHeader
+                        <SortableTableHeader
+                            sortKey="title"
                             label="Title"
-                            sortActive={sortConfig?.key === "title"}
-                            sortDirection={sortConfig?.direction}
-                            onSortAsc={() => onSort?.("title", "asc")}
-                            onSortDesc={() => onSort?.("title", "desc")}
-                            searchable
-                            searchValue={searchValue}
-                            onSearchChange={onSearchChange}
-                            searchPlaceholder="Search agendas..."
-                            onHide={() => onHideColumn?.("title")}
-                            className="min-w-[250px]"
+                            defaultDirection="asc"
+                            sortConfig={sortConfig}
+                            onSort={onSort}
+                            variant="app"
+                            className="min-w-[240px]"
                         />
                     )}
 
                     {/* Template */}
                     {!hiddenColumns.has("template") && (
-                        <DataTableColumnHeader
+                        <SortableTableHeader
+                            sortKey="template"
                             label="Template"
-                            sortActive={sortConfig?.key === "template"}
-                            sortDirection={sortConfig?.direction}
-                            onSortAsc={() => onSort?.("template", "asc")}
-                            onSortDesc={() => onSort?.("template", "desc")}
-                            filterOptions={templateFilterOptions}
-                            selectedFilters={selectedTemplates}
-                            onFilterToggle={onTemplateToggle}
-                            onHide={() => onHideColumn?.("template")}
-                            className="w-[200px]"
+                            defaultDirection="asc"
+                            sortConfig={sortConfig}
+                            onSort={onSort}
+                            variant="app"
+                            className="w-[168px]"
                         />
                     )}
 
                     {/* Status */}
                     {!hiddenColumns.has("status") && (
-                        <DataTableColumnHeader
+                        <SortableTableHeader
+                            sortKey="status"
                             label="Status"
-                            sortActive={sortConfig?.key === "status"}
-                            sortDirection={sortConfig?.direction}
-                            onSortAsc={() => onSort?.("status", "asc")}
-                            onSortDesc={() => onSort?.("status", "desc")}
-                            filterOptions={STATUS_OPTIONS.map((opt) => ({
-                                ...opt,
-                                count: statusCounts?.[opt.value] || 0,
-                            }))}
-                            selectedFilters={selectedStatuses}
-                            onFilterToggle={onStatusToggle}
-                            onHide={() => onHideColumn?.("status")}
-                            className="w-[148px]"
+                            defaultDirection="asc"
+                            sortConfig={sortConfig}
+                            onSort={onSort}
+                            variant="app"
+                            className="w-[128px]"
                         />
                     )}
 
                     {/* Scheduled Date */}
                     {!hiddenColumns.has("scheduled_date") && (
-                        <DataTableColumnHeader
-                            label="Scheduled Date"
-                            sortActive={sortConfig?.key === "scheduled_date"}
-                            sortDirection={sortConfig?.direction}
-                            onSortAsc={() => onSort?.("scheduled_date", "asc")}
-                            onSortDesc={() => onSort?.("scheduled_date", "desc")}
-                            onHide={() => onHideColumn?.("scheduled_date")}
-                            className="w-[168px]"
+                        <SortableTableHeader
+                            sortKey="scheduled_date"
+                            label="Date"
+                            defaultDirection="desc"
+                            sortConfig={sortConfig}
+                            onSort={onSort}
+                            variant="app"
+                            className="w-[104px]"
                         />
                     )}
 
-                    {/* Actions */}
-                    <TableHead className="w-[52px]">
-                        <span className="sr-only">Actions</span>
-                    </TableHead>
+                    {/* Scheduled Time */}
+                    {!hiddenColumns.has("scheduled_time") && (
+                        <SortableTableHeader
+                            sortKey="scheduled_date"
+                            label="Time"
+                            defaultDirection="desc"
+                            sortConfig={sortConfig}
+                            onSort={onSort}
+                            variant="app"
+                            className="w-[96px]"
+                        />
+                    )}
+
+                    {/* Share Status */}
+                    {!hiddenColumns.has("share_status") && (
+                        <SortableTableHeader
+                            sortKey="share_status"
+                            label="Share Status"
+                            defaultDirection="asc"
+                            sortConfig={sortConfig}
+                            onSort={onSort}
+                            variant="app"
+                            className="w-[140px]"
+                        />
+                    )}
+
+                    <StandardActionsHeadCell variant="app" />
                 </TableRow>
             </TableHeader>
 
@@ -238,113 +243,96 @@ export function MeetingsTable({
                             <div className="flex flex-col items-center justify-center py-4">
                                 <CalendarDays className="h-8 w-8 text-muted-foreground mb-2 stroke-[1.6]" />
                                 <p className="text-muted-foreground">
-                                    No agendas found.
+                                    {emptyText}
                                 </p>
                             </div>
                         </TableCell>
                     </TableRow>
                 ) : (
                     meetings.map((meeting) => (
-                        <TableRow
+                        <StandardSelectableRow
                             key={meeting.id}
-                            data-state={selectedRows.has(meeting.id) ? "selected" : undefined}
-                            className="group transition-[background-color,box-shadow] duration-150 ease-out hover:bg-[hsl(var(--table-row-hover))] hover:shadow-[inset_0_0_0_1px_hsl(var(--table-shell-border)/0.28)] data-[state=selected]:bg-[hsl(var(--table-row-selected))] data-[state=selected]:shadow-[inset_0_0_0_1px_hsl(var(--table-shell-border)/0.4)]"
-                        >
-                            {/* Checkbox */}
-                            <TableCell className="px-3 py-2.5">
-                                <Checkbox
-                                    checked={selectedRows.has(meeting.id)}
-                                    className="opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100 data-[state=checked]:opacity-100"
-                                    onCheckedChange={() =>
-                                        onToggleRow?.(meeting.id)
-                                    }
+                            id={meeting.id}
+                            selected={selectedRows.has(meeting.id)}
+                            onToggle={onToggleRow}
+                            selectOnRowClick={false}
+                            onRowClick={() => router.push(getMeetingHref(meeting))}
+                            actions={
+                                <MeetingRowActions
+                                    meeting={meeting}
+                                    workspaceSlug={workspaceSlug}
+                                    isLeader={isLeader}
+                                    workspace={workspace}
                                 />
-                            </TableCell>
-
+                            }
+                        >
                             {/* Title */}
                             {!hiddenColumns.has("title") && (
-                        <TableCell className="table-cell-title">
-                            <div className="flex items-center gap-1.5">
-                                <Link
-                                    href={`/meetings/${meeting.id}`}
-                                    className="text-[13px] font-semibold text-foreground hover:text-foreground/90 hover:underline underline-offset-2 transition-colors"
-                                >
-                                    {meeting.title}
-                                </Link>
-                                        {meeting.is_publicly_shared && (
-                                            <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
-                                                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                                                Live
-                                            </span>
-                                        )}
-                                        {meeting._shareType === "shared_with_me" && (
-                                            <MeetingShareBadge
-                                                type="shared_with_me"
-                                                sharedBy={meeting._sharedByName}
-                                                fromWorkspace={meeting._sharedFromWorkspace}
-                                            />
-                                        )}
-                                        {meeting._isSharedOutward && meeting._shareType !== "shared_with_me" && (
-                                            <MeetingShareBadge
-                                                type="shared_outward"
-                                                onClick={() => setShareDialogMeeting(meeting)}
-                                            />
-                                        )}
-                                        {meeting.zoom_meeting_id && (
-                                            <ZoomIcon className="h-4 w-4 shrink-0" />
-                                        )}
-                                    </div>
+                        <TableCell className="table-cell-title pr-4">
+                            <div className="flex flex-col gap-1.5">
+                                <div className="flex items-center gap-1.5">
+                                    <Link
+                                        href={getMeetingHref(meeting)}
+                                        className="table-cell-link rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                                    >
+                                        {meeting.title}
+                                    </Link>
+                                </div>
+
+                            </div>
                                 </TableCell>
                             )}
 
                             {/* Template */}
                             {!hiddenColumns.has("template") && (
-                        <TableCell className="table-cell-meta text-[11.5px] text-foreground/56">
-                            {meeting.templates?.name || (
-                                <span className="italic">
-                                    No Template
-                                </span>
-                            )}
+                        <TableCell className="table-cell-meta text-[length:var(--table-meta-font-size)] text-foreground/54">
+                            {meeting.templates?.name}
                         </TableCell>
                             )}
 
                             {/* Status */}
                             {!hiddenColumns.has("status") && (
-                        <TableCell className="table-cell-meta !px-2 capitalize">
-                            <StatusIndicator
-                                label={formatLabel(meeting.status)}
-                                tone={STATUS_TONES[meeting.status] || "neutral"}
-                                className="text-[11.5px] text-foreground/66"
-                            />
+                        <TableCell className="table-cell-meta whitespace-nowrap">
+                            <span className="text-[length:var(--table-meta-font-size)] font-medium text-foreground/68 capitalize">
+                                {formatLabel(meeting.status)}
+                            </span>
                         </TableCell>
                             )}
 
                             {/* Scheduled Date */}
                             {!hiddenColumns.has("scheduled_date") && (
-                        <TableCell className="table-cell-meta !px-2 text-[11.5px] text-foreground/56">
-                            {meeting.scheduled_date
-                                ? format(
-                                      new Date(meeting.scheduled_date),
-                                              "MMM d, yyyy h:mm a"
-                                          )
-                                        : "—"}
+                        <TableCell className="table-cell-meta whitespace-nowrap tabular-nums">
+                            {meeting.scheduled_date ? (
+                                <span className="text-[length:var(--table-meta-font-size)] font-medium text-foreground/64">
+                                    {format(new Date(meeting.scheduled_date), "MMM d")}
+                                </span>
+                            ) : null}
                                 </TableCell>
                             )}
 
-                            {/* Actions */}
-                            <TableCell className="table-cell-actions">
-                                <MeetingRowActions
-                                    meeting={meeting}
-                                    workspaceSlug={workspaceSlug}
-                                    isLeader={isLeader}
-                                />
-                            </TableCell>
-                        </TableRow>
+                            {/* Scheduled Time */}
+                            {!hiddenColumns.has("scheduled_time") && (
+                        <TableCell className="table-cell-meta whitespace-nowrap tabular-nums">
+                            {meeting.scheduled_date ? (
+                                <span className="text-[length:var(--table-meta-font-size)] font-medium text-foreground/64">
+                                    {format(new Date(meeting.scheduled_date), "h:mm a")}
+                                </span>
+                            ) : null}
+                                </TableCell>
+                            )}
+
+                            {/* Share Status */}
+                            {!hiddenColumns.has("share_status") && (
+                                <TableCell className="table-cell-meta !px-2 text-[11.5px] text-foreground/66">
+                                    <ShareStatusCell meeting={meeting} />
+                                </TableCell>
+                            )}
+                        </StandardSelectableRow>
                     ))
                 )}
             </TableBody>
         </Table>
-        </div>
+        </StandardTableShell>
 
         {/* Share dialog — opened by clicking the shared_outward badge */}
         {shareDialogMeeting && (

@@ -8,6 +8,7 @@ type Profile = {
     role: string;
     full_name: string;
     role_title: string | null;
+    language_preference: "ENG" | "SPA";
 };
 
 export type Workspace = {
@@ -32,7 +33,7 @@ export default async function SettingsPage() {
     // Get current user's profile
     const { data: profile } = await supabase
         .from("profiles")
-        .select("workspace_id, role, full_name, role_title")
+        .select("workspace_id, role, full_name, role_title, language_preference")
         .eq("id", user.id)
         .single() as { data: Profile | null };
 
@@ -134,6 +135,7 @@ export default async function SettingsPage() {
             }}
             isZoomConnected={isZoomConnected}
             sharingGroups={sharingGroups}
+            languagePreference={profile.language_preference ?? "ENG"}
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             workspaceMembers={(members || []).map((m: any) => ({
                 email: m.email,

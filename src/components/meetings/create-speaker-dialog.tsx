@@ -14,6 +14,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "@/lib/toast";
 
@@ -39,11 +46,13 @@ export function CreateSpeakerDialog({
     const [name, setName] = useState("");
     const [topic, setTopic] = useState("");
     const [isConfirmed, setIsConfirmed] = useState(false);
+    const [gender, setGender] = useState<"male" | "female" | "unspecified">("unspecified");
 
     const resetForm = () => {
         setName("");
         setTopic("");
         setIsConfirmed(false);
+        setGender("unspecified");
     };
 
     const handleClose = () => {
@@ -94,6 +103,7 @@ export function CreateSpeakerDialog({
             const { data: newDir, error: dirError } = await (supabase.from("directory") as any)
                 .insert({
                     name: name.trim(),
+                    gender: gender === "unspecified" ? null : gender,
                     workspace_id: profile.workspace_id,
                     created_by: user.id,
                 })
@@ -163,6 +173,23 @@ export function CreateSpeakerDialog({
                                 required
                                 disabled={isLoading}
                             />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="speaker-gender">Gender (optional)</Label>
+                            <Select
+                                value={gender}
+                                onValueChange={(v) => setGender(v as "male" | "female" | "unspecified")}
+                                disabled={isLoading}
+                            >
+                                <SelectTrigger id="speaker-gender">
+                                    <SelectValue placeholder="Select gender" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="unspecified">Unspecified</SelectItem>
+                                    <SelectItem value="male">Male</SelectItem>
+                                    <SelectItem value="female">Female</SelectItem>
+                                </SelectContent>
+                            </Select>
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="speaker-topic">Topic *</Label>

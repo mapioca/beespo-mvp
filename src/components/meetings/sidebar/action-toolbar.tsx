@@ -121,8 +121,9 @@ export function ActionToolbar({
         onMeetingUpdate?.(updatedMeeting);
     };
 
+    const canConductProgram = meeting.plan_type === "program";
     const showConductButton =
-        meeting.status === "scheduled" || meeting.status === "in_progress";
+        canConductProgram && (meeting.status === "scheduled" || meeting.status === "in_progress");
 
     return (
         <div className="space-y-3">
@@ -142,7 +143,7 @@ export function ActionToolbar({
                                 ) : (
                                     <Play className="w-4 h-4 mr-2" />
                                 )}
-                                Conduct
+                                Start program
                             </Button>
                         ) : meeting.status === "in_progress" ? (
                             <Button
@@ -151,7 +152,7 @@ export function ActionToolbar({
                             >
                                 <Link href={`/meetings/${meeting.id}/conduct`}>
                                     <Play className="w-4 h-4 mr-2" />
-                                    Conduct
+                                    Conduct program
                                 </Link>
                             </Button>
                         ) : null}

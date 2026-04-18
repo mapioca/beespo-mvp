@@ -52,6 +52,6 @@ export interface NavSection {
  * Sidebar state persisted to localStorage
  */
 export interface SidebarState {
-  isCollapsed: boolean
+  isPinned: boolean
   expandedGroups: Record<string, boolean>
 }

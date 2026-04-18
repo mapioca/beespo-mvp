@@ -224,16 +224,16 @@ export default function NotebookViewPage({ params }: NotebookViewPageProps) {
             <Breadcrumbs
                 className="rounded-none border-b border-border/60 bg-white px-4 py-1.5 ring-0"
                 items={[
-                    { label: "Data", iconType: "database" },
-                    { label: "Notebooks", href: "/notebooks", iconType: "notebook" },
-                    { label: notebook.title, iconType: "notebook" },
+                    { label: "Data" },
+                    { label: "Notebooks", href: "/notebooks" },
+                    { label: notebook.title },
                 ]}
             />
 
             <div
                 className="sticky top-0 z-10 border-b border-border/55 bg-white/95 backdrop-blur-xl"
                 style={{
-                    backgroundImage: `linear-gradient(180deg, ${cover.gradient.match(/\#[0-9a-fA-F]{6}/)?.[0] ?? "#f5efe7"}18 0%, rgba(255,255,255,0.96) 58%, rgba(255,255,255,0.95) 100%)`,
+                    backgroundImage: `linear-gradient(180deg, ${cover.gradient.match(/#[0-9a-fA-F]{6}/)?.[0] ?? "#f5efe7"}18 0%, rgba(255,255,255,0.96) 58%, rgba(255,255,255,0.95) 100%)`,
                 }}
             >
                 <div className="mx-auto flex w-full max-w-[1500px] flex-col gap-5 px-5 py-5 sm:px-6 lg:px-8">

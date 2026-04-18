@@ -20,7 +20,7 @@ interface TaskCardProps {
 
 export function TaskCard({ task, onComplete, readonly = false }: TaskCardProps) {
     const isCompleted = task.status === 'completed';
-    const isOverdue = task.due_date && new Date(task.due_date) < new Date() && !isCompleted;
+    const isOverdue = task.due_date && new Date(task.due_date + "T00:00:00") < new Date() && !isCompleted;
 
     return (
         <Card className={cn(
@@ -52,7 +52,7 @@ export function TaskCard({ task, onComplete, readonly = false }: TaskCardProps) 
                     {task.due_date && (
                         <div className={cn("flex items-center gap-1", isOverdue && "text-red-500 font-medium")}>
                             <Calendar className="w-3 h-3" />
-                            {format(new Date(task.due_date), "MMM d, yyyy")}
+                            {format(new Date(task.due_date + "T00:00:00"), "MMM d, yyyy")}
                         </div>
                     )}
                     {task.assignee && (

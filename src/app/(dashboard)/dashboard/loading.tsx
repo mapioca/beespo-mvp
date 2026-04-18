@@ -1,92 +1,107 @@
+import type { ElementType } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Clock, CalendarDays, LayoutTemplate, BookOpen, Zap, MessageSquare } from "lucide-react";
+
+function SectionHeaderSkeleton({
+  icon: Icon,
+  label,
+}: {
+  icon: ElementType;
+  label: string;
+}) {
+  return (
+    <div className="flex items-center gap-1.5 mb-3">
+      <Icon className="h-3.5 w-3.5 text-muted-foreground/40" strokeWidth={1.8} />
+      <span className="text-[12px] font-medium text-muted-foreground/50 tracking-wide">
+        {label}
+      </span>
+    </div>
+  );
+}
 
 export default function DashboardLoading() {
   return (
-    <div className="min-h-[calc(100vh-8rem)] bg-gray-50/50">
-      <div className="p-8 max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="flex items-start justify-between mb-8">
-          <div>
-            <Skeleton className="h-9 w-64" />
-            <Skeleton className="h-5 w-56 mt-2" />
-          </div>
-          <Skeleton className="h-9 w-28" />
+    <div className="h-full w-full overflow-y-auto bg-background rounded-[var(--radius)] border border-border shadow-sm">
+      <div className="mx-auto max-w-3xl px-6 pt-16 pb-24 flex flex-col gap-10">
+
+        {/* ── Greeting ─────────────────────────────────────────────────── */}
+        <div className="flex flex-col items-center justify-center gap-2">
+          <Skeleton className="h-10 w-64 rounded-md" /> {/* Greeting + Name */}
+          <Skeleton className="h-4 w-40 rounded-sm" /> {/* Workspace Name */}
         </div>
 
-        {/* KPI Row — 3 cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <div
-              key={i}
-              className="bg-white rounded-xl ring-1 ring-gray-200 shadow-sm p-4"
-            >
-              <div className="flex items-center gap-2 mb-2">
-                <Skeleton className="h-8 w-8 rounded-lg" />
-                <Skeleton className="h-3 w-20" />
-              </div>
-              <Skeleton className="h-7 w-16 mb-1" />
-              <Skeleton className="h-3 w-32" />
-            </div>
-          ))}
-        </div>
-
-        {/* Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Left Column */}
-          <div className="space-y-4">
-            {Array.from({ length: 2 }).map((_, i) => (
-              <Card
-                key={i}
-                className="bg-white shadow-sm border-0 ring-1 ring-gray-200"
-              >
-                <CardHeader className="pb-2">
-                  <div className="flex items-center gap-2">
-                    <Skeleton className="h-4 w-4" />
-                    <Skeleton className="h-5 w-28" />
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  {Array.from({ length: 3 }).map((_, j) => (
-                    <div key={j} className="flex items-center gap-3 py-2">
-                      <Skeleton className="h-8 w-8 rounded-full" />
-                      <div className="flex-1 space-y-1">
-                        <Skeleton className="h-4 w-3/4" />
-                        <Skeleton className="h-3 w-1/3" />
-                      </div>
-                      <Skeleton className="h-3 w-16" />
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
+        {/* ── Quick Actions ─────────────────────────────────────────────── */}
+        <section>
+          <SectionHeaderSkeleton icon={Zap} label="Quick actions" />
+          <div className="flex justify-center gap-2">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <Skeleton key={i} className="h-8 w-24 rounded-[8px]" />
             ))}
           </div>
+        </section>
 
-          {/* Right Column */}
-          <div className="space-y-4">
+        {/* ── Recents ──────────────────────────────────────────────────── */}
+        <section>
+          <SectionHeaderSkeleton icon={Clock} label="Recently visited" />
+          <div className="flex gap-3 overflow-hidden">
             {Array.from({ length: 3 }).map((_, i) => (
-              <Card
-                key={i}
-                className="bg-white shadow-sm border-0 ring-1 ring-gray-200"
-              >
-                <CardHeader className="pb-2">
-                  <div className="flex items-center gap-2">
-                    <Skeleton className="h-4 w-4" />
-                    <Skeleton className="h-5 w-32" />
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  {Array.from({ length: 3 }).map((_, j) => (
-                    <div key={j} className="flex items-center gap-3 py-2">
-                      <Skeleton className="h-4 flex-1" />
-                      <Skeleton className="h-4 w-16 rounded-full" />
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
+              <Skeleton key={i} className="h-[90px] w-[180px] shrink-0 rounded-[10px]" />
             ))}
           </div>
-        </div>
+        </section>
+
+        {/* ── This Week ────────────────────────────────────────────────── */}
+        <section>
+          <SectionHeaderSkeleton icon={CalendarDays} label="Upcoming events" />
+          <div className="flex flex-col rounded-[12px] border border-[hsl(var(--cp-border))] overflow-hidden">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div
+                key={i}
+                className={`flex ${i !== 2 ? "border-b border-[hsl(var(--cp-border))]" : ""}`}
+              >
+                <div className="w-[140px] p-4 pt-4 shrink-0">
+                  <Skeleton className="h-4 w-20" />
+                </div>
+                <div className="flex-1 p-4 flex flex-col gap-2">
+                  <Skeleton className="h-5 w-48" />
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-3 w-32 mt-1" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* ── Open Discussions ─────────────────────────────────────────── */}
+        <section>
+          <SectionHeaderSkeleton icon={MessageSquare} label="Open discussions" />
+          <div className="flex gap-3 overflow-hidden">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <Skeleton key={i} className="h-[120px] w-[220px] shrink-0 rounded-[10px]" />
+            ))}
+          </div>
+        </section>
+
+        {/* ── Featured Templates ───────────────────────────────────────── */}
+        <section>
+          <SectionHeaderSkeleton icon={LayoutTemplate} label="Featured templates" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <Skeleton key={i} className="h-[126px] w-full rounded-[10px]" />
+            ))}
+          </div>
+        </section>
+
+        {/* ── Learn ─────────────────────────────────────────────────────── */}
+        <section>
+          <SectionHeaderSkeleton icon={BookOpen} label="Learn" />
+          <div className="flex gap-3 overflow-hidden">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <Skeleton key={i} className="h-[210px] w-[260px] shrink-0 rounded-[10px]" />
+            ))}
+          </div>
+        </section>
+
       </div>
     </div>
   );

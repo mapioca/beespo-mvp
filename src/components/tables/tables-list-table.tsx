@@ -5,12 +5,9 @@ import {
     Table,
     TableBody,
     TableCell,
-    TableHead,
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
-import { Button } from "@/components/ui/button"
-import { Checkbox } from "@/components/ui/checkbox"
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -28,14 +25,26 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { Table2, MoreHorizontal, Settings2, Trash2, Star, StarOff } from "lucide-react"
+import { Table2, Settings2, Trash2, Star, StarOff } from "lucide-react"
 import { format } from "date-fns"
-import { DataTableColumnHeader } from "@/components/ui/data-table-header"
 import { useState } from "react"
 import type { DynamicTable } from "@/types/table-types"
 import { toggleFavorite } from "@/lib/actions/navigation-actions"
 import { useNavigationStore } from "@/stores/navigation-store"
 import { toast } from "@/lib/toast"
+import { SortableTableHeader } from "@/components/ui/sortable-table-header"
+import {
+    StandardActionsHeadCell,
+    StandardSelectAllHeadCell,
+    StandardSelectableRow,
+    StandardTableShell,
+} from "@/components/ui/standard-data-table"
+import {
+    standardTableHeaderRowVariants,
+    standardTableHeaderVariants,
+    standardTableVariants,
+} from "@/components/ui/table-standard"
+import { TableRowActionTrigger } from "@/components/ui/table-row-action-trigger"
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -48,12 +57,8 @@ interface TablesListTableProps {
     // Sort
     sortConfig?: { key: string; direction: "asc" | "desc" } | null
     onSort?: (key: string, direction: "asc" | "desc") => void
-    // Search
-    searchValue?: string
-    onSearchChange?: (value: string) => void
     // Column visibility
     hiddenColumns?: Set<string>
-    onHideColumn?: (column: string) => void
     // Row selection
     selectedRows?: Set<string>
     onToggleRow?: (id: string) => void
@@ -68,10 +73,7 @@ export function TablesListTable({
     tables,
     sortConfig,
     onSort,
-    searchValue,
-    onSearchChange,
     hiddenColumns = new Set(),
-    onHideColumn,
     selectedRows = new Set(),
     onToggleRow,
     onToggleAllRows,
@@ -123,65 +125,58 @@ export function TablesListTable({
 
     return (
         <>
-            <div className="rounded-xl border-y border-border/60 bg-background/80 shadow-[0_1px_0_rgba(15,23,42,0.04)] overflow-hidden">
-            <Table className="text-[13px]">
-                <TableHeader>
-                    <TableRow className="bg-muted/30 hover:bg-muted/30 border-b">
+            <StandardTableShell variant="app" className="overflow-hidden">
+            <Table className={standardTableVariants({ density: "compact", dividers: "subtle" })}>
+                <TableHeader className={standardTableHeaderVariants({ sticky: true, variant: "app" })}>
+                    <TableRow className={standardTableHeaderRowVariants({ variant: "app" })}>
                         {/* Checkbox */}
-                        <TableHead className="w-10 px-3 py-2.5">
-                            <Checkbox
-                                checked={allSelected}
-                                onCheckedChange={() => onToggleAllRows?.()}
-                            />
-                        </TableHead>
+                        <StandardSelectAllHeadCell
+                            checked={allSelected}
+                            onToggle={() => onToggleAllRows?.()}
+                            variant="app"
+                        />
 
                         {/* Name */}
                         {!hiddenColumns.has("name") && (
-                            <DataTableColumnHeader
+                            <SortableTableHeader
+                                sortKey="name"
                                 label="Name"
-                                sortActive={sortConfig?.key === "name"}
-                                sortDirection={sortConfig?.direction}
-                                onSortAsc={() => onSort?.("name", "asc")}
-                                onSortDesc={() => onSort?.("name", "desc")}
-                                searchable
-                                searchValue={searchValue}
-                                onSearchChange={onSearchChange}
-                                searchPlaceholder="Search tables..."
-                                onHide={() => onHideColumn?.("name")}
+                                defaultDirection="asc"
+                                sortConfig={sortConfig}
+                                onSort={onSort}
+                                variant="app"
                                 className="min-w-[250px]"
                             />
                         )}
 
                         {/* Rows */}
                         {!hiddenColumns.has("row_count") && (
-                            <DataTableColumnHeader
+                            <SortableTableHeader
+                                sortKey="row_count"
                                 label="Rows"
-                                sortActive={sortConfig?.key === "row_count"}
-                                sortDirection={sortConfig?.direction}
-                                onSortAsc={() => onSort?.("row_count", "asc")}
-                                onSortDesc={() => onSort?.("row_count", "desc")}
-                                onHide={() => onHideColumn?.("row_count")}
+                                defaultDirection="desc"
+                                sortConfig={sortConfig}
+                                onSort={onSort}
+                                variant="app"
                                 className="w-[100px]"
                             />
                         )}
 
                         {/* Created */}
                         {!hiddenColumns.has("created_at") && (
-                            <DataTableColumnHeader
+                            <SortableTableHeader
+                                sortKey="created_at"
                                 label="Created"
-                                sortActive={sortConfig?.key === "created_at"}
-                                sortDirection={sortConfig?.direction}
-                                onSortAsc={() => onSort?.("created_at", "asc")}
-                                onSortDesc={() => onSort?.("created_at", "desc")}
-                                onHide={() => onHideColumn?.("created_at")}
+                                defaultDirection="desc"
+                                sortConfig={sortConfig}
+                                onSort={onSort}
+                                variant="app"
                                 className="w-[140px]"
                             />
                         )}
 
                         {/* Actions */}
-                        <TableHead className="w-[52px]">
-                            <span className="sr-only">Actions</span>
-                        </TableHead>
+                        <StandardActionsHeadCell variant="app" />
                     </TableRow>
                 </TableHeader>
 
@@ -197,64 +192,16 @@ export function TablesListTable({
                         </TableRow>
                     ) : (
                         tables.map((table) => (
-                            <TableRow key={table.id} className="group transition-colors hover:bg-[hsl(var(--table-row-hover))]">
-                                {/* Checkbox */}
-                                <TableCell className="px-3 py-3">
-                                    <Checkbox
-                                        checked={selectedRows.has(table.id)}
-                                        onCheckedChange={() => onToggleRow?.(table.id)}
-                                    />
-                                </TableCell>
-
-                                {/* Name */}
-                                {!hiddenColumns.has("name") && (
-                                    <TableCell className="font-medium px-3 py-3 text-[13px]">
-                                        <div className="flex flex-col">
-                                            <Link
-                                                href={`/tables/${table.id}`}
-                                                className="flex items-center gap-2 hover:underline"
-                                            >
-                                                {table.icon ? (
-                                                    <span className="text-base leading-none">{table.icon}</span>
-                                                ) : (
-                                                    <Table2 className="h-4 w-4 text-muted-foreground shrink-0 stroke-[1.6]" />
-                                                )}
-                                                {table.name}
-                                            </Link>
-                                            {table.description && (
-                                                <span className="text-[12px] text-muted-foreground/80 line-clamp-2 mt-0.5 ml-6">
-                                                    {table.description}
-                                                </span>
-                                            )}
-                                        </div>
-                                    </TableCell>
-                                )}
-
-                                {/* Rows */}
-                                {!hiddenColumns.has("row_count") && (
-                                    <TableCell className="px-3 py-3 text-[12px] text-muted-foreground tabular-nums">
-                                        {table.row_count.toLocaleString()}
-                                    </TableCell>
-                                )}
-
-                                {/* Created */}
-                                {!hiddenColumns.has("created_at") && (
-                                    <TableCell className="px-3 py-3 text-[12px] text-muted-foreground">
-                                        {format(new Date(table.created_at), "MMM d, yyyy")}
-                                    </TableCell>
-                                )}
-
-                                {/* Actions */}
-                                <TableCell className="px-3 py-3 text-right">
+                            <StandardSelectableRow
+                                key={table.id}
+                                id={table.id}
+                                selected={selectedRows.has(table.id)}
+                                onToggle={onToggleRow}
+                                className="focus-within:bg-transparent focus-within:shadow-none"
+                                actions={
                                     <DropdownMenu>
                                         <DropdownMenuTrigger asChild>
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                                            >
-                                                <MoreHorizontal className="h-4 w-4 stroke-[1.6]" />
-                                            </Button>
+                                            <TableRowActionTrigger />
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent align="end">
                                             <DropdownMenuItem asChild>
@@ -289,13 +236,45 @@ export function TablesListTable({
                                             </DropdownMenuItem>
                                         </DropdownMenuContent>
                                     </DropdownMenu>
-                                </TableCell>
-                            </TableRow>
+                                }
+                            >
+
+                                {/* Name */}
+                                {!hiddenColumns.has("name") && (
+                                    <TableCell className="table-cell-title">
+                                        <Link
+                                            href={`/tables/${table.id}`}
+                                            className="table-cell-link flex items-center gap-2"
+                                        >
+                                            {table.icon ? (
+                                                <span className="text-base leading-none">{table.icon}</span>
+                                            ) : (
+                                                <Table2 className="h-4 w-4 text-muted-foreground shrink-0 stroke-[1.6]" />
+                                            )}
+                                            {table.name}
+                                        </Link>
+                                    </TableCell>
+                                )}
+
+                                {/* Rows */}
+                                {!hiddenColumns.has("row_count") && (
+                                    <TableCell className="table-cell-meta tabular-nums">
+                                        {table.row_count.toLocaleString()}
+                                    </TableCell>
+                                )}
+
+                                {/* Created */}
+                                {!hiddenColumns.has("created_at") && (
+                                    <TableCell className="table-cell-meta">
+                                        {format(new Date(table.created_at), "MMM d, yyyy")}
+                                    </TableCell>
+                                )}
+                            </StandardSelectableRow>
                         ))
                     )}
                 </TableBody>
             </Table>
-            </div>
+            </StandardTableShell>
 
             {/* Delete confirmation */}
             <AlertDialog

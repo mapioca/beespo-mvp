@@ -44,6 +44,14 @@ const config: Config = {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
+        "nav-secondary-hover": "hsla(var(--nav-secondary-hover-hsl) / <alpha-value>)",
+        "app-main-card": "hsl(var(--app-main-card) / <alpha-value>)",
+        "app-island": "hsl(var(--app-island) / <alpha-value>)",
+        "app-island-border": "hsl(var(--app-island-border) / <alpha-value>)",
+        brand: {
+          DEFAULT: "hsl(var(--brand))",
+          foreground: "hsl(var(--brand-foreground))",
+        },
         chart: {
           "1": "hsl(var(--chart-1))",
           "2": "hsl(var(--chart-2))",
