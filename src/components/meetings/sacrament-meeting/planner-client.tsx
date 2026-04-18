@@ -409,15 +409,158 @@ function getMeetingTitle(specialType: MeetingSpecialType) {
   }
 }
 
-function getMeetingBadge(specialType: MeetingSpecialType) {
-  switch (specialType) {
+function getUpcomingMeetingTitle(meeting: PlannerMeetingState) {
+  switch (meeting.specialType) {
     case "fast-testimony":
-      return "Fast Sunday"
+      return "Fast & Testimony Meeting"
     case "ward-conference":
-      return "Conference"
+      return "Ward Conference"
     default:
-      return null
+      return ""
   }
+}
+
+function getUpcomingMeetingKind(meeting: PlannerMeetingState) {
+  switch (meeting.specialType) {
+    case "fast-testimony":
+      return { label: "Fast", className: "bg-[#f3f4ff] text-[#4f46e5]" }
+    case "ward-conference":
+      return { label: "Stake", className: "bg-[#eaf7ef] text-[#2f8f54]" }
+    default:
+      return { label: "Regular", className: "bg-[#f3f1ee] text-[#8a8277]" }
+  }
+}
+
+function getUpcomingDateParts(isoDate: string) {
+  const date = plannerSundayDateFromIso(isoDate)
+  return {
+    month: format(date, "MMM"),
+    day: format(date, "d"),
+  }
+}
+
+type UpcomingPanelProps = {
+  sundays: PlannerSunday[]
+  meetingsByDate: Record<string, PlannerMeetingState>
+  selectedIsoDate: string
+  defaultLanguage: Lang
+  jumpDate: Date | undefined
+  jumpPopoverOpen: boolean
+  visibleSundayCount: number
+  sundayCount: number
+  onSelectSunday: (isoDate: string) => void
+  onJumpPopoverOpenChange: (open: boolean) => void
+  onJumpDateSelect: (date: Date | undefined) => void
+  onShowMore: () => void
+}
+
+function UpcomingPanel({
+  sundays,
+  meetingsByDate,
+  selectedIsoDate,
+  defaultLanguage,
+  jumpDate,
+  jumpPopoverOpen,
+  visibleSundayCount,
+  sundayCount,
+  onSelectSunday,
+  onJumpPopoverOpenChange,
+  onJumpDateSelect,
+  onShowMore,
+}: UpcomingPanelProps) {
+  return (
+    <div className="rounded-2xl border border-border/70 bg-white p-2 shadow-[0_1px_2px_rgba(15,23,42,0.04)] xl:sticky xl:top-6">
+      <div className="flex items-center gap-2 px-2.5 pb-2 pt-2">
+        <div className="font-serif text-[14px] text-foreground">Upcoming</div>
+        <div className="ml-auto text-[11.5px] text-muted-foreground">{sundayCount} meetings</div>
+      </div>
+
+      <div className="flex flex-col">
+        {sundays.map((sunday) => {
+          const meeting =
+            meetingsByDate[sunday.isoDate] ??
+            createInitialMeetingState(sunday.isoDate, defaultLanguage)
+          const dateParts = getUpcomingDateParts(sunday.isoDate)
+          const isSelected = sunday.isoDate === selectedIsoDate
+          const title = getUpcomingMeetingTitle(meeting)
+          const kind = getUpcomingMeetingKind(meeting)
+          const conductor = meeting.assignments.conductor.trim()
+
+          return (
+            <button
+              key={sunday.isoDate}
+              type="button"
+              onClick={() => onSelectSunday(sunday.isoDate)}
+              className={cn(
+                "grid grid-cols-[48px_1fr] items-center gap-3 rounded-xl px-2.5 py-2.5 text-left transition-colors duration-100",
+                isSelected ? "bg-[#f0efec]" : "hover:bg-[#f7f6f4]"
+              )}
+            >
+              <div
+                className={cn(
+                  "rounded-lg border border-border/70 py-1 text-center",
+                  isSelected ? "bg-white" : "bg-[#f7f6f4]"
+                )}
+              >
+                <div className="text-[9.5px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                  {dateParts.month}
+                </div>
+                <div className="mt-0.5 font-serif text-[17px] leading-none text-foreground">
+                  {dateParts.day}
+                </div>
+              </div>
+
+              <div className="min-w-0">
+                <div className="truncate text-[13px] text-foreground">
+                  {title ? title : <span className="font-serif italic text-muted-foreground">Untitled</span>}
+                </div>
+                <div className="mt-1 flex min-w-0 items-center gap-1.5 text-[11.5px] text-muted-foreground">
+                  <span
+                    className={cn(
+                      "rounded-full px-1.5 py-[1px] text-[10px] font-medium uppercase tracking-[0.04em]",
+                      kind.className
+                    )}
+                  >
+                    {kind.label}
+                  </span>
+                  {conductor ? <span className="truncate">· {conductor}</span> : null}
+                </div>
+              </div>
+            </button>
+          )
+        })}
+      </div>
+
+      <div className="px-2 pb-2 pt-1">
+        <Popover open={jumpPopoverOpen} onOpenChange={onJumpPopoverOpenChange}>
+          <PopoverTrigger asChild>
+            <Button variant="outline" className="w-full justify-start gap-2">
+              <CalendarDays className="h-4 w-4" />
+              Jump to date
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <Calendar
+              mode="single"
+              selected={jumpDate}
+              onSelect={onJumpDateSelect}
+              disabled={(date) => isBefore(startOfDay(date), startOfDay(new Date()))}
+              initialFocus
+            />
+          </PopoverContent>
+        </Popover>
+        {visibleSundayCount < sundayCount ? (
+          <Button
+            variant="ghost"
+            className="mt-2 w-full justify-center"
+            onClick={onShowMore}
+          >
+            Show more Sundays
+          </Button>
+        ) : null}
+      </div>
+    </div>
+  )
 }
 
 export function SacramentMeetingPlannerClient({ defaultLanguage = "ENG" }: { defaultLanguage?: Lang }) {
@@ -952,94 +1095,8 @@ export function SacramentMeetingPlannerClient({ defaultLanguage = "ENG" }: { def
     <div className="min-h-full">
       <Breadcrumbs items={breadcrumbItems} />
       <div className="mx-auto flex w-full max-w-7xl flex-col px-4 py-6 sm:px-6 lg:px-8">
-        <div className="flex min-h-[calc(100vh-9rem)] flex-col overflow-hidden rounded-2xl border border-border/70 bg-background shadow-[0_1px_2px_rgba(15,23,42,0.04)] lg:flex-row">
-          <aside className="w-full shrink-0 border-b border-border/60 bg-[linear-gradient(180deg,#ffffff_0%,#fcfcfb_100%)] lg:w-72 lg:border-b-0 lg:border-r">
-            <div className="border-b border-border/60 px-4 py-3">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                Upcoming Sundays
-              </p>
-            </div>
-            <div className="flex flex-col p-2">
-              {visibleSundays.map((sunday) => {
-                const meeting = meetingsByDate[sunday.isoDate]
-                const stats = getPlannerAssignmentStats(meeting)
-                const isSelected = sunday.isoDate === selectedSunday.isoDate
-                const isFullyAssigned =
-                  stats.totalCount > 0 && stats.assignedCount === stats.totalCount
-                const meetingBadge = getMeetingBadge(meeting.specialType)
-
-                return (
-                  <button
-                    key={sunday.isoDate}
-                    type="button"
-                    onClick={() => handleSelectSunday(sunday.isoDate)}
-                    className={cn(
-                      "group rounded-xl px-3 py-3 text-left transition-colors duration-150",
-                      isSelected
-                        ? "bg-[#f7f7f6] ring-1 ring-border/70"
-                        : "hover:bg-[#fafaf9]"
-                    )}
-                  >
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="text-[15px] font-medium tracking-tight text-foreground">
-                        {sunday.dateLabel}
-                      </div>
-                      {meetingBadge ? (
-                        <span className="rounded-full border border-border/70 bg-background px-2 py-0.5 text-[10px] font-medium tracking-[0.02em] text-muted-foreground">
-                          {meetingBadge}
-                        </span>
-                      ) : null}
-                    </div>
-                    <div className="mt-1 flex items-center justify-between gap-3">
-                      <span className="text-[12px] font-medium text-muted-foreground">
-                        {sunday.dayLabel}
-                      </span>
-                      <span className="inline-flex items-center gap-1.5 text-[12px] text-muted-foreground">
-                        {isFullyAssigned ? (
-                          <CircleCheck className="h-3.5 w-3.5 text-emerald-600" />
-                        ) : null}
-                        <span>
-                          {stats.assignedCount}/{stats.totalCount} assigned
-                        </span>
-                      </span>
-                    </div>
-                  </button>
-                )
-              })}
-              <div className="px-2 pb-2 pt-1">
-                <Popover open={jumpPopoverOpen} onOpenChange={setJumpPopoverOpen}>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" className="w-full justify-start gap-2">
-                      <CalendarDays className="h-4 w-4" />
-                      Jump to date
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={jumpDate}
-                      onSelect={handleJumpDateSelect}
-                      disabled={(date) => isBefore(startOfDay(date), startOfDay(new Date()))}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-                {visibleSundayCount < sundays.length ? (
-                  <Button
-                    variant="ghost"
-                    className="mt-2 w-full justify-center"
-                    onClick={() =>
-                      setVisibleSundayCount((prev) => Math.min(prev + VISIBLE_SUNDAY_INCREMENT, sundays.length))
-                    }
-                  >
-                    Show more Sundays
-                  </Button>
-                ) : null}
-              </div>
-            </div>
-          </aside>
-
-          <section className="min-w-0 flex-1 bg-[linear-gradient(180deg,#ffffff_0%,#fbfbfa_100%)]">
+        <div className="flex min-h-[calc(100vh-9rem)] flex-col gap-6 xl:flex-row">
+          <section className="min-w-0 flex-1 rounded-2xl border border-border/70 bg-[linear-gradient(180deg,#ffffff_0%,#fbfbfa_100%)] shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
             <div className="flex h-full flex-col">
               <div className="border-b border-border/60 px-6 py-5">
                 <div className="flex flex-col gap-5">
@@ -1254,6 +1311,25 @@ export function SacramentMeetingPlannerClient({ defaultLanguage = "ENG" }: { def
               </div>
             </div>
           </section>
+
+          <aside className="w-full shrink-0 xl:w-80">
+            <UpcomingPanel
+              sundays={visibleSundays}
+              meetingsByDate={meetingsByDate}
+              selectedIsoDate={selectedSunday.isoDate}
+              defaultLanguage={defaultLanguageRef.current}
+              jumpDate={jumpDate}
+              jumpPopoverOpen={jumpPopoverOpen}
+              visibleSundayCount={visibleSundayCount}
+              sundayCount={sundays.length}
+              onSelectSunday={handleSelectSunday}
+              onJumpPopoverOpenChange={setJumpPopoverOpen}
+              onJumpDateSelect={handleJumpDateSelect}
+              onShowMore={() =>
+                setVisibleSundayCount((prev) => Math.min(prev + VISIBLE_SUNDAY_INCREMENT, sundays.length))
+              }
+            />
+          </aside>
         </div>
       </div>
       <DirectorySelectDialog
