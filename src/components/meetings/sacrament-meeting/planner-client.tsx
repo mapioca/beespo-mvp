@@ -10,6 +10,7 @@ import {
   GripVertical,
   Landmark,
   Loader2,
+  MoreHorizontal,
   Plus,
   Search,
   Trash2,
@@ -48,6 +49,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import {
   Select,
   SelectContent,
@@ -125,6 +132,24 @@ type DirectoryPerson = {
 
 const SECTION_CLOSING_ID = "section-closing"
 const PLANNER_DRAFT_STORAGE_KEY = "beespo:sacrament-meeting:planner:draft:v1"
+
+type Lang = "ENG" | "SPA"
+
+const ENTRY_LABELS: Record<string, Record<Lang, string>> = {
+  "section-opening":     { ENG: "Opening",                          SPA: "Apertura" },
+  "opening-hymn":        { ENG: "Opening Hymn",                     SPA: "Himno de Apertura" },
+  "invocation":          { ENG: "Invocation",                       SPA: "Invocación" },
+  "ward-business":       { ENG: "Ward Business",                    SPA: "Asuntos del Barrio" },
+  "section-ordinance":   { ENG: "Ordinance",                        SPA: "Ordenanza" },
+  "sacrament-hymn":      { ENG: "Sacrament Hymn",                   SPA: "Himno del Sacramento" },
+  "sacrament-ordinance": { ENG: "Administration of the Sacrament",  SPA: "Administración del Sacramento" },
+  "section-messages":    { ENG: "Messages",                         SPA: "Mensajes" },
+  [SECTION_CLOSING_ID]:  { ENG: "Closing",                          SPA: "Clausura" },
+  "closing-hymn":        { ENG: "Closing Hymn",                     SPA: "Himno de Clausura" },
+  "benediction":         { ENG: "Benediction",                      SPA: "Bendición" },
+}
+
+const SPEAKER_LABEL: Record<Lang, string> = { ENG: "Speaker", SPA: "Orador" }
 const AUTOSAVE_DELAY_MS = 8000
 const SPEAKER_TIME_OPTIONS = [
   2,
@@ -201,31 +226,32 @@ function getPlannerAssignmentStats(meeting: PlannerMeetingState) {
   return { assignedCount, totalCount }
 }
 
-function createStandardEntries(isoDate: string): AgendaEntry[] {
+function createStandardEntries(isoDate: string, lang: Lang = "ENG"): AgendaEntry[] {
+  const t = (id: string) => ENTRY_LABELS[id]?.[lang] ?? ENTRY_LABELS[id]?.["ENG"] ?? id
   return [
-    { id: "section-opening", kind: "section", title: "Opening" },
-    { id: "opening-hymn", kind: "static", title: "Opening Hymn", hymnId: "", hymnTitle: "" },
+    { id: "section-opening", kind: "section", title: t("section-opening") },
+    { id: "opening-hymn", kind: "static", title: t("opening-hymn"), hymnId: "", hymnTitle: "" },
     {
       id: "invocation",
       kind: "static",
-      title: "Invocation",
+      title: t("invocation"),
       assigneeField: "invocation",
       assigneeName: "",
     },
-    { id: "ward-business", kind: "static", title: "Ward Business" },
-    { id: "section-ordinance", kind: "section", title: "Ordinance" },
-    { id: "sacrament-hymn", kind: "static", title: "Sacrament Hymn", hymnId: "", hymnTitle: "" },
+    { id: "ward-business", kind: "static", title: t("ward-business") },
+    { id: "section-ordinance", kind: "section", title: t("section-ordinance") },
+    { id: "sacrament-hymn", kind: "static", title: t("sacrament-hymn"), hymnId: "", hymnTitle: "" },
     {
       id: "sacrament-ordinance",
       kind: "static",
-      title: "Administration of the Sacrament",
-      detail: "Blessing and passing of the sacrament",
+      title: t("sacrament-ordinance"),
+      detail: lang === "SPA" ? "Bendición y distribución del sacramento" : "Blessing and passing of the sacrament",
     },
-    { id: "section-messages", kind: "section", title: "Messages" },
+    { id: "section-messages", kind: "section", title: t("section-messages") },
     {
       id: `${isoDate}-speaker-1`,
       kind: "speaker",
-      title: "Speaker",
+      title: SPEAKER_LABEL[lang],
       speakerName: "",
       topic: "",
       durationMinutes: null,
@@ -233,63 +259,64 @@ function createStandardEntries(isoDate: string): AgendaEntry[] {
     {
       id: `${isoDate}-speaker-2`,
       kind: "speaker",
-      title: "Speaker",
+      title: SPEAKER_LABEL[lang],
       speakerName: "",
       topic: "",
       durationMinutes: null,
     },
-    { id: SECTION_CLOSING_ID, kind: "section", title: "Closing" },
-    { id: "closing-hymn", kind: "static", title: "Closing Hymn", hymnId: "", hymnTitle: "" },
+    { id: SECTION_CLOSING_ID, kind: "section", title: t(SECTION_CLOSING_ID) },
+    { id: "closing-hymn", kind: "static", title: t("closing-hymn"), hymnId: "", hymnTitle: "" },
     {
       id: "benediction",
       kind: "static",
-      title: "Benediction",
+      title: t("benediction"),
       assigneeField: "benediction",
       assigneeName: "",
     },
   ]
 }
 
-function createFastEntries(): AgendaEntry[] {
+function createFastEntries(lang: Lang = "ENG"): AgendaEntry[] {
+  const t = (id: string) => ENTRY_LABELS[id]?.[lang] ?? ENTRY_LABELS[id]?.["ENG"] ?? id
   return [
-    { id: "section-opening", kind: "section", title: "Opening" },
-    { id: "opening-hymn", kind: "static", title: "Opening Hymn", hymnId: "", hymnTitle: "" },
+    { id: "section-opening", kind: "section", title: t("section-opening") },
+    { id: "opening-hymn", kind: "static", title: t("opening-hymn"), hymnId: "", hymnTitle: "" },
     {
       id: "invocation",
       kind: "static",
-      title: "Invocation",
+      title: t("invocation"),
       assigneeField: "invocation",
       assigneeName: "",
     },
-    { id: "ward-business", kind: "static", title: "Ward Business" },
-    { id: "section-ordinance", kind: "section", title: "Ordinance" },
-    { id: "sacrament-hymn", kind: "static", title: "Sacrament Hymn", hymnId: "", hymnTitle: "" },
+    { id: "ward-business", kind: "static", title: t("ward-business") },
+    { id: "section-ordinance", kind: "section", title: t("section-ordinance") },
+    { id: "sacrament-hymn", kind: "static", title: t("sacrament-hymn"), hymnId: "", hymnTitle: "" },
     {
       id: "sacrament-ordinance",
       kind: "static",
-      title: "Administration of the Sacrament",
-      detail: "Blessing and passing of the sacrament",
+      title: t("sacrament-ordinance"),
+      detail: lang === "SPA" ? "Bendición y distribución del sacramento" : "Blessing and passing of the sacrament",
     },
-    { id: "section-messages", kind: "section", title: "Messages" },
+    { id: "section-messages", kind: "section", title: t("section-messages") },
     {
       id: "testimonies",
       kind: "testimony",
-      title: "Testimonies by members of the congregation",
-      detail: "Open microphone format following the sacrament.",
+      title: lang === "SPA" ? "Testimonios de miembros de la congregación" : "Testimonies by members of the congregation",
+      detail: lang === "SPA" ? "Formato de micrófono abierto después del sacramento." : "Open microphone format following the sacrament.",
     },
-    { id: SECTION_CLOSING_ID, kind: "section", title: "Closing" },
-    { id: "closing-hymn", kind: "static", title: "Closing Hymn", hymnId: "", hymnTitle: "" },
+    { id: SECTION_CLOSING_ID, kind: "section", title: t(SECTION_CLOSING_ID) },
+    { id: "closing-hymn", kind: "static", title: t("closing-hymn"), hymnId: "", hymnTitle: "" },
     {
       id: "benediction",
       kind: "static",
-      title: "Benediction",
+      title: t("benediction"),
       assigneeField: "benediction",
       assigneeName: "",
     },
   ]
 }
 
-function createInitialMeetingState(isoDate: string): PlannerMeetingState {
+function createInitialMeetingState(isoDate: string, lang: Lang = "ENG"): PlannerMeetingState {
   return {
     specialType: "standard",
     assignments: {
@@ -298,8 +325,8 @@ function createInitialMeetingState(isoDate: string): PlannerMeetingState {
       chorister: "",
       accompanist: "",
     },
-    standardEntries: createStandardEntries(isoDate),
-    fastEntries: createFastEntries(),
+    standardEntries: createStandardEntries(isoDate, lang),
+    fastEntries: createFastEntries(lang),
   }
 }
 
@@ -325,7 +352,7 @@ function getMeetingBadge(specialType: MeetingSpecialType) {
   }
 }
 
-export function SacramentMeetingPlannerClient() {
+export function SacramentMeetingPlannerClient({ defaultLanguage = "ENG" }: { defaultLanguage?: Lang }) {
   const pathname = usePathname()
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -339,7 +366,7 @@ export function SacramentMeetingPlannerClient() {
   const [hymnTarget, setHymnTarget] = useState<HymnTarget | null>(null)
   const [meetingsByDate, setMeetingsByDate] = useState<Record<string, PlannerMeetingState>>(() =>
     Object.fromEntries(
-      sundays.map((sunday) => [sunday.isoDate, createInitialMeetingState(sunday.isoDate)])
+      sundays.map((sunday) => [sunday.isoDate, createInitialMeetingState(sunday.isoDate, defaultLanguage)])
     )
   )
   const [autosaveStatus, setAutosaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle")
@@ -1047,6 +1074,7 @@ export function SacramentMeetingPlannerClient() {
           setHymnTarget(null)
         }}
         onSelect={handleSelectHymn}
+        defaultLanguage={defaultLanguage}
         currentHymnId={
           hymnTarget
             ? (
@@ -1165,8 +1193,20 @@ function AgendaRow({
         </button>
 
         <div className="min-w-0 flex-1">
-          <div className="text-sm font-medium text-foreground">
-            {entry.title}
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 text-sm font-medium text-foreground">
+              {entry.title}
+            </div>
+            {(entry.kind === "speaker" || (entry.kind === "static" && entry.removable)) ? (
+              <EntryActionsMenu
+                onDelete={() =>
+                  entry.kind === "speaker"
+                    ? onDeleteSpeaker(entry.id)
+                    : onDeleteStaticEntry(entry.id)
+                }
+                label={entry.title}
+              />
+            ) : null}
           </div>
           {entry.kind === "speaker" ? (
             <div className="mt-1 space-y-2">
@@ -1180,14 +1220,6 @@ function AgendaRow({
                   <span className="truncate">
                     {entry.speakerName || "Select speaker from directory"}
                   </span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onDeleteSpeaker(entry.id)}
-                  className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-[#fafaf9] hover:text-destructive"
-                  aria-label="Delete speaker"
-                >
-                  <Trash2 className="h-4 w-4" />
                 </button>
               </div>
               <div className="grid gap-2 md:grid-cols-[minmax(0,1fr)_120px]">
@@ -1243,16 +1275,6 @@ function AgendaRow({
                     : "Select hymn"}
                 </span>
               </button>
-              {entry.removable ? (
-                <button
-                  type="button"
-                  onClick={() => onDeleteStaticEntry(entry.id)}
-                  className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-[#fafaf9] hover:text-destructive"
-                  aria-label={`Delete ${entry.title}`}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              ) : null}
             </div>
           ) : entry.kind === "static" && entry.assigneeField ? (
             <button
@@ -1271,6 +1293,34 @@ function AgendaRow({
         </div>
       </div>
     </div>
+  )
+}
+
+function EntryActionsMenu({
+  onDelete,
+  label,
+}: {
+  onDelete: () => void
+  label: string
+}) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-[#fafaf9] hover:text-foreground"
+          aria-label={`${label} actions`}
+        >
+          <MoreHorizontal className="h-4 w-4" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-36">
+        <DropdownMenuItem onClick={onDelete}>
+          <Trash2 className="h-4 w-4" />
+          Delete
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
 }
 

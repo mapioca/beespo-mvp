@@ -355,6 +355,7 @@ export type Database = {
           feature_interests: string[] | null;
           feature_tier: FeatureTier | null;
           last_read_release_note_at: string | null;
+          language_preference: 'ENG' | 'SPA';
           created_at: string;
           updated_at: string;
         };
@@ -369,6 +370,7 @@ export type Database = {
           feature_interests?: string[] | null;
           feature_tier?: FeatureTier | null;
           last_read_release_note_at?: string | null;
+          language_preference?: 'ENG' | 'SPA';
           created_at?: string;
           updated_at?: string;
         };
@@ -383,6 +385,7 @@ export type Database = {
           feature_interests?: string[] | null;
           feature_tier?: FeatureTier | null;
           last_read_release_note_at?: string | null;
+          language_preference?: 'ENG' | 'SPA';
           created_at?: string;
           updated_at?: string;
         };

@@ -22,12 +22,20 @@ import { TeamMembersList } from "@/components/team/team-members-list";
 import { PendingInvitations } from "@/components/team/pending-invitations";
 import { ChangePasswordForm } from "@/components/auth/change-password-form";
 import { DeleteAccountDialog } from "@/components/auth/delete-account-dialog";
-import { Building2, Users, Users2, Save, Loader2, User, AlertTriangle, Plug, Bell, Shield } from "lucide-react";
+import { Building2, Users, Users2, Save, Loader2, User, AlertTriangle, Plug, Bell, Shield, Languages } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { ZoomFullLogo } from "@/components/ui/zoom-icon";
 import { SharingGroupsTab } from "@/components/settings/sharing-groups-tab";
 import { NotificationPreferencesTab } from "@/components/settings/notification-preferences-tab";
 import { MfaSettings } from "@/components/settings/mfa-settings";
+import { updateLanguagePreference } from "@/lib/actions/profile-actions";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 import type { SharingGroupWithMembers } from "@/types/share";
 
 interface Workspace {
@@ -76,6 +84,7 @@ interface SettingsClientProps {
     isZoomConnected: boolean;
     sharingGroups: SharingGroupWithMembers[];
     workspaceMembers: WorkspaceMember[];
+    languagePreference: "ENG" | "SPA";
 }
 
 const workspaceTypeLabels: Record<string, string> = {
@@ -107,6 +116,7 @@ export function SettingsClient({
     isZoomConnected,
     sharingGroups,
     workspaceMembers,
+    languagePreference,
 }: SettingsClientProps) {
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -119,6 +129,8 @@ export function SettingsClient({
     const [isDisconnectingZoom, setIsDisconnectingZoom] = useState(false);
     const [mfaRequired, setMfaRequired] = useState(workspace.mfa_required);
     const [isSavingMfa, setIsSavingMfa] = useState(false);
+    const [sacramentLanguage, setSacramentLanguage] = useState<"ENG" | "SPA">(languagePreference);
+    const [isSavingLanguage, setIsSavingLanguage] = useState(false);
     const isAdmin = currentUserRole === "admin";
 
     const handleDisconnectZoom = async () => {
@@ -207,6 +219,19 @@ export function SettingsClient({
         router.refresh();
     };
 
+    const handleSacramentLanguageChange = async (value: "ENG" | "SPA") => {
+        setSacramentLanguage(value);
+        setIsSavingLanguage(true);
+        const result = await updateLanguagePreference(value);
+        if (result.error) {
+            toast.error("Failed to save language preference");
+            setSacramentLanguage(sacramentLanguage);
+        } else {
+            toast.success("Saved", { description: "Language preference updated." });
+        }
+        setIsSavingLanguage(false);
+    };
+
     return (
         <div className="h-full overflow-y-auto">
         <div className="p-6 max-w-5xl mx-auto space-y-6">
@@ -242,6 +267,10 @@ export function SettingsClient({
                     <TabsTrigger value="integrations" className="gap-2">
                         <Plug className="h-4 w-4" />
                         Integrations
+                    </TabsTrigger>
+                    <TabsTrigger value="language" className="gap-2">
+                        <Languages className="h-4 w-4" />
+                        Language
                     </TabsTrigger>
                 </TabsList>
 
@@ -512,6 +541,43 @@ export function SettingsClient({
                                             <Link href="/api/auth/zoom/authorize">Connect Zoom</Link>
                                         </Button>
                                     )}
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+
+                <TabsContent value="language" className="space-y-6">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Language Preferences</CardTitle>
+                            <CardDescription>
+                                Set the preferred language for different parts of the app
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-6">
+                            <div>
+                                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-4">Meetings</h3>
+                                <div className="flex items-start justify-between gap-4">
+                                    <div className="space-y-1">
+                                        <Label>Sacrament Meeting</Label>
+                                        <p className="text-sm text-muted-foreground">
+                                            Sets the default language for hymns and agenda items in the sacrament meeting planner
+                                        </p>
+                                    </div>
+                                    <Select
+                                        value={sacramentLanguage}
+                                        onValueChange={(v) => handleSacramentLanguageChange(v as "ENG" | "SPA")}
+                                        disabled={isSavingLanguage}
+                                    >
+                                        <SelectTrigger className="w-36 shrink-0">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="ENG">English</SelectItem>
+                                            <SelectItem value="SPA">Spanish</SelectItem>
+                                        </SelectContent>
+                                    </Select>
                                 </div>
                             </div>
                         </CardContent>

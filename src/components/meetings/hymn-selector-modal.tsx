@@ -12,6 +12,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 import { Search, Music } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
@@ -21,6 +28,7 @@ interface Hymn {
     hymn_number: number;
     title: string;
     book_id: string;
+    language: string;
 }
 
 interface HymnSelectorModalProps {
@@ -28,6 +36,7 @@ interface HymnSelectorModalProps {
     onClose: () => void;
     onSelect: (hymn: { id: string; number: number; title: string }) => void;
     currentHymnId?: string;
+    defaultLanguage?: "ENG" | "SPA";
 }
 
 export function HymnSelectorModal({
@@ -35,10 +44,12 @@ export function HymnSelectorModal({
     onClose,
     onSelect,
     currentHymnId,
+    defaultLanguage = "ENG",
 }: HymnSelectorModalProps) {
     const [hymns, setHymns] = useState<Hymn[]>([]);
     const [search, setSearch] = useState("");
     const [isLoading, setIsLoading] = useState(false);
+    const [selectedLanguage, setSelectedLanguage] = useState<"ENG" | "SPA">(defaultLanguage);
 
     useEffect(() => {
         if (open && hymns.length === 0) {
@@ -51,7 +62,7 @@ export function HymnSelectorModal({
         const supabase = createClient();
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data, error } = await (supabase.from("hymns") as any)
-            .select("id, hymn_number, title, book_id")
+            .select("id, hymn_number, title, book_id, language")
             .order("hymn_number");
 
         if (!error && data) {
@@ -61,17 +72,20 @@ export function HymnSelectorModal({
     };
 
     const filteredHymns = useMemo(() => {
-        if (!search.trim()) return hymns;
+        let result = hymns.filter((h) => h.language === selectedLanguage);
 
-        const searchLower = search.toLowerCase();
-        const searchNum = parseInt(search);
+        if (search.trim()) {
+            const searchLower = search.toLowerCase();
+            const searchNum = parseInt(search);
+            result = result.filter((h) => {
+                if (!isNaN(searchNum) && h.hymn_number === searchNum) return true;
+                if (h.hymn_number.toString().startsWith(search)) return true;
+                return h.title.toLowerCase().includes(searchLower);
+            });
+        }
 
-        return hymns.filter((h) => {
-            if (!isNaN(searchNum) && h.hymn_number === searchNum) return true;
-            if (h.hymn_number.toString().startsWith(search)) return true;
-            return h.title.toLowerCase().includes(searchLower);
-        });
-    }, [hymns, search]);
+        return result;
+    }, [hymns, selectedLanguage, search]);
 
     const handleSelect = (hymn: Hymn) => {
         onSelect({
@@ -91,7 +105,15 @@ export function HymnSelectorModal({
             'hymns_home_church': {
                 src: '/images/home-church.svg',
                 alt: 'Home Church Collection'
-            }
+            },
+            'himnos_iglesia': {
+                src: '/images/lds-hymns.svg',
+                alt: 'LDS Himnos'
+            },
+            'himnos_hogar_iglesia': {
+                src: '/images/home-church.svg',
+                alt: 'Colección Hogar e Iglesia'
+            },
         };
         return logos[bookId] || { src: '/images/lds-hymns.svg', alt: 'Hymnal' };
     };
@@ -102,22 +124,33 @@ export function HymnSelectorModal({
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                         <Music className="h-5 w-5 text-blue-500" />
-                        Select Hymn
+                        {selectedLanguage === "SPA" ? "Seleccionar Himno" : "Select Hymn"}
                     </DialogTitle>
                     <DialogDescription>
-                        Search by hymn number or title
+                        {selectedLanguage === "SPA" ? "Buscar por número o título" : "Search by hymn number or title"}
                     </DialogDescription>
                 </DialogHeader>
 
-                <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                        placeholder="Search hymns..."
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        className="pl-9"
-                        autoFocus
-                    />
+                <div className="flex gap-2">
+                    <div className="relative flex-1">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                            placeholder={selectedLanguage === "SPA" ? "Número o título..." : "Search hymns..."}
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            className="pl-9"
+                            autoFocus
+                        />
+                    </div>
+                    <Select value={selectedLanguage} onValueChange={(v) => { setSelectedLanguage(v as "ENG" | "SPA"); setSearch(""); }}>
+                        <SelectTrigger className="w-20 shrink-0">
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="ENG">ENG</SelectItem>
+                            <SelectItem value="SPA">SPA</SelectItem>
+                        </SelectContent>
+                    </Select>
                 </div>
 
                 <ScrollArea className="h-[300px] border rounded-md">

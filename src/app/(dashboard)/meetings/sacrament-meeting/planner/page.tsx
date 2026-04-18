@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 }
 
 export default async function SacramentMeetingPlannerPage() {
-  const [{ profile }, supabase] = await Promise.all([
+  const [{ user, profile }, supabase] = await Promise.all([
     getDashboardRequestContext(),
     createClient(),
   ])
@@ -22,5 +22,13 @@ export default async function SacramentMeetingPlannerPage() {
     notFound()
   }
 
-  return <SacramentMeetingPlannerClient />
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: profileData } = await (supabase.from("profiles") as any)
+    .select("language_preference")
+    .eq("id", user.id)
+    .single()
+
+  const defaultLanguage: "ENG" | "SPA" = profileData?.language_preference ?? "ENG"
+
+  return <SacramentMeetingPlannerClient defaultLanguage={defaultLanguage} />
 }
