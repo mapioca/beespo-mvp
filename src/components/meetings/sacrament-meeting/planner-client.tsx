@@ -2,8 +2,9 @@
 
 import { useEffect, useMemo, useRef, useState } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
-import { addDays, format, startOfDay } from "date-fns"
+import { addDays, format, isBefore, startOfDay } from "date-fns"
 import {
+  CalendarDays,
   CircleCheck,
   Check,
   Clock3,
@@ -35,6 +36,17 @@ import { Breadcrumbs } from "@/components/dashboard/breadcrumbs"
 import { HymnSelectorModal } from "@/components/meetings/hymn-selector-modal"
 import { Button } from "@/components/ui/button"
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { Calendar } from "@/components/ui/calendar"
+import {
   Command,
   CommandEmpty,
   CommandGroup,
@@ -62,6 +74,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
 import { createClient } from "@/lib/supabase/client"
 import { cn } from "@/lib/utils"
 
@@ -138,19 +155,23 @@ type Lang = "ENG" | "SPA"
 const ENTRY_LABELS: Record<string, Record<Lang, string>> = {
   "section-opening":     { ENG: "Opening",                          SPA: "Apertura" },
   "opening-hymn":        { ENG: "Opening Hymn",                     SPA: "Himno de Apertura" },
-  "invocation":          { ENG: "Invocation",                       SPA: "Invocación" },
+  "invocation":          { ENG: "Invocation",                       SPA: "Primera Oración" },
   "ward-business":       { ENG: "Ward Business",                    SPA: "Asuntos del Barrio" },
-  "section-ordinance":   { ENG: "Ordinance",                        SPA: "Ordenanza" },
-  "sacrament-hymn":      { ENG: "Sacrament Hymn",                   SPA: "Himno del Sacramento" },
-  "sacrament-ordinance": { ENG: "Administration of the Sacrament",  SPA: "Administración del Sacramento" },
+  "section-ordinance":   { ENG: "Sacrament",                        SPA: "Santa Cena" },
+  "sacrament-hymn":      { ENG: "Sacrament Hymn",                   SPA: "Himno Sacramental" },
+  "sacrament-ordinance": { ENG: "Administration of the Sacrament",  SPA: "Administración de la Santa Cena" },
   "section-messages":    { ENG: "Messages",                         SPA: "Mensajes" },
   [SECTION_CLOSING_ID]:  { ENG: "Closing",                          SPA: "Clausura" },
   "closing-hymn":        { ENG: "Closing Hymn",                     SPA: "Himno de Clausura" },
-  "benediction":         { ENG: "Benediction",                      SPA: "Bendición" },
+  "benediction":         { ENG: "Benediction",                      SPA: "Última Oración" },
 }
 
-const SPEAKER_LABEL: Record<Lang, string> = { ENG: "Speaker", SPA: "Orador" }
+const SPEAKER_LABEL: Record<Lang, string> = { ENG: "Speaker", SPA: "Discursante" }
+const INTERMEDIATE_HYMN_LABEL: Record<Lang, string> = { ENG: "Intermediate Hymn", SPA: "Himno Intermedio" }
+const SPECIAL_NUMBER_LABEL: Record<Lang, string> = { ENG: "Special Number", SPA: "Número Especial" }
 const AUTOSAVE_DELAY_MS = 8000
+const DEFAULT_VISIBLE_SUNDAYS = 8
+const VISIBLE_SUNDAY_INCREMENT = 8
 const SPEAKER_TIME_OPTIONS = [
   2,
   3,
@@ -166,20 +187,67 @@ const SPEAKER_TIME_OPTIONS = [
   20,
 ]
 
-function getNextEightSundays(): PlannerSunday[] {
-  const today = startOfDay(new Date())
-  const currentDay = today.getDay()
-  const daysUntilSunday = currentDay === 0 ? 0 : 7 - currentDay
-  const firstSunday = addDays(today, daysUntilSunday)
+function toPlannerSunday(date: Date): PlannerSunday {
+  return {
+    isoDate: format(date, "yyyy-MM-dd"),
+    dateLabel: format(date, "MMM d"),
+    shortDateLabel: format(date, "MM/dd"),
+    dayLabel: format(date, "EEE"),
+  }
+}
 
-  return Array.from({ length: 8 }, (_, index) => {
-    const date = addDays(firstSunday, index * 7)
-    return {
-      isoDate: format(date, "yyyy-MM-dd"),
-      dateLabel: format(date, "MMM d"),
-      shortDateLabel: format(date, "MM/dd"),
-      dayLabel: format(date, "EEE"),
+function getSundayOnOrAfter(date: Date): Date {
+  const normalizedDate = startOfDay(date)
+  const currentDay = normalizedDate.getDay()
+  const daysUntilSunday = currentDay === 0 ? 0 : 7 - currentDay
+  return addDays(normalizedDate, daysUntilSunday)
+}
+
+function getUpcomingSundays(count = 26): PlannerSunday[] {
+  const firstSunday = getSundayOnOrAfter(new Date())
+
+  return Array.from({ length: count }, (_, index) => toPlannerSunday(addDays(firstSunday, index * 7)))
+}
+
+function plannerSundayDateFromIso(isoDate: string): Date {
+  return new Date(`${isoDate}T12:00:00`)
+}
+
+function translateEntries(entries: AgendaEntry[], lang: Lang): AgendaEntry[] {
+  return entries.map((entry) => {
+    if (entry.kind === "section" || entry.kind === "static") {
+      const label = ENTRY_LABELS[entry.id]
+      if (label) {
+        const translated: typeof entry = { ...entry, title: label[lang] }
+        if (entry.kind === "static" && entry.id === "sacrament-ordinance") {
+          return {
+            ...translated,
+            detail: lang === "SPA" ? "Bendición y distribución de la santa cena" : "Blessing and passing of the sacrament",
+          } as StaticEntry
+        }
+        return translated
+      }
     }
+    if (entry.kind === "speaker") {
+      const isGenericTitle = entry.title === SPEAKER_LABEL["ENG"] || entry.title === SPEAKER_LABEL["SPA"]
+      if (isGenericTitle) {
+        return { ...entry, title: SPEAKER_LABEL[lang] }
+      }
+    }
+    if (entry.kind === "static" && entry.removable) {
+      const isIntermediateHymn = entry.title === INTERMEDIATE_HYMN_LABEL["ENG"] || entry.title === INTERMEDIATE_HYMN_LABEL["SPA"]
+      if (isIntermediateHymn) return { ...entry, title: INTERMEDIATE_HYMN_LABEL[lang] }
+      const isSpecialNumber = entry.title === SPECIAL_NUMBER_LABEL["ENG"] || entry.title === SPECIAL_NUMBER_LABEL["SPA"]
+      if (isSpecialNumber) return { ...entry, title: SPECIAL_NUMBER_LABEL[lang] }
+    }
+    if (entry.kind === "testimony") {
+      return {
+        ...entry,
+        title: lang === "SPA" ? "Testimonios de miembros de la congregación" : "Testimonies by members of the congregation",
+        detail: lang === "SPA" ? "Formato de micrófono abierto después de la santa cena." : "Open microphone format following the sacrament.",
+      } as TestimonyEntry
+    }
+    return entry
   })
 }
 
@@ -245,7 +313,7 @@ function createStandardEntries(isoDate: string, lang: Lang = "ENG"): AgendaEntry
       id: "sacrament-ordinance",
       kind: "static",
       title: t("sacrament-ordinance"),
-      detail: lang === "SPA" ? "Bendición y distribución del sacramento" : "Blessing and passing of the sacrament",
+      detail: lang === "SPA" ? "Bendición y distribución de la santa cena" : "Blessing and passing of the sacrament",
     },
     { id: "section-messages", kind: "section", title: t("section-messages") },
     {
@@ -295,14 +363,14 @@ function createFastEntries(lang: Lang = "ENG"): AgendaEntry[] {
       id: "sacrament-ordinance",
       kind: "static",
       title: t("sacrament-ordinance"),
-      detail: lang === "SPA" ? "Bendición y distribución del sacramento" : "Blessing and passing of the sacrament",
+      detail: lang === "SPA" ? "Bendición y distribución de la santa cena" : "Blessing and passing of the sacrament",
     },
     { id: "section-messages", kind: "section", title: t("section-messages") },
     {
       id: "testimonies",
       kind: "testimony",
       title: lang === "SPA" ? "Testimonios de miembros de la congregación" : "Testimonies by members of the congregation",
-      detail: lang === "SPA" ? "Formato de micrófono abierto después del sacramento." : "Open microphone format following the sacrament.",
+      detail: lang === "SPA" ? "Formato de micrófono abierto después de la santa cena." : "Open microphone format following the sacrament.",
     },
     { id: SECTION_CLOSING_ID, kind: "section", title: t(SECTION_CLOSING_ID) },
     { id: "closing-hymn", kind: "static", title: t("closing-hymn"), hymnId: "", hymnTitle: "" },
@@ -357,13 +425,18 @@ export function SacramentMeetingPlannerClient({ defaultLanguage = "ENG" }: { def
   const router = useRouter()
   const searchParams = useSearchParams()
 
-  const sundays = useMemo(() => getNextEightSundays(), [])
+  const [sundays, setSundays] = useState<PlannerSunday[]>(() => getUpcomingSundays())
+  const defaultLanguageRef = useRef(defaultLanguage)
   const [directoryPeople, setDirectoryPeople] = useState<DirectoryPerson[]>([])
   const [isDirectoryLoading, setIsDirectoryLoading] = useState(false)
   const [directoryModalOpen, setDirectoryModalOpen] = useState(false)
   const [directoryTarget, setDirectoryTarget] = useState<DirectoryTarget | null>(null)
   const [hymnModalOpen, setHymnModalOpen] = useState(false)
   const [hymnTarget, setHymnTarget] = useState<HymnTarget | null>(null)
+  const [jumpDate, setJumpDate] = useState<Date | undefined>(undefined)
+  const [jumpPopoverOpen, setJumpPopoverOpen] = useState(false)
+  const [visibleSundayCount, setVisibleSundayCount] = useState(DEFAULT_VISIBLE_SUNDAYS)
+  const [clearDialogOpen, setClearDialogOpen] = useState(false)
   const [meetingsByDate, setMeetingsByDate] = useState<Record<string, PlannerMeetingState>>(() =>
     Object.fromEntries(
       sundays.map((sunday) => [sunday.isoDate, createInitialMeetingState(sunday.isoDate, defaultLanguage)])
@@ -379,10 +452,13 @@ export function SacramentMeetingPlannerClient({ defaultLanguage = "ENG" }: { def
     return sundays.find((sunday) => sunday.isoDate === selectedDate) ?? sundays[0]
   }, [searchParams, sundays])
 
-  const selectedMeeting = meetingsByDate[selectedSunday.isoDate]
+  const selectedMeeting =
+    meetingsByDate[selectedSunday.isoDate] ??
+    createInitialMeetingState(selectedSunday.isoDate, defaultLanguageRef.current)
   const visibleEntries = getVisibleAgendaEntries(selectedMeeting)
   const selectedMeetingTitle = getMeetingTitle(selectedMeeting.specialType)
   const selectedMeetingStats = getPlannerAssignmentStats(selectedMeeting)
+  const visibleSundays = sundays.slice(0, visibleSundayCount)
 
   const breadcrumbItems = useMemo(
     () => [
@@ -437,6 +513,24 @@ export function SacramentMeetingPlannerClient({ defaultLanguage = "ENG" }: { def
   }, [directoryModalOpen, directoryPeople.length])
 
   useEffect(() => {
+    setMeetingsByDate((prev) => {
+      let hasChanges = false
+      const next = { ...prev }
+
+      for (const sunday of sundays) {
+        if (next[sunday.isoDate]) {
+          continue
+        }
+
+        next[sunday.isoDate] = createInitialMeetingState(sunday.isoDate, defaultLanguageRef.current)
+        hasChanges = true
+      }
+
+      return hasChanges ? next : prev
+    })
+  }, [sundays])
+
+  useEffect(() => {
     try {
       const raw = window.localStorage.getItem(PLANNER_DRAFT_STORAGE_KEY)
       if (!raw) {
@@ -465,10 +559,10 @@ export function SacramentMeetingPlannerClient({ defaultLanguage = "ENG" }: { def
                 ...(savedMeeting.assignments ?? {}),
               },
               standardEntries: Array.isArray(savedMeeting.standardEntries)
-                ? (savedMeeting.standardEntries as AgendaEntry[])
+                ? translateEntries(savedMeeting.standardEntries as AgendaEntry[], defaultLanguageRef.current)
                 : prev[sunday.isoDate].standardEntries,
               fastEntries: Array.isArray(savedMeeting.fastEntries)
-                ? (savedMeeting.fastEntries as AgendaEntry[])
+                ? translateEntries(savedMeeting.fastEntries as AgendaEntry[], defaultLanguageRef.current)
                 : prev[sunday.isoDate].fastEntries,
             }
           }
@@ -487,6 +581,7 @@ export function SacramentMeetingPlannerClient({ defaultLanguage = "ENG" }: { def
     } finally {
       hasLoadedDraftRef.current = true
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sundays])
 
   useEffect(() => {
@@ -538,10 +633,50 @@ export function SacramentMeetingPlannerClient({ defaultLanguage = "ENG" }: { def
     }
   }, [meetingsByDate])
 
+  useEffect(() => {
+    const selectedDate = searchParams.get("date")
+    if (!selectedDate) {
+      return
+    }
+
+    const selectedIndex = sundays.findIndex((sunday) => sunday.isoDate === selectedDate)
+    if (selectedIndex === -1) {
+      return
+    }
+
+    setVisibleSundayCount((prev) => Math.max(prev, selectedIndex + 1))
+  }, [searchParams, sundays])
+
   const handleSelectSunday = (isoDate: string) => {
     const params = new URLSearchParams(searchParams.toString())
     params.set("date", isoDate)
     router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+  }
+
+  const upsertSunday = (date: Date) => {
+    const sundayDate = getSundayOnOrAfter(date)
+    const sunday = toPlannerSunday(sundayDate)
+
+    setSundays((prev) => {
+      if (prev.some((entry) => entry.isoDate === sunday.isoDate)) {
+        return prev
+      }
+
+      return [...prev, sunday].sort((left, right) => left.isoDate.localeCompare(right.isoDate))
+    })
+
+    handleSelectSunday(sunday.isoDate)
+    return sunday
+  }
+
+  const handleJumpDateSelect = (date: Date | undefined) => {
+    setJumpDate(date)
+    if (!date) {
+      return
+    }
+
+    upsertSunday(date)
+    setJumpPopoverOpen(false)
   }
 
   const updateSelectedMeeting = (updater: (meeting: PlannerMeetingState) => PlannerMeetingState) => {
@@ -556,6 +691,14 @@ export function SacramentMeetingPlannerClient({ defaultLanguage = "ENG" }: { def
       ...meeting,
       specialType: meeting.specialType === nextType ? "standard" : nextType,
     }))
+  }
+
+  const handleClearSelectedSunday = () => {
+    setMeetingsByDate((prev) => ({
+      ...prev,
+      [selectedSunday.isoDate]: createInitialMeetingState(selectedSunday.isoDate, defaultLanguageRef.current),
+    }))
+    setClearDialogOpen(false)
   }
 
   const handleAssignmentChange = (field: AssignmentField, value: string) => {
@@ -671,7 +814,7 @@ export function SacramentMeetingPlannerClient({ defaultLanguage = "ENG" }: { def
       const nextSpeaker: SpeakerEntry = {
         id: nextSpeakerId,
         kind: "speaker",
-        title: "Speaker",
+        title: SPEAKER_LABEL[defaultLanguage],
         speakerName: "",
         topic: "",
         durationMinutes: null,
@@ -694,7 +837,7 @@ export function SacramentMeetingPlannerClient({ defaultLanguage = "ENG" }: { def
       const nextHymn: StaticEntry = {
         id: nextHymnId,
         kind: "static",
-        title: "Intermediate Hymn",
+        title: INTERMEDIATE_HYMN_LABEL[defaultLanguage],
         hymnId: "",
         hymnTitle: "",
         removable: true,
@@ -717,7 +860,7 @@ export function SacramentMeetingPlannerClient({ defaultLanguage = "ENG" }: { def
       const nextSpecialNumber: StaticEntry = {
         id: nextSpecialNumberId,
         kind: "static",
-        title: "Special Number",
+        title: SPECIAL_NUMBER_LABEL[defaultLanguage],
         hymnId: "",
         hymnTitle: "",
         removable: true,
@@ -817,7 +960,7 @@ export function SacramentMeetingPlannerClient({ defaultLanguage = "ENG" }: { def
               </p>
             </div>
             <div className="flex flex-col p-2">
-              {sundays.map((sunday) => {
+              {visibleSundays.map((sunday) => {
                 const meeting = meetingsByDate[sunday.isoDate]
                 const stats = getPlannerAssignmentStats(meeting)
                 const isSelected = sunday.isoDate === selectedSunday.isoDate
@@ -863,6 +1006,36 @@ export function SacramentMeetingPlannerClient({ defaultLanguage = "ENG" }: { def
                   </button>
                 )
               })}
+              <div className="px-2 pb-2 pt-1">
+                <Popover open={jumpPopoverOpen} onOpenChange={setJumpPopoverOpen}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="w-full justify-start gap-2">
+                      <CalendarDays className="h-4 w-4" />
+                      Jump to date
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={jumpDate}
+                      onSelect={handleJumpDateSelect}
+                      disabled={(date) => isBefore(startOfDay(date), startOfDay(new Date()))}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+                {visibleSundayCount < sundays.length ? (
+                  <Button
+                    variant="ghost"
+                    className="mt-2 w-full justify-center"
+                    onClick={() =>
+                      setVisibleSundayCount((prev) => Math.min(prev + VISIBLE_SUNDAY_INCREMENT, sundays.length))
+                    }
+                  >
+                    Show more Sundays
+                  </Button>
+                ) : null}
+              </div>
             </div>
           </aside>
 
@@ -931,6 +1104,34 @@ export function SacramentMeetingPlannerClient({ defaultLanguage = "ENG" }: { def
 
                   <div className="text-xs text-muted-foreground">
                     {autosaveLabel}
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    <AlertDialog open={clearDialogOpen} onOpenChange={setClearDialogOpen}>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="rounded-full"
+                        onClick={() => setClearDialogOpen(true)}
+                      >
+                        Clear plan
+                      </Button>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Clear this Sunday&apos;s plan?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This will remove assignments, hymns, speakers, and other planning details for{" "}
+                            {format(plannerSundayDateFromIso(selectedSunday.isoDate), "MMMM d, yyyy")}.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={handleClearSelectedSunday}>
+                            Clear plan
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
 
                   <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
