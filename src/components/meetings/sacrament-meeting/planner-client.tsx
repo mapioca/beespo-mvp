@@ -6,12 +6,11 @@ import { addDays, format, isBefore, startOfDay } from "date-fns"
 import {
   CalendarDays,
   CircleCheck,
-  Check,
   Clock3,
   GripVertical,
-  Landmark,
   Loader2,
   MoreHorizontal,
+  Music,
   Plus,
   Search,
   Trash2,
@@ -47,17 +46,8 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Calendar } from "@/components/ui/calendar"
 import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command"
-import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
@@ -85,11 +75,15 @@ import { cn } from "@/lib/utils"
 type MeetingSpecialType = "standard" | "fast-testimony" | "ward-conference"
 type AssignmentField = "presiding" | "conductor" | "chorister" | "accompanist"
 type AgendaAssigneeField = "invocation" | "benediction"
+type SacramentAssignmentRole = "blessing" | "passing"
 type DirectoryTarget =
   | { type: "assignment"; field: AssignmentField }
   | { type: "agenda-assignee"; entryId: string; field: AgendaAssigneeField }
+  | { type: "sacrament-assignment"; role: SacramentAssignmentRole }
   | { type: "speaker"; entryId: string }
 type HymnTarget = { entryId: string }
+type PlannerTab = "meeting" | "horizon" | "notes"
+type PlannerStatus = "draft" | "ready" | "done"
 
 type PlannerSunday = {
   isoDate: string
@@ -138,6 +132,7 @@ type AgendaEntry = SectionEntry | StaticEntry | SpeakerEntry | TestimonyEntry
 type PlannerMeetingState = {
   specialType: MeetingSpecialType
   assignments: Record<AssignmentField, string>
+  sacramentAssignments: Record<SacramentAssignmentRole, string[]>
   standardEntries: AgendaEntry[]
   fastEntries: AgendaEntry[]
 }
@@ -145,6 +140,11 @@ type PlannerMeetingState = {
 type DirectoryPerson = {
   id: string
   name: string
+}
+
+type PlannerNotes = {
+  announcements: string
+  notes: string
 }
 
 const SECTION_CLOSING_ID = "section-closing"
@@ -393,6 +393,10 @@ function createInitialMeetingState(isoDate: string, lang: Lang = "ENG"): Planner
       chorister: "",
       accompanist: "",
     },
+    sacramentAssignments: {
+      blessing: [],
+      passing: [],
+    },
     standardEntries: createStandardEntries(isoDate, lang),
     fastEntries: createFastEntries(lang),
   }
@@ -437,6 +441,696 @@ function getUpcomingDateParts(isoDate: string) {
     month: format(date, "MMM"),
     day: format(date, "d"),
   }
+}
+
+function getPlannerSubtitle(meeting: PlannerMeetingState) {
+  switch (meeting.specialType) {
+    case "fast-testimony":
+      return "Fast & Testimony Meeting"
+    case "ward-conference":
+      return "Ward Conference"
+    default:
+      return "Regular sacrament meeting"
+  }
+}
+
+function getHorizonSpeakers(meeting: PlannerMeetingState) {
+  return meeting.standardEntries.filter(
+    (entry): entry is SpeakerEntry => entry.kind === "speaker" && !!entry.speakerName.trim()
+  )
+}
+
+type PlannerTabsProps = {
+  activeTab: PlannerTab
+  onTabChange: (tab: PlannerTab) => void
+}
+
+function PlannerTabs({ activeTab, onTabChange }: PlannerTabsProps) {
+  const tabs: { value: PlannerTab; label: string }[] = [
+    { value: "meeting", label: "This meeting" },
+    { value: "horizon", label: "Next 3 months" },
+    { value: "notes", label: "Notes & announcements" },
+  ]
+
+  return (
+    <div className="flex items-center gap-6 border-b border-border/60 px-6">
+      {tabs.map((tab) => (
+        <button
+          key={tab.value}
+          type="button"
+          onClick={() => onTabChange(tab.value)}
+          className={cn(
+            "relative py-3 text-[13px] font-medium transition-colors",
+            activeTab === tab.value
+              ? "text-foreground"
+              : "text-muted-foreground hover:text-foreground"
+          )}
+        >
+          {tab.label}
+          {activeTab === tab.value ? (
+            <span className="absolute inset-x-0 -bottom-px h-px bg-foreground" />
+          ) : null}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+type HorizonPanelProps = {
+  sundays: PlannerSunday[]
+  meetingsByDate: Record<string, PlannerMeetingState>
+  defaultLanguage: Lang
+  onOpen: (isoDate: string) => void
+}
+
+function HorizonPanel({ sundays, meetingsByDate, defaultLanguage, onOpen }: HorizonPanelProps) {
+  return (
+    <div className="px-6 py-6">
+      <p className="mb-5 max-w-xl text-[13.5px] leading-6 text-muted-foreground">
+        Plan speakers and themes up to three months ahead. Click any week to open the full program.
+      </p>
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {sundays.slice(0, 12).map((sunday) => {
+          const meeting =
+            meetingsByDate[sunday.isoDate] ??
+            createInitialMeetingState(sunday.isoDate, defaultLanguage)
+          const speakers = getHorizonSpeakers(meeting)
+          const title = getUpcomingMeetingTitle(meeting)
+          const kind = getUpcomingMeetingKind(meeting)
+
+          return (
+            <button
+              key={sunday.isoDate}
+              type="button"
+              onClick={() => onOpen(sunday.isoDate)}
+              className="flex min-h-[170px] flex-col rounded-xl border border-border/70 bg-white px-4 py-3 text-left transition-colors hover:border-border"
+            >
+              <div className="text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
+                {sunday.dayLabel} · {sunday.dateLabel}
+              </div>
+              <div className="mt-1 font-serif text-[22px] leading-tight text-foreground">
+                {title ? title : <span className="text-[15px] italic text-muted-foreground">Untitled</span>}
+              </div>
+              <div className="mt-4 flex flex-col gap-1">
+                {meeting.specialType === "fast-testimony" ? (
+                  <div className="font-serif text-[13.5px] italic text-muted-foreground">Fast & testimony</div>
+                ) : meeting.specialType === "ward-conference" ? (
+                  <div className="font-serif text-[13.5px] italic text-muted-foreground">Ward conference</div>
+                ) : speakers.length > 0 ? (
+                  speakers.map((speaker, index) => (
+                    <div key={`${speaker.id}-${index}`} className="font-serif text-[13.5px] leading-snug text-[#57534e]">
+                      {speaker.speakerName}
+                    </div>
+                  ))
+                ) : (
+                  <div className="font-serif text-[13.5px] italic text-muted-foreground">No speakers assigned</div>
+                )}
+              </div>
+              <span
+                className={cn(
+                  "mt-auto self-start rounded-full px-1.5 py-[2px] text-[9.5px] font-medium uppercase tracking-[0.04em]",
+                  kind.className
+                )}
+              >
+                {kind.label}
+              </span>
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+type NotesPanelProps = {
+  notes: PlannerNotes
+  onChange: (field: keyof PlannerNotes, value: string) => void
+}
+
+function NotesPanel({ notes, onChange }: NotesPanelProps) {
+  return (
+    <div className="grid max-w-3xl gap-6 px-6 py-6">
+      <div>
+        <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+          Announcements
+        </div>
+        <div className="rounded-xl border border-border/70 bg-white px-3 py-3">
+          <textarea
+            className="min-h-36 w-full resize-y bg-transparent text-sm leading-6 outline-none placeholder:text-muted-foreground"
+            placeholder="Weekly announcements to read from the stand..."
+            value={notes.announcements}
+            onChange={(event) => onChange("announcements", event.target.value)}
+          />
+        </div>
+      </div>
+      <div>
+        <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+          Private bishopric notes
+        </div>
+        <div className="rounded-xl border border-border/70 bg-white px-3 py-3">
+          <textarea
+            className="min-h-36 w-full resize-y bg-transparent text-sm leading-6 outline-none placeholder:text-muted-foreground"
+            placeholder="Not shared with the congregation. Use for coordination, follow-up, sensitive considerations..."
+            value={notes.notes}
+            onChange={(event) => onChange("notes", event.target.value)}
+          />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+type SectionHeaderProps = {
+  label: string
+  number: string
+}
+
+function SectionHeader({ label, number }: SectionHeaderProps) {
+  return (
+    <div className="mb-2.5 flex items-center gap-2.5">
+      <div className="font-serif text-[14px] italic text-muted-foreground">{label}</div>
+      <div className="h-px flex-1 bg-border/70" />
+      <div className="text-[11px] font-medium tracking-[0.04em] text-muted-foreground">{number}</div>
+    </div>
+  )
+}
+
+function getInitials(name: string) {
+  const parts = name.trim().split(/\s+/).filter(Boolean)
+  if (parts.length === 0) return "+"
+  return parts.slice(0, 2).map((part) => part[0]?.toUpperCase()).join("")
+}
+
+type PresidencyAndMusicSectionProps = {
+  assignments: PlannerMeetingState["assignments"]
+  onSelect: (field: AssignmentField) => void
+}
+
+function PresidencyAndMusicSection({ assignments, onSelect }: PresidencyAndMusicSectionProps) {
+  return (
+    <div>
+      <SectionHeader label="Presidency & music" number="01" />
+      <div className="grid gap-2.5 sm:grid-cols-2">
+        <AssignmentCard
+          role="Presiding"
+          name={assignments.presiding}
+          onClick={() => onSelect("presiding")}
+        />
+        <AssignmentCard
+          role="Conducting"
+          name={assignments.conductor}
+          onClick={() => onSelect("conductor")}
+        />
+        <AssignmentCard
+          role="Chorister"
+          name={assignments.chorister}
+          onClick={() => onSelect("chorister")}
+        />
+        <AssignmentCard
+          role="Organist"
+          name={assignments.accompanist}
+          onClick={() => onSelect("accompanist")}
+        />
+      </div>
+    </div>
+  )
+}
+
+type AssignmentCardProps = {
+  role: string
+  name: string
+  onClick: () => void
+}
+
+function AssignmentCard({ role, name, onClick }: AssignmentCardProps) {
+  const assignedName = name.trim()
+
+  return (
+    <button
+      className="flex items-center gap-3 rounded-xl border border-border/70 bg-white px-3.5 py-3 text-left transition-colors hover:border-border hover:bg-[#f7f6f4]"
+      onClick={onClick}
+      type="button"
+    >
+      <div
+        className={cn(
+          "grid h-8 w-8 shrink-0 place-items-center rounded-full text-[11px] font-semibold",
+          assignedName
+            ? "bg-[#f3f1ee] text-[#57534e]"
+            : "border border-dashed border-border bg-transparent text-muted-foreground"
+        )}
+      >
+        {assignedName ? getInitials(assignedName) : "+"}
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="text-[11px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
+          {role}
+        </div>
+        <div
+          className={cn(
+            "mt-0.5 truncate font-serif text-[15.5px]",
+            assignedName ? "text-foreground" : "italic text-muted-foreground"
+          )}
+        >
+          {assignedName || "Unassigned"}
+        </div>
+      </div>
+      <ChevronRightIcon />
+    </button>
+  )
+}
+
+function ChevronRightIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      className="h-3.5 w-3.5 shrink-0 text-muted-foreground"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth="2"
+    >
+      <path strokeLinecap="round" strokeLinejoin="round" d="m9 18 6-6-6-6" />
+    </svg>
+  )
+}
+
+function getStaticEntry(entries: AgendaEntry[], id: string) {
+  return entries.find((entry): entry is StaticEntry => entry.kind === "static" && entry.id === id)
+}
+
+type OpeningSectionProps = {
+  entries: AgendaEntry[]
+  onPickHymn: (entryId: string) => void
+  onPickPrayer: (entryId: string, field: AgendaAssigneeField) => void
+}
+
+function OpeningSection({ entries, onPickHymn, onPickPrayer }: OpeningSectionProps) {
+  const openingHymn = getStaticEntry(entries, "opening-hymn")
+  const invocation = getStaticEntry(entries, "invocation")
+
+  return (
+    <div>
+      <SectionHeader label="Opening" number="02" />
+      {openingHymn ? (
+        <HymnPlanningRow
+          type="Opening hymn"
+          hymnNumber={openingHymn.hymnNumber}
+          hymnTitle={openingHymn.hymnTitle}
+          onClick={() => onPickHymn(openingHymn.id)}
+        />
+      ) : null}
+      {invocation ? (
+        <PrayerPlanningRow
+          type="Invocation"
+          personName={invocation.assigneeName}
+          onClick={() => onPickPrayer(invocation.id, "invocation")}
+        />
+      ) : null}
+    </div>
+  )
+}
+
+type HymnPlanningRowProps = {
+  type: string
+  hymnNumber?: number
+  hymnTitle?: string
+  meta?: string
+  onClick: () => void
+}
+
+function HymnPlanningRow({ type, hymnNumber, hymnTitle, meta, onClick }: HymnPlanningRowProps) {
+  const hasHymn = Boolean(hymnTitle)
+
+  return (
+    <button
+      className="mb-2 grid w-full grid-cols-[100px_1fr_auto] items-center gap-3.5 rounded-xl border border-border/70 bg-white px-3.5 py-3 text-left transition-colors hover:border-border"
+      onClick={onClick}
+      type="button"
+    >
+      <div className="text-[10.5px] font-medium uppercase tracking-[0.05em] text-muted-foreground">
+        {type}
+      </div>
+      <div className="min-w-0">
+        {hasHymn ? (
+          <>
+            {typeof hymnNumber === "number" ? (
+              <span className="mr-1.5 font-serif text-[13px] italic text-[#4f46e5]">
+                No. {hymnNumber}
+              </span>
+            ) : null}
+            <span className="font-serif text-[15.5px] text-foreground">{hymnTitle}</span>
+          </>
+        ) : (
+          <span className="font-serif text-[15.5px] italic text-muted-foreground">Choose a hymn</span>
+        )}
+        {meta ? (
+          <div className="mt-0.5 truncate text-[12px] text-muted-foreground">{meta}</div>
+        ) : null}
+      </div>
+      <ChevronRightIcon />
+    </button>
+  )
+}
+
+type PrayerPlanningRowProps = {
+  type: string
+  personName?: string
+  onClick: () => void
+}
+
+function PrayerPlanningRow({ type, personName, onClick }: PrayerPlanningRowProps) {
+  const assignedName = personName?.trim()
+
+  return (
+    <button
+      className="mb-2 grid w-full grid-cols-[100px_1fr_auto] items-center gap-3.5 rounded-xl border border-border/70 bg-white px-3.5 py-3 text-left transition-colors hover:border-border"
+      onClick={onClick}
+      type="button"
+    >
+      <div className="text-[10.5px] font-medium uppercase tracking-[0.05em] text-muted-foreground">
+        {type}
+      </div>
+      <div className="min-w-0">
+        {assignedName ? (
+          <span className="font-serif text-[15.5px] text-foreground">{assignedName}</span>
+        ) : (
+          <span className="font-serif text-[15.5px] italic text-muted-foreground">Assign someone</span>
+        )}
+      </div>
+      <ChevronRightIcon />
+    </button>
+  )
+}
+
+type SacramentSectionProps = {
+  entries: AgendaEntry[]
+  assignments: PlannerMeetingState["sacramentAssignments"]
+  onPickHymn: (entryId: string) => void
+  onAssign: (role: SacramentAssignmentRole) => void
+  onRemove: (role: SacramentAssignmentRole, name: string) => void
+}
+
+function SacramentSection({
+  entries,
+  assignments,
+  onPickHymn,
+  onAssign,
+  onRemove,
+}: SacramentSectionProps) {
+  const sacramentHymn = getStaticEntry(entries, "sacrament-hymn")
+
+  return (
+    <div>
+      <SectionHeader label="Sacrament" number="03" />
+      {sacramentHymn ? (
+        <HymnPlanningRow
+          type="Sacrament hymn"
+          hymnNumber={sacramentHymn.hymnNumber}
+          hymnTitle={sacramentHymn.hymnTitle}
+          meta="Between opening prayer and sacrament ordinance"
+          onClick={() => onPickHymn(sacramentHymn.id)}
+        />
+      ) : null}
+      <div className="mt-2 grid gap-2.5 sm:grid-cols-2">
+        <AaronicAssignmentCard
+          title="Blessing the sacrament"
+          people={assignments.blessing}
+          max={2}
+          onAdd={() => onAssign("blessing")}
+          onRemove={(name) => onRemove("blessing", name)}
+        />
+        <AaronicAssignmentCard
+          title="Passing the sacrament"
+          people={assignments.passing}
+          max={8}
+          onAdd={() => onAssign("passing")}
+          onRemove={(name) => onRemove("passing", name)}
+        />
+      </div>
+    </div>
+  )
+}
+
+type AaronicAssignmentCardProps = {
+  title: string
+  people: string[]
+  max: number
+  onAdd: () => void
+  onRemove: (name: string) => void
+}
+
+function AaronicAssignmentCard({ title, people, max, onAdd, onRemove }: AaronicAssignmentCardProps) {
+  const assignedPeople = people.filter((person) => person.trim())
+
+  return (
+    <div className="rounded-xl border border-border/70 bg-white px-3.5 py-3">
+      <div className="mb-2 text-[11px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
+        {title} <span className="text-muted-foreground/70">· {assignedPeople.length}/{max}</span>
+      </div>
+      <div className="flex flex-wrap gap-1.5">
+        {assignedPeople.map((person) => (
+          <span
+            key={person}
+            className="inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-[#f7f6f4] py-1 pl-2.5 pr-1 text-[12.5px] font-serif text-foreground"
+          >
+            {person}
+            <button
+              type="button"
+              className="grid h-4 w-4 place-items-center rounded-full bg-white text-[11px] text-muted-foreground transition-colors hover:text-foreground"
+              onClick={() => onRemove(person)}
+              aria-label={`Remove ${person}`}
+            >
+              &times;
+            </button>
+          </span>
+        ))}
+        {assignedPeople.length < max ? (
+          <button
+            type="button"
+            className="inline-flex items-center gap-1.5 rounded-full border border-dashed border-border px-2.5 py-1 text-[12px] font-medium text-muted-foreground transition-colors hover:border-border hover:text-foreground"
+            onClick={onAdd}
+          >
+            <Plus className="h-3 w-3" />
+            Add
+          </button>
+        ) : null}
+      </div>
+    </div>
+  )
+}
+
+type SpeakersAndMusicSectionProps = {
+  entries: AgendaEntry[]
+  isFastTestimony: boolean
+  onSelectSpeaker: (entryId: string) => void
+  onSpeakerFieldChange: (
+    entryId: string,
+    field: "topic" | "time",
+    value: string | number | null
+  ) => void
+  onDeleteSpeaker: (entryId: string) => void
+  onPickHymn: (entryId: string) => void
+  onDeleteStaticEntry: (entryId: string) => void
+  onAddSpeaker: () => void
+  onAddIntermediateHymn: () => void
+  onAddSpecialNumber: () => void
+}
+
+function SpeakersAndMusicSection({
+  entries,
+  isFastTestimony,
+  onSelectSpeaker,
+  onSpeakerFieldChange,
+  onDeleteSpeaker,
+  onPickHymn,
+  onDeleteStaticEntry,
+  onAddSpeaker,
+  onAddIntermediateHymn,
+  onAddSpecialNumber,
+}: SpeakersAndMusicSectionProps) {
+  const messageEntries = entries.filter(
+    (entry): entry is SpeakerEntry | TestimonyEntry | StaticEntry =>
+      entry.kind === "speaker" ||
+      entry.kind === "testimony" ||
+      (entry.kind === "static" && Boolean(entry.removable))
+  )
+  let speakerOrder = 0
+
+  return (
+    <div>
+      <SectionHeader label={isFastTestimony ? "Testimony meeting" : "Speakers & music"} number="04" />
+      {isFastTestimony ? (
+        <div className="rounded-xl border border-border/70 bg-white px-4 py-4 font-serif text-[14.5px] italic leading-6 text-muted-foreground">
+          Fast &amp; testimony meeting - open to the congregation following the presiding authority&apos;s opening testimony.
+        </div>
+      ) : (
+        <>
+          <div className="space-y-2">
+            {messageEntries.map((entry) => {
+              if (entry.kind === "speaker") {
+                speakerOrder += 1
+                return (
+                  <SpeakerPlanningRow
+                    key={entry.id}
+                    entry={entry}
+                    order={speakerOrder}
+                    onSelectSpeaker={onSelectSpeaker}
+                    onSpeakerFieldChange={onSpeakerFieldChange}
+                    onDeleteSpeaker={onDeleteSpeaker}
+                  />
+                )
+              }
+
+              if (entry.kind === "static") {
+                return (
+                  <MusicPlanningRow
+                    key={entry.id}
+                    entry={entry}
+                    onPickHymn={onPickHymn}
+                    onDeleteStaticEntry={onDeleteStaticEntry}
+                  />
+                )
+              }
+
+              return null
+            })}
+          </div>
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={onAddSpeaker}
+              className="inline-flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-[#fafaf9] hover:text-foreground"
+            >
+              <Plus className="h-4 w-4" />
+              Add speaker
+            </button>
+            <button
+              type="button"
+              onClick={onAddIntermediateHymn}
+              className="inline-flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-[#fafaf9] hover:text-foreground"
+            >
+              <Plus className="h-4 w-4" />
+              Add musical number
+            </button>
+            <button
+              type="button"
+              onClick={onAddSpecialNumber}
+              className="inline-flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-[#fafaf9] hover:text-foreground"
+            >
+              <Plus className="h-4 w-4" />
+              Add special number
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
+type SpeakerPlanningRowProps = {
+  entry: SpeakerEntry
+  order: number
+  onSelectSpeaker: (entryId: string) => void
+  onSpeakerFieldChange: (
+    entryId: string,
+    field: "topic" | "time",
+    value: string | number | null
+  ) => void
+  onDeleteSpeaker: (entryId: string) => void
+}
+
+function SpeakerPlanningRow({
+  entry,
+  order,
+  onSelectSpeaker,
+  onSpeakerFieldChange,
+  onDeleteSpeaker,
+}: SpeakerPlanningRowProps) {
+  return (
+    <div className="grid grid-cols-[30px_1fr_auto] items-center gap-3 rounded-xl border border-border/70 bg-white px-3.5 py-3">
+      <div className="font-mono text-[12px] text-muted-foreground">{order}.</div>
+      <div className="min-w-0">
+        <button
+          type="button"
+          onClick={() => onSelectSpeaker(entry.id)}
+          className="block w-full truncate text-left font-serif text-[16.5px] text-foreground"
+        >
+          {entry.speakerName ? (
+            entry.speakerName
+          ) : (
+            <span className="italic text-muted-foreground">Tap to assign speaker</span>
+          )}
+        </button>
+        <input
+          value={entry.topic}
+          onChange={(event) => onSpeakerFieldChange(entry.id, "topic", event.target.value)}
+          placeholder="Topic or assigned subject"
+          className="mt-0.5 w-full border-0 bg-transparent p-0 text-[13px] text-muted-foreground outline-none placeholder:text-muted-foreground"
+        />
+      </div>
+      <div className="flex items-center gap-2">
+        <Select
+          value={entry.durationMinutes?.toString() ?? ""}
+          onValueChange={(value) => onSpeakerFieldChange(entry.id, "time", Number(value))}
+        >
+          <SelectTrigger className="h-8 w-[86px] bg-[#f7f6f4] px-2 text-[12px] shadow-none">
+            <SelectValue placeholder="Time" />
+          </SelectTrigger>
+          <SelectContent align="end" className="max-h-44">
+            {SPEAKER_TIME_OPTIONS.map((option) => (
+              <SelectItem key={option} value={option.toString()}>
+                {option} min
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <button
+          type="button"
+          onClick={() => onDeleteSpeaker(entry.id)}
+          className="grid h-8 w-8 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-[#f7f6f4] hover:text-foreground"
+          aria-label={`Remove ${entry.title}`}
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+        </button>
+      </div>
+    </div>
+  )
+}
+
+type MusicPlanningRowProps = {
+  entry: StaticEntry
+  onPickHymn: (entryId: string) => void
+  onDeleteStaticEntry: (entryId: string) => void
+}
+
+function MusicPlanningRow({ entry, onPickHymn, onDeleteStaticEntry }: MusicPlanningRowProps) {
+  return (
+    <div className="grid grid-cols-[30px_1fr_auto] items-center gap-3 rounded-xl border border-dashed border-border/80 bg-white px-3.5 py-3">
+      <div className="grid h-7 w-7 place-items-center rounded-full bg-[#f7f6f4] text-muted-foreground">
+        <Music className="h-3.5 w-3.5" />
+      </div>
+      <button
+        type="button"
+        onClick={() => onPickHymn(entry.id)}
+        className="min-w-0 text-left"
+      >
+        <div className="font-serif text-[16.5px] text-foreground">{entry.title}</div>
+        <div className="mt-0.5 truncate text-[13px] text-muted-foreground">
+          {entry.hymnNumber && entry.hymnTitle
+            ? `No. ${entry.hymnNumber} ${entry.hymnTitle}`
+            : "Choose hymn or musical number"}
+        </div>
+      </button>
+      <button
+        type="button"
+        onClick={() => onDeleteStaticEntry(entry.id)}
+        className="grid h-8 w-8 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-[#f7f6f4] hover:text-foreground"
+        aria-label={`Remove ${entry.title}`}
+      >
+        <Trash2 className="h-3.5 w-3.5" />
+      </button>
+    </div>
+  )
 }
 
 type UpcomingPanelProps = {
@@ -576,10 +1270,13 @@ export function SacramentMeetingPlannerClient({ defaultLanguage = "ENG" }: { def
   const [directoryTarget, setDirectoryTarget] = useState<DirectoryTarget | null>(null)
   const [hymnModalOpen, setHymnModalOpen] = useState(false)
   const [hymnTarget, setHymnTarget] = useState<HymnTarget | null>(null)
+  const [activeTab, setActiveTab] = useState<PlannerTab>("meeting")
+  const [statusByDate, setStatusByDate] = useState<Record<string, PlannerStatus>>({})
   const [jumpDate, setJumpDate] = useState<Date | undefined>(undefined)
   const [jumpPopoverOpen, setJumpPopoverOpen] = useState(false)
   const [visibleSundayCount, setVisibleSundayCount] = useState(DEFAULT_VISIBLE_SUNDAYS)
   const [clearDialogOpen, setClearDialogOpen] = useState(false)
+  const [notesByDate, setNotesByDate] = useState<Record<string, PlannerNotes>>({})
   const [meetingsByDate, setMeetingsByDate] = useState<Record<string, PlannerMeetingState>>(() =>
     Object.fromEntries(
       sundays.map((sunday) => [sunday.isoDate, createInitialMeetingState(sunday.isoDate, defaultLanguage)])
@@ -602,6 +1299,23 @@ export function SacramentMeetingPlannerClient({ defaultLanguage = "ENG" }: { def
   const selectedMeetingTitle = getMeetingTitle(selectedMeeting.specialType)
   const selectedMeetingStats = getPlannerAssignmentStats(selectedMeeting)
   const visibleSundays = sundays.slice(0, visibleSundayCount)
+  const selectedNotes = notesByDate[selectedSunday.isoDate] ?? { announcements: "", notes: "" }
+  const selectedPlannerStatus = statusByDate[selectedSunday.isoDate] ?? "draft"
+  const remainingAgendaEntries = visibleEntries.filter(
+    (entry) =>
+      ![
+        "section-opening",
+        "opening-hymn",
+        "invocation",
+        "section-ordinance",
+        "sacrament-hymn",
+        "sacrament-ordinance",
+        "section-messages",
+      ].includes(entry.id) &&
+      entry.kind !== "speaker" &&
+      entry.kind !== "testimony" &&
+      !(entry.kind === "static" && entry.removable)
+  )
 
   const breadcrumbItems = useMemo(
     () => [
@@ -683,6 +1397,8 @@ export function SacramentMeetingPlannerClient({ defaultLanguage = "ENG" }: { def
 
       const parsed = JSON.parse(raw) as {
         meetingsByDate?: Record<string, Partial<PlannerMeetingState>>
+        notesByDate?: Record<string, PlannerNotes>
+        statusByDate?: Record<string, PlannerStatus>
         savedAt?: string
       }
 
@@ -701,6 +1417,10 @@ export function SacramentMeetingPlannerClient({ defaultLanguage = "ENG" }: { def
                 ...prev[sunday.isoDate].assignments,
                 ...(savedMeeting.assignments ?? {}),
               },
+              sacramentAssignments: {
+                ...prev[sunday.isoDate].sacramentAssignments,
+                ...(savedMeeting.sacramentAssignments ?? {}),
+              },
               standardEntries: Array.isArray(savedMeeting.standardEntries)
                 ? translateEntries(savedMeeting.standardEntries as AgendaEntry[], defaultLanguageRef.current)
                 : prev[sunday.isoDate].standardEntries,
@@ -712,6 +1432,14 @@ export function SacramentMeetingPlannerClient({ defaultLanguage = "ENG" }: { def
 
           return next
         })
+      }
+
+      if (parsed.notesByDate) {
+        setNotesByDate(parsed.notesByDate)
+      }
+
+      if (parsed.statusByDate) {
+        setStatusByDate(parsed.statusByDate)
       }
 
       if (parsed.savedAt) {
@@ -737,6 +1465,8 @@ export function SacramentMeetingPlannerClient({ defaultLanguage = "ENG" }: { def
         setAutosaveStatus("saving")
         const payload = {
           meetingsByDate,
+          notesByDate,
+          statusByDate,
           savedAt: new Date().toISOString(),
         }
         window.localStorage.setItem(PLANNER_DRAFT_STORAGE_KEY, JSON.stringify(payload))
@@ -774,7 +1504,7 @@ export function SacramentMeetingPlannerClient({ defaultLanguage = "ENG" }: { def
       window.removeEventListener("pagehide", flushDraft)
       window.removeEventListener("beforeunload", flushDraft)
     }
-  }, [meetingsByDate])
+  }, [meetingsByDate, notesByDate, statusByDate])
 
   useEffect(() => {
     const selectedDate = searchParams.get("date")
@@ -841,7 +1571,32 @@ export function SacramentMeetingPlannerClient({ defaultLanguage = "ENG" }: { def
       ...prev,
       [selectedSunday.isoDate]: createInitialMeetingState(selectedSunday.isoDate, defaultLanguageRef.current),
     }))
+    setNotesByDate((prev) => ({
+      ...prev,
+      [selectedSunday.isoDate]: { announcements: "", notes: "" },
+    }))
+    setStatusByDate((prev) => ({
+      ...prev,
+      [selectedSunday.isoDate]: "draft",
+    }))
     setClearDialogOpen(false)
+  }
+
+  const handlePlannerStatusChange = (status: PlannerStatus) => {
+    setStatusByDate((prev) => ({
+      ...prev,
+      [selectedSunday.isoDate]: status,
+    }))
+  }
+
+  const handleNotesChange = (field: keyof PlannerNotes, value: string) => {
+    setNotesByDate((prev) => ({
+      ...prev,
+      [selectedSunday.isoDate]: {
+        ...(prev[selectedSunday.isoDate] ?? { announcements: "", notes: "" }),
+        [field]: value,
+      },
+    }))
   }
 
   const handleAssignmentChange = (field: AssignmentField, value: string) => {
@@ -850,6 +1605,40 @@ export function SacramentMeetingPlannerClient({ defaultLanguage = "ENG" }: { def
       assignments: {
         ...meeting.assignments,
         [field]: value,
+      },
+    }))
+  }
+
+  const handleAddSacramentAssignment = (role: SacramentAssignmentRole, personName: string) => {
+    const maxByRole: Record<SacramentAssignmentRole, number> = {
+      blessing: 2,
+      passing: 8,
+    }
+
+    updateSelectedMeeting((meeting) => {
+      const currentPeople = meeting.sacramentAssignments[role] ?? []
+      const trimmedName = personName.trim()
+
+      if (!trimmedName || currentPeople.includes(trimmedName) || currentPeople.length >= maxByRole[role]) {
+        return meeting
+      }
+
+      return {
+        ...meeting,
+        sacramentAssignments: {
+          ...meeting.sacramentAssignments,
+          [role]: [...currentPeople, trimmedName],
+        },
+      }
+    })
+  }
+
+  const handleRemoveSacramentAssignment = (role: SacramentAssignmentRole, personName: string) => {
+    updateSelectedMeeting((meeting) => ({
+      ...meeting,
+      sacramentAssignments: {
+        ...meeting.sacramentAssignments,
+        [role]: (meeting.sacramentAssignments[role] ?? []).filter((name) => name !== personName),
       },
     }))
   }
@@ -1056,6 +1845,8 @@ export function SacramentMeetingPlannerClient({ defaultLanguage = "ENG" }: { def
 
     if (directoryTarget.type === "assignment") {
       handleAssignmentChange(directoryTarget.field, personName)
+    } else if (directoryTarget.type === "sacrament-assignment") {
+      handleAddSacramentAssignment(directoryTarget.role, personName)
     } else if (directoryTarget.type === "speaker") {
       handleSpeakerNameChange(directoryTarget.entryId, personName)
     } else {
@@ -1081,7 +1872,6 @@ export function SacramentMeetingPlannerClient({ defaultLanguage = "ENG" }: { def
     setHymnTarget(null)
   }
 
-  const messagesInsertIndex = visibleEntries.findIndex((entry) => entry.id === SECTION_CLOSING_ID)
   const autosaveLabel =
     autosaveStatus === "saving"
       ? "Saving draft..."
@@ -1099,26 +1889,36 @@ export function SacramentMeetingPlannerClient({ defaultLanguage = "ENG" }: { def
           <section className="min-w-0 flex-1 rounded-2xl border border-border/70 bg-[linear-gradient(180deg,#ffffff_0%,#fbfbfa_100%)] shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
             <div className="flex h-full flex-col">
               <div className="border-b border-border/60 px-6 py-5">
-                <div className="flex flex-col gap-5">
-                  <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-                    <div>
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                        Planner
-                      </p>
-                      <div className="mt-2 flex items-center gap-3">
-                        <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-                          {selectedMeetingTitle}
-                        </h1>
-                        {selectedMeeting.specialType === "ward-conference" ? (
-                          <span className="inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-background px-2.5 py-1 text-[11px] font-medium text-muted-foreground">
-                            <Landmark className="h-3.5 w-3.5" />
-                            Ward Conference
-                          </span>
-                        ) : null}
-                      </div>
-                      <p className="mt-1 text-sm text-muted-foreground">
-                        {selectedSunday.dayLabel} {selectedSunday.shortDateLabel}
-                      </p>
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                  <div>
+                    <div className="text-[13px] text-muted-foreground">
+                      {format(plannerSundayDateFromIso(selectedSunday.isoDate), "EEEE, MMMM d, yyyy")} · 9:00 AM
+                    </div>
+                    <h1 className="mt-1 font-serif text-[34px] font-normal tracking-[-0.02em] text-foreground">
+                      {selectedMeetingTitle}
+                    </h1>
+                    <div className="mt-1 text-sm text-muted-foreground">
+                      {getPlannerSubtitle(selectedMeeting)}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    <div className="inline-flex rounded-xl border border-border/70 bg-[#fafaf9] p-1">
+                      {(["draft", "ready", "done"] as PlannerStatus[]).map((status) => (
+                        <button
+                          key={status}
+                          type="button"
+                          onClick={() => handlePlannerStatusChange(status)}
+                          className={cn(
+                            "rounded-lg px-3 py-1.5 text-sm font-medium capitalize transition-colors",
+                            selectedPlannerStatus === status
+                              ? "bg-white text-foreground shadow-sm"
+                              : "text-muted-foreground hover:text-foreground"
+                          )}
+                        >
+                          {status}
+                        </button>
+                      ))}
                     </div>
 
                     <div className="inline-flex rounded-xl border border-border/70 bg-[#fafaf9] p-1">
@@ -1148,167 +1948,164 @@ export function SacramentMeetingPlannerClient({ defaultLanguage = "ENG" }: { def
                       </button>
                     </div>
                   </div>
+                </div>
+              </div>
 
-                  <div className="inline-flex items-center gap-2 self-start rounded-full border border-border/70 bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground">
-                    {selectedMeetingStats.totalCount > 0 &&
-                    selectedMeetingStats.assignedCount === selectedMeetingStats.totalCount ? (
-                      <CircleCheck className="h-3.5 w-3.5 text-emerald-600" />
-                    ) : null}
-                    <span>
-                      {selectedMeetingStats.assignedCount}/{selectedMeetingStats.totalCount} assigned
-                    </span>
-                  </div>
+              <PlannerTabs activeTab={activeTab} onTabChange={setActiveTab} />
 
-                  <div className="text-xs text-muted-foreground">
-                    {autosaveLabel}
-                  </div>
+              {activeTab === "meeting" ? (
+                <>
+                  <div className="border-b border-border/60 px-6 py-5">
+                    <div className="flex flex-col gap-5">
+                      <div className="flex flex-wrap items-center gap-3">
+                        <div className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground">
+                          {selectedMeetingStats.totalCount > 0 &&
+                          selectedMeetingStats.assignedCount === selectedMeetingStats.totalCount ? (
+                            <CircleCheck className="h-3.5 w-3.5 text-emerald-600" />
+                          ) : null}
+                          <span>
+                            {selectedMeetingStats.assignedCount}/{selectedMeetingStats.totalCount} assigned
+                          </span>
+                        </div>
 
-                  <div className="flex flex-wrap items-center gap-2">
-                    <AlertDialog open={clearDialogOpen} onOpenChange={setClearDialogOpen}>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="rounded-full"
-                        onClick={() => setClearDialogOpen(true)}
-                      >
-                        Clear plan
-                      </Button>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Clear this Sunday&apos;s plan?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            This will remove assignments, hymns, speakers, and other planning details for{" "}
-                            {format(plannerSundayDateFromIso(selectedSunday.isoDate), "MMMM d, yyyy")}.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction onClick={handleClearSelectedSunday}>
+                        <div className="text-xs text-muted-foreground">
+                          {autosaveLabel}
+                        </div>
+
+                        <AlertDialog open={clearDialogOpen} onOpenChange={setClearDialogOpen}>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="rounded-full"
+                            onClick={() => setClearDialogOpen(true)}
+                          >
                             Clear plan
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </div>
-
-                  <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                    <AssignmentInput
-                      label="Presiding"
-                      value={selectedMeeting.assignments.presiding}
-                      onSelect={() =>
-                        handleOpenDirectoryPicker({
-                          type: "assignment",
-                          field: "presiding",
-                        })
-                      }
-                    />
-                    <AssignmentInput
-                      label="Conductor"
-                      value={selectedMeeting.assignments.conductor}
-                      onSelect={() =>
-                        handleOpenDirectoryPicker({
-                          type: "assignment",
-                          field: "conductor",
-                        })
-                      }
-                    />
-                    <AssignmentInput
-                      label="Chorister"
-                      value={selectedMeeting.assignments.chorister}
-                      onSelect={() =>
-                        handleOpenDirectoryPicker({
-                          type: "assignment",
-                          field: "chorister",
-                        })
-                      }
-                    />
-                    <AssignmentInput
-                      label="Organist / Pianist"
-                      value={selectedMeeting.assignments.accompanist}
-                      onSelect={() =>
-                        handleOpenDirectoryPicker({
-                          type: "assignment",
-                          field: "accompanist",
-                        })
-                      }
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex-1 overflow-auto px-6 py-5">
-                <div className="mx-auto w-full max-w-3xl">
-                  <DndContext
-                    sensors={sensors}
-                    collisionDetection={closestCenter}
-                    onDragEnd={handleDragEnd}
-                  >
-                    <SortableContext
-                      items={visibleEntries.map((entry) => entry.id)}
-                      strategy={verticalListSortingStrategy}
-                    >
-                      <div className="space-y-1.5">
-                        {visibleEntries.map((entry, index) => (
-                          <div key={entry.id}>
-                            <AgendaRow
-                              entry={entry}
-                              onSelectSpeaker={(entryId) =>
-                                handleOpenDirectoryPicker({
-                                  type: "speaker",
-                                  entryId,
-                                })
-                              }
-                              onSpeakerFieldChange={handleSpeakerFieldChange}
-                              onDeleteSpeaker={handleDeleteSpeaker}
-                              onDeleteStaticEntry={handleDeleteStaticEntry}
-                              onSelectAgendaAssignee={(entryId, field) =>
-                                handleOpenDirectoryPicker({
-                                  type: "agenda-assignee",
-                                  entryId,
-                                  field,
-                                })
-                              }
-                              onSelectHymn={handleOpenHymnPicker}
-                            />
-                            {selectedMeeting.specialType !== "fast-testimony" &&
-                            messagesInsertIndex > 0 &&
-                            index === messagesInsertIndex - 1 ? (
-                              <div className="px-1 py-2">
-                                <div className="flex flex-wrap items-center gap-2">
-                                  <button
-                                    type="button"
-                                    onClick={handleAddSpeaker}
-                                    className="inline-flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-[#fafaf9] hover:text-foreground"
-                                  >
-                                    <Plus className="h-4 w-4" />
-                                    Add speaker
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={handleAddIntermediateHymn}
-                                    className="inline-flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-[#fafaf9] hover:text-foreground"
-                                  >
-                                    <Plus className="h-4 w-4" />
-                                    Add intermediate hymn
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={handleAddSpecialNumber}
-                                    className="inline-flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-[#fafaf9] hover:text-foreground"
-                                  >
-                                    <Plus className="h-4 w-4" />
-                                    Add special number
-                                  </button>
-                                </div>
-                              </div>
-                            ) : null}
-                          </div>
-                        ))}
+                          </Button>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Clear this Sunday&apos;s plan?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This will remove assignments, hymns, speakers, and other planning details for{" "}
+                                {format(plannerSundayDateFromIso(selectedSunday.isoDate), "MMMM d, yyyy")}.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction onClick={handleClearSelectedSunday}>
+                                Clear plan
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       </div>
-                    </SortableContext>
-                  </DndContext>
-                </div>
-              </div>
+
+                      <PresidencyAndMusicSection
+                        assignments={selectedMeeting.assignments}
+                        onSelect={(field) =>
+                          handleOpenDirectoryPicker({
+                            type: "assignment",
+                            field,
+                          })
+                        }
+                      />
+                      <OpeningSection
+                        entries={visibleEntries}
+                        onPickHymn={handleOpenHymnPicker}
+                        onPickPrayer={(entryId, field) =>
+                          handleOpenDirectoryPicker({
+                            type: "agenda-assignee",
+                            entryId,
+                            field,
+                          })
+                        }
+                      />
+                      <SacramentSection
+                        entries={visibleEntries}
+                        assignments={selectedMeeting.sacramentAssignments}
+                        onPickHymn={handleOpenHymnPicker}
+                        onAssign={(role) =>
+                          handleOpenDirectoryPicker({
+                            type: "sacrament-assignment",
+                            role,
+                          })
+                        }
+                        onRemove={handleRemoveSacramentAssignment}
+                      />
+                      <SpeakersAndMusicSection
+                        entries={visibleEntries}
+                        isFastTestimony={selectedMeeting.specialType === "fast-testimony"}
+                        onSelectSpeaker={(entryId) =>
+                          handleOpenDirectoryPicker({
+                            type: "speaker",
+                            entryId,
+                          })
+                        }
+                        onSpeakerFieldChange={handleSpeakerFieldChange}
+                        onDeleteSpeaker={handleDeleteSpeaker}
+                        onPickHymn={handleOpenHymnPicker}
+                        onDeleteStaticEntry={handleDeleteStaticEntry}
+                        onAddSpeaker={handleAddSpeaker}
+                        onAddIntermediateHymn={handleAddIntermediateHymn}
+                        onAddSpecialNumber={handleAddSpecialNumber}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex-1 overflow-auto px-6 py-5">
+                    <div className="mx-auto w-full max-w-3xl">
+                      <DndContext
+                        sensors={sensors}
+                        collisionDetection={closestCenter}
+                        onDragEnd={handleDragEnd}
+                      >
+                        <SortableContext
+                          items={remainingAgendaEntries.map((entry) => entry.id)}
+                          strategy={verticalListSortingStrategy}
+                        >
+                          <div className="space-y-1.5">
+                            {remainingAgendaEntries.map((entry) => (
+                              <div key={entry.id}>
+                                <AgendaRow
+                                  entry={entry}
+                                  onSelectSpeaker={(entryId) =>
+                                    handleOpenDirectoryPicker({
+                                      type: "speaker",
+                                      entryId,
+                                    })
+                                  }
+                                  onSpeakerFieldChange={handleSpeakerFieldChange}
+                                  onDeleteSpeaker={handleDeleteSpeaker}
+                                  onDeleteStaticEntry={handleDeleteStaticEntry}
+                                  onSelectAgendaAssignee={(entryId, field) =>
+                                    handleOpenDirectoryPicker({
+                                      type: "agenda-assignee",
+                                      entryId,
+                                      field,
+                                    })
+                                  }
+                                  onSelectHymn={handleOpenHymnPicker}
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        </SortableContext>
+                      </DndContext>
+                    </div>
+                  </div>
+                </>
+              ) : activeTab === "horizon" ? (
+                <HorizonPanel
+                  sundays={sundays}
+                  meetingsByDate={meetingsByDate}
+                  defaultLanguage={defaultLanguageRef.current}
+                  onOpen={(isoDate) => {
+                    handleSelectSunday(isoDate)
+                    setActiveTab("meeting")
+                  }}
+                />
+              ) : (
+                <NotesPanel notes={selectedNotes} onChange={handleNotesChange} />
+              )}
             </div>
           </section>
 
@@ -1363,34 +2160,6 @@ export function SacramentMeetingPlannerClient({ defaultLanguage = "ENG" }: { def
         }
       />
     </div>
-  )
-}
-
-function AssignmentInput({
-  label,
-  value,
-  onSelect,
-}: {
-  label: string
-  value: string
-  onSelect: () => void
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onSelect}
-      className="rounded-xl border border-border/70 bg-[#fcfcfb] px-3 py-2.5 text-left transition-colors hover:bg-white"
-    >
-      <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-        {label}
-      </div>
-      <div className="mt-1 flex items-center gap-2 text-sm text-foreground">
-        <Search className="h-3.5 w-3.5 text-muted-foreground" />
-        <span className={cn(!value && "text-muted-foreground")}>
-          {value || "Select from directory"}
-        </span>
-      </div>
-    </button>
   )
 }
 
@@ -1614,54 +2383,70 @@ function DirectorySelectDialog({
   isLoading: boolean
   onSelect: (personName: string) => void
 }) {
+  const [query, setQuery] = useState("")
+
+  useEffect(() => {
+    if (open) {
+      setQuery("")
+    }
+  }, [open])
+
+  const filteredPeople = useMemo(() => {
+    const needle = query.trim().toLowerCase()
+    if (!needle) {
+      return people
+    }
+
+    return people.filter((person) => person.name.toLowerCase().includes(needle))
+  }, [people, query])
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md gap-0 overflow-hidden p-0">
-        <DialogHeader className="border-b px-6 py-5">
-          <DialogTitle className="text-base font-semibold tracking-tight">
-            Select from directory
+      <DialogContent className="max-h-[80vh] max-w-[520px] gap-0 overflow-hidden rounded-2xl border-border/80 p-0 shadow-2xl">
+        <DialogHeader className="border-b border-border/70 px-[18px] py-3.5">
+          <DialogTitle className="font-serif text-[15px] font-normal text-foreground">
+            Assign person
           </DialogTitle>
-          <DialogDescription className="text-[13px] leading-snug text-muted-foreground">
-            Search for a member and assign them to this part of the meeting.
-          </DialogDescription>
         </DialogHeader>
-        <Command className="rounded-none">
-          <div className="border-b px-4 py-3">
-            <CommandInput placeholder="Search directory..." className="h-9" />
-          </div>
-          <CommandList className="max-h-[320px]">
-            <CommandEmpty>No one found.</CommandEmpty>
-            <CommandGroup>
-              {isLoading ? (
-                <div className="flex items-center justify-center py-10">
-                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+        <input
+          className="w-full border-0 border-b border-border/70 bg-[#f7f6f4] px-4 py-2.5 text-sm outline-none placeholder:text-muted-foreground"
+          placeholder="Search members..."
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          autoFocus
+        />
+        <div className="max-h-[360px] overflow-y-auto py-1">
+          {isLoading ? (
+            <div className="flex items-center justify-center py-10">
+              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+            </div>
+          ) : filteredPeople.length === 0 ? (
+            <div className="px-5 py-8 text-center text-[13px] text-muted-foreground">
+              No members match.
+            </div>
+          ) : (
+            filteredPeople.map((person) => (
+              <button
+                key={person.id}
+                type="button"
+                onClick={() => onSelect(person.name)}
+                className="flex w-full items-center gap-3 px-[18px] py-2 text-left transition-colors hover:bg-[#f7f6f4]"
+              >
+                <div className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-[#f3f1ee] text-[11px] font-semibold text-[#57534e]">
+                  {getInitials(person.name)}
                 </div>
-              ) : (
-                people.map((person) => (
-                  <CommandItem
-                    key={person.id}
-                    value={person.name}
-                    onSelect={() => onSelect(person.name)}
-                    className="mx-2 my-1 rounded-lg px-3 py-2 text-sm"
-                  >
-                    <Check className="mr-2 h-4 w-4 opacity-0" />
+                <div className="min-w-0 flex-1">
+                  <div className="truncate font-serif text-[14.5px] text-foreground">
                     {person.name}
-                  </CommandItem>
-                ))
-              )}
-            </CommandGroup>
-          </CommandList>
-          <div className="border-t px-4 py-3">
-            <Button
-              type="button"
-              variant="ghost"
-              className="w-full justify-center"
-              onClick={() => onOpenChange(false)}
-            >
-              Close
-            </Button>
-          </div>
-        </Command>
+                  </div>
+                  <div className="truncate text-[11.5px] text-muted-foreground">
+                    Directory member
+                  </div>
+                </div>
+              </button>
+            ))
+          )}
+        </div>
       </DialogContent>
     </Dialog>
   )
