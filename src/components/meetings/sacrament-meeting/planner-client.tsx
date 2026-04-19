@@ -1529,7 +1529,7 @@ function UpcomingPanel({
   onShowMore,
 }: UpcomingPanelProps) {
   return (
-    <div className="rounded-2xl border border-border/70 bg-card p-2 xl:sticky xl:top-6">
+    <div className="rounded-2xl border border-border/70 bg-card p-2 dark:bg-background xl:sticky xl:top-6">
       <div className="flex items-center gap-2 px-2.5 pb-2 pt-2">
         <div className="font-serif text-[14px] text-foreground">Upcoming</div>
         <div className="ml-auto text-[11.5px] text-muted-foreground">{sundayCount} meetings</div>
