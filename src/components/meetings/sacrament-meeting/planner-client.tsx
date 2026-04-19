@@ -39,6 +39,8 @@ import { CSS } from "@dnd-kit/utilities"
 import { Breadcrumbs } from "@/components/dashboard/breadcrumbs"
 import { ConductView } from "@/components/meetings/sacrament-meeting/conduct-view"
 import { HymnSelectorModal } from "@/components/meetings/hymn-selector-modal"
+import { AnnouncementSelectorPopover } from "@/components/meetings/builder/announcement-selector-popover"
+import { BusinessSelectorPopover } from "@/components/meetings/builder/business-selector-popover"
 import { Button } from "@/components/ui/button"
 import {
   AlertDialog,
@@ -154,9 +156,17 @@ type DirectoryPerson = {
   name: string
 }
 
+type PlannerItem = {
+  id: string
+  title: string
+  checked: boolean
+}
+
 type PlannerNotes = {
-  announcements: string
+  announcements: PlannerItem[]
+  business: PlannerItem[]
   notes: string
+  initialized?: boolean
 }
 
 const SECTION_CLOSING_ID = "section-closing"
@@ -442,7 +452,7 @@ function MeetingTypeSelect({ value, onChange }: MeetingTypeSelectProps) {
         <SelectTrigger className="h-auto w-auto gap-1.5 rounded-md border-0 bg-transparent px-0 py-0 font-serif text-[15px] italic text-muted-foreground shadow-none underline decoration-border decoration-dotted underline-offset-4 transition-colors hover:text-foreground focus:border-0 focus:text-foreground focus:ring-0 focus:ring-offset-0 [&>svg]:h-3.5 [&>svg]:w-3.5">
           <SelectValue />
         </SelectTrigger>
-        <SelectContent align="end" className="rounded-xl">
+        <SelectContent className="rounded-xl">
           {MEETING_TYPE_OPTIONS.map((option) => (
             <SelectItem key={option.value} value={option.value}>
               {option.label}
@@ -616,7 +626,7 @@ function PlannerTabs({ activeTab, onTabChange }: PlannerTabsProps) {
   const tabs: { value: PlannerTab; label: string }[] = [
     { value: "meeting", label: "This meeting" },
     { value: "horizon", label: "Next 3 months" },
-    { value: "notes", label: "Notes & announcements" },
+    { value: "notes", label: "Notes" },
   ]
 
   return (
@@ -711,37 +721,19 @@ function HorizonPanel({ sundays, meetingsByDate, defaultLanguage, onOpen }: Hori
 
 type NotesPanelProps = {
   notes: PlannerNotes
-  onChange: (field: keyof PlannerNotes, value: string) => void
+  onNotesChange: (value: string) => void
 }
 
-function NotesPanel({ notes, onChange }: NotesPanelProps) {
+function NotesPanel({ notes, onNotesChange }: NotesPanelProps) {
   return (
     <div className="grid max-w-3xl gap-6 px-6 py-6">
-      <div>
-        <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-          Announcements
-        </div>
-        <div className="rounded-xl border border-border/70 bg-white px-3 py-3">
-          <textarea
-            className="min-h-36 w-full resize-y bg-transparent text-sm leading-6 outline-none placeholder:text-muted-foreground"
-            placeholder="Weekly announcements to read from the stand..."
-            value={notes.announcements}
-            onChange={(event) => onChange("announcements", event.target.value)}
-          />
-        </div>
-      </div>
-      <div>
-        <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-          Private bishopric notes
-        </div>
-        <div className="rounded-xl border border-border/70 bg-white px-3 py-3">
-          <textarea
-            className="min-h-36 w-full resize-y bg-transparent text-sm leading-6 outline-none placeholder:text-muted-foreground"
-            placeholder="Not shared with the congregation. Use for coordination, follow-up, sensitive considerations..."
-            value={notes.notes}
-            onChange={(event) => onChange("notes", event.target.value)}
-          />
-        </div>
+      <div className="rounded-xl border border-border/70 bg-white px-3 py-3">
+        <textarea
+          className="min-h-48 w-full resize-y bg-transparent text-sm leading-6 outline-none placeholder:text-muted-foreground"
+          placeholder="Private bishopric notes — not shared with the congregation..."
+          value={notes.notes}
+          onChange={(event) => onNotesChange(event.target.value)}
+        />
       </div>
     </div>
   )
@@ -897,6 +889,201 @@ function OpeningSection({ entries, onPickHymn, onPickPrayer }: OpeningSectionPro
   )
 }
 
+type ItemsRowProps = {
+  type: string
+  items: PlannerItem[]
+  onClick: () => void
+}
+
+function ItemsRow({ type, items, onClick }: ItemsRowProps) {
+  const checkedCount = items.filter((item) => item.checked).length
+  const totalCount = items.length
+
+  return (
+    <button
+      className="mb-2 grid w-full grid-cols-[100px_1fr_auto] items-center gap-3.5 rounded-xl border border-border/70 bg-white px-3.5 py-3 text-left transition-colors hover:border-border"
+      onClick={onClick}
+      type="button"
+    >
+      <div className="text-[10.5px] font-medium uppercase tracking-[0.05em] text-muted-foreground">
+        {type}
+      </div>
+      <div className="min-w-0">
+        {totalCount === 0 ? (
+          <span className="font-serif text-[15.5px] italic text-muted-foreground">None added</span>
+        ) : (
+          <span className="font-serif text-[15.5px] text-foreground">
+            {checkedCount} {type.toLowerCase()}{checkedCount !== 1 ? "s" : ""}
+          </span>
+        )}
+      </div>
+      <ChevronRightIcon />
+    </button>
+  )
+}
+
+type ItemsPickerModalProps = {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  title: string
+  items: PlannerItem[]
+  onChange: (items: PlannerItem[]) => void
+  addTrigger: React.ReactNode
+}
+
+function ItemsPickerModal({
+  open,
+  onOpenChange,
+  title,
+  items,
+  onChange,
+  addTrigger,
+}: ItemsPickerModalProps) {
+  const handleToggle = (id: string) => {
+    onChange(items.map((item) => item.id === id ? { ...item, checked: !item.checked } : item))
+  }
+
+  const handleDelete = (id: string) => {
+    onChange(items.filter((item) => item.id !== id))
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-h-[80vh] max-w-[520px] gap-0 overflow-hidden rounded-2xl border-border/80 p-0 shadow-2xl">
+        <DialogHeader className="border-b border-border/70 px-[18px] py-3.5">
+          <DialogTitle className="font-serif text-[15px] font-normal text-foreground">
+            {title}
+          </DialogTitle>
+        </DialogHeader>
+        <div className="max-h-[360px] overflow-y-auto py-1">
+          {items.length === 0 ? (
+            <div className="px-5 py-8 text-center text-[13px] text-muted-foreground">
+              No {title.toLowerCase()} added yet.
+            </div>
+          ) : (
+            items.map((item) => (
+              <div
+                key={item.id}
+                className="flex items-center gap-3 px-[18px] py-2.5 transition-colors hover:bg-[#f7f6f4]"
+              >
+                <button
+                  type="button"
+                  onClick={() => handleToggle(item.id)}
+                  className={cn(
+                    "flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded border transition-colors",
+                    item.checked
+                      ? "border-foreground bg-foreground text-white"
+                      : "border-border bg-white"
+                  )}
+                  aria-label={item.checked ? `Uncheck ${item.title}` : `Check ${item.title}`}
+                >
+                  {item.checked ? (
+                    <svg className="h-2.5 w-2.5" viewBox="0 0 12 10" fill="none">
+                      <path d="M1 5l3.5 3.5L11 1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  ) : null}
+                </button>
+                <span
+                  className={cn(
+                    "min-w-0 flex-1 font-serif text-[14.5px]",
+                    item.checked ? "text-foreground" : "text-muted-foreground line-through"
+                  )}
+                >
+                  {item.title}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => handleDelete(item.id)}
+                  className="grid h-6 w-6 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-white hover:text-foreground"
+                  aria-label={`Remove ${item.title}`}
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+            ))
+          )}
+        </div>
+        <div className="border-t border-border/70 px-[18px] py-3">
+          {addTrigger}
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+type AnnouncementsAndBusinessSectionProps = {
+  announcements: PlannerItem[]
+  business: PlannerItem[]
+  onAnnouncementsChange: (items: PlannerItem[]) => void
+  onBusinessChange: (items: PlannerItem[]) => void
+}
+
+function AnnouncementsAndBusinessSection({
+  announcements,
+  business,
+  onAnnouncementsChange,
+  onBusinessChange,
+}: AnnouncementsAndBusinessSectionProps) {
+  const [announcementsModalOpen, setAnnouncementsModalOpen] = useState(false)
+  const [businessModalOpen, setBusinessModalOpen] = useState(false)
+
+  return (
+    <div>
+      <SectionHeader label="Announcements & business" number="03" />
+      <ItemsRow type="Announcements" items={announcements} onClick={() => setAnnouncementsModalOpen(true)} />
+      <ItemsRow type="Business" items={business} onClick={() => setBusinessModalOpen(true)} />
+      <ItemsPickerModal
+        open={announcementsModalOpen}
+        onOpenChange={setAnnouncementsModalOpen}
+        title="Announcements"
+        items={announcements}
+        onChange={onAnnouncementsChange}
+        addTrigger={
+          <AnnouncementSelectorPopover
+            onSelect={(selected) => {
+              const newItems = selected
+                .filter((a) => !announcements.some((item) => item.id === a.id))
+                .map((a) => ({ id: a.id, title: a.title, checked: true }))
+              if (newItems.length) onAnnouncementsChange([...announcements, ...newItems])
+            }}
+          >
+            <Button type="button" variant="outline" size="sm" className="w-full">
+              <Plus className="h-3.5 w-3.5" />
+              Add announcements
+            </Button>
+          </AnnouncementSelectorPopover>
+        }
+      />
+      <ItemsPickerModal
+        open={businessModalOpen}
+        onOpenChange={setBusinessModalOpen}
+        title="Business"
+        items={business}
+        onChange={onBusinessChange}
+        addTrigger={
+          <BusinessSelectorPopover
+            onSelect={(selected) => {
+              const newItems = selected
+                .filter((b) => !business.some((item) => item.id === b.id))
+                .map((b) => ({
+                  id: b.id,
+                  title: `${b.person_name}${b.position_calling ? ` – ${b.position_calling}` : ""}`,
+                  checked: true,
+                }))
+              if (newItems.length) onBusinessChange([...business, ...newItems])
+            }}
+          >
+            <Button type="button" variant="outline" size="sm" className="w-full">
+              <Plus className="h-3.5 w-3.5" />
+              Add business items
+            </Button>
+          </BusinessSelectorPopover>
+        }
+      />
+    </div>
+  )
+}
+
 type ClosingSectionProps = {
   entries: AgendaEntry[]
   onPickHymn: (entryId: string) => void
@@ -909,7 +1096,7 @@ function ClosingSection({ entries, onPickHymn, onPickPrayer }: ClosingSectionPro
 
   return (
     <div>
-      <SectionHeader label="Closing" number="05" />
+      <SectionHeader label="Closing" number="06" />
       {closingHymn ? (
         <HymnPlanningRow
           type="Closing hymn"
@@ -1020,7 +1207,7 @@ function SacramentSection({
 
   return (
     <div>
-      <SectionHeader label="Sacrament" number="03" />
+      <SectionHeader label="Sacrament" number="04" />
       {sacramentHymn ? (
         <HymnPlanningRow
           type="Sacrament hymn"
@@ -1137,7 +1324,7 @@ function SpeakersAndMusicSection({
 
   return (
     <div>
-      <SectionHeader label={isFastTestimony ? "Testimony meeting" : "Speakers & music"} number="04" />
+      <SectionHeader label={isFastTestimony ? "Testimony meeting" : "Speakers & music"} number="05" />
       {isFastTestimony ? (
         <div className="rounded-xl border border-border/70 bg-white px-4 py-4 font-serif text-[14.5px] italic leading-6 text-muted-foreground">
           Fast &amp; testimony meeting - open to the congregation following the presiding authority&apos;s opening testimony.
@@ -1255,7 +1442,7 @@ function SpeakerPlanningRow({
           <SelectTrigger className="h-8 w-[86px] bg-[#f7f6f4] px-2 text-[12px] shadow-none">
             <SelectValue placeholder="Time" />
           </SelectTrigger>
-          <SelectContent align="end" className="max-h-44">
+          <SelectContent className="max-h-44">
             {SPEAKER_TIME_OPTIONS.map((option) => (
               <SelectItem key={option} value={option.toString()}>
                 {option} min
@@ -1480,7 +1667,7 @@ export function SacramentMeetingPlannerClient({ defaultLanguage = "ENG" }: { def
   const selectedMeetingStats = getPlannerAssignmentStats(selectedMeeting)
   const selectedPlannerStatus = getDerivedPlannerStatus(selectedSunday.isoDate, selectedMeeting)
   const visibleSundays = sundays.slice(0, visibleSundayCount)
-  const selectedNotes = notesByDate[selectedSunday.isoDate] ?? { announcements: "", notes: "" }
+  const selectedNotes = notesByDate[selectedSunday.isoDate] ?? { announcements: [], business: [], notes: "" }
   const remainingAgendaEntries = visibleEntries.filter(
     (entry) =>
       ![
@@ -1529,7 +1716,8 @@ export function SacramentMeetingPlannerClient({ defaultLanguage = "ENG" }: { def
     const loadDirectoryPeople = async () => {
       setIsDirectoryLoading(true)
       const supabase = createClient()
-      const { data, error } = await (supabase.from("directory") as ReturnType<typeof supabase.from>)
+      const { data, error } = await supabase
+        .from("directory")
         .select("id, name")
         .order("name", { ascending: true })
 
@@ -1552,6 +1740,79 @@ export function SacramentMeetingPlannerClient({ defaultLanguage = "ENG" }: { def
       isMounted = false
     }
   }, [directoryModalOpen, directoryPeople.length])
+
+  // Auto-populate announcements & business items on first visit to a date
+  useEffect(() => {
+    const currentNotes = notesByDate[selectedSunday.isoDate]
+    if (currentNotes?.initialized) return
+
+    let isMounted = true
+
+    const initNotesForDate = async () => {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user || !isMounted) return
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: profile } = await (supabase.from("profiles") as any)
+        .select("workspace_id")
+        .eq("id", user.id)
+        .single()
+
+      const workspaceId = profile?.workspace_id
+      if (!workspaceId || !isMounted) return
+
+      const [annResult, bizResult] = await Promise.all([
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (supabase.from("announcements") as any)
+          .select("id, title")
+          .eq("status", "active")
+          .eq("workspace_id", workspaceId)
+          .order("priority", { ascending: true })
+          .order("created_at", { ascending: false }),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (supabase.from("business_items") as any)
+          .select("id, person_name, position_calling")
+          .eq("status", "pending")
+          .eq("workspace_id", workspaceId)
+          .order("created_at", { ascending: false }),
+      ])
+
+      if (!isMounted) return
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const announcements: PlannerItem[] = (annResult.data ?? []).map((a: any) => ({
+        id: a.id,
+        title: a.title,
+        checked: true,
+      }))
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const business: PlannerItem[] = (bizResult.data ?? []).map((b: any) => ({
+        id: b.id,
+        title: `${b.person_name}${b.position_calling ? ` – ${b.position_calling}` : ""}`,
+        checked: true,
+      }))
+
+      setNotesByDate((prev) => ({
+        ...prev,
+        [selectedSunday.isoDate]: {
+          ...(prev[selectedSunday.isoDate] ?? { notes: "" }),
+          announcements,
+          business,
+          initialized: true,
+        },
+      }))
+    }
+
+    void initNotesForDate()
+
+    return () => {
+      isMounted = false
+    }
+  // Only re-run when the selected date changes; notesByDate intentionally omitted
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedSunday.isoDate])
 
   useEffect(() => {
     setMeetingsByDate((prev) => {
@@ -1625,7 +1886,20 @@ export function SacramentMeetingPlannerClient({ defaultLanguage = "ENG" }: { def
       }
 
       if (parsed.notesByDate) {
-        setNotesByDate(parsed.notesByDate)
+        // Migrate old string format to new PlannerItem[] format
+        // Mark all saved dates as initialized — user previously managed that data
+        const migratedNotes: Record<string, PlannerNotes> = {}
+        for (const [date, savedNotes] of Object.entries(parsed.notesByDate)) {
+          migratedNotes[date] = {
+            announcements: Array.isArray(savedNotes.announcements) ? savedNotes.announcements : [],
+            business: Array.isArray((savedNotes as unknown as Record<string, unknown>).business)
+              ? ((savedNotes as unknown as Record<string, unknown>).business as PlannerItem[])
+              : [],
+            notes: typeof savedNotes.notes === "string" ? savedNotes.notes : "",
+            initialized: true,
+          }
+        }
+        setNotesByDate(migratedNotes)
       }
 
       if (parsed.meetingTypeOverridesByDate) {
@@ -1774,7 +2048,7 @@ export function SacramentMeetingPlannerClient({ defaultLanguage = "ENG" }: { def
     }))
     setNotesByDate((prev) => ({
       ...prev,
-      [selectedSunday.isoDate]: { announcements: "", notes: "" },
+      [selectedSunday.isoDate]: { announcements: [], business: [], notes: "", initialized: false },
     }))
     setMeetingTypeOverridesByDate((prev) => ({
       ...prev,
@@ -1783,12 +2057,32 @@ export function SacramentMeetingPlannerClient({ defaultLanguage = "ENG" }: { def
     setClearDialogOpen(false)
   }
 
-  const handleNotesChange = (field: keyof PlannerNotes, value: string) => {
+  const handleAnnouncementsChange = (items: PlannerItem[]) => {
     setNotesByDate((prev) => ({
       ...prev,
       [selectedSunday.isoDate]: {
-        ...(prev[selectedSunday.isoDate] ?? { announcements: "", notes: "" }),
-        [field]: value,
+        ...(prev[selectedSunday.isoDate] ?? { announcements: [], business: [], notes: "" }),
+        announcements: items,
+      },
+    }))
+  }
+
+  const handleBusinessChange = (items: PlannerItem[]) => {
+    setNotesByDate((prev) => ({
+      ...prev,
+      [selectedSunday.isoDate]: {
+        ...(prev[selectedSunday.isoDate] ?? { announcements: [], business: [], notes: "" }),
+        business: items,
+      },
+    }))
+  }
+
+  const handleNotesTextChange = (value: string) => {
+    setNotesByDate((prev) => ({
+      ...prev,
+      [selectedSunday.isoDate]: {
+        ...(prev[selectedSunday.isoDate] ?? { announcements: [], business: [], notes: "" }),
+        notes: value,
       },
     }))
   }
@@ -2204,6 +2498,12 @@ export function SacramentMeetingPlannerClient({ defaultLanguage = "ENG" }: { def
                           })
                         }
                       />
+                      <AnnouncementsAndBusinessSection
+                        announcements={selectedNotes.announcements}
+                        business={selectedNotes.business}
+                        onAnnouncementsChange={handleAnnouncementsChange}
+                        onBusinessChange={handleBusinessChange}
+                      />
                       <SacramentSection
                         entries={visibleEntries}
                         assignments={selectedMeeting.sacramentAssignments}
@@ -2321,7 +2621,10 @@ export function SacramentMeetingPlannerClient({ defaultLanguage = "ENG" }: { def
                   }}
                 />
               ) : (
-                <NotesPanel notes={selectedNotes} onChange={handleNotesChange} />
+                <NotesPanel
+                  notes={selectedNotes}
+                  onNotesChange={handleNotesTextChange}
+                />
               )}
           </section>
       </div>
@@ -2344,7 +2647,7 @@ export function SacramentMeetingPlannerClient({ defaultLanguage = "ENG" }: { def
             specialType: selectedMeeting.specialType,
             assignments: selectedMeeting.assignments,
             entries: visibleEntries,
-            announcements: selectedNotes.announcements,
+            announcements: selectedNotes.announcements.filter((i) => i.checked).map((i) => i.title).join(", "),
           }}
           isoDate={selectedSunday.isoDate}
           onClose={() => setConductOpen(false)}
@@ -2507,7 +2810,7 @@ function AgendaRow({
                     <SelectTrigger className="mt-1 h-auto border-0 bg-transparent px-0 py-0 text-sm shadow-none focus:border-transparent">
                       <SelectValue placeholder="Select time" />
                     </SelectTrigger>
-                    <SelectContent align="end" className="max-h-44">
+                    <SelectContent className="max-h-44">
                       {SPEAKER_TIME_OPTIONS.map((option) => (
                         <SelectItem key={option} value={option.toString()}>
                           {option} min
