@@ -7,11 +7,13 @@ import {
   CalendarDays,
   CircleCheck,
   Clock3,
+  Eye,
   GripVertical,
   Loader2,
   MoreHorizontal,
   Music,
   PencilLine,
+  Play,
   Plus,
   Search,
   Shredder,
@@ -35,6 +37,7 @@ import {
 import { CSS } from "@dnd-kit/utilities"
 
 import { Breadcrumbs } from "@/components/dashboard/breadcrumbs"
+import { ConductView } from "@/components/meetings/sacrament-meeting/conduct-view"
 import { HymnSelectorModal } from "@/components/meetings/hymn-selector-modal"
 import { Button } from "@/components/ui/button"
 import {
@@ -1451,6 +1454,7 @@ export function SacramentMeetingPlannerClient({ defaultLanguage = "ENG" }: { def
   const [jumpPopoverOpen, setJumpPopoverOpen] = useState(false)
   const [visibleSundayCount, setVisibleSundayCount] = useState(DEFAULT_VISIBLE_SUNDAYS)
   const [clearDialogOpen, setClearDialogOpen] = useState(false)
+  const [conductOpen, setConductOpen] = useState(false)
   const [notesByDate, setNotesByDate] = useState<Record<string, PlannerNotes>>({})
   const [meetingTypeOverridesByDate, setMeetingTypeOverridesByDate] = useState<Record<string, boolean>>({})
   const [meetingsByDate, setMeetingsByDate] = useState<Record<string, PlannerMeetingState>>(() =>
@@ -2073,7 +2077,21 @@ export function SacramentMeetingPlannerClient({ defaultLanguage = "ENG" }: { def
 
   return (
     <div className="min-h-full">
-      <Breadcrumbs items={breadcrumbItems} />
+      <Breadcrumbs
+        items={breadcrumbItems}
+        action={
+          <div className="flex items-center gap-2">
+            <Button type="button" variant="ghost" size="sm">
+              <Eye className="h-3.5 w-3.5" />
+              Audience
+            </Button>
+            <Button type="button" variant="outline" size="sm" onClick={() => setConductOpen(true)}>
+              <Play className="h-3.5 w-3.5" />
+              Conduct
+            </Button>
+          </div>
+        }
+      />
       <div className="mx-auto flex w-full max-w-7xl flex-col px-4 py-6 sm:px-6 lg:px-8">
         <section className="rounded-2xl bg-[linear-gradient(180deg,#ffffff_0%,#fbfbfa_100%)]">
               <div className="border-b border-border/60 px-6 py-5">
@@ -2319,6 +2337,20 @@ export function SacramentMeetingPlannerClient({ defaultLanguage = "ENG" }: { def
         isLoading={isDirectoryLoading}
         onSelect={handleSelectDirectoryPerson}
       />
+      {conductOpen && (
+        <ConductView
+          meeting={{
+            title: selectedMeeting.title,
+            specialType: selectedMeeting.specialType,
+            assignments: selectedMeeting.assignments,
+            entries: visibleEntries,
+            announcements: selectedNotes.announcements,
+          }}
+          isoDate={selectedSunday.isoDate}
+          onClose={() => setConductOpen(false)}
+        />
+      )}
+
       <HymnSelectorModal
         open={hymnModalOpen}
         onClose={() => {
