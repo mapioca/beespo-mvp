@@ -20,8 +20,29 @@ export const breadcrumbConfigs: BreadcrumbConfig[] = [
     pattern: "/dashboard",
     trail: [{ label: "Dashboard" }],
   },
+  {
+    pattern: "/inbox",
+    trail: [{ label: "Workspace", href: "/dashboard" }, { label: "Inbox" }],
+  },
 
   // Calendar section
+  {
+    pattern: "/calendar",
+    trail: [{ label: "Calendar", href: "/calendar" }],
+  },
+  {
+    pattern: "/calendar/events",
+    trail: [{ label: "Calendar", href: "/calendar" }, { label: "Events" }],
+  },
+  {
+    pattern: /^\/calendar\/events\/[^/]+$/,
+    trail: [{ label: "Calendar", href: "/calendar" }, { label: "Events", href: "/calendar/events" }, { label: "Event Details" }],
+    dynamic: true,
+  },
+  {
+    pattern: "/calendar/settings",
+    trail: [{ label: "Calendar", href: "/calendar" }, { label: "Settings" }],
+  },
   {
     pattern: "/schedule",
     trail: [{ label: "Schedule", href: "/schedule/calendar" }, { label: "Calendar" }],

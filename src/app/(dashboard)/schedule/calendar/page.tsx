@@ -6,8 +6,8 @@ import { getDashboardRequestContext } from "@/lib/dashboard/request-context";
 import type { UserRole } from "@/types/database";
 
 export const metadata: Metadata = {
-    title: "Calendar View | Beespo",
-    description: "Your interactive calendar view",
+    title: "Calendar | Beespo",
+    description: "Your interactive calendar",
 };
 
 export default async function ScheduleCalendarPage() {

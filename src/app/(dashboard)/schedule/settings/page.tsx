@@ -6,8 +6,8 @@ import { CalendarSubscriptionsSettings } from "@/components/calendar/settings/ca
 import type { CalendarSubscription } from "@/types/database"
 
 export const metadata: Metadata = {
-  title: "Schedule Settings | Beespo",
-  description: "Manage schedule settings and calendar subscriptions",
+  title: "Calendar Settings | Beespo",
+  description: "Manage calendar settings and subscriptions",
 }
 
 export default async function ScheduleSettingsPage() {

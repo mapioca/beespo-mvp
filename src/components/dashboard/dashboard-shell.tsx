@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { AppRail } from "@/components/dashboard/app-rail";
+import { AppSidebar } from "@/components/dashboard/app-sidebar";
 import { NavigationStoreHydrator } from "@/components/dashboard/navigation-store-hydrator";
 import { WorkspaceStoreHydrator } from "@/components/dashboard/workspace-store-hydrator";
 import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
@@ -42,20 +42,20 @@ export function DashboardShell({
                 {workspaceName && <WorkspaceStoreHydrator workspaceName={workspaceName} />}
                 <div className="flex h-screen-dynamic overflow-hidden overscroll-none bg-app-shell">
                 <div className="relative z-20 hidden lg:flex">
-                    <AppRail userName={userName} userId={userId} />
+                    <AppSidebar userName={userName} userId={userId} workspaceName={workspaceName} />
                 </div>
 
                 <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
                     <SheetContent side="left" className="w-[300px] p-0">
                         <SheetTitle className="sr-only">Navigation</SheetTitle>
                         <SheetDescription className="sr-only">Workspace navigation drawer</SheetDescription>
-                        <AppRail userName={userName} userId={userId} />
+                        <AppSidebar userName={userName} userId={userId} workspaceName={workspaceName} />
                     </SheetContent>
                 </Sheet>
 
                 {/* Content area: full-bleed main + optional details pane */}
                 <div className="flex-1 min-w-0 min-h-0 flex items-stretch bg-app-shell">
-                    <main className="relative z-0 flex-1 min-w-0 h-full min-h-0 overflow-hidden bg-app-main-card">
+                    <main className="relative z-0 flex-1 min-w-0 h-full min-h-0 overflow-auto bg-app-main-card">
                         {children}
                     </main>
                     {/* Portal target for DetailsPanel — hidden on mobile, sized by panel open state on desktop */}

@@ -11,7 +11,7 @@ export async function middleware(request: NextRequest) {
     const publicRoutes = ["/shared"];
     const isMfaPage = pathname.startsWith("/mfa/setup") || pathname.startsWith("/mfa/verify");
     const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route)) || isMfaPage;
-    const protectedRoutes = ["/dashboard", "/library", "/meetings", "/tasks", "/members", "/announcements", "/speakers", "/settings", "/schedule", "/data", "/forms", "/tables", "/callings", "/notebooks", "/apps"];
+    const protectedRoutes = ["/dashboard", "/inbox", "/calendar", "/library", "/meetings", "/tasks", "/members", "/announcements", "/speakers", "/settings", "/schedule", "/data", "/forms", "/tables", "/callings", "/notebooks", "/apps"];
     const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route));
     const isAuthPage = pathname === "/login" || pathname === "/signup";
 
@@ -113,7 +113,7 @@ export async function middleware(request: NextRequest) {
   // =====================================================
 
   // Protected routes - redirect to login if not authenticated
-  const protectedRoutes = ["/dashboard", "/library", "/meetings", "/tasks", "/members", "/announcements", "/speakers", "/settings", "/schedule", "/data", "/forms", "/tables", "/callings", "/notebooks", "/apps"];
+  const protectedRoutes = ["/dashboard", "/inbox", "/calendar", "/library", "/meetings", "/tasks", "/members", "/announcements", "/speakers", "/settings", "/schedule", "/data", "/forms", "/tables", "/callings", "/notebooks", "/apps"];
   const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route));
 
   if (!user && isProtectedRoute) {
