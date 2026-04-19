@@ -373,6 +373,17 @@
     --btn-primary-bg-disabled: #f5f5f4;
     --btn-primary-text-disabled: #a8a29e;
     --btn-primary-border-disabled: #e7e5e4;
+    --app-nav-bg: #f3f3f1;
+    --app-nav-card: #ffffff;
+    --app-nav-hover: #eeeeec;
+    --app-nav-active: #e6e6e3;
+    --app-nav-text: #25272a;
+    --app-nav-strong: #0f1011;
+    --app-nav-muted: #83878e;
+    --app-nav-icon: #4e5258;
+    --app-nav-border: #e6e6e4;
+    --app-nav-inverse: #0f1011;
+    --app-nav-inverse-text: #f3f3f1;
   }
 
   .dark {
@@ -613,6 +624,132 @@
     --brand-bg: 26 50% 18%; /* Accent bg (dark amber tint) */
     --brand-hover: 22 83% 31%;
     --brand-active: 15 75% 28%;
+    --app-nav-bg: #141416;
+    --app-nav-card: #1f1f22;
+    --app-nav-hover: #26262a;
+    --app-nav-active: #2f2f34;
+    --app-nav-text: #dcd9cf;
+    --app-nav-strong: #f3f1ea;
+    --app-nav-muted: #78756a;
+    --app-nav-icon: #a19d90;
+    --app-nav-border: #2c2c30;
+    --app-nav-inverse: #f3f1ea;
+    --app-nav-inverse-text: #17171a;
+  }
+
+  [data-theme="warm"] {
+    --color-stone-50: #faf9f5;
+    --color-stone-100: #f4f2ea;
+    --color-stone-200: #e6e1d1;
+    --color-stone-300: #d8d2bf;
+    --color-stone-500: #8a867a;
+    --color-stone-600: #57544c;
+    --color-stone-900: #141413;
+
+    --color-accent-50: #eadfce;
+    --color-accent-600: #c9603c;
+    --color-accent-700: #a94d2d;
+    --color-accent-800: #7a3518;
+
+    --color-bg-app: #faf9f5;
+    --color-text-primary: #141413;
+    --color-text-secondary: #57544c;
+    --color-text-tertiary: #8a867a;
+    --color-border: #e6e1d1;
+    --color-focus-ring: rgba(201, 96, 60, 0.3);
+
+    --cp-canvas: 45 33% 97%;
+    --cp-surface: 0 0% 100%;
+    --cp-surface-2: 45 31% 95%;
+    --cp-text: 60 2% 8%;
+    --cp-text-muted: 43 7% 33%;
+    --cp-text-subtle: 42 6% 51%;
+    --cp-border: 45 28% 86%;
+    --cp-divider: 45 26% 88%;
+    --cp-hover: 43 28% 92%;
+    --cp-active: 43 30% 87%;
+    --cp-focus: 17 55% 51%;
+    --cp-primary: 17 55% 51%;
+    --cp-primary-foreground: 0 0% 100%;
+
+    --canvas: var(--cp-canvas);
+    --panel: var(--cp-canvas);
+    --paper: var(--cp-surface-2);
+    --background: var(--cp-surface);
+    --foreground: var(--cp-text);
+    --card: var(--cp-surface);
+    --card-foreground: var(--cp-text);
+    --popover: var(--cp-surface);
+    --popover-foreground: var(--cp-text);
+    --primary: var(--brand);
+    --primary-foreground: var(--brand-foreground);
+    --secondary: var(--cp-surface-2);
+    --secondary-foreground: var(--cp-text);
+    --muted: var(--cp-surface-2);
+    --muted-foreground: var(--cp-text-muted);
+    --accent: var(--cp-hover);
+    --accent-foreground: var(--cp-text);
+    --accent-warm: 35 31% 86%;
+    --accent-warm-hover: 39 28% 80%;
+    --chrome: var(--cp-surface-2);
+    --chrome-border: var(--cp-border);
+    --app-shell: 45 33% 97%;
+    --app-sidebar: 45 31% 95%;
+    --app-main-card: 0 0% 100%;
+    --app-island: 45 31% 95%;
+    --app-island-border: var(--cp-border);
+    --nav-hover: 43 28% 92%;
+    --nav-hover-alpha: 1;
+    --nav-selected: 43 30% 87%;
+    --nav-selected-alpha: 1;
+    --nav-text: 43 7% 33%;
+    --nav-text-strong: 60 2% 8%;
+    --nav-text-muted: 42 6% 51%;
+    --nav-active-border: 45 28% 86%;
+    --menu: 0 0% 100%;
+    --menu-border: 45 28% 86%;
+    --menu-text: 60 2% 8%;
+    --menu-muted: 42 6% 51%;
+    --menu-icon: 43 7% 33%;
+    --menu-hover: 43 28% 92%;
+    --menu-separator: 45 26% 88%;
+    --table-row-hover: 43 28% 96%;
+    --table-row-selected: var(--brand-bg);
+    --table-filter-hover: 43 28% 92%;
+    --table-filter-active: 43 30% 87%;
+    --table-shell-bg: 0 0% 100%;
+    --table-shell-border: 45 28% 86%;
+    --table-header-bg: 0 0% 100%;
+    --table-header-border: 45 28% 86%;
+    --agenda-interactive-hover: 43 28% 92%;
+    --agenda-interactive-active: 43 30% 87%;
+    --agenda-interactive-focus-ring: 17 55% 51%;
+    --chip-bg: 45 33% 97%;
+    --chip-border: 45 28% 86%;
+    --chip-text: 43 7% 26%;
+    --chip-hover-bg: 43 28% 92%;
+    --chip-active-bg: 43 30% 87%;
+    --chip-active-border: 39 25% 76%;
+    --chip-active-text: 60 2% 8%;
+    --border: var(--cp-border);
+    --input: 45 28% 82%;
+    --ring: var(--brand);
+    --brand: 17 55% 51%;
+    --brand-foreground: 0 0% 100%;
+    --brand-bg: 35 31% 86%;
+    --brand-hover: 17 58% 42%;
+    --brand-active: 18 68% 29%;
+    --app-nav-bg: #f4f2ea;
+    --app-nav-card: #ffffff;
+    --app-nav-hover: #f0ede3;
+    --app-nav-active: #e9e4d4;
+    --app-nav-text: #2b2a27;
+    --app-nav-strong: #141413;
+    --app-nav-muted: #8a867a;
+    --app-nav-icon: #57544c;
+    --app-nav-border: #e6e1d1;
+    --app-nav-inverse: #141413;
+    --app-nav-inverse-text: #faf9f5;
   }
 }
 

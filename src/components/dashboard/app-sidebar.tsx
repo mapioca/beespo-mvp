@@ -21,12 +21,15 @@ import {
   LogOut,
   Megaphone,
   MessageSquare,
+  Moon,
   NotebookPen,
   NotebookTabs,
+  Palette,
   PanelTop,
   Pin,
   Search,
   Settings,
+  Sun,
   Table2,
   UserRoundCheck,
   UsersRound,
@@ -35,6 +38,7 @@ import {
 
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
+import { useTheme } from "@/components/theme/theme-provider";
 import { useCommandPaletteStore } from "@/stores/command-palette-store";
 import { useNavigationStore } from "@/stores/navigation-store";
 import type {
@@ -158,19 +162,19 @@ function NavRow({
   const hasChildren = Boolean(item.children?.length);
 
   const className = cn(
-    "group relative flex w-full items-center gap-2.5 rounded-[6px] px-2.5 py-[7px] text-left text-[13.5px] text-[#25272a] transition-colors duration-75",
-    depth > 0 && "py-1.5 pl-8 text-[13px] text-[#4e5258]",
-    item.soon ? "cursor-default opacity-75" : "hover:bg-[#eeeeec]",
-    active && !item.soon && "bg-[#e6e6e3] font-medium text-[#0f1011]"
+    "group relative flex w-full items-center gap-2.5 rounded-[6px] px-2.5 py-[7px] text-left text-[13.5px] text-[var(--app-nav-text)] transition-colors duration-75",
+    depth > 0 && "py-1.5 pl-8 text-[13px]",
+    item.soon ? "cursor-default opacity-75" : "hover:bg-[var(--app-nav-hover)]",
+    active && !item.soon && "bg-[var(--app-nav-active)] font-medium text-[var(--app-nav-strong)]"
   );
 
   const content = (
     <>
-      <Icon className={cn("h-[15px] w-[15px] shrink-0 text-[#4e5258]", active && "text-[#0f1011]")} strokeWidth={1.8} />
+      <Icon className={cn("h-[15px] w-[15px] shrink-0 text-[var(--app-nav-icon)]", active && "text-[var(--app-nav-strong)]")} strokeWidth={1.8} />
       <span className="min-w-0 flex-1 truncate">{item.label}</span>
-      {item.soon ? <span className="rounded-full border border-[#e6e6e4] bg-white px-1.5 py-px text-[10px] uppercase tracking-[0.04em] text-[#83878e]">Soon</span> : null}
+      {item.soon ? <span className="rounded-full border border-[var(--app-nav-border)] bg-[var(--app-nav-card)] px-1.5 py-px text-[10px] uppercase tracking-[0.04em] text-[var(--app-nav-muted)]">Soon</span> : null}
       {hasChildren ? (
-        <ChevronRight className={cn("h-3.5 w-3.5 shrink-0 text-[#83878e] transition-transform", isOpen && "rotate-90")} />
+        <ChevronRight className={cn("h-3.5 w-3.5 shrink-0 text-[var(--app-nav-muted)] transition-transform", isOpen && "rotate-90")} />
       ) : null}
     </>
   );
@@ -211,20 +215,20 @@ function SavedItemsGroup({
     <div>
       <button
         type="button"
-        className="group flex w-full items-center gap-2.5 rounded-[6px] px-2.5 py-[7px] text-left text-[13.5px] text-[#25272a] transition-colors duration-75 hover:bg-[#eeeeec]"
+        className="group flex w-full items-center gap-2.5 rounded-[6px] px-2.5 py-[7px] text-left text-[13.5px] text-[var(--app-nav-text)] transition-colors duration-75 hover:bg-[var(--app-nav-hover)]"
         onClick={() => setOpen((value) => !value)}
         aria-expanded={open}
       >
-        <Icon className="h-[15px] w-[15px] shrink-0 text-[#4e5258]" strokeWidth={1.8} />
+        <Icon className="h-[15px] w-[15px] shrink-0 text-[var(--app-nav-icon)]" strokeWidth={1.8} />
         <span className="min-w-0 flex-1 truncate">{title}</span>
-        <span className="text-[11px] tabular-nums text-[#83878e]">{items.length}</span>
-        <ChevronRight className={cn("h-3.5 w-3.5 shrink-0 text-[#83878e] transition-transform", open && "rotate-90")} />
+        <span className="text-[11px] tabular-nums text-[var(--app-nav-muted)]">{items.length}</span>
+        <ChevronRight className={cn("h-3.5 w-3.5 shrink-0 text-[var(--app-nav-muted)] transition-transform", open && "rotate-90")} />
       </button>
 
       {open ? (
         <div className="mt-0.5 flex flex-col gap-0.5">
           {visibleItems.length === 0 ? (
-            <div className="px-8 py-1.5 text-[12px] text-[#83878e]">None yet</div>
+            <div className="px-8 py-1.5 text-[12px] text-[var(--app-nav-muted)]">None yet</div>
           ) : (
             visibleItems.map((item) => {
               const SavedIcon = savedIconByType[item.entityType];
@@ -235,8 +239,8 @@ function SavedItemsGroup({
                   key={`${item.entityType}-${item.id}`}
                   href={item.href}
                   className={cn(
-                    "flex min-w-0 items-center gap-2.5 rounded-[6px] px-2.5 py-1.5 pl-8 text-[13px] text-[#4e5258] transition-colors duration-75 hover:bg-[#eeeeec] hover:text-[#0f1011]",
-                    active && "bg-[#e6e6e3] font-medium text-[#0f1011]"
+                    "flex min-w-0 items-center gap-2.5 rounded-[6px] px-2.5 py-1.5 pl-8 text-[13px] text-[var(--app-nav-icon)] transition-colors duration-75 hover:bg-[var(--app-nav-hover)] hover:text-[var(--app-nav-strong)]",
+                    active && "bg-[var(--app-nav-active)] font-medium text-[var(--app-nav-strong)]"
                   )}
                 >
                   <SavedIcon className="h-[15px] w-[15px] shrink-0" strokeWidth={1.8} />
@@ -265,6 +269,7 @@ export function AppSidebar({
   const toggleCommandPalette = useCommandPaletteStore((state) => state.toggle);
   const favorites = useNavigationStore((state) => state.favorites);
   const recents = useNavigationStore((state) => state.recents);
+  const { theme, setTheme } = useTheme();
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
     "/meetings/sacrament-meeting/planner": true,
   });
@@ -293,21 +298,21 @@ export function AppSidebar({
   };
 
   return (
-    <aside className="flex h-full w-[248px] shrink-0 flex-col gap-0.5 overflow-y-auto border-r border-[#e6e6e4] bg-[#f3f3f1] px-2.5 py-3.5">
+    <aside className="flex h-full w-[248px] shrink-0 flex-col gap-0.5 overflow-y-auto border-r border-[var(--app-nav-border)] bg-[var(--app-nav-bg)] px-2.5 py-3.5">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <button
             type="button"
-            className="mb-2 flex w-full flex-col gap-0.5 rounded-[8px] border border-[#e6e6e4] bg-white px-3 py-2.5 text-left text-[12px] transition-colors hover:bg-[#fbfbfa]"
+            className="mb-2 flex w-full flex-col gap-0.5 rounded-[8px] border border-[var(--app-nav-border)] bg-[var(--app-nav-card)] px-3 py-2.5 text-left text-[12px] transition-colors hover:bg-[var(--app-nav-hover)]"
             aria-label="Workspace menu"
           >
             <span className="flex items-center gap-2.5">
-              <span className="grid h-7 w-7 shrink-0 place-items-center rounded-[8px] bg-[#0f1011] font-serif text-[12px] font-medium italic text-[#f3f3f1]">
+              <span className="grid h-7 w-7 shrink-0 place-items-center rounded-[8px] bg-[var(--app-nav-inverse)] font-serif text-[12px] font-medium italic text-[var(--app-nav-inverse-text)]">
                 {workspaceInitials}
               </span>
               <span className="min-w-0">
-                <span className="block truncate font-serif text-[14px] text-[#0f1011]">{workspaceLabel}</span>
-                <span className="block truncate text-[11px] text-[#83878e]">{userName || userId.slice(0, 8)}</span>
+                <span className="block truncate font-serif text-[14px] text-[var(--app-nav-strong)]">{workspaceLabel}</span>
+                <span className="block truncate text-[11px] text-[var(--app-nav-muted)]">{userName || userId.slice(0, 8)}</span>
               </span>
             </span>
           </button>
@@ -324,6 +329,22 @@ export function AppSidebar({
             Search
           </DropdownMenuItem>
           <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={() => setTheme("warm")}>
+            <Palette className="h-4 w-4" />
+            Warm mode
+            {theme === "warm" ? <span className="ml-auto text-xs text-muted-foreground">On</span> : null}
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setTheme("light")}>
+            <Sun className="h-4 w-4" />
+            Light mode
+            {theme === "light" ? <span className="ml-auto text-xs text-muted-foreground">On</span> : null}
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setTheme("dark")}>
+            <Moon className="h-4 w-4" />
+            Dark mode
+            {theme === "dark" ? <span className="ml-auto text-xs text-muted-foreground">On</span> : null}
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
           <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
             <LogOut className="h-4 w-4" />
             Sign out
@@ -333,7 +354,7 @@ export function AppSidebar({
 
       {sectionsWithOpenState.map((section) => (
         <div key={section.label}>
-          <div className="px-3 pb-1 pt-3 text-[11px] font-medium uppercase tracking-[0.06em] text-[#83878e]">
+          <div className="px-3 pb-1 pt-3 text-[11px] font-medium uppercase tracking-[0.06em] text-[var(--app-nav-muted)]">
             {section.label}
           </div>
           <div className="flex flex-col gap-0.5">
@@ -363,7 +384,7 @@ export function AppSidebar({
       ))}
 
       <div>
-        <div className="px-3 pb-1 pt-3 text-[11px] font-medium uppercase tracking-[0.06em] text-[#83878e]">
+        <div className="px-3 pb-1 pt-3 text-[11px] font-medium uppercase tracking-[0.06em] text-[var(--app-nav-muted)]">
           Shortcuts
         </div>
         <div className="flex flex-col gap-0.5">
