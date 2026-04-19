@@ -403,7 +403,7 @@ type EditableMeetingTitleProps = {
 
 function EditableMeetingTitle({ value, placeholder, onChange }: EditableMeetingTitleProps) {
   return (
-    <div className="group relative mt-1 flex max-w-3xl items-center gap-2 rounded-xl -ml-2 px-2 py-0 transition-colors hover:bg-[#f7f6f4] focus-within:bg-white focus-within:ring-1 focus-within:ring-border/80">
+    <div className="group relative mt-1 flex max-w-3xl items-center gap-2 rounded-xl -ml-2 px-2 py-0 transition-colors hover:bg-muted/50 focus-within:bg-background focus-within:ring-1 focus-within:ring-border/80">
       <input
         aria-label="Meeting title"
         value={value}
@@ -426,10 +426,10 @@ function PlannerStatusBadge({ status }: PlannerStatusBadgeProps) {
       className={cn(
         "inline-flex items-center rounded-full border px-3 py-1.5 text-xs font-medium",
         status === "ready"
-          ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+          ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-400"
           : status === "done"
-            ? "border-stone-200 bg-stone-100 text-stone-700"
-            : "border-amber-200 bg-amber-50 text-amber-700"
+            ? "border-stone-200 bg-stone-100 text-stone-700 dark:border-stone-700 dark:bg-stone-800/50 dark:text-stone-400"
+            : "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-400"
       )}
     >
       {getPlannerStatusLabel(status)}
@@ -591,15 +591,15 @@ function getMeetingTitle(specialType: MeetingSpecialType) {
 function getUpcomingMeetingKind(meeting: PlannerMeetingState) {
   switch (meeting.specialType) {
     case "fast-testimony":
-      return { label: "Fast", className: "bg-[#f3f4ff] text-[#4f46e5]" }
+      return { label: "Fast", className: "bg-[#f3f4ff] text-[#4f46e5] dark:bg-indigo-950 dark:text-indigo-300" }
     case "general-conference":
-      return { label: "General", className: "bg-[#eef2ff] text-[#3730a3]" }
+      return { label: "General", className: "bg-[#eef2ff] text-[#3730a3] dark:bg-indigo-950/70 dark:text-indigo-400" }
     case "stake-conference":
-      return { label: "Stake", className: "bg-[#eaf7ef] text-[#2f8f54]" }
+      return { label: "Stake", className: "bg-[#eaf7ef] text-[#2f8f54] dark:bg-emerald-950 dark:text-emerald-400" }
     case "ward-conference":
-      return { label: "Ward", className: "bg-[#f0f9ff] text-[#0369a1]" }
+      return { label: "Ward", className: "bg-[#f0f9ff] text-[#0369a1] dark:bg-sky-950 dark:text-sky-400" }
     default:
-      return { label: "Regular", className: "bg-[#f3f1ee] text-[#8a8277]" }
+      return { label: "Regular", className: "bg-muted text-muted-foreground" }
   }
 }
 
@@ -680,7 +680,7 @@ function HorizonPanel({ sundays, meetingsByDate, defaultLanguage, onOpen }: Hori
               key={sunday.isoDate}
               type="button"
               onClick={() => onOpen(sunday.isoDate)}
-              className="flex min-h-[170px] flex-col rounded-xl border border-border/70 bg-white px-4 py-3 text-left transition-colors hover:border-border"
+              className="flex min-h-[170px] flex-col rounded-xl border border-border/70 bg-card px-4 py-3 text-left transition-colors hover:border-border"
             >
               <div className="text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
                 {sunday.dayLabel} · {sunday.dateLabel}
@@ -695,7 +695,7 @@ function HorizonPanel({ sundays, meetingsByDate, defaultLanguage, onOpen }: Hori
                   </div>
                 ) : speakers.length > 0 ? (
                   speakers.map((speaker, index) => (
-                    <div key={`${speaker.id}-${index}`} className="font-serif text-[13.5px] leading-snug text-[#57534e]">
+                    <div key={`${speaker.id}-${index}`} className="font-serif text-[13.5px] leading-snug text-muted-foreground">
                       {speaker.speakerName}
                     </div>
                   ))
@@ -727,7 +727,7 @@ type NotesPanelProps = {
 function NotesPanel({ notes, onNotesChange }: NotesPanelProps) {
   return (
     <div className="grid max-w-3xl gap-6 px-6 py-6">
-      <div className="rounded-xl border border-border/70 bg-white px-3 py-3">
+      <div className="rounded-xl border border-border/70 bg-card px-3 py-3">
         <textarea
           className="min-h-48 w-full resize-y bg-transparent text-sm leading-6 outline-none placeholder:text-muted-foreground"
           placeholder="Private bishopric notes — not shared with the congregation..."
@@ -806,7 +806,7 @@ function AssignmentCard({ role, name, onClick }: AssignmentCardProps) {
 
   return (
     <button
-      className="flex items-center gap-3 rounded-xl border border-border/70 bg-white px-3.5 py-3 text-left transition-colors hover:border-border hover:bg-[#f7f6f4]"
+      className="flex items-center gap-3 rounded-xl border border-border/70 bg-card px-3.5 py-3 text-left transition-colors hover:border-border hover:bg-muted/50"
       onClick={onClick}
       type="button"
     >
@@ -814,7 +814,7 @@ function AssignmentCard({ role, name, onClick }: AssignmentCardProps) {
         className={cn(
           "grid h-8 w-8 shrink-0 place-items-center rounded-full text-[11px] font-semibold",
           assignedName
-            ? "bg-[#f3f1ee] text-[#57534e]"
+            ? "bg-muted text-muted-foreground"
             : "border border-dashed border-border bg-transparent text-muted-foreground"
         )}
       >
@@ -901,7 +901,7 @@ function ItemsRow({ type, items, onClick }: ItemsRowProps) {
 
   return (
     <button
-      className="mb-2 grid w-full grid-cols-[100px_1fr_auto] items-center gap-3.5 rounded-xl border border-border/70 bg-white px-3.5 py-3 text-left transition-colors hover:border-border"
+      className="mb-2 grid w-full grid-cols-[100px_1fr_auto] items-center gap-3.5 rounded-xl border border-border/70 bg-card px-3.5 py-3 text-left transition-colors hover:border-border"
       onClick={onClick}
       type="button"
     >
@@ -964,7 +964,7 @@ function ItemsPickerModal({
             items.map((item) => (
               <div
                 key={item.id}
-                className="flex items-center gap-3 px-[18px] py-2.5 transition-colors hover:bg-[#f7f6f4]"
+                className="flex items-center gap-3 px-[18px] py-2.5 transition-colors hover:bg-muted/50"
               >
                 <button
                   type="button"
@@ -973,7 +973,7 @@ function ItemsPickerModal({
                     "flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded border transition-colors",
                     item.checked
                       ? "border-foreground bg-foreground text-white"
-                      : "border-border bg-white"
+                      : "border-border bg-background"
                   )}
                   aria-label={item.checked ? `Uncheck ${item.title}` : `Check ${item.title}`}
                 >
@@ -994,7 +994,7 @@ function ItemsPickerModal({
                 <button
                   type="button"
                   onClick={() => handleDelete(item.id)}
-                  className="grid h-6 w-6 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-white hover:text-foreground"
+                  className="grid h-6 w-6 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-background hover:text-foreground"
                   aria-label={`Remove ${item.title}`}
                 >
                   <X className="h-3 w-3" />
@@ -1129,7 +1129,7 @@ function HymnPlanningRow({ type, hymnNumber, hymnTitle, meta, onClick }: HymnPla
 
   return (
     <button
-      className="mb-2 grid w-full grid-cols-[100px_1fr_auto] items-center gap-3.5 rounded-xl border border-border/70 bg-white px-3.5 py-3 text-left transition-colors hover:border-border"
+      className="mb-2 grid w-full grid-cols-[100px_1fr_auto] items-center gap-3.5 rounded-xl border border-border/70 bg-card px-3.5 py-3 text-left transition-colors hover:border-border"
       onClick={onClick}
       type="button"
     >
@@ -1140,7 +1140,7 @@ function HymnPlanningRow({ type, hymnNumber, hymnTitle, meta, onClick }: HymnPla
         {hasHymn ? (
           <>
             {typeof hymnNumber === "number" ? (
-              <span className="mr-1.5 font-serif text-[13px] italic text-[#4f46e5]">
+              <span className="mr-1.5 font-serif text-[13px] italic text-[#4f46e5] dark:text-indigo-400">
                 № {hymnNumber}
               </span>
             ) : null}
@@ -1169,7 +1169,7 @@ function PrayerPlanningRow({ type, personName, onClick }: PrayerPlanningRowProps
 
   return (
     <button
-      className="mb-2 grid w-full grid-cols-[100px_1fr_auto] items-center gap-3.5 rounded-xl border border-border/70 bg-white px-3.5 py-3 text-left transition-colors hover:border-border"
+      className="mb-2 grid w-full grid-cols-[100px_1fr_auto] items-center gap-3.5 rounded-xl border border-border/70 bg-card px-3.5 py-3 text-left transition-colors hover:border-border"
       onClick={onClick}
       type="button"
     >
@@ -1249,7 +1249,7 @@ function AaronicAssignmentCard({ title, people, max, onAdd, onRemove }: AaronicA
   const assignedPeople = people.filter((person) => person.trim())
 
   return (
-    <div className="rounded-xl border border-border/70 bg-white px-3.5 py-3">
+    <div className="rounded-xl border border-border/70 bg-card px-3.5 py-3">
       <div className="mb-2 text-[11px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
         {title} <span className="text-muted-foreground/70">· {assignedPeople.length}/{max}</span>
       </div>
@@ -1257,12 +1257,12 @@ function AaronicAssignmentCard({ title, people, max, onAdd, onRemove }: AaronicA
         {assignedPeople.map((person) => (
           <span
             key={person}
-            className="inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-[#f7f6f4] py-1 pl-2.5 pr-1 text-[12.5px] font-serif text-foreground"
+            className="inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-muted/50 py-1 pl-2.5 pr-1 text-[12.5px] font-serif text-foreground"
           >
             {person}
             <button
               type="button"
-              className="grid h-4 w-4 place-items-center rounded-full bg-white text-[11px] text-muted-foreground transition-colors hover:text-foreground"
+              className="grid h-4 w-4 place-items-center rounded-full bg-card text-[11px] text-muted-foreground transition-colors hover:text-foreground"
               onClick={() => onRemove(person)}
               aria-label={`Remove ${person}`}
             >
@@ -1326,7 +1326,7 @@ function SpeakersAndMusicSection({
     <div>
       <SectionHeader label={isFastTestimony ? "Testimony meeting" : "Speakers & music"} number="05" />
       {isFastTestimony ? (
-        <div className="rounded-xl border border-border/70 bg-white px-4 py-4 font-serif text-[14.5px] italic leading-6 text-muted-foreground">
+        <div className="rounded-xl border border-border/70 bg-card px-4 py-4 font-serif text-[14.5px] italic leading-6 text-muted-foreground">
           Fast &amp; testimony meeting - open to the congregation following the presiding authority&apos;s opening testimony.
         </div>
       ) : (
@@ -1365,7 +1365,7 @@ function SpeakersAndMusicSection({
             <button
               type="button"
               onClick={onAddSpeaker}
-              className="inline-flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-[#fafaf9] hover:text-foreground"
+              className="inline-flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
             >
               <Plus className="h-4 w-4" />
               Add speaker
@@ -1373,7 +1373,7 @@ function SpeakersAndMusicSection({
             <button
               type="button"
               onClick={onAddIntermediateHymn}
-              className="inline-flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-[#fafaf9] hover:text-foreground"
+              className="inline-flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
             >
               <Plus className="h-4 w-4" />
               Add musical number
@@ -1381,7 +1381,7 @@ function SpeakersAndMusicSection({
             <button
               type="button"
               onClick={onAddSpecialNumber}
-              className="inline-flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-[#fafaf9] hover:text-foreground"
+              className="inline-flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
             >
               <Plus className="h-4 w-4" />
               Add special number
@@ -1413,7 +1413,7 @@ function SpeakerPlanningRow({
   onDeleteSpeaker,
 }: SpeakerPlanningRowProps) {
   return (
-    <div className="grid grid-cols-[30px_1fr_auto] items-center gap-3 rounded-xl border border-border/70 bg-white px-3.5 py-3">
+    <div className="grid grid-cols-[30px_1fr_auto] items-center gap-3 rounded-xl border border-border/70 bg-card px-3.5 py-3">
       <div className="font-mono text-[12px] text-muted-foreground">{order}.</div>
       <div className="min-w-0">
         <button
@@ -1439,7 +1439,7 @@ function SpeakerPlanningRow({
           value={entry.durationMinutes?.toString() ?? ""}
           onValueChange={(value) => onSpeakerFieldChange(entry.id, "time", Number(value))}
         >
-          <SelectTrigger className="h-8 w-[86px] bg-[#f7f6f4] px-2 text-[12px] shadow-none">
+          <SelectTrigger className="h-8 w-[86px] bg-muted/50 px-2 text-[12px] shadow-none">
             <SelectValue placeholder="Time" />
           </SelectTrigger>
           <SelectContent className="max-h-44">
@@ -1453,7 +1453,7 @@ function SpeakerPlanningRow({
         <button
           type="button"
           onClick={() => onDeleteSpeaker(entry.id)}
-          className="grid h-8 w-8 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-[#f7f6f4] hover:text-foreground"
+          className="grid h-8 w-8 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
           aria-label={`Remove ${entry.title}`}
         >
           <X className="h-3.5 w-3.5" />
@@ -1471,8 +1471,8 @@ type MusicPlanningRowProps = {
 
 function MusicPlanningRow({ entry, onPickHymn, onDeleteStaticEntry }: MusicPlanningRowProps) {
   return (
-    <div className="grid grid-cols-[30px_1fr_auto] items-center gap-3 rounded-xl border border-dashed border-border/80 bg-white px-3.5 py-3">
-      <div className="grid h-7 w-7 place-items-center rounded-full bg-[#f7f6f4] text-muted-foreground">
+    <div className="grid grid-cols-[30px_1fr_auto] items-center gap-3 rounded-xl border border-dashed border-border/80 bg-card px-3.5 py-3">
+      <div className="grid h-7 w-7 place-items-center rounded-full bg-muted/50 text-muted-foreground">
         <Music className="h-3.5 w-3.5" />
       </div>
       <button
@@ -1490,7 +1490,7 @@ function MusicPlanningRow({ entry, onPickHymn, onDeleteStaticEntry }: MusicPlann
       <button
         type="button"
         onClick={() => onDeleteStaticEntry(entry.id)}
-        className="grid h-8 w-8 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-[#f7f6f4] hover:text-foreground"
+        className="grid h-8 w-8 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
         aria-label={`Remove ${entry.title}`}
       >
         <X className="h-3.5 w-3.5" />
@@ -1529,7 +1529,7 @@ function UpcomingPanel({
   onShowMore,
 }: UpcomingPanelProps) {
   return (
-    <div className="rounded-2xl border border-border/70 bg-white p-2 shadow-[0_1px_2px_rgba(15,23,42,0.04)] xl:sticky xl:top-6">
+    <div className="rounded-2xl border border-border/70 bg-card p-2 xl:sticky xl:top-6">
       <div className="flex items-center gap-2 px-2.5 pb-2 pt-2">
         <div className="font-serif text-[14px] text-foreground">Upcoming</div>
         <div className="ml-auto text-[11.5px] text-muted-foreground">{sundayCount} meetings</div>
@@ -1553,13 +1553,13 @@ function UpcomingPanel({
               onClick={() => onSelectSunday(sunday.isoDate)}
               className={cn(
                 "grid grid-cols-[48px_1fr] items-center gap-3 rounded-xl px-2.5 py-2.5 text-left transition-colors duration-100",
-                isSelected ? "bg-[#f0efec]" : "hover:bg-[#f7f6f4]"
+                isSelected ? "bg-muted" : "hover:bg-muted/50"
               )}
             >
               <div
                 className={cn(
                   "rounded-lg border border-border/70 py-1 text-center",
-                  isSelected ? "bg-white" : "bg-[#f7f6f4]"
+                  isSelected ? "bg-background" : "bg-muted/50"
                 )}
               >
                 <div className="text-[9.5px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
@@ -2369,7 +2369,7 @@ export function SacramentMeetingPlannerClient({ defaultLanguage = "ENG" }: { def
           : "Draft autosaves"
 
   return (
-    <div className="min-h-full">
+    <div className="min-h-full dark:bg-card">
       <Breadcrumbs
         items={breadcrumbItems}
         action={
@@ -2386,7 +2386,7 @@ export function SacramentMeetingPlannerClient({ defaultLanguage = "ENG" }: { def
         }
       />
       <div className="mx-auto flex w-full max-w-7xl flex-col px-4 py-6 sm:px-6 lg:px-8">
-        <section className="rounded-2xl bg-[linear-gradient(180deg,#ffffff_0%,#fbfbfa_100%)]">
+        <section className="rounded-2xl border border-transparent bg-card">
               <div className="border-b border-border/60 px-6 py-5">
                 <div className="flex flex-col gap-0">
                   <div>
@@ -2430,7 +2430,7 @@ export function SacramentMeetingPlannerClient({ defaultLanguage = "ENG" }: { def
                             type="button"
                             variant="ghost"
                             size="icon"
-                            className="h-9 w-9 rounded-xl text-muted-foreground hover:bg-[#f7f6f4] hover:text-foreground"
+                            className="h-9 w-9 rounded-xl text-muted-foreground hover:bg-muted/50 hover:text-foreground"
                             aria-label="Meeting actions"
                           >
                             <MoreHorizontal className="h-4 w-4" />
@@ -2734,7 +2734,7 @@ function AgendaRow({
       ref={setNodeRef}
       style={style}
       className={cn(
-        "group rounded-xl border border-border/70 bg-white px-3 py-3 transition-shadow",
+        "group rounded-xl border border-border/70 bg-card px-3 py-3 transition-shadow",
         isDragging && "shadow-lg"
       )}
     >
@@ -2743,7 +2743,7 @@ function AgendaRow({
           type="button"
           className={cn(
             "mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors",
-            canDrag ? "cursor-grab hover:bg-[#f6f6f5] hover:text-foreground" : "cursor-default"
+            canDrag ? "cursor-grab hover:bg-muted/50 hover:text-foreground" : "cursor-default"
           )}
           {...(canDrag ? attributes : {})}
           {...(canDrag ? listeners : {})}
@@ -2773,7 +2773,7 @@ function AgendaRow({
                 <button
                   type="button"
                   onClick={() => onSelectSpeaker(entry.id)}
-                  className="inline-flex min-w-0 items-center gap-2 rounded-md px-1.5 py-1 text-sm text-muted-foreground transition-colors hover:bg-[#fafaf9] hover:text-foreground"
+                  className="inline-flex min-w-0 items-center gap-2 rounded-md px-1.5 py-1 text-sm text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
                 >
                   <Search className="h-3.5 w-3.5 shrink-0" />
                   <span className="truncate">
@@ -2782,7 +2782,7 @@ function AgendaRow({
                 </button>
               </div>
               <div className="grid gap-2 md:grid-cols-[minmax(0,1fr)_120px]">
-                <label className="rounded-lg border border-border/70 bg-[#fcfcfb] px-2.5 py-2">
+                <label className="rounded-lg border border-border/70 bg-muted/30 px-2.5 py-2">
                   <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                     Topic
                   </div>
@@ -2795,7 +2795,7 @@ function AgendaRow({
                     className="mt-1 w-full border-0 bg-transparent p-0 text-sm text-foreground outline-none placeholder:text-muted-foreground"
                   />
                 </label>
-                <label className="rounded-lg border border-border/70 bg-[#fcfcfb] px-2.5 py-2">
+                <label className="rounded-lg border border-border/70 bg-muted/30 px-2.5 py-2">
                   <div className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                     <Clock3 className="h-3 w-3" />
                     Time
@@ -2825,7 +2825,7 @@ function AgendaRow({
               <button
                 type="button"
                 onClick={() => onSelectHymn(entry.id)}
-                className="inline-flex min-w-0 items-center gap-2 rounded-md px-1.5 py-1 text-sm text-muted-foreground transition-colors hover:bg-[#fafaf9] hover:text-foreground"
+                className="inline-flex min-w-0 items-center gap-2 rounded-md px-1.5 py-1 text-sm text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
               >
                 <Search className="h-3.5 w-3.5 shrink-0" />
                 <span className="truncate">
@@ -2839,7 +2839,7 @@ function AgendaRow({
             <button
               type="button"
               onClick={() => onSelectAgendaAssignee(entry.id, entry.assigneeField!)}
-              className="mt-1 inline-flex items-center gap-2 rounded-md px-1.5 py-1 text-sm text-muted-foreground transition-colors hover:bg-[#fafaf9] hover:text-foreground"
+              className="mt-1 inline-flex items-center gap-2 rounded-md px-1.5 py-1 text-sm text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
             >
               <Search className="h-3.5 w-3.5" />
               <span>{entry.assigneeName || "Assign someone"}</span>
@@ -2867,7 +2867,7 @@ function EntryActionsMenu({
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-[#fafaf9] hover:text-foreground"
+          className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
           aria-label={`${label} actions`}
         >
           <MoreHorizontal className="h-4 w-4" />
@@ -2922,7 +2922,7 @@ function DirectorySelectDialog({
           </DialogTitle>
         </DialogHeader>
         <input
-          className="w-full border-0 border-b border-border/70 bg-[#f7f6f4] px-4 py-2.5 text-sm outline-none placeholder:text-muted-foreground"
+          className="w-full border-0 border-b border-border/70 bg-muted px-4 py-2.5 text-sm outline-none placeholder:text-muted-foreground"
           placeholder="Search members..."
           value={query}
           onChange={(event) => setQuery(event.target.value)}
@@ -2943,9 +2943,9 @@ function DirectorySelectDialog({
                 key={person.id}
                 type="button"
                 onClick={() => onSelect(person.name)}
-                className="flex w-full items-center gap-3 px-[18px] py-2 text-left transition-colors hover:bg-[#f7f6f4]"
+                className="flex w-full items-center gap-3 px-[18px] py-2 text-left transition-colors hover:bg-muted/50"
               >
-                <div className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-[#f3f1ee] text-[11px] font-semibold text-[#57534e]">
+                <div className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-muted text-[11px] font-semibold text-muted-foreground">
                   {getInitials(person.name)}
                 </div>
                 <div className="min-w-0 flex-1">
