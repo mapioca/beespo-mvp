@@ -750,6 +750,38 @@ function OpeningSection({ entries, onPickHymn, onPickPrayer }: OpeningSectionPro
   )
 }
 
+type ClosingSectionProps = {
+  entries: AgendaEntry[]
+  onPickHymn: (entryId: string) => void
+  onPickPrayer: (entryId: string, field: AgendaAssigneeField) => void
+}
+
+function ClosingSection({ entries, onPickHymn, onPickPrayer }: ClosingSectionProps) {
+  const closingHymn = getStaticEntry(entries, "closing-hymn")
+  const benediction = getStaticEntry(entries, "benediction")
+
+  return (
+    <div>
+      <SectionHeader label="Closing" number="05" />
+      {closingHymn ? (
+        <HymnPlanningRow
+          type="Closing hymn"
+          hymnNumber={closingHymn.hymnNumber}
+          hymnTitle={closingHymn.hymnTitle}
+          onClick={() => onPickHymn(closingHymn.id)}
+        />
+      ) : null}
+      {benediction ? (
+        <PrayerPlanningRow
+          type="Benediction"
+          personName={benediction.assigneeName}
+          onClick={() => onPickPrayer(benediction.id, "benediction")}
+        />
+      ) : null}
+    </div>
+  )
+}
+
 type HymnPlanningRowProps = {
   type: string
   hymnNumber?: number
@@ -775,7 +807,7 @@ function HymnPlanningRow({ type, hymnNumber, hymnTitle, meta, onClick }: HymnPla
           <>
             {typeof hymnNumber === "number" ? (
               <span className="mr-1.5 font-serif text-[13px] italic text-[#4f46e5]">
-                No. {hymnNumber}
+                № {hymnNumber}
               </span>
             ) : null}
             <span className="font-serif text-[15.5px] text-foreground">{hymnTitle}</span>
@@ -783,8 +815,8 @@ function HymnPlanningRow({ type, hymnNumber, hymnTitle, meta, onClick }: HymnPla
         ) : (
           <span className="font-serif text-[15.5px] italic text-muted-foreground">Choose a hymn</span>
         )}
-        {meta ? (
-          <div className="mt-0.5 truncate text-[12px] text-muted-foreground">{meta}</div>
+        {hasHymn && meta ? (
+          <div className="mt-px truncate text-[11.5px] text-muted-foreground">{meta}</div>
         ) : null}
       </div>
       <ChevronRightIcon />
@@ -1307,10 +1339,14 @@ export function SacramentMeetingPlannerClient({ defaultLanguage = "ENG" }: { def
         "section-opening",
         "opening-hymn",
         "invocation",
+        "ward-business",
         "section-ordinance",
         "sacrament-hymn",
         "sacrament-ordinance",
         "section-messages",
+        SECTION_CLOSING_ID,
+        "closing-hymn",
+        "benediction",
       ].includes(entry.id) &&
       entry.kind !== "speaker" &&
       entry.kind !== "testimony" &&
@@ -2048,50 +2084,63 @@ export function SacramentMeetingPlannerClient({ defaultLanguage = "ENG" }: { def
                         onAddIntermediateHymn={handleAddIntermediateHymn}
                         onAddSpecialNumber={handleAddSpecialNumber}
                       />
+                      <ClosingSection
+                        entries={visibleEntries}
+                        onPickHymn={handleOpenHymnPicker}
+                        onPickPrayer={(entryId, field) =>
+                          handleOpenDirectoryPicker({
+                            type: "agenda-assignee",
+                            entryId,
+                            field,
+                          })
+                        }
+                      />
                     </div>
                   </div>
 
-                  <div className="flex-1 overflow-auto px-6 py-5">
-                    <div className="mx-auto w-full max-w-3xl">
-                      <DndContext
-                        sensors={sensors}
-                        collisionDetection={closestCenter}
-                        onDragEnd={handleDragEnd}
-                      >
-                        <SortableContext
-                          items={remainingAgendaEntries.map((entry) => entry.id)}
-                          strategy={verticalListSortingStrategy}
+                  {remainingAgendaEntries.length > 0 ? (
+                    <div className="flex-1 overflow-auto px-6 py-5">
+                      <div className="mx-auto w-full max-w-3xl">
+                        <DndContext
+                          sensors={sensors}
+                          collisionDetection={closestCenter}
+                          onDragEnd={handleDragEnd}
                         >
-                          <div className="space-y-1.5">
-                            {remainingAgendaEntries.map((entry) => (
-                              <div key={entry.id}>
-                                <AgendaRow
-                                  entry={entry}
-                                  onSelectSpeaker={(entryId) =>
-                                    handleOpenDirectoryPicker({
-                                      type: "speaker",
-                                      entryId,
-                                    })
-                                  }
-                                  onSpeakerFieldChange={handleSpeakerFieldChange}
-                                  onDeleteSpeaker={handleDeleteSpeaker}
-                                  onDeleteStaticEntry={handleDeleteStaticEntry}
-                                  onSelectAgendaAssignee={(entryId, field) =>
-                                    handleOpenDirectoryPicker({
-                                      type: "agenda-assignee",
-                                      entryId,
-                                      field,
-                                    })
-                                  }
-                                  onSelectHymn={handleOpenHymnPicker}
-                                />
-                              </div>
-                            ))}
-                          </div>
-                        </SortableContext>
-                      </DndContext>
+                          <SortableContext
+                            items={remainingAgendaEntries.map((entry) => entry.id)}
+                            strategy={verticalListSortingStrategy}
+                          >
+                            <div className="space-y-1.5">
+                              {remainingAgendaEntries.map((entry) => (
+                                <div key={entry.id}>
+                                  <AgendaRow
+                                    entry={entry}
+                                    onSelectSpeaker={(entryId) =>
+                                      handleOpenDirectoryPicker({
+                                        type: "speaker",
+                                        entryId,
+                                      })
+                                    }
+                                    onSpeakerFieldChange={handleSpeakerFieldChange}
+                                    onDeleteSpeaker={handleDeleteSpeaker}
+                                    onDeleteStaticEntry={handleDeleteStaticEntry}
+                                    onSelectAgendaAssignee={(entryId, field) =>
+                                      handleOpenDirectoryPicker({
+                                        type: "agenda-assignee",
+                                        entryId,
+                                        field,
+                                      })
+                                    }
+                                    onSelectHymn={handleOpenHymnPicker}
+                                  />
+                                </div>
+                              ))}
+                            </div>
+                          </SortableContext>
+                        </DndContext>
+                      </div>
                     </div>
-                  </div>
+                  ) : null}
                 </>
               ) : activeTab === "horizon" ? (
                 <HorizonPanel
@@ -2149,6 +2198,7 @@ export function SacramentMeetingPlannerClient({ defaultLanguage = "ENG" }: { def
         }}
         onSelect={handleSelectHymn}
         defaultLanguage={defaultLanguage}
+        sacramentOnly={hymnTarget?.entryId === "sacrament-hymn"}
         currentHymnId={
           hymnTarget
             ? (

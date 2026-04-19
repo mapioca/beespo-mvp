@@ -1,17 +1,12 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import Image from "next/image";
 import {
     Dialog,
     DialogContent,
-    DialogDescription,
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import {
     Select,
     SelectContent,
@@ -19,7 +14,6 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { Search, Music } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
@@ -29,6 +23,7 @@ interface Hymn {
     title: string;
     book_id: string;
     language: string;
+    topic?: string | null;
 }
 
 interface HymnSelectorModalProps {
@@ -37,6 +32,7 @@ interface HymnSelectorModalProps {
     onSelect: (hymn: { id: string; number: number; title: string }) => void;
     currentHymnId?: string;
     defaultLanguage?: "ENG" | "SPA";
+    sacramentOnly?: boolean;
 }
 
 export function HymnSelectorModal({
@@ -45,6 +41,7 @@ export function HymnSelectorModal({
     onSelect,
     currentHymnId,
     defaultLanguage = "ENG",
+    sacramentOnly = false,
 }: HymnSelectorModalProps) {
     const [hymns, setHymns] = useState<Hymn[]>([]);
     const [search, setSearch] = useState("");
@@ -62,7 +59,7 @@ export function HymnSelectorModal({
         const supabase = createClient();
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data, error } = await (supabase.from("hymns") as any)
-            .select("id, hymn_number, title, book_id, language")
+            .select("id, hymn_number, title, book_id, language, topic")
             .order("hymn_number");
 
         if (!error && data) {
@@ -74,18 +71,31 @@ export function HymnSelectorModal({
     const filteredHymns = useMemo(() => {
         let result = hymns.filter((h) => h.language === selectedLanguage);
 
+        if (sacramentOnly) {
+            result = result.filter((h) => {
+                const topic = h.topic?.toLowerCase() ?? "";
+                return (
+                    topic.includes("sacrament") ||
+                    topic.includes("santa cena") ||
+                    (h.language === "ENG" && h.hymn_number >= 169 && h.hymn_number <= 196) ||
+                    (h.language === "SPA" && h.hymn_number >= 101 && h.hymn_number <= 120)
+                );
+            });
+        }
+
         if (search.trim()) {
             const searchLower = search.toLowerCase();
             const searchNum = parseInt(search);
             result = result.filter((h) => {
                 if (!isNaN(searchNum) && h.hymn_number === searchNum) return true;
                 if (h.hymn_number.toString().startsWith(search)) return true;
-                return h.title.toLowerCase().includes(searchLower);
+                if (h.title.toLowerCase().includes(searchLower)) return true;
+                return (h.topic ?? "").toLowerCase().includes(searchLower);
             });
         }
 
         return result;
-    }, [hymns, selectedLanguage, search]);
+    }, [hymns, selectedLanguage, search, sacramentOnly]);
 
     const handleSelect = (hymn: Hymn) => {
         onSelect({
@@ -96,54 +106,43 @@ export function HymnSelectorModal({
         onClose();
     };
 
-    const getHymnBookLogo = (bookId: string) => {
-        const logos: Record<string, { src: string; alt: string }> = {
-            'hymns_church': {
-                src: '/images/lds-hymns.svg',
-                alt: 'LDS Hymns'
-            },
-            'hymns_home_church': {
-                src: '/images/home-church.svg',
-                alt: 'Home Church Collection'
-            },
-            'himnos_iglesia': {
-                src: '/images/lds-hymns.svg',
-                alt: 'LDS Himnos'
-            },
-            'himnos_hogar_iglesia': {
-                src: '/images/home-church.svg',
-                alt: 'Colección Hogar e Iglesia'
-            },
-        };
-        return logos[bookId] || { src: '/images/lds-hymns.svg', alt: 'Hymnal' };
+    const title = selectedLanguage === "SPA"
+        ? sacramentOnly ? "Elegir himno sacramental" : "Elegir himno"
+        : sacramentOnly ? "Choose sacrament hymn" : "Choose hymn";
+    const placeholder = selectedLanguage === "SPA"
+        ? sacramentOnly ? "Buscar himnos sacramentales..." : "Buscar por número, título o tema..."
+        : sacramentOnly ? "Search sacrament hymns..." : "Search by number, title, or topic...";
+
+    const getBookLabel = (bookId: string) => {
+        if (bookId.includes("home") || bookId.includes("hogar")) return "Home"
+        return selectedLanguage === "SPA" ? "Himnos" : "Hymns"
     };
 
     return (
         <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-            <DialogContent className="sm:max-w-lg">
-                <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2">
-                        <Music className="h-5 w-5 text-blue-500" />
-                        {selectedLanguage === "SPA" ? "Seleccionar Himno" : "Select Hymn"}
+            <DialogContent className="max-h-[80vh] max-w-[560px] gap-0 overflow-hidden rounded-2xl border-border/80 p-0 shadow-2xl">
+                <DialogHeader className="border-b border-border/70 px-[18px] py-3.5">
+                    <DialogTitle className="font-serif text-[15px] font-normal text-foreground">
+                        {title}
                     </DialogTitle>
-                    <DialogDescription>
-                        {selectedLanguage === "SPA" ? "Buscar por número o título" : "Search by hymn number or title"}
-                    </DialogDescription>
                 </DialogHeader>
 
-                <div className="flex gap-2">
-                    <div className="relative flex-1">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input
-                            placeholder={selectedLanguage === "SPA" ? "Número o título..." : "Search hymns..."}
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                            className="pl-9"
-                            autoFocus
-                        />
-                    </div>
-                    <Select value={selectedLanguage} onValueChange={(v) => { setSelectedLanguage(v as "ENG" | "SPA"); setSearch(""); }}>
-                        <SelectTrigger className="w-20 shrink-0">
+                <div className="flex border-b border-border/70 bg-[#f7f6f4]">
+                    <input
+                        className="min-w-0 flex-1 bg-transparent px-4 py-2.5 text-sm outline-none placeholder:text-muted-foreground"
+                        placeholder={placeholder}
+                        value={search}
+                        onChange={(event) => setSearch(event.target.value)}
+                        autoFocus
+                    />
+                    <Select
+                        value={selectedLanguage}
+                        onValueChange={(value) => {
+                            setSelectedLanguage(value as "ENG" | "SPA");
+                            setSearch("");
+                        }}
+                    >
+                        <SelectTrigger className="h-auto w-20 shrink-0 rounded-none border-0 border-l border-border/70 bg-transparent px-3 shadow-none focus:ring-0">
                             <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -153,54 +152,49 @@ export function HymnSelectorModal({
                     </Select>
                 </div>
 
-                <ScrollArea className="h-[300px] border rounded-md">
+                <div className="max-h-[420px] overflow-y-auto py-1">
                     {isLoading ? (
-                        <div className="p-4 text-center text-sm text-muted-foreground">
+                        <div className="p-8 text-center text-[13px] text-muted-foreground">
                             Loading hymns...
                         </div>
                     ) : filteredHymns.length === 0 ? (
-                        <div className="p-4 text-center text-sm text-muted-foreground">
+                        <div className="p-8 text-center text-[13px] text-muted-foreground">
                             No hymns found
                         </div>
                     ) : (
-                        <div className="divide-y">
+                        <div>
                             {filteredHymns.map((hymn) => {
-                                const logo = getHymnBookLogo(hymn.book_id);
                                 return (
                                     <button
                                         key={hymn.id}
+                                        type="button"
                                         onClick={() => handleSelect(hymn)}
                                         className={cn(
-                                            "w-full text-left p-3 hover:bg-accent transition-colors flex items-center gap-3",
-                                            currentHymnId === hymn.id && "bg-accent"
+                                            "grid w-full grid-cols-[48px_1fr_auto] items-center gap-2.5 px-[18px] py-2.5 text-left transition-colors hover:bg-[#f7f6f4]",
+                                            currentHymnId === hymn.id && "bg-[#f7f6f4]"
                                         )}
                                     >
-                                        <div className="relative w-6 h-6 flex-shrink-0">
-                                            <Image
-                                                src={logo.src}
-                                                alt={logo.alt}
-                                                width={24}
-                                                height={24}
-                                                className="object-contain"
-                                            />
+                                        <div className="font-serif text-[15px] italic text-[#4f46e5]">
+                                            № {hymn.hymn_number}
                                         </div>
-                                        <span className="font-mono text-sm text-muted-foreground w-8">
-                                            #{hymn.hymn_number}
-                                        </span>
-                                        <span className="font-medium truncate">
-                                            {hymn.title}
-                                        </span>
+                                        <div className="min-w-0">
+                                            <div className="truncate font-serif text-[14.5px] text-foreground">
+                                                {hymn.title}
+                                            </div>
+                                            {hymn.topic ? (
+                                                <div className="mt-px truncate text-[11px] text-muted-foreground">
+                                                    {hymn.topic}
+                                                </div>
+                                            ) : null}
+                                        </div>
+                                        <div className="rounded-full border border-border px-2 py-0.5 text-[10.5px] uppercase tracking-[0.04em] text-muted-foreground">
+                                            {getBookLabel(hymn.book_id)}
+                                        </div>
                                     </button>
                                 );
                             })}
                         </div>
                     )}
-                </ScrollArea>
-
-                <div className="flex justify-end">
-                    <Button variant="outline" onClick={onClose}>
-                        Cancel
-                    </Button>
                 </div>
             </DialogContent>
         </Dialog>
