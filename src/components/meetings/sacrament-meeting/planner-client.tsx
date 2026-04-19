@@ -1605,7 +1605,6 @@ function UpcomingPanel({
               selected={jumpDate}
               onSelect={onJumpDateSelect}
               disabled={(date) => isBefore(startOfDay(date), startOfDay(new Date()))}
-              initialFocus
             />
           </PopoverContent>
         </Popover>
@@ -1895,7 +1894,7 @@ export function SacramentMeetingPlannerClient({ defaultLanguage = "ENG" }: { def
             business: Array.isArray((savedNotes as unknown as Record<string, unknown>).business)
               ? ((savedNotes as unknown as Record<string, unknown>).business as PlannerItem[])
               : [],
-            notes: typeof savedNotes.notes === "string" ? savedNotes.notes : "",
+            notes: savedNotes.notes,
             initialized: true,
           }
         }
@@ -2778,7 +2777,7 @@ function AgendaRow({
                 >
                   <Search className="h-3.5 w-3.5 shrink-0" />
                   <span className="truncate">
-                    {entry.speakerName || "Select speaker from directory"}
+                    {entry.speakerName || "Tap to assign speaker"}
                   </span>
                 </button>
               </div>
@@ -2843,7 +2842,7 @@ function AgendaRow({
               className="mt-1 inline-flex items-center gap-2 rounded-md px-1.5 py-1 text-sm text-muted-foreground transition-colors hover:bg-[#fafaf9] hover:text-foreground"
             >
               <Search className="h-3.5 w-3.5" />
-              <span>{entry.assigneeName || "Select from directory"}</span>
+              <span>{entry.assigneeName || "Assign someone"}</span>
             </button>
           ) : entry.detail ? (
             <div className="mt-1 text-sm text-muted-foreground">
