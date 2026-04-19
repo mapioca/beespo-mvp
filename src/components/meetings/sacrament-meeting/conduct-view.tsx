@@ -297,6 +297,7 @@ export function ConductView({ meeting, isoDate, onClose }: ConductViewProps) {
               const state: "done" | "current" | "upcoming" =
                 i < cur ? "done" : i === cur ? "current" : "upcoming"
               const isSacramentCurrent = step.kind === "sacrament-prayers" && state === "current"
+              const isWelcomeCurrent = step.key === "welcome" && state === "current"
 
               return (
                 <div key={step.key}>
@@ -354,6 +355,34 @@ export function ConductView({ meeting, isoDate, onClose }: ConductViewProps) {
                       )}
                     </div>
                   </div>
+
+                  {/* Presidency card — inline under current welcome step */}
+                  {isWelcomeCurrent && (
+                    <div className="mx-4 mb-1.5 rounded-[14px] border border-[#d8d2bf] bg-white p-8 shadow-[0_12px_40px_rgba(60,50,30,0.10),0_0_0_1px_rgba(60,50,30,0.05)]">
+                      {(
+                        [
+                          { label: "Presiding",       value: meeting.assignments.presiding },
+                          { label: "Conducting",      value: meeting.assignments.conductor },
+                          { label: "Chorister",       value: meeting.assignments.chorister },
+                          { label: "Piano / Organist",value: meeting.assignments.accompanist },
+                        ] as const
+                      ).map(({ label, value }, idx, arr) => (
+                        <div key={label}>
+                          <div className="flex items-baseline justify-between gap-6 py-3">
+                            <div className="text-[11px] font-medium uppercase tracking-[0.09em] text-[#8a867a]">
+                              {label}
+                            </div>
+                            <div className="font-serif text-[18px] tracking-[-0.005em] text-[#141413]">
+                              {value?.trim() || <span className="italic text-[#b7b3a4]">—</span>}
+                            </div>
+                          </div>
+                          {idx < arr.length - 1 && (
+                            <div className="h-px bg-[#f0ece6]" />
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
 
                   {/* Sacrament prayer card — inline under current sacrament step */}
                   {isSacramentCurrent && (
