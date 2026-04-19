@@ -14,6 +14,7 @@ import {
   PencilLine,
   Plus,
   Search,
+  Shredder,
   Trash2,
   X,
 } from "lucide-react"
@@ -202,11 +203,6 @@ const MEETING_TYPE_OPTIONS: { value: MeetingSpecialType; label: string }[] = [
   { value: "ward-conference", label: "Ward Conference" },
 ]
 
-const SACRAMENT_ASSIGNMENT_REQUIREMENTS: Record<SacramentAssignmentRole, number> = {
-  blessing: 2,
-  passing: 8,
-}
-
 function toPlannerSunday(date: Date): PlannerSunday {
   return {
     isoDate: format(date, "yyyy-MM-dd"),
@@ -308,6 +304,7 @@ function getPlannerAssignmentStats(meeting: PlannerMeetingState) {
   const entries = getVisibleAgendaEntries(meeting)
   let assignedCount = 0
   let totalCount = 0
+  let optionalAssignedCount = 0
 
   for (const assignment of Object.values(meeting.assignments)) {
     totalCount += 1
@@ -316,13 +313,8 @@ function getPlannerAssignmentStats(meeting: PlannerMeetingState) {
     }
   }
 
-  for (const [role, requiredCount] of Object.entries(SACRAMENT_ASSIGNMENT_REQUIREMENTS) as [
-    SacramentAssignmentRole,
-    number,
-  ][]) {
-    const assignedPeople = meeting.sacramentAssignments[role].filter((person) => person.trim())
-    totalCount += requiredCount
-    assignedCount += Math.min(assignedPeople.length, requiredCount)
+  for (const assignments of Object.values(meeting.sacramentAssignments)) {
+    optionalAssignedCount += assignments.filter((person) => person.trim()).length
   }
 
   for (const entry of entries) {
@@ -354,7 +346,7 @@ function getPlannerAssignmentStats(meeting: PlannerMeetingState) {
     }
   }
 
-  return { assignedCount, totalCount }
+  return { assignedCount, optionalAssignedCount, totalCount }
 }
 
 function getDerivedPlannerStatus(isoDate: string, meeting: PlannerMeetingState): PlannerStatus {
@@ -398,13 +390,13 @@ type EditableMeetingTitleProps = {
 
 function EditableMeetingTitle({ value, placeholder, onChange }: EditableMeetingTitleProps) {
   return (
-    <div className="group relative mt-1 flex max-w-3xl items-center gap-2 rounded-xl -ml-2 px-2 py-1 transition-colors hover:bg-[#f7f6f4] focus-within:bg-white focus-within:ring-1 focus-within:ring-border/80">
+    <div className="group relative mt-1 flex max-w-3xl items-center gap-2 rounded-xl -ml-2 px-2 py-0 transition-colors hover:bg-[#f7f6f4] focus-within:bg-white focus-within:ring-1 focus-within:ring-border/80">
       <input
         aria-label="Meeting title"
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
-        className="min-w-0 flex-1 bg-transparent p-0 font-serif text-[34px] font-normal leading-tight tracking-[-0.02em] text-foreground outline-none placeholder:italic placeholder:text-muted-foreground"
+        className="min-w-0 flex-1 bg-transparent p-0 font-serif text-[34px] font-normal leading-none tracking-[-0.02em] text-foreground outline-none placeholder:italic placeholder:text-muted-foreground"
       />
       <PencilLine className="h-4 w-4 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-70 group-focus-within:opacity-70" />
     </div>
@@ -2085,7 +2077,7 @@ export function SacramentMeetingPlannerClient({ defaultLanguage = "ENG" }: { def
       <div className="mx-auto flex w-full max-w-7xl flex-col px-4 py-6 sm:px-6 lg:px-8">
         <section className="rounded-2xl bg-[linear-gradient(180deg,#ffffff_0%,#fbfbfa_100%)]">
               <div className="border-b border-border/60 px-6 py-5">
-                <div className="flex flex-col gap-4">
+                <div className="flex flex-col gap-0">
                   <div>
                     <div className="text-[13px] text-muted-foreground">
                       {format(plannerSundayDateFromIso(selectedSunday.isoDate), "EEEE, MMMM d, yyyy")} · 9:00 AM
@@ -2097,13 +2089,28 @@ export function SacramentMeetingPlannerClient({ defaultLanguage = "ENG" }: { def
                     />
                   </div>
 
-                  <div className="flex flex-wrap items-end justify-between gap-3">
+                  <div className="-mt-0.5 flex flex-wrap items-end justify-between gap-3">
                     <div className="flex flex-wrap items-center gap-3">
                       <MeetingTypeSelect
                         value={selectedMeeting.specialType}
                         onChange={handleMeetingTypeChange}
                       />
                       <PlannerStatusBadge status={selectedPlannerStatus} />
+                      <div className="text-xs text-muted-foreground">
+                        {autosaveLabel}
+                      </div>
+                      <div className="inline-flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                        {selectedMeetingStats.totalCount > 0 &&
+                        selectedMeetingStats.assignedCount === selectedMeetingStats.totalCount ? (
+                          <CircleCheck className="h-3.5 w-3.5 text-emerald-600" />
+                        ) : null}
+                        <span>
+                          {selectedMeetingStats.assignedCount}/{selectedMeetingStats.totalCount} assigned
+                          {selectedMeetingStats.optionalAssignedCount > 0
+                            ? ` · ${selectedMeetingStats.optionalAssignedCount} optional`
+                            : null}
+                        </span>
+                      </div>
                     </div>
                     <AlertDialog open={clearDialogOpen} onOpenChange={setClearDialogOpen}>
                       <DropdownMenu>
@@ -2126,14 +2133,14 @@ export function SacramentMeetingPlannerClient({ defaultLanguage = "ENG" }: { def
                             }}
                             className="gap-2 text-destructive focus:text-destructive"
                           >
-                            <Trash2 className="h-4 w-4" />
-                            Reset planning
+                            <Shredder className="h-4 w-4" />
+                            Clear meeting data
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                       <AlertDialogContent>
                         <AlertDialogHeader>
-                          <AlertDialogTitle>Reset this meeting&apos;s planning?</AlertDialogTitle>
+                          <AlertDialogTitle>Clear this meeting&apos;s data?</AlertDialogTitle>
                           <AlertDialogDescription>
                             This will remove assignments, hymns, speakers, notes, and other planning details for{" "}
                             {format(plannerSundayDateFromIso(selectedSunday.isoDate), "MMMM d, yyyy")}. The meeting
@@ -2143,7 +2150,7 @@ export function SacramentMeetingPlannerClient({ defaultLanguage = "ENG" }: { def
                         <AlertDialogFooter>
                           <AlertDialogCancel>Cancel</AlertDialogCancel>
                           <AlertDialogAction onClick={handleClearSelectedSunday}>
-                            Reset planning
+                            Clear meeting data
                           </AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>
@@ -2159,23 +2166,6 @@ export function SacramentMeetingPlannerClient({ defaultLanguage = "ENG" }: { def
                   <div>
                   <div className="border-b border-border/60 px-6 py-5">
                     <div className="flex flex-col gap-5">
-                      <div className="flex flex-wrap items-center gap-3">
-                        <div className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground">
-                          {selectedMeetingStats.totalCount > 0 &&
-                          selectedMeetingStats.assignedCount === selectedMeetingStats.totalCount ? (
-                            <CircleCheck className="h-3.5 w-3.5 text-emerald-600" />
-                          ) : null}
-                          <span>
-                            {selectedMeetingStats.assignedCount}/{selectedMeetingStats.totalCount} assigned
-                          </span>
-                        </div>
-
-                        <div className="text-xs text-muted-foreground">
-                          {autosaveLabel}
-                        </div>
-
-                      </div>
-
                       <PresidencyAndMusicSection
                         assignments={selectedMeeting.assignments}
                         onSelect={(field) =>
