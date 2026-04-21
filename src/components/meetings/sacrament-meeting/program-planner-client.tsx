@@ -1540,7 +1540,7 @@ function UpcomingPanel({
   onShowMore,
 }: UpcomingPanelProps) {
   return (
-    <div className="rounded-2xl border border-border/70 bg-card p-2 dark:bg-background xl:sticky xl:top-6">
+    <div className="rounded-2xl border border-border/70 bg-card p-2 dark:bg-background">
       <div className="flex items-center gap-2 px-2.5 pb-2 pt-2">
         <div className="font-serif text-[14px] text-foreground">Upcoming</div>
         <div className="ml-auto text-[11.5px] text-muted-foreground">{sundayCount} meetings</div>
@@ -2435,7 +2435,7 @@ export function SacramentMeetingPlannerClient({
       />
       <div className="mx-auto flex w-full max-w-7xl flex-col px-4 py-6 sm:px-6 lg:px-8">
         <section className="rounded-2xl border border-transparent bg-card">
-          <div className="sticky top-0 z-10 border-b border-border/60 bg-card px-6 py-5">
+          <div className="border-b border-border/60 bg-card px-6 py-5">
                 <div className="flex flex-col gap-0">
                   <div>
                     <div className="text-[13px] text-muted-foreground">
@@ -2638,7 +2638,7 @@ export function SacramentMeetingPlannerClient({
                     </div>
                   ) : null}
                   </div>
-                  <div className="pr-6 pt-5 xl:sticky xl:top-24">
+                  <div className="pr-6 pt-5 xl:sticky xl:top-20">
                     <UpcomingPanel
                       sundays={visibleSundays}
                       meetingsByDate={meetingsByDate}

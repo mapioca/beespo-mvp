@@ -74,14 +74,14 @@ export function Breadcrumbs({ items, className, inlineAction, action }: Breadcru
   }
 
   return (
-    <div className="flex-shrink-0">
+    <div className="sticky top-0 z-30 flex-shrink-0">
       <div
         ref={containerRef}
         className={cn(
-          "sticky top-0 z-30 flex h-14 items-center gap-2 px-4 transition-[background-color,border-color,box-shadow] duration-200",
+          "flex h-14 items-center gap-2 px-4 transition-[background-color,border-color,box-shadow] duration-200",
           isElevated
-            ? "border-b border-border/55 bg-[hsl(var(--chrome)/0.86)] shadow-[0_1px_0_rgba(15,23,42,0.06)] backdrop-blur supports-[backdrop-filter]:bg-[hsl(var(--chrome)/0.82)]"
-            : "border-b border-transparent bg-transparent",
+            ? "border-b border-border/55 bg-card shadow-[0_1px_0_rgba(15,23,42,0.06)]"
+            : "border-b border-transparent bg-card",
           className
         )}
       >

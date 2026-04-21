@@ -408,11 +408,11 @@
     --color-focus-ring: rgba(224, 131, 97, 0.3);
 
     --cp-canvas: 260 6% 10%;
-    --cp-surface: 255 4% 13%;
-    --cp-surface-2: 255 4% 13%;
+    --cp-surface: 240 4% 11%;
+    --cp-surface-2: 240 4% 11%;
     /* Named surface tokens */
     --surface-canvas: 260 6% 10%; /* #1a1a1d — deepest bg, behind everything */
-    --surface-base: 255 4% 13%;   /* #201f22 — cards, panels, sidebars */
+    --surface-base: 240 4% 11%;   /* #1a1a1c — cards, panels, sidebars */
     --surface-raised: 255 4% 13%; /* #201f22 — passive buttons, interactive tiles */
     --surface-hover: 240 4% 16%;  /* #26262a — hover state for interactive surfaces */
     --surface-active: 255 5% 23%; /* #383640 — selected/active state */

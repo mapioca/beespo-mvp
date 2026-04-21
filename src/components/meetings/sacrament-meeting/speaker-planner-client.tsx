@@ -345,7 +345,7 @@ function MeetingCard({
   return (
     <div
       className={cn(
-        "overflow-hidden rounded-2xl border bg-card transition-all",
+        "overflow-hidden rounded-2xl border bg-surface-raised transition-all",
         isActive
           ? "border-brand shadow-[0_0_0_3px_hsl(var(--brand)/0.15)]"
           : "border-border/60"

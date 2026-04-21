@@ -42,7 +42,7 @@ export function HomeQuickActions() {
               id={`quick-action-${action.id}`}
               className={cn(
                 "flex items-center gap-1.5 rounded-[8px] px-3.5 py-1.5 shrink-0 snap-start",
-                "border border-[hsl(var(--cp-border))] bg-[hsl(var(--cp-surface-2))]",
+                "border border-[hsl(var(--cp-border))] bg-surface-raised",
                 "text-[13px] font-medium text-muted-foreground",
                 "hover:bg-[hsl(var(--cp-hover))] hover:text-foreground hover:border-[hsl(var(--cp-border)/0.7)]",
                 "transition-all duration-150"

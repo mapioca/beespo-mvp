@@ -55,7 +55,7 @@ export function DashboardShell({
 
                 {/* Content area: full-bleed main + optional details pane */}
                 <div className="flex-1 min-w-0 min-h-0 flex items-stretch bg-app-shell">
-                    <main className="relative z-0 flex-1 min-w-0 h-full min-h-0 overflow-auto bg-app-main-card">
+                    <main className="relative z-0 flex-1 min-w-0 h-full min-h-0 overflow-auto bg-app-main-card dark:bg-card">
                         {children}
                     </main>
                     {/* Portal target for DetailsPanel — hidden on mobile, sized by panel open state on desktop */}
