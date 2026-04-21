@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from "react"
 import { createPortal } from "react-dom"
 import { format } from "date-fns"
 import { Check, X } from "lucide-react"
+
+import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
 // ─── Types (mirrored from planner) ──────────────────────────────────────────
@@ -254,15 +256,10 @@ export function ConductView({ meeting, isoDate, onClose }: ConductViewProps) {
   return createPortal(
     <div className="fixed inset-0 z-[9999] flex flex-col overflow-hidden bg-[#faf9f5] dark:bg-[#0a0a0a]">
       {/* ── Topbar ── */}
-      <div className="flex shrink-0 items-center gap-3 border-b border-[#e6e1d1] px-6 py-3 dark:border-[#1f1f1f]">
-        <button
-          type="button"
-          onClick={onClose}
-          className="mr-2 inline-flex items-center gap-1.5 text-[13px] text-[#8a867a] transition-colors hover:text-[#141413] dark:text-[#6b6b6b] dark:hover:text-[#e5e5e5]"
-        >
-          <X className="h-3.5 w-3.5" />
-          Close
-        </button>
+      <div className="flex shrink-0 items-center justify-end gap-3 border-b border-[#e6e1d1] px-6 py-3 dark:border-[#1f1f1f]">
+        <h1 className="mr-auto font-serif text-[22px] font-normal tracking-[-0.01em] text-[#141413] dark:text-[#e5e5e5]">
+          {meetingTitle}
+        </h1>
 
         {/* Live badge */}
         <div className="flex items-center gap-1.5 rounded-full bg-[#e4e6d6] px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#6b7a3f] dark:bg-[#1a2e1a] dark:text-[#7fb87f]">
@@ -270,11 +267,7 @@ export function ConductView({ meeting, isoDate, onClose }: ConductViewProps) {
           Live
         </div>
 
-        <h1 className="font-serif text-[22px] font-normal tracking-[-0.01em] text-[#141413] dark:text-[#e5e5e5]">
-          {meetingTitle}
-        </h1>
-
-        <div className="ml-auto font-mono text-[14px] tabular-nums text-[#8a867a] dark:text-[#6b6b6b]">
+        <div className="font-mono text-[14px] tabular-nums text-[#8a867a] dark:text-[#6b6b6b]">
           {clock}
         </div>
 
@@ -287,6 +280,14 @@ export function ConductView({ meeting, isoDate, onClose }: ConductViewProps) {
           </kbd>
           <span>to navigate</span>
         </div>
+
+        <Button type="button" variant="outline" className="rounded-full" onClick={onClose}>
+          <X className="h-3.5 w-3.5" />
+          Close
+          <kbd className="ml-1 hidden rounded border border-border bg-muted px-1 py-0.5 font-mono text-[10px] text-muted-foreground sm:inline">
+            Esc
+          </kbd>
+        </Button>
       </div>
 
       {/* ── Agenda ── */}

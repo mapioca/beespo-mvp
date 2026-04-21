@@ -820,7 +820,7 @@ function AssignmentCard({ role, name, onClick }: AssignmentCardProps) {
         className={cn(
           "grid h-8 w-8 shrink-0 place-items-center rounded-full text-[11px] font-semibold",
           assignedName
-            ? "bg-muted text-muted-foreground"
+            ? "bg-surface-sunken text-muted-foreground"
             : "border border-dashed border-border bg-transparent text-muted-foreground"
         )}
       >

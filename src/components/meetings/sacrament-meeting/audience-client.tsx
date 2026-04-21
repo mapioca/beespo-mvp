@@ -146,7 +146,7 @@ export function SacramentMeetingAudienceView({
       <div className="sticky top-0 z-10 flex h-14 items-center justify-end bg-card/90 px-4 backdrop-blur">
         <Button type="button" variant="outline" className="rounded-full" onClick={onClose}>
           <X className="h-3.5 w-3.5" />
-          Exit audience view
+          Close
           <kbd className="ml-1 hidden rounded border border-border bg-muted px-1 py-0.5 font-mono text-[10px] text-muted-foreground sm:inline">
             Esc
           </kbd>
