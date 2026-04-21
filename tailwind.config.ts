@@ -48,6 +48,11 @@ const config: Config = {
         "app-main-card": "hsl(var(--app-main-card) / <alpha-value>)",
         "app-island": "hsl(var(--app-island) / <alpha-value>)",
         "app-island-border": "hsl(var(--app-island-border) / <alpha-value>)",
+        "surface-canvas": "hsl(var(--surface-canvas) / <alpha-value>)",
+        "surface-base": "hsl(var(--surface-base) / <alpha-value>)",
+        "surface-raised": "hsl(var(--surface-raised) / <alpha-value>)",
+        "surface-hover": "hsl(var(--surface-hover) / <alpha-value>)",
+        "surface-sunken": "hsl(var(--surface-sunken) / <alpha-value>)",
         brand: {
           DEFAULT: "hsl(var(--brand))",
           foreground: "hsl(var(--brand-foreground))",

@@ -680,7 +680,7 @@ function HorizonPanel({ sundays, meetingsByDate, defaultLanguage, onOpen }: Hori
               key={sunday.isoDate}
               type="button"
               onClick={() => onOpen(sunday.isoDate)}
-              className="flex min-h-[170px] flex-col rounded-xl border border-border/70 bg-card px-4 py-3 text-left transition-colors hover:border-border"
+              className="flex min-h-[170px] flex-col rounded-xl border border-border/70 bg-surface-raised px-4 py-3 text-left transition-colors hover:border-border hover:bg-surface-hover"
             >
               <div className="text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
                 {sunday.dayLabel} · {sunday.dateLabel}
@@ -806,7 +806,7 @@ function AssignmentCard({ role, name, onClick }: AssignmentCardProps) {
 
   return (
     <button
-      className="flex items-center gap-3 rounded-xl border border-border/70 bg-card px-3.5 py-3 text-left transition-colors hover:border-border hover:bg-muted/50"
+      className="flex items-center gap-3 rounded-xl border border-border/70 bg-surface-raised px-3.5 py-3 text-left transition-colors hover:border-border hover:bg-surface-hover"
       onClick={onClick}
       type="button"
     >
@@ -901,7 +901,7 @@ function ItemsRow({ type, items, onClick }: ItemsRowProps) {
 
   return (
     <button
-      className="mb-2 grid w-full grid-cols-[100px_1fr_auto] items-center gap-3.5 rounded-xl border border-border/70 bg-card px-3.5 py-3 text-left transition-colors hover:border-border"
+      className="mb-2 grid w-full grid-cols-[100px_1fr_auto] items-center gap-3.5 rounded-xl border border-border/70 bg-surface-raised px-3.5 py-3 text-left transition-colors hover:border-border hover:bg-surface-hover"
       onClick={onClick}
       type="button"
     >
@@ -1129,7 +1129,7 @@ function HymnPlanningRow({ type, hymnNumber, hymnTitle, meta, onClick }: HymnPla
 
   return (
     <button
-      className="mb-2 grid w-full grid-cols-[100px_1fr_auto] items-center gap-3.5 rounded-xl border border-border/70 bg-card px-3.5 py-3 text-left transition-colors hover:border-border"
+      className="mb-2 grid w-full grid-cols-[100px_1fr_auto] items-center gap-3.5 rounded-xl border border-border/70 bg-surface-raised px-3.5 py-3 text-left transition-colors hover:border-border hover:bg-surface-hover"
       onClick={onClick}
       type="button"
     >
@@ -1169,7 +1169,7 @@ function PrayerPlanningRow({ type, personName, onClick }: PrayerPlanningRowProps
 
   return (
     <button
-      className="mb-2 grid w-full grid-cols-[100px_1fr_auto] items-center gap-3.5 rounded-xl border border-border/70 bg-card px-3.5 py-3 text-left transition-colors hover:border-border"
+      className="mb-2 grid w-full grid-cols-[100px_1fr_auto] items-center gap-3.5 rounded-xl border border-border/70 bg-surface-raised px-3.5 py-3 text-left transition-colors hover:border-border hover:bg-surface-hover"
       onClick={onClick}
       type="button"
     >
@@ -1249,7 +1249,7 @@ function AaronicAssignmentCard({ title, people, max, onAdd, onRemove }: AaronicA
   const assignedPeople = people.filter((person) => person.trim())
 
   return (
-    <div className="rounded-xl border border-border/70 bg-card px-3.5 py-3">
+    <div className="rounded-xl border border-border/70 bg-surface-raised px-3.5 py-3">
       <div className="mb-2 text-[11px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
         {title} <span className="text-muted-foreground/70">· {assignedPeople.length}/{max}</span>
       </div>
@@ -1413,7 +1413,7 @@ function SpeakerPlanningRow({
   onDeleteSpeaker,
 }: SpeakerPlanningRowProps) {
   return (
-    <div className="grid grid-cols-[30px_1fr_auto] items-center gap-3 rounded-xl border border-border/70 bg-card px-3.5 py-3">
+    <div className="grid grid-cols-[30px_1fr_auto] items-center gap-3 rounded-xl border border-border/70 bg-surface-raised px-3.5 py-3">
       <div className="font-mono text-[12px] text-muted-foreground">{order}.</div>
       <div className="min-w-0">
         <button
@@ -1471,7 +1471,7 @@ type MusicPlanningRowProps = {
 
 function MusicPlanningRow({ entry, onPickHymn, onDeleteStaticEntry }: MusicPlanningRowProps) {
   return (
-    <div className="grid grid-cols-[30px_1fr_auto] items-center gap-3 rounded-xl border border-dashed border-border/80 bg-card px-3.5 py-3">
+    <div className="grid grid-cols-[30px_1fr_auto] items-center gap-3 rounded-xl border border-dashed border-border/80 bg-surface-raised px-3.5 py-3">
       <div className="grid h-7 w-7 place-items-center rounded-full bg-muted/50 text-muted-foreground">
         <Music className="h-3.5 w-3.5" />
       </div>
@@ -2734,7 +2734,7 @@ function AgendaRow({
       ref={setNodeRef}
       style={style}
       className={cn(
-        "group rounded-xl border border-border/70 bg-card px-3 py-3 transition-shadow",
+        "group rounded-xl border border-border/70 bg-surface-raised px-3 py-3 transition-shadow",
         isDragging && "shadow-lg"
       )}
     >
@@ -2922,7 +2922,7 @@ function DirectorySelectDialog({
           </DialogTitle>
         </DialogHeader>
         <input
-          className="w-full border-0 border-b border-border/70 bg-muted px-4 py-2.5 text-sm outline-none placeholder:text-muted-foreground"
+          className="w-full border-0 border-b border-border/70 bg-surface-sunken px-4 py-2.5 text-sm outline-none placeholder:text-muted-foreground"
           placeholder="Search members..."
           value={query}
           onChange={(event) => setQuery(event.target.value)}
@@ -2943,9 +2943,9 @@ function DirectorySelectDialog({
                 key={person.id}
                 type="button"
                 onClick={() => onSelect(person.name)}
-                className="flex w-full items-center gap-3 px-[18px] py-2 text-left transition-colors hover:bg-muted/50"
+                className="flex w-full items-center gap-3 px-[18px] py-2 text-left transition-colors hover:bg-surface-hover"
               >
-                <div className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-muted text-[11px] font-semibold text-muted-foreground">
+                <div className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-surface-sunken text-[11px] font-semibold text-muted-foreground">
                   {getInitials(person.name)}
                 </div>
                 <div className="min-w-0 flex-1">

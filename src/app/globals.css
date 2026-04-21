@@ -5,28 +5,28 @@
 @layer base {
   :root {
     /* Neutrals */
-    --color-stone-50: #fafaf9;
-    --color-stone-100: #f5f5f4;
-    --color-stone-200: #e7e5e4;
-    --color-stone-300: #d6d3d1;
-    --color-stone-500: #78716c;
-    --color-stone-600: #57534e;
-    --color-stone-900: #1c1917;
+    --color-stone-50: #fbfbfa;
+    --color-stone-100: #f3f3f1;
+    --color-stone-200: #e6e6e4;
+    --color-stone-300: #d6d6d3;
+    --color-stone-500: #83878e;
+    --color-stone-600: #4e5258;
+    --color-stone-900: #0f1011;
 
-    /* Accent - Terracotta */
-    --color-accent-50: #fef3e7;
-    --color-accent-200: #fcd9a0;
-    --color-accent-600: #b45309;
-    --color-accent-700: #92400e;
-    --color-accent-800: #7c2d12;
+    /* Accent - Cool Blue */
+    --color-accent-50: #e0e7ff;
+    --color-accent-200: #c7d2fe;
+    --color-accent-600: #3b5bdb;
+    --color-accent-700: #3451c7;
+    --color-accent-800: #1e3a8a;
 
     /* Semantic */
-    --color-bg-app: #ffffff;
-    --color-text-primary: #1c1917;
-    --color-text-secondary: #57534e;
-    --color-text-tertiary: #78716c;
-    --color-border: #e7e5e4;
-    --color-focus-ring: rgba(180, 83, 9, 0.3);
+    --color-bg-app: #fbfbfa;
+    --color-text-primary: #0f1011;
+    --color-text-secondary: #4e5258;
+    --color-text-tertiary: #83878e;
+    --color-border: #e6e6e4;
+    --color-focus-ring: rgba(59, 91, 219, 0.3);
 
     /* App Rail - 56px narrow left */
     --rail-width: 56px;
@@ -72,18 +72,18 @@
     --topbar-title-color: var(--color-text-primary);
 
     /* Calm Precision */
-    --cp-canvas: 0 0% 94.5%;
+    --cp-canvas: 0 0% 98%;
     --cp-surface: 0 0% 100%;
-    --cp-surface-2: 220 20% 99.2%;
-    --cp-text: 24 10% 10%;
-    --cp-text-muted: 25 5% 45%;
-    --cp-text-subtle: 25 5% 55%;
-    --cp-border: 20 6% 90%;
-    --cp-divider: 220 12% 93.8%;
-    --cp-hover: 220 18% 97%;
-    --cp-active: 220 14% 95.5%;
-    --cp-focus: 222 70% 56%;
-    --cp-primary: 220 14% 14%;
+    --cp-surface-2: 0 0% 95.3%;
+    --cp-text: 210 10% 6%;
+    --cp-text-muted: 215 5% 43%;
+    --cp-text-subtle: 214 6% 54%;
+    --cp-border: 0 0% 90%;
+    --cp-divider: 0 0% 92%;
+    --cp-hover: 0 0% 93%;
+    --cp-active: 0 0% 90%;
+    --cp-focus: 231 67% 54%;
+    --cp-primary: 231 67% 54%;
     --cp-primary-foreground: 0 0% 100%;
     --cp-danger: 0 75% 54%;
     --cp-warning: 37 85% 52%;
@@ -360,16 +360,16 @@
     --form-checkbox-border: var(--cp-border);
     --form-checkbox-focus: var(--cp-focus);
     --form-checkbox-check: var(--cp-primary);
-    --form-checkbox-checked-bg: 28 93% 36%; /* accent-600 #b45309 */
-    --form-checkbox-checked-border: 28 93% 36%;
+    --form-checkbox-checked-bg: 231 67% 54%; /* accent-600 #3b5bdb */
+    --form-checkbox-checked-border: 231 67% 54%;
     --form-checkbox-checked-check: 0 0% 100%;
     --nav-secondary-hover-hsl: 220 10% 45%;
     --app-main-card: 0 0% 100%;
-    --brand: 26 91% 37%; /* Accent: #b45309 */
+    --brand: 231 67% 54%; /* Accent: #3b5bdb */
     --brand-foreground: 0 0% 100%;
-    --brand-bg: 31 92% 95%; /* Accent bg: #fef3e7 */
-    --brand-hover: 22 83% 31%; /* Accent hover: #92400e */
-    --brand-active: 15 75% 28%; /* Accent active: #7c2d12 */
+    --brand-bg: 226 100% 94%; /* Accent bg: #e0e7ff */
+    --brand-hover: 231 60% 44%; /* Accent hover: #3451c7 */
+    --brand-active: 221 64% 32%; /* Accent active: #1e3a8a */
     --btn-primary-bg-disabled: #f5f5f4;
     --btn-primary-text-disabled: #a8a29e;
     --btn-primary-border-disabled: #e7e5e4;
@@ -387,46 +387,52 @@
   }
 
   .dark {
-    --color-stone-50: #0c0a09;
-    --color-stone-100: #1c1917;
-    --color-stone-200: #292524;
-    --color-stone-300: #44403c;
-    --color-stone-500: #a8a29e;
-    --color-stone-600: #d6d3d1;
-    --color-stone-900: #fafaf9;
+    --color-stone-50: #141416;
+    --color-stone-100: #1f1f22;
+    --color-stone-200: #26262a;
+    --color-stone-300: #3a3a3f;
+    --color-stone-500: #78756a;
+    --color-stone-600: #a19d90;
+    --color-stone-900: #f3f1ea;
 
-    --color-accent-50: #1f1409;
-    --color-accent-600: #ea580c;
-    --color-accent-700: #f97316;
-    --color-accent-800: #fb923c;
+    --color-accent-50: #3a231a;
+    --color-accent-600: #e08361;
+    --color-accent-700: #ea9a7a;
+    --color-accent-800: #f2b79b;
 
-    --color-bg-app: #0c0a09;
-    --color-text-primary: #fafaf9;
-    --color-text-secondary: #d6d3d1;
-    --color-text-tertiary: #a8a29e;
-    --color-border: #292524;
-    --color-focus-ring: rgba(234, 88, 12, 0.3);
+    --color-bg-app: #17171a;
+    --color-text-primary: #f3f1ea;
+    --color-text-secondary: #dcd9cf;
+    --color-text-tertiary: #a19d90;
+    --color-border: #2c2c30;
+    --color-focus-ring: rgba(224, 131, 97, 0.3);
 
-    --cp-canvas: 0 0% 7%;
-    --cp-surface: 220 12% 10.5%;
-    --cp-surface-2: 220 11% 12.5%;
-    --cp-text: 60 9% 98%;
-    --cp-text-muted: 24 5% 64%;
-    --cp-text-subtle: 24 5% 56%;
-    --cp-border: 30 6% 25%;
-    --cp-divider: 220 10% 23%;
-    --cp-hover: 220 10% 14%;
-    --cp-active: 220 10% 17%;
-    --cp-focus: 222 75% 64%;
-    --cp-primary: 220 14% 92%;
-    --cp-primary-foreground: 220 14% 10%;
+    --cp-canvas: 260 6% 10%;
+    --cp-surface: 255 4% 13%;
+    --cp-surface-2: 255 4% 13%;
+    /* Named surface tokens */
+    --surface-canvas: 260 6% 10%; /* #1a1a1d — deepest bg, behind everything */
+    --surface-base: 255 4% 13%;   /* #201f22 — cards, panels, sidebars */
+    --surface-raised: 255 4% 13%; /* #201f22 — passive buttons, interactive tiles */
+    --surface-hover: 240 4% 16%;  /* #26262a — hover state for interactive surfaces */
+    --surface-sunken: 255 5% 8%;  /* #141316 — recessed inputs, wells */
+    --cp-text: 45 18% 93%;
+    --cp-text-muted: 40 8% 59%;
+    --cp-text-subtle: 38 6% 44%;
+    --cp-border: 240 3% 18%;
+    --cp-divider: 240 3% 20%;
+    --cp-hover: 240 4% 16%;
+    --cp-active: 240 4% 19%;
+    --cp-focus: 17 65% 63%;
+    --cp-primary: 45 18% 93%;
+    --cp-primary-foreground: 240 5% 10%;
 
     --canvas: 24 18% 22%; /* Back-compat */
     --panel: var(--cp-canvas);
     --paper: var(--cp-surface-2);
-    --background: var(--cp-canvas);
+    --background: var(--surface-base); /* #201f22 - upcoming sidebar */
     --foreground: var(--cp-text);
-    --card: var(--cp-surface);
+    --card: var(--surface-canvas); /* #1a1a1d - main canvas */
     --card-foreground: var(--cp-text);
     --popover: var(--cp-surface);
     --popover-foreground: var(--cp-text);
@@ -441,11 +447,10 @@
     --accent-warm: 24 18% 22%;
     --accent-warm-hover: 24 20% 26%;
     --chrome: var(--cp-surface-2);
-    --chrome-border: var(--cp-border);
     --overlay: 0 0% 0% / 0.6; /* Modal overlay tint */
-    --app-shell: 24 10% 10%; /* Stone & Sage: Stone 900 (#1c1917) - rail */
+    --app-shell: 260 6% 10%; /* #18171a */
     --app-sidebar: 12 6% 15%; /* Stone & Sage: Stone 800 (#292524) - sidebar = main */
-    --app-main-card: 12 6% 15%; /* Stone & Sage: Stone 800 (#292524) */
+    --app-main-card: 260 6% 10%; /* #18171a */
     --app-island: var(--cp-surface);
     --app-island-border: var(--cp-border);
     --nav-hover: 24 8% 18%;
@@ -615,15 +620,15 @@
     --form-checkbox-border: var(--cp-border);
     --form-checkbox-focus: var(--cp-focus);
     --form-checkbox-check: var(--cp-primary);
-    --form-checkbox-checked-bg: 220 12% 86%;
-    --form-checkbox-checked-border: 220 12% 86%;
-    --form-checkbox-checked-check: 220 14% 11%;
+    --form-checkbox-checked-bg: 17 65% 63%;
+    --form-checkbox-checked-border: 17 65% 63%;
+    --form-checkbox-checked-check: 240 5% 10%;
     --nav-secondary-hover-hsl: 0 0% 100%;
-    --brand: 26 91% 37%; /* Accent: #b45309 */
+    --brand: 17 65% 63%; /* Accent: #e08361 */
     --brand-foreground: 0 0% 100%;
-    --brand-bg: 26 50% 18%; /* Accent bg (dark amber tint) */
-    --brand-hover: 22 83% 31%;
-    --brand-active: 15 75% 28%;
+    --brand-bg: 17 37% 16%; /* Accent bg (dark warm tint) */
+    --brand-hover: 17 58% 52%;
+    --brand-active: 17 50% 42%;
     --app-nav-bg: #141416;
     --app-nav-card: #1f1f22;
     --app-nav-hover: #26262a;
@@ -647,6 +652,7 @@
     --color-stone-900: #141413;
 
     --color-accent-50: #eadfce;
+    --color-accent-200: #dbc9b4;
     --color-accent-600: #c9603c;
     --color-accent-700: #a94d2d;
     --color-accent-800: #7a3518;
@@ -750,6 +756,9 @@
     --app-nav-border: #e6e1d1;
     --app-nav-inverse: #141413;
     --app-nav-inverse-text: #faf9f5;
+    --form-checkbox-checked-bg: 17 55% 51%;
+    --form-checkbox-checked-border: 17 55% 51%;
+    --form-checkbox-checked-check: 0 0% 100%;
   }
 }
 
@@ -771,6 +780,16 @@
     background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
     background-repeat: repeat;
     background-size: 256px 256px;
+  }
+}
+
+/* ============================================
+   Component classes
+============================================ */
+@layer components {
+  .modal-content {
+    @apply max-h-[80vh] gap-0 overflow-hidden rounded-2xl border-border/80 p-0 shadow-2xl;
+    @apply max-w-[560px];
   }
 }
 

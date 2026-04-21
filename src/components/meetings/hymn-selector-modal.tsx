@@ -127,7 +127,7 @@ export function HymnSelectorModal({
                     </DialogTitle>
                 </DialogHeader>
 
-                <div className="flex border-b border-border/70 bg-[#f7f6f4]">
+                <div className="flex border-b border-border/70 dark:bg-surface-sunken bg-[#f7f6f4]">
                     <input
                         className="min-w-0 flex-1 bg-transparent px-4 py-2.5 text-sm outline-none placeholder:text-muted-foreground"
                         placeholder={placeholder}
@@ -170,26 +170,27 @@ export function HymnSelectorModal({
                                         type="button"
                                         onClick={() => handleSelect(hymn)}
                                         className={cn(
-                                            "grid w-full grid-cols-[48px_1fr_auto] items-center gap-2.5 px-[18px] py-2.5 text-left transition-colors hover:bg-[#f7f6f4]",
-                                            currentHymnId === hymn.id && "bg-[#f7f6f4]"
+                                            "grid w-full grid-cols-[48px_1fr_auto] items-center gap-2.5 px-[18px] py-2.5 text-left transition-colors hover:bg-[#f7f6f4] dark:hover:bg-surface-hover",
+                                            currentHymnId === hymn.id && "bg-[#f7f6f4] dark:bg-surface-hover"
                                         )}
                                     >
-                                        <div className="font-serif text-[15px] italic text-[#4f46e5]">
+                                        <div className="font-serif text-[15px] italic text-brand">
                                             № {hymn.hymn_number}
                                         </div>
                                         <div className="min-w-0">
                                             <div className="truncate font-serif text-[14.5px] text-foreground">
                                                 {hymn.title}
                                             </div>
-                                            {hymn.topic ? (
-                                                <div className="mt-px truncate text-[11px] text-muted-foreground">
-                                                    {hymn.topic}
-                                                </div>
-                                            ) : null}
                                         </div>
-                                        <div className="rounded-full border border-border px-2 py-0.5 text-[10.5px] uppercase tracking-[0.04em] text-muted-foreground">
-                                            {getBookLabel(hymn.book_id)}
-                                        </div>
+                                        {hymn.topic ? (
+                                            <div className="truncate rounded-full border border-muted-foreground/30 px-2 py-0.5 text-[11px] text-muted-foreground">
+                                                {hymn.topic}
+                                            </div>
+                                        ) : (
+                                            <div className="rounded-full border border-muted-foreground/30 px-2 py-0.5 text-[10.5px] uppercase tracking-[0.04em] text-muted-foreground">
+                                                {getBookLabel(hymn.book_id)}
+                                            </div>
+                                        )}
                                     </button>
                                 );
                             })}
