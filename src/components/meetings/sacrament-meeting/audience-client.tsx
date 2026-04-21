@@ -1,9 +1,9 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
-import Link from "next/link"
-import { useSearchParams } from "next/navigation"
-import { addDays, format, startOfDay } from "date-fns"
+import { useEffect, useState } from "react"
+import { createPortal } from "react-dom"
+import { format } from "date-fns"
+import { X } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -16,8 +16,6 @@ type MeetingSpecialType =
   | "ward-conference"
 type AssignmentField = "presiding" | "conductor" | "chorister" | "accompanist"
 type AgendaAssigneeField = "invocation" | "benediction"
-type SacramentAssignmentRole = "blessing" | "passing"
-type Lang = "ENG" | "SPA"
 
 type SectionEntry = {
   id: string
@@ -56,26 +54,19 @@ type TestimonyEntry = {
 
 type AgendaEntry = SectionEntry | StaticEntry | SpeakerEntry | TestimonyEntry
 
-type PlannerMeetingState = {
+type AudienceMeeting = {
   title?: string
   specialType: MeetingSpecialType
   assignments: Record<AssignmentField, string>
-  sacramentAssignments: Record<SacramentAssignmentRole, string[]>
-  standardEntries: AgendaEntry[]
-  fastEntries: AgendaEntry[]
+  entries: AgendaEntry[]
 }
 
-type PlannerDraft = {
-  meetingsByDate?: Record<string, Partial<PlannerMeetingState>>
-  meetingTypeOverridesByDate?: Record<string, boolean>
-}
-
-type AudienceClientProps = {
+type AudienceViewProps = {
   unitName: string
-  defaultLanguage?: Lang
+  isoDate: string
+  meeting: AudienceMeeting
+  onClose: () => void
 }
-
-const PLANNER_DRAFT_STORAGE_KEY = "beespo:sacrament-meeting:planner:draft:v1"
 
 const MEETING_TYPE_LABELS: Record<MeetingSpecialType, string> = {
   standard: "Sacrament meeting",
@@ -85,180 +76,15 @@ const MEETING_TYPE_LABELS: Record<MeetingSpecialType, string> = {
   "ward-conference": "Ward Conference",
 }
 
-const ENTRY_LABELS: Record<string, Record<Lang, string>> = {
-  "section-opening": { ENG: "Opening", SPA: "Apertura" },
-  "opening-hymn": { ENG: "Opening Hymn", SPA: "Himno de Apertura" },
-  invocation: { ENG: "Invocation", SPA: "Primera Oración" },
-  "ward-business": { ENG: "Ward Business", SPA: "Asuntos del Barrio" },
-  "section-ordinance": { ENG: "Sacrament", SPA: "Santa Cena" },
-  "sacrament-hymn": { ENG: "Sacrament Hymn", SPA: "Himno Sacramental" },
-  "sacrament-ordinance": {
-    ENG: "Administration of the Sacrament",
-    SPA: "Administración de la Santa Cena",
-  },
-  "section-messages": { ENG: "Messages", SPA: "Mensajes" },
-  "section-closing": { ENG: "Closing", SPA: "Clausura" },
-  "closing-hymn": { ENG: "Closing Hymn", SPA: "Himno de Clausura" },
-  benediction: { ENG: "Benediction", SPA: "Última Oración" },
-}
-
-function getSundayOnOrAfter(date: Date): Date {
-  const normalizedDate = startOfDay(date)
-  const currentDay = normalizedDate.getDay()
-  const daysUntilSunday = currentDay === 0 ? 0 : 7 - currentDay
-  return addDays(normalizedDate, daysUntilSunday)
-}
-
-function toIsoDate(date: Date) {
-  return format(date, "yyyy-MM-dd")
-}
-
 function plannerSundayDateFromIso(isoDate: string): Date {
   return new Date(`${isoDate}T12:00:00`)
-}
-
-function isFirstSundayOfMonth(isoDate: string) {
-  return plannerSundayDateFromIso(isoDate).getDate() <= 7
-}
-
-function isGeneralConferenceSunday(isoDate: string) {
-  const date = plannerSundayDateFromIso(isoDate)
-  const month = date.getMonth()
-  return (month === 3 || month === 9) && isFirstSundayOfMonth(isoDate)
-}
-
-function getDefaultMeetingSpecialType(isoDate: string): MeetingSpecialType {
-  if (isGeneralConferenceSunday(isoDate)) return "general-conference"
-  if (isFirstSundayOfMonth(isoDate)) return "fast-testimony"
-  return "standard"
-}
-
-function createStandardEntries(isoDate: string, lang: Lang = "ENG"): AgendaEntry[] {
-  const t = (id: string) => ENTRY_LABELS[id]?.[lang] ?? ENTRY_LABELS[id]?.ENG ?? id
-  return [
-    { id: "section-opening", kind: "section", title: t("section-opening") },
-    { id: "opening-hymn", kind: "static", title: t("opening-hymn"), hymnId: "", hymnTitle: "" },
-    { id: "invocation", kind: "static", title: t("invocation"), assigneeField: "invocation", assigneeName: "" },
-    { id: "ward-business", kind: "static", title: t("ward-business") },
-    { id: "section-ordinance", kind: "section", title: t("section-ordinance") },
-    { id: "sacrament-hymn", kind: "static", title: t("sacrament-hymn"), hymnId: "", hymnTitle: "" },
-    {
-      id: "sacrament-ordinance",
-      kind: "static",
-      title: t("sacrament-ordinance"),
-      detail: lang === "SPA" ? "Bendición y distribución de la santa cena" : "Blessing and passing of the sacrament",
-    },
-    { id: "section-messages", kind: "section", title: t("section-messages") },
-    {
-      id: `${isoDate}-speaker-1`,
-      kind: "speaker",
-      title: lang === "SPA" ? "Discursante" : "Speaker",
-      speakerName: "",
-      topic: "",
-      durationMinutes: null,
-    },
-    {
-      id: `${isoDate}-speaker-2`,
-      kind: "speaker",
-      title: lang === "SPA" ? "Discursante" : "Speaker",
-      speakerName: "",
-      topic: "",
-      durationMinutes: null,
-    },
-    { id: "section-closing", kind: "section", title: t("section-closing") },
-    { id: "closing-hymn", kind: "static", title: t("closing-hymn"), hymnId: "", hymnTitle: "" },
-    { id: "benediction", kind: "static", title: t("benediction"), assigneeField: "benediction", assigneeName: "" },
-  ]
-}
-
-function createFastEntries(lang: Lang = "ENG"): AgendaEntry[] {
-  const t = (id: string) => ENTRY_LABELS[id]?.[lang] ?? ENTRY_LABELS[id]?.ENG ?? id
-  return [
-    { id: "section-opening", kind: "section", title: t("section-opening") },
-    { id: "opening-hymn", kind: "static", title: t("opening-hymn"), hymnId: "", hymnTitle: "" },
-    { id: "invocation", kind: "static", title: t("invocation"), assigneeField: "invocation", assigneeName: "" },
-    { id: "ward-business", kind: "static", title: t("ward-business") },
-    { id: "section-ordinance", kind: "section", title: t("section-ordinance") },
-    { id: "sacrament-hymn", kind: "static", title: t("sacrament-hymn"), hymnId: "", hymnTitle: "" },
-    {
-      id: "sacrament-ordinance",
-      kind: "static",
-      title: t("sacrament-ordinance"),
-      detail: lang === "SPA" ? "Bendición y distribución de la santa cena" : "Blessing and passing of the sacrament",
-    },
-    { id: "section-messages", kind: "section", title: t("section-messages") },
-    {
-      id: "testimonies",
-      kind: "testimony",
-      title: lang === "SPA" ? "Testimonios de miembros de la congregación" : "Testimonies by members of the congregation",
-      detail: lang === "SPA" ? "Formato de micrófono abierto después de la santa cena." : "Open microphone format following the sacrament.",
-    },
-    { id: "section-closing", kind: "section", title: t("section-closing") },
-    { id: "closing-hymn", kind: "static", title: t("closing-hymn"), hymnId: "", hymnTitle: "" },
-    { id: "benediction", kind: "static", title: t("benediction"), assigneeField: "benediction", assigneeName: "" },
-  ]
-}
-
-function createInitialMeetingState(isoDate: string, lang: Lang = "ENG"): PlannerMeetingState {
-  return {
-    title: "",
-    specialType: getDefaultMeetingSpecialType(isoDate),
-    assignments: {
-      presiding: "",
-      conductor: "",
-      chorister: "",
-      accompanist: "",
-    },
-    sacramentAssignments: {
-      blessing: [],
-      passing: [],
-    },
-    standardEntries: createStandardEntries(isoDate, lang),
-    fastEntries: createFastEntries(lang),
-  }
-}
-
-function hydrateMeeting(
-  isoDate: string,
-  savedMeeting: Partial<PlannerMeetingState> | undefined,
-  hasMeetingTypeOverride: boolean,
-  lang: Lang
-): PlannerMeetingState {
-  const base = createInitialMeetingState(isoDate, lang)
-  if (!savedMeeting) return base
-
-  return {
-    ...base,
-    ...savedMeeting,
-    title: savedMeeting.title ?? "",
-    specialType:
-      hasMeetingTypeOverride || savedMeeting.specialType !== "standard"
-        ? savedMeeting.specialType ?? base.specialType
-        : base.specialType,
-    assignments: {
-      ...base.assignments,
-      ...(savedMeeting.assignments ?? {}),
-    },
-    sacramentAssignments: {
-      ...base.sacramentAssignments,
-      ...(savedMeeting.sacramentAssignments ?? {}),
-    },
-    standardEntries: Array.isArray(savedMeeting.standardEntries)
-      ? (savedMeeting.standardEntries as AgendaEntry[])
-      : base.standardEntries,
-    fastEntries: Array.isArray(savedMeeting.fastEntries) ? (savedMeeting.fastEntries as AgendaEntry[]) : base.fastEntries,
-  }
-}
-
-function getVisibleAgendaEntries(meeting: PlannerMeetingState) {
-  return meeting.specialType === "fast-testimony" ? meeting.fastEntries : meeting.standardEntries
 }
 
 function getStaticEntry(entries: AgendaEntry[], id: string) {
   return entries.find((entry): entry is StaticEntry => entry.kind === "static" && entry.id === id)
 }
 
-function getAudienceSubtitle(meeting: PlannerMeetingState) {
+function getAudienceSubtitle(meeting: AudienceMeeting) {
   return meeting.specialType === "standard"
     ? meeting.title?.trim() || "Sacrament meeting"
     : MEETING_TYPE_LABELS[meeting.specialType]
@@ -278,41 +104,31 @@ function isMusicalEntry(entry: StaticEntry) {
   )
 }
 
-export function SacramentMeetingAudienceClient({ unitName, defaultLanguage = "ENG" }: AudienceClientProps) {
-  const searchParams = useSearchParams()
-  const [draft, setDraft] = useState<PlannerDraft>({})
-  const fallbackIsoDate = useMemo(() => toIsoDate(getSundayOnOrAfter(new Date())), [])
+export function SacramentMeetingAudienceView({
+  unitName,
+  isoDate,
+  meeting,
+  onClose,
+}: AudienceViewProps) {
+  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
-    try {
-      const raw = window.localStorage.getItem(PLANNER_DRAFT_STORAGE_KEY)
-      setDraft(raw ? (JSON.parse(raw) as PlannerDraft) : {})
-    } catch (error) {
-      console.error("Failed to load sacrament planner draft:", error)
-      setDraft({})
-    }
+    setMounted(true)
   }, [])
 
-  const selectedIsoDate = useMemo(() => {
-    const requestedDate = searchParams.get("date")
-    if (requestedDate) return requestedDate
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault()
+        onClose()
+      }
+    }
 
-    const dates = Object.keys(draft.meetingsByDate ?? {}).sort()
-    return dates.find((date) => date >= fallbackIsoDate) ?? dates[0] ?? fallbackIsoDate
-  }, [draft.meetingsByDate, fallbackIsoDate, searchParams])
+    window.addEventListener("keydown", onKeyDown)
+    return () => window.removeEventListener("keydown", onKeyDown)
+  }, [onClose])
 
-  const meeting = useMemo(
-    () =>
-      hydrateMeeting(
-        selectedIsoDate,
-        draft.meetingsByDate?.[selectedIsoDate],
-        Boolean(draft.meetingTypeOverridesByDate?.[selectedIsoDate]),
-        defaultLanguage
-      ),
-    [defaultLanguage, draft.meetingTypeOverridesByDate, draft.meetingsByDate, selectedIsoDate]
-  )
-
-  const entries = getVisibleAgendaEntries(meeting)
+  const entries = meeting.entries
   const openingHymn = getStaticEntry(entries, "opening-hymn")
   const invocation = getStaticEntry(entries, "invocation")
   const sacramentHymn = getStaticEntry(entries, "sacrament-hymn")
@@ -321,17 +137,23 @@ export function SacramentMeetingAudienceClient({ unitName, defaultLanguage = "EN
   const speakers = entries.filter((entry): entry is SpeakerEntry => entry.kind === "speaker")
   const musicalEntries = entries.filter((entry): entry is StaticEntry => entry.kind === "static" && isMusicalEntry(entry))
   const hasSpeakerNames = speakers.some((speaker) => speaker.speakerName.trim())
-  const date = plannerSundayDateFromIso(selectedIsoDate)
+  const date = plannerSundayDateFromIso(isoDate)
 
-  return (
-    <div className="min-h-full bg-card">
-      <div className="mx-auto flex w-full max-w-6xl flex-col items-center px-4 py-10 sm:px-6 lg:px-8">
-        <Button asChild variant="outline" className="mb-6 self-end rounded-full">
-          <Link href={`/meetings/sacrament-meeting/planner?date=${selectedIsoDate}`}>
-            Exit audience view
-          </Link>
+  if (!mounted) return null
+
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] overflow-y-auto bg-card">
+      <div className="sticky top-0 z-10 flex h-14 items-center justify-end bg-card/90 px-4 backdrop-blur">
+        <Button type="button" variant="outline" className="rounded-full" onClick={onClose}>
+          <X className="h-3.5 w-3.5" />
+          Exit audience view
+          <kbd className="ml-1 hidden rounded border border-border bg-muted px-1 py-0.5 font-mono text-[10px] text-muted-foreground sm:inline">
+            Esc
+          </kbd>
         </Button>
+      </div>
 
+      <div className="mx-auto flex w-full max-w-6xl flex-col items-center px-4 py-10 sm:px-6 lg:px-8">
         <article className="w-full max-w-[560px] rounded-[2px] border border-border bg-background px-7 py-10 shadow-lg sm:px-14 sm:py-16">
           <header className="border-b border-border pb-7 text-center">
             <div className="font-serif text-[13px] italic tracking-[0.02em] text-muted-foreground">
@@ -424,7 +246,8 @@ export function SacramentMeetingAudienceClient({ unitName, defaultLanguage = "EN
           </footer>
         </article>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 

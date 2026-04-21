@@ -32,12 +32,6 @@ export function getMeetingsNavItems(isBishopric: boolean): DomainNavItem[] {
                 matchMode: "prefix" as const,
               },
               {
-                href: "/meetings/sacrament-meeting/audience",
-                label: "Audience",
-                icon: Landmark,
-                matchMode: "prefix" as const,
-              },
-              {
                 href: "/meetings/sacrament-meeting/archive",
                 label: "Archive",
                 icon: Landmark,

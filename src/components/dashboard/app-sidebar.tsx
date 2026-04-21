@@ -103,7 +103,6 @@ const sections: SidebarSection[] = [
         children: [
           { href: "/meetings/sacrament-meeting/planner", label: "Program Planner", icon: Landmark, match: "prefix" },
           { href: "/meetings/sacrament-meeting/speaker-planner", label: "Speaker Planner", icon: UserRoundCheck, match: "prefix" },
-          { href: "/meetings/sacrament-meeting/audience", label: "Audience", icon: UsersRound, match: "prefix" },
           { href: "/meetings/sacrament-meeting/business", label: "Business", icon: BriefcaseBusiness, match: "prefix" },
           { href: "/meetings/sacrament-meeting/archive", label: "Archive", icon: Archive, match: "prefix" },
         ],

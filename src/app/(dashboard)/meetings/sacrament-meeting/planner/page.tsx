@@ -22,13 +22,19 @@ export default async function SacramentMeetingPlannerPage() {
     notFound()
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: profileData } = await (supabase.from("profiles") as any)
-    .select("language_preference")
-    .eq("id", user.id)
-    .single()
+  const [{ data: profileData }, { data: workspace }] = await Promise.all([
+    (supabase.from("profiles") as ReturnType<typeof supabase.from>)
+      .select("language_preference")
+      .eq("id", user.id)
+      .single(),
+    (supabase.from("workspaces") as ReturnType<typeof supabase.from>)
+      .select("name, unit_name")
+      .eq("id", profile.workspace_id)
+      .single(),
+  ])
 
   const defaultLanguage: "ENG" | "SPA" = profileData?.language_preference ?? "ENG"
+  const unitName = workspace?.unit_name || workspace?.name || "Ward"
 
-  return <SacramentMeetingPlannerClient defaultLanguage={defaultLanguage} />
+  return <SacramentMeetingPlannerClient defaultLanguage={defaultLanguage} unitName={unitName} />
 }

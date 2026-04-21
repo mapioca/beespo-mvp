@@ -14,7 +14,6 @@ import {
   GripVertical,
   Loader2,
   MoreHorizontal,
-  Music,
   PencilLine,
   Play,
   Plus,
@@ -40,6 +39,7 @@ import {
 import { CSS } from "@dnd-kit/utilities"
 
 import { Breadcrumbs } from "@/components/dashboard/breadcrumbs"
+import { SacramentMeetingAudienceView } from "@/components/meetings/sacrament-meeting/audience-client"
 import { ConductView } from "@/components/meetings/sacrament-meeting/conduct-view"
 import { HymnSelectorModal } from "@/components/meetings/hymn-selector-modal"
 import { AnnouncementSelectorPopover } from "@/components/meetings/builder/announcement-selector-popover"
@@ -1219,7 +1219,6 @@ function SacramentSection({
           type="Sacrament hymn"
           hymnNumber={sacramentHymn.hymnNumber}
           hymnTitle={sacramentHymn.hymnTitle}
-          meta="Between opening prayer and sacrament ordinance"
           onClick={() => onPickHymn(sacramentHymn.id)}
         />
       ) : null}
@@ -1382,7 +1381,7 @@ function SpeakersAndMusicSection({
               className="inline-flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
             >
               <Plus className="h-4 w-4" />
-              Add musical number
+              Add Intermediate Hymn
             </button>
             <button
               type="button"
@@ -1390,7 +1389,7 @@ function SpeakersAndMusicSection({
               className="inline-flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
             >
               <Plus className="h-4 w-4" />
-              Add special number
+              Add musical number
             </button>
           </div>
         </>
@@ -1473,30 +1472,38 @@ type MusicPlanningRowProps = {
 }
 
 function MusicPlanningRow({ entry, onPickHymn, onDeleteStaticEntry }: MusicPlanningRowProps) {
+  const hasHymn = Boolean(entry.hymnTitle)
+
   return (
-    <div className="grid grid-cols-[30px_1fr_auto] items-center gap-3 rounded-xl border border-dashed border-border/80 bg-surface-raised px-3.5 py-3">
-      <div className="grid h-7 w-7 place-items-center rounded-full bg-muted/50 text-muted-foreground">
-        <Music className="h-3.5 w-3.5" />
+    <div className="mb-2 grid w-full grid-cols-[100px_1fr_auto] items-center gap-3.5 rounded-xl border border-border/70 bg-surface-raised px-3.5 py-3">
+      <div className="text-[10.5px] font-medium uppercase tracking-[0.05em] text-muted-foreground">
+        {entry.title}
       </div>
       <button
         type="button"
         onClick={() => onPickHymn(entry.id)}
-        className="min-w-0 text-left"
+        className="min-w-0 text-left transition-colors hover:text-foreground"
       >
-        <div className="font-serif text-[16.5px] text-foreground">{entry.title}</div>
-        <div className="mt-0.5 truncate text-[13px] text-muted-foreground">
-          {entry.hymnNumber && entry.hymnTitle
-            ? `No. ${entry.hymnNumber} ${entry.hymnTitle}`
-            : "Choose hymn or musical number"}
-        </div>
+        {hasHymn ? (
+          <>
+            {typeof entry.hymnNumber === "number" ? (
+              <span className="mr-1.5 font-serif text-[13px] italic text-brand">
+                № {entry.hymnNumber}
+              </span>
+            ) : null}
+            <span className="font-serif text-[15.5px] text-foreground">{entry.hymnTitle}</span>
+          </>
+        ) : (
+          <span className="font-serif text-[15.5px] italic text-muted-foreground">Choose a hymn</span>
+        )}
       </button>
       <button
         type="button"
         onClick={() => onDeleteStaticEntry(entry.id)}
-        className="grid h-8 w-8 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
+        className="grid h-6 w-6 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-surface-hover hover:text-foreground"
         aria-label={`Remove ${entry.title}`}
       >
-        <X className="h-3.5 w-3.5" />
+        <X className="h-3 w-3" />
       </button>
     </div>
   )
@@ -1625,7 +1632,13 @@ function UpcomingPanel({
   )
 }
 
-export function SacramentMeetingPlannerClient({ defaultLanguage = "ENG" }: { defaultLanguage?: Lang }) {
+export function SacramentMeetingPlannerClient({
+  defaultLanguage = "ENG",
+  unitName,
+}: {
+  defaultLanguage?: Lang
+  unitName: string
+}) {
   const pathname = usePathname()
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -1643,6 +1656,7 @@ export function SacramentMeetingPlannerClient({ defaultLanguage = "ENG" }: { def
   const [jumpPopoverOpen, setJumpPopoverOpen] = useState(false)
   const [visibleSundayCount, setVisibleSundayCount] = useState(DEFAULT_VISIBLE_SUNDAYS)
   const [clearDialogOpen, setClearDialogOpen] = useState(false)
+  const [audienceOpen, setAudienceOpen] = useState(false)
   const [conductOpen, setConductOpen] = useState(false)
   const [notesByDate, setNotesByDate] = useState<Record<string, PlannerNotes>>({})
   const [meetingTypeOverridesByDate, setMeetingTypeOverridesByDate] = useState<Record<string, boolean>>({})
@@ -2375,19 +2389,36 @@ export function SacramentMeetingPlannerClient({ defaultLanguage = "ENG" }: { def
           ? `Saved ${format(lastSavedAt, "h:mm a")}`
           : "Draft autosaves"
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.altKey && e.code === "KeyA") {
+        e.preventDefault()
+        setAudienceOpen(true)
+      }
+      if (e.altKey && e.code === "KeyC") {
+        e.preventDefault()
+        setConductOpen(true)
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown)
+    return () => window.removeEventListener("keydown", handleKeyDown)
+  }, [])
+
   return (
     <div className="min-h-full dark:bg-card">
       <Breadcrumbs
         items={breadcrumbItems}
         action={
           <div className="flex items-center gap-2">
-            <Button type="button" variant="ghost" size="sm" onClick={() => router.push("/meetings/sacrament-meeting/audience")}>
+            <Button type="button" variant="ghost" size="sm" onClick={() => setAudienceOpen(true)}>
               <Eye className="h-3.5 w-3.5" />
               Audience
+              <kbd className="ml-1 hidden rounded border border-border bg-muted px-1 py-0.5 font-mono text-[10px] text-muted-foreground sm:inline">⌥A</kbd>
             </Button>
             <Button type="button" variant="outline" size="sm" onClick={() => setConductOpen(true)}>
               <Play className="h-3.5 w-3.5" />
               Conduct
+              <kbd className="ml-1 hidden rounded border border-border bg-muted px-1 py-0.5 font-mono text-[10px] text-muted-foreground sm:inline">⌥C</kbd>
             </Button>
           </div>
         }
@@ -2657,6 +2688,19 @@ export function SacramentMeetingPlannerClient({ defaultLanguage = "ENG" }: { def
           }}
           isoDate={selectedSunday.isoDate}
           onClose={() => setConductOpen(false)}
+        />
+      )}
+      {audienceOpen && (
+        <SacramentMeetingAudienceView
+          unitName={unitName}
+          meeting={{
+            title: selectedMeeting.title,
+            specialType: selectedMeeting.specialType,
+            assignments: selectedMeeting.assignments,
+            entries: visibleEntries,
+          }}
+          isoDate={selectedSunday.isoDate}
+          onClose={() => setAudienceOpen(false)}
         />
       )}
 
