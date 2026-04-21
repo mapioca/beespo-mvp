@@ -20,6 +20,7 @@ import {
   Search,
   Shredder,
   Trash2,
+  UserCheck,
   X,
 } from "lucide-react"
 import {
@@ -1707,8 +1708,8 @@ export function SacramentMeetingPlannerClient({
   const breadcrumbItems = useMemo(
     () => [
       { label: "Meetings", href: "/meetings/overview" },
-      { label: "Sacrament Meeting", href: "/meetings/sacrament-meeting/planner" },
-      { label: "Program Planner", href: "/meetings/sacrament-meeting/planner" },
+      { label: "Sacrament Meeting", href: "/meetings/sacrament-meeting/program-planner" },
+      { label: "Program Planner", href: "/meetings/sacrament-meeting/program-planner" },
       { label: selectedSunday.dateLabel },
     ],
     [selectedSunday.dateLabel]
@@ -2399,10 +2400,14 @@ export function SacramentMeetingPlannerClient({
         e.preventDefault()
         setConductOpen(true)
       }
+      if (e.altKey && e.code === "KeyS") {
+        e.preventDefault()
+        router.push("/meetings/sacrament-meeting/speaker-planner")
+      }
     }
     window.addEventListener("keydown", handleKeyDown)
     return () => window.removeEventListener("keydown", handleKeyDown)
-  }, [])
+  }, [router])
 
   return (
     <div className="min-h-full dark:bg-card">
@@ -2410,6 +2415,11 @@ export function SacramentMeetingPlannerClient({
         items={breadcrumbItems}
         action={
           <div className="flex items-center gap-2">
+            <Button type="button" variant="ghost" size="sm" onClick={() => router.push("/meetings/sacrament-meeting/speaker-planner")}>
+              <UserCheck className="h-3.5 w-3.5" />
+              Speakers
+              <kbd className="ml-1 hidden rounded border border-border bg-muted px-1 py-0.5 font-mono text-[10px] text-muted-foreground sm:inline">⌥S</kbd>
+            </Button>
             <Button type="button" variant="ghost" size="sm" onClick={() => setAudienceOpen(true)}>
               <Eye className="h-3.5 w-3.5" />
               Audience
@@ -2425,7 +2435,7 @@ export function SacramentMeetingPlannerClient({
       />
       <div className="mx-auto flex w-full max-w-7xl flex-col px-4 py-6 sm:px-6 lg:px-8">
         <section className="rounded-2xl border border-transparent bg-card">
-              <div className="sticky top-0 z-10 border-b border-border/60 bg-card px-6 py-5">
+          <div className="sticky top-0 z-10 border-b border-border/60 bg-card px-6 py-5">
                 <div className="flex flex-col gap-0">
                   <div>
                     <div className="text-[13px] text-muted-foreground">
@@ -2628,7 +2638,7 @@ export function SacramentMeetingPlannerClient({
                     </div>
                   ) : null}
                   </div>
-                  <div className="pr-6 pt-5 xl:sticky xl:top-6">
+                  <div className="pr-6 pt-5 xl:sticky xl:top-24">
                     <UpcomingPanel
                       sundays={visibleSundays}
                       meetingsByDate={meetingsByDate}

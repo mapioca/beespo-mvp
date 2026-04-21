@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 
-import { SacramentMeetingPlannerClient } from "@/components/meetings/sacrament-meeting/planner-client"
+import { SacramentMeetingPlannerClient } from "@/components/meetings/sacrament-meeting/program-planner-client"
 import { getDashboardRequestContext } from "@/lib/dashboard/request-context"
 import { getWorkspaceOrganizationType, isBishopricOrganization } from "@/lib/meetings/access"
 import { createClient } from "@/lib/supabase/server"

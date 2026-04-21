@@ -98,12 +98,12 @@ const sections: SidebarSection[] = [
     label: "Meetings",
     items: [
       {
-        href: "/meetings/sacrament-meeting/planner",
+        href: "/meetings/sacrament-meeting/program-planner",
         label: "Sacrament Meeting",
         icon: Landmark,
         match: "prefix",
         children: [
-          { href: "/meetings/sacrament-meeting/planner", label: "Program Planner", icon: Landmark, match: "prefix" },
+          { href: "/meetings/sacrament-meeting/program-planner", label: "Program Planner", icon: Landmark, match: "prefix" },
           { href: "/meetings/sacrament-meeting/speaker-planner", label: "Speaker Planner", icon: UserRoundCheck, match: "prefix" },
           { href: "/meetings/sacrament-meeting/business", label: "Business", icon: BriefcaseBusiness, match: "prefix" },
           { href: "/meetings/sacrament-meeting/archive", label: "Archive", icon: Archive, match: "prefix" },
@@ -273,7 +273,7 @@ export function AppSidebar({
   const recents = useNavigationStore((state) => state.recents);
   const { theme, setTheme } = useTheme();
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
-    "/meetings/sacrament-meeting/planner": true,
+    "/meetings/sacrament-meeting/program-planner": true,
   });
 
   const workspaceLabel = workspaceName || "Workspace";
