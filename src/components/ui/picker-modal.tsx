@@ -26,7 +26,7 @@ export function PickerModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         className={cn(
-          "max-h-[80vh] gap-0 overflow-hidden rounded-2xl border-border/80 p-0 shadow-2xl",
+          "flex max-h-[80vh] flex-col gap-0 overflow-hidden rounded-2xl border-border/80 p-0 shadow-2xl",
           maxWidth
         )}
       >
@@ -38,12 +38,12 @@ export function PickerModal({
         </DialogHeader>
 
         {/* Search */}
-        <div className="flex border-b border-border/70 bg-[#f7f6f4] dark:bg-surface-sunken">
+        <div className="flex shrink-0 border-b border-border/70 bg-[#f7f6f4] dark:bg-surface-sunken">
           {searchSlot}
         </div>
 
         {/* Body */}
-        <div className={cn("overflow-y-auto py-1", bodyClassName)}>
+        <div className={cn("min-h-0 flex-1 overflow-y-auto py-1", bodyClassName)}>
           {children}
         </div>
       </DialogContent>

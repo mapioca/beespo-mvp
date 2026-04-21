@@ -6,6 +6,9 @@ import { addDays, format, isBefore, startOfDay } from "date-fns"
 import {
   CalendarDays,
   CircleCheck,
+  CircleCheckBig,
+  CircleDashed,
+  CircleDot,
   Clock3,
   Eye,
   GripVertical,
@@ -422,10 +425,11 @@ type PlannerStatusBadgeProps = {
 }
 
 function PlannerStatusBadge({ status }: PlannerStatusBadgeProps) {
+  const Icon = status === "ready" ? CircleDot : status === "done" ? CircleCheckBig : CircleDashed
   return (
     <div
       className={cn(
-        "inline-flex items-center rounded-full border px-3 py-1.5 text-xs font-medium",
+        "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium",
         status === "ready"
           ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-400"
           : status === "done"
@@ -433,6 +437,7 @@ function PlannerStatusBadge({ status }: PlannerStatusBadgeProps) {
             : "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-400"
       )}
     >
+      <Icon className="h-3 w-3" />
       {getPlannerStatusLabel(status)}
     </div>
   )
@@ -592,9 +597,9 @@ function getMeetingTitle(specialType: MeetingSpecialType) {
 function getUpcomingMeetingKind(meeting: PlannerMeetingState) {
   switch (meeting.specialType) {
     case "fast-testimony":
-      return { label: "Fast", className: "bg-[#f3f4ff] text-[#4f46e5] dark:bg-indigo-950 dark:text-indigo-300" }
+      return { label: "Fast", className: "bg-brand/15 text-brand" }
     case "general-conference":
-      return { label: "General", className: "bg-[#eef2ff] text-[#3730a3] dark:bg-indigo-950/70 dark:text-indigo-400" }
+      return { label: "General", className: "bg-brand/10 text-brand" }
     case "stake-conference":
       return { label: "Stake", className: "bg-[#eaf7ef] text-[#2f8f54] dark:bg-emerald-950 dark:text-emerald-400" }
     case "ward-conference":
@@ -1436,25 +1441,22 @@ function SpeakerPlanningRow({
         />
       </div>
       <div className="flex items-center gap-2">
-        <Select
-          value={entry.durationMinutes?.toString() ?? ""}
-          onValueChange={(value) => onSpeakerFieldChange(entry.id, "time", Number(value))}
-        >
-          <SelectTrigger className="h-8 w-[86px] bg-muted/50 px-2 text-[12px] shadow-none">
-            <SelectValue placeholder="Time" />
-          </SelectTrigger>
-          <SelectContent className="max-h-44">
-            {SPEAKER_TIME_OPTIONS.map((option) => (
-              <SelectItem key={option} value={option.toString()}>
-                {option} min
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex items-center gap-1.5">
+          <input
+            type="number"
+            min={1}
+            max={60}
+            value={entry.durationMinutes ?? ""}
+            onChange={(e) => onSpeakerFieldChange(entry.id, "time", e.target.value ? Number(e.target.value) : null)}
+            placeholder="—"
+            className="w-[46px] rounded-md border border-border/70 bg-surface-sunken px-1.5 py-1 text-right font-mono text-[12px] text-foreground outline-none focus:border-border"
+          />
+          <span className="font-mono text-[11.5px] text-muted-foreground">min</span>
+        </div>
         <button
           type="button"
           onClick={() => onDeleteSpeaker(entry.id)}
-          className="grid h-8 w-8 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
+          className="grid h-8 w-8 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-surface-hover hover:text-foreground"
           aria-label={`Remove ${entry.title}`}
         >
           <X className="h-3.5 w-3.5" />
@@ -1554,13 +1556,13 @@ function UpcomingPanel({
               onClick={() => onSelectSunday(sunday.isoDate)}
               className={cn(
                 "grid grid-cols-[48px_1fr] items-center gap-3 rounded-xl px-2.5 py-2.5 text-left transition-colors duration-100",
-                isSelected ? "bg-muted" : "hover:bg-muted/50"
+                isSelected ? "bg-surface-active" : "hover:bg-surface-hover"
               )}
             >
               <div
                 className={cn(
                   "rounded-lg border border-border/70 py-1 text-center",
-                  isSelected ? "bg-background" : "bg-muted/50"
+                  isSelected ? "bg-background" : "bg-surface-sunken"
                 )}
               >
                 <div className="text-[9.5px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
@@ -2443,7 +2445,7 @@ export function SacramentMeetingPlannerClient({ defaultLanguage = "ENG" }: { def
                               event.preventDefault()
                               setClearDialogOpen(true)
                             }}
-                            className="gap-2 text-destructive focus:text-destructive"
+                            className="gap-2"
                           >
                             <Shredder className="h-4 w-4" />
                             Clear meeting data
@@ -2919,7 +2921,6 @@ function DirectorySelectDialog({
       open={open}
       onOpenChange={onOpenChange}
       title="Assign person"
-      bodyClassName="max-h-[360px]"
       searchSlot={
         <input
           className="w-full bg-transparent px-4 py-2.5 text-sm outline-none placeholder:text-muted-foreground"

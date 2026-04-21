@@ -119,7 +119,6 @@ export function HymnSelectorModal({
             onOpenChange={(o) => !o && onClose()}
             title={title}
             maxWidth="max-w-[560px]"
-            bodyClassName="max-h-[420px]"
             searchSlot={
                 <>
                     <input

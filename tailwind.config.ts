@@ -53,6 +53,7 @@ const config: Config = {
         "surface-raised": "hsl(var(--surface-raised) / <alpha-value>)",
         "surface-hover": "hsl(var(--surface-hover) / <alpha-value>)",
         "surface-sunken": "hsl(var(--surface-sunken) / <alpha-value>)",
+        "surface-active": "hsl(var(--surface-active) / <alpha-value>)",
         brand: {
           DEFAULT: "hsl(var(--brand))",
           foreground: "hsl(var(--brand-foreground))",

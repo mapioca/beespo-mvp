@@ -415,6 +415,7 @@
     --surface-base: 255 4% 13%;   /* #201f22 — cards, panels, sidebars */
     --surface-raised: 255 4% 13%; /* #201f22 — passive buttons, interactive tiles */
     --surface-hover: 240 4% 16%;  /* #26262a — hover state for interactive surfaces */
+    --surface-active: 255 5% 23%; /* #383640 — selected/active state */
     --surface-sunken: 255 5% 8%;  /* #141316 — recessed inputs, wells */
     --cp-text: 45 18% 93%;
     --cp-text-muted: 40 8% 59%;
