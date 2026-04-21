@@ -11,6 +11,7 @@ import {
   CheckSquare,
   ChevronRight,
   ClipboardList,
+  BookUser,
   Clock3,
   Database,
   FileText,
@@ -86,6 +87,7 @@ const sections: SidebarSection[] = [
     items: [
       { href: "/dashboard", label: "Home", icon: Home, match: "exact" },
       { href: "/inbox", label: "Inbox", icon: Inbox, match: "prefix" },
+      { href: "/directory", label: "Directory", icon: BookUser, match: "prefix" },
       { href: "/calendar", label: "Calendar", icon: CalendarDays, match: "prefix", activeAliases: ["/schedule"] },
       { href: "/tasks", label: "Tasks", icon: CheckSquare, match: "prefix" },
       { href: "/interviews", label: "Interviews", icon: UserRoundCheck, soon: true },

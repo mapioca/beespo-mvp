@@ -126,18 +126,6 @@ export const breadcrumbConfigs: BreadcrumbConfig[] = [
     dynamic: true,
   },
   {
-    pattern: "/meetings/directory",
-    trail: [{ label: "Meetings", href: "/meetings/overview" }, { label: "Directory" }],
-  },
-  {
-    pattern: "/meetings/participants",
-    trail: [{ label: "Meetings", href: "/meetings/overview" }, { label: "Participants" }],
-  },
-  {
-    pattern: "/meetings/speakers",
-    trail: [{ label: "Meetings", href: "/meetings/overview" }, { label: "Speakers" }],
-  },
-  {
     pattern: "/meetings/announcements",
     trail: [{ label: "Meetings", href: "/meetings/overview" }, { label: "Announcements" }],
   },
@@ -289,32 +277,6 @@ export const breadcrumbConfigs: BreadcrumbConfig[] = [
       { label: "Directory", href: "/directory" },
       { label: "Callings", href: "/callings" },
       { label: "Calling Details" },
-    ],
-    dynamic: true,
-  },
-  {
-    pattern: "/speakers",
-    trail: [{ label: "Directory", href: "/directory" }, { label: "Speakers" }],
-  },
-  {
-    pattern: /^\/speakers\/[^/]+$/,
-    trail: [
-      { label: "Directory", href: "/directory" },
-      { label: "Speakers", href: "/speakers" },
-      { label: "Speaker Details" },
-    ],
-    dynamic: true,
-  },
-  {
-    pattern: "/participants",
-    trail: [{ label: "Directory", href: "/directory" }, { label: "Participants" }],
-  },
-  {
-    pattern: /^\/participants\/[^/]+$/,
-    trail: [
-      { label: "Directory", href: "/directory" },
-      { label: "Participants", href: "/participants" },
-      { label: "Participant Details" },
     ],
     dynamic: true,
   },

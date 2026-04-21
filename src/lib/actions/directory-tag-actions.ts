@@ -73,8 +73,7 @@ export async function createDirectoryTag(payload: { name: string; color: string 
     return { data: null, error: error.message }
   }
 
-  revalidatePath('/meetings/directory')
-  revalidatePath('/participants')
+  revalidatePath('/directory')
 
   return { data: data as DirectoryTag, error: null }
 }
@@ -124,8 +123,7 @@ export async function deleteDirectoryTag(tagId: string) {
     return { error: error.message }
   }
 
-  revalidatePath('/meetings/directory')
-  revalidatePath('/participants')
+  revalidatePath('/directory')
 
   return { error: null }
 }
@@ -190,8 +188,7 @@ export async function assignTagToDirectoryEntry(directoryId: string, tagId: stri
     return { error: error.message }
   }
 
-  revalidatePath('/meetings/directory')
-  revalidatePath('/participants')
+  revalidatePath('/directory')
 
   return { error: null }
 }
@@ -242,8 +239,7 @@ export async function removeTagFromDirectoryEntry(directoryId: string, tagId: st
     return { error: error.message }
   }
 
-  revalidatePath('/meetings/directory')
-  revalidatePath('/participants')
+  revalidatePath('/directory')
 
   return { error: null }
 }
@@ -298,8 +294,7 @@ export async function updateDirectoryTag(tagId: string, payload: { name: string;
     return { data: null, error: error.message }
   }
 
-  revalidatePath('/meetings/directory')
-  revalidatePath('/participants')
+  revalidatePath('/directory')
 
   return { data: data as DirectoryTag, error: null }
 }

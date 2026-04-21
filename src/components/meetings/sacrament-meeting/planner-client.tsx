@@ -2425,7 +2425,7 @@ export function SacramentMeetingPlannerClient({
       />
       <div className="mx-auto flex w-full max-w-7xl flex-col px-4 py-6 sm:px-6 lg:px-8">
         <section className="rounded-2xl border border-transparent bg-card">
-              <div className="border-b border-border/60 px-6 py-5">
+              <div className="sticky top-0 z-10 border-b border-border/60 bg-card px-6 py-5">
                 <div className="flex flex-col gap-0">
                   <div>
                     <div className="text-[13px] text-muted-foreground">
