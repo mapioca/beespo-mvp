@@ -252,37 +252,37 @@ export function ConductView({ meeting, isoDate, onClose }: ConductViewProps) {
   if (!mounted) return null
 
   return createPortal(
-    <div className="fixed inset-0 z-[9999] flex flex-col overflow-hidden bg-[#faf9f5]">
+    <div className="fixed inset-0 z-[9999] flex flex-col overflow-hidden bg-[#faf9f5] dark:bg-[#0a0a0a]">
       {/* ── Topbar ── */}
-      <div className="flex shrink-0 items-center gap-3 border-b border-[#e6e1d1] px-6 py-3">
+      <div className="flex shrink-0 items-center gap-3 border-b border-[#e6e1d1] px-6 py-3 dark:border-[#1f1f1f]">
         <button
           type="button"
           onClick={onClose}
-          className="mr-2 inline-flex items-center gap-1.5 text-[13px] text-[#8a867a] transition-colors hover:text-[#141413]"
+          className="mr-2 inline-flex items-center gap-1.5 text-[13px] text-[#8a867a] transition-colors hover:text-[#141413] dark:text-[#6b6b6b] dark:hover:text-[#e5e5e5]"
         >
           <X className="h-3.5 w-3.5" />
           Close
         </button>
 
         {/* Live badge */}
-        <div className="flex items-center gap-1.5 rounded-full bg-[#e4e6d6] px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#6b7a3f]">
-          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#6b7a3f]" />
+        <div className="flex items-center gap-1.5 rounded-full bg-[#e4e6d6] px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#6b7a3f] dark:bg-[#1a2e1a] dark:text-[#7fb87f]">
+          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#6b7a3f] dark:bg-[#7fb87f]" />
           Live
         </div>
 
-        <h1 className="font-serif text-[22px] font-normal tracking-[-0.01em] text-[#141413]">
+        <h1 className="font-serif text-[22px] font-normal tracking-[-0.01em] text-[#141413] dark:text-[#e5e5e5]">
           {meetingTitle}
         </h1>
 
-        <div className="ml-auto font-mono text-[14px] tabular-nums text-[#8a867a]">
+        <div className="ml-auto font-mono text-[14px] tabular-nums text-[#8a867a] dark:text-[#6b6b6b]">
           {clock}
         </div>
 
-        <div className="ml-4 hidden items-center gap-1.5 text-[12px] text-[#8a867a] lg:flex">
-          <kbd className="inline-flex h-5 items-center rounded border border-[#d8d2bf] bg-white px-1 font-mono text-[10px] text-[#57544c]">
+        <div className="ml-4 hidden items-center gap-1.5 text-[12px] text-[#8a867a] lg:flex dark:text-[#6b6b6b]">
+          <kbd className="inline-flex h-5 items-center rounded border border-[#d8d2bf] bg-white px-1 font-mono text-[10px] text-[#57544c] dark:border-[#2a2a2a] dark:bg-[#1a1a1a] dark:text-[#a1a1a1]">
             ↑
           </kbd>
-          <kbd className="inline-flex h-5 items-center rounded border border-[#d8d2bf] bg-white px-1 font-mono text-[10px] text-[#57544c]">
+          <kbd className="inline-flex h-5 items-center rounded border border-[#d8d2bf] bg-white px-1 font-mono text-[10px] text-[#57544c] dark:border-[#2a2a2a] dark:bg-[#1a1a1a] dark:text-[#a1a1a1]">
             ↓
           </kbd>
           <span>to navigate</span>
@@ -307,23 +307,23 @@ export function ConductView({ meeting, isoDate, onClose }: ConductViewProps) {
                     className={cn(
                       "grid cursor-pointer grid-cols-[80px_1fr_auto] items-center gap-[18px] rounded-[10px] border px-[18px] py-3.5 transition-all duration-150",
                       state === "done" &&
-                        "border-transparent opacity-40 hover:bg-[#f0ede3] hover:opacity-60",
+                        "border-transparent opacity-40 hover:bg-[#f0ede3] hover:opacity-60 dark:hover:bg-[#1a1a1a]",
                       state === "upcoming" &&
-                        "border-transparent hover:bg-[#f0ede3]",
+                        "border-transparent hover:bg-[#f0ede3] dark:hover:bg-[#1a1a1a]",
                       state === "current" &&
-                        "my-1.5 border-[#d8d2bf] bg-white px-[22px] py-5 shadow-[0_2px_8px_rgba(60,50,30,0.06),0_0_0_1px_rgba(60,50,30,0.05)]"
+                        "my-1.5 border-[#d8d2bf] bg-white px-[22px] py-5 shadow-[0_2px_8px_rgba(60,50,30,0.06),0_0_0_1px_rgba(60,50,30,0.05)] dark:border-[#2a2a2a] dark:bg-[#141414] dark:shadow-[0_2px_8px_rgba(0,0,0,0.4),0_0_0_1px_rgba(255,255,255,0.05)]"
                     )}
                   >
                     {/* Marker */}
-                    <div className="flex items-center gap-2 font-mono text-[11.5px] tracking-[0.04em] text-[#8a867a]">
+                    <div className="flex items-center gap-2 font-mono text-[11.5px] tracking-[0.04em] text-[#8a867a] dark:text-[#6b6b6b]">
                       <div
                         className={cn(
-                          "grid h-[18px] w-[18px] shrink-0 place-items-center rounded-full border-[1.5px] bg-white",
+                          "grid h-[18px] w-[18px] shrink-0 place-items-center rounded-full border-[1.5px] bg-white dark:bg-[#1a1a1a]",
                           state === "done" &&
-                            "border-[#8a867a] bg-[#8a867a] text-white",
+                            "border-[#8a867a] bg-[#8a867a] text-white dark:border-[#6b6b6b] dark:bg-[#6b6b6b]",
                           state === "current" &&
-                            "border-[#c9603c] bg-[#c9603c] text-white",
-                          state === "upcoming" && "border-[#d8d2bf]"
+                            "border-[#c9603c] bg-[#c9603c] text-white dark:border-[#e07856] dark:bg-[#e07856]",
+                          state === "upcoming" && "border-[#d8d2bf] dark:border-[#2a2a2a]"
                         )}
                       >
                         {state === "done" && <Check className="h-2.5 w-2.5" />}
@@ -333,32 +333,32 @@ export function ConductView({ meeting, isoDate, onClose }: ConductViewProps) {
 
                     {/* Body */}
                     <div className="min-w-0">
-                      <div className="text-[10.5px] font-medium uppercase tracking-[0.08em] text-[#8a867a]">
+                      <div className="text-[10.5px] font-medium uppercase tracking-[0.08em] text-[#8a867a] dark:text-[#6b6b6b]">
                         {step.eyebrow}
                       </div>
                       <div
                         className={cn(
-                          "mt-0.5 font-serif font-normal text-[#141413]",
-                          state === "done" && "line-through decoration-[#b7b3a4]",
+                          "mt-0.5 font-serif font-normal text-[#141413] dark:text-[#e5e5e5]",
+                          state === "done" && "line-through decoration-[#b7b3a4] dark:decoration-[#3a3a3a]",
                           state === "current" ? "text-[22px]" : "text-[18px]"
                         )}
                       >
                         {step.hymnNum && (
-                          <span className="mr-1 font-serif italic text-[#c9603c]">
+                          <span className="mr-1 font-serif italic text-[#c9603c] dark:text-[#e07856]">
                             №&thinsp;{step.hymnNum}
                           </span>
                         )}
                         {step.title}
                       </div>
                       {step.meta && (
-                        <div className="mt-0.5 text-[13px] text-[#57544c]">{step.meta}</div>
+                        <div className="mt-0.5 text-[13px] text-[#57544c] dark:text-[#a1a1a1]">{step.meta}</div>
                       )}
                     </div>
                   </div>
 
                   {/* Presidency card — inline under current welcome step */}
                   {isWelcomeCurrent && (
-                    <div className="mx-4 mb-1.5 rounded-[14px] border border-[#d8d2bf] bg-white p-8 shadow-[0_12px_40px_rgba(60,50,30,0.10),0_0_0_1px_rgba(60,50,30,0.05)]">
+                    <div className="mx-4 mb-1.5 rounded-[14px] border border-[#d8d2bf] bg-white p-8 shadow-[0_12px_40px_rgba(60,50,30,0.10),0_0_0_1px_rgba(60,50,30,0.05)] dark:border-[#2a2a2a] dark:bg-[#141414] dark:shadow-[0_12px_40px_rgba(0,0,0,0.4),0_0_0_1px_rgba(255,255,255,0.05)]">
                       {(
                         [
                           { label: "Presiding",       value: meeting.assignments.presiding },
@@ -369,15 +369,15 @@ export function ConductView({ meeting, isoDate, onClose }: ConductViewProps) {
                       ).map(({ label, value }, idx, arr) => (
                         <div key={label}>
                           <div className="flex items-baseline justify-between gap-6 py-3">
-                            <div className="text-[11px] font-medium uppercase tracking-[0.09em] text-[#8a867a]">
+                            <div className="text-[11px] font-medium uppercase tracking-[0.09em] text-[#8a867a] dark:text-[#6b6b6b]">
                               {label}
                             </div>
-                            <div className="font-serif text-[18px] tracking-[-0.005em] text-[#141413]">
-                              {value?.trim() || <span className="italic text-[#b7b3a4]">—</span>}
+                            <div className="font-serif text-[18px] tracking-[-0.005em] text-[#141413] dark:text-[#e5e5e5]">
+                              {value?.trim() || <span className="italic text-[#b7b3a4] dark:text-[#3a3a3a]">—</span>}
                             </div>
                           </div>
                           {idx < arr.length - 1 && (
-                            <div className="h-px bg-[#f0ece6]" />
+                            <div className="h-px bg-[#f0ece6] dark:bg-[#1f1f1f]" />
                           )}
                         </div>
                       ))}
@@ -386,9 +386,9 @@ export function ConductView({ meeting, isoDate, onClose }: ConductViewProps) {
 
                   {/* Sacrament prayer card — inline under current sacrament step */}
                   {isSacramentCurrent && (
-                    <div className="mx-4 mb-1.5 rounded-[14px] border border-[#d8d2bf] bg-white p-8 shadow-[0_12px_40px_rgba(60,50,30,0.10),0_0_0_1px_rgba(60,50,30,0.05)]">
+                    <div className="mx-4 mb-1.5 rounded-[14px] border border-[#d8d2bf] bg-white p-8 shadow-[0_12px_40px_rgba(60,50,30,0.10),0_0_0_1px_rgba(60,50,30,0.05)] dark:border-[#2a2a2a] dark:bg-[#141414] dark:shadow-[0_12px_40px_rgba(0,0,0,0.4),0_0_0_1px_rgba(255,255,255,0.05)]">
                       {/* Tabs */}
-                      <div className="mb-4 flex gap-6 border-b border-[#e6e1d1]">
+                      <div className="mb-4 flex gap-6 border-b border-[#e6e1d1] dark:border-[#1f1f1f]">
                         {(["bread", "water"] as const).map((tab) => (
                           <button
                             key={tab}
@@ -400,8 +400,8 @@ export function ConductView({ meeting, isoDate, onClose }: ConductViewProps) {
                             className={cn(
                               "-mb-px border-b-[1.5px] pb-2 text-[13px] font-medium uppercase tracking-[0.06em] transition-colors",
                               prayerTab === tab
-                                ? "border-[#c9603c] text-[#141413]"
-                                : "border-transparent text-[#8a867a] hover:text-[#141413]"
+                                ? "border-[#c9603c] text-[#141413] dark:border-[#e07856] dark:text-[#e5e5e5]"
+                                : "border-transparent text-[#8a867a] hover:text-[#141413] dark:text-[#6b6b6b] dark:hover:text-[#e5e5e5]"
                             )}
                           >
                             {tab}
@@ -409,11 +409,11 @@ export function ConductView({ meeting, isoDate, onClose }: ConductViewProps) {
                         ))}
                       </div>
                       {/* Reference */}
-                      <div className="mb-3 font-mono text-[11px] tracking-[0.04em] text-[#8a867a]">
+                      <div className="mb-3 font-mono text-[11px] tracking-[0.04em] text-[#8a867a] dark:text-[#6b6b6b]">
                         {SACRAMENT_PRAYERS[prayerTab].reference}
                       </div>
                       {/* Prayer text */}
-                      <p className="font-serif text-[22px] leading-[1.62] tracking-[-0.005em] text-[#141413]">
+                      <p className="font-serif text-[22px] leading-[1.62] tracking-[-0.005em] text-[#141413] dark:text-[#e5e5e5]">
                         {SACRAMENT_PRAYERS[prayerTab].text}
                       </p>
                     </div>
@@ -427,17 +427,17 @@ export function ConductView({ meeting, isoDate, onClose }: ConductViewProps) {
 
       {/* ── Floating toolbar ── */}
       <div className="pointer-events-none fixed bottom-6 left-0 right-0 flex justify-center">
-        <div className="pointer-events-auto flex items-center gap-3 rounded-full border border-[#d8d2bf] bg-white py-1.5 pl-4 pr-1.5 shadow-[0_12px_40px_rgba(60,50,30,0.10),0_0_0_1px_rgba(60,50,30,0.05)]">
-          <div className="flex items-center gap-2 text-[12.5px] text-[#57544c]">
+        <div className="pointer-events-auto flex items-center gap-3 rounded-full border border-[#d8d2bf] bg-white py-1.5 pl-4 pr-1.5 shadow-[0_12px_40px_rgba(60,50,30,0.10),0_0_0_1px_rgba(60,50,30,0.05)] dark:border-[#2a2a2a] dark:bg-[#141414] dark:shadow-[0_12px_40px_rgba(0,0,0,0.4),0_0_0_1px_rgba(255,255,255,0.05)]">
+          <div className="flex items-center gap-2 text-[12.5px] text-[#57544c] dark:text-[#a1a1a1]">
             <span>Step {cur + 1}</span>
-            <span className="text-[#b7b3a4]">of</span>
+            <span className="text-[#b7b3a4] dark:text-[#3a3a3a]">of</span>
             <span>{total}</span>
           </div>
           <button
             type="button"
             onClick={() => navigate(cur - 1)}
             disabled={cur === 0}
-            className="rounded-full border border-[#d8d2bf] bg-white px-4 py-1.5 text-[13px] text-[#57544c] transition-colors hover:bg-[#f0ede3] disabled:pointer-events-none disabled:opacity-30"
+            className="rounded-full border border-[#d8d2bf] bg-white px-4 py-1.5 text-[13px] text-[#57544c] transition-colors hover:bg-[#f0ede3] disabled:pointer-events-none disabled:opacity-30 dark:border-[#2a2a2a] dark:bg-[#1a1a1a] dark:text-[#a1a1a1] dark:hover:bg-[#252525]"
           >
             Previous
           </button>
@@ -445,7 +445,7 @@ export function ConductView({ meeting, isoDate, onClose }: ConductViewProps) {
             type="button"
             onClick={() => navigate(cur + 1)}
             disabled={cur === total - 1}
-            className="rounded-full bg-[#c9603c] px-4 py-1.5 text-[13px] font-medium text-white transition-colors hover:bg-[#b5502f] disabled:pointer-events-none disabled:opacity-40"
+            className="rounded-full bg-[#c9603c] px-4 py-1.5 text-[13px] font-medium text-white transition-colors hover:bg-[#b5502f] disabled:pointer-events-none disabled:opacity-40 dark:bg-[#e07856] dark:hover:bg-[#c9603c]"
           >
             Next step →
           </button>
