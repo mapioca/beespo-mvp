@@ -7,8 +7,8 @@ import { getWorkspaceOrganizationType, isBishopricOrganization } from "@/lib/mee
 import { createClient } from "@/lib/supabase/server"
 
 export const metadata: Metadata = {
-  title: "Sacrament Meeting Planner | Beespo",
-  description: "Bishopric-only sacrament meeting planner",
+  title: "Program Planner | Beespo",
+  description: "Bishopric-only sacrament meeting program planner",
 }
 
 export default async function SacramentMeetingPlannerPage() {

@@ -1,4 +1,4 @@
-import { ArrowUpRight, Briefcase, ClipboardList, Landmark, LayoutGrid, Megaphone, MessageSquare, NotebookPen, PanelsTopLeft } from "lucide-react"
+import { ArrowUpRight, Briefcase, ClipboardList, Landmark, LayoutGrid, Megaphone, MessageSquare, NotebookPen, PanelsTopLeft, UserRoundCheck } from "lucide-react"
 
 import type { DomainNavItem } from "@/components/domain/domain-shell"
 
@@ -21,27 +21,33 @@ export function getMeetingsNavItems(isBishopric: boolean): DomainNavItem[] {
             children: [
               {
                 href: "/meetings/sacrament-meeting/planner",
-                label: "Planner",
+                label: "Program Planner",
                 icon: Landmark,
-                matchMode: "prefix",
+                matchMode: "prefix" as const,
+              },
+              {
+                href: "/meetings/sacrament-meeting/speaker-planner",
+                label: "Speaker Planner",
+                icon: UserRoundCheck,
+                matchMode: "prefix" as const,
               },
               {
                 href: "/meetings/sacrament-meeting/audience",
                 label: "Audience",
                 icon: Landmark,
-                matchMode: "prefix",
+                matchMode: "prefix" as const,
               },
               {
                 href: "/meetings/sacrament-meeting/archive",
                 label: "Archive",
                 icon: Landmark,
-                matchMode: "prefix",
+                matchMode: "prefix" as const,
               },
               {
                 href: "/meetings/sacrament-meeting/business",
                 label: "Business",
                 icon: Briefcase,
-                matchMode: "prefix",
+                matchMode: "prefix" as const,
               },
             ],
           },
@@ -57,13 +63,13 @@ export function getMeetingsNavItems(isBishopric: boolean): DomainNavItem[] {
           href: "/meetings/agendas/discussions",
           label: "Discussions",
           icon: MessageSquare,
-          matchMode: "prefix",
+          matchMode: "prefix" as const,
         },
         {
           href: "/library/agendas",
           label: "Use a Template",
           icon: ArrowUpRight,
-          matchMode: "exact",
+          matchMode: "exact" as const,
         },
       ],
     },
@@ -77,7 +83,7 @@ export function getMeetingsNavItems(isBishopric: boolean): DomainNavItem[] {
           href: "/library/programs",
           label: "Use a Template",
           icon: ArrowUpRight,
-          matchMode: "exact",
+          matchMode: "exact" as const,
         },
       ],
     },

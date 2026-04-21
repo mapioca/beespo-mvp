@@ -324,27 +324,27 @@ export function SacramentMeetingAudienceClient({ unitName, defaultLanguage = "EN
   const date = plannerSundayDateFromIso(selectedIsoDate)
 
   return (
-    <div className="min-h-full bg-[#f7f6f4]">
+    <div className="min-h-full bg-card">
       <div className="mx-auto flex w-full max-w-6xl flex-col items-center px-4 py-10 sm:px-6 lg:px-8">
-        <Button asChild variant="outline" className="mb-6 self-end rounded-full bg-white">
+        <Button asChild variant="outline" className="mb-6 self-end rounded-full">
           <Link href={`/meetings/sacrament-meeting/planner?date=${selectedIsoDate}`}>
             Exit audience view
           </Link>
         </Button>
 
-        <article className="w-full max-w-[560px] rounded-[2px] border border-[#e7e2dc] bg-white px-7 py-10 shadow-[0_24px_60px_rgba(28,25,23,0.12)] sm:px-14 sm:py-16">
-          <header className="border-b border-[#ece8e2] pb-7 text-center">
-            <div className="font-serif text-[13px] italic tracking-[0.02em] text-[#9a9187]">
+        <article className="w-full max-w-[560px] rounded-[2px] border border-border bg-background px-7 py-10 shadow-lg sm:px-14 sm:py-16">
+          <header className="border-b border-border pb-7 text-center">
+            <div className="font-serif text-[13px] italic tracking-[0.02em] text-muted-foreground">
               The Church of Jesus Christ
             </div>
-            <h1 className="mt-2 font-serif text-[28px] font-normal tracking-[-0.01em] text-[#292524]">
+            <h1 className="mt-2 font-serif text-[28px] font-normal tracking-[-0.01em] text-foreground">
               {unitName}
             </h1>
-            <div className="mt-1.5 text-[13.5px] text-[#6f675f]">Sacrament Meeting</div>
-            <div className="mt-4 font-serif text-[15px] italic text-[#6f675f]">
+            <div className="mt-1.5 text-[13.5px] text-muted-foreground">Sacrament Meeting</div>
+            <div className="mt-4 font-serif text-[15px] italic text-muted-foreground">
               {format(date, "EEEE, MMMM d, yyyy")}
             </div>
-            <div className="mt-1 text-[12.5px] text-[#9a9187]">{getAudienceSubtitle(meeting)}</div>
+            <div className="mt-1 text-[12.5px] text-muted-foreground/70">{getAudienceSubtitle(meeting)}</div>
           </header>
 
           <AudienceRule />
@@ -366,7 +366,7 @@ export function SacramentMeetingAudienceClient({ unitName, defaultLanguage = "EN
 
           <AudienceSectionLabel>the sacrament</AudienceSectionLabel>
           <AudienceHymn kind="Sacrament Hymn" entry={sacramentHymn} />
-          <div className="py-2.5 text-center font-serif text-[14.5px] italic text-[#6f675f]">
+          <div className="py-2.5 text-center font-serif text-[14.5px] italic text-muted-foreground">
             Administration of the Sacrament
           </div>
 
@@ -375,7 +375,7 @@ export function SacramentMeetingAudienceClient({ unitName, defaultLanguage = "EN
           {meeting.specialType === "fast-testimony" ? (
             <>
               <AudienceSectionLabel>bearing of testimonies</AudienceSectionLabel>
-              <div className="px-3 pb-1 pt-3 text-center font-serif text-[15px] italic leading-7 text-[#6f675f]">
+              <div className="px-3 pb-1 pt-3 text-center font-serif text-[15px] italic leading-7 text-muted-foreground">
                 The remainder of this meeting will be devoted to the bearing of testimonies
               </div>
             </>
@@ -403,7 +403,7 @@ export function SacramentMeetingAudienceClient({ unitName, defaultLanguage = "EN
                     />
                   ))
               ) : (
-                <div className="py-4 text-center font-serif text-[15px] italic text-[#9a9187]">
+                <div className="py-4 text-center font-serif text-[15px] italic text-muted-foreground/60">
                   Speakers to be announced
                 </div>
               )}
@@ -416,8 +416,8 @@ export function SacramentMeetingAudienceClient({ unitName, defaultLanguage = "EN
           <AudienceHymn kind="Closing Hymn" entry={closingHymn} />
           <AudienceCenteredRow label="Benediction" value={benediction?.assigneeName} />
 
-          <footer className="mt-8 border-t border-[#ece8e2] pt-6 text-center text-[11.5px] leading-7 text-[#9a9187]">
-            <div className="mx-auto mb-4 max-w-[340px] font-serif text-[13px] italic leading-6 text-[#6f675f]">
+          <footer className="mt-8 border-t border-border pt-6 text-center text-[11.5px] leading-7 text-muted-foreground/70">
+            <div className="mx-auto mb-4 max-w-[340px] font-serif text-[13px] italic leading-6 text-muted-foreground">
               &quot;For where two or three are gathered together in my name, there am I in the midst of them.&quot;
             </div>
             <div>Matthew 18:20</div>
@@ -429,12 +429,12 @@ export function SacramentMeetingAudienceClient({ unitName, defaultLanguage = "EN
 }
 
 function AudienceRule() {
-  return <div className="mx-auto my-7 h-px w-12 bg-[#d8d2ca]" />
+  return <div className="mx-auto my-7 h-px w-12 bg-border" />
 }
 
 function AudienceSectionLabel({ children }: { children: string }) {
   return (
-    <div className="mb-3 mt-7 text-center font-serif text-[12.5px] italic lowercase tracking-[0.1em] text-[#9a9187]">
+    <div className="mb-3 mt-7 text-center font-serif text-[12.5px] italic lowercase tracking-[0.1em] text-muted-foreground/70">
       {children}
     </div>
   )
@@ -443,8 +443,8 @@ function AudienceSectionLabel({ children }: { children: string }) {
 function AudienceRole({ label, value }: { label: string; value?: string }) {
   return (
     <div className="grid grid-cols-[1fr_auto] items-baseline gap-4 py-1.5">
-      <div className="text-[11px] font-medium uppercase tracking-[0.09em] text-[#9a9187]">{label}</div>
-      <div className="text-right font-serif text-[16px] tracking-[-0.005em] text-[#292524]">
+      <div className="text-[11px] font-medium uppercase tracking-[0.09em] text-muted-foreground/70">{label}</div>
+      <div className="text-right font-serif text-[16px] tracking-[-0.005em] text-foreground">
         {value?.trim() || "-"}
       </div>
     </div>
@@ -456,17 +456,17 @@ function AudienceHymn({ kind, entry }: { kind: string; entry?: StaticEntry }) {
 
   return (
     <div className="py-3.5 text-center">
-      <div className="text-[10.5px] uppercase tracking-[0.12em] text-[#9a9187]">{kind}</div>
+      <div className="text-[10.5px] uppercase tracking-[0.12em] text-muted-foreground/70">{kind}</div>
       <div
         className={cn(
           "mt-1 font-serif text-[20px] font-normal italic",
-          title ? "text-[#292524]" : "text-[#9a9187]"
+          title ? "text-foreground" : "text-muted-foreground/50"
         )}
       >
         {title ? quoteTitle(title) : "-"}
       </div>
       {title && typeof entry?.hymnNumber === "number" ? (
-        <div className="mt-1 font-serif text-[14px] italic text-[#7c6f64]">Hymn No. {entry.hymnNumber}</div>
+        <div className="mt-1 font-serif text-[14px] italic text-brand">Hymn No. {entry.hymnNumber}</div>
       ) : null}
     </div>
   )
@@ -475,8 +475,8 @@ function AudienceHymn({ kind, entry }: { kind: string; entry?: StaticEntry }) {
 function AudienceCenteredRow({ label, value }: { label: string; value?: string }) {
   return (
     <div className="mt-1.5 block py-2.5 text-center">
-      <div className="text-center text-[11px] font-medium uppercase tracking-[0.09em] text-[#9a9187]">{label}</div>
-      <div className="mt-1 text-center font-serif text-[16px] tracking-[-0.005em] text-[#292524]">
+      <div className="text-center text-[11px] font-medium uppercase tracking-[0.09em] text-muted-foreground/70">{label}</div>
+      <div className="mt-1 text-center font-serif text-[16px] tracking-[-0.005em] text-foreground">
         {value?.trim() || "-"}
       </div>
     </div>
@@ -496,16 +496,16 @@ function AudienceSpeaker({
 }) {
   return (
     <div className="py-[18px] text-center">
-      <div className="text-[10.5px] uppercase tracking-[0.12em] text-[#9a9187]">{eyebrow}</div>
+      <div className="text-[10.5px] uppercase tracking-[0.12em] text-muted-foreground/70">{eyebrow}</div>
       <div
         className={cn(
-          "mt-1 font-serif font-normal tracking-[-0.01em] text-[#292524]",
+          "mt-1 font-serif font-normal tracking-[-0.01em] text-foreground",
           musical ? "text-[19px] italic" : "text-[22px]"
         )}
       >
         {name || "-"}
       </div>
-      {topic ? <div className="mt-1 font-serif text-[14px] italic text-[#6f675f]">{topic}</div> : null}
+      {topic ? <div className="mt-1 font-serif text-[14px] italic text-muted-foreground">{topic}</div> : null}
     </div>
   )
 }

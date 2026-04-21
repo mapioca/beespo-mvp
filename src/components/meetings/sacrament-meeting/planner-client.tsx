@@ -195,7 +195,7 @@ const ENTRY_LABELS: Record<string, Record<Lang, string>> = {
 const SPEAKER_LABEL: Record<Lang, string> = { ENG: "Speaker", SPA: "Discursante" }
 const INTERMEDIATE_HYMN_LABEL: Record<Lang, string> = { ENG: "Intermediate Hymn", SPA: "Himno Intermedio" }
 const SPECIAL_NUMBER_LABEL: Record<Lang, string> = { ENG: "Special Number", SPA: "Número Especial" }
-const AUTOSAVE_DELAY_MS = 8000
+const AUTOSAVE_DELAY_MS = 1500
 const DEFAULT_VISIBLE_SUNDAYS = 8
 const VISIBLE_SUNDAY_INCREMENT = 8
 const SPEAKER_TIME_OPTIONS = [
@@ -1146,7 +1146,7 @@ function HymnPlanningRow({ type, hymnNumber, hymnTitle, meta, onClick }: HymnPla
         {hasHymn ? (
           <>
             {typeof hymnNumber === "number" ? (
-              <span className="mr-1.5 font-serif text-[13px] italic text-[#4f46e5] dark:text-indigo-400">
+              <span className="mr-1.5 font-serif text-[13px] italic text-brand">
                 № {hymnNumber}
               </span>
             ) : null}
@@ -1694,7 +1694,7 @@ export function SacramentMeetingPlannerClient({ defaultLanguage = "ENG" }: { def
     () => [
       { label: "Meetings", href: "/meetings/overview" },
       { label: "Sacrament Meeting", href: "/meetings/sacrament-meeting/planner" },
-      { label: "Planner", href: "/meetings/sacrament-meeting/planner" },
+      { label: "Program Planner", href: "/meetings/sacrament-meeting/planner" },
       { label: selectedSunday.dateLabel },
     ],
     [selectedSunday.dateLabel]
@@ -1959,8 +1959,11 @@ export function SacramentMeetingPlannerClient({ defaultLanguage = "ENG" }: { def
       saveDraft()
     }
 
+    const flushOnHide = () => { if (document.visibilityState === "hidden") flushDraft() }
+
     window.addEventListener("pagehide", flushDraft)
     window.addEventListener("beforeunload", flushDraft)
+    document.addEventListener("visibilitychange", flushOnHide)
 
     return () => {
       if (autosaveTimeoutRef.current) {
@@ -1969,6 +1972,7 @@ export function SacramentMeetingPlannerClient({ defaultLanguage = "ENG" }: { def
       }
       window.removeEventListener("pagehide", flushDraft)
       window.removeEventListener("beforeunload", flushDraft)
+      document.removeEventListener("visibilitychange", flushOnHide)
     }
   }, [meetingsByDate, meetingTypeOverridesByDate, notesByDate])
 
@@ -2377,7 +2381,7 @@ export function SacramentMeetingPlannerClient({ defaultLanguage = "ENG" }: { def
         items={breadcrumbItems}
         action={
           <div className="flex items-center gap-2">
-            <Button type="button" variant="ghost" size="sm">
+            <Button type="button" variant="ghost" size="sm" onClick={() => router.push("/meetings/sacrament-meeting/audience")}>
               <Eye className="h-3.5 w-3.5" />
               Audience
             </Button>
