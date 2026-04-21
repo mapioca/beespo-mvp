@@ -100,7 +100,7 @@ export default function ConductMeetingPage({ params }: ConductMeetingProps) {
     };
 
     fetchMeeting();
-  }, [id, setMeetingId, setActiveItem, startGlobalTimer]);
+  }, [id, router, setMeetingId, setActiveItem, startGlobalTimer]);
 
   // Real-time subscription for remote updates
   useEffect(() => {

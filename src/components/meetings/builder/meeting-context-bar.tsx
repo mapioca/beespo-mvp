@@ -151,6 +151,7 @@ export function MeetingContextBar({
     onSaveAsNew,
     onSaveAsTemplate,
     mode,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     onModeChange: _onModeChange,
     isLeader,
     totalDuration,

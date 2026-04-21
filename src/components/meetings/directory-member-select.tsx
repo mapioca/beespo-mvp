@@ -32,10 +32,9 @@ interface DirectoryMemberSelectProps {
 }
 
 export function DirectoryMemberSearch({
-  value,
   onChange,
 }: {
-  value: string;
+  value?: string;
   onChange: (name: string) => void;
 }) {
   const [members, setMembers] = useState<DirectoryMember[]>([]);
@@ -47,7 +46,7 @@ export function DirectoryMemberSearch({
     (supabase.from("directory") as ReturnType<typeof supabase.from>)
       .select("id, name")
       .order("name", { ascending: true })
-      .then(({ data, error }) => {
+      .then(({ data, error }: { data: DirectoryMember[] | null; error: Error | null }) => {
         if (!error) setMembers(data || []);
         setIsLoading(false);
       });

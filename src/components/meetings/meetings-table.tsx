@@ -9,7 +9,7 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
-import { CalendarDays, ArrowUp, ArrowDown } from "lucide-react"
+import { CalendarDays } from "lucide-react"
 import { format } from "date-fns"
 import { MeetingRowActions } from "./meeting-row-actions"
 import { ShareDialog } from "@/components/conduct/share-dialog"
