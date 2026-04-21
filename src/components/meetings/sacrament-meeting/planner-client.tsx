@@ -79,6 +79,7 @@ import {
 } from "@/components/ui/popover"
 import { createClient } from "@/lib/supabase/client"
 import { cn } from "@/lib/utils"
+import { PickerModal } from "@/components/ui/picker-modal"
 
 type MeetingSpecialType =
   | "standard"
@@ -2914,21 +2915,21 @@ function DirectorySelectDialog({
   }, [people, query])
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[80vh] max-w-[520px] gap-0 overflow-hidden rounded-2xl border-border/80 p-0 shadow-2xl">
-        <DialogHeader className="border-b border-border/70 px-[18px] py-3.5">
-          <DialogTitle className="font-serif text-[15px] font-normal text-foreground">
-            Assign person
-          </DialogTitle>
-        </DialogHeader>
+    <PickerModal
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Assign person"
+      bodyClassName="max-h-[360px]"
+      searchSlot={
         <input
-          className="w-full border-0 border-b border-border/70 bg-surface-sunken px-4 py-2.5 text-sm outline-none placeholder:text-muted-foreground"
+          className="w-full bg-transparent px-4 py-2.5 text-sm outline-none placeholder:text-muted-foreground"
           placeholder="Search members..."
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           autoFocus
         />
-        <div className="max-h-[360px] overflow-y-auto py-1">
+      }
+    >
           {isLoading ? (
             <div className="flex items-center justify-center py-10">
               <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
@@ -2959,8 +2960,6 @@ function DirectorySelectDialog({
               </button>
             ))
           )}
-        </div>
-      </DialogContent>
-    </Dialog>
+    </PickerModal>
   )
 }

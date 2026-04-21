@@ -1,12 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-} from "@/components/ui/dialog";
+import { PickerModal } from "@/components/ui/picker-modal";
 import {
     Select,
     SelectContent,
@@ -119,15 +114,14 @@ export function HymnSelectorModal({
     };
 
     return (
-        <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-            <DialogContent className="max-h-[80vh] max-w-[560px] gap-0 overflow-hidden rounded-2xl border-border/80 p-0 shadow-2xl">
-                <DialogHeader className="border-b border-border/70 px-[18px] py-3.5">
-                    <DialogTitle className="font-serif text-[15px] font-normal text-foreground">
-                        {title}
-                    </DialogTitle>
-                </DialogHeader>
-
-                <div className="flex border-b border-border/70 dark:bg-surface-sunken bg-[#f7f6f4]">
+        <PickerModal
+            open={open}
+            onOpenChange={(o) => !o && onClose()}
+            title={title}
+            maxWidth="max-w-[560px]"
+            bodyClassName="max-h-[420px]"
+            searchSlot={
+                <>
                     <input
                         className="min-w-0 flex-1 bg-transparent px-4 py-2.5 text-sm outline-none placeholder:text-muted-foreground"
                         placeholder={placeholder}
@@ -150,9 +144,9 @@ export function HymnSelectorModal({
                             <SelectItem value="SPA">SPA</SelectItem>
                         </SelectContent>
                     </Select>
-                </div>
-
-                <div className="max-h-[420px] overflow-y-auto py-1">
+                </>
+            }
+        >
                     {isLoading ? (
                         <div className="p-8 text-center text-[13px] text-muted-foreground">
                             Loading hymns...
@@ -196,8 +190,6 @@ export function HymnSelectorModal({
                             })}
                         </div>
                     )}
-                </div>
-            </DialogContent>
-        </Dialog>
+        </PickerModal>
     );
 }
