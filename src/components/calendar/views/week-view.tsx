@@ -63,7 +63,7 @@ export function WeekView({
     : 0;
 
   return (
-    <div className="flex flex-col h-full rounded-lg border border-border/50 overflow-hidden bg-background/60">
+    <div className="flex flex-col h-full rounded-lg border border-border/50 overflow-hidden bg-surface-raised">
       {/* Header with day names and dates */}
       <div className="grid grid-cols-8 border-b border-border/50 bg-muted/20">
         {/* Time column header */}

@@ -48,7 +48,7 @@ export function MonthView({
   const numWeeks = weeks.length;
 
   return (
-    <div className="flex flex-col h-full rounded-lg border border-border/50 overflow-hidden bg-background/60">
+    <div className="flex flex-col h-full rounded-lg border border-border/50 overflow-hidden bg-surface-raised">
       {/* Weekday header - Notion style */}
       <div className="grid grid-cols-7 border-b border-border/50 bg-muted/20">
         {WEEKDAY_NAMES.map((name) => (
@@ -87,7 +87,7 @@ export function MonthView({
                   key={dateKey}
                   className={cn(
                     "p-2 cursor-pointer transition-colors overflow-hidden",
-                    "hover:bg-[hsl(var(--table-row-hover))]",
+                    "hover:bg-surface-hover",
                     !isCurrentMonth && "bg-muted/10",
                     dayIndex !== 6 && "border-r border-border/30"
                   )}

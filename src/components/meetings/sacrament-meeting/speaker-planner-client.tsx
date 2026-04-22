@@ -1,9 +1,8 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { useRouter } from "next/navigation"
 import { format, startOfDay, addDays } from "date-fns"
-import { ArrowLeft, ChevronRight, Hand, Plus, Search, X } from "lucide-react"
+import { ChevronRight, Hand, Plus, Search, X } from "lucide-react"
 
 import { Breadcrumbs } from "@/components/dashboard/breadcrumbs"
 import { Button } from "@/components/ui/button"
@@ -47,6 +46,12 @@ type LastSpokeEntry = { date: string; topic: string }
 type LastSpokeMap = Record<string, LastSpokeEntry>
 
 type PickingState = { isoDate: string; slotIdx: number } | null
+
+type PersistedPlannerEntry = {
+  meetingDate: string
+  meetingState?: Partial<PlannerMeetingState>
+  meetingTypeOverridden?: boolean
+}
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -113,6 +118,74 @@ function computeLastSpoke(meetingsByDate: Record<string, PlannerMeetingState>): 
 
 function isAssignableMeeting(specialType: MeetingSpecialType) {
   return specialType === "standard"
+}
+
+function getMeetingTypeLabel(specialType: MeetingSpecialType) {
+  switch (specialType) {
+    case "fast-testimony":
+      return "Fast & Testimony Meeting"
+    case "general-conference":
+      return "General Conference"
+    case "stake-conference":
+      return "Stake Conference"
+    case "ward-conference":
+      return "Ward Conference"
+    default:
+      return "Sacrament Meeting"
+  }
+}
+
+function getSpeakerPlannerEmptyMessage(specialType: MeetingSpecialType) {
+  switch (specialType) {
+    case "fast-testimony":
+      return "No assigned speakers for fast and testimony meeting."
+    case "general-conference":
+      return "No local speaker planning for General Conference."
+    case "stake-conference":
+      return "No ward speaker planning for Stake Conference."
+    case "ward-conference":
+      return "Speaker planning is handled outside the regular rotation."
+    default:
+      return "No speaker slots for this meeting."
+  }
+}
+
+function isFirstSundayOfMonth(isoDate: string) {
+  return new Date(`${isoDate}T12:00:00`).getDate() <= 7
+}
+
+function isGeneralConferenceSunday(isoDate: string) {
+  const date = new Date(`${isoDate}T12:00:00`)
+  const month = date.getMonth()
+
+  return (month === 3 || month === 9) && isFirstSundayOfMonth(isoDate)
+}
+
+function getDefaultMeetingSpecialType(isoDate: string): MeetingSpecialType {
+  if (isGeneralConferenceSunday(isoDate)) {
+    return "general-conference"
+  }
+
+  if (isFirstSundayOfMonth(isoDate)) {
+    return "fast-testimony"
+  }
+
+  return "standard"
+}
+
+function createFallbackMeetingState(isoDate: string): PlannerMeetingState {
+  return {
+    title: "",
+    specialType: getDefaultMeetingSpecialType(isoDate),
+    assignments: {},
+    standardEntries: [
+      {
+        id: "section-closing",
+        kind: "section",
+      },
+    ],
+    fastEntries: [],
+  }
 }
 
 function getUpcomingSundays(count = 26): string[] {
@@ -334,6 +407,7 @@ function MeetingCard({
   const month = format(date, "MMM").toUpperCase()
   const day = format(date, "d")
   const longDate = format(date, "EEEE, MMMM d, yyyy")
+  const isAssignable = isAssignableMeeting(meeting.specialType)
 
   const allEntries = [
     ...(meeting.standardEntries ?? []),
@@ -362,9 +436,7 @@ function MeetingCard({
 
         <div className="min-w-0 flex-1">
           <div className="truncate font-serif text-[15.5px] text-foreground">
-            {meeting.title || (
-              <span className="italic text-muted-foreground">Sacrament Meeting</span>
-            )}
+            {meeting.title || <span className="italic">{getMeetingTypeLabel(meeting.specialType)}</span>}
           </div>
           <div className="mt-0.5 text-[11.5px] text-muted-foreground">{longDate}</div>
         </div>
@@ -372,38 +444,46 @@ function MeetingCard({
 
       {/* Slots */}
       <div className="flex flex-col gap-2 px-4 py-3">
-        {speakers.map((s, i) => (
-          <SlotFilled
-            key={s.id}
-            speaker={s}
-            slotIdx={i}
-            isPickingThis={(isActive && picking?.slotIdx === i)}
-            onPickSlot={() => onPickSlot(i)}
-            onRemove={() => onRemoveSpeaker(i)}
-            onTopicChange={(topic) => onUpdateTopic(i, topic)}
-            lastSpoke={s.speakerName ? lastSpokeMap[s.speakerName] : undefined}
-          />
-        ))}
+        {!isAssignable ? (
+          <div className="rounded-lg border border-dashed border-border bg-surface-sunken/50 px-3 py-3 text-[13px] text-muted-foreground">
+            {getSpeakerPlannerEmptyMessage(meeting.specialType)}
+          </div>
+        ) : (
+          <>
+            {speakers.map((s, i) => (
+              <SlotFilled
+                key={s.id}
+                speaker={s}
+                slotIdx={i}
+                isPickingThis={(isActive && picking?.slotIdx === i)}
+                onPickSlot={() => onPickSlot(i)}
+                onRemove={() => onRemoveSpeaker(i)}
+                onTopicChange={(topic) => onUpdateTopic(i, topic)}
+                lastSpoke={s.speakerName ? lastSpokeMap[s.speakerName] : undefined}
+              />
+            ))}
 
-        {speakers.length < MAX_SPEAKERS && (
-          <button
-            type="button"
-            onClick={() => onPickSlot(speakers.length)}
-            className={cn(
-              "flex w-full items-center gap-2 rounded-lg border-[1.5px] border-dashed px-3 py-2 text-[13px] transition-all",
-              isActive && picking?.slotIdx === speakers.length
-                ? "border-brand bg-brand/10 text-brand"
-                : "border-border text-muted-foreground hover:border-muted-foreground/40 hover:bg-muted/40 hover:text-foreground"
+            {speakers.length < MAX_SPEAKERS && (
+              <button
+                type="button"
+                onClick={() => onPickSlot(speakers.length)}
+                className={cn(
+                  "flex w-full items-center gap-2 rounded-lg border-[1.5px] border-dashed px-3 py-2 text-[13px] transition-all",
+                  isActive && picking?.slotIdx === speakers.length
+                    ? "border-brand bg-brand/10 text-brand"
+                    : "border-border text-muted-foreground hover:border-muted-foreground/40 hover:bg-muted/40 hover:text-foreground"
+                )}
+              >
+                <Plus className="h-3.5 w-3.5 shrink-0" />
+                <span>Add speaker</span>
+                {isActive && picking?.slotIdx === speakers.length && (
+                  <span className="ml-auto text-[11.5px] font-medium text-brand">
+                    ← select from roster
+                  </span>
+                )}
+              </button>
             )}
-          >
-            <Plus className="h-3.5 w-3.5 shrink-0" />
-            <span>Add speaker</span>
-            {isActive && picking?.slotIdx === speakers.length && (
-              <span className="ml-auto text-[11.5px] font-medium text-brand">
-                ← select from roster
-              </span>
-            )}
-          </button>
+          </>
         )}
       </div>
     </div>
@@ -413,33 +493,93 @@ function MeetingCard({
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export function SpeakerPlannerClient() {
-  const router = useRouter()
-
   const [meetingsByDate, setMeetingsByDate] = useState<Record<string, PlannerMeetingState>>({})
   const [roster, setRoster] = useState<DirectoryPerson[]>([])
   const [rosterLoading, setRosterLoading] = useState(true)
   const [picking, setPicking] = useState<PickingState>(null)
   const [search, setSearch] = useState("")
   const searchRef = useRef<HTMLInputElement>(null)
+  const upcomingSundays = useMemo(() => getUpcomingSundays(26), [])
 
   // ── Load from localStorage ─────────────────────────────────────────────────
   useEffect(() => {
+    let isMounted = true
+
+    const applyPersistedEntries = (entries: PersistedPlannerEntry[]) => {
+      if (entries.length === 0) return
+
+      setMeetingsByDate((prev) => {
+        const next = { ...prev }
+
+        for (const entry of entries) {
+          if (!entry.meetingState) continue
+          const fallback = next[entry.meetingDate] ?? createFallbackMeetingState(entry.meetingDate)
+
+          next[entry.meetingDate] = {
+            ...fallback,
+            ...entry.meetingState,
+            specialType:
+              entry.meetingTypeOverridden || entry.meetingState.specialType !== "standard"
+                ? entry.meetingState.specialType ?? fallback.specialType
+                : getDefaultMeetingSpecialType(entry.meetingDate),
+            assignments: {
+              ...fallback.assignments,
+              ...(entry.meetingState.assignments ?? {}),
+            },
+            standardEntries: Array.isArray(entry.meetingState.standardEntries)
+              ? entry.meetingState.standardEntries
+              : fallback.standardEntries,
+            fastEntries: Array.isArray(entry.meetingState.fastEntries)
+              ? entry.meetingState.fastEntries
+              : fallback.fastEntries,
+          }
+        }
+
+        return next
+      })
+    }
+
     try {
       const raw = window.localStorage.getItem(PLANNER_DRAFT_STORAGE_KEY)
       if (raw) {
         const parsed = JSON.parse(raw) as {
           meetingsByDate?: Record<string, Partial<PlannerMeetingState>>
+          meetingTypeOverridesByDate?: Record<string, boolean>
         }
         if (parsed.meetingsByDate) {
-          setMeetingsByDate(
-            parsed.meetingsByDate as Record<string, PlannerMeetingState>
+          applyPersistedEntries(
+            Object.entries(parsed.meetingsByDate).map(([meetingDate, meetingState]) => ({
+              meetingDate,
+              meetingState,
+              meetingTypeOverridden: parsed.meetingTypeOverridesByDate?.[meetingDate],
+            }))
           )
         }
       }
     } catch {
       /* ignore */
     }
-  }, [])
+
+    const loadPersistedEntries = async () => {
+      try {
+        const response = await fetch(`/api/meetings/sacrament-planner?dates=${upcomingSundays.join(",")}`)
+        if (!response.ok) return
+
+        const payload = (await response.json()) as { entries?: PersistedPlannerEntry[] }
+        if (isMounted) {
+          applyPersistedEntries(payload.entries ?? [])
+        }
+      } catch {
+        /* local drafts remain usable if shared persistence is unavailable */
+      }
+    }
+
+    void loadPersistedEntries()
+
+    return () => {
+      isMounted = false
+    }
+  }, [upcomingSundays])
 
   // ── Load roster from Supabase ──────────────────────────────────────────────
   useEffect(() => {
@@ -489,16 +629,21 @@ export function SpeakerPlannerClient() {
   // ── Derived data ───────────────────────────────────────────────────────────
   const lastSpokeMap = useMemo(() => computeLastSpoke(meetingsByDate), [meetingsByDate])
 
-  const upcomingSundays = useMemo(() => getUpcomingSundays(26), [])
-
-  const assignableMeetings = useMemo(
+  const visibleMeetingDates = useMemo(
     () =>
-      upcomingSundays.filter(
-        (iso) =>
-          meetingsByDate[iso] &&
-          isAssignableMeeting(meetingsByDate[iso].specialType)
-      ),
+      upcomingSundays.filter((iso) => {
+        const meeting = meetingsByDate[iso] ?? createFallbackMeetingState(iso)
+        return Boolean(meeting)
+      }),
     [upcomingSundays, meetingsByDate]
+  )
+
+  const regularMeetingCount = useMemo(
+    () =>
+      visibleMeetingDates.filter((iso) =>
+        isAssignableMeeting((meetingsByDate[iso] ?? createFallbackMeetingState(iso)).specialType)
+      ).length,
+    [visibleMeetingDates, meetingsByDate]
   )
 
   const sortedRoster = useMemo(() => {
@@ -522,8 +667,7 @@ export function SpeakerPlannerClient() {
   const updateMeeting = useCallback(
     (isoDate: string, updater: (m: PlannerMeetingState) => Partial<PlannerMeetingState>) => {
       setMeetingsByDate((prev) => {
-        const meeting = prev[isoDate]
-        if (!meeting) return prev
+        const meeting = prev[isoDate] ?? createFallbackMeetingState(isoDate)
         const next = { ...prev, [isoDate]: { ...meeting, ...updater(meeting) } }
         persist(next)
         return next
@@ -614,15 +758,14 @@ export function SpeakerPlannerClient() {
   // ─── Breadcrumb ─────────────────────────────────────────────────────────────
   const breadcrumbItems = useMemo(
     () => [
-      { label: "Meetings", href: "/meetings/overview" },
-      { label: "Sacrament Meeting", href: "/meetings/sacrament-meeting/program-planner" },
+      { label: "<- Back to the Planner", href: "/meetings/sacrament-meeting/program-planner" },
       { label: "Speaker Planner" },
     ],
     []
   )
 
   return (
-    <div className="min-h-full dark:bg-card">
+    <div className="min-h-full bg-surface-canvas">
       <Breadcrumbs
         items={breadcrumbItems}
         action={
@@ -663,43 +806,35 @@ export function SpeakerPlannerClient() {
         {/* ── Left: Meeting cards ── */}
         <div className="border-b border-border/60 py-7 lg:border-b-0 lg:border-r lg:py-8">
           <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
-          {/* Back link */}
-          <button
-            type="button"
-            onClick={() => router.push("/meetings/sacrament-meeting/program-planner")}
-            className="mb-6 flex items-center gap-1.5 text-[12.5px] text-muted-foreground transition-colors hover:text-foreground"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" />
-            Back to Planner
-          </button>
-
           <div className="mb-5">
             <div className="font-serif text-[17px] text-foreground">Upcoming meetings</div>
             <div className="mt-0.5 text-[12px] text-muted-foreground">
-              {assignableMeetings.length} regular meetings · fast, stake &amp; conference excluded
+              {regularMeetingCount} regular meetings · all Sundays shown
             </div>
           </div>
 
-          {assignableMeetings.length === 0 ? (
-            <div className="py-10 text-center font-serif text-[14px] italic text-muted-foreground">
-              No upcoming regular meetings to plan.
-            </div>
-          ) : (
-            <div className="flex flex-col gap-3.5">
-              {assignableMeetings.map((iso) => (
+          <div className="flex flex-col gap-3.5">
+            {visibleMeetingDates.map((iso) => {
+              const meeting = meetingsByDate[iso] ?? createFallbackMeetingState(iso)
+              const isAssignable = isAssignableMeeting(meeting.specialType)
+
+              return (
                 <MeetingCard
                   key={iso}
                   isoDate={iso}
-                  meeting={meetingsByDate[iso]}
+                  meeting={meeting}
                   picking={picking}
                   lastSpokeMap={lastSpokeMap}
-                  onPickSlot={(slotIdx) => setPicking({ isoDate: iso, slotIdx })}
+                  onPickSlot={(slotIdx) => {
+                    if (!isAssignable) return
+                    setPicking({ isoDate: iso, slotIdx })
+                  }}
                   onRemoveSpeaker={(slotIdx) => removeSpeaker(iso, slotIdx)}
                   onUpdateTopic={(slotIdx, topic) => updateTopic(iso, slotIdx, topic)}
                 />
-              ))}
-            </div>
-          )}
+              )
+            })}
+          </div>
           </div>{/* /max-w-3xl */}
         </div>
 

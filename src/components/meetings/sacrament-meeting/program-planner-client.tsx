@@ -10,7 +10,6 @@ import {
   CircleDashed,
   CircleDot,
   Clock3,
-  Eye,
   GripVertical,
   Loader2,
   MoreHorizontal,
@@ -20,7 +19,6 @@ import {
   Search,
   Shredder,
   Trash2,
-  UserCheck,
   X,
 } from "lucide-react"
 import {
@@ -318,7 +316,17 @@ function getVisibleAgendaEntries(meeting: PlannerMeetingState) {
     : meeting.standardEntries
 }
 
+function isConferenceSpecialType(
+  specialType: MeetingSpecialType
+): specialType is Extract<MeetingSpecialType, "general-conference" | "stake-conference"> {
+  return specialType === "general-conference" || specialType === "stake-conference"
+}
+
 function getPlannerAssignmentStats(meeting: PlannerMeetingState) {
+  if (isConferenceSpecialType(meeting.specialType)) {
+    return { assignedCount: 0, optionalAssignedCount: 0, totalCount: 0 }
+  }
+
   const entries = getVisibleAgendaEntries(meeting)
   let assignedCount = 0
   let totalCount = 0
@@ -372,6 +380,10 @@ function getDerivedPlannerStatus(isoDate: string, meeting: PlannerMeetingState):
     return "done"
   }
 
+  if (isConferenceSpecialType(meeting.specialType)) {
+    return "ready"
+  }
+
   const stats = getPlannerAssignmentStats(meeting)
 
   return stats.totalCount > 0 && stats.assignedCount === stats.totalCount ? "ready" : "draft"
@@ -393,11 +405,79 @@ function getMeetingTypeLabel(specialType: MeetingSpecialType) {
 }
 
 function getDefaultMeetingTitle(specialType: MeetingSpecialType) {
-  return specialType === "standard" ? "Untitled" : getMeetingTypeLabel(specialType)
+  return specialType === "standard" ? "Sacrament Meeting" : getMeetingTypeLabel(specialType)
 }
 
 function getMeetingListTitle(meeting: PlannerMeetingState) {
-  return meeting.title.trim() || (meeting.specialType === "standard" ? "" : getMeetingTypeLabel(meeting.specialType))
+  return meeting.title.trim() || getDefaultMeetingTitle(meeting.specialType)
+}
+
+function agendaEntriesHaveUserChanges(entries: AgendaEntry[], defaultEntries: AgendaEntry[]) {
+  if (entries.length !== defaultEntries.length) {
+    return true
+  }
+
+  return entries.some((entry, index) => {
+    const defaultEntry = defaultEntries[index]
+
+    if (!defaultEntry || entry.id !== defaultEntry.id || entry.kind !== defaultEntry.kind) {
+      return true
+    }
+
+    if (entry.kind === "speaker") {
+      return Boolean(entry.speakerName.trim() || entry.topic.trim() || entry.durationMinutes)
+    }
+
+    if (entry.kind === "static") {
+      return Boolean(
+        entry.assigneeName?.trim() ||
+          entry.hymnId ||
+          entry.hymnNumber ||
+          entry.hymnTitle?.trim()
+      )
+    }
+
+    return false
+  })
+}
+
+function meetingHasUserChanges(
+  isoDate: string,
+  meeting: PlannerMeetingState,
+  meetingTypeOverridesByDate: Record<string, boolean>,
+  defaultLanguage: Lang
+) {
+  const defaultMeeting = createInitialMeetingState(isoDate, defaultLanguage)
+
+  return Boolean(
+    meeting.title.trim() ||
+      meetingTypeOverridesByDate[isoDate] ||
+      meeting.specialType !== defaultMeeting.specialType ||
+      Object.values(meeting.assignments).some((assignment) => assignment.trim()) ||
+      Object.values(meeting.sacramentAssignments).some((assignments) =>
+        assignments.some((person) => person.trim())
+      ) ||
+      agendaEntriesHaveUserChanges(meeting.standardEntries, defaultMeeting.standardEntries) ||
+      agendaEntriesHaveUserChanges(meeting.fastEntries, defaultMeeting.fastEntries)
+  )
+}
+
+function plannerNotesHaveUserChanges(notes: PlannerNotes | undefined) {
+  if (!notes) return false
+
+  return Boolean(
+    notes.notes.trim() ||
+      notes.announcements.length > 0 ||
+      notes.business.length > 0
+  )
+}
+
+type PersistedPlannerEntry = {
+  meetingDate: string
+  meetingState?: Partial<PlannerMeetingState>
+  notesState?: PlannerNotes
+  meetingTypeOverridden?: boolean
+  updatedAt?: string
 }
 
 type EditableMeetingTitleProps = {
@@ -441,6 +521,31 @@ function PlannerStatusBadge({ status }: PlannerStatusBadgeProps) {
       <Icon className="h-3 w-3" />
       {getPlannerStatusLabel(status)}
     </div>
+  )
+}
+
+function PlannerStatusIcon({ status }: PlannerStatusBadgeProps) {
+  const Icon = status === "ready" ? CircleDot : status === "done" ? CircleCheckBig : CircleDashed
+  const label = getPlannerStatusLabel(status)
+
+  return (
+    <span
+      title={label}
+      aria-label={label}
+      className="inline-flex shrink-0"
+    >
+      <Icon
+        aria-hidden="true"
+        className={cn(
+          "h-3.5 w-3.5",
+          status === "ready"
+            ? "text-emerald-600 dark:text-emerald-400"
+            : status === "done"
+              ? "text-stone-500 dark:text-stone-400"
+              : "text-amber-600 dark:text-amber-400"
+        )}
+      />
+    </span>
   )
 }
 
@@ -663,11 +768,18 @@ function PlannerTabs({ activeTab, onTabChange }: PlannerTabsProps) {
 type HorizonPanelProps = {
   sundays: PlannerSunday[]
   meetingsByDate: Record<string, PlannerMeetingState>
+  meetingTypeOverridesByDate: Record<string, boolean>
   defaultLanguage: Lang
   onOpen: (isoDate: string) => void
 }
 
-function HorizonPanel({ sundays, meetingsByDate, defaultLanguage, onOpen }: HorizonPanelProps) {
+function HorizonPanel({
+  sundays,
+  meetingsByDate,
+  meetingTypeOverridesByDate,
+  defaultLanguage,
+  onOpen,
+}: HorizonPanelProps) {
   return (
     <div className="px-6 py-6">
       <p className="mb-5 max-w-xl text-[13.5px] leading-6 text-muted-foreground">
@@ -680,6 +792,12 @@ function HorizonPanel({ sundays, meetingsByDate, defaultLanguage, onOpen }: Hori
             createInitialMeetingState(sunday.isoDate, defaultLanguage)
           const speakers = getHorizonSpeakers(meeting)
           const title = getMeetingListTitle(meeting)
+          const hasUserChanges = meetingHasUserChanges(
+            sunday.isoDate,
+            meeting,
+            meetingTypeOverridesByDate,
+            defaultLanguage
+          )
           const kind = getUpcomingMeetingKind(meeting)
 
           return (
@@ -692,8 +810,13 @@ function HorizonPanel({ sundays, meetingsByDate, defaultLanguage, onOpen }: Hori
               <div className="text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
                 {sunday.dayLabel} · {sunday.dateLabel}
               </div>
-              <div className="mt-1 font-serif text-[22px] leading-tight text-foreground">
-                {title ? title : <span className="text-[15px] italic text-muted-foreground">Untitled</span>}
+              <div
+                className={cn(
+                  "mt-1 font-serif text-[22px] italic leading-tight",
+                  hasUserChanges ? "text-foreground" : "text-muted-foreground"
+                )}
+              >
+                {title}
               </div>
               <div className="mt-4 flex flex-col gap-1">
                 {meeting.specialType !== "standard" ? (
@@ -741,6 +864,63 @@ function NotesPanel({ notes, onNotesChange }: NotesPanelProps) {
           value={notes.notes}
           onChange={(event) => onNotesChange(event.target.value)}
         />
+      </div>
+    </div>
+  )
+}
+
+type ConferencePlaceholderProps = {
+  type: MeetingSpecialType
+}
+
+function ConferencePlaceholder({ type }: ConferencePlaceholderProps) {
+  const isGeneralConference = type === "general-conference"
+  const title = isGeneralConference ? "General Conference" : "Stake Conference"
+  const detail = isGeneralConference
+    ? "No local sacrament meeting program is needed for this Sunday."
+    : "This Sunday is reserved for stake conference sessions."
+
+  return (
+    <div className="px-6 py-6">
+      <div className="relative min-h-[540px] overflow-hidden rounded-2xl border border-border/70 bg-surface-raised shadow-sm">
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage:
+              "linear-gradient(180deg, hsl(var(--background) / 0.08), hsl(var(--surface-raised) / 0.82) 72%, hsl(var(--surface-canvas) / 0.96)), linear-gradient(118deg, hsl(var(--brand) / 0.22) 0%, transparent 38%), linear-gradient(244deg, hsl(var(--accent-warm) / 0.58) 0%, transparent 44%), linear-gradient(180deg, hsl(var(--surface-canvas)), hsl(var(--surface-raised)))",
+          }}
+        />
+        <div
+          className="absolute inset-0 opacity-[0.34] mix-blend-multiply dark:mix-blend-screen"
+          style={{
+            backgroundImage:
+              "repeating-linear-gradient(0deg, hsl(var(--foreground) / 0.055) 0 1px, transparent 1px 7px), repeating-linear-gradient(90deg, hsl(var(--background) / 0.16) 0 1px, transparent 1px 9px)",
+          }}
+        />
+        <div className="absolute inset-x-0 top-0 h-44 bg-[linear-gradient(180deg,hsl(var(--background)/0.52),transparent)]" />
+        <div className="absolute -left-20 top-12 h-[520px] w-80 rotate-12 bg-[linear-gradient(90deg,transparent,hsl(var(--background)/0.28),transparent)] blur-xl" />
+        <div className="absolute left-1/4 top-0 h-[620px] w-36 rotate-[18deg] bg-[linear-gradient(90deg,transparent,hsl(var(--brand)/0.16),transparent)] blur-lg" />
+        <div className="absolute right-6 top-[-80px] h-[620px] w-44 rotate-[-16deg] bg-[linear-gradient(90deg,transparent,hsl(var(--accent-warm)/0.42),transparent)] blur-xl" />
+        <div className="absolute inset-x-8 bottom-0 h-40 bg-[linear-gradient(0deg,hsl(var(--surface-canvas)/0.78),transparent)]" />
+        <div className="absolute bottom-0 left-0 right-0 h-48">
+          <div className="absolute bottom-0 left-[-4%] h-28 w-[46%] skew-x-[-18deg] rounded-t-[4rem] bg-background/35 shadow-[0_-1px_0_hsl(var(--border)/0.45)]" />
+          <div className="absolute bottom-0 left-[28%] h-36 w-[42%] skew-x-[12deg] rounded-t-[5rem] bg-card/42 shadow-[0_-1px_0_hsl(var(--border)/0.45)]" />
+        </div>
+
+        <div className="relative flex min-h-[540px] items-end px-6 py-6 sm:px-8 sm:py-8">
+          <div className="max-w-xl pb-3">
+            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-border/70 bg-background/70 px-3 py-1 text-xs font-medium text-muted-foreground shadow-sm backdrop-blur">
+              <CalendarDays className="h-3.5 w-3.5 text-brand" />
+              Conference Sunday
+            </div>
+            <h2 className="font-serif text-4xl font-normal tracking-normal text-foreground sm:text-5xl">
+              {title}
+            </h2>
+            <p className="mt-3 max-w-md text-sm leading-6 text-muted-foreground">
+              {detail}
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   )
@@ -866,17 +1046,32 @@ function getStaticEntry(entries: AgendaEntry[], id: string) {
 
 type OpeningSectionProps = {
   entries: AgendaEntry[]
+  announcements: PlannerItem[]
+  business: PlannerItem[]
   onPickHymn: (entryId: string) => void
   onPickPrayer: (entryId: string, field: AgendaAssigneeField) => void
+  onAnnouncementsChange: (items: PlannerItem[]) => void
+  onBusinessChange: (items: PlannerItem[]) => void
 }
 
-function OpeningSection({ entries, onPickHymn, onPickPrayer }: OpeningSectionProps) {
+function OpeningSection({
+  entries,
+  announcements,
+  business,
+  onPickHymn,
+  onPickPrayer,
+  onAnnouncementsChange,
+  onBusinessChange,
+}: OpeningSectionProps) {
+  const [announcementsModalOpen, setAnnouncementsModalOpen] = useState(false)
+  const [businessModalOpen, setBusinessModalOpen] = useState(false)
   const openingHymn = getStaticEntry(entries, "opening-hymn")
   const invocation = getStaticEntry(entries, "invocation")
 
   return (
     <div>
       <SectionHeader label="Opening" number="02" />
+      <ItemsRow type="Announcements" items={announcements} onClick={() => setAnnouncementsModalOpen(true)} />
       {openingHymn ? (
         <HymnPlanningRow
           type="Opening hymn"
@@ -892,6 +1087,55 @@ function OpeningSection({ entries, onPickHymn, onPickPrayer }: OpeningSectionPro
           onClick={() => onPickPrayer(invocation.id, "invocation")}
         />
       ) : null}
+      <ItemsRow type="Business" items={business} onClick={() => setBusinessModalOpen(true)} />
+      <ItemsPickerModal
+        open={announcementsModalOpen}
+        onOpenChange={setAnnouncementsModalOpen}
+        title="Announcements"
+        items={announcements}
+        onChange={onAnnouncementsChange}
+        addTrigger={
+          <AnnouncementSelectorPopover
+            onSelect={(selected) => {
+              const newItems = selected
+                .filter((a) => !announcements.some((item) => item.id === a.id))
+                .map((a) => ({ id: a.id, title: a.title, checked: true }))
+              if (newItems.length) onAnnouncementsChange([...announcements, ...newItems])
+            }}
+          >
+            <Button type="button" variant="outline" size="sm" className="w-full">
+              <Plus className="h-3.5 w-3.5" />
+              Add announcements
+            </Button>
+          </AnnouncementSelectorPopover>
+        }
+      />
+      <ItemsPickerModal
+        open={businessModalOpen}
+        onOpenChange={setBusinessModalOpen}
+        title="Business"
+        items={business}
+        onChange={onBusinessChange}
+        addTrigger={
+          <BusinessSelectorPopover
+            onSelect={(selected) => {
+              const newItems = selected
+                .filter((b) => !business.some((item) => item.id === b.id))
+                .map((b) => ({
+                  id: b.id,
+                  title: `${b.person_name}${b.position_calling ? ` – ${b.position_calling}` : ""}`,
+                  checked: true,
+                }))
+              if (newItems.length) onBusinessChange([...business, ...newItems])
+            }}
+          >
+            <Button type="button" variant="outline" size="sm" className="w-full">
+              <Plus className="h-3.5 w-3.5" />
+              Add business items
+            </Button>
+          </BusinessSelectorPopover>
+        }
+      />
     </div>
   )
 }
@@ -1015,79 +1259,6 @@ function ItemsPickerModal({
         </div>
       </DialogContent>
     </Dialog>
-  )
-}
-
-type AnnouncementsAndBusinessSectionProps = {
-  announcements: PlannerItem[]
-  business: PlannerItem[]
-  onAnnouncementsChange: (items: PlannerItem[]) => void
-  onBusinessChange: (items: PlannerItem[]) => void
-}
-
-function AnnouncementsAndBusinessSection({
-  announcements,
-  business,
-  onAnnouncementsChange,
-  onBusinessChange,
-}: AnnouncementsAndBusinessSectionProps) {
-  const [announcementsModalOpen, setAnnouncementsModalOpen] = useState(false)
-  const [businessModalOpen, setBusinessModalOpen] = useState(false)
-
-  return (
-    <div>
-      <SectionHeader label="Announcements & business" number="03" />
-      <ItemsRow type="Announcements" items={announcements} onClick={() => setAnnouncementsModalOpen(true)} />
-      <ItemsRow type="Business" items={business} onClick={() => setBusinessModalOpen(true)} />
-      <ItemsPickerModal
-        open={announcementsModalOpen}
-        onOpenChange={setAnnouncementsModalOpen}
-        title="Announcements"
-        items={announcements}
-        onChange={onAnnouncementsChange}
-        addTrigger={
-          <AnnouncementSelectorPopover
-            onSelect={(selected) => {
-              const newItems = selected
-                .filter((a) => !announcements.some((item) => item.id === a.id))
-                .map((a) => ({ id: a.id, title: a.title, checked: true }))
-              if (newItems.length) onAnnouncementsChange([...announcements, ...newItems])
-            }}
-          >
-            <Button type="button" variant="outline" size="sm" className="w-full">
-              <Plus className="h-3.5 w-3.5" />
-              Add announcements
-            </Button>
-          </AnnouncementSelectorPopover>
-        }
-      />
-      <ItemsPickerModal
-        open={businessModalOpen}
-        onOpenChange={setBusinessModalOpen}
-        title="Business"
-        items={business}
-        onChange={onBusinessChange}
-        addTrigger={
-          <BusinessSelectorPopover
-            onSelect={(selected) => {
-              const newItems = selected
-                .filter((b) => !business.some((item) => item.id === b.id))
-                .map((b) => ({
-                  id: b.id,
-                  title: `${b.person_name}${b.position_calling ? ` – ${b.position_calling}` : ""}`,
-                  checked: true,
-                }))
-              if (newItems.length) onBusinessChange([...business, ...newItems])
-            }}
-          >
-            <Button type="button" variant="outline" size="sm" className="w-full">
-              <Plus className="h-3.5 w-3.5" />
-              Add business items
-            </Button>
-          </BusinessSelectorPopover>
-        }
-      />
-    </div>
   )
 }
 
@@ -1513,6 +1684,7 @@ function MusicPlanningRow({ entry, onPickHymn, onDeleteStaticEntry }: MusicPlann
 type UpcomingPanelProps = {
   sundays: PlannerSunday[]
   meetingsByDate: Record<string, PlannerMeetingState>
+  meetingTypeOverridesByDate: Record<string, boolean>
   selectedIsoDate: string
   defaultLanguage: Lang
   jumpDate: Date | undefined
@@ -1528,6 +1700,7 @@ type UpcomingPanelProps = {
 function UpcomingPanel({
   sundays,
   meetingsByDate,
+  meetingTypeOverridesByDate,
   selectedIsoDate,
   defaultLanguage,
   jumpDate,
@@ -1554,8 +1727,15 @@ function UpcomingPanel({
           const dateParts = getUpcomingDateParts(sunday.isoDate)
           const isSelected = sunday.isoDate === selectedIsoDate
           const title = getMeetingListTitle(meeting)
+          const hasUserChanges = meetingHasUserChanges(
+            sunday.isoDate,
+            meeting,
+            meetingTypeOverridesByDate,
+            defaultLanguage
+          )
           const kind = getUpcomingMeetingKind(meeting)
           const conductor = meeting.assignments.conductor.trim()
+          const status = getDerivedPlannerStatus(sunday.isoDate, meeting)
 
           return (
             <button
@@ -1582,8 +1762,15 @@ function UpcomingPanel({
               </div>
 
               <div className="min-w-0">
-                <div className="truncate text-[13px] text-foreground">
-                  {title ? title : <span className="font-serif italic text-muted-foreground">Untitled</span>}
+                <div
+                  className={cn(
+                    "truncate font-serif text-[13px] italic",
+                    hasUserChanges || isConferenceSpecialType(meeting.specialType)
+                      ? "text-foreground"
+                      : "text-muted-foreground"
+                  )}
+                >
+                  {title}
                 </div>
                 <div className="mt-1 flex min-w-0 items-center gap-1.5 text-[11.5px] text-muted-foreground">
                   <span
@@ -1594,6 +1781,7 @@ function UpcomingPanel({
                   >
                     {kind.label}
                   </span>
+                  <PlannerStatusIcon status={status} />
                   {conductor ? <span className="truncate">· {conductor}</span> : null}
                 </div>
               </div>
@@ -1602,10 +1790,10 @@ function UpcomingPanel({
         })}
       </div>
 
-      <div className="px-2 pb-2 pt-1">
+      <div className="grid grid-cols-[1fr_auto] gap-2 px-2 pb-2 pt-1">
         <Popover open={jumpPopoverOpen} onOpenChange={onJumpPopoverOpenChange}>
           <PopoverTrigger asChild>
-            <Button variant="outline" className="w-full justify-start gap-2">
+            <Button variant="outline" className="h-9 w-full justify-start gap-2">
               <CalendarDays className="h-4 w-4" />
               Jump to date
             </Button>
@@ -1622,10 +1810,10 @@ function UpcomingPanel({
         {visibleSundayCount < sundayCount ? (
           <Button
             variant="ghost"
-            className="mt-2 w-full justify-center"
+            className="h-9 px-3"
             onClick={onShowMore}
           >
-            Show more Sundays
+            Show more
           </Button>
         ) : null}
       </div>
@@ -1681,6 +1869,7 @@ export function SacramentMeetingPlannerClient({
     createInitialMeetingState(selectedSunday.isoDate, defaultLanguageRef.current)
   const visibleEntries = getVisibleAgendaEntries(selectedMeeting)
   const selectedMeetingTitlePlaceholder = getDefaultMeetingTitle(selectedMeeting.specialType)
+  const selectedMeetingIsConference = isConferenceSpecialType(selectedMeeting.specialType)
   const selectedMeetingStats = getPlannerAssignmentStats(selectedMeeting)
   const selectedPlannerStatus = getDerivedPlannerStatus(selectedSunday.isoDate, selectedMeeting)
   const visibleSundays = sundays.slice(0, visibleSundayCount)
@@ -1850,88 +2039,118 @@ export function SacramentMeetingPlannerClient({
   }, [sundays])
 
   useEffect(() => {
-    try {
-      const raw = window.localStorage.getItem(PLANNER_DRAFT_STORAGE_KEY)
-      if (!raw) {
-        hasLoadedDraftRef.current = true
-        return
-      }
+    let isMounted = true
 
-      const parsed = JSON.parse(raw) as {
-        meetingsByDate?: Record<string, Partial<PlannerMeetingState>>
-        notesByDate?: Record<string, PlannerNotes>
-        meetingTypeOverridesByDate?: Record<string, boolean>
-        savedAt?: string
-      }
+    const applyPersistedEntries = (entries: PersistedPlannerEntry[]) => {
+      if (entries.length === 0) return
 
-      const meetingTypeOverrides = parsed.meetingTypeOverridesByDate ?? {}
+      const entriesByDate = Object.fromEntries(entries.map((entry) => [entry.meetingDate, entry]))
 
-      if (parsed.meetingsByDate) {
-        setMeetingsByDate((prev) => {
-          const next = { ...prev }
+      setMeetingsByDate((prev) => {
+        const next = { ...prev }
 
-          for (const sunday of sundays) {
-            const savedMeeting = parsed.meetingsByDate?.[sunday.isoDate]
-            if (!savedMeeting) continue
+        for (const sunday of sundays) {
+          const persistedEntry = entriesByDate[sunday.isoDate]
+          const savedMeeting = persistedEntry?.meetingState
+          if (!savedMeeting) continue
 
-            next[sunday.isoDate] = {
-              ...prev[sunday.isoDate],
-              ...savedMeeting,
-              specialType:
-                meetingTypeOverrides[sunday.isoDate] || savedMeeting.specialType !== "standard"
-                  ? savedMeeting.specialType ?? prev[sunday.isoDate].specialType
-                  : getDefaultMeetingSpecialType(sunday.isoDate),
-              assignments: {
-                ...prev[sunday.isoDate].assignments,
-                ...(savedMeeting.assignments ?? {}),
-              },
-              sacramentAssignments: {
-                ...prev[sunday.isoDate].sacramentAssignments,
-                ...(savedMeeting.sacramentAssignments ?? {}),
-              },
-              standardEntries: Array.isArray(savedMeeting.standardEntries)
-                ? translateEntries(savedMeeting.standardEntries as AgendaEntry[], defaultLanguageRef.current)
-                : prev[sunday.isoDate].standardEntries,
-              fastEntries: Array.isArray(savedMeeting.fastEntries)
-                ? translateEntries(savedMeeting.fastEntries as AgendaEntry[], defaultLanguageRef.current)
-                : prev[sunday.isoDate].fastEntries,
-            }
-          }
-
-          return next
-        })
-      }
-
-      if (parsed.notesByDate) {
-        // Migrate old string format to new PlannerItem[] format
-        // Mark all saved dates as initialized — user previously managed that data
-        const migratedNotes: Record<string, PlannerNotes> = {}
-        for (const [date, savedNotes] of Object.entries(parsed.notesByDate)) {
-          migratedNotes[date] = {
-            announcements: Array.isArray(savedNotes.announcements) ? savedNotes.announcements : [],
-            business: Array.isArray((savedNotes as unknown as Record<string, unknown>).business)
-              ? ((savedNotes as unknown as Record<string, unknown>).business as PlannerItem[])
-              : [],
-            notes: savedNotes.notes,
-            initialized: true,
+          next[sunday.isoDate] = {
+            ...prev[sunday.isoDate],
+            ...savedMeeting,
+            specialType:
+              persistedEntry.meetingTypeOverridden || savedMeeting.specialType !== "standard"
+                ? savedMeeting.specialType ?? prev[sunday.isoDate].specialType
+                : getDefaultMeetingSpecialType(sunday.isoDate),
+            assignments: {
+              ...prev[sunday.isoDate].assignments,
+              ...(savedMeeting.assignments ?? {}),
+            },
+            sacramentAssignments: {
+              ...prev[sunday.isoDate].sacramentAssignments,
+              ...(savedMeeting.sacramentAssignments ?? {}),
+            },
+            standardEntries: Array.isArray(savedMeeting.standardEntries)
+              ? translateEntries(savedMeeting.standardEntries as AgendaEntry[], defaultLanguageRef.current)
+              : prev[sunday.isoDate].standardEntries,
+            fastEntries: Array.isArray(savedMeeting.fastEntries)
+              ? translateEntries(savedMeeting.fastEntries as AgendaEntry[], defaultLanguageRef.current)
+              : prev[sunday.isoDate].fastEntries,
           }
         }
-        setNotesByDate(migratedNotes)
+
+        return next
+      })
+
+      const nextNotes: Record<string, PlannerNotes> = {}
+      const nextOverrides: Record<string, boolean> = {}
+
+      for (const entry of entries) {
+        if (entry.notesState) {
+          nextNotes[entry.meetingDate] = {
+            announcements: Array.isArray(entry.notesState.announcements) ? entry.notesState.announcements : [],
+            business: Array.isArray(entry.notesState.business) ? entry.notesState.business : [],
+            notes: entry.notesState.notes ?? "",
+            initialized: entry.notesState.initialized ?? true,
+          }
+        }
+        nextOverrides[entry.meetingDate] = Boolean(entry.meetingTypeOverridden)
       }
 
-      if (parsed.meetingTypeOverridesByDate) {
-        setMeetingTypeOverridesByDate(parsed.meetingTypeOverridesByDate)
+      if (Object.keys(nextNotes).length > 0) {
+        setNotesByDate((prev) => ({ ...prev, ...nextNotes }))
       }
+      setMeetingTypeOverridesByDate((prev) => ({ ...prev, ...nextOverrides }))
+    }
 
-      if (parsed.savedAt) {
-        setLastSavedAt(new Date(parsed.savedAt))
-        setAutosaveStatus("saved")
+    const loadDraft = async () => {
+      try {
+        const raw = window.localStorage.getItem(PLANNER_DRAFT_STORAGE_KEY)
+
+        if (raw) {
+          const parsed = JSON.parse(raw) as {
+            meetingsByDate?: Record<string, Partial<PlannerMeetingState>>
+            notesByDate?: Record<string, PlannerNotes>
+            meetingTypeOverridesByDate?: Record<string, boolean>
+            savedAt?: string
+          }
+
+          const localEntries: PersistedPlannerEntry[] = sundays
+            .map((sunday) => ({
+              meetingDate: sunday.isoDate,
+              meetingState: parsed.meetingsByDate?.[sunday.isoDate],
+              notesState: parsed.notesByDate?.[sunday.isoDate],
+              meetingTypeOverridden: parsed.meetingTypeOverridesByDate?.[sunday.isoDate],
+            }))
+            .filter((entry) => entry.meetingState || entry.notesState || typeof entry.meetingTypeOverridden === "boolean")
+
+          applyPersistedEntries(localEntries)
+
+          if (parsed.savedAt) {
+            setLastSavedAt(new Date(parsed.savedAt))
+            setAutosaveStatus("saved")
+          }
+        }
+
+        const response = await fetch(`/api/meetings/sacrament-planner?dates=${sundays.map((sunday) => sunday.isoDate).join(",")}`)
+        if (response.ok) {
+          const payload = (await response.json()) as { entries?: PersistedPlannerEntry[] }
+          if (isMounted) {
+            applyPersistedEntries(payload.entries ?? [])
+          }
+        }
+      } catch {
+        // Local browser drafts remain usable if shared persistence is unavailable.
+      } finally {
+        if (isMounted) {
+          hasLoadedDraftRef.current = true
+        }
       }
-    } catch (error) {
-      console.error("Failed to load planner draft:", error)
-      setAutosaveStatus("error")
-    } finally {
-      hasLoadedDraftRef.current = true
+    }
+
+    void loadDraft()
+
+    return () => {
+      isMounted = false
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sundays])
@@ -1941,7 +2160,7 @@ export function SacramentMeetingPlannerClient({
       return
     }
 
-    const saveDraft = () => {
+    const saveDraft = async () => {
       try {
         setAutosaveStatus("saving")
         const payload = {
@@ -1951,10 +2170,47 @@ export function SacramentMeetingPlannerClient({
           savedAt: new Date().toISOString(),
         }
         window.localStorage.setItem(PLANNER_DRAFT_STORAGE_KEY, JSON.stringify(payload))
+
+        const entries = sundays
+          .map((sunday) => {
+            const meeting = meetingsByDate[sunday.isoDate]
+            const notes = notesByDate[sunday.isoDate]
+            const meetingTypeOverridden = Boolean(meetingTypeOverridesByDate[sunday.isoDate])
+
+            if (
+              !meeting ||
+              (!meetingHasUserChanges(sunday.isoDate, meeting, meetingTypeOverridesByDate, defaultLanguageRef.current) &&
+                !plannerNotesHaveUserChanges(notes))
+            ) {
+              return null
+            }
+
+            return {
+              meetingDate: sunday.isoDate,
+              meetingState: meeting,
+              notesState: notes ?? { announcements: [], business: [], notes: "", initialized: false },
+              meetingTypeOverridden,
+            }
+          })
+          .filter((entry): entry is NonNullable<typeof entry> => Boolean(entry))
+
+        try {
+          await fetch("/api/meetings/sacrament-planner", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              dates: sundays.map((sunday) => sunday.isoDate),
+              entries,
+            }),
+          })
+        } catch {
+          // Local browser drafts remain usable if shared persistence is unavailable.
+        }
+
         setLastSavedAt(new Date())
         setAutosaveStatus("saved")
       } catch (error) {
-        console.error("Failed to save planner draft:", error)
+        console.warn("Planner draft saved locally, but shared persistence is unavailable:", error)
         setAutosaveStatus("error")
       }
     }
@@ -1971,7 +2227,7 @@ export function SacramentMeetingPlannerClient({
         clearTimeout(autosaveTimeoutRef.current)
         autosaveTimeoutRef.current = null
       }
-      saveDraft()
+      void saveDraft()
     }
 
     const flushOnHide = () => { if (document.visibilityState === "hidden") flushDraft() }
@@ -1989,7 +2245,7 @@ export function SacramentMeetingPlannerClient({
       window.removeEventListener("beforeunload", flushDraft)
       document.removeEventListener("visibilitychange", flushOnHide)
     }
-  }, [meetingsByDate, meetingTypeOverridesByDate, notesByDate])
+  }, [meetingsByDate, meetingTypeOverridesByDate, notesByDate, sundays])
 
   useEffect(() => {
     const selectedDate = searchParams.get("date")
@@ -2415,27 +2671,25 @@ export function SacramentMeetingPlannerClient({
         items={breadcrumbItems}
         action={
           <div className="flex items-center gap-2">
-            <Button type="button" variant="ghost" size="sm" onClick={() => router.push("/meetings/sacrament-meeting/speaker-planner")}>
-              <UserCheck className="h-3.5 w-3.5" />
+            <Button type="button" variant="ghost" size="sm" onClick={() => router.push("/meetings/sacrament-meeting/speaker-planner")} className="bg-surface-raised border border-border">
               Speakers
-              <kbd className="ml-1 hidden rounded border border-border bg-muted px-1 py-0.5 font-mono text-[10px] text-muted-foreground sm:inline">⌥S</kbd>
+              <kbd className="ml-1 hidden rounded border border-border bg-surface-sunken px-1 py-0.5 font-mono text-[10px] text-muted-foreground sm:inline">⌥S</kbd>
             </Button>
-            <Button type="button" variant="ghost" size="sm" onClick={() => setAudienceOpen(true)}>
-              <Eye className="h-3.5 w-3.5" />
+            <Button type="button" variant="ghost" size="sm" onClick={() => setAudienceOpen(true)} className="bg-surface-raised border border-border">
               Audience
-              <kbd className="ml-1 hidden rounded border border-border bg-muted px-1 py-0.5 font-mono text-[10px] text-muted-foreground sm:inline">⌥A</kbd>
+              <kbd className="ml-1 hidden rounded border border-border bg-surface-sunken px-1 py-0.5 font-mono text-[10px] text-muted-foreground sm:inline">⌥A</kbd>
             </Button>
-            <Button type="button" variant="outline" size="sm" onClick={() => setConductOpen(true)}>
+            <Button type="button" variant="outline" size="sm" onClick={() => setConductOpen(true)} className="bg-primary text-primary-foreground border-primary hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/80">
               <Play className="h-3.5 w-3.5" />
               Conduct
-              <kbd className="ml-1 hidden rounded border border-border bg-muted px-1 py-0.5 font-mono text-[10px] text-muted-foreground sm:inline">⌥C</kbd>
+              <kbd className="ml-1 hidden rounded border border-border bg-surface-sunken px-1 py-0.5 font-mono text-[10px] text-muted-foreground sm:inline">⌥C</kbd>
             </Button>
           </div>
         }
       />
       <div className="mx-auto flex w-full max-w-7xl flex-col px-4 py-6 sm:px-6 lg:px-8">
-        <section className="rounded-2xl border border-transparent bg-card">
-          <div className="border-b border-border/60 bg-card px-6 py-5">
+        <section className="rounded-2xl border border-transparent bg-surface-canvas">
+          <div className="border-b border-border/60 bg-surface-canvas px-6 py-5">
                 <div className="flex flex-col gap-0">
                   <div>
                     <div className="text-[13px] text-muted-foreground">
@@ -2458,18 +2712,20 @@ export function SacramentMeetingPlannerClient({
                       <div className="text-xs text-muted-foreground">
                         {autosaveLabel}
                       </div>
-                      <div className="inline-flex items-center gap-2 text-xs font-medium text-muted-foreground">
-                        {selectedMeetingStats.totalCount > 0 &&
-                        selectedMeetingStats.assignedCount === selectedMeetingStats.totalCount ? (
-                          <CircleCheck className="h-3.5 w-3.5 text-emerald-600" />
-                        ) : null}
-                        <span>
-                          {selectedMeetingStats.assignedCount}/{selectedMeetingStats.totalCount} assigned
-                          {selectedMeetingStats.optionalAssignedCount > 0
-                            ? ` · ${selectedMeetingStats.optionalAssignedCount} optional`
-                            : null}
-                        </span>
-                      </div>
+                      {!selectedMeetingIsConference ? (
+                        <div className="inline-flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                          {selectedMeetingStats.totalCount > 0 &&
+                          selectedMeetingStats.assignedCount === selectedMeetingStats.totalCount ? (
+                            <CircleCheck className="h-3.5 w-3.5 text-emerald-600" />
+                          ) : null}
+                          <span>
+                            {selectedMeetingStats.assignedCount}/{selectedMeetingStats.totalCount} assigned
+                            {selectedMeetingStats.optionalAssignedCount > 0
+                              ? ` · ${selectedMeetingStats.optionalAssignedCount} optional`
+                              : null}
+                          </span>
+                        </div>
+                      ) : null}
                     </div>
                     <AlertDialog open={clearDialogOpen} onOpenChange={setClearDialogOpen}>
                       <DropdownMenu>
@@ -2523,125 +2779,130 @@ export function SacramentMeetingPlannerClient({
               {activeTab === "meeting" ? (
                 <div className="grid items-start gap-9 xl:grid-cols-[1fr_320px]">
                   <div>
-                  <div className="border-b border-border/60 px-6 py-5">
-                    <div className="flex flex-col gap-5">
-                      <PresidencyAndMusicSection
-                        assignments={selectedMeeting.assignments}
-                        onSelect={(field) =>
-                          handleOpenDirectoryPicker({
-                            type: "assignment",
-                            field,
-                          })
-                        }
-                      />
-                      <OpeningSection
-                        entries={visibleEntries}
-                        onPickHymn={handleOpenHymnPicker}
-                        onPickPrayer={(entryId, field) =>
-                          handleOpenDirectoryPicker({
-                            type: "agenda-assignee",
-                            entryId,
-                            field,
-                          })
-                        }
-                      />
-                      <AnnouncementsAndBusinessSection
-                        announcements={selectedNotes.announcements}
-                        business={selectedNotes.business}
-                        onAnnouncementsChange={handleAnnouncementsChange}
-                        onBusinessChange={handleBusinessChange}
-                      />
-                      <SacramentSection
-                        entries={visibleEntries}
-                        assignments={selectedMeeting.sacramentAssignments}
-                        onPickHymn={handleOpenHymnPicker}
-                        onAssign={(role) =>
-                          handleOpenDirectoryPicker({
-                            type: "sacrament-assignment",
-                            role,
-                          })
-                        }
-                        onRemove={handleRemoveSacramentAssignment}
-                      />
-                      <SpeakersAndMusicSection
-                        entries={visibleEntries}
-                        isFastTestimony={selectedMeeting.specialType === "fast-testimony"}
-                        onSelectSpeaker={(entryId) =>
-                          handleOpenDirectoryPicker({
-                            type: "speaker",
-                            entryId,
-                          })
-                        }
-                        onSpeakerFieldChange={handleSpeakerFieldChange}
-                        onDeleteSpeaker={handleDeleteSpeaker}
-                        onPickHymn={handleOpenHymnPicker}
-                        onDeleteStaticEntry={handleDeleteStaticEntry}
-                        onAddSpeaker={handleAddSpeaker}
-                        onAddIntermediateHymn={handleAddIntermediateHymn}
-                        onAddSpecialNumber={handleAddSpecialNumber}
-                      />
-                      <ClosingSection
-                        entries={visibleEntries}
-                        onPickHymn={handleOpenHymnPicker}
-                        onPickPrayer={(entryId, field) =>
-                          handleOpenDirectoryPicker({
-                            type: "agenda-assignee",
-                            entryId,
-                            field,
-                          })
-                        }
-                      />
-                    </div>
-                  </div>
+                    {selectedMeetingIsConference ? (
+                      <ConferencePlaceholder type={selectedMeeting.specialType} />
+                    ) : (
+                      <>
+                        <div className="border-b border-border/60 px-6 py-5">
+                          <div className="flex flex-col gap-5">
+                            <PresidencyAndMusicSection
+                              assignments={selectedMeeting.assignments}
+                              onSelect={(field) =>
+                                handleOpenDirectoryPicker({
+                                  type: "assignment",
+                                  field,
+                                })
+                              }
+                            />
+                            <OpeningSection
+                              entries={visibleEntries}
+                              announcements={selectedNotes.announcements}
+                              business={selectedNotes.business}
+                              onPickHymn={handleOpenHymnPicker}
+                              onPickPrayer={(entryId, field) =>
+                                handleOpenDirectoryPicker({
+                                  type: "agenda-assignee",
+                                  entryId,
+                                  field,
+                                })
+                              }
+                              onAnnouncementsChange={handleAnnouncementsChange}
+                              onBusinessChange={handleBusinessChange}
+                            />
+                            <SacramentSection
+                              entries={visibleEntries}
+                              assignments={selectedMeeting.sacramentAssignments}
+                              onPickHymn={handleOpenHymnPicker}
+                              onAssign={(role) =>
+                                handleOpenDirectoryPicker({
+                                  type: "sacrament-assignment",
+                                  role,
+                                })
+                              }
+                              onRemove={handleRemoveSacramentAssignment}
+                            />
+                            <SpeakersAndMusicSection
+                              entries={visibleEntries}
+                              isFastTestimony={selectedMeeting.specialType === "fast-testimony"}
+                              onSelectSpeaker={(entryId) =>
+                                handleOpenDirectoryPicker({
+                                  type: "speaker",
+                                  entryId,
+                                })
+                              }
+                              onSpeakerFieldChange={handleSpeakerFieldChange}
+                              onDeleteSpeaker={handleDeleteSpeaker}
+                              onPickHymn={handleOpenHymnPicker}
+                              onDeleteStaticEntry={handleDeleteStaticEntry}
+                              onAddSpeaker={handleAddSpeaker}
+                              onAddIntermediateHymn={handleAddIntermediateHymn}
+                              onAddSpecialNumber={handleAddSpecialNumber}
+                            />
+                            <ClosingSection
+                              entries={visibleEntries}
+                              onPickHymn={handleOpenHymnPicker}
+                              onPickPrayer={(entryId, field) =>
+                                handleOpenDirectoryPicker({
+                                  type: "agenda-assignee",
+                                  entryId,
+                                  field,
+                                })
+                              }
+                            />
+                          </div>
+                        </div>
 
-                  {remainingAgendaEntries.length > 0 ? (
-                    <div className="px-6 py-5">
-                      <div className="mx-auto w-full max-w-3xl">
-                        <DndContext
-                          sensors={sensors}
-                          collisionDetection={closestCenter}
-                          onDragEnd={handleDragEnd}
-                        >
-                          <SortableContext
-                            items={remainingAgendaEntries.map((entry) => entry.id)}
-                            strategy={verticalListSortingStrategy}
-                          >
-                            <div className="space-y-1.5">
-                              {remainingAgendaEntries.map((entry) => (
-                                <div key={entry.id}>
-                                  <AgendaRow
-                                    entry={entry}
-                                    onSelectSpeaker={(entryId) =>
-                                      handleOpenDirectoryPicker({
-                                        type: "speaker",
-                                        entryId,
-                                      })
-                                    }
-                                    onSpeakerFieldChange={handleSpeakerFieldChange}
-                                    onDeleteSpeaker={handleDeleteSpeaker}
-                                    onDeleteStaticEntry={handleDeleteStaticEntry}
-                                    onSelectAgendaAssignee={(entryId, field) =>
-                                      handleOpenDirectoryPicker({
-                                        type: "agenda-assignee",
-                                        entryId,
-                                        field,
-                                      })
-                                    }
-                                    onSelectHymn={handleOpenHymnPicker}
-                                  />
-                                </div>
-                              ))}
+                        {remainingAgendaEntries.length > 0 ? (
+                          <div className="px-6 py-5">
+                            <div className="mx-auto w-full max-w-3xl">
+                              <DndContext
+                                sensors={sensors}
+                                collisionDetection={closestCenter}
+                                onDragEnd={handleDragEnd}
+                              >
+                                <SortableContext
+                                  items={remainingAgendaEntries.map((entry) => entry.id)}
+                                  strategy={verticalListSortingStrategy}
+                                >
+                                  <div className="space-y-1.5">
+                                    {remainingAgendaEntries.map((entry) => (
+                                      <div key={entry.id}>
+                                        <AgendaRow
+                                          entry={entry}
+                                          onSelectSpeaker={(entryId) =>
+                                            handleOpenDirectoryPicker({
+                                              type: "speaker",
+                                              entryId,
+                                            })
+                                          }
+                                          onSpeakerFieldChange={handleSpeakerFieldChange}
+                                          onDeleteSpeaker={handleDeleteSpeaker}
+                                          onDeleteStaticEntry={handleDeleteStaticEntry}
+                                          onSelectAgendaAssignee={(entryId, field) =>
+                                            handleOpenDirectoryPicker({
+                                              type: "agenda-assignee",
+                                              entryId,
+                                              field,
+                                            })
+                                          }
+                                          onSelectHymn={handleOpenHymnPicker}
+                                        />
+                                      </div>
+                                    ))}
+                                  </div>
+                                </SortableContext>
+                              </DndContext>
                             </div>
-                          </SortableContext>
-                        </DndContext>
-                      </div>
-                    </div>
-                  ) : null}
+                          </div>
+                        ) : null}
+                      </>
+                    )}
                   </div>
                   <div className="pr-6 pt-5 xl:sticky xl:top-20">
                     <UpcomingPanel
                       sundays={visibleSundays}
                       meetingsByDate={meetingsByDate}
+                      meetingTypeOverridesByDate={meetingTypeOverridesByDate}
                       selectedIsoDate={selectedSunday.isoDate}
                       defaultLanguage={defaultLanguageRef.current}
                       jumpDate={jumpDate}
@@ -2661,6 +2922,7 @@ export function SacramentMeetingPlannerClient({
                 <HorizonPanel
                   sundays={sundays}
                   meetingsByDate={meetingsByDate}
+                  meetingTypeOverridesByDate={meetingTypeOverridesByDate}
                   defaultLanguage={defaultLanguageRef.current}
                   onOpen={(isoDate) => {
                     handleSelectSunday(isoDate)

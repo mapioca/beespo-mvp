@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 
 const patchSchema = z.object({
@@ -65,6 +66,11 @@ export async function PATCH(
   if (!data) {
     return NextResponse.json({ error: "Meeting not found" }, { status: 404 });
   }
+
+  // Revalidate relevant pages to update cached data
+  revalidatePath("/dashboard");
+  revalidatePath("/meetings");
+  revalidatePath(`/meetings/${id}`);
 
   return NextResponse.json({ meeting: data });
 }

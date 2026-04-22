@@ -41,7 +41,7 @@ export function CalendarEventChip({
       }}
       className={cn(
         "w-full text-left rounded-md border-l-[3px] transition-all duration-150",
-        "shadow-none hover:shadow-sm bg-muted/25 text-foreground hover:bg-[hsl(var(--table-row-hover))]",
+        "shadow-none hover:shadow-sm bg-surface-sunken text-foreground hover:bg-surface-hover",
         compact ? "px-1.5 py-0.5 text-[11px]" : "px-2 py-1.5 text-sm"
       )}
       style={{ borderLeftColor: accentColor }}

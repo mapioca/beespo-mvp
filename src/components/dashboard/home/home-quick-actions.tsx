@@ -1,7 +1,6 @@
 import type { ElementType } from "react";
 import Link from "next/link";
 import {
-  CalendarPlus,
   CheckSquare,
   MessageSquare,
   ClipboardPen,
@@ -18,7 +17,6 @@ interface QuickAction {
 }
 
 const QUICK_ACTIONS: QuickAction[] = [
-  { id: "new-meeting",    label: "New meeting",    href: "/meetings/new", icon: CalendarPlus },
   { id: "new-task",       label: "New task",       href: "/tasks?create=true", icon: CheckSquare },
   { id: "new-discussion", label: "New discussion", href: "/meetings/agendas/discussions", icon: MessageSquare },
   { id: "new-form",       label: "New form",       href: "/forms/new", icon: ClipboardPen },

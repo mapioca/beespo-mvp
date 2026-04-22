@@ -80,8 +80,8 @@ export function Breadcrumbs({ items, className, inlineAction, action }: Breadcru
         className={cn(
           "flex h-14 items-center gap-2 px-4 transition-[background-color,border-color,box-shadow] duration-200",
           isElevated
-            ? "border-b border-border/55 bg-card shadow-[0_1px_0_rgba(15,23,42,0.06)]"
-            : "border-b border-transparent bg-card",
+            ? "border-b border-border/55 bg-surface-canvas shadow-[0_1px_0_rgba(15,23,42,0.06)]"
+            : "border-b border-transparent bg-surface-canvas",
           className
         )}
       >

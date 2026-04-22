@@ -69,7 +69,7 @@ type AudienceViewProps = {
 }
 
 const MEETING_TYPE_LABELS: Record<MeetingSpecialType, string> = {
-  standard: "Sacrament meeting",
+  standard: "Sacrament Meeting",
   "fast-testimony": "Fast & Testimony Meeting",
   "general-conference": "General Conference",
   "stake-conference": "Stake Conference",
@@ -85,9 +85,7 @@ function getStaticEntry(entries: AgendaEntry[], id: string) {
 }
 
 function getAudienceSubtitle(meeting: AudienceMeeting) {
-  return meeting.specialType === "standard"
-    ? meeting.title?.trim() || "Sacrament meeting"
-    : MEETING_TYPE_LABELS[meeting.specialType]
+  return meeting.title?.trim() || MEETING_TYPE_LABELS[meeting.specialType]
 }
 
 function romanize(index: number) {
@@ -157,16 +155,17 @@ export function SacramentMeetingAudienceView({
         <article className="w-full max-w-[560px] rounded-[2px] border border-border bg-background px-7 py-10 shadow-lg sm:px-14 sm:py-16">
           <header className="border-b border-border pb-7 text-center">
             <div className="font-serif text-[13px] italic tracking-[0.02em] text-muted-foreground">
-              The Church of Jesus Christ
+              {unitName}
             </div>
             <h1 className="mt-2 font-serif text-[28px] font-normal tracking-[-0.01em] text-foreground">
-              {unitName}
+              {getAudienceSubtitle(meeting)}
             </h1>
-            <div className="mt-1.5 text-[13.5px] text-muted-foreground">Sacrament Meeting</div>
             <div className="mt-4 font-serif text-[15px] italic text-muted-foreground">
               {format(date, "EEEE, MMMM d, yyyy")}
             </div>
-            <div className="mt-1 text-[12.5px] text-muted-foreground/70">{getAudienceSubtitle(meeting)}</div>
+            <div className="mt-1 text-[12.5px] text-muted-foreground/70">
+              9:00 AM
+            </div>
           </header>
 
           <AudienceRule />

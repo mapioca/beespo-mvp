@@ -23,6 +23,7 @@ import {
   Megaphone,
   MessageSquare,
   Moon,
+  MoreVertical,
   NotebookPen,
   NotebookTabs,
   Palette,
@@ -90,12 +91,11 @@ const sections: SidebarSection[] = [
       { href: "/directory", label: "Directory", icon: BookUser, match: "prefix" },
       { href: "/calendar", label: "Calendar", icon: CalendarDays, match: "prefix", activeAliases: ["/schedule"] },
       { href: "/tasks", label: "Tasks", icon: CheckSquare, match: "prefix" },
-      { href: "/interviews", label: "Interviews", icon: UserRoundCheck, soon: true },
       { href: "/callings", label: "Callings", icon: BriefcaseBusiness, match: "prefix" },
     ],
   },
   {
-    label: "Meetings",
+    label: "My Calling",
     items: [
       {
         href: "/meetings/sacrament-meeting/program-planner",
@@ -109,12 +109,22 @@ const sections: SidebarSection[] = [
           { href: "/meetings/sacrament-meeting/archive", label: "Archive", icon: Archive, match: "prefix" },
         ],
       },
+      { href: "/meetings/bishopric", label: "Bishopric", icon: Landmark, soon: true },
       { href: "/meetings/ward-council", label: "Ward Council", icon: UsersRound, soon: true },
-      { href: "/meetings/agendas", label: "Agendas", icon: NotebookPen, match: "prefix" },
-      { href: "/meetings/programs", label: "Programs", icon: PanelTop, match: "prefix" },
-      { href: "/meetings/agendas/discussions", label: "Discussions", icon: MessageSquare, match: "prefix" },
-      { href: "/meetings/assignments", label: "Assignments", icon: ClipboardList, match: "prefix" },
-      { href: "/meetings/announcements", label: "Announcements", icon: Megaphone, match: "prefix" },
+      { href: "/meetings/interviews", label: "Interviews", icon: UserRoundCheck, soon: true },
+      {
+        href: "",
+        label: "More",
+        icon: MoreVertical,
+        match: "prefix",
+        children: [
+          { href: "/meetings/agendas", label: "Agendas", icon: NotebookPen, match: "prefix" },
+          { href: "/meetings/programs", label: "Programs", icon: PanelTop, match: "prefix" },
+          { href: "/meetings/agendas/discussions", label: "Discussions", icon: MessageSquare, match: "prefix" },
+          { href: "/meetings/assignments", label: "Assignments", icon: ClipboardList, match: "prefix" },
+          { href: "/meetings/announcements", label: "Announcements", icon: Megaphone, match: "prefix" },
+        ],
+      },
     ],
   },
   {
@@ -139,6 +149,7 @@ function getInitials(name: string) {
 }
 
 function isItemActive(pathname: string, item: SidebarItem) {
+  if (item.label === "More") return false;
   if (item.children?.some((child) => isItemActive(pathname, child))) return true;
   if (item.activeAliases?.some((alias) => pathname === alias || pathname.startsWith(`${alias}/`))) {
     return true;
@@ -162,6 +173,7 @@ function NavRow({
   const Icon = item.icon;
   const active = isItemActive(pathname, item);
   const hasChildren = Boolean(item.children?.length);
+  const isMore = item.label === "More" && hasChildren;
 
   const className = cn(
     "group relative flex w-full items-center gap-2.5 rounded-[6px] px-2.5 py-[7px] text-left text-[13.5px] text-[var(--app-nav-text)] transition-colors duration-75",
@@ -175,11 +187,43 @@ function NavRow({
       <Icon className={cn("h-[15px] w-[15px] shrink-0 text-[var(--app-nav-icon)]", active && "text-[var(--app-nav-strong)]")} strokeWidth={1.8} />
       <span className="min-w-0 flex-1 truncate">{item.label}</span>
       {item.soon ? <span className="rounded-full border border-[var(--app-nav-border)] bg-[var(--app-nav-card)] px-1.5 py-px text-[10px] uppercase tracking-[0.04em] text-[var(--app-nav-muted)]">Soon</span> : null}
-      {hasChildren ? (
+      {hasChildren && !isMore ? (
         <ChevronRight className={cn("h-3.5 w-3.5 shrink-0 text-[var(--app-nav-muted)] transition-transform", isOpen && "rotate-90")} />
       ) : null}
     </>
   );
+
+  if (isMore) {
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button type="button" className={className} aria-expanded={isOpen}>
+            {content}
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" side="right" className="w-48">
+          {item.children!.map((child) => {
+            const ChildIcon = child.icon;
+            const childActive = isItemActive(pathname, child);
+            return (
+              <DropdownMenuItem key={child.href} asChild>
+                <Link
+                  href={child.href}
+                  className={cn(
+                    "flex w-full items-center gap-2.5 text-[13px]",
+                    childActive && "bg-[var(--app-nav-active)] font-medium text-[var(--app-nav-strong)]"
+                  )}
+                >
+                  <ChildIcon className="h-[15px] w-[15px] shrink-0" strokeWidth={1.8} />
+                  {child.label}
+                </Link>
+              </DropdownMenuItem>
+            );
+          })}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
+  }
 
   if (hasChildren) {
     return (

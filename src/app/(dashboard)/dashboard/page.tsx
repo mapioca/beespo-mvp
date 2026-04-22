@@ -46,7 +46,7 @@ export default async function DashboardPage() {
   );
 
   return (
-    <div className="h-full w-full overflow-y-auto bg-background rounded-[var(--radius)] border border-border shadow-sm">
+    <div className="h-full w-full overflow-y-auto bg-surface-canvas rounded-[var(--radius)] border border-border shadow-sm">
       <div className="mx-auto max-w-3xl px-6 pt-16 pb-24 flex flex-col gap-10">
 
         {/* ── Greeting ─────────────────────────────────────────────────── */}

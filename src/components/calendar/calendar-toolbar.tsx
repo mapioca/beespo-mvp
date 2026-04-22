@@ -98,7 +98,7 @@ export function CalendarToolbar({
                 className={cn(
                   "rounded-none first:rounded-l-full last:rounded-r-full capitalize px-3",
                   view === viewType
-                    ? "bg-primary text-primary-foreground"
+                    ? "bg-surface-active text-foreground"
                     : "text-muted-foreground hover:bg-accent hover:text-foreground"
                 )}
               >
