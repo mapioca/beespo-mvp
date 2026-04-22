@@ -16,7 +16,6 @@ export type BusinessCategory =
     | "release"
     | "confirmation"
     | "ordination"
-    | "setting_apart"
     | "other";
 
 interface BusinessFiltersProps {
@@ -39,7 +38,6 @@ const CATEGORY_OPTIONS: { value: BusinessCategory; label: string }[] = [
     { value: "release", label: "Release" },
     { value: "confirmation", label: "Confirmation" },
     { value: "ordination", label: "Ordination" },
-    { value: "setting_apart", label: "Setting Apart" },
     { value: "other", label: "Other" },
 ];
 

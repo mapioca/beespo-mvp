@@ -50,7 +50,6 @@ export type BusinessCategory =
     | "release"
     | "confirmation"
     | "ordination"
-    | "setting_apart"
     | "other"
 
 export interface BusinessItem {

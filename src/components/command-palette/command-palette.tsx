@@ -799,7 +799,6 @@ export function CommandPalette() {
                     <SelectItem value="release">Release</SelectItem>
                     <SelectItem value="confirmation">Confirmation</SelectItem>
                     <SelectItem value="ordination">Ordination</SelectItem>
-                    <SelectItem value="setting_apart">Setting Apart</SelectItem>
                     <SelectItem value="other">Other</SelectItem>
                   </SelectContent>
                 </Select>

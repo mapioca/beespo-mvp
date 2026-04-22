@@ -43,7 +43,6 @@ import {
     UserMinus,
     Flame,
     Award,
-    Sparkles,
     MoreHorizontal,
     Languages,
     Check,
@@ -75,7 +74,6 @@ const CATEGORY_OPTIONS = [
     { value: "release", label: "Release", icon: UserMinus },
     { value: "confirmation", label: "Confirmation", icon: Flame },
     { value: "ordination", label: "Ordination", icon: Award },
-    { value: "setting_apart", label: "Setting Apart", icon: Sparkles },
     { value: "other", label: "Other", icon: MoreHorizontal },
 ];
 
