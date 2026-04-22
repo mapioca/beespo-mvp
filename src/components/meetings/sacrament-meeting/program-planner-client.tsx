@@ -1858,6 +1858,8 @@ export function SacramentMeetingPlannerClient({
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null)
   const autosaveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const hasLoadedDraftRef = useRef(false)
+  const sundaysRef = useRef(sundays)
+  sundaysRef.current = sundays
 
   const selectedSunday = useMemo(() => {
     const selectedDate = searchParams.get("date")
@@ -2171,7 +2173,8 @@ export function SacramentMeetingPlannerClient({
         }
         window.localStorage.setItem(PLANNER_DRAFT_STORAGE_KEY, JSON.stringify(payload))
 
-        const entries = sundays
+        const currentSundays = sundaysRef.current
+        const entries = currentSundays
           .map((sunday) => {
             const meeting = meetingsByDate[sunday.isoDate]
             const notes = notesByDate[sunday.isoDate]
@@ -2199,7 +2202,7 @@ export function SacramentMeetingPlannerClient({
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              dates: sundays.map((sunday) => sunday.isoDate),
+              dates: currentSundays.map((sunday) => sunday.isoDate),
               entries,
             }),
           })
@@ -2245,7 +2248,9 @@ export function SacramentMeetingPlannerClient({
       window.removeEventListener("beforeunload", flushDraft)
       document.removeEventListener("visibilitychange", flushOnHide)
     }
-  }, [meetingsByDate, meetingTypeOverridesByDate, notesByDate, sundays])
+  // sundays accessed via sundaysRef to keep dep array size constant
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [meetingsByDate, meetingTypeOverridesByDate, notesByDate])
 
   useEffect(() => {
     const selectedDate = searchParams.get("date")

@@ -499,6 +499,7 @@ export function SpeakerPlannerClient() {
   const [picking, setPicking] = useState<PickingState>(null)
   const [search, setSearch] = useState("")
   const searchRef = useRef<HTMLInputElement>(null)
+  const autosaveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const upcomingSundays = useMemo(() => getUpcomingSundays(26), [])
 
   // ── Load from localStorage ─────────────────────────────────────────────────
@@ -612,19 +613,58 @@ export function SpeakerPlannerClient() {
     }
   }, [picking])
 
-  // ── Persist changes to localStorage ───────────────────────────────────────
-  const persist = useCallback((next: Record<string, PlannerMeetingState>) => {
-    try {
-      const raw = window.localStorage.getItem(PLANNER_DRAFT_STORAGE_KEY)
-      const base = raw ? (JSON.parse(raw) as Record<string, unknown>) : {}
-      window.localStorage.setItem(
-        PLANNER_DRAFT_STORAGE_KEY,
-        JSON.stringify({ ...base, meetingsByDate: next, savedAt: new Date().toISOString() })
-      )
-    } catch {
-      /* ignore */
+  // ── Cleanup autosave timer on unmount ─────────────────────────────────────
+  useEffect(() => {
+    return () => {
+      if (autosaveTimeoutRef.current) {
+        clearTimeout(autosaveTimeoutRef.current)
+      }
     }
   }, [])
+
+  // ── Persist changes to localStorage + server ──────────────────────────────
+  const persist = useCallback(
+    (next: Record<string, PlannerMeetingState>, dates: string[]) => {
+      try {
+        const raw = window.localStorage.getItem(PLANNER_DRAFT_STORAGE_KEY)
+        const base = raw ? (JSON.parse(raw) as Record<string, unknown>) : {}
+        window.localStorage.setItem(
+          PLANNER_DRAFT_STORAGE_KEY,
+          JSON.stringify({ ...base, meetingsByDate: next, savedAt: new Date().toISOString() })
+        )
+      } catch {
+        /* ignore */
+      }
+
+      if (autosaveTimeoutRef.current) {
+        clearTimeout(autosaveTimeoutRef.current)
+      }
+
+      autosaveTimeoutRef.current = setTimeout(() => {
+        const entries = dates
+          .map((isoDate) => {
+            const meeting = next[isoDate]
+            if (!meeting) return null
+            return {
+              meetingDate: isoDate,
+              meetingState: meeting,
+              notesState: {},
+              meetingTypeOverridden: false,
+            }
+          })
+          .filter((e): e is NonNullable<typeof e> => Boolean(e))
+
+        fetch("/api/meetings/sacrament-planner", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ dates, entries }),
+        }).catch(() => {
+          /* local draft remains usable if server is unavailable */
+        })
+      }, 2000)
+    },
+    []
+  )
 
   // ── Derived data ───────────────────────────────────────────────────────────
   const lastSpokeMap = useMemo(() => computeLastSpoke(meetingsByDate), [meetingsByDate])
@@ -669,11 +709,11 @@ export function SpeakerPlannerClient() {
       setMeetingsByDate((prev) => {
         const meeting = prev[isoDate] ?? createFallbackMeetingState(isoDate)
         const next = { ...prev, [isoDate]: { ...meeting, ...updater(meeting) } }
-        persist(next)
+        persist(next, upcomingSundays)
         return next
       })
     },
-    [persist]
+    [persist, upcomingSundays]
   )
 
   const assignSpeaker = useCallback(
