@@ -54,7 +54,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { Calendar } from "@/components/ui/calendar"
+import { PlannerDatePickerDialog } from "@/components/meetings/sacrament-meeting/planner-date-picker-dialog"
 import {
   Dialog,
   DialogContent,
@@ -74,11 +74,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
 import { createClient } from "@/lib/supabase/client"
 import { generateBusinessScript } from "@/lib/business-script-generator"
 import { generateCombinedBusinessScript, type BusinessCategoryKey } from "@/lib/business/combined-script"
@@ -1812,22 +1807,25 @@ function UpcomingPanel({
       </div>
 
       <div className="grid grid-cols-[1fr_auto] gap-2 px-2 pb-2 pt-1">
-        <Popover open={jumpPopoverOpen} onOpenChange={onJumpPopoverOpenChange}>
-          <PopoverTrigger asChild>
-            <Button variant="outline" className="h-9 w-full justify-start gap-2">
-              <CalendarDays className="h-4 w-4" />
-              Jump to date
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="start">
-            <Calendar
-              mode="single"
-              selected={jumpDate}
-              onSelect={onJumpDateSelect}
-              disabled={(date) => isBefore(startOfDay(date), startOfDay(new Date()))}
-            />
-          </PopoverContent>
-        </Popover>
+        <Button 
+          variant="outline" 
+          className="h-9 w-full justify-start gap-2"
+          onClick={() => onJumpPopoverOpenChange(true)}
+        >
+          <CalendarDays className="h-4 w-4" />
+          Jump to date
+        </Button>
+        <PlannerDatePickerDialog
+          open={jumpPopoverOpen}
+          onOpenChange={onJumpPopoverOpenChange}
+          titleAccent="date"
+          titlePrefix="Jump to"
+          value={jumpDate ? format(jumpDate, "yyyy-MM-dd") : ""}
+          onSave={(date: string) => {
+            onJumpDateSelect(new Date(date))
+            onJumpPopoverOpenChange(false)
+          }}
+        />
         {visibleSundayCount < sundayCount ? (
           <Button
             variant="ghost"

@@ -8,7 +8,7 @@ import { format } from "date-fns"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
-import { DatePickerDialog } from "@/components/ui/date-picker-dialog"
+import { SundayPickerModal } from "@/components/ui/sunday-picker-modal"
 import {
   BUSINESS_CATEGORY_LABEL,
   BUSINESS_CATEGORY_ORDER,
@@ -481,16 +481,11 @@ export function BusinessReviewPanel({
             <CalendarDays className="h-3.5 w-3.5 text-muted-foreground" />
             <span>{meetingDate ? format(new Date(`${meetingDate}T12:00:00`), "EEE, MMM d, yyyy") : "Select date"}</span>
           </button>
-          <DatePickerDialog
+          <SundayPickerModal
             open={datePickerOpen}
             onOpenChange={setDatePickerOpen}
-            titleAccent="meeting date"
-            titlePrefix="Select"
             value={meetingDate}
-            onSave={(date: string) => {
-              onMeetingDateChange(date)
-              setDatePickerOpen(false)
-            }}
+            onSelect={onMeetingDateChange}
           />
           <Button
             type="button"

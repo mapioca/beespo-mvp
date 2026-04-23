@@ -137,7 +137,7 @@ export function BusinessClient({ items }: BusinessClientProps) {
     : items
 
   return (
-    <div className="flex h-full flex-col bg-background">
+    <div className="flex h-full flex-col bg-surface-canvas">
       <Breadcrumbs
         items={[
           { label: "Business", icon: <Briefcase className="h-4 w-4 stroke-[1.6]" /> },

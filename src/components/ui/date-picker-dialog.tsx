@@ -34,6 +34,8 @@ interface DatePickerDialogProps {
   value?: string
   /** Called with the ISO date string when the user clicks Save. */
   onSave: (iso: string) => void
+  /** Optional extra classes per day cell. */
+  dayClassName?: MonthGridProps["dayClassName"]
 }
 
 /* ------------------------------------------------------------------ */
@@ -81,9 +83,11 @@ interface MonthGridProps {
   todayIso: string
   selectedIso: string
   onSelect: (iso: string) => void
+  /** Optional extra classes per day. Receives day metadata, return a className string or undefined. */
+  dayClassName?: (opts: { iso: string; isWeekend: boolean; isToday: boolean; isSelected: boolean }) => string | undefined
 }
 
-function MonthGrid({ year, month, todayIso, selectedIso, onSelect }: MonthGridProps) {
+function MonthGrid({ year, month, todayIso, selectedIso, onSelect, dayClassName }: MonthGridProps) {
   const totalDays = daysInMonth(year, month)
   const startDay = startDayOfMonth(year, month)
 
@@ -134,9 +138,10 @@ function MonthGrid({ year, month, todayIso, selectedIso, onSelect }: MonthGridPr
                 className={cn(
                   "mx-auto flex h-8 w-8 items-center justify-center rounded-full text-[13px] font-normal transition-colors",
                   "hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                  isWeekend && !isToday && !isSelected && "text-muted-foreground/60",
+                  isWeekend && !isToday && !isSelected && !dayClassName && "text-muted-foreground/60",
                   isToday && !isSelected && "bg-accent text-accent-foreground font-medium",
                   isSelected && "bg-primary text-primary-foreground font-medium",
+                  dayClassName?.({ iso, isWeekend, isToday, isSelected }),
                 )}
               >
                 {day}
@@ -162,6 +167,7 @@ export function DatePickerDialog({
   saveLabel = "Save date",
   value,
   onSave,
+  dayClassName,
 }: DatePickerDialogProps) {
   const now = new Date()
   const todayIso = toIso(now.getFullYear(), now.getMonth(), now.getDate())
@@ -244,8 +250,8 @@ export function DatePickerDialog({
             className={cn(
               "flex h-9 w-full items-center rounded-md border px-3 text-sm",
               staged
-                ? "border-input text-foreground"
-                : "border-input text-muted-foreground"
+                ? "border-input bg-surface-sunken text-foreground"
+                : "border-input bg-surface-sunken text-muted-foreground"
             )}
           >
             {formattedPreview || "\u00A0"}
@@ -286,6 +292,7 @@ export function DatePickerDialog({
                 todayIso={todayIso}
                 selectedIso={staged}
                 onSelect={setStaged}
+                dayClassName={dayClassName}
               />
             </div>
 
@@ -300,6 +307,7 @@ export function DatePickerDialog({
                 todayIso={todayIso}
                 selectedIso={staged}
                 onSelect={setStaged}
+                dayClassName={dayClassName}
               />
             </div>
           </div>
