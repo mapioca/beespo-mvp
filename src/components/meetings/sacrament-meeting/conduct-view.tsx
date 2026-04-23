@@ -43,13 +43,20 @@ type SpeakerEntry = {
 }
 type TestimonyEntry = { id: string; kind: "testimony"; title: string; detail: string }
 type AgendaEntry = SectionEntry | StaticEntry | SpeakerEntry | TestimonyEntry
+type ConductItem = {
+  id: string
+  title: string
+  checked: boolean
+  detail?: string | null
+}
 
 export type ConductMeeting = {
   title?: string
   specialType: MeetingSpecialType
   assignments: Record<AssignmentField, string>
   entries: AgendaEntry[]
-  announcements: string
+  announcements: ConductItem[]
+  business: ConductItem[]
 }
 
 export type ConductViewProps = {
@@ -79,14 +86,16 @@ type Step = {
   title: string
   meta?: string
   hymnNum?: number
-  kind?: "sacrament-prayers"
+  kind?: "business" | "sacrament-prayers"
 }
 
 // ─── Build agenda steps from meeting data ────────────────────────────────────
 
 function buildAgenda(meeting: ConductMeeting): Step[] {
   const steps: Step[] = []
-  const { entries, assignments, specialType, announcements } = meeting
+  const { entries, assignments, specialType } = meeting
+  const announcements = meeting.announcements.filter((item) => item.checked)
+  const business = meeting.business.filter((item) => item.checked)
 
   const getStatic = (id: string) =>
     entries.find((e): e is StaticEntry => e.kind === "static" && e.id === id)
@@ -100,7 +109,7 @@ function buildAgenda(meeting: ConductMeeting): Step[] {
   steps.push({
     key: "welcome",
     eyebrow: "Welcome",
-    title: "Welcome & announcements",
+    title: announcements.length > 0 ? "Welcome & announcements" : "Welcome",
     meta: assignments.conductor?.trim()
       ? `Conducted by ${assignments.conductor}`
       : "Conducting: unassigned",
@@ -118,12 +127,14 @@ function buildAgenda(meeting: ConductMeeting): Step[] {
     title: inv?.assigneeName?.trim() || "Unassigned",
   })
 
-  // Ward business / announcements
-  if (announcements?.trim()) {
+  // Ward business
+  if (business.length > 0) {
     steps.push({
       key: "ward-business",
+      kind: "business",
       eyebrow: "Ward Business",
       title: "Sustainings & business",
+      meta: `${business.length} business item${business.length === 1 ? "" : "s"}`,
     })
   }
 
@@ -201,11 +212,47 @@ function plannerSundayDateFromIso(isoDate: string): Date {
   return new Date(`${isoDate}T12:00:00`)
 }
 
+function ConductItemsList({ title, items }: { title: string; items: ConductItem[] }) {
+  if (items.length === 0) return null
+
+  return (
+    <section>
+      <div className="mb-3 flex items-center gap-3">
+        <h2 className="text-[12px] font-semibold uppercase tracking-[0.08em] text-[#8a867a] dark:text-[#6b6b6b]">
+          {title}
+        </h2>
+        <div className="h-px flex-1 bg-[#e6e1d1] dark:bg-[#1f1f1f]" />
+      </div>
+      <div className="space-y-3">
+        {items.map((item, index) => (
+          <div key={item.id} className="grid grid-cols-[28px_1fr] gap-4">
+            <div className="grid h-7 w-7 place-items-center rounded-full bg-[#f0ede3] font-mono text-[11px] text-[#57544c] dark:bg-[#1f1f1f] dark:text-[#a1a1a1]">
+              {index + 1}
+            </div>
+            <div className="min-w-0">
+              <div className="font-serif text-[19px] leading-snug text-[#141413] dark:text-[#e5e5e5]">
+                {item.title}
+              </div>
+              {item.detail?.trim() ? (
+                <p className="mt-2 whitespace-pre-line text-[14px] leading-6 text-[#57544c] dark:text-[#a1a1a1]">
+                  {item.detail}
+                </p>
+              ) : null}
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  )
+}
+
 // ─── Main component ──────────────────────────────────────────────────────────
 
 export function ConductView({ meeting, isoDate, onClose }: ConductViewProps) {
   const steps = buildAgenda(meeting)
   const total = steps.length
+  const checkedAnnouncements = meeting.announcements.filter((item) => item.checked)
+  const checkedBusiness = meeting.business.filter((item) => item.checked)
 
   const [mounted, setMounted] = useState(false)
   const [cur, setCur] = useState(0)
@@ -298,6 +345,7 @@ export function ConductView({ meeting, isoDate, onClose }: ConductViewProps) {
               const state: "done" | "current" | "upcoming" =
                 i < cur ? "done" : i === cur ? "current" : "upcoming"
               const isSacramentCurrent = step.kind === "sacrament-prayers" && state === "current"
+              const isBusinessCurrent = step.kind === "business" && state === "current"
               const isWelcomeCurrent = step.key === "welcome" && state === "current"
 
               return (
@@ -382,6 +430,20 @@ export function ConductView({ meeting, isoDate, onClose }: ConductViewProps) {
                           )}
                         </div>
                       ))}
+                    </div>
+                  )}
+
+                  {/* Announcements card — inline under current welcome step */}
+                  {isWelcomeCurrent && checkedAnnouncements.length > 0 && (
+                    <div className="mx-4 mb-1.5 rounded-[14px] border border-[#d8d2bf] bg-white p-8 shadow-[0_12px_40px_rgba(60,50,30,0.10),0_0_0_1px_rgba(60,50,30,0.05)] dark:border-[#2a2a2a] dark:bg-[#141414] dark:shadow-[0_12px_40px_rgba(0,0,0,0.4),0_0_0_1px_rgba(255,255,255,0.05)]">
+                      <ConductItemsList title="Announcements" items={checkedAnnouncements} />
+                    </div>
+                  )}
+
+                  {/* Business card — inline under current ward business step */}
+                  {isBusinessCurrent && (
+                    <div className="mx-4 mb-1.5 rounded-[14px] border border-[#d8d2bf] bg-white p-8 shadow-[0_12px_40px_rgba(60,50,30,0.10),0_0_0_1px_rgba(60,50,30,0.05)] dark:border-[#2a2a2a] dark:bg-[#141414] dark:shadow-[0_12px_40px_rgba(0,0,0,0.4),0_0_0_1px_rgba(255,255,255,0.05)]">
+                      <ConductItemsList title="Business" items={checkedBusiness} />
                     </div>
                   )}
 

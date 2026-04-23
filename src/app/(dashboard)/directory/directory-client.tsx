@@ -15,10 +15,12 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { createClient } from "@/lib/supabase/client"
+import { DirectoryDetailsPanel } from "./directory-details-panel"
 
 export type DirectoryMember = {
   id: string
   name: string
+  gender?: "male" | "female" | null
   created_at: string | null
 }
 
@@ -55,6 +57,8 @@ export function DirectoryClient({
   const [name, setName] = useState("")
   const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
+  const [selectedMember, setSelectedMember] = useState<DirectoryMember | null>(null)
+  const [detailsOpen, setDetailsOpen] = useState(false)
 
   const sortedMembers = useMemo(
     () => [...members].sort((a, b) => a.name.localeCompare(b.name)),
@@ -135,9 +139,14 @@ export function DirectoryClient({
         ) : (
           <div className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-2.5">
             {sortedMembers.map((member) => (
-              <article
+              <button
                 key={member.id}
-                className="flex items-center gap-3 rounded-[10px] border border-[var(--color-border)] bg-[var(--app-nav-card)] px-3.5 py-3"
+                type="button"
+                onClick={() => {
+                  setSelectedMember(member)
+                  setDetailsOpen(true)
+                }}
+                className="flex items-center gap-3 rounded-[10px] border border-[var(--color-border)] bg-[var(--app-nav-card)] px-3.5 py-3 text-left transition-colors hover:bg-[var(--color-stone-100)]"
               >
                 <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[var(--color-stone-100)] text-[13px] font-semibold text-[var(--color-text-secondary)]">
                   {initials(member.name)}
@@ -150,11 +159,17 @@ export function DirectoryClient({
                     {householdLabel(member.name)}
                   </div>
                 </div>
-              </article>
+              </button>
             ))}
           </div>
         )}
       </main>
+
+      <DirectoryDetailsPanel
+        member={selectedMember}
+        open={detailsOpen}
+        onOpenChange={setDetailsOpen}
+      />
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="rounded-[10px] border-[var(--color-border)] bg-[var(--app-nav-card)]">

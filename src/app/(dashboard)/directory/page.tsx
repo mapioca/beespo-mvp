@@ -23,7 +23,7 @@ export default async function DirectoryPage() {
       .single(),
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (supabase.from("directory" as any) as any)
-      .select("id, name, created_at", { count: "exact" })
+      .select("id, name, gender, created_at", { count: "exact" })
       .eq("workspace_id", profile.workspace_id)
       .order("name", { ascending: true }),
   ])
@@ -35,6 +35,7 @@ export default async function DirectoryPage() {
   const members: DirectoryMember[] = ((data ?? []) as DirectoryMember[]).map((member) => ({
     id: member.id,
     name: member.name,
+    gender: member.gender,
     created_at: member.created_at,
   }))
 

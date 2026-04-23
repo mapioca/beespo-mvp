@@ -12,14 +12,11 @@ import {
   BusinessStatusTabs,
   type BusinessLifecycleStatus,
 } from "./business-status-tabs"
-import { BusinessCategorySection } from "./business-category-section"
-import { BusinessPersonCard } from "./business-person-card"
 import {
-  BusinessLivePreview,
-  type ProgramRenderMode,
+  BusinessReviewPanel,
+  BusinessScriptPreview,
 } from "./business-live-preview"
 import {
-  BUSINESS_CATEGORY_ORDER,
   isBusinessCategoryKey,
   type BusinessCategoryKey,
 } from "@/lib/business/combined-script"
@@ -70,8 +67,14 @@ export function BusinessPendingView({ items, onOpenItem }: BusinessPendingViewPr
   const router = useRouter()
   const [active, setActive] = useState<BusinessLifecycleStatus>("pending")
   const [meetingDate, setMeetingDate] = useState<string>(getNextSundayIso())
-  const [mode, setMode] = useState<ProgramRenderMode>("combined")
   const [scheduling, setScheduling] = useState(false)
+  const [scriptOverrides, setScriptOverrides] = useState<Record<BusinessCategoryKey, string | null>>({
+    sustaining: null,
+    release: null,
+    confirmation: null,
+    ordination: null,
+    other: null,
+  })
 
   const byStatus = useMemo(() => {
     const map: Record<BusinessLifecycleStatus, BusinessItem[]> = {
@@ -96,6 +99,13 @@ export function BusinessPendingView({ items, onOpenItem }: BusinessPendingViewPr
 
   const activeItems = byStatus[active]
   const grouped = useMemo(() => groupByCategory(activeItems), [activeItems])
+
+  const handleScriptOverrideChange = useCallback(
+    (category: BusinessCategoryKey, script: string | null) => {
+      setScriptOverrides((prev) => ({ ...prev, [category]: script }))
+    },
+    []
+  )
 
   const handleSchedule = useCallback(async () => {
     if (active !== "pending" || activeItems.length === 0 || !meetingDate) return
@@ -123,11 +133,11 @@ export function BusinessPendingView({ items, onOpenItem }: BusinessPendingViewPr
     : ""
 
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-6 sm:px-6 lg:px-10 lg:py-8">
+    <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-6 sm:px-6 lg:px-10 lg:py-8">
       <BusinessStatusTabs active={active} counts={counts} onChange={setActive} />
 
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_320px] xl:grid-cols-[minmax(0,1fr)_340px] xl:gap-10">
-        {/* Left column */}
+      <div className="grid grid-cols-1 gap-8 xl:grid-cols-[minmax(0,1.45fr)_minmax(340px,0.75fr)] xl:gap-10">
+        {/* Primary column */}
         <div className="min-w-0">
           <PendingHeader
             active={active}
@@ -138,56 +148,30 @@ export function BusinessPendingView({ items, onOpenItem }: BusinessPendingViewPr
           {activeItems.length === 0 ? (
             <EmptyState status={active} />
           ) : (
-            <div className="mt-5 flex flex-col gap-6">
-              {BUSINESS_CATEGORY_ORDER.map((key) => {
-                const group = grouped[key]
-                if (group.length === 0) return null
-                return (
-                  <BusinessCategorySection
-                    key={key}
-                    category={key}
-                    items={group}
-                    scriptFormat={mode}
-                    onOpenItem={onOpenItem}
-                  />
-                )
-              })}
-
-              {mode === "individual" && (
-                <section className="flex flex-col gap-2">
-                  <div className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                    All items
-                  </div>
-                  {activeItems.map((item) => (
-                    <BusinessPersonCard
-                      key={item.id}
-                      name={item.person_name}
-                      subtitle={item.position_calling}
-                      category={
-                        isBusinessCategoryKey(item.category)
-                          ? item.category
-                          : "other"
-                      }
-                      onOpen={onOpenItem ? () => onOpenItem(item) : undefined}
-                    />
-                  ))}
-                </section>
-              )}
-            </div>
+            <BusinessScriptPreview
+              className="mt-5"
+              items={activeItems}
+              groupedByCategory={grouped}
+              meetingDate={meetingDate}
+              scriptOverrides={scriptOverrides}
+              onScriptOverrideChange={handleScriptOverrideChange}
+            />
           )}
         </div>
 
-        {/* Right column — Live Preview */}
-        <div className="lg:sticky lg:top-4 lg:self-start">
-          <BusinessLivePreview
+        {/* Secondary column */}
+        <div className="xl:sticky xl:top-4 xl:self-start">
+          <BusinessReviewPanel
             items={activeItems}
             groupedByCategory={grouped}
             meetingDate={meetingDate}
             onMeetingDateChange={setMeetingDate}
-            mode={mode}
-            onModeChange={setMode}
+            activeStatus={active}
             onSchedule={handleSchedule}
             scheduling={scheduling}
+            onOpenItem={onOpenItem}
+            scriptOverrides={scriptOverrides}
+            onScriptOverrideChange={handleScriptOverrideChange}
           />
         </div>
       </div>

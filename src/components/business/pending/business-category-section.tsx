@@ -14,11 +14,11 @@ import {
 } from "@/lib/business/combined-script"
 import type { BusinessItem } from "@/components/business/business-table"
 import { describeOrdination } from "@/lib/business/combined-script"
+import { scriptToTemplate, templateToScript, type ScriptVariable } from "@/lib/business/script-template"
 
 interface BusinessCategorySectionProps {
   category: BusinessCategoryKey
   items: BusinessItem[]
-  scriptFormat: "combined" | "individual"
   onOpenItem?: (item: BusinessItem) => void
   /** Custom override script (persisted upstream). Empty = use generated. */
   scriptOverride?: string | null
@@ -35,13 +35,13 @@ function subtitleFor(item: BusinessItem): string | null {
 export function BusinessCategorySection({
   category,
   items,
-  scriptFormat,
   onOpenItem,
   scriptOverride,
   onScriptOverrideChange,
 }: BusinessCategorySectionProps) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(scriptOverride ?? "")
+  const [variables, setVariables] = useState<ScriptVariable[]>([])
 
   const generated = useMemo(
     () => generateCombinedBusinessScript(category, items),
@@ -52,16 +52,20 @@ export function BusinessCategorySection({
 
   if (items.length === 0) return null
 
-  const showCombined = scriptFormat === "combined"
-  const showHeaderMeta = showCombined
+  // Always show combined script and edit button
+  const showCombined = true
+  const showHeaderMeta = items.length > 1 // Only show "+ combined script" label when multiple items
 
   const handleEditStart = () => {
-    setDraft(activeScript)
+    const { template, variables: vars } = scriptToTemplate(activeScript, items)
+    setDraft(template)
+    setVariables(vars)
     setEditing(true)
   }
 
   const handleSave = () => {
-    const trimmed = draft.trim()
+    const renderedScript = templateToScript(draft, variables)
+    const trimmed = renderedScript.trim()
     if (trimmed === generated.trim() || trimmed.length === 0) {
       onScriptOverrideChange?.(null)
     } else {
@@ -76,7 +80,9 @@ export function BusinessCategorySection({
   }
 
   const handleResetToGenerated = () => {
-    setDraft(generated)
+    const { template, variables: vars } = scriptToTemplate(generated, items)
+    setDraft(template)
+    setVariables(vars)
     onScriptOverrideChange?.(null)
   }
 
@@ -124,6 +130,24 @@ export function BusinessCategorySection({
                     "resize-none rounded-xl border border-border/70 bg-background text-[13px] leading-relaxed text-foreground/90 shadow-none focus-visible:ring-1 focus-visible:ring-[hsl(var(--brand))]"
                   )}
                 />
+                {variables.length > 0 && (
+                  <div className="rounded-lg border border-border/60 bg-muted/30 px-3 py-2">
+                    <div className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                      Variables in this script
+                    </div>
+                    <div className="space-y-1 text-[11.5px]">
+                      {variables.map((variable) => (
+                        <div key={variable.key} className="flex items-start gap-2">
+                          <code className="rounded bg-background px-1.5 py-0.5 font-mono text-[10.5px] text-foreground">
+                            {variable.key}
+                          </code>
+                          <span className="text-muted-foreground">→</span>
+                          <span className="text-foreground">{variable.label}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 <div className="flex items-center justify-between text-[11px]">
                   <button
                     type="button"

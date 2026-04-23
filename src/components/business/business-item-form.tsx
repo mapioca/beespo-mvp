@@ -295,7 +295,7 @@ export function BusinessItemForm({
       if (!part) return null;
       if (tokenSet.has(part)) {
         return (
-          <span key={`${part}-${index}`} className="font-semibold italic">
+          <span key={`${part}-${index}`} className="font-medium text-[hsl(var(--brand))]">
             {part}
           </span>
         );

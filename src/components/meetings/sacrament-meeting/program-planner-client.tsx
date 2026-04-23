@@ -80,6 +80,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 import { createClient } from "@/lib/supabase/client"
+import { generateBusinessScript } from "@/lib/business-script-generator"
 import { cn } from "@/lib/utils"
 import { PickerModal } from "@/components/ui/picker-modal"
 
@@ -163,6 +164,7 @@ type PlannerItem = {
   id: string
   title: string
   checked: boolean
+  detail?: string | null
 }
 
 type PlannerNotes = {
@@ -1099,7 +1101,7 @@ function OpeningSection({
             onSelect={(selected) => {
               const newItems = selected
                 .filter((a) => !announcements.some((item) => item.id === a.id))
-                .map((a) => ({ id: a.id, title: a.title, checked: true }))
+                .map((a) => ({ id: a.id, title: a.title, checked: true, detail: a.description }))
               if (newItems.length) onAnnouncementsChange([...announcements, ...newItems])
             }}
           >
@@ -1125,6 +1127,7 @@ function OpeningSection({
                   id: b.id,
                   title: `${b.person_name}${b.position_calling ? ` – ${b.position_calling}` : ""}`,
                   checked: true,
+                  detail: b.generated_script,
                 }))
               if (newItems.length) onBusinessChange([...business, ...newItems])
             }}
@@ -1973,14 +1976,14 @@ export function SacramentMeetingPlannerClient({
       const [annResult, bizResult] = await Promise.all([
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (supabase.from("announcements") as any)
-          .select("id, title")
+          .select("id, title, content")
           .eq("status", "active")
           .eq("workspace_id", workspaceId)
           .order("priority", { ascending: true })
           .order("created_at", { ascending: false }),
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (supabase.from("business_items") as any)
-          .select("id, person_name, position_calling")
+          .select("id, person_name, position_calling, category, notes, details")
           .eq("status", "pending")
           .eq("workspace_id", workspaceId)
           .order("created_at", { ascending: false }),
@@ -1993,6 +1996,7 @@ export function SacramentMeetingPlannerClient({
         id: a.id,
         title: a.title,
         checked: true,
+        detail: a.content,
       }))
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -2000,6 +2004,7 @@ export function SacramentMeetingPlannerClient({
         id: b.id,
         title: `${b.person_name}${b.position_calling ? ` – ${b.position_calling}` : ""}`,
         checked: true,
+        detail: generateBusinessScript(b),
       }))
 
       setNotesByDate((prev) => ({
@@ -2961,7 +2966,8 @@ export function SacramentMeetingPlannerClient({
             specialType: selectedMeeting.specialType,
             assignments: selectedMeeting.assignments,
             entries: visibleEntries,
-            announcements: selectedNotes.announcements.filter((i) => i.checked).map((i) => i.title).join(", "),
+            announcements: selectedNotes.announcements,
+            business: selectedNotes.business,
           }}
           isoDate={selectedSunday.isoDate}
           onClose={() => setConductOpen(false)}

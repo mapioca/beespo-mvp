@@ -17,15 +17,8 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import {
-    Command,
-    CommandEmpty,
-    CommandGroup,
-    CommandInput,
-    CommandItem,
-    CommandList,
-} from "@/components/ui/command";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { PickerModal } from "@/components/ui/picker-modal";
+import { Input } from "@/components/ui/input";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -43,15 +36,11 @@ import {
     UserMinus,
     Flame,
     Award,
-    MoreHorizontal,
-    Languages,
     Check,
-    ChevronsUpDown,
 } from "lucide-react";
 import { format } from "date-fns";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "@/lib/toast";
-import { generateBusinessScript, type Language } from "@/lib/business-script-generator";
 import {
     getWorkspaceProfile,
     getDirectoryCache,
@@ -60,6 +49,14 @@ import {
 } from "@/lib/cache/form-data-cache";
 import callingsCatalog from "@/data/callings.json";
 import { cn } from "@/lib/utils";
+import {
+    generateBusinessScript,
+    getPriesthoodFromOffice,
+    PRIESTHOOD_OFFICES,
+    type Gender,
+    type Language,
+    type PriesthoodOffice,
+} from "@/lib/business-script-generator";
 import type { BusinessItem } from "./business-table";
 
 // ── Constants ────────────────────────────────────────────────────────────────
@@ -74,14 +71,7 @@ const CATEGORY_OPTIONS = [
     { value: "release", label: "Release", icon: UserMinus },
     { value: "confirmation", label: "Confirmation", icon: Flame },
     { value: "ordination", label: "Ordination", icon: Award },
-    { value: "other", label: "Other", icon: MoreHorizontal },
 ];
-
-const LANGUAGE_OPTIONS = [
-    { value: "ENG", label: "English" },
-    { value: "SPA", label: "Español" },
-];
-
 // ── Callings catalog helpers ─────────────────────────────────────────────────
 
 type CallingLevel = "ward" | "branch" | "stake" | "district";
@@ -136,6 +126,8 @@ export function BusinessDetailsPanel({
     const [category, setCategory] = useState("");
     const [status, setStatus] = useState("pending");
     const [language, setLanguage] = useState<Language>("ENG");
+    const [gender, setGender] = useState<Gender | undefined>();
+    const [office, setOffice] = useState<PriesthoodOffice | undefined>();
     const [notes, setNotes] = useState("");
 
     // Person combobox state
@@ -173,12 +165,10 @@ export function BusinessDetailsPanel({
                 c.organization.toLowerCase().includes(q)
         );
     }, [availableCallings, callingSearch]);
-
-    const selectedCalling = useMemo(
+    useMemo(
         () => availableCallings.find((c) => c.id === selectedCallingId) ?? null,
         [availableCallings, selectedCallingId]
     );
-
     const languageKey = language === "SPA" ? "es" : "en";
 
     const filteredPeople = useMemo(() => {
@@ -241,6 +231,8 @@ export function BusinessDetailsPanel({
             setCategory(item.category);
             setStatus(item.status);
             setLanguage(item.details?.language ?? "ENG");
+            setGender(item.details?.gender);
+            setOffice(item.details?.office);
             setNotes(item.notes ?? "");
             setSelectedPersonId(""); // resolved by directory-match effect below
             setSelectedCallingId(""); // resolved by catalog-match effect below
@@ -268,19 +260,24 @@ export function BusinessDetailsPanel({
     }, [item?.id, item?.position_calling, availableCallings]);
 
     // ── Conducting script (live preview) ───────────────────────────────────
-
-    const conductingScript = useMemo(() => {
+    useMemo(() => {
         if (!personName || !category) return "";
+        const priesthood = office ? getPriesthoodFromOffice(office) : item?.details?.priesthood;
         return generateBusinessScript({
             person_name: personName,
             position_calling: positionCalling || null,
             category,
             notes: notes || null,
-            details: { ...(item?.details ?? {}), language },
+            details: {
+                ...(item?.details ?? {}),
+                language,
+                gender: gender ?? selectedPerson?.gender ?? undefined,
+                office,
+                priesthood,
+            },
         });
-    }, [personName, positionCalling, category, notes, item?.details, language]);
-
-    // ── Auto-save ───────────────────────────────────────────────────────────
+    }, [personName, positionCalling, category, notes, item?.details, language, gender, selectedPerson?.gender, office]);
+// ── Auto-save ───────────────────────────────────────────────────────────
 
     const saveFields = useCallback(
         async (fields: Record<string, unknown>) => {
@@ -317,16 +314,47 @@ export function BusinessDetailsPanel({
 
     const handleLanguageChange = (val: string) => {
         setLanguage(val as Language);
-        saveFields({ details: { ...(item?.details ?? {}), language: val } });
+        saveFields({
+            details: {
+                ...(item?.details ?? {}),
+                language: val,
+                gender: gender ?? selectedPerson?.gender ?? undefined,
+                office,
+                priesthood: office ? getPriesthoodFromOffice(office) : item?.details?.priesthood,
+            },
+        });
     };
 
+    const handleOfficeChange = (val: string) => {
+        const nextOffice = val as PriesthoodOffice;
+        setOffice(nextOffice);
+        saveFields({
+            details: {
+                ...(item?.details ?? {}),
+                language,
+                gender: gender ?? selectedPerson?.gender ?? undefined,
+                office: nextOffice,
+                priesthood: getPriesthoodFromOffice(nextOffice),
+            },
+        });
+    };
     const handlePersonSelect = (personId: string) => {
         const person = directoryPeople.find((p) => p.id === personId);
         if (!person) return;
         setSelectedPersonId(personId);
         setPersonName(person.name);
+        setGender(person.gender ?? undefined);
         setPersonOpen(false);
-        saveFields({ person_name: person.name });
+        saveFields({
+            person_name: person.name,
+            details: {
+                ...(item?.details ?? {}),
+                language,
+                gender: person.gender ?? undefined,
+                office,
+                priesthood: office ? getPriesthoodFromOffice(office) : item?.details?.priesthood,
+            },
+        });
     };
 
     const handleCallingSelect = (callingId: string, labelOverride?: string) => {
@@ -372,121 +400,135 @@ export function BusinessDetailsPanel({
             >
                 {/* Person Name + Calling */}
                 <DetailsPanelSection>
-                    <Popover open={personOpen} onOpenChange={setPersonOpen}>
-                        <PopoverTrigger asChild>
-                            <Button
-                                type="button"
-                                variant="ghost"
-                                role="combobox"
-                                aria-expanded={personOpen}
-                                className="h-auto px-0 py-0 font-semibold text-[15px] text-foreground hover:bg-transparent hover:text-foreground justify-start gap-1 w-full max-w-full"
+                    <Input
+                        value={personName}
+                        onChange={(e) => setPersonName(e.target.value)}
+                        onClick={() => setPersonOpen(true)}
+                        placeholder="Select person..."
+                        readOnly
+                        className="border-0 bg-transparent shadow-none px-0 h-auto text-[15px] font-semibold placeholder:text-muted-foreground/50 focus-visible:ring-0 cursor-pointer hover:text-foreground/80 transition-colors"
+                    />
+                    <PickerModal
+                        open={personOpen}
+                        onOpenChange={setPersonOpen}
+                        title="Assign person"
+                        searchSlot={
+                            <input
+                                className="w-full bg-transparent px-4 py-2.5 text-sm outline-none placeholder:text-muted-foreground"
+                                placeholder={isDirectoryLoading ? "Loading..." : "Search members..."}
+                                value={personSearch}
+                                onChange={(e) => setPersonSearch(e.target.value)}
+                                autoFocus
+                            />
+                        }
+                    >
+                        {isDirectoryLoading ? (
+                            <div className="flex items-center justify-center py-10">
+                                <div className="h-4 w-4 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
+                            </div>
+                        ) : filteredPeople.length === 0 ? (
+                            <div className="px-5 py-8 text-center text-[13px] text-muted-foreground">
+                                No members match.
+                            </div>
+                        ) : (
+                            filteredPeople.map((person) => (
+                                <button
+                                    key={person.id}
+                                    type="button"
+                                    onClick={() => handlePersonSelect(person.id)}
+                                    className="flex w-full items-center gap-3 px-[18px] py-2 text-left transition-colors hover:bg-surface-hover"
+                                >
+                                    <div className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-surface-sunken text-[11px] font-semibold text-muted-foreground">
+                                        {person.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+                                    </div>
+                                    <div className="min-w-0 flex-1">
+                                        <div className="truncate font-serif text-[14.5px] text-foreground">
+                                            {person.name}
+                                        </div>
+                                        <div className="truncate text-[11.5px] text-muted-foreground">
+                                            Directory member
+                                        </div>
+                                    </div>
+                                </button>
+                            ))
+                        )}
+                    </PickerModal>
+                    {category === "ordination" ? (
+                        <Select value={office} onValueChange={handleOfficeChange}>
+                            <SelectTrigger className="h-auto w-full justify-start gap-1 border-0 bg-transparent px-0 py-0 text-drawer-meta font-normal text-muted-foreground shadow-none hover:bg-transparent hover:text-foreground focus:ring-0 [&>svg]:h-3 [&>svg]:w-3 [&>svg]:opacity-40">
+                                <SelectValue placeholder="Select priesthood office..." />
+                            </SelectTrigger>
+                            <SelectContent className={selectContentClass}>
+                                {PRIESTHOOD_OFFICES.map((option) => (
+                                    <SelectItem key={option.value} value={option.value} className={selectItemClass}>
+                                        {option.label}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    ) : (
+                        <>
+                            <Input
+                                value={positionCalling}
+                                onClick={() => setCallingOpen(true)}
+                                placeholder="Select calling..."
+                                readOnly
+                                className="border-0 bg-transparent shadow-none px-0 h-auto text-drawer-meta font-normal text-muted-foreground placeholder:text-muted-foreground/40 focus-visible:ring-0 cursor-pointer hover:text-foreground transition-colors"
+                            />
+                            <PickerModal
+                                open={callingOpen}
+                                onOpenChange={setCallingOpen}
+                                title="Select Calling"
+                                searchSlot={
+                                    <Input
+                                        placeholder="Search callings..."
+                                        value={callingSearch}
+                                        onChange={(e) => setCallingSearch(e.target.value)}
+                                        className="h-9 border-0 bg-transparent shadow-none focus-visible:ring-0"
+                                    />
+                                }
                             >
-                                <span className="truncate min-w-0 flex-1 text-left">
-                                    {selectedPerson
-                                        ? selectedPerson.name
-                                        : personName || (
-                                            <span className="font-normal text-muted-foreground/50">Select person...</span>
-                                        )}
-                                </span>
-                                <ChevronsUpDown className="h-3 w-3 opacity-40 shrink-0" />
-                            </Button>
-                        </PopoverTrigger>
-                        <PopoverContent align="start" className="w-[280px] p-0">
-                            <Command shouldFilter={false}>
-                                <CommandInput
-                                    placeholder={isDirectoryLoading ? "Loading..." : "Search members..."}
-                                    value={personSearch}
-                                    onValueChange={setPersonSearch}
-                                />
-                                <CommandList className="max-h-64 overflow-y-auto">
-                                    <CommandEmpty>No members found.</CommandEmpty>
-                                    <CommandGroup>
-                                        {filteredPeople.map((person) => (
-                                            <CommandItem
-                                                key={person.id}
-                                                value={person.id}
-                                                onSelect={() => handlePersonSelect(person.id)}
-                                            >
-                                                <Check
-                                                    className={cn(
-                                                        "mr-2 h-4 w-4 shrink-0",
-                                                        selectedPersonId === person.id ? "opacity-100" : "opacity-0"
-                                                    )}
-                                                />
-                                                {person.name}
-                                            </CommandItem>
-                                        ))}
-                                    </CommandGroup>
-                                </CommandList>
-                            </Command>
-                        </PopoverContent>
-                    </Popover>
-                    <Popover open={callingOpen} onOpenChange={setCallingOpen}>
-                        <PopoverTrigger asChild>
-                            <Button
-                                type="button"
-                                variant="ghost"
-                                role="combobox"
-                                aria-expanded={callingOpen}
-                                className="h-auto px-0 py-0 font-normal text-drawer-meta text-muted-foreground hover:bg-transparent hover:text-foreground justify-start gap-1 w-full max-w-full"
-                            >
-                                <span className="truncate min-w-0 flex-1 text-left">
-                                    {selectedCalling
-                                        ? selectedCalling.labels[languageKey]
-                                        : positionCalling || (
-                                            <span className="text-muted-foreground/40">Select calling...</span>
-                                        )}
-                                </span>
-                                <ChevronsUpDown className="h-3 w-3 opacity-40 shrink-0" />
-                            </Button>
-                        </PopoverTrigger>
-                        <PopoverContent align="start" className="w-[280px] p-0">
-                            <Command shouldFilter={false}>
-                                <CommandInput
-                                    placeholder="Search callings..."
-                                    value={callingSearch}
-                                    onValueChange={setCallingSearch}
-                                />
-                                <CommandList className="max-h-64 overflow-y-auto">
-                                    <CommandEmpty>
-                                        {workspaceCallingLevel
-                                            ? "No callings found."
-                                            : "Workspace type not supported for callings."}
-                                    </CommandEmpty>
-                                    <CommandGroup>
-                                        <CommandItem
-                                            value="__none__"
-                                            onSelect={handleCallingClear}
-                                            className="text-muted-foreground"
+                                <div className="px-1">
+                                    <button
+                                        type="button"
+                                        onClick={handleCallingClear}
+                                        className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left text-[13px] text-muted-foreground hover:bg-muted/50"
+                                    >
+                                        <Check
+                                            className={cn(
+                                                "h-4 w-4 shrink-0",
+                                                !selectedCallingId ? "opacity-100" : "opacity-0"
+                                            )}
+                                        />
+                                        No calling
+                                    </button>
+                                    {filteredCallings.length === 0 && callingSearch && (
+                                        <div className="px-2.5 py-6 text-center text-[13px] text-muted-foreground">
+                                            {workspaceCallingLevel
+                                                ? "No callings found."
+                                                : "Workspace type not supported for callings."}
+                                        </div>
+                                    )}
+                                    {filteredCallings.map((calling) => (
+                                        <button
+                                            key={calling.id}
+                                            type="button"
+                                            onClick={() => handleCallingSelect(calling.id)}
+                                            className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left text-[13px] hover:bg-muted/50"
                                         >
                                             <Check
                                                 className={cn(
-                                                    "mr-2 h-4 w-4 shrink-0",
-                                                    !selectedCallingId ? "opacity-100" : "opacity-0"
+                                                    "h-4 w-4 shrink-0",
+                                                    selectedCallingId === calling.id ? "opacity-100" : "opacity-0"
                                                 )}
                                             />
-                                            No calling
-                                        </CommandItem>
-                                        {filteredCallings.map((calling) => (
-                                            <CommandItem
-                                                key={calling.id}
-                                                value={calling.id}
-                                                onSelect={() => handleCallingSelect(calling.id)}
-                                            >
-                                                <Check
-                                                    className={cn(
-                                                        "mr-2 h-4 w-4 shrink-0",
-                                                        selectedCallingId === calling.id ? "opacity-100" : "opacity-0"
-                                                    )}
-                                                />
-                                                {calling.labels[languageKey]}
-                                            </CommandItem>
-                                        ))}
-                                    </CommandGroup>
-                                </CommandList>
-                            </Command>
-                        </PopoverContent>
-                    </Popover>
+                                            {calling.labels[languageKey]}
+                                        </button>
+                                    ))}
+                                </div>
+                            </PickerModal>
+                        </>
+                    )}
                 </DetailsPanelSection>
 
                 <Separator />
@@ -499,17 +541,11 @@ export function BusinessDetailsPanel({
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent className={selectContentClass}>
-                                {CATEGORY_OPTIONS.map((opt) => {
-                                    const Icon = opt.icon;
-                                    return (
-                                        <SelectItem key={opt.value} value={opt.value} className={selectItemClass}>
-                                            <div className="flex items-center gap-2">
-                                                <Icon className="h-3 w-3" />
-                                                {opt.label}
-                                            </div>
-                                        </SelectItem>
-                                    );
-                                })}
+                                {CATEGORY_OPTIONS.map((opt) => (
+                                    <SelectItem key={opt.value} value={opt.value} className={selectItemClass}>
+                                        {opt.label}
+                                    </SelectItem>
+                                ))}
                             </SelectContent>
                         </Select>
                     </DetailsPanelField>
@@ -520,38 +556,55 @@ export function BusinessDetailsPanel({
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent className={selectContentClass}>
-                                {STATUS_OPTIONS.map((opt) => {
-                                    const Icon = opt.icon;
-                                    return (
-                                        <SelectItem key={opt.value} value={opt.value} className={selectItemClass}>
-                                            <div className="flex items-center gap-2">
-                                                <Icon className="h-3 w-3" />
-                                                {opt.label}
-                                            </div>
-                                        </SelectItem>
-                                    );
-                                })}
-                            </SelectContent>
-                        </Select>
-                    </DetailsPanelField>
-
-                    <DetailsPanelField label="Language">
-                        <Select value={language} onValueChange={handleLanguageChange}>
-                            <SelectTrigger className={inlineSelectTrigger}>
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent className={selectContentClass}>
-                                {LANGUAGE_OPTIONS.map((opt) => (
+                                {STATUS_OPTIONS.map((opt) => (
                                     <SelectItem key={opt.value} value={opt.value} className={selectItemClass}>
-                                        <div className="flex items-center gap-2">
-                                            <Languages className="h-3 w-3" />
-                                            {opt.label}
-                                        </div>
+                                        {opt.label}
                                     </SelectItem>
                                 ))}
                             </SelectContent>
                         </Select>
                     </DetailsPanelField>
+
+                    <DetailsPanelField label="Script language">
+                        <div className="flex items-center gap-1.5">
+                            {(["ENG", "SPA"] as const).map((value) => {
+                                const selected = language === value;
+                                const label = value === "ENG" ? "English" : "Español";
+                                return (
+                                    <Button
+                                        key={value}
+                                        type="button"
+                                        variant={selected ? "default" : "outline"}
+                                        size="sm"
+                                        onClick={() => handleLanguageChange(value)}
+                                        className={cn(
+                                            "h-7 rounded-full px-2.5 text-[11px]",
+                                            selected && "bg-foreground text-background hover:bg-foreground/90"
+                                        )}
+                                    >
+                                        {label}
+                                    </Button>
+                                );
+                            })}
+                        </div>
+                    </DetailsPanelField>
+
+                    {category === "ordination" && (
+                        <DetailsPanelField label="Priesthood office">
+                            <Select value={office} onValueChange={handleOfficeChange}>
+                                <SelectTrigger className={inlineSelectTrigger}>
+                                    <SelectValue placeholder="Select office" />
+                                </SelectTrigger>
+                                <SelectContent className={selectContentClass}>
+                                    {PRIESTHOOD_OFFICES.map((option) => (
+                                        <SelectItem key={option.value} value={option.value} className={selectItemClass}>
+                                            {option.label}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </DetailsPanelField>
+                    )}
 
                     {item?.action_date && (
                         <DetailsPanelField label="Action date">
@@ -575,23 +628,6 @@ export function BusinessDetailsPanel({
                                 {item.creator.full_name}
                             </span>
                         </DetailsPanelField>
-                    )}
-                </DetailsPanelSection>
-
-                <Separator />
-
-                {/* Script */}
-                <DetailsPanelSection title="Conducting script">
-                    {conductingScript ? (
-                        <div className="rounded-xl border border-border/60 bg-muted/20 p-3">
-                            <p className="text-[12.5px] text-foreground/80 whitespace-pre-line leading-relaxed">
-                                {conductingScript}
-                            </p>
-                        </div>
-                    ) : (
-                        <p className="text-[12px] text-muted-foreground text-center py-1">
-                            Fill in person name and category to generate a script.
-                        </p>
                     )}
                 </DetailsPanelSection>
 
