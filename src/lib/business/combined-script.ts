@@ -80,7 +80,7 @@ function sustainingCombined(items: BusinessItem[]): string {
   if (language === "SPA") {
     return `Hemos llamado a ${joinSpanishSeries(phrases)}, y proponemos que sean sostenidos. Los que estén a favor, sírvanse manifestarlo levantando la mano.\n\n[Pausa para la votación]\n\nLos que se opongan, si los hay, sírvanse manifestarlo.`
   }
-  return `We have called ${joinWithSeriesComma(phrases)}, and propose that they be sustained. Those in favor may manifest it by the uplifted hand. [Pause] Those opposed, if any, may manifest it.`
+  return `We have called ${joinWithSeriesComma(phrases)}, and propose that they be sustained. Those in favor may manifest it by the uplifted hand.\n\n[Pause for voting]\n\nThose opposed, if any, may manifest it.`
 }
 
 function releaseCombined(items: BusinessItem[]): string {
@@ -116,9 +116,14 @@ function confirmationCombined(items: BusinessItem[]): string {
   const language = dominantLanguage(items)
   const names = items.map((i) => i.person_name)
   if (language === "SPA") {
-    return `Hemos recibido aviso de que ${joinSpanishSeries(names)} han sido bautizados y confirmados miembros de La Iglesia de Jesucristo de los Santos de los Últimos Días. Proponemos que sean aceptados en plena hermandad en el barrio.`
+    const nameList = joinSpanishSeries(names)
+    const verb = items.length === 1 ? "ha sido" : "han sido"
+    const baptizedConfirmed = items.length === 1 ? "bautizado y confirmado" : "bautizados y confirmados"
+    return `${nameList} ${verb} ${baptizedConfirmed} miembro${items.length === 1 ? "" : "s"} de La Iglesia de Jesucristo de los Santos de los Últimos Días. Les pedimos que muestren con la mano levantada que le${items.length === 1 ? "" : "s"} dan la bienvenida al barrio.`
   }
-  return `We have received notice that ${joinWithSeriesComma(names)} have been baptized and confirmed members of The Church of Jesus Christ of Latter-day Saints. We propose that they be accepted into full fellowship in the ward.`
+  const nameList = joinWithSeriesComma(names)
+  const verb = items.length === 1 ? "has" : "have"
+  return `${nameList} ${verb} been baptized and confirmed ${items.length === 1 ? "a member" : "members"} of The Church of Jesus Christ of Latter-day Saints. Please show by an uplifted hand that you welcome ${items.length === 1 ? names[0] : "them"} into the ward.`
 }
 
 export function generateCombinedBusinessScript(

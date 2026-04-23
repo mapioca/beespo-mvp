@@ -214,30 +214,19 @@ Those opposed, if any, may manifest it.`;
 
 /**
  * Confirmation Script (New Member)
- * "We have received the membership record of [Name]..."
+ * Welcoming newly baptized members into the ward
  */
 function generateConfirmationScript(
   name: string,
   gender?: Gender,
   language: Language = "ENG"
 ): string {
-  const pronoun = getSubjectPronoun(gender);
-
   if (language === "SPA") {
     const baptizedConfirmed = gender === "female" ? "bautizada y confirmada" : "bautizado y confirmado";
-    const acceptedWord = gender === "female" ? "aceptada" : "aceptado";
-    return `Hemos recibido aviso de que ${name} ha sido ${baptizedConfirmed} miembro de La Iglesia de Jesucristo de los Santos de los Últimos Días. Proponemos que sea ${acceptedWord} en plena hermandad en el barrio. Los que estén a favor, sírvanse manifestarlo levantando la mano.
-
-[Pausa para la votación]
-
-Los que se opongan, si los hay, sírvanse manifestarlo.`;
+    return `${name} ha sido ${baptizedConfirmed} miembro de La Iglesia de Jesucristo de los Santos de los Últimos Días. Les pedimos que muestren con la mano levantada que le dan la bienvenida al barrio.`;
   }
 
-  return `We have received notice that ${name} has been baptized and confirmed a member of The Church of Jesus Christ of Latter-day Saints. We propose that ${pronoun} be accepted into full fellowship in the ward. Those in favor may manifest it by the uplifted hand.
-
-[Pause for voting]
-
-Those opposed, if any, may manifest it.`;
+  return `${name} has been baptized and confirmed a member of The Church of Jesus Christ of Latter-day Saints. Please show by an uplifted hand that you welcome ${name} into the ward.`;
 }
 
 /**

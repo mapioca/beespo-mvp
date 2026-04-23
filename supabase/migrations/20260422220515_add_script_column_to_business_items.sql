@@ -1,1 +1,0 @@
-ALTER TABLE business_items ADD COLUMN IF NOT EXISTS script TEXT;

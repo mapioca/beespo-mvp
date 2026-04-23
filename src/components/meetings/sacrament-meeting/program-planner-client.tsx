@@ -81,6 +81,8 @@ import {
 } from "@/components/ui/popover"
 import { createClient } from "@/lib/supabase/client"
 import { generateBusinessScript } from "@/lib/business-script-generator"
+import { generateCombinedBusinessScript, type BusinessCategoryKey } from "@/lib/business/combined-script"
+import type { BusinessItem } from "@/components/business/business-table"
 import { cn } from "@/lib/utils"
 import { PickerModal } from "@/components/ui/picker-modal"
 
@@ -153,6 +155,7 @@ type PlannerMeetingState = {
   sacramentAssignments: Record<SacramentAssignmentRole, string[]>
   standardEntries: AgendaEntry[]
   fastEntries: AgendaEntry[]
+  businessScripts?: Record<string, string>
 }
 
 type DirectoryPerson = {
@@ -313,9 +316,23 @@ function translateEntries(entries: AgendaEntry[], lang: Lang): AgendaEntry[] {
 }
 
 function getVisibleAgendaEntries(meeting: PlannerMeetingState) {
-  return meeting.specialType === "fast-testimony"
+  const entries = meeting.specialType === "fast-testimony"
     ? meeting.fastEntries
     : meeting.standardEntries
+
+  // Add business scripts to the ward-business entry
+  return entries.map(entry => {
+    if (entry.id === "ward-business" && meeting.businessScripts) {
+      const scripts = Object.values(meeting.businessScripts)
+      if (scripts.length > 0) {
+        return {
+          ...entry,
+          detail: scripts.join('\n\n')
+        }
+      }
+    }
+    return entry
+  })
 }
 
 function isConferenceSpecialType(
@@ -684,6 +701,7 @@ function createInitialMeetingState(isoDate: string, lang: Lang = "ENG"): Planner
     },
     standardEntries: createStandardEntries(isoDate, lang),
     fastEntries: createFastEntries(lang),
+    businessScripts: {},
   }
 }
 
@@ -1973,7 +1991,7 @@ export function SacramentMeetingPlannerClient({
       const workspaceId = profile?.workspace_id
       if (!workspaceId || !isMounted) return
 
-      const [annResult, bizResult] = await Promise.all([
+      const [annResult, bizResult, scheduledBizResult] = await Promise.all([
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (supabase.from("announcements") as any)
           .select("id, title, content")
@@ -1987,6 +2005,13 @@ export function SacramentMeetingPlannerClient({
           .eq("status", "pending")
           .eq("workspace_id", workspaceId)
           .order("created_at", { ascending: false }),
+        // Load business items scheduled for this meeting date
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (supabase.from("business_items") as any)
+          .select("id, person_name, position_calling, category, notes, details")
+          .eq("action_date", selectedSunday.isoDate)
+          .eq("workspace_id", workspaceId)
+          .order("created_at", { ascending: true }),
       ])
 
       if (!isMounted) return
@@ -1995,8 +2020,56 @@ export function SacramentMeetingPlannerClient({
       const announcements: PlannerItem[] = (annResult.data ?? []).map((a: any) => ({
         id: a.id,
         title: a.title,
-        checked: true,
-        detail: a.content,
+        checked: false,
+      }))
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const pendingBusiness: PlannerItem[] = (bizResult.data ?? []).map((b: any) => ({
+        id: b.id,
+        title: b.person_name,
+        checked: false,
+        detail: b.position_calling,
+      }))
+
+      // Process scheduled business items and generate scripts
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const scheduledBusinessItems: any[] = scheduledBizResult.data ?? []
+
+      // Group business items by category
+      const businessByCategory: Record<string, BusinessItem[]> = {}
+      for (const item of scheduledBusinessItems) {
+        if (!businessByCategory[item.category]) {
+          businessByCategory[item.category] = []
+        }
+        businessByCategory[item.category].push(item)
+      }
+
+      // Generate scripts for each category
+      const businessScripts: Record<string, string> = {}
+      for (const [category, items] of Object.entries(businessByCategory)) {
+        if (items.length > 0) {
+          // Generate combined script for this category
+          businessScripts[category] = generateCombinedBusinessScript(category as BusinessCategoryKey, items)
+        }
+      }
+
+      // Update meeting state with generated business scripts
+      setMeetingsByDate((prev) => ({
+        ...prev,
+        [selectedSunday.isoDate]: {
+          ...(prev[selectedSunday.isoDate] ?? createInitialMeetingState(selectedSunday.isoDate)),
+          businessScripts,
+        },
+      }))
+
+      setNotesByDate((prev) => ({
+        ...prev,
+        [selectedSunday.isoDate]: {
+          ...(prev[selectedSunday.isoDate] ?? { notes: "" }),
+          announcements,
+          business: pendingBusiness,
+          initialized: true,
+        },
       }))
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any

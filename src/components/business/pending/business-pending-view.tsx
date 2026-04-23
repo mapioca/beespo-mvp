@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { addDays, format, startOfDay } from "date-fns"
 import { useRouter } from "next/navigation"
 
@@ -75,6 +75,7 @@ export function BusinessPendingView({ items, onOpenItem }: BusinessPendingViewPr
     ordination: null,
     other: null,
   })
+  const [selectedItemIds, setSelectedItemIds] = useState<Set<string>>(new Set())
 
   const byStatus = useMemo(() => {
     const map: Record<BusinessLifecycleStatus, BusinessItem[]> = {
@@ -83,21 +84,26 @@ export function BusinessPendingView({ items, onOpenItem }: BusinessPendingViewPr
       presented: [],
     }
     for (const item of items) {
-      map[lifecycleStatusFor(item)].push(item)
+      const status = lifecycleStatusFor(item)
+      map[status].push(item)
     }
     return map
   }, [items])
 
-  const counts = useMemo(
-    () => ({
-      pending: byStatus.pending.length,
-      scheduled: byStatus.scheduled.length,
-      presented: byStatus.presented.length,
-    }),
-    [byStatus]
-  )
-
   const activeItems = byStatus[active]
+
+  const counts = useMemo(() => ({
+    pending: byStatus.pending.length,
+    scheduled: byStatus.scheduled.length,
+    presented: byStatus.presented.length,
+  }), [byStatus])
+
+  // Auto-select all pending items when switching to pending view
+  useEffect(() => {
+    if (active === "pending") {
+      setSelectedItemIds(new Set(activeItems.map(item => item.id)))
+    }
+  }, [active, activeItems])
   const grouped = useMemo(() => groupByCategory(activeItems), [activeItems])
 
   const handleScriptOverrideChange = useCallback(
@@ -107,25 +113,39 @@ export function BusinessPendingView({ items, onOpenItem }: BusinessPendingViewPr
     []
   )
 
+  const handleToggleItemSelection = useCallback((itemId: string) => {
+    setSelectedItemIds(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(itemId)) {
+        newSet.delete(itemId);
+      } else {
+        newSet.add(itemId);
+      }
+      return newSet;
+    });
+  }, []);
+
+  const handleSelectAll = useCallback(() => {
+    setSelectedItemIds(new Set(activeItems.map(item => item.id)));
+  }, [activeItems]);
+
+  const handleDeselectAll = useCallback(() => {
+    setSelectedItemIds(new Set());
+  }, []);
+
   const handleSchedule = useCallback(async () => {
-    if (active !== "pending" || activeItems.length === 0 || !meetingDate) return
+    if (active !== "pending" || selectedItemIds.size === 0 || !meetingDate) return
     setScheduling(true)
     const supabase = createClient()
 
-    // Update each business item with action_date and script override if present
-    const updatePromises = activeItems.map(async (item) => {
-      const scriptOverride = scriptOverrides[item.category as BusinessCategoryKey];
-      const updateData: { action_date: string; script?: string | null } = {
-        action_date: meetingDate
-      };
+    // Get selected items
+    const selectedItems = activeItems.filter(item => selectedItemIds.has(item.id));
 
-      if (scriptOverride !== undefined) {
-        updateData.script = scriptOverride;
-      }
-
+    // Update each selected business item with action_date
+    const updatePromises = selectedItems.map(async (item) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return (supabase.from("business_items") as any)
-        .update(updateData)
+        .update({ action_date: meetingDate })
         .eq("id", item.id)
     });
 
@@ -136,12 +156,13 @@ export function BusinessPendingView({ items, onOpenItem }: BusinessPendingViewPr
       toast.error(errors[0].error?.message || "Failed to schedule business items.")
     } else {
       const label = format(new Date(`${meetingDate}T12:00:00`), "MMM d, yyyy")
-      toast.success(`${activeItems.length} item${activeItems.length === 1 ? "" : "s"} scheduled for ${label}`)
+      toast.success(`${selectedItems.length} item${selectedItems.length === 1 ? "" : "s"} scheduled for ${label}`)
+      setSelectedItemIds(new Set()); // Clear selection after successful scheduling
       router.refresh()
       setActive("scheduled")
     }
     setScheduling(false)
-  }, [active, activeItems, meetingDate, router, scriptOverrides])
+  }, [active, activeItems, selectedItemIds, meetingDate, router])
 
   const meetingDateLabel = meetingDate
     ? format(new Date(`${meetingDate}T12:00:00`), "EEE, MMM d, yyyy")
@@ -170,6 +191,10 @@ export function BusinessPendingView({ items, onOpenItem }: BusinessPendingViewPr
               meetingDate={meetingDate}
               scriptOverrides={scriptOverrides}
               onScriptOverrideChange={handleScriptOverrideChange}
+              selectedItemIds={selectedItemIds}
+              onToggleItemSelection={handleToggleItemSelection}
+              onSelectAll={handleSelectAll}
+              onDeselectAll={handleDeselectAll}
             />
           )}
         </div>
@@ -187,6 +212,10 @@ export function BusinessPendingView({ items, onOpenItem }: BusinessPendingViewPr
             onOpenItem={onOpenItem}
             scriptOverrides={scriptOverrides}
             onScriptOverrideChange={handleScriptOverrideChange}
+            selectedItemIds={selectedItemIds}
+            onToggleItemSelection={handleToggleItemSelection}
+            onSelectAll={handleSelectAll}
+            onDeselectAll={handleDeselectAll}
           />
         </div>
       </div>

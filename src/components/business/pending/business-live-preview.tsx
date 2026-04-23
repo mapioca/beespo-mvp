@@ -7,6 +7,7 @@ import { format } from "date-fns"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
 import { DatePickerDialog } from "@/components/ui/date-picker-dialog"
 import {
   BUSINESS_CATEGORY_LABEL,
@@ -28,6 +29,10 @@ interface BusinessScriptPreviewProps {
   meetingDate: string
   scriptOverrides?: Record<BusinessCategoryKey, string | null>
   onScriptOverrideChange?: (category: BusinessCategoryKey, script: string | null) => void
+  selectedItemIds?: Set<string>
+  onToggleItemSelection?: (itemId: string) => void
+  onSelectAll?: () => void
+  onDeselectAll?: () => void
   className?: string
 }
 
@@ -42,6 +47,10 @@ interface BusinessReviewPanelProps {
   onOpenItem?: (item: BusinessItem) => void
   scriptOverrides?: Record<BusinessCategoryKey, string | null>
   onScriptOverrideChange?: (category: BusinessCategoryKey, script: string | null) => void
+  selectedItemIds?: Set<string>
+  onToggleItemSelection?: (itemId: string) => void
+  onSelectAll?: () => void
+  onDeselectAll?: () => void
   className?: string
 }
 
@@ -126,22 +135,21 @@ function buildActionIssues(
 }
 
 function buildScriptSections(
-  groupedByCategory: Record<BusinessCategoryKey, BusinessItem[]>
+  groupedByCategory: Record<BusinessCategoryKey, BusinessItem[]>,
+  selectedItemIds?: Set<string>
 ): ScriptSection[] {
   return BUSINESS_CATEGORY_ORDER.flatMap((key) => {
     const group = groupedByCategory[key] ?? []
-    if (group.length === 0) return []
+    const filteredGroup = selectedItemIds 
+      ? group.filter(item => selectedItemIds.has(item.id))
+      : group
+    
+    if (filteredGroup.length === 0) return []
 
-    // Use stored scripts if available, otherwise generate them
-    const storedScripts = group
-      .map(item => item.script)
-      .filter(script => script && script.trim().length > 0)
+    // Generate combined script for selected items in this category
+    const script = generateCombinedBusinessScript(key, filteredGroup)
 
-    const script = storedScripts.length > 0
-      ? storedScripts.join('\n\n')
-      : generateCombinedBusinessScript(key, group)
-
-    const issues = group.flatMap((item) =>
+    const issues = filteredGroup.flatMap((item) =>
       itemIssues(item).map((issue) => `${item.person_name}: ${issue}`)
     )
     const unresolvedPlaceholders = unresolvedPlaceholdersFor(script)
@@ -150,7 +158,7 @@ function buildScriptSections(
       {
         key,
         title: BUSINESS_CATEGORY_PLURAL[key],
-        items: group,
+        items: filteredGroup,
         script,
         issues,
         unresolvedPlaceholders,
@@ -299,9 +307,21 @@ function EditableScriptSection({
         </div>
       ) : (
         <>
-          <p className="whitespace-pre-line font-serif text-[20px] leading-[1.7] tracking-normal text-foreground">
-            {activeScript}
-          </p>
+          <div className="whitespace-pre-line font-serif text-[20px] leading-[1.7] tracking-normal text-foreground">
+            {activeScript.split(/(\[Pause[^\]]*])/g).map((part, i) => {
+              if (part.match(/^\[Pause[^\]]*]$/)) {
+                return (
+                  <span
+                    key={i}
+                    className="inline-flex items-center rounded-md border border-border/60 bg-muted/40 px-2 py-0.5 align-middle font-sans text-[11px] font-medium uppercase tracking-wide text-muted-foreground"
+                  >
+                    {part.replace(/[\[\]]/g, '')}
+                  </span>
+                )
+              }
+              return part
+            })}
+          </div>
 
           {section.issues.length > 0 || section.unresolvedPlaceholders.length > 0 ? (
             <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[12px] leading-5 text-amber-800 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-200">
@@ -325,11 +345,12 @@ export function BusinessScriptPreview({
   meetingDate,
   scriptOverrides,
   onScriptOverrideChange,
+  selectedItemIds,
   className,
 }: BusinessScriptPreviewProps) {
   const sections = useMemo(
-    () => buildScriptSections(groupedByCategory),
-    [groupedByCategory]
+    () => buildScriptSections(groupedByCategory, selectedItemIds),
+    [groupedByCategory, selectedItemIds]
   )
   const longDate = formatLongMeetingLabel(meetingDate)
   const issueCount = sections.reduce(
@@ -406,13 +427,17 @@ export function BusinessReviewPanel({
   onSchedule,
   scheduling,
   onOpenItem,
+  selectedItemIds,
+  onToggleItemSelection,
+  onSelectAll,
+  onDeselectAll,
   className,
 }: BusinessReviewPanelProps) {
   const [datePickerOpen, setDatePickerOpen] = useState(false)
 
   const sections = useMemo(
-    () => buildScriptSections(groupedByCategory),
-    [groupedByCategory]
+    () => buildScriptSections(groupedByCategory, selectedItemIds),
+    [groupedByCategory, selectedItemIds]
   )
   const actionIssues = useMemo(
     () => buildActionIssues(groupedByCategory),
@@ -470,7 +495,7 @@ export function BusinessReviewPanel({
           <Button
             type="button"
             onClick={() => onSchedule()}
-            disabled={scheduling || items.length === 0}
+            disabled={scheduling || (selectedItemIds?.size ?? 0) === 0}
             className="h-10 w-full gap-2 rounded-xl bg-[hsl(var(--brand))] text-[13.5px] font-medium text-[hsl(var(--brand-foreground))] hover:bg-[hsl(var(--brand-active))] disabled:opacity-60"
           >
             <CalendarDays className="h-4 w-4" />
@@ -478,7 +503,7 @@ export function BusinessReviewPanel({
           </Button>
           <div className="flex items-start gap-1.5 text-[11.5px] leading-5 text-muted-foreground">
             <Orbit className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[hsl(var(--brand))]" />
-            {items.length} item{items.length === 1 ? "" : "s"} will appear in the {shortDate} Program Planner business card.
+            {selectedItemIds?.size ?? 0} of {items.length} item{items.length === 1 ? "" : "s"} selected. These will appear in the {shortDate} Program Planner business card.
           </div>
         </div>
       ) : null}
@@ -538,8 +563,29 @@ export function BusinessReviewPanel({
       )}
 
       <div className="space-y-3">
-        <div className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-          Included Items
+        <div className="flex items-center justify-between">
+          <div className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+            Included Items
+          </div>
+          {activeStatus === "pending" && items.length > 0 && (
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={onSelectAll}
+                className="text-[11px] text-[hsl(var(--brand))] hover:text-[hsl(var(--brand-active))]"
+              >
+                Select all
+              </button>
+              <span className="text-muted-foreground">•</span>
+              <button
+                type="button"
+                onClick={onDeselectAll}
+                className="text-[11px] text-muted-foreground hover:text-foreground"
+              >
+                Clear
+              </button>
+            </div>
+          )}
         </div>
         {items.length === 0 ? (
           <div className="rounded-lg border border-dashed border-border/60 px-3 py-4 text-center text-[11.5px] text-muted-foreground">
@@ -562,8 +608,20 @@ export function BusinessReviewPanel({
                   <div className="space-y-1.5">
                     {group.map((item) => {
                       const readiness = readinessFor(item)
+                      const isSelected = selectedItemIds?.has(item.id) ?? false
                       const content = (
                         <>
+                          {activeStatus === "pending" && (
+                            <Checkbox
+                              checked={isSelected}
+                              onCheckedChange={() => {
+                                // Prevent event propagation to avoid triggering the item open
+                                onToggleItemSelection?.(item.id)
+                              }}
+                              onClick={(e) => e.stopPropagation()}
+                              className="mr-2"
+                            />
+                          )}
                           <div className="min-w-0 flex-1">
                             <div className="truncate font-serif text-[14px] text-foreground">
                               {item.person_name}
@@ -584,14 +642,13 @@ export function BusinessReviewPanel({
                       )
 
                       return onOpenItem ? (
-                        <button
+                        <div
                           key={item.id}
-                          type="button"
                           onClick={() => onOpenItem(item)}
-                          className="flex w-full items-center gap-3 rounded-xl border border-border/60 bg-background/70 px-3 py-2.5 text-left transition-colors hover:border-border hover:bg-surface-hover"
+                          className="flex w-full items-center gap-3 rounded-xl border border-border/60 bg-background/70 px-3 py-2.5 text-left transition-colors hover:border-border hover:bg-surface-hover cursor-pointer"
                         >
                           {content}
-                        </button>
+                        </div>
                       ) : (
                         <div
                           key={item.id}

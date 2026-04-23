@@ -61,7 +61,6 @@ export interface BusinessItem {
     action_date?: string | null
     notes?: string | null
     details?: BusinessItemDetails | null
-    script?: string | null
     created_at: string
     created_by?: string | null
     creator?: { full_name?: string | null } | null

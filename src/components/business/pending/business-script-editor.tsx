@@ -60,9 +60,10 @@ const ScriptVariableNode = Node.create({
     return [
       "span",
       mergeAttributes(HTMLAttributes, {
-        class: "business-script-variable",
+        class: "business-script-variable font-semibold text-[hsl(var(--brand))]",
         "data-key": key,
       }),
+      key,
     ]
   },
 
@@ -440,7 +441,7 @@ export function BusinessScriptEditor({
               >
                 <code className="font-mono text-[11px]">{variable.key}</code>
                 <span className="text-muted-foreground">→</span>
-                <span>{variable.value}</span>
+                <span className="text-white">{variable.value}</span>
               </button>
             ))}
           </div>

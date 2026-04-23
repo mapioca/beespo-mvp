@@ -1,5 +1,6 @@
 import type { BusinessItem } from "@/components/business/business-table";
 import { BUSINESS_CATEGORY_LABEL } from "./combined-script";
+import { formatOffice } from "@/lib/business-script-generator";
 
 export interface ScriptVariable {
   key: string;
@@ -33,8 +34,8 @@ export function scriptToTemplate(
       });
     }
 
-    // Replace calling/position
-    if (item.position_calling) {
+    // Replace calling/position (skip for ordinations and confirmations)
+    if (item.position_calling && item.category !== 'ordination' && item.category !== 'confirmation') {
       const callingVar = `{{calling_${num}}}`;
       const callingLabel = `${item.position_calling}`;
       template = template.replace(new RegExp(item.position_calling, 'g'), callingVar);
@@ -48,12 +49,13 @@ export function scriptToTemplate(
     // Replace priesthood office for ordinations
     if (item.category === 'ordination' && item.details?.office) {
       const officeVar = `{{office_${num}}}`;
-      const officeLabel = item.details.office;
-      template = template.replace(new RegExp(item.details.office, 'gi'), officeVar);
+      const formattedOffice = formatOffice(item.details.office, item.details?.language || 'ENG');
+      const officeLabel = formattedOffice;
+      template = template.replace(new RegExp(formattedOffice, 'gi'), officeVar);
       variables.push({
         key: officeVar,
         label: officeLabel,
-        value: item.details.office,
+        value: formattedOffice,
       });
     }
   });
