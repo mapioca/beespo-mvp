@@ -140,7 +140,7 @@ export function BusinessScriptEditor({
   const [selectedIndex, setSelectedIndex] = useState(0)
   const [showValidationErrors, setShowValidationErrors] = useState(false)
   const editorRef = useRef<HTMLDivElement>(null)
-  const validationTimeoutRef = useRef<NodeJS.Timeout>()
+  const validationTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   
   const content = useMemo(
     () => templateToEditorContent(value, variables),
@@ -196,7 +196,7 @@ export function BusinessScriptEditor({
           "focus:outline-none [&_p]:m-0 [&_p+p]:mt-3"
         ),
       },
-      handleKeyDown: (view, event) => {
+      handleKeyDown: (_view, event) => {
         if (!autocompleteQuery) return false
         
         if (event.key === 'ArrowDown') {
@@ -226,22 +226,6 @@ export function BusinessScriptEditor({
           return true
         }
         
-        return false
-      },
-      handleTextInput: (view, from, to, text) => {
-        // Auto-close braces when user types second {
-        if (text === '{') {
-          const textBefore = view.state.doc.textBetween(Math.max(0, from - 1), from, '\n')
-          if (textBefore.endsWith('{')) {
-            const tr = view.state.tr
-              .delete(from - 1, to)
-              .insertText('{{}}', from - 1)
-            const newPos = from + 1
-            tr.setSelection(view.state.selection.constructor.near(tr.doc.resolve(newPos)))
-            view.dispatch(tr)
-            return true
-          }
-        }
         return false
       },
     },
@@ -380,7 +364,7 @@ export function BusinessScriptEditor({
         className="relative overflow-hidden rounded-xl border border-border/70 bg-background shadow-none focus-within:ring-1 focus-within:ring-[hsl(var(--brand))]"
         onBlur={(e) => {
           // Only trigger if focus is leaving the editor container entirely
-          if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+          if (e.relatedTarget && !e.currentTarget.contains(e.relatedTarget as Element)) {
             setShowValidationErrors(true)
           }
         }}

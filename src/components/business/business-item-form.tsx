@@ -167,6 +167,7 @@ export function BusinessItemForm({
     | "personName"
     | "category"
     | "positionCalling"
+    | "gender"
     | "office";
 
   // Form state
@@ -203,6 +204,7 @@ export function BusinessItemForm({
     personName: false,
     category: false,
     positionCalling: false,
+    gender: false,
     office: false,
   });
 
@@ -345,6 +347,7 @@ export function BusinessItemForm({
       category: true,
       positionCalling: Boolean(categoryConfig?.requiresCalling),
       office: Boolean(categoryConfig?.requiresOffice),
+      gender: Boolean(categoryConfig?.requiresGender),
     });
   };
 
