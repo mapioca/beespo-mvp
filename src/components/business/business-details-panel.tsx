@@ -492,7 +492,7 @@ export function BusinessDetailsPanel({
                                     <button
                                         type="button"
                                         onClick={handleCallingClear}
-                                        className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left text-[13px] text-muted-foreground hover:bg-muted/50"
+                                        className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left text-[13px] text-muted-foreground hover:bg-surface-hover"
                                     >
                                         <Check
                                             className={cn(
@@ -522,7 +522,8 @@ export function BusinessDetailsPanel({
                                                     selectedCallingId === calling.id ? "opacity-100" : "opacity-0"
                                                 )}
                                             />
-                                            {calling.labels[languageKey]}
+                                            <span className="flex-1 truncate">{calling.labels[languageKey]}</span>
+                                            <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">{calling.organization}</span>
                                         </button>
                                     ))}
                                 </div>

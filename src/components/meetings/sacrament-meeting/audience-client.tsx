@@ -179,7 +179,7 @@ export function SacramentMeetingAudienceView({
 
           <AudienceRule />
 
-          <AudienceSectionLabel>opening</AudienceSectionLabel>
+          <AudienceSectionLabel>Greeting & Welcome</AudienceSectionLabel>
           <AudienceHymn kind="Opening Hymn" entry={openingHymn} />
           <AudienceCenteredRow label="Invocation" value={invocation?.assigneeName} />
 

@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { toast } from "@/lib/toast"
 import { createClient } from "@/lib/supabase/client"
+import { Button } from "@/components/ui/button"
 import type { BusinessItem } from "@/components/business/business-table"
 import {
   BusinessStatusTabs,
@@ -18,8 +19,10 @@ import {
 } from "./business-live-preview"
 import {
   isBusinessCategoryKey,
+  BUSINESS_CATEGORY_LABEL,
   type BusinessCategoryKey,
 } from "@/lib/business/combined-script"
+import { readPlannerDraftMeta, getDefaultMeetingTitle } from "@/lib/sundays"
 
 interface BusinessPendingViewProps {
   items: BusinessItem[]
@@ -61,6 +64,106 @@ function groupByCategory(
     }
   }
   return groups
+}
+
+function itemSubtitle(item: BusinessItem): string {
+  if (isBusinessCategoryKey(item.category)) {
+    return item.position_calling?.trim() || BUSINESS_CATEGORY_LABEL[item.category as BusinessCategoryKey]
+  }
+  return item.position_calling?.trim() || item.category
+}
+
+function ScheduledMeetingCards({
+  items,
+  onOpenItem,
+  onReschedule,
+}: {
+  items: BusinessItem[]
+  onOpenItem?: (item: BusinessItem) => void
+  onReschedule?: (item: BusinessItem) => void
+}) {
+  const draftMeta = useMemo(() => readPlannerDraftMeta(), [])
+
+  // Group by action_date
+  const byDate = useMemo(() => {
+    const map = new Map<string, BusinessItem[]>()
+    for (const item of items) {
+      const date = item.action_date ?? "unknown"
+      if (!map.has(date)) map.set(date, [])
+      map.get(date)!.push(item)
+    }
+    // Sort dates ascending
+    return Array.from(map.entries()).sort(([a], [b]) => a.localeCompare(b))
+  }, [items])
+
+  return (
+    <div className="mt-5 space-y-4">
+      {byDate.map(([isoDate, dateItems]) => {
+        const meta = draftMeta[isoDate]
+        const meetingTitle = meta?.title?.trim() || getDefaultMeetingTitle(meta?.specialType ?? "standard")
+        const dateLabel = isoDate !== "unknown"
+          ? format(new Date(`${isoDate}T12:00:00`), "EEEE, MMMM d, yyyy")
+          : "Unknown date"
+
+        return (
+          <div key={isoDate} className="rounded-2xl border border-border/70 bg-surface-raised overflow-hidden shadow-[var(--shadow-builder-card)]">
+            {/* Card header */}
+            <div className="border-b border-border/70 px-6 py-5 sm:px-7">
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                  <div className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                    Ward Business
+                  </div>
+                  <h2 className="mt-2 font-serif text-[30px] font-normal leading-none tracking-normal text-foreground">
+                    {meetingTitle}
+                  </h2>
+                  <div className="mt-2 text-[13px] text-muted-foreground">{dateLabel}</div>
+                </div>
+                <span className="shrink-0 rounded-full border border-border/60 bg-surface-sunken px-2.5 py-1 text-[11.5px] font-medium text-muted-foreground">
+                  {dateItems.length} item{dateItems.length === 1 ? "" : "s"}
+                </span>
+              </div>
+            </div>
+
+            {/* Items list */}
+            <div className="bg-surface-body px-5 py-5 sm:px-7 sm:py-6">
+              <div className="space-y-2">
+                {dateItems.map((item) => (
+                  <div
+                    key={item.id}
+                    onClick={() => onOpenItem?.(item)}
+                    className={cn(
+                      "flex items-center gap-3 rounded-xl border border-border/60 bg-surface-raised px-3 py-2.5",
+                      onOpenItem && "cursor-pointer transition-colors hover:border-border hover:bg-surface-hover"
+                    )}
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate font-serif text-[14px] text-foreground">{item.person_name}</div>
+                      <div className="mt-0.5 truncate text-[11.5px] text-muted-foreground">{itemSubtitle(item)}</div>
+                    </div>
+                    <span className="shrink-0 rounded-full border border-border/60 bg-surface-sunken px-2 py-[3px] text-[10.5px] font-medium capitalize leading-none text-muted-foreground">
+                      {item.category}
+                    </span>
+                    {onReschedule && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => { e.stopPropagation(); onReschedule(item) }}
+                        className="h-7 shrink-0 rounded-full border border-amber-200 bg-amber-50 px-2.5 text-[11px] font-medium text-amber-700 hover:bg-amber-100 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-300 dark:hover:bg-amber-900"
+                      >
+                        Unschedule
+                      </Button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
 }
 
 export function BusinessPendingView({ items, onOpenItem }: BusinessPendingViewProps) {
@@ -133,6 +236,20 @@ export function BusinessPendingView({ items, onOpenItem }: BusinessPendingViewPr
     setSelectedItemIds(new Set());
   }, []);
 
+  const handleReschedule = useCallback(async (item: BusinessItem) => {
+    const supabase = createClient()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase.from("business_items") as any)
+      .update({ action_date: null })
+      .eq("id", item.id)
+    if (error) {
+      toast.error("Failed to unschedule item.")
+    } else {
+      toast.success(`${item.person_name} moved back to pending.`)
+      router.refresh()
+    }
+  }, [router])
+
   const handleSchedule = useCallback(async () => {
     if (active !== "pending" || selectedItemIds.size === 0 || !meetingDate) return
     setScheduling(true)
@@ -183,6 +300,8 @@ export function BusinessPendingView({ items, onOpenItem }: BusinessPendingViewPr
 
           {activeItems.length === 0 ? (
             <EmptyState status={active} />
+          ) : active === "scheduled" ? (
+            <ScheduledMeetingCards items={activeItems} onOpenItem={onOpenItem} onReschedule={handleReschedule} />
           ) : (
             <BusinessScriptPreview
               className="mt-5"

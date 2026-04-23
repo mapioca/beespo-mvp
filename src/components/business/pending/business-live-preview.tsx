@@ -392,7 +392,7 @@ export function BusinessScriptPreview({
         </div>
       </div>
 
-      <div className="bg-background/45 px-5 py-5 sm:px-7 sm:py-6">
+      <div className="bg-surface-body px-5 py-5 sm:px-7 sm:py-6">
         {items.length === 0 ? (
           <div className="rounded-xl border border-dashed border-border/70 bg-surface-sunken/40 px-6 py-12 text-center text-[13px] text-muted-foreground">
             No business items to preview.

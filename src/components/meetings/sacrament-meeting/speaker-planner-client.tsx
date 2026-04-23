@@ -2,10 +2,21 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { format, startOfDay, addDays } from "date-fns"
-import { ChevronRight, Hand, Plus, Search, X } from "lucide-react"
+import {
+  ChevronRight,
+  ExternalLink,
+  Hand,
+  Link2,
+  Minus,
+  Pencil,
+  Plus,
+  Search,
+  X,
+} from "lucide-react"
 
 import { Breadcrumbs } from "@/components/dashboard/breadcrumbs"
 import { Button } from "@/components/ui/button"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { createClient } from "@/lib/supabase/client"
 import { cn } from "@/lib/utils"
 
@@ -24,7 +35,14 @@ type SpeakerEntry = {
   title: string
   speakerName: string
   topic: string
+  topicUrl?: string | null
   durationMinutes: number | null
+}
+
+type SpeakerFieldPatch = {
+  topic?: string
+  topicUrl?: string | null
+  durationMinutes?: number | null
 }
 
 type AgendaEntry = { id: string; kind: string; [key: string]: unknown }
@@ -295,6 +313,488 @@ function RosterRow({ person, spoke, picking, isCurrentSlot, onClick }: RosterRow
   )
 }
 
+// ─── Topic field (text or church URL with preview) ──────────────────────────
+
+const CHURCH_HOST = "www.churchofjesuschrist.org"
+
+type LinkPreview = {
+  url: string
+  title: string | null
+  description: string | null
+  image: string | null
+  siteName: string | null
+}
+
+const previewCache = new Map<string, Promise<LinkPreview | null>>()
+
+function fetchPreview(url: string): Promise<LinkPreview | null> {
+  const cached = previewCache.get(url)
+  if (cached) return cached
+  const promise = fetch(`/api/link-preview?url=${encodeURIComponent(url)}`)
+    .then((r) => (r.ok ? (r.json() as Promise<LinkPreview>) : null))
+    .catch(() => null)
+  previewCache.set(url, promise)
+  return promise
+}
+
+function isChurchUrl(value: string): boolean {
+  const trimmed = value.trim()
+  if (!trimmed) return false
+  try {
+    const parsed = new URL(trimmed)
+    return parsed.protocol === "https:" && parsed.hostname === CHURCH_HOST
+  } catch {
+    return false
+  }
+}
+
+function usePreview(url: string | null) {
+  const [preview, setPreview] = useState<LinkPreview | null>(null)
+  const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    if (!url) {
+      setPreview(null)
+      setLoading(false)
+      return
+    }
+    let cancelled = false
+    setLoading(true)
+    fetchPreview(url).then((data) => {
+      if (cancelled) return
+      setPreview(data)
+      setLoading(false)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [url])
+
+  return { preview, loading }
+}
+
+type LinkPreviewCardProps = {
+  url: string
+  preview: LinkPreview | null
+  loading: boolean
+}
+
+function LinkPreviewCard({ url, preview, loading }: LinkPreviewCardProps) {
+  const hostname = useMemo(() => {
+    try {
+      return new URL(url).hostname
+    } catch {
+      return url
+    }
+  }, [url])
+
+  return (
+    <div className="w-72 overflow-hidden rounded-xl border border-border bg-popover text-popover-foreground shadow-lg">
+      {preview?.image ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={preview.image}
+          alt=""
+          className="h-36 w-full object-cover"
+          loading="lazy"
+        />
+      ) : (
+        <div className="flex h-20 w-full items-center justify-center bg-muted">
+          <Link2 className="h-6 w-6 text-muted-foreground" />
+        </div>
+      )}
+      <div className="flex flex-col gap-1.5 p-3">
+        <div className="line-clamp-2 font-serif text-[14px] font-semibold leading-snug text-foreground">
+          {preview?.title ?? (loading ? "Loading preview…" : "Untitled page")}
+        </div>
+        {preview?.description && (
+          <div className="line-clamp-3 text-[12px] leading-snug text-muted-foreground">
+            {preview.description}
+          </div>
+        )}
+        <div className="mt-0.5 flex items-center gap-1 text-[11px] text-muted-foreground">
+          <Link2 className="h-3 w-3 shrink-0" />
+          <span className="truncate">{hostname}</span>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Legacy support: some entries stored the URL directly in `topic`.
+// Resolve both fields to `{ title, url }` for rendering.
+function resolveTopic(topic: string, topicUrl: string | null | undefined) {
+  const trimmedUrl = topicUrl?.trim() || ""
+  if (trimmedUrl && isChurchUrl(trimmedUrl)) {
+    return { title: topic.trim(), url: trimmedUrl }
+  }
+  const trimmedTopic = topic.trim()
+  if (isChurchUrl(trimmedTopic)) {
+    return { title: "", url: trimmedTopic }
+  }
+  return { title: trimmedTopic, url: "" }
+}
+
+// ─── Structured topic editor (popover with title + URL) ──────────────────────
+
+type TopicEditorProps = {
+  initialTitle: string
+  initialUrl: string
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  onSave: (patch: SpeakerFieldPatch) => void
+  trigger: React.ReactNode
+}
+
+function TopicEditor({
+  initialTitle,
+  initialUrl,
+  open,
+  onOpenChange,
+  onSave,
+  trigger,
+}: TopicEditorProps) {
+  const [title, setTitle] = useState(initialTitle)
+  const [url, setUrl] = useState(initialUrl)
+
+  // Reset local state when the popover opens fresh
+  useEffect(() => {
+    if (open) {
+      setTitle(initialTitle)
+      setUrl(initialUrl)
+    }
+  }, [open, initialTitle, initialUrl])
+
+  const trimmedUrl = url.trim()
+  const urlValid = !trimmedUrl || isChurchUrl(trimmedUrl)
+  const { preview, loading } = usePreview(urlValid && trimmedUrl ? trimmedUrl : null)
+
+  // If the user pastes a URL and hasn't typed a title yet, auto-fill it
+  // from the fetched metadata. Never override a title the user already typed.
+  useEffect(() => {
+    if (preview?.title && !title.trim()) {
+      setTitle(preview.title)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [preview?.title])
+
+  const commit = () => {
+    const finalTitle =
+      title.trim() || (urlValid && trimmedUrl ? preview?.title?.trim() || "" : "")
+    const finalUrl = urlValid ? trimmedUrl || null : null
+    onSave({ topic: finalTitle, topicUrl: finalUrl })
+    onOpenChange(false)
+  }
+
+  return (
+    <Popover
+      open={open}
+      onOpenChange={(next) => {
+        if (!next) commit()
+        onOpenChange(next)
+      }}
+    >
+      <PopoverTrigger asChild>{trigger}</PopoverTrigger>
+      <PopoverContent
+        align="start"
+        side="bottom"
+        sideOffset={6}
+        className="w-80 p-3"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex flex-col gap-3">
+          <div>
+            <label className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+              Title
+            </label>
+            <input
+              autoFocus
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault()
+                  commit()
+                }
+              }}
+              placeholder="e.g. Faith, repentance, the Atonement…"
+              className="w-full rounded-md border border-border bg-background px-2.5 py-1.5 text-[13px] text-foreground outline-none focus:border-brand"
+            />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+              Link <span className="font-normal normal-case text-muted-foreground/70">(optional)</span>
+            </label>
+            <input
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault()
+                  commit()
+                }
+              }}
+              placeholder={`https://${CHURCH_HOST}/…`}
+              className="w-full rounded-md border border-border bg-background px-2.5 py-1.5 text-[12px] text-foreground outline-none focus:border-brand"
+            />
+            {trimmedUrl && !urlValid && (
+              <div className="mt-1 text-[10.5px] text-amber-600 dark:text-amber-400">
+                Only https://{CHURCH_HOST} links are supported.
+              </div>
+            )}
+          </div>
+
+          {urlValid && trimmedUrl && (
+            <LinkPreviewCard url={trimmedUrl} preview={preview} loading={loading} />
+          )}
+
+          <div className="flex items-center justify-between pt-1">
+            {trimmedUrl ? (
+              <button
+                type="button"
+                onClick={() => setUrl("")}
+                className="text-[11.5px] text-muted-foreground hover:text-foreground"
+              >
+                Remove link
+              </button>
+            ) : (
+              <span />
+            )}
+            <Button size="sm" onClick={commit} className="h-7 px-3 text-[12px]">
+              Done
+            </Button>
+          </div>
+        </div>
+      </PopoverContent>
+    </Popover>
+  )
+}
+
+// ─── Topic field (input + chip with hover preview) ───────────────────────────
+
+type TopicFieldProps = {
+  topic: string
+  topicUrl: string | null | undefined
+  onUpdate: (patch: SpeakerFieldPatch) => void
+}
+
+function TopicField({ topic, topicUrl, onUpdate }: TopicFieldProps) {
+  const { title, url } = resolveTopic(topic, topicUrl)
+  const [hoverOpen, setHoverOpen] = useState(false)
+  const [editorOpen, setEditorOpen] = useState(false)
+  const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const { preview, loading } = usePreview(url || null)
+
+  useEffect(() => {
+    return () => {
+      if (hoverTimer.current) clearTimeout(hoverTimer.current)
+    }
+  }, [])
+
+  const openHover = () => {
+    if (hoverTimer.current) clearTimeout(hoverTimer.current)
+    setHoverOpen(true)
+  }
+  const closeHoverSoon = () => {
+    if (hoverTimer.current) clearTimeout(hoverTimer.current)
+    hoverTimer.current = setTimeout(() => setHoverOpen(false), 140)
+  }
+
+  // Empty state: plain input, no pencil. On commit (Enter/blur), auto-detect
+  // if the pasted value is a church URL and fetch the title.
+  if (!title && !url) {
+    const commitInline = (value: string) => {
+      const trimmed = value.trim()
+      if (!trimmed) {
+        onUpdate({ topic: "", topicUrl: null })
+        return
+      }
+      if (isChurchUrl(trimmed)) {
+        onUpdate({ topic: "", topicUrl: trimmed })
+        fetchPreview(trimmed).then((data) => {
+          if (data?.title) onUpdate({ topic: data.title, topicUrl: trimmed })
+        })
+        return
+      }
+      onUpdate({ topic: trimmed, topicUrl: null })
+    }
+
+    return (
+      <div className="mt-0.5">
+        <input
+          className="block w-full bg-transparent text-[11.5px] text-muted-foreground outline-none placeholder:italic placeholder:text-muted-foreground/60"
+          placeholder="Type a topic or paste a church url…"
+          defaultValue=""
+          onBlur={(e) => commitInline(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault()
+              e.currentTarget.blur()
+            }
+          }}
+          onClick={(e) => e.stopPropagation()}
+        />
+      </div>
+    )
+  }
+
+  const displayTitle = title || preview?.title || (url && loading ? "Loading…" : url)
+
+  const titleNode = url ? (
+    <Popover open={hoverOpen} onOpenChange={setHoverOpen}>
+      <PopoverTrigger asChild>
+        <a
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={(e) => e.stopPropagation()}
+          onMouseEnter={openHover}
+          onMouseLeave={closeHoverSoon}
+          onFocus={openHover}
+          onBlur={closeHoverSoon}
+          className="inline-flex min-w-0 items-center gap-1 truncate text-brand underline underline-offset-2 hover:text-brand/80"
+        >
+          <ExternalLink className="h-3 w-3 shrink-0" />
+          <span className="truncate">{displayTitle}</span>
+        </a>
+      </PopoverTrigger>
+      <PopoverContent
+        side="bottom"
+        align="start"
+        sideOffset={6}
+        className="w-auto border-0 bg-transparent p-0 shadow-none"
+        onMouseEnter={openHover}
+        onMouseLeave={closeHoverSoon}
+        onOpenAutoFocus={(e) => e.preventDefault()}
+      >
+        <LinkPreviewCard url={url} preview={preview} loading={loading} />
+      </PopoverContent>
+    </Popover>
+  ) : (
+    <button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation()
+        setEditorOpen(true)
+      }}
+      className="inline-flex min-w-0 items-center truncate text-left text-brand underline underline-offset-2 hover:text-brand/80"
+    >
+      <span className="truncate">{title}</span>
+    </button>
+  )
+
+  return (
+    <div className="mt-0.5 flex items-center gap-1 text-[11.5px]">
+      {titleNode}
+      <TopicEditor
+        initialTitle={title || preview?.title || ""}
+        initialUrl={url}
+        open={editorOpen}
+        onOpenChange={setEditorOpen}
+        onSave={onUpdate}
+        trigger={
+          <button
+            type="button"
+            onClick={(e) => e.stopPropagation()}
+            className="shrink-0 text-muted-foreground/60 transition-colors hover:text-foreground"
+            title="Edit topic"
+          >
+            <Pencil className="h-3 w-3" />
+          </button>
+        }
+      />
+    </div>
+  )
+}
+
+// ─── Duration stepper ────────────────────────────────────────────────────────
+
+const DURATION_MIN = 1
+const DURATION_MAX = 60
+
+type DurationStepperProps = {
+  value: number | null
+  onChange: (next: number | null) => void
+}
+
+function DurationStepper({ value, onChange }: DurationStepperProps) {
+  const [draft, setDraft] = useState<string>(value != null ? String(value) : "")
+
+  useEffect(() => {
+    setDraft(value != null ? String(value) : "")
+  }, [value])
+
+  const clamp = (n: number) => Math.max(DURATION_MIN, Math.min(DURATION_MAX, n))
+  const step = (delta: number) => {
+    const current = value ?? 0
+    onChange(clamp(current + delta))
+  }
+
+  const commit = (raw: string) => {
+    const trimmed = raw.trim()
+    if (!trimmed) {
+      onChange(null)
+      return
+    }
+    const n = Number(trimmed)
+    if (Number.isFinite(n)) onChange(clamp(Math.round(n)))
+    else setDraft(value != null ? String(value) : "")
+  }
+
+  const atMin = value != null && value <= DURATION_MIN
+  const atMax = value != null && value >= DURATION_MAX
+
+  return (
+    <div
+      className="group flex items-center rounded-md border border-border/70 bg-surface-sunken transition-colors focus-within:border-brand/60 hover:border-border"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <button
+        type="button"
+        disabled={atMin}
+        onClick={() => step(-1)}
+        aria-label="Decrease minutes"
+        className="flex h-6 w-5 items-center justify-center rounded-l-md text-muted-foreground/70 transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-30"
+      >
+        <Minus className="h-3 w-3" />
+      </button>
+      <input
+        type="text"
+        inputMode="numeric"
+        pattern="[0-9]*"
+        value={draft}
+        onChange={(e) => setDraft(e.target.value.replace(/\D/g, ""))}
+        onBlur={(e) => commit(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault()
+            e.currentTarget.blur()
+          } else if (e.key === "ArrowUp") {
+            e.preventDefault()
+            step(1)
+          } else if (e.key === "ArrowDown") {
+            e.preventDefault()
+            step(-1)
+          }
+        }}
+        placeholder="—"
+        aria-label="Duration in minutes"
+        className="w-[26px] border-x border-border/60 bg-transparent py-1 text-center font-mono text-[11.5px] text-foreground outline-none placeholder:text-muted-foreground/60"
+      />
+      <button
+        type="button"
+        disabled={atMax}
+        onClick={() => step(1)}
+        aria-label="Increase minutes"
+        className="flex h-6 w-5 items-center justify-center rounded-r-md text-muted-foreground/70 transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-30"
+      >
+        <Plus className="h-3 w-3" />
+      </button>
+    </div>
+  )
+}
+
 // ─── Speaker slot ─────────────────────────────────────────────────────────────
 
 type SlotFilledProps = {
@@ -303,7 +803,7 @@ type SlotFilledProps = {
   isPickingThis: boolean
   onPickSlot: () => void
   onRemove: () => void
-  onTopicChange: (topic: string) => void
+  onTopicUpdate: (patch: SpeakerFieldPatch) => void
   lastSpoke: LastSpokeEntry | undefined
 }
 
@@ -312,7 +812,7 @@ function SlotFilled({
   isPickingThis,
   onPickSlot,
   onRemove,
-  onTopicChange,
+  onTopicUpdate,
   lastSpoke,
 }: SlotFilledProps) {
   const tier: AgoTier = lastSpoke ? agoTier(lastSpoke.date) : "never"
@@ -350,26 +850,20 @@ function SlotFilled({
             <span className="italic text-muted-foreground">Tap to assign</span>
           )}
         </button>
-        <input
-          className="mt-0.5 block w-full bg-transparent text-[11.5px] text-muted-foreground outline-none placeholder:italic placeholder:text-muted-foreground/60"
-          placeholder="Topic or subject…"
-          value={speaker.topic}
-          onChange={(e) => onTopicChange(e.target.value)}
-          onClick={(e) => e.stopPropagation()}
+        <TopicField
+          topic={speaker.topic}
+          topicUrl={speaker.topicUrl}
+          onUpdate={onTopicUpdate}
         />
       </div>
 
-      {lastSpoke && speaker.speakerName && (
-        <span
-          className={cn(
-            "shrink-0 rounded-full px-1.5 py-px text-[10px] font-medium",
-            agoBadgeClass[tier]
-          )}
-          title={`Last spoke ${format(new Date(`${lastSpoke.date}T12:00:00`), "MMM d, yyyy")}: "${lastSpoke.topic || "no topic"}"`}
-        >
-          {relativeDate(lastSpoke.date)}
-        </span>
-      )}
+      <div className="flex shrink-0 items-center gap-1">
+        <DurationStepper
+          value={speaker.durationMinutes}
+          onChange={(durationMinutes) => onTopicUpdate({ durationMinutes })}
+        />
+        <span className="font-mono text-[11px] text-muted-foreground">min</span>
+      </div>
 
       <button
         type="button"
@@ -391,7 +885,7 @@ type MeetingCardProps = {
   lastSpokeMap: LastSpokeMap
   onPickSlot: (slotIdx: number) => void
   onRemoveSpeaker: (slotIdx: number) => void
-  onUpdateTopic: (slotIdx: number, topic: string) => void
+  onUpdateTopic: (slotIdx: number, patch: SpeakerFieldPatch) => void
 }
 
 function MeetingCard({
@@ -458,7 +952,7 @@ function MeetingCard({
                 isPickingThis={(isActive && picking?.slotIdx === i)}
                 onPickSlot={() => onPickSlot(i)}
                 onRemove={() => onRemoveSpeaker(i)}
-                onTopicChange={(topic) => onUpdateTopic(i, topic)}
+                onTopicUpdate={(patch) => onUpdateTopic(i, patch)}
                 lastSpoke={s.speakerName ? lastSpokeMap[s.speakerName] : undefined}
               />
             ))}
@@ -745,7 +1239,7 @@ export function SpeakerPlannerClient() {
             title: "Speaker",
             speakerName: person.name,
             topic: "",
-            durationMinutes: 12,
+            durationMinutes: 10,
           }
           // Insert before closing section or at end of standardEntries
           const closingIdx = allEntries.findIndex((e) => e.id === "section-closing")
@@ -780,14 +1274,19 @@ export function SpeakerPlannerClient() {
   )
 
   const updateTopic = useCallback(
-    (isoDate: string, slotIdx: number, topic: string) => {
+    (isoDate: string, slotIdx: number, patch: SpeakerFieldPatch) => {
       updateMeeting(isoDate, (m) => {
         let speakerCount = 0
         const updatedEntries = (m.standardEntries ?? []).map((e) => {
           if (e.kind !== "speaker") return e
           const isTarget = speakerCount === slotIdx
           speakerCount++
-          return isTarget ? { ...e, topic } : e
+          if (!isTarget) return e
+          const next = { ...e } as SpeakerEntry
+          if (patch.topic !== undefined) next.topic = patch.topic
+          if (patch.topicUrl !== undefined) next.topicUrl = patch.topicUrl
+          if (patch.durationMinutes !== undefined) next.durationMinutes = patch.durationMinutes
+          return next
         })
         return { standardEntries: updatedEntries }
       })
@@ -870,7 +1369,7 @@ export function SpeakerPlannerClient() {
                     setPicking({ isoDate: iso, slotIdx })
                   }}
                   onRemoveSpeaker={(slotIdx) => removeSpeaker(iso, slotIdx)}
-                  onUpdateTopic={(slotIdx, topic) => updateTopic(iso, slotIdx, topic)}
+                  onUpdateTopic={(slotIdx, patch) => updateTopic(iso, slotIdx, patch)}
                 />
               )
             })}

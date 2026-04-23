@@ -39,6 +39,7 @@ type SpeakerEntry = {
   title: string
   speakerName: string
   topic: string
+  topicUrl?: string | null
   durationMinutes: number | null
 }
 type TestimonyEntry = { id: string; kind: "testimony"; title: string; detail: string }

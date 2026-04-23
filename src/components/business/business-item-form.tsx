@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -12,8 +13,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { TemplateSelector } from "@/components/templates/template-selector";
-import { Check, ChevronsUpDown, Languages, Link as LinkIcon, X } from "lucide-react";
+import { Check } from "lucide-react";
+import { PickerModal } from "@/components/ui/picker-modal";
 import { createClient } from "@/lib/supabase/client";
 import {
   getDirectoryCache,
@@ -21,15 +22,6 @@ import {
   clearDirectoryCache,
   getWorkspaceProfile,
 } from "@/lib/cache/form-data-cache";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   ModalForm,
   ModalFormBody,
@@ -173,6 +165,8 @@ export function BusinessItemForm({
   // Form state
   const [personName, setPersonName] = useState(initialData?.personName || "");
   const [selectedDirectoryPersonId, setSelectedDirectoryPersonId] = useState<string>("");
+  const [personOpen, setPersonOpen] = useState(false);
+  const [personSearch, setPersonSearch] = useState("");
   const [directoryPeople, setDirectoryPeople] = useState<DirectoryPersonOption[]>([]);
   const [isDirectoryLoading, setIsDirectoryLoading] = useState(false);
   const [isUpdatingDirectoryGender, setIsUpdatingDirectoryGender] = useState(false);
@@ -182,16 +176,15 @@ export function BusinessItemForm({
   );
   const [category, setCategory] = useState(initialData?.category || "");
   const [notes] = useState(initialData?.notes || "");
-  const [selectedTemplateIds, setSelectedTemplateIds] = useState<string[]>(
+  const [selectedTemplateIds] = useState<string[]>(
     initialData?.templateId ? [initialData.templateId] : []
   );
-  const [templateOptions, setTemplateOptions] = useState<{ id: string; name: string }[]>([]);
   const [callingOpen, setCallingOpen] = useState(false);
   const [callingSearch, setCallingSearch] = useState("");
   const [selectedCallingId, setSelectedCallingId] = useState<string>("");
 
   // Details state (structured metadata)
-  const [language, setLanguage] = useState<Language>(
+  const [language] = useState<Language>(
     initialData?.details?.language || "ENG"
   );
   const [office, setOffice] = useState<PriesthoodOffice | undefined>(
@@ -235,6 +228,11 @@ export function BusinessItemForm({
     () => availableCallings.find((calling) => calling.id === selectedCallingId) ?? null,
     [availableCallings, selectedCallingId]
   );
+  const filteredPeople = useMemo(() => {
+    const q = personSearch.trim().toLowerCase();
+    if (!q) return directoryPeople;
+    return directoryPeople.filter((p) => p.name.toLowerCase().includes(q));
+  }, [directoryPeople, personSearch]);
   const effectiveGender: Gender | undefined =
     category === "ordination"
       ? "male"
@@ -280,24 +278,23 @@ export function BusinessItemForm({
       .filter(Boolean)
       .sort((a, b) => b.length - a.length);
   }, [personName, positionCalling]);
-
-  const highlightedScriptPreview = useMemo(() => {
+  useMemo(() => {
     if (!scriptPreview || scriptVariableTokens.length === 0) return scriptPreview;
 
     const regex = new RegExp(`(${scriptVariableTokens
-      .map((token) => {
-        const escapedToken = escapeRegExp(token);
-        const shouldUseWordBoundaries = /^[\p{L}\p{N}_]+$/u.test(token);
-        return shouldUseWordBoundaries ? `\\b${escapedToken}\\b` : escapedToken;
-      })
-      .join("|")})`, "g");
+        .map((token) => {
+          const escapedToken = escapeRegExp(token);
+          const shouldUseWordBoundaries = /^[\p{L}\p{N}_]+$/u.test(token);
+          return shouldUseWordBoundaries ? `\\b${escapedToken}\\b` : escapedToken;
+        })
+        .join("|")})`, "g");
     const tokenSet = new Set(scriptVariableTokens);
 
     return scriptPreview.split(regex).map((part, index) => {
       if (!part) return null;
       if (tokenSet.has(part)) {
         return (
-          <span key={`${part}-${index}`} className="font-medium text-[hsl(var(--brand))]">
+            <span key={`${part}-${index}`} className="font-medium text-[hsl(var(--brand))]">
             {part}
           </span>
         );
@@ -307,7 +304,7 @@ export function BusinessItemForm({
     });
   }, [scriptPreview, scriptVariableTokens]);
 
-  // Validation
+  /** Validation **/
   const validation = useMemo(() => {
     if (!category) return { valid: false, errors: ["Select a category"] };
     if (!selectedDirectoryPersonId) return { valid: false, errors: ["Person is required"] };
@@ -561,107 +558,130 @@ export function BusinessItemForm({
       <ModalFormBody className="w-full space-y-4 pt-2 pb-2">
         <ModalFormSection>
           <div className="max-w-[32rem] space-y-2">
-            <Label htmlFor="personName">Person Name*</Label>
+            <Label htmlFor="category">Category*</Label>
             <Select
-              value={selectedDirectoryPersonId}
+              value={category}
               onValueChange={(value) => {
-                setSelectedDirectoryPersonId(value);
-                const selected = directoryPeople.find((person) => person.id === value);
-                if (selected) {
-                  setPersonName(selected.name);
-                }
-                markTouched("personName");
+                setCategory(value);
+                markTouched("category");
               }}
               disabled={isLoading}
               required
             >
               <SelectTrigger
-                id="personName"
+                id="category"
                 className={cn(
-                  touched.personName && fieldErrors.personName && "border-destructive focus:ring-destructive/30"
+                  touched.category && fieldErrors.category && "border-destructive focus:ring-destructive/30"
                 )}
               >
-                <SelectValue
-                  placeholder={isDirectoryLoading ? "Loading members..." : "Select a person"}
-                />
+                <SelectValue placeholder="Select category" />
               </SelectTrigger>
               <SelectContent>
-                {directoryPeople.map((person) => (
-                  <SelectItem key={person.id} value={person.id}>
-                    {person.name}
+                {CATEGORY_OPTIONS
+                  .filter((opt) => opt.value !== "other")
+                  .map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
-            {touched.personName && fieldErrors.personName && (
-              <p className="text-xs text-destructive">{fieldErrors.personName}</p>
+            {touched.category && fieldErrors.category && (
+              <p className="text-xs text-destructive">{fieldErrors.category}</p>
             )}
-            {selectedDirectoryPerson &&
-              categoryConfig?.requiresGender &&
-              !selectedDirectoryPerson.gender && (
-                <div className="space-y-2 rounded-md border border-border/60 bg-muted/30 p-2.5">
-                  <p className="text-xs text-muted-foreground">
-                    This person is missing gender in Directory. Set it once to continue.
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleSetDirectoryGender("male")}
-                      disabled={isUpdatingDirectoryGender || isLoading}
-                      className="h-7 rounded-full px-2.5 text-[11px]"
-                    >
-                      Set as Male
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleSetDirectoryGender("female")}
-                      disabled={isUpdatingDirectoryGender || isLoading}
-                      className="h-7 rounded-full px-2.5 text-[11px]"
-                    >
-                      Set as Female
-                    </Button>
-                  </div>
-                </div>
-              )}
           </div>
 
           <div className="grid max-w-[34rem] grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="category">Category*</Label>
-              <Select
-                value={category}
-                onValueChange={(value) => {
-                  setCategory(value);
-                  markTouched("category");
-                }}
+              <Label htmlFor="personName">Person Name*</Label>
+              <Input
+                id="personName"
+                value={personName}
+                onClick={() => setPersonOpen(true)}
+                placeholder={isDirectoryLoading ? "Loading members..." : "Select a person"}
+                readOnly
                 disabled={isLoading}
-                required
+                className={cn(
+                  "cursor-pointer",
+                  touched.personName && fieldErrors.personName && "border-destructive focus:ring-destructive/30"
+                )}
+              />
+              <PickerModal
+                open={personOpen}
+                onOpenChange={(open) => { setPersonOpen(open); if (!open) setPersonSearch(""); }}
+                title="Assign person"
+                searchSlot={
+                  <input
+                    className="w-full bg-transparent px-4 py-2.5 text-sm outline-none placeholder:text-muted-foreground"
+                    placeholder={isDirectoryLoading ? "Loading..." : "Search members..."}
+                    value={personSearch}
+                    onChange={(e) => setPersonSearch(e.target.value)}
+                    autoFocus
+                  />
+                }
               >
-                <SelectTrigger
-                  id="category"
-                  className={cn(
-                    touched.category && fieldErrors.category && "border-destructive focus:ring-destructive/30"
-                  )}
-                >
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {CATEGORY_OPTIONS
-                    .filter((opt) => opt.value !== "other")
-                    .map((opt) => (
-                    <SelectItem key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {touched.category && fieldErrors.category && (
-                <p className="text-xs text-destructive">{fieldErrors.category}</p>
+                {isDirectoryLoading ? (
+                  <div className="flex items-center justify-center py-10">
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
+                  </div>
+                ) : filteredPeople.length === 0 ? (
+                  <div className="px-5 py-8 text-center text-[13px] text-muted-foreground">No members match.</div>
+                ) : (
+                  filteredPeople.map((person) => (
+                    <button
+                      key={person.id}
+                      type="button"
+                      onClick={() => {
+                        setSelectedDirectoryPersonId(person.id);
+                        setPersonName(person.name);
+                        markTouched("personName");
+                        setPersonOpen(false);
+                        setPersonSearch("");
+                      }}
+                      className="flex w-full items-center gap-3 px-[18px] py-2 text-left transition-colors hover:bg-surface-hover"
+                    >
+                      <div className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-surface-sunken text-[11px] font-semibold text-muted-foreground">
+                        {person.name.trim().split(/\s+/).slice(0, 2).map((p) => p[0]?.toUpperCase()).join("")}
+                      </div>
+                      <span className="truncate text-[14px] text-foreground">{person.name}</span>
+                    </button>
+                  ))
+                )}
+              </PickerModal>
+              {touched.personName && fieldErrors.personName && (
+                <p className="text-xs text-destructive">{fieldErrors.personName}</p>
               )}
+              {selectedDirectoryPerson &&
+                categoryConfig?.requiresGender &&
+                !selectedDirectoryPerson.gender && (
+                  <div className="space-y-2 rounded-md border border-border/60 bg-muted/30 p-2.5">
+                    <p className="text-xs text-muted-foreground">
+                      This person is missing gender in Directory. Set it once to continue.
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleSetDirectoryGender("male")}
+                        disabled={isUpdatingDirectoryGender || isLoading}
+                        className="h-7 rounded-full px-2.5 text-[11px]"
+                      >
+                        Set as Male
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleSetDirectoryGender("female")}
+                        disabled={isUpdatingDirectoryGender || isLoading}
+                        className="h-7 rounded-full px-2.5 text-[11px]"
+                      >
+                        Set as Female
+                      </Button>
+                    </div>
+                  </div>
+                )}
             </div>
 
             {categoryConfig?.requiresOffice ? (
@@ -699,66 +719,57 @@ export function BusinessItemForm({
             ) : categoryConfig?.requiresCalling ? (
               <div className="space-y-2">
                 <Label htmlFor="positionCalling">Calling*</Label>
-                <Popover open={callingOpen} onOpenChange={setCallingOpen}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      id="positionCalling"
-                      type="button"
-                      variant="outline"
-                      role="combobox"
-                      aria-expanded={callingOpen}
-                      disabled={isLoading}
-                      className={cn(
-                        "h-9 w-full justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm font-normal ring-offset-background",
-                        !selectedCalling && "text-muted-foreground",
-                        touched.positionCalling && fieldErrors.positionCalling && "border-destructive"
-                      )}
-                    >
-                      <span className="min-w-0 flex-1 truncate text-left">
-                        {selectedCalling ? selectedCalling.labels[languageKey] : "Select calling"}
-                      </span>
-                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent align="start" className="w-[--radix-popover-trigger-width] p-0">
-                    <Command shouldFilter={false}>
-                      <CommandInput
-                        placeholder="Search callings..."
-                        value={callingSearch}
-                        onValueChange={setCallingSearch}
-                      />
-                      <CommandList className="max-h-64 overflow-y-auto">
-                        <CommandEmpty>
-                          {workspaceCallingLevel
-                            ? "No callings found."
-                            : "Unsupported workspace type for callings."}
-                        </CommandEmpty>
-                        <CommandGroup>
-                          {filteredCallings.map((calling) => (
-                            <CommandItem
-                              key={calling.id}
-                              value={calling.id}
-                              onSelect={() => {
-                                setSelectedCallingId(calling.id);
-                                setPositionCalling(calling.labels[languageKey]);
-                                markTouched("positionCalling");
-                                setCallingOpen(false);
-                              }}
-                            >
-                              <Check
-                                className={cn(
-                                  "mr-2 h-4 w-4",
-                                  selectedCallingId === calling.id ? "opacity-100" : "opacity-0"
-                                )}
-                              />
-                              {calling.labels[languageKey]}
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
+                <Input
+                  id="positionCalling"
+                  value={selectedCalling ? selectedCalling.labels[languageKey] : ""}
+                  onClick={() => setCallingOpen(true)}
+                  placeholder="Select calling..."
+                  readOnly
+                  disabled={isLoading}
+                  className={cn(
+                    "cursor-pointer",
+                    touched.positionCalling && fieldErrors.positionCalling && "border-destructive"
+                  )}
+                />
+                <PickerModal
+                  open={callingOpen}
+                  onOpenChange={setCallingOpen}
+                  title="Select Calling"
+                  searchSlot={
+                    <input
+                      className="w-full bg-transparent px-4 py-2.5 text-sm outline-none placeholder:text-muted-foreground"
+                      placeholder="Search callings..."
+                      value={callingSearch}
+                      onChange={(e) => setCallingSearch(e.target.value)}
+                      autoFocus
+                    />
+                  }
+                >
+                  <div className="px-1">
+                    {filteredCallings.length === 0 && (
+                      <div className="px-2.5 py-6 text-center text-[13px] text-muted-foreground">
+                        {workspaceCallingLevel ? "No callings found." : "Unsupported workspace type for callings."}
+                      </div>
+                    )}
+                    {filteredCallings.map((calling) => (
+                      <button
+                        key={calling.id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedCallingId(calling.id);
+                          setPositionCalling(calling.labels[languageKey]);
+                          markTouched("positionCalling");
+                          setCallingOpen(false);
+                        }}
+                        className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left text-[13px] hover:bg-surface-hover"
+                      >
+                        <Check className={cn("h-4 w-4 shrink-0", selectedCallingId === calling.id ? "opacity-100" : "opacity-0")} />
+                        <span className="flex-1 truncate">{calling.labels[languageKey]}</span>
+                        <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">{calling.organization}</span>
+                      </button>
+                    ))}
+                  </div>
+                </PickerModal>
                 {touched.positionCalling && fieldErrors.positionCalling && (
                   <p className="text-xs text-destructive">{fieldErrors.positionCalling}</p>
                 )}
@@ -786,98 +797,6 @@ export function BusinessItemForm({
             )}
           </ModalFormSection>
         )}
-
-        <ModalFormSection>
-          <p className="max-w-[34rem] text-sm font-semibold tracking-tight text-foreground">
-            Script Preview
-          </p>
-
-          <div
-            className={cn(
-              "max-h-[180px] max-w-[34rem] overflow-y-auto rounded-md border border-muted bg-muted p-3 text-sm leading-relaxed whitespace-pre-wrap",
-              "font-serif"
-            )}
-          >
-            {validation.valid && highlightedScriptPreview ? (
-              highlightedScriptPreview
-            ) : (
-              <span className="text-muted-foreground italic">
-                Complete the form to see the script preview...
-              </span>
-            )}
-          </div>
-        </ModalFormSection>
-
-        <ModalFormSection className="pt-3">
-          <div className="max-w-[34rem] space-y-2">
-            <div className="flex flex-wrap items-center gap-2">
-              <Select
-                value={language}
-                onValueChange={(value) => setLanguage(value as Language)}
-                disabled={isLoading}
-              >
-                <SelectTrigger
-                  className={cn(
-                    "h-7 w-auto rounded-full px-2.5 text-[11px] font-medium shadow-sm transition-colors [&>svg]:hidden",
-                    language !== "ENG"
-                      ? "border-transparent bg-[hsl(var(--chip-active-bg))] text-[hsl(var(--chip-active-text))]"
-                      : "border-[hsl(var(--chip-border))] bg-background text-[hsl(var(--chip-text))] hover:bg-[hsl(var(--chip-hover-bg))]"
-                  )}
-                >
-                  <div className="inline-flex items-center gap-1.5 whitespace-nowrap leading-none">
-                    <Languages className="h-2.5 w-2.5 shrink-0" />
-                    Overwrite language
-                  </div>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ENG">English</SelectItem>
-                  <SelectItem value="SPA">Español</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <TemplateSelector
-                value={selectedTemplateIds}
-                onChange={setSelectedTemplateIds}
-                onTemplatesLoaded={setTemplateOptions}
-                disabled={isLoading}
-                mode="pill"
-                pillLabel="Link to template"
-                pillIcon={<LinkIcon className="h-2.5 w-2.5 shrink-0" />}
-              />
-            </div>
-
-            {selectedTemplateIds.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {selectedTemplateIds.map((templateId) => {
-                  const templateName =
-                    templateOptions.find((template) => template.id === templateId)?.name ||
-                    "Template";
-
-                  return (
-                    <span
-                      key={templateId}
-                      className="inline-flex items-center gap-1 rounded-full border border-muted bg-muted px-2.5 py-1 text-xs text-foreground"
-                    >
-                      {templateName}
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setSelectedTemplateIds((prev) =>
-                            prev.filter((id) => id !== templateId)
-                          )
-                        }
-                        className="inline-flex h-3.5 w-3.5 items-center justify-center rounded-full text-muted-foreground hover:text-foreground"
-                        aria-label={`Remove ${templateName}`}
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </span>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        </ModalFormSection>
 
       </ModalFormBody>
 

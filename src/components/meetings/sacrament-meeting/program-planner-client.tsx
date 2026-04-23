@@ -131,6 +131,7 @@ type SpeakerEntry = {
   title: string
   speakerName: string
   topic: string
+  topicUrl?: string | null
   durationMinutes: number | null
 }
 
@@ -145,6 +146,7 @@ type AgendaEntry = SectionEntry | StaticEntry | SpeakerEntry | TestimonyEntry
 
 type PlannerMeetingState = {
   title: string
+  meetingTime: string
   specialType: MeetingSpecialType
   assignments: Record<AssignmentField, string>
   sacramentAssignments: Record<SacramentAssignmentRole, string[]>
@@ -178,7 +180,7 @@ const PLANNER_DRAFT_STORAGE_KEY = "beespo:sacrament-meeting:planner:draft:v1"
 type Lang = "ENG" | "SPA"
 
 const ENTRY_LABELS: Record<string, Record<Lang, string>> = {
-  "section-opening":     { ENG: "Opening",                          SPA: "Apertura" },
+  "section-opening":     { ENG: "Greeting & welcome",                SPA: "Bienvenida" },
   "opening-hymn":        { ENG: "Opening Hymn",                     SPA: "Himno de Apertura" },
   "invocation":          { ENG: "Invocation",                       SPA: "Primera Oración" },
   "ward-business":       { ENG: "Ward Business",                    SPA: "Asuntos del Barrio" },
@@ -683,6 +685,7 @@ function createFastEntries(lang: Lang = "ENG"): AgendaEntry[] {
 function createInitialMeetingState(isoDate: string, lang: Lang = "ENG"): PlannerMeetingState {
   return {
     title: "",
+    meetingTime: "9:00 AM",
     specialType: getDefaultMeetingSpecialType(isoDate),
     assignments: {
       presiding: "",
@@ -1085,7 +1088,7 @@ function OpeningSection({
 
   return (
     <div>
-      <SectionHeader label="Opening" number="02" />
+      <SectionHeader label="Greeting & welcome" number="02" />
       <ItemsRow type="Announcements" items={announcements} onClick={() => setAnnouncementsModalOpen(true)} />
       {openingHymn ? (
         <HymnPlanningRow
@@ -2399,6 +2402,13 @@ export function SacramentMeetingPlannerClient({
     }))
   }
 
+  const handleMeetingTimeChange = (meetingTime: string) => {
+    updateSelectedMeeting((meeting) => ({
+      ...meeting,
+      meetingTime,
+    }))
+  }
+
   const handleClearSelectedSunday = () => {
     setMeetingsByDate((prev) => ({
       ...prev,
@@ -2515,6 +2525,17 @@ export function SacramentMeetingPlannerClient({
                 ? { durationMinutes: typeof value === "number" ? value : null }
                 : { topic: typeof value === "string" ? value : "" }),
             }
+          : entry
+      ),
+    }))
+  }
+
+  const handleTopicUpdate = (entryId: string, patch: { topic?: string; topicUrl?: string | null }) => {
+    updateSelectedMeeting((meeting) => ({
+      ...meeting,
+      standardEntries: meeting.standardEntries.map((entry) =>
+        entry.id === entryId && entry.kind === "speaker"
+          ? { ...entry, ...patch }
           : entry
       ),
     }))
@@ -2741,6 +2762,10 @@ export function SacramentMeetingPlannerClient({
         e.preventDefault()
         router.push("/meetings/sacrament-meeting/speaker-planner")
       }
+      if (e.altKey && e.code === "KeyB") {
+        e.preventDefault()
+        router.push("/meetings/sacrament-meeting/business")
+      }
     }
     window.addEventListener("keydown", handleKeyDown)
     return () => window.removeEventListener("keydown", handleKeyDown)
@@ -2755,6 +2780,10 @@ export function SacramentMeetingPlannerClient({
             <Button type="button" variant="ghost" size="sm" onClick={() => router.push("/meetings/sacrament-meeting/speaker-planner")} className="bg-surface-raised border border-border">
               Speakers
               <kbd className="ml-1 hidden rounded border border-border bg-surface-sunken px-1 py-0.5 font-mono text-[10px] text-muted-foreground sm:inline">⌥S</kbd>
+            </Button>
+            <Button type="button" variant="ghost" size="sm" onClick={() => router.push("/meetings/sacrament-meeting/business")} className="bg-surface-raised border border-border">
+              Business
+              <kbd className="ml-1 hidden rounded border border-border bg-surface-sunken px-1 py-0.5 font-mono text-[10px] text-muted-foreground sm:inline">⌥B</kbd>
             </Button>
             <Button type="button" variant="ghost" size="sm" onClick={() => setAudienceOpen(true)} className="bg-surface-raised border border-border">
               Audience
@@ -2774,7 +2803,13 @@ export function SacramentMeetingPlannerClient({
                 <div className="flex flex-col gap-0">
                   <div>
                     <div className="text-[13px] text-muted-foreground">
-                      {format(plannerSundayDateFromIso(selectedSunday.isoDate), "EEEE, MMMM d, yyyy")} · 9:00 AM
+                      {format(plannerSundayDateFromIso(selectedSunday.isoDate), "EEEE, MMMM d, yyyy")} · <input
+                        type="text"
+                        value={selectedMeeting.meetingTime ?? "9:00 AM"}
+                        onChange={(e) => handleMeetingTimeChange(e.target.value)}
+                        className="inline w-[6rem] bg-transparent outline-none hover:text-foreground focus:text-foreground"
+                        aria-label="Meeting time"
+                      />
                     </div>
                     <EditableMeetingTitle
                       value={selectedMeeting.title}
@@ -3055,6 +3090,7 @@ export function SacramentMeetingPlannerClient({
           }}
           isoDate={selectedSunday.isoDate}
           onClose={() => setAudienceOpen(false)}
+          onTopicUpdate={handleTopicUpdate}
         />
       )}
 
@@ -3128,7 +3164,7 @@ function AgendaRow({
         className="pt-3 first:pt-0"
       >
         <div className="px-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-          {entry.title}
+          {ENTRY_LABELS[entry.id]?.["ENG"] ?? entry.title}
         </div>
       </div>
     )

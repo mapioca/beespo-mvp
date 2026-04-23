@@ -86,6 +86,7 @@
     --surface-hover: 0 0% 97%; /* Hover state for interactive surfaces in light mode */
     --surface-raised: 0 0% 100%; /* Passive buttons, interactive tiles for light mode */
     --surface-sunken: 0 0% 96%; /* Recessed inputs, wells for light mode */
+    --surface-body: 0 0% 99%; /* Lighter shade of surface-raised */
     --cp-focus: 231 67% 54%;
     --cp-primary: 231 67% 54%;
     --cp-primary-foreground: 0 0% 100%;
@@ -420,6 +421,7 @@
     --surface-hover: 240 4% 16%;  /* #26262a — hover state for interactive surfaces */
     --surface-active: 255 5% 23%; /* #383640 — selected/active state */
     --surface-sunken: 255 5% 8%;  /* #141316 — recessed inputs, wells */
+    --surface-body: 260 5% 13%; /* Between surface-canvas and surface-raised */
     --cp-text: 45 18% 93%;
     --cp-text-muted: 40 8% 59%;
     --cp-text-subtle: 38 6% 44%;
@@ -682,6 +684,7 @@
     --surface-hover: 46 17% 94%; /* Hover state for interactive surfaces in warm mode */
     --surface-raised: 0 0% 100%; /* Passive buttons, interactive tiles for warm mode */
     --surface-sunken: 45 25% 93%; /* Recessed inputs, wells for warm mode */
+    --surface-body: 0 0% 99%; /* Lighter shade of surface-raised */
     --cp-focus: 17 55% 51%;
     --cp-primary: 17 55% 51%;
     --cp-primary-foreground: 0 0% 100%;
@@ -849,6 +852,10 @@
 
   .bg-builder-canvas {
     background-color: hsl(var(--builder-canvas));
+  }
+
+  .bg-surface-body {
+    background-color: hsl(var(--surface-body));
   }
 
   .border-app-island {
