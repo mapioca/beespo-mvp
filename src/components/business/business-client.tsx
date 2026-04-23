@@ -21,6 +21,7 @@ import { BusinessItem } from "./business-table"
 import { BusinessDetailsPanel } from "./business-details-panel"
 import { BusinessItemForm, BusinessItemFormData } from "./business-item-form"
 import { BusinessPendingView } from "./pending/business-pending-view"
+import { generateBusinessScript } from "@/lib/business-script-generator"
 
 interface BusinessClientProps {
   items: BusinessItem[]
@@ -84,6 +85,16 @@ export function BusinessClient({ items }: BusinessClientProps) {
       return
     }
 
+    // Generate the conducting script
+    const businessItemForScript = {
+      person_name: formData.personName,
+      position_calling: formData.positionCalling,
+      category: formData.category,
+      notes: formData.notes,
+      details: formData.details,
+    };
+    const generatedScript = generateBusinessScript(businessItemForScript);
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: businessItem, error: createError } = await (supabase.from("business_items") as any)
       .insert({
@@ -94,6 +105,7 @@ export function BusinessClient({ items }: BusinessClientProps) {
         action_date: formData.actionDate || null,
         notes: formData.notes || null,
         details: formData.details,
+        script: generatedScript,
         workspace_id: profile.workspace_id,
         created_by: user.id,
       })

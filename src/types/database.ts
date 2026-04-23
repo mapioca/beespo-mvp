@@ -1072,6 +1072,7 @@ export type Database = {
           status: "pending" | "completed";
           action_date: string | null;
           notes: string | null;
+          script: string | null;
           created_by: string | null;
           created_at: string;
           updated_at: string;
@@ -1091,6 +1092,7 @@ export type Database = {
           status?: "pending" | "completed";
           action_date?: string | null;
           notes?: string | null;
+          script?: string | null;
           created_by?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -1110,6 +1112,7 @@ export type Database = {
           status?: "pending" | "completed";
           action_date?: string | null;
           notes?: string | null;
+          script?: string | null;
           created_by?: string | null;
           created_at?: string;
           updated_at?: string;

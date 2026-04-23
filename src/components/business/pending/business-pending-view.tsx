@@ -111,22 +111,37 @@ export function BusinessPendingView({ items, onOpenItem }: BusinessPendingViewPr
     if (active !== "pending" || activeItems.length === 0 || !meetingDate) return
     setScheduling(true)
     const supabase = createClient()
-    const ids = activeItems.map((i) => i.id)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase.from("business_items") as any)
-      .update({ action_date: meetingDate })
-      .in("id", ids)
 
-    if (error) {
-      toast.error(error.message || "Failed to schedule business items.")
+    // Update each business item with action_date and script override if present
+    const updatePromises = activeItems.map(async (item) => {
+      const scriptOverride = scriptOverrides[item.category as BusinessCategoryKey];
+      const updateData: { action_date: string; script?: string | null } = {
+        action_date: meetingDate
+      };
+
+      if (scriptOverride !== undefined) {
+        updateData.script = scriptOverride;
+      }
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return (supabase.from("business_items") as any)
+        .update(updateData)
+        .eq("id", item.id)
+    });
+
+    const results = await Promise.all(updatePromises);
+    const errors = results.filter(result => result.error);
+
+    if (errors.length > 0) {
+      toast.error(errors[0].error?.message || "Failed to schedule business items.")
     } else {
       const label = format(new Date(`${meetingDate}T12:00:00`), "MMM d, yyyy")
-      toast.success(`${ids.length} item${ids.length === 1 ? "" : "s"} scheduled for ${label}`)
+      toast.success(`${activeItems.length} item${activeItems.length === 1 ? "" : "s"} scheduled for ${label}`)
       router.refresh()
       setActive("scheduled")
     }
     setScheduling(false)
-  }, [active, activeItems, meetingDate, router])
+  }, [active, activeItems, meetingDate, router, scriptOverrides])
 
   const meetingDateLabel = meetingDate
     ? format(new Date(`${meetingDate}T12:00:00`), "EEE, MMM d, yyyy")

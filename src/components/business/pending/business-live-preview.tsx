@@ -132,7 +132,15 @@ function buildScriptSections(
     const group = groupedByCategory[key] ?? []
     if (group.length === 0) return []
 
-    const script = generateCombinedBusinessScript(key, group)
+    // Use stored scripts if available, otherwise generate them
+    const storedScripts = group
+      .map(item => item.script)
+      .filter(script => script && script.trim().length > 0)
+
+    const script = storedScripts.length > 0
+      ? storedScripts.join('\n\n')
+      : generateCombinedBusinessScript(key, group)
+
     const issues = group.flatMap((item) =>
       itemIssues(item).map((issue) => `${item.person_name}: ${issue}`)
     )
