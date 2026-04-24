@@ -10,9 +10,13 @@ import {
   CircleDashed,
   CircleDot,
   Clock3,
+  ExternalLink,
   GripVertical,
+  Link2,
   Loader2,
+  Minus,
   MoreHorizontal,
+  Pencil,
   PencilLine,
   Play,
   Plus,
@@ -44,6 +48,7 @@ import { HymnSelectorModal } from "@/components/meetings/hymn-selector-modal"
 import { AnnouncementSelectorPopover } from "@/components/meetings/builder/announcement-selector-popover"
 import { BusinessSelectorPopover } from "@/components/meetings/builder/business-selector-popover"
 import { Button } from "@/components/ui/button"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -1496,6 +1501,7 @@ type SpeakersAndMusicSectionProps = {
   onAddSpeaker: () => void
   onAddIntermediateHymn: () => void
   onAddSpecialNumber: () => void
+  onDragEnd: (event: DragEndEvent) => void
 }
 
 function SpeakersAndMusicSection({
@@ -1509,7 +1515,17 @@ function SpeakersAndMusicSection({
   onAddSpeaker,
   onAddIntermediateHymn,
   onAddSpecialNumber,
+  onDragEnd,
 }: SpeakersAndMusicSectionProps) {
+  const [reorderMode, setReorderMode] = useState(false)
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    })
+  )
+
   const messageEntries = entries.filter(
     (entry): entry is SpeakerEntry | TestimonyEntry | StaticEntry =>
       entry.kind === "speaker" ||
@@ -1520,43 +1536,77 @@ function SpeakersAndMusicSection({
 
   return (
     <div>
-      <SectionHeader label={isFastTestimony ? "Testimony meeting" : "Speakers & music"} number="05" />
+      <div className="mb-2.5 flex items-center gap-2.5">
+        <div className="font-serif text-[14px] italic text-muted-foreground">
+          {isFastTestimony ? "Testimony meeting" : "Speakers & music"}
+        </div>
+        <div className="h-px flex-1 bg-border/70" />
+        {!isFastTestimony && messageEntries.length > 1 && (
+          <button
+            type="button"
+            onClick={() => setReorderMode(!reorderMode)}
+            className={cn(
+              "flex items-center gap-1.5 rounded-md px-2 py-1 text-[11px] font-medium transition-colors",
+              reorderMode
+                ? "bg-brand/10 text-brand"
+                : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+            )}
+          >
+            <GripVertical className="h-3 w-3" />
+            {reorderMode ? "Done" : "Reorder"}
+          </button>
+        )}
+        <div className="text-[11px] font-medium tracking-[0.04em] text-muted-foreground">05</div>
+      </div>
       {isFastTestimony ? (
         <div className="rounded-xl border border-border/70 bg-card px-4 py-4 font-serif text-[14.5px] italic leading-6 text-muted-foreground">
           Fast &amp; testimony meeting - open to the congregation following the presiding authority&apos;s opening testimony.
         </div>
       ) : (
         <>
-          <div className="space-y-2">
-            {messageEntries.map((entry) => {
-              if (entry.kind === "speaker") {
-                speakerOrder += 1
-                return (
-                  <SpeakerPlanningRow
-                    key={entry.id}
-                    entry={entry}
-                    order={speakerOrder}
-                    onSelectSpeaker={onSelectSpeaker}
-                    onSpeakerFieldChange={onSpeakerFieldChange}
-                    onDeleteSpeaker={onDeleteSpeaker}
-                  />
-                )
-              }
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={onDragEnd}
+          >
+            <SortableContext
+              items={messageEntries.map((entry) => entry.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              <div className="space-y-2">
+                {messageEntries.map((entry) => {
+                  if (entry.kind === "speaker") {
+                    speakerOrder += 1
+                    return (
+                      <SpeakerPlanningRow
+                        key={entry.id}
+                        entry={entry}
+                        order={speakerOrder}
+                        reorderMode={reorderMode}
+                        onSelectSpeaker={onSelectSpeaker}
+                        onSpeakerFieldChange={onSpeakerFieldChange}
+                        onDeleteSpeaker={onDeleteSpeaker}
+                      />
+                    )
+                  }
 
-              if (entry.kind === "static") {
-                return (
-                  <MusicPlanningRow
-                    key={entry.id}
-                    entry={entry}
-                    onPickHymn={onPickHymn}
-                    onDeleteStaticEntry={onDeleteStaticEntry}
-                  />
-                )
-              }
+                  if (entry.kind === "static") {
+                    return (
+                      <MusicPlanningRow
+                        key={entry.id}
+                        entry={entry}
+                        reorderMode={reorderMode}
+                        onPickHymn={onPickHymn}
+                        onDeleteStaticEntry={onDeleteStaticEntry}
+                      />
+                    )
+                  }
 
-              return null
-            })}
-          </div>
+                  return null
+                })}
+              </div>
+            </SortableContext>
+          </DndContext>
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <button
               type="button"
@@ -1589,9 +1639,488 @@ function SpeakersAndMusicSection({
   )
 }
 
+// ─── Topic editor helpers (from speaker-planner) ─────────────────────────────
+
+const CHURCH_HOST = "www.churchofjesuschrist.org"
+
+type LinkPreview = {
+  url: string
+  title: string | null
+  description: string | null
+  image: string | null
+  siteName: string | null
+}
+
+type SpeakerFieldPatch = {
+  topic?: string
+  topicUrl?: string | null
+  durationMinutes?: number | null
+}
+
+const previewCache = new Map<string, Promise<LinkPreview | null>>()
+
+function fetchPreview(url: string): Promise<LinkPreview | null> {
+  const cached = previewCache.get(url)
+  if (cached) return cached
+  const promise = fetch(`/api/link-preview?url=${encodeURIComponent(url)}`)
+    .then((r) => (r.ok ? (r.json() as Promise<LinkPreview>) : null))
+    .catch(() => null)
+  previewCache.set(url, promise)
+  return promise
+}
+
+function isChurchUrl(value: string): boolean {
+  const trimmed = value.trim()
+  if (!trimmed) return false
+  try {
+    const parsed = new URL(trimmed)
+    return parsed.protocol === "https:" && parsed.hostname === CHURCH_HOST
+  } catch {
+    return false
+  }
+}
+
+function usePreview(url: string | null) {
+  const [preview, setPreview] = useState<LinkPreview | null>(null)
+  const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    if (!url) {
+      setPreview(null)
+      setLoading(false)
+      return
+    }
+    let cancelled = false
+    setLoading(true)
+    fetchPreview(url).then((data) => {
+      if (cancelled) return
+      setPreview(data)
+      setLoading(false)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [url])
+
+  return { preview, loading }
+}
+
+type LinkPreviewCardProps = {
+  url: string
+  preview: LinkPreview | null
+  loading: boolean
+}
+
+function LinkPreviewCard({ url, preview, loading }: LinkPreviewCardProps) {
+  const hostname = useMemo(() => {
+    try {
+      return new URL(url).hostname
+    } catch {
+      return url
+    }
+  }, [url])
+
+  return (
+    <div className="w-72 overflow-hidden rounded-xl border border-border bg-popover text-popover-foreground shadow-lg">
+      {preview?.image ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={preview.image}
+          alt=""
+          className="h-36 w-full object-cover"
+          loading="lazy"
+        />
+      ) : (
+        <div className="flex h-20 w-full items-center justify-center bg-muted">
+          <Link2 className="h-6 w-6 text-muted-foreground" />
+        </div>
+      )}
+      <div className="flex flex-col gap-1.5 p-3">
+        <div className="line-clamp-2 font-serif text-[14px] font-semibold leading-snug text-foreground">
+          {preview?.title ?? (loading ? "Loading preview…" : "Untitled page")}
+        </div>
+        {preview?.description && (
+          <div className="line-clamp-3 text-[12px] leading-snug text-muted-foreground">
+            {preview.description}
+          </div>
+        )}
+        <div className="mt-0.5 flex items-center gap-1 text-[11px] text-muted-foreground">
+          <Link2 className="h-3 w-3 shrink-0" />
+          <span className="truncate">{hostname}</span>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function resolveTopic(topic: string, topicUrl: string | null | undefined) {
+  const trimmedUrl = topicUrl?.trim() || ""
+  if (trimmedUrl && isChurchUrl(trimmedUrl)) {
+    return { title: topic.trim(), url: trimmedUrl }
+  }
+  const trimmedTopic = topic.trim()
+  if (isChurchUrl(trimmedTopic)) {
+    return { title: "", url: trimmedTopic }
+  }
+  return { title: trimmedTopic, url: "" }
+}
+
+type TopicEditorProps = {
+  initialTitle: string
+  initialUrl: string
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  onSave: (patch: SpeakerFieldPatch) => void
+  trigger: React.ReactNode
+}
+
+function TopicEditor({
+  initialTitle,
+  initialUrl,
+  open,
+  onOpenChange,
+  onSave,
+  trigger,
+}: TopicEditorProps) {
+  const [title, setTitle] = useState(initialTitle)
+  const [url, setUrl] = useState(initialUrl)
+
+  useEffect(() => {
+    if (open) {
+      setTitle(initialTitle)
+      setUrl(initialUrl)
+    }
+  }, [open, initialTitle, initialUrl])
+
+  const trimmedUrl = url.trim()
+  const urlValid = !trimmedUrl || isChurchUrl(trimmedUrl)
+  const { preview, loading } = usePreview(urlValid && trimmedUrl ? trimmedUrl : null)
+
+  useEffect(() => {
+    if (preview?.title && !title.trim()) {
+      setTitle(preview.title)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [preview?.title])
+
+  const commit = () => {
+    const finalTitle =
+      title.trim() || (urlValid && trimmedUrl ? preview?.title?.trim() || "" : "")
+    const finalUrl = urlValid ? trimmedUrl || null : null
+    onSave({ topic: finalTitle, topicUrl: finalUrl })
+    onOpenChange(false)
+  }
+
+  return (
+    <Popover
+      open={open}
+      onOpenChange={(next) => {
+        if (!next) commit()
+        onOpenChange(next)
+      }}
+    >
+      <PopoverTrigger asChild>{trigger}</PopoverTrigger>
+      <PopoverContent
+        align="start"
+        side="bottom"
+        sideOffset={6}
+        className="w-80 p-3"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex flex-col gap-3">
+          <div>
+            <label className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+              Title
+            </label>
+            <input
+              autoFocus
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault()
+                  commit()
+                }
+              }}
+              placeholder="e.g. Faith, repentance, the Atonement…"
+              className="w-full rounded-md border border-border bg-background px-2.5 py-1.5 text-[13px] text-foreground outline-none focus:border-brand"
+            />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+              Link <span className="font-normal normal-case text-muted-foreground/70">(optional)</span>
+            </label>
+            <input
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault()
+                  commit()
+                }
+              }}
+              placeholder={`https://${CHURCH_HOST}/…`}
+              className="w-full rounded-md border border-border bg-background px-2.5 py-1.5 text-[12px] text-foreground outline-none focus:border-brand"
+            />
+            {trimmedUrl && !urlValid && (
+              <div className="mt-1 text-[10.5px] text-amber-600 dark:text-amber-400">
+                Only https://{CHURCH_HOST} links are supported.
+              </div>
+            )}
+          </div>
+
+          {urlValid && trimmedUrl && (
+            <LinkPreviewCard url={trimmedUrl} preview={preview} loading={loading} />
+          )}
+
+          <div className="flex items-center justify-between pt-1">
+            {trimmedUrl ? (
+              <button
+                type="button"
+                onClick={() => setUrl("")}
+                className="text-[11.5px] text-muted-foreground hover:text-foreground"
+              >
+                Remove link
+              </button>
+            ) : (
+              <span />
+            )}
+            <Button size="sm" onClick={commit} className="h-7 px-3 text-[12px]">
+              Done
+            </Button>
+          </div>
+        </div>
+      </PopoverContent>
+    </Popover>
+  )
+}
+
+type TopicFieldProps = {
+  topic: string
+  topicUrl: string | null | undefined
+  onUpdate: (patch: SpeakerFieldPatch) => void
+}
+
+function TopicField({ topic, topicUrl, onUpdate }: TopicFieldProps) {
+  const { title, url } = resolveTopic(topic, topicUrl)
+  const [hoverOpen, setHoverOpen] = useState(false)
+  const [editorOpen, setEditorOpen] = useState(false)
+  const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const { preview, loading } = usePreview(url || null)
+
+  useEffect(() => {
+    return () => {
+      if (hoverTimer.current) clearTimeout(hoverTimer.current)
+    }
+  }, [])
+
+  const openHover = () => {
+    if (hoverTimer.current) clearTimeout(hoverTimer.current)
+    setHoverOpen(true)
+  }
+  const closeHoverSoon = () => {
+    if (hoverTimer.current) clearTimeout(hoverTimer.current)
+    hoverTimer.current = setTimeout(() => setHoverOpen(false), 140)
+  }
+
+  // Empty state: plain input
+  if (!title && !url) {
+    const commitInline = (value: string) => {
+      const trimmed = value.trim()
+      if (!trimmed) {
+        onUpdate({ topic: "", topicUrl: null })
+        return
+      }
+      if (isChurchUrl(trimmed)) {
+        onUpdate({ topic: "", topicUrl: trimmed })
+        fetchPreview(trimmed).then((data) => {
+          if (data?.title) onUpdate({ topic: data.title, topicUrl: trimmed })
+        })
+        return
+      }
+      onUpdate({ topic: trimmed, topicUrl: null })
+    }
+
+    return (
+      <div className="mt-0.5">
+        <input
+          className="block w-full bg-transparent text-[11.5px] text-muted-foreground outline-none placeholder:italic placeholder:text-muted-foreground/60"
+          placeholder="Type a topic or paste a church url…"
+          defaultValue=""
+          onBlur={(e) => commitInline(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault()
+              e.currentTarget.blur()
+            }
+          }}
+          onClick={(e) => e.stopPropagation()}
+        />
+      </div>
+    )
+  }
+
+  const displayTitle = title || preview?.title || (url && loading ? "Loading…" : url)
+
+  const titleNode = url ? (
+    <Popover open={hoverOpen} onOpenChange={setHoverOpen}>
+      <PopoverTrigger asChild>
+        <a
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={(e) => e.stopPropagation()}
+          onMouseEnter={openHover}
+          onMouseLeave={closeHoverSoon}
+          onFocus={openHover}
+          onBlur={closeHoverSoon}
+          className="inline-flex min-w-0 items-center gap-1 truncate text-brand underline underline-offset-2 hover:text-brand/80"
+        >
+          <ExternalLink className="h-3 w-3 shrink-0" />
+          <span className="truncate">{displayTitle}</span>
+        </a>
+      </PopoverTrigger>
+      <PopoverContent
+        side="bottom"
+        align="start"
+        sideOffset={6}
+        className="w-auto border-0 bg-transparent p-0 shadow-none"
+        onMouseEnter={openHover}
+        onMouseLeave={closeHoverSoon}
+        onOpenAutoFocus={(e) => e.preventDefault()}
+      >
+        <LinkPreviewCard url={url} preview={preview} loading={loading} />
+      </PopoverContent>
+    </Popover>
+  ) : (
+    <button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation()
+        setEditorOpen(true)
+      }}
+      className="inline-flex min-w-0 items-center truncate text-left text-brand underline underline-offset-2 hover:text-brand/80"
+    >
+      <span className="truncate">{title}</span>
+    </button>
+  )
+
+  return (
+    <div className="mt-0.5 flex items-center gap-1 text-[11.5px]">
+      {titleNode}
+      <TopicEditor
+        initialTitle={title || preview?.title || ""}
+        initialUrl={url}
+        open={editorOpen}
+        onOpenChange={setEditorOpen}
+        onSave={onUpdate}
+        trigger={
+          <button
+            type="button"
+            onClick={(e) => e.stopPropagation()}
+            className="shrink-0 text-muted-foreground/60 transition-colors hover:text-foreground"
+            title="Edit topic"
+          >
+            <Pencil className="h-3 w-3" />
+          </button>
+        }
+      />
+    </div>
+  )
+}
+
+// ─── Duration stepper (from speaker-planner) ─────────────────────────────────
+
+const DURATION_MIN = 1
+const DURATION_MAX = 60
+
+type DurationStepperProps = {
+  value: number | null
+  onChange: (next: number | null) => void
+}
+
+function DurationStepper({ value, onChange }: DurationStepperProps) {
+  const [draft, setDraft] = useState<string>(value != null ? String(value) : "")
+
+  useEffect(() => {
+    setDraft(value != null ? String(value) : "")
+  }, [value])
+
+  const clamp = (n: number) => Math.max(DURATION_MIN, Math.min(DURATION_MAX, n))
+  const step = (delta: number) => {
+    const current = value ?? 0
+    onChange(clamp(current + delta))
+  }
+
+  const commit = (raw: string) => {
+    const trimmed = raw.trim()
+    if (!trimmed) {
+      onChange(null)
+      return
+    }
+    const n = Number(trimmed)
+    if (Number.isFinite(n)) onChange(clamp(Math.round(n)))
+    else setDraft(value != null ? String(value) : "")
+  }
+
+  const atMin = value != null && value <= DURATION_MIN
+  const atMax = value != null && value >= DURATION_MAX
+
+  return (
+    <div
+      className="group flex items-center rounded-md border border-border/70 bg-surface-sunken transition-colors focus-within:border-brand/60 hover:border-border"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <button
+        type="button"
+        disabled={atMin}
+        onClick={() => step(-1)}
+        aria-label="Decrease minutes"
+        className="flex h-6 w-5 items-center justify-center rounded-l-md text-muted-foreground/70 transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-30"
+      >
+        <Minus className="h-3 w-3" />
+      </button>
+      <input
+        type="text"
+        inputMode="numeric"
+        pattern="[0-9]*"
+        value={draft}
+        onChange={(e) => setDraft(e.target.value.replace(/\D/g, ""))}
+        onBlur={(e) => commit(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault()
+            e.currentTarget.blur()
+          } else if (e.key === "ArrowUp") {
+            e.preventDefault()
+            step(1)
+          } else if (e.key === "ArrowDown") {
+            e.preventDefault()
+            step(-1)
+          }
+        }}
+        placeholder="—"
+        aria-label="Duration in minutes"
+        className="w-[26px] border-x border-border/60 bg-transparent py-1 text-center font-mono text-[11.5px] text-foreground outline-none placeholder:text-muted-foreground/60"
+      />
+      <button
+        type="button"
+        disabled={atMax}
+        onClick={() => step(1)}
+        aria-label="Increase minutes"
+        className="flex h-6 w-5 items-center justify-center rounded-r-md text-muted-foreground/70 transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-30"
+      >
+        <Plus className="h-3 w-3" />
+      </button>
+    </div>
+  )
+}
+
 type SpeakerPlanningRowProps = {
   entry: SpeakerEntry
   order: number
+  reorderMode: boolean
   onSelectSpeaker: (entryId: string) => void
   onSpeakerFieldChange: (
     entryId: string,
@@ -1604,18 +2133,61 @@ type SpeakerPlanningRowProps = {
 function SpeakerPlanningRow({
   entry,
   order,
+  reorderMode,
   onSelectSpeaker,
   onSpeakerFieldChange,
   onDeleteSpeaker,
 }: SpeakerPlanningRowProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
+    id: entry.id,
+    disabled: !reorderMode,
+  })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  }
+
+  const handleTopicUpdate = (patch: { topic?: string; topicUrl?: string | null }) => {
+    if (patch.topic !== undefined) {
+      onSpeakerFieldChange(entry.id, "topic", patch.topic)
+    }
+  }
+
   return (
-    <div className="grid grid-cols-[30px_1fr_auto] items-center gap-3 rounded-xl border border-border/70 bg-surface-raised px-3.5 py-3">
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={cn(
+        "grid items-center gap-3 rounded-xl border border-border/70 bg-surface-raised px-3.5 py-3 transition-shadow",
+        reorderMode ? "grid-cols-[auto_30px_1fr_auto]" : "grid-cols-[30px_1fr_auto]",
+        isDragging && "shadow-lg"
+      )}
+    >
+      {reorderMode && (
+        <button
+          type="button"
+          className="cursor-grab text-muted-foreground hover:text-foreground active:cursor-grabbing"
+          {...attributes}
+          {...listeners}
+        >
+          <GripVertical className="h-4 w-4" />
+        </button>
+      )}
       <div className="font-mono text-[12px] text-muted-foreground">{order}.</div>
       <div className="min-w-0">
         <button
           type="button"
           onClick={() => onSelectSpeaker(entry.id)}
           className="block w-full truncate text-left font-serif text-[16.5px] text-foreground"
+          disabled={reorderMode}
         >
           {entry.speakerName ? (
             entry.speakerName
@@ -1623,50 +2195,82 @@ function SpeakerPlanningRow({
             <span className="italic text-muted-foreground">Tap to assign speaker</span>
           )}
         </button>
-        <input
-          value={entry.topic}
-          onChange={(event) => onSpeakerFieldChange(entry.id, "topic", event.target.value)}
-          placeholder="Topic or assigned subject"
-          className="mt-0.5 w-full border-0 bg-transparent p-0 text-[13px] text-muted-foreground outline-none placeholder:text-muted-foreground"
-        />
-      </div>
-      <div className="flex items-center gap-2">
-        <div className="flex items-center gap-1.5">
-          <input
-            type="number"
-            min={1}
-            max={60}
-            value={entry.durationMinutes ?? ""}
-            onChange={(e) => onSpeakerFieldChange(entry.id, "time", e.target.value ? Number(e.target.value) : null)}
-            placeholder="—"
-            className="w-[46px] rounded-md border border-border/70 bg-surface-sunken px-1.5 py-1 text-right font-mono text-[12px] text-foreground outline-none focus:border-border"
+        {!reorderMode && (
+          <TopicField
+            topic={entry.topic}
+            topicUrl={entry.topicUrl}
+            onUpdate={handleTopicUpdate}
           />
-          <span className="font-mono text-[11.5px] text-muted-foreground">min</span>
-        </div>
-        <button
-          type="button"
-          onClick={() => onDeleteSpeaker(entry.id)}
-          className="grid h-8 w-8 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-surface-hover hover:text-foreground"
-          aria-label={`Remove ${entry.title}`}
-        >
-          <X className="h-3.5 w-3.5" />
-        </button>
+        )}
       </div>
+      {!reorderMode && (
+        <div className="flex items-center gap-2">
+          <DurationStepper
+            value={entry.durationMinutes}
+            onChange={(durationMinutes) => onSpeakerFieldChange(entry.id, "time", durationMinutes)}
+          />
+          <span className="font-mono text-[11px] text-muted-foreground">min</span>
+          <button
+            type="button"
+            onClick={() => onDeleteSpeaker(entry.id)}
+            className="grid h-8 w-8 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-surface-hover hover:text-foreground"
+            aria-label={`Remove ${entry.title}`}
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      )}
     </div>
   )
 }
 
 type MusicPlanningRowProps = {
   entry: StaticEntry
+  reorderMode: boolean
   onPickHymn: (entryId: string) => void
   onDeleteStaticEntry: (entryId: string) => void
 }
 
-function MusicPlanningRow({ entry, onPickHymn, onDeleteStaticEntry }: MusicPlanningRowProps) {
+function MusicPlanningRow({ entry, reorderMode, onPickHymn, onDeleteStaticEntry }: MusicPlanningRowProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
+    id: entry.id,
+    disabled: !reorderMode,
+  })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  }
+
   const hasHymn = Boolean(entry.hymnTitle)
 
   return (
-    <div className="mb-2 grid w-full grid-cols-[100px_1fr_auto] items-center gap-3.5 rounded-xl border border-border/70 bg-surface-raised px-3.5 py-3">
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={cn(
+        "mb-2 grid w-full items-center gap-3.5 rounded-xl border border-border/70 bg-surface-raised px-3.5 py-3 transition-shadow",
+        reorderMode ? "grid-cols-[auto_100px_1fr]" : "grid-cols-[100px_1fr_auto]",
+        isDragging && "shadow-lg"
+      )}
+    >
+      {reorderMode && (
+        <button
+          type="button"
+          className="cursor-grab text-muted-foreground hover:text-foreground active:cursor-grabbing"
+          {...attributes}
+          {...listeners}
+        >
+          <GripVertical className="h-4 w-4" />
+        </button>
+      )}
       <div className="text-[10.5px] font-medium uppercase tracking-[0.05em] text-muted-foreground">
         {entry.title}
       </div>
@@ -1674,6 +2278,7 @@ function MusicPlanningRow({ entry, onPickHymn, onDeleteStaticEntry }: MusicPlann
         type="button"
         onClick={() => onPickHymn(entry.id)}
         className="min-w-0 text-left transition-colors hover:text-foreground"
+        disabled={reorderMode}
       >
         {hasHymn ? (
           <>
@@ -1688,14 +2293,16 @@ function MusicPlanningRow({ entry, onPickHymn, onDeleteStaticEntry }: MusicPlann
           <span className="font-serif text-[15.5px] italic text-muted-foreground">Choose a hymn</span>
         )}
       </button>
-      <button
-        type="button"
-        onClick={() => onDeleteStaticEntry(entry.id)}
-        className="grid h-6 w-6 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-surface-hover hover:text-foreground"
-        aria-label={`Remove ${entry.title}`}
-      >
-        <X className="h-3 w-3" />
-      </button>
+      {!reorderMode && (
+        <button
+          type="button"
+          onClick={() => onDeleteStaticEntry(entry.id)}
+          className="grid h-6 w-6 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-surface-hover hover:text-foreground"
+          aria-label={`Remove ${entry.title}`}
+        >
+          <X className="h-3 w-3" />
+        </button>
+      )}
     </div>
   )
 }
@@ -2676,6 +3283,41 @@ export function SacramentMeetingPlannerClient({
     })
   }
 
+  const handleSpeakersDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event
+    if (!over || active.id === over.id) return
+
+    updateSelectedMeeting((meeting) => {
+      const entries = meeting.specialType === "fast-testimony" ? meeting.fastEntries : meeting.standardEntries
+      const messageEntries = entries.filter(
+        (entry) =>
+          entry.kind === "speaker" ||
+          entry.kind === "testimony" ||
+          (entry.kind === "static" && Boolean(entry.removable))
+      )
+      
+      const oldIndex = messageEntries.findIndex((entry) => entry.id === active.id)
+      const newIndex = messageEntries.findIndex((entry) => entry.id === over.id)
+      
+      if (oldIndex === -1 || newIndex === -1) return meeting
+      
+      const reordered = arrayMove(messageEntries, oldIndex, newIndex)
+      
+      const closingIndex = entries.findIndex((entry) => entry.id === SECTION_CLOSING_ID)
+      const messagesIndex = entries.findIndex((entry) => entry.id === "section-messages")
+      
+      const newEntries = [...entries]
+      const startIndex = messagesIndex + 1
+      const endIndex = closingIndex === -1 ? entries.length : closingIndex
+      
+      newEntries.splice(startIndex, endIndex - startIndex, ...reordered)
+      
+      return meeting.specialType === "fast-testimony"
+        ? { ...meeting, fastEntries: newEntries }
+        : { ...meeting, standardEntries: newEntries }
+    })
+  }
+
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event
     if (!over || active.id === over.id) {
@@ -2953,6 +3595,7 @@ export function SacramentMeetingPlannerClient({
                               onAddSpeaker={handleAddSpeaker}
                               onAddIntermediateHymn={handleAddIntermediateHymn}
                               onAddSpecialNumber={handleAddSpecialNumber}
+                              onDragEnd={handleSpeakersDragEnd}
                             />
                             <ClosingSection
                               entries={visibleEntries}
@@ -3089,8 +3732,8 @@ export function SacramentMeetingPlannerClient({
             entries: visibleEntries,
           }}
           isoDate={selectedSunday.isoDate}
-          onClose={() => setAudienceOpen(false)}
-          onTopicUpdate={handleTopicUpdate}
+          onCloseAction={() => setAudienceOpen(false)}
+          onTopicUpdateAction={handleTopicUpdate}
         />
       )}
 

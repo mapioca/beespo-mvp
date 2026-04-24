@@ -65,7 +65,8 @@ type AudienceViewProps = {
   unitName: string
   isoDate: string
   meeting: AudienceMeeting
-  onClose: () => void
+  onCloseAction: () => void
+  onTopicUpdateAction: (entryId: string, patch: { topic?: string; topicUrl?: string | null }) => void
 }
 
 const MEETING_TYPE_LABELS: Record<MeetingSpecialType, string> = {
@@ -106,7 +107,7 @@ export function SacramentMeetingAudienceView({
   unitName,
   isoDate,
   meeting,
-  onClose,
+  onCloseAction,
 }: AudienceViewProps) {
   const [mounted, setMounted] = useState(false)
 
@@ -118,13 +119,13 @@ export function SacramentMeetingAudienceView({
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         event.preventDefault()
-        onClose()
+        onCloseAction()
       }
     }
 
     window.addEventListener("keydown", onKeyDown)
     return () => window.removeEventListener("keydown", onKeyDown)
-  }, [onClose])
+  }, [onCloseAction])
 
   const entries = meeting.entries
   const openingHymn = getStaticEntry(entries, "opening-hymn")
@@ -142,7 +143,7 @@ export function SacramentMeetingAudienceView({
   return createPortal(
     <div className="fixed inset-0 z-[9999] overflow-y-auto bg-card">
       <div className="sticky top-0 z-10 flex h-14 items-center justify-end bg-card/90 px-4 backdrop-blur">
-        <Button type="button" variant="outline" className="rounded-full" onClick={onClose}>
+        <Button type="button" variant="outline" className="rounded-full" onClick={onCloseAction}>
           <X className="h-3.5 w-3.5" />
           Close
           <kbd className="ml-1 hidden rounded border border-border bg-muted px-1 py-0.5 font-mono text-[10px] text-muted-foreground sm:inline">
