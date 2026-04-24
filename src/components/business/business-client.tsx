@@ -15,7 +15,6 @@ import {
 import { createClient } from "@/lib/supabase/client"
 import { prefetchBusinessFormData } from "@/lib/cache/form-data-cache"
 import { toast } from "@/lib/toast"
-import { TopbarSearchAction } from "@/components/ui/topbar-search-action"
 
 import { BusinessItem } from "./business-table"
 import { BusinessDetailsPanel } from "./business-details-panel"
@@ -33,7 +32,7 @@ export function BusinessClient({ items }: BusinessClientProps) {
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [newBusinessModalOpen, setNewBusinessModalOpen] = useState(false)
   const [isCreating, setIsCreating] = useState(false)
-  const [search, setSearch] = useState("")
+  const [search] = useState("")
 
   useEffect(() => {
     prefetchBusinessFormData()
@@ -140,45 +139,42 @@ export function BusinessClient({ items }: BusinessClientProps) {
     <div className="flex h-full flex-col bg-surface-canvas">
       <Breadcrumbs
         items={[
-          { label: "<- Back to the Planner", href: "/meetings/sacrament-meeting/program-planner" },
+          { label: "Meetings", href: "/meetings/sacrament-meeting/program-planner" },
           { label: "Business", icon: <Briefcase className="h-4 w-4 stroke-[1.6]" /> },
         ]}
         className="bg-transparent ring-0 border-b border-border/60 rounded-none px-4 py-1.5"
-        action={
-          <div className="hidden items-center gap-1 sm:flex">
-            <TopbarSearchAction
-              value={search}
-              onChange={setSearch}
-              placeholder="Search business..."
-              items={searchable.slice(0, 8).map((item) => ({
-                id: item.id,
-                label: item.person_name,
-                actionLabel: "Open",
-              }))}
-              onSelect={(itemId) => {
-                const selected = searchable.find((item) => item.id === itemId)
-                if (!selected) return
-                handleViewItem(selected)
-              }}
-              emptyText="No matching business items."
-            />
+      />
+
+      <div className="flex-1 overflow-auto">
+        <div className="py-10">
+          <header className="mx-auto flex w-full max-w-7xl items-end justify-between gap-6 px-4 sm:px-6 lg:px-10 mb-2">
+            <div className="min-w-0">
+              <div className="text-[10px] uppercase tracking-wider font-medium text-muted-foreground mb-2">
+                Business
+              </div>
+              <h1 className="font-serif text-3xl md:text-[34px] leading-[1.1] tracking-tight text-foreground">
+                Sacrament meeting <em className="font-serif italic">business</em>
+              </h1>
+              <p className="text-[13px] text-muted-foreground mt-2 max-w-xl leading-relaxed">
+                Track formal church procedures. The conducting script is generated automatically.
+              </p>
+            </div>
             <Button
-              variant="ghost"
               size="sm"
               onClick={() => setNewBusinessModalOpen(true)}
               onMouseEnter={() => prefetchBusinessFormData()}
               onFocus={() => prefetchBusinessFormData()}
-              className="h-7 gap-1 rounded-full px-2.5 text-[length:var(--agenda-control-font-size)] text-nav transition-colors hover:bg-[hsl(var(--agenda-interactive-hover))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--agenda-interactive-focus-ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              className="h-9 px-4 text-[13px] bg-foreground text-background hover:bg-foreground/90 shrink-0"
             >
-              <Plus className="h-3.5 w-3.5 stroke-[1.6]" />
+              <Plus className="h-4 w-4 mr-2" />
               New business
             </Button>
-          </div>
-        }
-      />
+          </header>
 
-      <div className="flex-1 overflow-auto">
-        <BusinessPendingView items={searchable} onOpenItem={handleViewItem} />
+          <div className="mt-10">
+            <BusinessPendingView items={searchable} onOpenItem={handleViewItem} />
+          </div>
+        </div>
       </div>
 
       <Dialog open={newBusinessModalOpen} onOpenChange={setNewBusinessModalOpen}>

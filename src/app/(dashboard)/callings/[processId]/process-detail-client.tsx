@@ -7,6 +7,7 @@ import {
     ArrowLeft,
     ArrowRight,
     Check,
+    FileText,
     ListPlus,
     MoreHorizontal,
     Send,
@@ -44,6 +45,7 @@ import {
     dropProcess,
     addCallingComment,
     createCallingTask,
+    createCallingBusinessItem,
     getWorkspaceAssignees,
 } from "@/lib/actions/calling-actions";
 import {
@@ -137,6 +139,7 @@ function formatTime(date: string) {
     return new Date(date).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
 }
 
+
 export function ProcessDetailClient({
     process,
     initialHistory,
@@ -161,6 +164,9 @@ export function ProcessDetailClient({
     const [taskDueDate, setTaskDueDate] = useState("");
     const [assignees, setAssignees] = useState<Assignee[]>([]);
     const [assigneesLoaded, setAssigneesLoaded] = useState(false);
+
+    const [showBusinessDialog, setShowBusinessDialog] = useState(false);
+    const [businessNotes, setBusinessNotes] = useState("");
 
     const candidateName = process.candidate?.name || "Unknown member";
     const callingTitle = process.calling?.title || "Unknown calling";
@@ -280,6 +286,30 @@ export function ProcessDetailClient({
         setTaskDueDate("");
         setShowTaskDialog(true);
         void loadAssignees();
+    };
+
+    const openBusinessDialog = () => {
+        setBusinessNotes(
+            `Sustaining for ${candidateName} as ${callingTitle}${organization ? ` (${organization})` : ""}.`
+        );
+        setShowBusinessDialog(true);
+    };
+
+    const handleConfirmCreateBusinessItem = async () => {
+        setShowBusinessDialog(false);
+        setIsMutating(true);
+        const toastId = toast.loading(`Creating sustaining item for ${candidateName}…`);
+        const result = await createCallingBusinessItem(process.id, {
+            category: "sustaining",
+            notes: businessNotes.trim() || undefined,
+        });
+        setIsMutating(false);
+        if (result.error) {
+            toast.error("Unable to create business item", { description: result.error, id: toastId });
+            return;
+        }
+        toast.success("Sustaining item added to sacrament meeting business", { id: toastId });
+        router.refresh();
     };
 
     const handleConfirmCreateTask = async () => {
@@ -415,7 +445,7 @@ export function ProcessDetailClient({
                             <div className="text-[10px] uppercase tracking-wider font-medium text-muted-foreground">
                                 Progress
                             </div>
-                            <div className="font-serif text-3xl mt-1 font-mono">
+                            <div className="font-serif text-3xl mt-1">
                                 {completedCount}
                                 <span className="text-muted-foreground text-xl">/{ALL_STAGES.length}</span>
                             </div>
@@ -548,20 +578,20 @@ export function ProcessDetailClient({
                                                 <div className="shrink-0 flex items-center gap-1.5">
                                                     <Button
                                                         size="sm"
-                                                        disabled={isMutating}
-                                                        className="h-8 text-[12px] bg-brand text-white hover:bg-brand/90"
-                                                        onClick={() => handleToggleStage(stage, "complete")}
-                                                    >
-                                                        Accepted
-                                                    </Button>
-                                                    <Button
-                                                        size="sm"
                                                         variant="outline"
                                                         disabled={isMutating}
                                                         className="h-8 text-[12px] text-destructive hover:bg-destructive/10 hover:text-destructive border-destructive/30"
                                                         onClick={() => openDeclineDialog(stage)}
                                                     >
                                                         Declined
+                                                    </Button>
+                                                    <Button
+                                                        size="sm"
+                                                        disabled={isMutating}
+                                                        className="h-8 text-[12px] bg-brand text-white hover:bg-brand/90"
+                                                        onClick={() => handleToggleStage(stage, "complete")}
+                                                    >
+                                                        Accepted
                                                     </Button>
                                                 </div>
                                             )}
@@ -577,6 +607,18 @@ export function ProcessDetailClient({
                                                         >
                                                             <ListPlus className="h-3.5 w-3.5 mr-1.5" />
                                                             Create task
+                                                        </Button>
+                                                    )}
+                                                    {stage === "sustained" && (
+                                                        <Button
+                                                            size="sm"
+                                                            variant="outline"
+                                                            disabled={isMutating}
+                                                            className="h-8 text-[12px]"
+                                                            onClick={openBusinessDialog}
+                                                        >
+                                                            <FileText className="h-3.5 w-3.5 mr-1.5" />
+                                                            Create business item
                                                         </Button>
                                                     )}
                                                     <Button
@@ -709,44 +751,100 @@ export function ProcessDetailClient({
                                     No activity yet. Advance a stage or log a note.
                                 </p>
                             ) : (
-                                <ol className="relative space-y-4 pl-5 before:content-[''] before:absolute before:left-1.5 before:top-1 before:bottom-1 before:w-px before:bg-border">
-                                    {activity.map((item) => (
-                                        <li key={item.id} className="relative">
-                                            <span className="absolute -left-[18px] top-1.5 h-2.5 w-2.5 rounded-full border-2 border-background bg-brand" />
-                                            <div className="flex items-baseline gap-2 flex-wrap">
-                                                <span className="text-[12.5px]">
-                                                    <span className="font-medium">{item.actorName}</span>{" "}
-                                                    <span className="text-muted-foreground">
-                                                        {item.kind === "history"
-                                                            ? describeHistory(item.action, item.fromValue, item.toValue)
-                                                            : "logged a note"}
+                                <div className="max-h-[500px] overflow-y-auto pr-2">
+                                    <ol className="relative space-y-4 pl-5 before:content-[''] before:absolute before:left-1.5 before:top-1 before:bottom-1 before:w-px before:bg-border">
+                                        {activity.map((item) => (
+                                            <li key={item.id} className="relative">
+                                                <span className="absolute -left-[18px] top-1.5 h-2.5 w-2.5 rounded-full border-2 border-background bg-brand" />
+                                                <div className="flex items-baseline gap-2 flex-wrap">
+                                                    <span className="text-[12.5px]">
+                                                        <span className="font-medium">{item.actorName}</span>{" "}
+                                                        <span className="text-muted-foreground">
+                                                            {item.kind === "history"
+                                                                ? describeHistory(item.action, item.fromValue, item.toValue)
+                                                                : "logged a note"}
+                                                        </span>
                                                     </span>
-                                                </span>
-                                                <span
-                                                    className="text-[11px] text-muted-foreground font-mono ml-auto"
-                                                    title={new Date(item.createdAt).toString()}
-                                                >
-                                                    {timeAgo(item.createdAt)} · {formatTime(item.createdAt)}
-                                                </span>
-                                            </div>
-                                            {item.kind === "comment" && (
-                                                <p className="text-[12.5px] text-muted-foreground italic mt-1 border-l-2 border-border pl-3 leading-relaxed whitespace-pre-wrap">
-                                                    {item.content}
-                                                </p>
-                                            )}
-                                            {item.kind === "history" && item.notes && (
-                                                <p className="text-[12.5px] text-muted-foreground italic mt-1 border-l-2 border-border pl-3 leading-relaxed whitespace-pre-wrap">
-                                                    {item.notes}
-                                                </p>
-                                            )}
-                                        </li>
-                                    ))}
-                                </ol>
+                                                    <span
+                                                        className="text-[11px] text-muted-foreground font-mono ml-auto"
+                                                        title={new Date(item.createdAt).toString()}
+                                                    >
+                                                        {timeAgo(item.createdAt)} · {formatTime(item.createdAt)}
+                                                    </span>
+                                                </div>
+                                                {item.kind === "comment" && (
+                                                    <p className="text-[12.5px] text-muted-foreground italic mt-1 border-l-2 border-border pl-3 leading-relaxed whitespace-pre-wrap">
+                                                        {item.content}
+                                                    </p>
+                                                )}
+                                                {item.kind === "history" && item.notes && (
+                                                    <p className="text-[12.5px] text-muted-foreground italic mt-1 border-l-2 border-border pl-3 leading-relaxed whitespace-pre-wrap">
+                                                        {item.notes}
+                                                    </p>
+                                                )}
+                                            </li>
+                                        ))}
+                                    </ol>
+                                </div>
                             )}
                         </div>
                     </aside>
                 </div>
             </div>
+
+            <Dialog open={showBusinessDialog} onOpenChange={setShowBusinessDialog}>
+                <DialogContent className="bg-popover border-border sm:max-w-[520px]">
+                    <DialogHeader>
+                        <DialogTitle className="font-serif text-2xl">Add to sacrament meeting business</DialogTitle>
+                        <DialogDescription>
+                            Create a sustaining item for the next sacrament meeting. It will appear in the
+                            Business section ready for the clerk to add to the conducting script.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-2">
+                        <div className="space-y-1.5">
+                            <div className="text-[10px] uppercase tracking-wider font-medium text-muted-foreground">
+                                Category
+                            </div>
+                            <Input value="Sustaining" disabled className="text-[13px] h-9" />
+                        </div>
+                        <div className="space-y-1.5">
+                            <div className="text-[10px] uppercase tracking-wider font-medium text-muted-foreground">
+                                Person
+                            </div>
+                            <Input value={candidateName} disabled className="text-[13px] h-9" />
+                        </div>
+                        <div className="space-y-1.5">
+                            <div className="text-[10px] uppercase tracking-wider font-medium text-muted-foreground">
+                                Calling
+                            </div>
+                            <Input value={callingTitle} disabled className="text-[13px] h-9" />
+                        </div>
+                        <div className="space-y-1.5">
+                            <div className="text-[10px] uppercase tracking-wider font-medium text-muted-foreground">
+                                Notes
+                            </div>
+                            <Textarea
+                                value={businessNotes}
+                                onChange={(e) => setBusinessNotes(e.target.value)}
+                                className="min-h-[80px] text-[13px]"
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="ghost" onClick={() => setShowBusinessDialog(false)}>
+                            Cancel
+                        </Button>
+                        <Button
+                            disabled={isMutating}
+                            className="bg-brand text-white hover:bg-brand/90"
+                            onClick={handleConfirmCreateBusinessItem}
+                        >
+                            Create business item
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
             <Dialog open={showTaskDialog} onOpenChange={setShowTaskDialog}>
                 <DialogContent className="bg-popover border-border sm:max-w-[520px]">

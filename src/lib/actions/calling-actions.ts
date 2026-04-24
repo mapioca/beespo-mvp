@@ -1261,6 +1261,81 @@ export async function getProcessDetails(processId: string) {
     };
 }
 
+// Create a sacrament-meeting business item (sustaining / setting_apart / release)
+// from a calling process, pre-populating person + calling.
+export async function createCallingBusinessItem(
+    processId: string,
+    input: {
+        category: "sustaining" | "release" | "setting_apart" | "confirmation" | "ordination" | "other";
+        personName?: string;
+        positionCalling?: string;
+        actionDate?: string;
+        notes?: string;
+    }
+) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: "Unauthorized" };
+
+    const { data: profile } = await (supabase
+        .from("profiles") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+        .select("workspace_id, role")
+        .eq("id", user.id)
+        .single();
+
+    if (!profile?.workspace_id) return { error: "Profile not found" };
+    if (!["admin", "leader"].includes(profile.role)) {
+        return { error: "Insufficient permissions" };
+    }
+
+    const { data: process } = await (supabase
+        .from("calling_processes") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+        .select(`
+            id,
+            calling:callings!calling_processes_calling_id_fkey(id, title, workspace_id),
+            candidate:candidate_names(id, name)
+        `)
+        .eq("id", processId)
+        .single();
+
+    if (!process || process.calling?.workspace_id !== profile.workspace_id) {
+        return { error: "Process not found" };
+    }
+
+    const personName = input.personName?.trim() || process.candidate?.name || "";
+    if (!personName) return { error: "Person name is required" };
+
+    const positionCalling = input.positionCalling?.trim()
+        || process.calling?.title
+        || null;
+
+    const { data: businessItem, error } = await (supabase
+        .from("business_items") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+        .insert({
+            workspace_id: profile.workspace_id,
+            person_name: personName,
+            position_calling: positionCalling,
+            category: input.category,
+            status: "pending",
+            action_date: input.actionDate || null,
+            notes: input.notes?.trim() || null,
+            details: null,
+            created_by: user.id,
+        })
+        .select("id")
+        .single();
+
+    if (error) {
+        console.error("Create calling business item error:", error);
+        return { error: error.message };
+    }
+
+    revalidatePath("/callings");
+    revalidatePath(`/callings/${processId}`);
+    revalidatePath("/meetings/sacrament-meeting/business");
+    return { success: true, businessItemId: businessItem.id };
+}
+
 // Fetch workspace members who can be assigned tasks (admins + leaders).
 export async function getWorkspaceAssignees() {
     const supabase = await createClient();
@@ -1318,24 +1393,16 @@ export async function setProcessStageStatus(
     const stages = getAllStages();
     const targetIdx = stages.indexOf(stage);
 
-    // Build the new per-stage map with cascading rules:
-    //   - status='declined': mark this stage + every later stage as declined.
-    //   - reverting a declined stage to pending: clear declines on this + later
-    //     stages (so the process becomes active again).
-    //   - status='complete'|'pending': touch only this stage, but if a later
-    //     declined chain exists it stays intact unless the user specifically
-    //     un-declines.
+    // Build the new per-stage map:
+    //   - status='declined': cascades forward — the process ends at this stage,
+    //     so every later stage is implicitly declined too.
+    //   - status='complete' | 'pending': strictly single-stage. Marking undone
+    //     does not cascade, even when unmarking a stage that was part of an
+    //     earlier decline cascade.
     const newStatuses = { ...resolved };
     if (status === "declined") {
         for (let i = targetIdx; i < stages.length; i++) {
             newStatuses[stages[i]] = "declined";
-        }
-    } else if (resolved[stage] === "declined" && status === "pending") {
-        // Undo a decline: clear declines from this stage forward.
-        for (let i = targetIdx; i < stages.length; i++) {
-            if (newStatuses[stages[i]] === "declined") {
-                newStatuses[stages[i]] = "pending";
-            }
         }
     } else {
         newStatuses[stage] = status;
@@ -1344,27 +1411,29 @@ export async function setProcessStageStatus(
     const highestIdx = highestCompletedStageIndex(newStatuses);
     const newCurrentStage: CallingProcessStage = highestIdx >= 0 ? stages[highestIdx] : "defined";
 
-    const willBeCompleted = newStatuses.recorded_lcr === "complete";
-    const willBeDeclined = status === "declined";
+    // Derive process-level status from the full stage map (single source of truth).
+    const hasDeclined = stages.some((s) => newStatuses[s] === "declined");
+    const recordedLcrComplete = newStatuses.recorded_lcr === "complete";
+    const newProcessStatus: CallingProcessStatus = recordedLcrComplete
+        ? "completed"
+        : hasDeclined
+            ? "declined"
+            : "active";
+
     const wasCompleted = currentProcess.status === "completed";
     const wasDeclined = currentProcess.status === "declined";
+    const willBeCompleted = newProcessStatus === "completed";
 
     const updateData: Record<string, unknown> = {
         stage_statuses: newStatuses,
         current_stage: newCurrentStage,
         updated_at: new Date().toISOString(),
+        status: newProcessStatus,
     };
-    if (willBeCompleted && !wasCompleted) {
-        updateData.status = "completed" as CallingProcessStatus;
-    } else if (willBeDeclined && !wasDeclined) {
-        updateData.status = "declined" as CallingProcessStatus;
+    if (newProcessStatus === "declined" && !wasDeclined) {
         updateData.dropped_reason = opts?.reason?.trim() || null;
-    } else if (!willBeDeclined && wasDeclined) {
-        // Reverted out of a declined state.
-        updateData.status = "active" as CallingProcessStatus;
+    } else if (newProcessStatus !== "declined" && wasDeclined) {
         updateData.dropped_reason = null;
-    } else if (!willBeCompleted && wasCompleted) {
-        updateData.status = "active" as CallingProcessStatus;
     }
 
     const { error } = await (supabase
