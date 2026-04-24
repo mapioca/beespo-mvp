@@ -6,7 +6,7 @@ import type { CallingProcessStage } from "@/types/database";
 
 interface CallingProcessStepperProps {
     currentStage: CallingProcessStage;
-    status: 'active' | 'completed' | 'dropped';
+    status: 'active' | 'completed' | 'dropped' | 'declined';
     onStageClick?: (stage: CallingProcessStage) => void;
     compact?: boolean;
 }

@@ -104,7 +104,7 @@ export function ToastPill({ item }: ToastPillProps) {
         >
           {item.type === "loading" ? (
             <motion.span
-              animate={{ rotate: 360 }}
+              animate={{ rotate: [0, 360] }}
               transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
               className="block"
             >

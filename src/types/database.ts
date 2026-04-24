@@ -114,7 +114,11 @@ export type CallingProcessStage =
   | 'recorded_lcr';
 
 // Calling process status
-export type CallingProcessStatus = 'active' | 'completed' | 'dropped';
+export type CallingProcessStatus = 'active' | 'completed' | 'dropped' | 'declined';
+
+// Per-stage completion state stored in calling_processes.stage_statuses
+export type CallingStageStatus = 'complete' | 'pending' | 'declined';
+export type CallingStageStatuses = Partial<Record<CallingProcessStage, CallingStageStatus>>;
 
 // Calling history action types
 export type CallingHistoryAction =

@@ -2,13 +2,736 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import callingsCatalog from "@/data/callings.json";
 import type {
     CallingCandidateStatus,
     CallingProcessStage,
     CallingProcessStatus,
+    CallingStageStatus,
+    CallingStageStatuses,
     CallingHistoryAction
 } from "@/types/database";
-import { getAllStages } from "@/lib/calling-utils";
+import {
+    getAllStages,
+    resolveStageStatuses,
+    highestCompletedStageIndex,
+} from "@/lib/calling-utils";
+
+type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
+
+async function getCallingProfile(
+    supabase: SupabaseServerClient,
+    requireEditor = false
+) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: "Unauthorized" };
+
+    const { data: profile } = await (supabase
+        .from("profiles") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+        .select("workspace_id, role")
+        .eq("id", user.id)
+        .single();
+
+    if (!profile?.workspace_id) return { error: "Profile not found" };
+    if (requireEditor && !['admin', 'leader'].includes(profile.role)) {
+        return { error: "Insufficient permissions" };
+    }
+
+    return {
+        user,
+        profile: profile as { workspace_id: string; role: string },
+    };
+}
+
+async function ensureCandidateName(
+    supabase: SupabaseServerClient,
+    workspaceId: string,
+    userId: string,
+    name: string
+) {
+    const trimmedName = name.trim();
+    const { data: existing } = await (supabase
+        .from("candidate_names") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+        .select("id, name")
+        .eq("workspace_id", workspaceId)
+        .ilike("name", trimmedName)
+        .maybeSingle();
+
+    if (existing) return { candidate: existing };
+
+    const { data: candidate, error } = await (supabase
+        .from("candidate_names") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+        .insert({
+            workspace_id: workspaceId,
+            name: trimmedName,
+            created_by: userId,
+        })
+        .select("id, name")
+        .single();
+
+    if (error) return { error: error.message };
+    return { candidate };
+}
+
+async function ensureCalling(
+    supabase: SupabaseServerClient,
+    workspaceId: string,
+    userId: string,
+    input: { title: string; organization?: string | null }
+) {
+    const title = input.title.trim();
+    const organization = input.organization?.trim() || null;
+    let query = (supabase
+        .from("callings") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+        .select("id, title, organization, created_at")
+        .eq("workspace_id", workspaceId)
+        .eq("title", title);
+
+    query = organization ? query.eq("organization", organization) : query.is("organization", null);
+
+    const { data: existing } = await query.maybeSingle();
+    if (existing) return { calling: existing };
+
+    const { data: calling, error } = await (supabase
+        .from("callings") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+        .insert({
+            workspace_id: workspaceId,
+            title,
+            organization,
+            created_by: userId,
+        })
+        .select("id, title, organization, created_at")
+        .single();
+
+    if (error) return { error: error.message };
+    return { calling };
+}
+
+async function ensureCallingCandidate(
+    supabase: SupabaseServerClient,
+    userId: string,
+    callingId: string,
+    candidateNameId: string,
+    notes?: string | null
+) {
+    const { data: existing } = await (supabase
+        .from("calling_candidates") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+        .select("id, calling_id, candidate_name_id, status, notes")
+        .eq("calling_id", callingId)
+        .eq("candidate_name_id", candidateNameId)
+        .maybeSingle();
+
+    if (existing) {
+        const updateData: Record<string, string | null> = {
+            status: existing.status === 'archived' ? 'proposed' : existing.status,
+            updated_at: new Date().toISOString(),
+        };
+        if (notes !== undefined) updateData.notes = notes || null;
+
+        const { data: updated, error } = await (supabase
+            .from("calling_candidates") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+            .update(updateData)
+            .eq("id", existing.id)
+            .select("id, calling_id, candidate_name_id, status, notes")
+            .single();
+
+        if (error) return { error: error.message };
+        return { callingCandidate: updated };
+    }
+
+    const { data: callingCandidate, error } = await (supabase
+        .from("calling_candidates") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+        .insert({
+            calling_id: callingId,
+            candidate_name_id: candidateNameId,
+            status: 'proposed' as CallingCandidateStatus,
+            notes: notes || null,
+            created_by: userId,
+        })
+        .select("id, calling_id, candidate_name_id, status, notes")
+        .single();
+
+    if (error) return { error: error.message };
+    return { callingCandidate };
+}
+
+// =====================================================
+// CALLINGS BOARD (Vacancies + Member Considerations)
+// =====================================================
+
+export async function getCallingBoardData() {
+    const supabase = await createClient();
+    const auth = await getCallingProfile(supabase);
+    if ("error" in auth) return { error: auth.error };
+
+    const workspaceId = auth.profile.workspace_id;
+
+    // Round 1: fetch independent top-level data in parallel
+    const [
+        { data: dbCallings, error: callingsError },
+        { data: vacancyRows, error: vacanciesError },
+        { data: considerationRows, error: considerationsError },
+        { data: processRows, error: processesError },
+    ] = await Promise.all([
+        (supabase.from("callings") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+            .select("id, title, organization")
+            .eq("workspace_id", workspaceId)
+            .order("title", { ascending: true }),
+        (supabase.from("calling_vacancies") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+            .select(`
+                id,
+                notes,
+                created_at,
+                calling:callings(id, title, organization)
+            `)
+            .eq("workspace_id", workspaceId)
+            .order("created_at", { ascending: false }),
+        (supabase.from("calling_considerations") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+            .select("id, directory_id, candidate_name_id, member_name, notes, created_at")
+            .eq("workspace_id", workspaceId)
+            .order("created_at", { ascending: false }),
+        (supabase.from("calling_processes") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+            .select(`
+                id,
+                current_stage,
+                status,
+                stage_statuses,
+                dropped_reason,
+                created_at,
+                updated_at,
+                candidate:candidate_names(id, name),
+                calling:callings!calling_processes_calling_id_fkey(id, title, organization, workspace_id)
+            `)
+            .eq("calling.workspace_id", workspaceId)
+            .order("updated_at", { ascending: false }),
+    ]);
+
+    const callingOptionsByKey = new Map<string, {
+        id: string;
+        callingId: string | null;
+        title: string;
+        organization: string;
+    }>();
+
+    for (const calling of callingsError ? [] : dbCallings || []) {
+        const organization = calling.organization || "";
+        callingOptionsByKey.set(`${calling.title}::${organization}`, {
+            id: calling.id,
+            callingId: calling.id,
+            title: calling.title,
+            organization,
+        });
+    }
+
+    for (const catalogCalling of callingsCatalog.filter((calling) => calling.active)) {
+        const title = catalogCalling.labels.en;
+        const organization = formatCatalogOrganization(catalogCalling.organization);
+        const key = `${title}::${organization}`;
+
+        if (!callingOptionsByKey.has(key)) {
+            callingOptionsByKey.set(key, {
+                id: `catalog:${catalogCalling.id}`,
+                callingId: null,
+                title,
+                organization,
+            });
+        }
+    }
+
+    const callingOptions = Array.from(callingOptionsByKey.values()).sort((a, b) =>
+        a.title.localeCompare(b.title)
+    );
+
+    const warnings: string[] = [];
+    if (vacanciesError) warnings.push(vacanciesError.message);
+    if (considerationsError) warnings.push(considerationsError.message);
+    if (processesError) warnings.push(processesError.message);
+
+    const pipelineProcesses = (processRows || [])
+        .filter((p: any) => p.calling !== null) // eslint-disable-line @typescript-eslint/no-explicit-any
+        .map((p: any) => ({ // eslint-disable-line @typescript-eslint/no-explicit-any
+            id: p.id,
+            currentStage: p.current_stage,
+            status: p.status,
+            stageStatuses: resolveStageStatuses(p.stage_statuses as CallingStageStatuses | null, p.current_stage),
+            droppedReason: p.dropped_reason,
+            createdAt: p.created_at,
+            updatedAt: p.updated_at,
+            candidateName: p.candidate?.name || "Unknown member",
+            callingId: p.calling.id,
+            callingTitle: p.calling.title,
+            organization: p.calling.organization || "",
+        }));
+
+    // Round 2: fetch dependent child data in parallel
+    const vacancyCallingIds = (vacancyRows || [])
+        .map((row: any) => row.calling?.id) // eslint-disable-line @typescript-eslint/no-explicit-any
+        .filter(Boolean);
+
+    const considerationIds = (considerationRows || []).map((row: any) => row.id); // eslint-disable-line @typescript-eslint/no-explicit-any
+
+    const [
+        { data: vacancyCandidates },
+        { data: vacancyProcesses },
+        { data: considerationLinks },
+    ] = await Promise.all([
+        vacancyCallingIds.length > 0
+            ? (supabase.from("calling_candidates") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+                .select(`
+                    id,
+                    calling_id,
+                    candidate_name_id,
+                    notes,
+                    status,
+                    candidate:candidate_names(id, name)
+                `)
+                .in("calling_id", vacancyCallingIds)
+                .neq("status", "archived")
+                .order("created_at", { ascending: true })
+            : Promise.resolve({ data: [] }),
+        vacancyCallingIds.length > 0
+            ? (supabase.from("calling_processes") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+                .select(`
+                    calling_id,
+                    candidate_name_id,
+                    candidate:candidate_names(id, name)
+                `)
+                .in("calling_id", vacancyCallingIds)
+                .eq("status", "active")
+                .order("created_at", { ascending: true })
+            : Promise.resolve({ data: [] }),
+        considerationIds.length > 0
+            ? (supabase.from("calling_consideration_options") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+                .select(`
+                    id,
+                    consideration_id,
+                    status,
+                    calling_candidate:calling_candidates(id, calling_id)
+                `)
+                .in("consideration_id", considerationIds)
+            : Promise.resolve({ data: [] }),
+    ]);
+
+    const activeCandidateKeys = new Set(
+        (vacancyProcesses || []).map((process: any) => `${process.calling_id}:${process.candidate_name_id}`) // eslint-disable-line @typescript-eslint/no-explicit-any
+    );
+
+    const vacancies = (vacancyRows || []).map((row: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
+        const callingId = row.calling?.id;
+        return {
+            id: row.id,
+            callingId,
+            callingTitle: row.calling?.title || "Unknown calling",
+            organization: row.calling?.organization || "",
+            notes: row.notes || "",
+            createdAt: row.created_at,
+            candidates: (vacancyCandidates || [])
+                .filter((candidate: any) => candidate.calling_id === callingId) // eslint-disable-line @typescript-eslint/no-explicit-any
+                .filter((candidate: any) => !activeCandidateKeys.has(`${candidate.calling_id}:${candidate.candidate_name_id}`)) // eslint-disable-line @typescript-eslint/no-explicit-any
+                .map((candidate: any) => ({ // eslint-disable-line @typescript-eslint/no-explicit-any
+                    id: candidate.id,
+                    memberId: candidate.candidate_name_id,
+                    name: candidate.candidate?.name || "Unknown member",
+                    notes: candidate.notes || "",
+                })),
+            inPipelineNames: (vacancyProcesses || [])
+                .filter((process: any) => process.calling_id === callingId) // eslint-disable-line @typescript-eslint/no-explicit-any
+                .map((process: any) => process.candidate?.name || "Unknown member"), // eslint-disable-line @typescript-eslint/no-explicit-any
+        };
+    });
+
+    const considerations = (considerationRows || []).map((row: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
+        const links = (considerationLinks || []).filter(
+            (link: any) => link.consideration_id === row.id // eslint-disable-line @typescript-eslint/no-explicit-any
+        );
+
+        return {
+            id: row.id,
+            memberId: row.directory_id || row.candidate_name_id,
+            memberName: row.member_name,
+            notes: row.notes || "",
+            createdAt: row.created_at,
+            candidateCallingIds: links
+                .filter((link: any) => link.status === "possible") // eslint-disable-line @typescript-eslint/no-explicit-any
+                .map((link: any) => link.calling_candidate?.calling_id) // eslint-disable-line @typescript-eslint/no-explicit-any
+                .filter(Boolean),
+            pipelineCallingIds: links
+                .filter((link: any) => link.status === "in_pipeline") // eslint-disable-line @typescript-eslint/no-explicit-any
+                .map((link: any) => link.calling_candidate?.calling_id) // eslint-disable-line @typescript-eslint/no-explicit-any
+                .filter(Boolean),
+        };
+    });
+
+    return {
+        success: true,
+        callingOptions,
+        vacancies,
+        considerations,
+        pipelineProcesses,
+        warning: warnings.length > 0 ? warnings.join("; ") : undefined,
+    };
+}
+
+function formatCatalogOrganization(org: string): string {
+    return org
+        .split("-")
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(" ");
+}
+
+export async function createCallingVacancyCard(input: {
+    title: string;
+    organization?: string | null;
+    notes?: string | null;
+}) {
+    const supabase = await createClient();
+    const auth = await getCallingProfile(supabase, true);
+    if ("error" in auth) return { error: auth.error };
+
+    const callingResult = await ensureCalling(
+        supabase,
+        auth.profile.workspace_id,
+        auth.user.id,
+        input
+    );
+    if ("error" in callingResult) return { error: callingResult.error };
+
+    const { error } = await (supabase
+        .from("calling_vacancies") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+        .upsert({
+            workspace_id: auth.profile.workspace_id,
+            calling_id: callingResult.calling.id,
+            notes: input.notes || null,
+            created_by: auth.user.id,
+            updated_at: new Date().toISOString(),
+        }, { onConflict: "workspace_id,calling_id" });
+
+    if (error) return { error: error.message };
+    revalidatePath("/callings");
+    return { success: true };
+}
+
+export async function updateCallingVacancyNotes(vacancyId: string, notes: string) {
+    const supabase = await createClient();
+    const auth = await getCallingProfile(supabase, true);
+    if ("error" in auth) return { error: auth.error };
+
+    const { error } = await (supabase
+        .from("calling_vacancies") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+        .update({ notes: notes || null, updated_at: new Date().toISOString() })
+        .eq("id", vacancyId)
+        .eq("workspace_id", auth.profile.workspace_id);
+
+    if (error) return { error: error.message };
+    revalidatePath("/callings");
+    return { success: true };
+}
+
+export async function deleteCallingVacancyCard(vacancyId: string) {
+    const supabase = await createClient();
+    const auth = await getCallingProfile(supabase, true);
+    if ("error" in auth) return { error: auth.error };
+
+    const { error } = await (supabase
+        .from("calling_vacancies") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+        .delete()
+        .eq("id", vacancyId)
+        .eq("workspace_id", auth.profile.workspace_id);
+
+    if (error) return { error: error.message };
+    revalidatePath("/callings");
+    return { success: true };
+}
+
+export async function addVacancyCandidate(vacancyId: string, memberName: string, notes?: string) {
+    const supabase = await createClient();
+    const auth = await getCallingProfile(supabase, true);
+    if ("error" in auth) return { error: auth.error };
+
+    const { data: vacancy } = await (supabase
+        .from("calling_vacancies") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+        .select("calling_id")
+        .eq("id", vacancyId)
+        .eq("workspace_id", auth.profile.workspace_id)
+        .single();
+
+    if (!vacancy?.calling_id) return { error: "Vacancy not found" };
+
+    const candidateResult = await ensureCandidateName(
+        supabase,
+        auth.profile.workspace_id,
+        auth.user.id,
+        memberName
+    );
+    if ("error" in candidateResult) return { error: candidateResult.error };
+
+    const callingCandidateResult = await ensureCallingCandidate(
+        supabase,
+        auth.user.id,
+        vacancy.calling_id,
+        candidateResult.candidate.id,
+        notes || null
+    );
+    if ("error" in callingCandidateResult) return { error: callingCandidateResult.error };
+
+    revalidatePath("/callings");
+    return { success: true };
+}
+
+export async function updateVacancyCandidateNotes(callingCandidateId: string, notes: string) {
+    return updateCallingCandidate(callingCandidateId, { notes: notes || null });
+}
+
+export async function startVacancyCandidatePipeline(callingCandidateId: string) {
+    const supabase = await createClient();
+    const auth = await getCallingProfile(supabase, true);
+    if ("error" in auth) return { error: auth.error };
+
+    const { data: candidate } = await (supabase
+        .from("calling_candidates") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+        .select("id, calling_id, candidate_name_id")
+        .eq("id", callingCandidateId)
+        .single();
+
+    if (!candidate) return { error: "Candidate not found" };
+
+    const { data: existingProcess } = await (supabase
+        .from("calling_processes") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+        .select("id")
+        .eq("calling_id", candidate.calling_id)
+        .eq("candidate_name_id", candidate.candidate_name_id)
+        .eq("status", "active")
+        .maybeSingle();
+
+    if (!existingProcess) {
+        const { error: processError } = await (supabase
+            .from("calling_processes") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+            .insert({
+                calling_id: candidate.calling_id,
+                candidate_name_id: candidate.candidate_name_id,
+                calling_candidate_id: candidate.id,
+                current_stage: 'defined' as CallingProcessStage,
+                status: 'active' as CallingProcessStatus,
+                created_by: auth.user.id,
+            });
+
+        if (processError) return { error: processError.message };
+    }
+
+    await updateCallingCandidate(callingCandidateId, { status: 'selected' as CallingCandidateStatus });
+    revalidatePath("/callings");
+    return { success: true };
+}
+
+export async function createMemberConsideration(input: {
+    directoryId: string;
+    memberName: string;
+}) {
+    const supabase = await createClient();
+    const auth = await getCallingProfile(supabase, true);
+    if ("error" in auth) return { error: auth.error };
+
+    const candidateResult = await ensureCandidateName(
+        supabase,
+        auth.profile.workspace_id,
+        auth.user.id,
+        input.memberName
+    );
+    if ("error" in candidateResult) return { error: candidateResult.error };
+
+    const { error } = await (supabase
+        .from("calling_considerations") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+        .upsert({
+            workspace_id: auth.profile.workspace_id,
+            directory_id: input.directoryId,
+            candidate_name_id: candidateResult.candidate.id,
+            member_name: input.memberName,
+            created_by: auth.user.id,
+            updated_at: new Date().toISOString(),
+        }, { onConflict: "workspace_id,candidate_name_id" });
+
+    if (error) return { error: error.message };
+    revalidatePath("/callings");
+    return { success: true };
+}
+
+export async function updateMemberConsiderationNotes(considerationId: string, notes: string) {
+    const supabase = await createClient();
+    const auth = await getCallingProfile(supabase, true);
+    if ("error" in auth) return { error: auth.error };
+
+    const { error } = await (supabase
+        .from("calling_considerations") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+        .update({ notes: notes || null, updated_at: new Date().toISOString() })
+        .eq("id", considerationId)
+        .eq("workspace_id", auth.profile.workspace_id);
+
+    if (error) return { error: error.message };
+    revalidatePath("/callings");
+    return { success: true };
+}
+
+export async function deleteMemberConsideration(considerationId: string) {
+    const supabase = await createClient();
+    const auth = await getCallingProfile(supabase, true);
+    if ("error" in auth) return { error: auth.error };
+
+    const { error } = await (supabase
+        .from("calling_considerations") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+        .delete()
+        .eq("id", considerationId)
+        .eq("workspace_id", auth.profile.workspace_id);
+
+    if (error) return { error: error.message };
+    revalidatePath("/callings");
+    return { success: true };
+}
+
+export async function addCallingToMemberConsideration(considerationId: string, input: {
+    title: string;
+    organization?: string | null;
+}) {
+    const supabase = await createClient();
+    const auth = await getCallingProfile(supabase, true);
+    if ("error" in auth) return { error: auth.error };
+
+    const { data: consideration } = await (supabase
+        .from("calling_considerations") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+        .select("id, candidate_name_id")
+        .eq("id", considerationId)
+        .eq("workspace_id", auth.profile.workspace_id)
+        .single();
+
+    if (!consideration) return { error: "Consideration not found" };
+
+    const callingResult = await ensureCalling(
+        supabase,
+        auth.profile.workspace_id,
+        auth.user.id,
+        input
+    );
+    if ("error" in callingResult) return { error: callingResult.error };
+
+    const candidateResult = await ensureCallingCandidate(
+        supabase,
+        auth.user.id,
+        callingResult.calling.id,
+        consideration.candidate_name_id
+    );
+    if ("error" in candidateResult) return { error: candidateResult.error };
+
+    const { error } = await (supabase
+        .from("calling_consideration_options") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+        .upsert({
+            consideration_id: consideration.id,
+            calling_candidate_id: candidateResult.callingCandidate.id,
+            status: 'possible',
+            updated_at: new Date().toISOString(),
+        }, { onConflict: "consideration_id,calling_candidate_id" });
+
+    if (error) return { error: error.message };
+    revalidatePath("/callings");
+    return { success: true };
+}
+
+export async function removeCallingFromMemberConsideration(considerationId: string, callingId: string) {
+    const supabase = await createClient();
+    const auth = await getCallingProfile(supabase, true);
+    if ("error" in auth) return { error: auth.error };
+
+    const { data: links } = await (supabase
+        .from("calling_consideration_options") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+        .select(`
+            id,
+            status,
+            calling_candidate:calling_candidates(id, calling_id)
+        `)
+        .eq("consideration_id", considerationId)
+        .order("created_at", { ascending: true });
+
+    const link = (links || []).find(
+        (item: any) => item.calling_candidate?.calling_id === callingId // eslint-disable-line @typescript-eslint/no-explicit-any
+    );
+
+    if (!link) return { success: true };
+
+    const { error } = await (supabase
+        .from("calling_consideration_options") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+        .delete()
+        .eq("id", link.id);
+
+    if (error) return { error: error.message };
+
+    if (link.status === "possible" && link.calling_candidate?.id) {
+        await removeCallingCandidate(link.calling_candidate.id);
+    }
+
+    revalidatePath("/callings");
+    return { success: true };
+}
+
+export async function startMemberConsiderationPipeline(considerationId: string, callingId: string) {
+    const supabase = await createClient();
+    const auth = await getCallingProfile(supabase, true);
+    if ("error" in auth) return { error: auth.error };
+
+    const { data: links } = await (supabase
+        .from("calling_consideration_options") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+        .select(`
+            id,
+            calling_candidate:calling_candidates(id, calling_id, candidate_name_id)
+        `)
+        .eq("consideration_id", considerationId)
+        .order("created_at", { ascending: true });
+
+    const link = (links || []).find(
+        (item: any) => item.calling_candidate?.calling_id === callingId // eslint-disable-line @typescript-eslint/no-explicit-any
+    );
+
+    if (!link?.calling_candidate) return { error: "Calling is not attached to this consideration" };
+
+    const { data: existingProcess } = await (supabase
+        .from("calling_processes") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+        .select("id")
+        .eq("calling_id", link.calling_candidate.calling_id)
+        .eq("candidate_name_id", link.calling_candidate.candidate_name_id)
+        .eq("status", "active")
+        .maybeSingle();
+
+    let processId = existingProcess?.id;
+    if (!processId) {
+        const { data: process, error: processError } = await (supabase
+            .from("calling_processes") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+            .insert({
+                calling_id: link.calling_candidate.calling_id,
+                candidate_name_id: link.calling_candidate.candidate_name_id,
+                calling_candidate_id: link.calling_candidate.id,
+                current_stage: 'defined' as CallingProcessStage,
+                status: 'active' as CallingProcessStatus,
+                created_by: auth.user.id,
+            })
+            .select("id")
+            .single();
+
+        if (processError) return { error: processError.message };
+        processId = process.id;
+    }
+
+    const { error } = await (supabase
+        .from("calling_consideration_options") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+        .update({
+            status: 'in_pipeline',
+            calling_process_id: processId,
+            updated_at: new Date().toISOString(),
+        })
+        .eq("id", link.id);
+
+    if (error) return { error: error.message };
+
+    await updateCallingCandidate(link.calling_candidate.id, { status: 'selected' as CallingCandidateStatus });
+    revalidatePath("/callings");
+    return { success: true };
+}
 
 // =====================================================
 // CANDIDATE NAMES (Autocomplete Pool)
@@ -524,7 +1247,157 @@ export async function getProcessDetails(processId: string) {
         return { error: error.message };
     }
 
-    return { success: true, process };
+    const resolved = resolveStageStatuses(
+        process.stage_statuses as CallingStageStatuses | null,
+        process.current_stage as CallingProcessStage
+    );
+
+    return {
+        success: true,
+        process: {
+            ...process,
+            stage_statuses: resolved,
+        },
+    };
+}
+
+// Fetch workspace members who can be assigned tasks (admins + leaders).
+export async function getWorkspaceAssignees() {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: "Unauthorized" };
+
+    const { data: profile } = await (supabase
+        .from("profiles") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+        .select("workspace_id")
+        .eq("id", user.id)
+        .single();
+
+    if (!profile?.workspace_id) return { error: "Profile not found" };
+
+    const { data, error } = await (supabase
+        .from("profiles") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+        .select("id, full_name, email, role")
+        .eq("workspace_id", profile.workspace_id)
+        .in("role", ["admin", "leader"])
+        .order("full_name", { ascending: true });
+
+    if (error) {
+        console.error("Get workspace assignees error:", error);
+        return { error: error.message };
+    }
+
+    return { success: true, assignees: data || [] };
+}
+
+export async function setProcessStageStatus(
+    processId: string,
+    stage: CallingProcessStage,
+    status: CallingStageStatus,
+    opts?: { reason?: string }
+) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: "Unauthorized" };
+
+    const { data: currentProcess } = await (supabase
+        .from("calling_processes") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+        .select("id, current_stage, status, stage_statuses, dropped_reason, calling_id, candidate_name_id")
+        .eq("id", processId)
+        .single();
+
+    if (!currentProcess) return { error: "Process not found" };
+    if (currentProcess.status === "dropped") {
+        return { error: "Process has been dropped" };
+    }
+
+    const resolved = resolveStageStatuses(
+        currentProcess.stage_statuses as CallingStageStatuses | null,
+        currentProcess.current_stage as CallingProcessStage
+    );
+    const stages = getAllStages();
+    const targetIdx = stages.indexOf(stage);
+
+    // Build the new per-stage map with cascading rules:
+    //   - status='declined': mark this stage + every later stage as declined.
+    //   - reverting a declined stage to pending: clear declines on this + later
+    //     stages (so the process becomes active again).
+    //   - status='complete'|'pending': touch only this stage, but if a later
+    //     declined chain exists it stays intact unless the user specifically
+    //     un-declines.
+    const newStatuses = { ...resolved };
+    if (status === "declined") {
+        for (let i = targetIdx; i < stages.length; i++) {
+            newStatuses[stages[i]] = "declined";
+        }
+    } else if (resolved[stage] === "declined" && status === "pending") {
+        // Undo a decline: clear declines from this stage forward.
+        for (let i = targetIdx; i < stages.length; i++) {
+            if (newStatuses[stages[i]] === "declined") {
+                newStatuses[stages[i]] = "pending";
+            }
+        }
+    } else {
+        newStatuses[stage] = status;
+    }
+
+    const highestIdx = highestCompletedStageIndex(newStatuses);
+    const newCurrentStage: CallingProcessStage = highestIdx >= 0 ? stages[highestIdx] : "defined";
+
+    const willBeCompleted = newStatuses.recorded_lcr === "complete";
+    const willBeDeclined = status === "declined";
+    const wasCompleted = currentProcess.status === "completed";
+    const wasDeclined = currentProcess.status === "declined";
+
+    const updateData: Record<string, unknown> = {
+        stage_statuses: newStatuses,
+        current_stage: newCurrentStage,
+        updated_at: new Date().toISOString(),
+    };
+    if (willBeCompleted && !wasCompleted) {
+        updateData.status = "completed" as CallingProcessStatus;
+    } else if (willBeDeclined && !wasDeclined) {
+        updateData.status = "declined" as CallingProcessStatus;
+        updateData.dropped_reason = opts?.reason?.trim() || null;
+    } else if (!willBeDeclined && wasDeclined) {
+        // Reverted out of a declined state.
+        updateData.status = "active" as CallingProcessStatus;
+        updateData.dropped_reason = null;
+    } else if (!willBeCompleted && wasCompleted) {
+        updateData.status = "active" as CallingProcessStatus;
+    }
+
+    const { error } = await (supabase
+        .from("calling_processes") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+        .update(updateData)
+        .eq("id", processId);
+
+    if (error) {
+        console.error("Set process stage status error:", error);
+        return { error: error.message };
+    }
+
+    if (willBeCompleted && !wasCompleted) {
+        await (supabase.from("callings") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+            .update({
+                is_filled: true,
+                filled_by: currentProcess.candidate_name_id,
+                filled_at: new Date().toISOString(),
+            })
+            .eq("id", currentProcess.calling_id);
+    } else if (!willBeCompleted && wasCompleted) {
+        await (supabase.from("callings") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+            .update({
+                is_filled: false,
+                filled_by: null,
+                filled_at: null,
+            })
+            .eq("id", currentProcess.calling_id);
+    }
+
+    revalidatePath("/callings");
+    revalidatePath(`/callings/${processId}`);
+    return { success: true };
 }
 
 // =====================================================
@@ -744,5 +1617,3 @@ export async function createCallingTask(processId: string, data: {
     revalidatePath("/tasks");
     return { success: true, task };
 }
-
-
