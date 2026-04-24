@@ -2,7 +2,17 @@
 
 import { useState, useMemo } from "react";
 import { Breadcrumbs } from "@/components/dashboard/breadcrumbs";
-import { Users, Plus, Search, MoreHorizontal, Trash2, Pencil, ChevronsUpDown } from "lucide-react";
+import {
+    Users,
+    Plus,
+    Search,
+    MoreHorizontal,
+    Trash2,
+    Pencil,
+    ChevronsUpDown,
+    ArrowUpRight,
+    X,
+} from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import {
@@ -51,6 +61,20 @@ interface DirectoryMember {
     name: string;
 }
 
+interface VacancyCandidate {
+    id: string;
+    memberId: string;
+    name: string;
+    notes: string;
+}
+
+function getInitials(name: string): string {
+    const parts = name.trim().split(/\s+/).filter(Boolean);
+    if (parts.length === 0) return "?";
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+    return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+}
+
 function VacancyCard({ vacancy, onRemove, onUpdateNotes, timeAgo }: VacancyCardProps) {
     const [isEditingNotes, setIsEditingNotes] = useState(false);
     const [isAddingCandidate, setIsAddingCandidate] = useState(false);
@@ -58,7 +82,11 @@ function VacancyCard({ vacancy, onRemove, onUpdateNotes, timeAgo }: VacancyCardP
     const [memberSearch, setMemberSearch] = useState("");
     const [directoryMembers, setDirectoryMembers] = useState<DirectoryMember[]>([]);
     const [isLoadingMembers, setIsLoadingMembers] = useState(false);
-    const [selectedMemberName, setSelectedMemberName] = useState<string | null>(null);
+    const [selectedMember, setSelectedMember] = useState<DirectoryMember | null>(null);
+    const [candidates, setCandidates] = useState<VacancyCandidate[]>([]);
+    const [inPipelineNames, setInPipelineNames] = useState<string[]>([]);
+    const [editingCandidateId, setEditingCandidateId] = useState<string | null>(null);
+    const [editingCandidateNotes, setEditingCandidateNotes] = useState("");
 
     const filteredMembers = useMemo(() => {
         const query = memberSearch.trim().toLowerCase();
@@ -86,6 +114,40 @@ function VacancyCard({ vacancy, onRemove, onUpdateNotes, timeAgo }: VacancyCardP
         setIsLoadingMembers(false);
     };
 
+    const handleAddCandidate = () => {
+        if (!selectedMember) return;
+
+        const alreadyExists = candidates.some((candidate) => candidate.memberId === selectedMember.id);
+        const alreadyInPipeline = inPipelineNames.includes(selectedMember.name);
+
+        if (alreadyExists || alreadyInPipeline) {
+            setSelectedMember(null);
+            setIsAddingCandidate(false);
+            return;
+        }
+
+        setCandidates((prev) => [
+            ...prev,
+            {
+                id: crypto.randomUUID(),
+                memberId: selectedMember.id,
+                name: selectedMember.name,
+                notes: "",
+            },
+        ]);
+        setSelectedMember(null);
+        setIsAddingCandidate(false);
+    };
+
+    const handleMoveToPipeline = (candidateId: string, candidateName: string) => {
+        setCandidates((prev) => prev.filter((candidate) => candidate.id !== candidateId));
+        setInPipelineNames((prev) => (prev.includes(candidateName) ? prev : [...prev, candidateName]));
+    };
+
+    const handleRemoveCandidate = (candidateId: string) => {
+        setCandidates((prev) => prev.filter((candidate) => candidate.id !== candidateId));
+    };
+
     return (
         <article className="bg-card border border-border rounded-xl overflow-hidden">
             <header className="px-5 pt-5 pb-4 flex items-start justify-between gap-3">
@@ -101,7 +163,9 @@ function VacancyCard({ vacancy, onRemove, onUpdateNotes, timeAgo }: VacancyCardP
                             <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
                             Vacant {timeAgo(vacancy.createdAt)}
                         </span>
-                        <span className="font-mono">0 candidates</span>
+                        <span className="font-mono">
+                            {candidates.length} candidate{candidates.length === 1 ? "" : "s"}
+                        </span>
                     </div>
                 </div>
                 <DropdownMenu>
@@ -160,21 +224,129 @@ function VacancyCard({ vacancy, onRemove, onUpdateNotes, timeAgo }: VacancyCardP
             )}
 
             <div className="border-t border-border">
+                {candidates.length > 0 && (
+                    <ul className="divide-y divide-border">
+                        {candidates.map((candidate) => (
+                            <li key={candidate.id} className="px-5 py-3 group/candidate">
+                                <div className="flex items-start gap-3">
+                                    <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-muted text-[11px] font-semibold text-muted-foreground">
+                                        {getInitials(candidate.name)}
+                                    </div>
+                                    <div className="min-w-0 flex-1">
+                                        <div className="text-[13px] font-medium text-foreground truncate">
+                                            {candidate.name}
+                                        </div>
+                                        {editingCandidateId === candidate.id ? (
+                                            <Textarea
+                                                autoFocus
+                                                value={editingCandidateNotes}
+                                                onChange={(e) => setEditingCandidateNotes(e.target.value)}
+                                                onBlur={() => {
+                                                    setCandidates((prev) =>
+                                                        prev.map((item) =>
+                                                            item.id === candidate.id
+                                                                ? { ...item, notes: editingCandidateNotes.trim() }
+                                                                : item
+                                                        )
+                                                    );
+                                                    setEditingCandidateId(null);
+                                                    setEditingCandidateNotes("");
+                                                }}
+                                                placeholder="Add note..."
+                                                className="mt-1.5 min-h-[60px] text-[12.5px]"
+                                            />
+                                        ) : candidate.notes ? (
+                                            <p
+                                                className="mt-0.5 text-[12.5px] text-muted-foreground leading-relaxed cursor-text"
+                                                onClick={() => {
+                                                    setEditingCandidateId(candidate.id);
+                                                    setEditingCandidateNotes(candidate.notes);
+                                                }}
+                                            >
+                                                {candidate.notes}
+                                            </p>
+                                        ) : (
+                                            <button
+                                                className="mt-0.5 text-[12px] text-muted-foreground/70 hover:text-foreground"
+                                                onClick={() => {
+                                                    setEditingCandidateId(candidate.id);
+                                                    setEditingCandidateNotes("");
+                                                }}
+                                            >
+                                                Add note...
+                                            </button>
+                                        )}
+                                    </div>
+                                    <div className="flex items-center gap-1 opacity-70 transition-opacity group-hover/candidate:opacity-100">
+                                        <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            className="h-7 px-2 text-[11.5px] text-brand hover:text-brand hover:bg-brand/10"
+                                            onClick={() => handleMoveToPipeline(candidate.id, candidate.name)}
+                                        >
+                                            Move to pipeline
+                                            <ArrowUpRight className="ml-1 h-3 w-3" />
+                                        </Button>
+                                        <Button
+                                            size="icon"
+                                            variant="ghost"
+                                            className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                                            onClick={() => handleRemoveCandidate(candidate.id)}
+                                        >
+                                            <X className="h-3.5 w-3.5" />
+                                        </Button>
+                                    </div>
+                                </div>
+                            </li>
+                        ))}
+                    </ul>
+                )}
+
+                {inPipelineNames.length > 0 && (
+                    <div className="border-t border-border px-5 py-2.5 text-[11px] text-muted-foreground">
+                        <span className="font-mono">{inPipelineNames.length}</span> already in pipeline:{" "}
+                        {inPipelineNames.join(", ")}
+                    </div>
+                )}
+
                 {isAddingCandidate ? (
-                    <button
-                        className="w-full px-5 py-3 text-left text-[12.5px] text-muted-foreground hover:text-foreground hover:bg-accent/40 transition-colors flex items-center justify-between gap-2"
-                        onClick={() => {
-                            void handleOpenMemberPicker();
-                        }}
-                    >
-                        <span className="truncate">
-                            {selectedMemberName || "Select member"}
-                        </span>
-                        <ChevronsUpDown className="h-3.5 w-3.5 shrink-0 opacity-60" />
-                    </button>
+                    <div className="border-y border-border px-5 py-3 space-y-2">
+                        <button
+                            className="inline-flex h-9 w-full max-w-[280px] items-center justify-between rounded-md border border-input bg-background px-3 text-left text-[13px] text-foreground hover:bg-accent/40 transition-colors"
+                            onClick={() => {
+                                void handleOpenMemberPicker();
+                            }}
+                        >
+                            <span className={`truncate ${selectedMember ? "text-foreground" : "text-muted-foreground"}`}>
+                                {selectedMember?.name || "Select member"}
+                            </span>
+                            <ChevronsUpDown className="h-3.5 w-3.5 shrink-0 opacity-60" />
+                        </button>
+                        <div className="flex justify-end gap-2">
+                            <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-8 text-[12px]"
+                                onClick={() => {
+                                    setIsAddingCandidate(false);
+                                    setSelectedMember(null);
+                                }}
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                size="sm"
+                                className="h-8 text-[12px]"
+                                disabled={!selectedMember}
+                                onClick={handleAddCandidate}
+                            >
+                                Add candidate
+                            </Button>
+                        </div>
+                    </div>
                 ) : (
                     <button
-                        className="w-full px-5 py-3 text-left text-[12.5px] text-muted-foreground hover:text-foreground hover:bg-accent/40 transition-colors flex items-center gap-2"
+                        className="w-full border-y border-border px-5 py-3 text-left text-[12.5px] text-muted-foreground hover:text-foreground hover:bg-accent/40 transition-colors flex items-center gap-2"
                         onClick={() => setIsAddingCandidate(true)}
                     >
                         <Plus className="h-3.5 w-3.5" />
@@ -209,12 +381,17 @@ function VacancyCard({ vacancy, onRemove, onUpdateNotes, timeAgo }: VacancyCardP
                             <button
                                 key={member.id}
                                 onClick={() => {
-                                    setSelectedMemberName(member.name);
+                                    setSelectedMember(member);
                                     setShowMemberPicker(false);
                                 }}
                                 className="w-full rounded-md px-3 py-2.5 text-left hover:bg-accent transition-colors"
                             >
-                                <div className="font-medium text-sm">{member.name}</div>
+                                <div className="flex items-center gap-2.5 min-w-0">
+                                    <div className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-surface-sunken text-[10px] font-semibold text-muted-foreground">
+                                        {getInitials(member.name)}
+                                    </div>
+                                    <div className="font-medium text-sm truncate">{member.name}</div>
+                                </div>
                             </button>
                         ))
                     ) : (
