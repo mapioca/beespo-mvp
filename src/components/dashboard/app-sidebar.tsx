@@ -2,39 +2,27 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useMemo, useState, type ElementType } from "react";
+import { useMemo, useState } from "react";
 import {
   Archive,
-  BookOpen,
   BriefcaseBusiness,
   CalendarDays,
   CheckSquare,
   ChevronRight,
-  ClipboardList,
   BookUser,
-  Clock3,
-  Database,
-  FileText,
   Home,
   Inbox,
   Landmark,
-  Library,
   LogOut,
   Megaphone,
   MessageSquare,
   Moon,
   MoreVertical,
-  NotebookPen,
-  NotebookTabs,
   Palette,
-  PanelTop,
-  Pin,
   Search,
   Settings,
   Sun,
-  Table2,
   UserRoundCheck,
-  UsersRound,
   type LucideIcon,
 } from "lucide-react";
 
@@ -42,12 +30,6 @@ import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/components/theme/theme-provider";
 import { useCommandPaletteStore } from "@/stores/command-palette-store";
-import { useNavigationStore } from "@/stores/navigation-store";
-import type {
-  FavoriteEntityType,
-  NavigationFavoriteItem,
-  NavigationRecentItem,
-} from "@/lib/navigation/types";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -70,18 +52,6 @@ type SidebarSection = {
   label: string;
   items: SidebarItem[];
 };
-
-type SavedItem = NavigationFavoriteItem | NavigationRecentItem;
-
-const savedIconByType: Record<FavoriteEntityType, ElementType> = {
-  meeting: NotebookTabs,
-  table: Table2,
-  form: ClipboardList,
-  discussion: MessageSquare,
-  notebook: BookOpen,
-  note: FileText,
-};
-
 const sections: SidebarSection[] = [
   {
     label: "Workspace",
@@ -109,43 +79,22 @@ const sections: SidebarSection[] = [
           { href: "/meetings/sacrament-meeting/archive", label: "Archive", icon: Archive, match: "prefix" },
         ],
       },
-      { href: "/meetings/bishopric", label: "Bishopric", icon: Landmark, soon: true },
-      { href: "/meetings/ward-council", label: "Ward Council", icon: UsersRound, soon: true },
-      { href: "/meetings/interviews", label: "Interviews", icon: UserRoundCheck, soon: true },
       {
         href: "",
         label: "More",
         icon: MoreVertical,
         match: "prefix",
         children: [
-          { href: "/meetings/agendas", label: "Agendas", icon: NotebookPen, match: "prefix" },
-          { href: "/meetings/programs", label: "Programs", icon: PanelTop, match: "prefix" },
           { href: "/meetings/agendas/discussions", label: "Discussions", icon: MessageSquare, match: "prefix" },
-          { href: "/meetings/assignments", label: "Assignments", icon: ClipboardList, match: "prefix" },
           { href: "/meetings/announcements", label: "Announcements", icon: Megaphone, match: "prefix" },
         ],
       },
     ],
   },
-  {
-    label: "Library",
-    items: [{ href: "/library", label: "Library", icon: Library, match: "prefix" }],
-  },
-  {
-    label: "Data",
-    items: [
-      { href: "/forms", label: "Forms", icon: ClipboardList, match: "prefix" },
-      { href: "/tables", label: "Tables", icon: Database, match: "prefix" },
-      { href: "/notebooks", label: "Notebooks", icon: BookOpen, match: "prefix" },
-    ],
-  },
 ];
 
 function getInitials(name: string) {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return "W";
-  if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
-  return `${parts[0].charAt(0)}${parts[parts.length - 1].charAt(0)}`.toUpperCase();
+  return name.trim().charAt(0).toUpperCase() || "W";
 }
 
 function isItemActive(pathname: string, item: SidebarItem) {
@@ -243,64 +192,6 @@ function NavRow({
     </Link>
   );
 }
-
-function SavedItemsGroup({
-  title,
-  icon: Icon,
-  items,
-}: {
-  title: string;
-  icon: LucideIcon;
-  items: SavedItem[];
-}) {
-  const [open, setOpen] = useState(false);
-  const pathname = usePathname();
-  const visibleItems = items.slice(0, 6);
-
-  return (
-    <div>
-      <button
-        type="button"
-        className="group flex w-full items-center gap-2.5 rounded-[6px] px-2.5 py-[7px] text-left text-[13.5px] text-[var(--app-nav-text)] transition-colors duration-75 hover:bg-[var(--app-nav-hover)]"
-        onClick={() => setOpen((value) => !value)}
-        aria-expanded={open}
-      >
-        <Icon className="h-[15px] w-[15px] shrink-0 text-[var(--app-nav-icon)]" strokeWidth={1.8} />
-        <span className="min-w-0 flex-1 truncate">{title}</span>
-        <span className="text-[11px] tabular-nums text-[var(--app-nav-muted)]">{items.length}</span>
-        <ChevronRight className={cn("h-3.5 w-3.5 shrink-0 text-[var(--app-nav-muted)] transition-transform", open && "rotate-90")} />
-      </button>
-
-      {open ? (
-        <div className="mt-0.5 flex flex-col gap-0.5">
-          {visibleItems.length === 0 ? (
-            <div className="px-8 py-1.5 text-[12px] text-[var(--app-nav-muted)]">None yet</div>
-          ) : (
-            visibleItems.map((item) => {
-              const SavedIcon = savedIconByType[item.entityType];
-              const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
-
-              return (
-                <Link
-                  key={`${item.entityType}-${item.id}`}
-                  href={item.href}
-                  className={cn(
-                    "flex min-w-0 items-center gap-2.5 rounded-[6px] px-2.5 py-1.5 pl-8 text-[13px] text-[var(--app-nav-icon)] transition-colors duration-75 hover:bg-[var(--app-nav-hover)] hover:text-[var(--app-nav-strong)]",
-                    active && "bg-[var(--app-nav-active)] font-medium text-[var(--app-nav-strong)]"
-                  )}
-                >
-                  <SavedIcon className="h-[15px] w-[15px] shrink-0" strokeWidth={1.8} />
-                  <span className="truncate">{item.title}</span>
-                </Link>
-              );
-            })
-          )}
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
 export function AppSidebar({
   userName,
   userId,
@@ -313,8 +204,6 @@ export function AppSidebar({
   const router = useRouter();
   const pathname = usePathname();
   const toggleCommandPalette = useCommandPaletteStore((state) => state.toggle);
-  const favorites = useNavigationStore((state) => state.favorites);
-  const recents = useNavigationStore((state) => state.recents);
   const { theme, setTheme } = useTheme();
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
     "/meetings/sacrament-meeting/program-planner": true,
@@ -428,16 +317,6 @@ export function AppSidebar({
           </div>
         </div>
       ))}
-
-      <div>
-        <div className="px-3 pb-1 pt-3 text-[11px] font-medium uppercase tracking-[0.06em] text-[var(--app-nav-muted)]">
-          Shortcuts
-        </div>
-        <div className="flex flex-col gap-0.5">
-          <SavedItemsGroup title="Favorites" icon={Pin} items={favorites} />
-          <SavedItemsGroup title="Recents" icon={Clock3} items={recents} />
-        </div>
-      </div>
     </aside>
   );
 }

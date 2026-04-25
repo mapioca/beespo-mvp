@@ -1171,15 +1171,13 @@ export function SpeakerPlannerClient() {
       }),
     [upcomingSundays, meetingsByDate]
   )
-
-  const regularMeetingCount = useMemo(
-    () =>
-      visibleMeetingDates.filter((iso) =>
-        isAssignableMeeting((meetingsByDate[iso] ?? createFallbackMeetingState(iso)).specialType)
-      ).length,
-    [visibleMeetingDates, meetingsByDate]
-  )
-
+  useMemo(
+      () =>
+          visibleMeetingDates.filter((iso) =>
+              isAssignableMeeting((meetingsByDate[iso] ?? createFallbackMeetingState(iso)).specialType)
+          ).length,
+      [visibleMeetingDates, meetingsByDate]
+  );
   const sortedRoster = useMemo(() => {
     return [...roster].sort((a, b) => {
       const la = lastSpokeMap[a.name]
@@ -1340,115 +1338,129 @@ export function SpeakerPlannerClient() {
         }
       />
 
-      {/* Shell */}
-      <div className="grid w-full grid-cols-1 lg:grid-cols-[1fr_320px] xl:grid-cols-[1fr_360px]">
-        {/* ── Left: Meeting cards ── */}
-        <div className="border-b border-border/60 py-7 lg:border-b-0 lg:border-r lg:py-8">
-          <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
-          <div className="mb-5">
-            <div className="font-serif text-[17px] text-foreground">Upcoming meetings</div>
-            <div className="mt-0.5 text-[12px] text-muted-foreground">
-              {regularMeetingCount} regular meetings · all Sundays shown
+      {/* Header */}
+      <div className="border-b border-border/60 px-4 sm:px-6 lg:px-10 py-10">
+        <div className="mx-auto max-w-7xl">
+          <header>
+            <div className="text-[10px] uppercase tracking-wider font-medium text-muted-foreground mb-2">
+              Speaker Planner
             </div>
-          </div>
-
-          <div className="flex flex-col gap-3.5">
-            {visibleMeetingDates.map((iso) => {
-              const meeting = meetingsByDate[iso] ?? createFallbackMeetingState(iso)
-              const isAssignable = isAssignableMeeting(meeting.specialType)
-
-              return (
-                <MeetingCard
-                  key={iso}
-                  isoDate={iso}
-                  meeting={meeting}
-                  picking={picking}
-                  lastSpokeMap={lastSpokeMap}
-                  onPickSlot={(slotIdx) => {
-                    if (!isAssignable) return
-                    setPicking({ isoDate: iso, slotIdx })
-                  }}
-                  onRemoveSpeaker={(slotIdx) => removeSpeaker(iso, slotIdx)}
-                  onUpdateTopic={(slotIdx, patch) => updateTopic(iso, slotIdx, patch)}
-                />
-              )
-            })}
-          </div>
-          </div>{/* /max-w-3xl */}
+            <h1 className="font-serif text-3xl md:text-[34px] leading-[1.1] tracking-tight text-foreground">
+              Sacrament meeting <em className="font-serif italic">speakers</em>
+            </h1>
+            <p className="text-[13px] text-muted-foreground mt-2 max-w-xl leading-relaxed">
+              Assign speakers for upcoming meetings. Roster sorted by longest since last talk.
+            </p>
+          </header>
         </div>
+      </div>
 
-        {/* ── Right: Roster ── */}
-        <div
-          className={cn(
-            "px-4 py-7 transition-colors sm:px-5 lg:sticky lg:top-0-lg:max-h-screen lg:overflow-y-auto lg:py-8",
-            picking && "bg-brand/[0.04] dark:bg-brand/[0.07]"
-          )}
-        >
-          <div className="mb-4">
-            <div
-              className={cn(
-                "font-serif text-[17px] transition-colors",
-                picking ? "text-brand" : "text-foreground"
-              )}
-            >
-              {picking ? "Choose a speaker" : "Ward roster"}
-            </div>
-            <div className="mt-0.5 text-[12px] text-muted-foreground">
-              Sorted by longest since last talk
-            </div>
-          </div>
+      {/* Two-pane layout */}
+      <div className="px-4 sm:px-6 lg:px-10 py-8">
+        <div className="mx-auto max-w-7xl">
+          <div className="grid grid-cols-1 gap-8 xl:grid-cols-[minmax(0,1.45fr)_minmax(340px,0.75fr)] xl:gap-10">
+            {/* Left pane: Meeting cards */}
+            <div className="min-w-0">
+              <div className="flex flex-col gap-3.5">
+                {visibleMeetingDates.map((iso) => {
+                  const meeting = meetingsByDate[iso] ?? createFallbackMeetingState(iso)
+                  const isAssignable = isAssignableMeeting(meeting.specialType)
 
-          {/* Search */}
-          <div className="relative mb-3">
-            <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-            <input
-              ref={searchRef}
-              className="w-full rounded-lg border border-border bg-muted/40 py-2 pl-8 pr-3 text-[13px] text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-border/80 focus:bg-background"
-              placeholder="Search members…"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
-
-          {/* Roster list */}
-          <div className="flex flex-col gap-px">
-            {rosterLoading ? (
-              <div className="py-8 text-center text-[13px] text-muted-foreground">
-                Loading…
+                  return (
+                    <MeetingCard
+                      key={iso}
+                      isoDate={iso}
+                      meeting={meeting}
+                      picking={picking}
+                      lastSpokeMap={lastSpokeMap}
+                      onPickSlot={(slotIdx) => {
+                        if (!isAssignable) return
+                        setPicking({ isoDate: iso, slotIdx })
+                      }}
+                      onRemoveSpeaker={(slotIdx) => removeSpeaker(iso, slotIdx)}
+                      onUpdateTopic={(slotIdx, patch) => updateTopic(iso, slotIdx, patch)}
+                    />
+                  )
+                })}
               </div>
-            ) : filteredRoster.length === 0 ? (
-              <div className="py-8 text-center font-serif text-[13px] italic text-muted-foreground">
-                No members found.
-              </div>
-            ) : (
-              filteredRoster.map((person) => {
-                const spoke = lastSpokeMap[person.name]
-                const pickingMeetingDate = picking?.isoDate
-                const pickingMeeting = pickingMeetingDate
-                  ? meetingsByDate[pickingMeetingDate]
-                  : undefined
-                const allEntries = pickingMeeting
-                  ? [...(pickingMeeting.standardEntries ?? [])]
-                  : []
-                const speakerEntries = getSpeakers(allEntries as AgendaEntry[])
-                const slotPerson =
-                  picking && picking.slotIdx < speakerEntries.length
-                    ? speakerEntries[picking.slotIdx].speakerName
-                    : null
-                const isCurrentSlot = !!slotPerson && slotPerson === person.name
+            </div>
 
-                return (
-                  <RosterRow
-                    key={person.id}
-                    person={person}
-                    spoke={spoke}
-                    picking={!!picking}
-                    isCurrentSlot={isCurrentSlot}
-                    onClick={() => assignSpeaker(person)}
+            {/* Right pane: Roster */}
+            <div>
+              <div
+                className={cn(
+                  "xl:sticky xl:top-16 rounded-2xl border border-border/70 bg-surface-raised p-5 shadow-sm transition-colors",
+                  picking && "border-brand bg-brand/[0.04]"
+                )}
+              >
+                <div className="mb-4">
+                  <div
+                    className={cn(
+                      "font-serif text-[17px] transition-colors",
+                      picking ? "text-brand" : "text-foreground"
+                    )}
+                  >
+                    {picking ? "Choose a speaker" : "Ward roster"}
+                  </div>
+                  <div className="mt-0.5 text-[12px] text-muted-foreground">
+                    Sorted by longest since last talk
+                  </div>
+                </div>
+
+                {/* Search */}
+                <div className="relative mb-3">
+                  <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                  <input
+                    ref={searchRef}
+                    className="w-full rounded-lg border border-border bg-muted/40 py-2 pl-8 pr-3 text-[13px] text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-border/80 focus:bg-background"
+                    placeholder="Search members…"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
                   />
-                )
-              })
-            )}
+                </div>
+
+                {/* Roster list */}
+                <div className="flex flex-col gap-px max-h-[600px] overflow-y-auto">
+                  {rosterLoading ? (
+                    <div className="py-8 text-center text-[13px] text-muted-foreground">
+                      Loading…
+                    </div>
+                  ) : filteredRoster.length === 0 ? (
+                    <div className="py-8 text-center font-serif text-[13px] italic text-muted-foreground">
+                      No members found.
+                    </div>
+                  ) : (
+                    filteredRoster.map((person) => {
+                      const spoke = lastSpokeMap[person.name]
+                      const pickingMeetingDate = picking?.isoDate
+                      const pickingMeeting = pickingMeetingDate
+                        ? meetingsByDate[pickingMeetingDate]
+                        : undefined
+                      const allEntries = pickingMeeting
+                        ? [...(pickingMeeting.standardEntries ?? [])]
+                        : []
+                      const speakerEntries = getSpeakers(allEntries as AgendaEntry[])
+                      const slotPerson =
+                        picking && picking.slotIdx < speakerEntries.length
+                          ? speakerEntries[picking.slotIdx].speakerName
+                          : null
+                      const isCurrentSlot = !!slotPerson && slotPerson === person.name
+
+                      return (
+                        <RosterRow
+                          key={person.id}
+                          person={person}
+                          spoke={spoke}
+                          picking={!!picking}
+                          isCurrentSlot={isCurrentSlot}
+                          onClick={() => assignSpeaker(person)}
+                        />
+                      )
+                    })
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>

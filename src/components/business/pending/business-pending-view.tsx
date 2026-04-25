@@ -17,6 +17,7 @@ import {
   BusinessReviewPanel,
   BusinessScriptPreview,
 } from "./business-live-preview"
+import { BusinessMeetingAssignmentCard } from "./business-meeting-assignment-card"
 import {
   isBusinessCategoryKey,
   BUSINESS_CATEGORY_LABEL,
@@ -201,13 +202,27 @@ export function BusinessPendingView({ items, onOpenItem }: BusinessPendingViewPr
     presented: byStatus.presented.length,
   }), [byStatus])
 
-  // Auto-select all pending items when switching to pending view
+  // Auto-select all items when switching to pending or scheduled view
   useEffect(() => {
-    if (active === "pending") {
+    if (active === "pending" || active === "scheduled") {
       setSelectedItemIds(new Set(activeItems.map(item => item.id)))
     }
   }, [active, activeItems])
+  
   const grouped = useMemo(() => groupByCategory(activeItems), [activeItems])
+
+  // Group scheduled items by date for the Schedule tab
+  const byDate = useMemo(() => {
+    if (active !== "scheduled") return []
+    const map = new Map<string, BusinessItem[]>()
+    for (const item of activeItems) {
+      const date = item.action_date ?? "unknown"
+      if (!map.has(date)) map.set(date, [])
+      map.get(date)!.push(item)
+    }
+    // Sort dates ascending
+    return Array.from(map.entries()).sort(([a], [b]) => a.localeCompare(b))
+  }, [active, activeItems])
 
   const handleScriptOverrideChange = useCallback(
     (category: BusinessCategoryKey, script: string | null) => {
@@ -235,21 +250,19 @@ export function BusinessPendingView({ items, onOpenItem }: BusinessPendingViewPr
   const handleDeselectAll = useCallback(() => {
     setSelectedItemIds(new Set());
   }, []);
-
-  const handleReschedule = useCallback(async (item: BusinessItem) => {
+  useCallback(async (item: BusinessItem) => {
     const supabase = createClient()
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabase.from("business_items") as any)
-      .update({ action_date: null })
-      .eq("id", item.id)
+        .update({ action_date: null })
+        .eq("id", item.id)
     if (error) {
       toast.error("Failed to unschedule item.")
     } else {
       toast.success(`${item.person_name} moved back to pending.`)
       router.refresh()
     }
-  }, [router])
-
+  }, [router]);
   const handleSchedule = useCallback(async () => {
     if (active !== "pending" || selectedItemIds.size === 0 || !meetingDate) return
     setScheduling(true)
@@ -280,11 +293,9 @@ export function BusinessPendingView({ items, onOpenItem }: BusinessPendingViewPr
     }
     setScheduling(false)
   }, [active, activeItems, selectedItemIds, meetingDate, router])
-
-  const meetingDateLabel = meetingDate
-    ? format(new Date(`${meetingDate}T12:00:00`), "EEE, MMM d, yyyy")
-    : ""
-
+  meetingDate
+      ? format(new Date(`${meetingDate}T12:00:00`), "EEE, MMM d, yyyy")
+      : "";
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-6 sm:px-6 lg:px-10 lg:py-8">
       <BusinessStatusTabs active={active} counts={counts} onChange={setActive} />
@@ -292,29 +303,36 @@ export function BusinessPendingView({ items, onOpenItem }: BusinessPendingViewPr
       <div className="grid grid-cols-1 gap-8 xl:grid-cols-[minmax(0,1.45fr)_minmax(340px,0.75fr)] xl:gap-10">
         {/* Primary column */}
         <div className="min-w-0">
-          <PendingHeader
-            active={active}
-            meetingDateLabel={meetingDateLabel}
-            totalItems={activeItems.length}
-          />
-
           {activeItems.length === 0 ? (
             <EmptyState status={active} />
-          ) : active === "scheduled" ? (
-            <ScheduledMeetingCards items={activeItems} onOpenItem={onOpenItem} onReschedule={handleReschedule} />
-          ) : (
-            <BusinessScriptPreview
-              className="mt-5"
-              items={activeItems}
-              groupedByCategory={grouped}
+          ) : active === "pending" ? (
+            <BusinessMeetingAssignmentCard
               meetingDate={meetingDate}
-              scriptOverrides={scriptOverrides}
-              onScriptOverrideChange={handleScriptOverrideChange}
-              selectedItemIds={selectedItemIds}
-              onToggleItemSelection={handleToggleItemSelection}
-              onSelectAll={handleSelectAll}
-              onDeselectAll={handleDeselectAll}
+              items={activeItems}
+              onOpenItem={onOpenItem}
             />
+          ) : active === "scheduled" ? (
+            <div className="space-y-6">
+              {byDate.map(([isoDate, dateItems]) => {
+                const dateGrouped = groupByCategory(dateItems)
+                return (
+                  <BusinessScriptPreview
+                    key={isoDate}
+                    items={dateItems}
+                    groupedByCategory={dateGrouped}
+                    meetingDate={isoDate}
+                    scriptOverrides={scriptOverrides}
+                    onScriptOverrideChange={handleScriptOverrideChange}
+                    selectedItemIds={selectedItemIds}
+                    onToggleItemSelection={handleToggleItemSelection}
+                    onSelectAll={handleSelectAll}
+                    onDeselectAll={handleDeselectAll}
+                  />
+                )
+              })}
+            </div>
+          ) : (
+            <ScheduledMeetingCards items={activeItems} onOpenItem={onOpenItem} />
           )}
         </div>
 
@@ -341,72 +359,6 @@ export function BusinessPendingView({ items, onOpenItem }: BusinessPendingViewPr
     </div>
   )
 }
-
-function PendingHeader({
-  active,
-  meetingDateLabel,
-  totalItems,
-}: {
-  active: BusinessLifecycleStatus
-  meetingDateLabel: string
-  totalItems: number
-}) {
-  if (active === "pending") {
-    return (
-      <div className="flex flex-wrap items-center gap-3">
-        <h2 className="font-serif text-[17px] font-semibold text-foreground">
-          Ready for presentation
-        </h2>
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-[hsl(var(--brand)/0.08)] px-2.5 py-[5px] text-[11.5px] font-medium text-[hsl(var(--brand))]">
-          <span className="inline-block h-1.5 w-1.5 rounded-full bg-[hsl(var(--brand))]" />
-          {meetingDateLabel}
-        </span>
-        <span className="inline-flex items-center gap-1.5 text-[11.5px] text-muted-foreground">
-          <InfoDot />
-          These items will auto-populate in the Program Planner
-        </span>
-      </div>
-    )
-  }
-
-  if (active === "scheduled") {
-    return (
-      <div className="flex flex-col gap-1">
-        <h2 className="font-serif text-[17px] font-semibold text-foreground">
-          Scheduled for upcoming meetings
-        </h2>
-        <p className="text-[12px] text-muted-foreground">
-          {totalItems} item{totalItems === 1 ? "" : "s"} ready to be presented &mdash; grouped by assigned meeting date.
-        </p>
-      </div>
-    )
-  }
-
-  return (
-    <div className="flex flex-col gap-1">
-      <h2 className="font-serif text-[17px] font-semibold text-foreground">
-        Presented
-      </h2>
-      <p className="text-[12px] text-muted-foreground">
-        History of business items presented in past meetings.
-      </p>
-    </div>
-  )
-}
-
-function InfoDot() {
-  return (
-    <span
-      aria-hidden
-      className={cn(
-        "inline-flex h-3.5 w-3.5 items-center justify-center rounded-full border border-border/80 text-[9px] leading-none text-muted-foreground"
-      )}
-    >
-      i
-    </span>
-  )
-}
-
 function EmptyState({ status }: { status: BusinessLifecycleStatus }) {
   const label =
     status === "pending"
