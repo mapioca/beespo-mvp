@@ -12,7 +12,7 @@ export interface Task {
   workspace_task_id?: string | null;
 }
 
-interface CallingProcess {
+export interface CallingProcess {
   id: string;
   calling_id: string;
   candidate_name_id: string;
@@ -24,20 +24,20 @@ interface CallingProcess {
   stage_statuses?: Record<string, "pending" | "complete">;
 }
 
-interface CallingVacancy {
+export interface CallingVacancy {
   id: string;
   calling_id: string;
   notes?: string | null;
   created_at: string;
 }
 
-interface Calling {
+export interface Calling {
   id: string;
   title: string;
   organization?: string | null;
 }
 
-interface CandidateName {
+export interface CandidateName {
   id: string;
   name: string;
 }

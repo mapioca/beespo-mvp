@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { deriveInbox } from "./deriveInbox";
 import { useInboxReadState } from "./useInboxReadState";
 import type { InboxItem } from "./types";
+import type { Task, CallingProcess, CallingVacancy, Calling, CandidateName } from "./deriveInbox";
 
 interface UseInboxProps {
   tasks: Task[];

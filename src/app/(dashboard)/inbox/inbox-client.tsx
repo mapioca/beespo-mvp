@@ -10,6 +10,7 @@ import {
   type InboxBucket,
   type InboxKind,
 } from "@/lib/inbox/types";
+import { type Task, type CallingProcess, type CallingVacancy, type Calling, type CandidateName } from "@/lib/inbox/deriveInbox";
 import { InboxItemRow } from "@/components/inbox/InboxItemRow";
 import { cn } from "@/lib/utils";
 
@@ -34,11 +35,11 @@ const KIND_FILTERS: InboxKind[] = [
 const BUCKET_ORDER: InboxBucket[] = ["today", "this_week", "later"];
 
 interface InboxClientProps {
-  tasks: any[];
-  callingProcesses: any[];
-  vacancies: any[];
-  callings: any[];
-  candidateNames: any[];
+  tasks: Task[];
+  callingProcesses: CallingProcess[];
+  vacancies: CallingVacancy[];
+  callings: Calling[];
+  candidateNames: CandidateName[];
   currentUserId: string;
 }
 
