@@ -22,6 +22,7 @@ type TaskSummary = Pick<
     Database["public"]["Tables"]["tasks"]["Row"],
     "id" | "title" | "status"
 >;
+type TaskStatus = Database["public"]["Tables"]["tasks"]["Row"]["status"];
 
 type SupabaseClientType = Awaited<ReturnType<typeof createClient>>;
 
@@ -153,7 +154,7 @@ export async function updateTask(taskId: string, data: {
         if (data.assigned_to !== undefined) updateData.assigned_to = data.assigned_to;
         if (data.due_date !== undefined) updateData.due_date = data.due_date;
         if (data.priority !== undefined) updateData.priority = data.priority;
-        if (data.status !== undefined) updateData.status = data.status;
+        if (data.status !== undefined) updateData.status = data.status as TaskStatus;
         if (data.tags !== undefined) updateData.tags = data.tags;
 
         // 1. Fetch current task to check for changes

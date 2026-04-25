@@ -293,10 +293,7 @@ export function BusinessPendingView({ items, onOpenItem }: BusinessPendingViewPr
     }
     setScheduling(false)
   }, [active, activeItems, selectedItemIds, meetingDate, router])
-  meetingDate
-      ? format(new Date(`${meetingDate}T12:00:00`), "EEE, MMM d, yyyy")
-      : "";
-  return (
+return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-6 sm:px-6 lg:px-10 lg:py-8">
       <BusinessStatusTabs active={active} counts={counts} onChange={setActive} />
 
