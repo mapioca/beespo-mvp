@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { MessagesSquare, Plus, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,9 +8,8 @@ import { cn } from "@/lib/utils";
 import { DiscussionRow } from "@/features/discussions/components/DiscussionRow";
 import { NewDiscussionDialog } from "@/features/discussions/components/NewDiscussionDialog";
 import { Pill, SectionHeader } from "@/features/discussions/components/shared";
-import { STATE_LABEL, type Discussion, type DiscussionPriority, type DiscussionState } from "@/features/discussions/data/types";
+import { STATE_LABEL, type DiscussionPriority, type DiscussionState } from "@/features/discussions/data/types";
 import { PRIORITY_LABEL, PRIORITY_RANK, STATE_TONE } from "@/features/discussions/lib/meta";
-import { useDiscussions } from "@/features/discussions/lib/store";
 
 type Scope = "all" | "active" | "draft" | "closed";
 
@@ -21,19 +20,42 @@ const SCOPES: Array<{ key: Scope; label: string }> = [
   { key: "closed", label: "Closed" },
 ];
 
+interface Discussion {
+  id: string;
+  title: string;
+  description?: string;
+  state: DiscussionState;
+  priority: string;
+  created_at: string;
+  created_by?: string;
+  noteCount?: number;
+}
+
 export default function Discussions() {
-  const { discussions } = useDiscussions();
+  const [discussions, setDiscussions] = useState<Discussion[]>([]);
+  const [loading, setLoading] = useState(true);
   const [scope, setScope] = useState<Scope>("active");
   const [search, setSearch] = useState("");
   const [priorityFilter, setPriorityFilter] = useState<DiscussionPriority | null>(null);
-  const [tagFilter, setTagFilter] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
 
-  const allTags = useMemo(() => {
-    const set = new Set<string>();
-    for (const discussion of discussions) for (const tag of discussion.tags) set.add(tag);
-    return Array.from(set).sort();
-  }, [discussions]);
+  useEffect(() => {
+    loadDiscussions();
+  }, []);
+
+  const loadDiscussions = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch("/api/discussions");
+      const result = await response.json();
+      if (result.data) {
+        setDiscussions(result.data);
+      }
+    } catch (error) {
+      console.error("Failed to load discussions:", error);
+    }
+    setLoading(false);
+  };
 
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -41,28 +63,25 @@ export default function Discussions() {
       .filter((discussion) => {
         if (scope !== "all" && discussion.state !== scope) return false;
         if (priorityFilter && discussion.priority !== priorityFilter) return false;
-        if (tagFilter && !discussion.tags.includes(tagFilter)) return false;
         if (query) {
-          const haystack = `${discussion.title} ${discussion.description ?? ""} ${discussion.tags.join(" ")}`.toLowerCase();
+          const haystack = `${discussion.title} ${discussion.description ?? ""}`.toLowerCase();
           if (!haystack.includes(query)) return false;
         }
         return true;
       })
       .sort((a, b) => {
-        const priority = PRIORITY_RANK[a.priority] - PRIORITY_RANK[b.priority];
+        const priority = PRIORITY_RANK[a.priority as DiscussionPriority] - PRIORITY_RANK[b.priority as DiscussionPriority];
         if (priority !== 0) return priority;
-        const aLast = a.timeline[a.timeline.length - 1]?.at ?? a.createdAt;
-        const bLast = b.timeline[b.timeline.length - 1]?.at ?? b.createdAt;
-        return new Date(bLast).getTime() - new Date(aLast).getTime();
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
       });
-  }, [discussions, priorityFilter, scope, search, tagFilter]);
+  }, [discussions, priorityFilter, scope, search]);
 
   const counts = useMemo(
     () => ({
       all: discussions.length,
-      active: discussions.filter((discussion) => discussion.state === "active").length,
-      draft: discussions.filter((discussion) => discussion.state === "draft").length,
-      closed: discussions.filter((discussion) => discussion.state === "closed").length,
+      active: discussions.filter((d) => d.state === "active").length,
+      draft: discussions.filter((d) => d.state === "draft").length,
+      closed: discussions.filter((d) => d.state === "closed").length,
     }),
     [discussions],
   );
@@ -73,8 +92,18 @@ export default function Discussions() {
     return out;
   }, [filtered]);
 
-  const hasActiveFilter = priorityFilter !== null || tagFilter !== null || search.trim() !== "";
+  const hasActiveFilter = priorityFilter !== null || search.trim() !== "";
   const stateOrder: DiscussionState[] = ["active", "draft", "closed"];
+
+  if (loading) {
+    return (
+      <div className="min-h-full bg-surface-canvas px-5 py-10 text-foreground sm:px-8 lg:px-12">
+        <div className="mx-auto max-w-[1100px]">
+          <p className="text-muted-foreground">Loading discussions...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-full bg-surface-canvas px-5 py-10 text-foreground sm:px-8 lg:px-12">
@@ -90,7 +119,7 @@ export default function Discussions() {
           right={
             <Button
               onClick={() => setCreating(true)}
-              className="mt-9 h-9 rounded-[8px] bg-brand px-4 text-[12.5px] font-medium text-brand-foreground hover:bg-[hsl(var(--brand-hover))]"
+              className="mt-9"
             >
               <Plus className="mr-1.5 h-3.5 w-3.5" />
               New discussion
@@ -98,7 +127,7 @@ export default function Discussions() {
           }
         />
 
-        <div className="mt-10 flex items-center gap-8 border-b border-border/70">
+        <div className="mt-10 flex items-center gap-8 border-b">
           {SCOPES.map((item) => {
             const active = scope === item.key;
             return (
@@ -107,12 +136,12 @@ export default function Discussions() {
                 type="button"
                 onClick={() => setScope(item.key)}
                 className={cn(
-                  "-mb-px border-b-2 pb-3 text-[13px] transition-colors",
-                  active ? "border-brand text-foreground" : "border-transparent text-muted-foreground hover:text-foreground",
+                  "-mb-px border-b-2 pb-3 text-sm transition-colors",
+                  active ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground",
                 )}
               >
                 {item.label}
-                <span className="ml-2 text-[10px] tabular-nums opacity-70">{counts[item.key]}</span>
+                <span className="ml-2 text-xs tabular-nums opacity-70">{counts[item.key]}</span>
               </button>
             );
           })}
@@ -123,9 +152,9 @@ export default function Discussions() {
             <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
             <Input
               value={search}
-              onChange={(event) => setSearch(event.target.value)}
+              onChange={(e) => setSearch(e.target.value)}
               placeholder="Search discussions..."
-              className="h-8 w-[240px] rounded-[8px] border-border/70 bg-surface-sunken pl-8 text-[12.5px]"
+              className="h-8 w-[240px] pl-8 text-sm"
             />
           </div>
 
@@ -138,29 +167,20 @@ export default function Discussions() {
             }))}
             onChange={(value) => setPriorityFilter(value as DiscussionPriority | null)}
           />
-          {allTags.length > 0 ? (
-            <FilterMenu
-              label="Tag"
-              value={tagFilter}
-              options={allTags.map((tag) => ({ value: tag, label: `#${tag}` }))}
-              onChange={setTagFilter}
-            />
-          ) : null}
           {hasActiveFilter ? (
             <button
               type="button"
-              className="ml-1 inline-flex items-center gap-1 text-[11.5px] text-muted-foreground hover:text-foreground"
+              className="ml-1 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
               onClick={() => {
                 setSearch("");
                 setPriorityFilter(null);
-                setTagFilter(null);
               }}
             >
               <X className="h-3 w-3" />
               Clear
             </button>
           ) : null}
-          <div className="ml-auto text-[11.5px] tabular-nums text-muted-foreground">
+          <div className="ml-auto text-xs tabular-nums text-muted-foreground">
             {filtered.length} of {discussions.length}
           </div>
         </div>
@@ -179,11 +199,11 @@ export default function Discussions() {
                       <Pill tone={STATE_TONE[state]} dot>
                         {STATE_LABEL[state]}
                       </Pill>
-                      <span className="text-[11px] tabular-nums text-muted-foreground">{list.length}</span>
+                      <span className="text-xs tabular-nums text-muted-foreground">{list.length}</span>
                     </div>
-                    <div className="overflow-hidden rounded-[8px] border border-border/70 bg-background">
+                    <div className="overflow-hidden rounded-lg border bg-card">
                       {list.map((discussion, index) => (
-                        <div key={discussion.id} className={cn(index > 0 && "border-t border-border/60")}>
+                        <div key={discussion.id} className={cn(index > 0 && "border-t")}>
                           <DiscussionRow d={discussion} />
                         </div>
                       ))}
@@ -196,7 +216,11 @@ export default function Discussions() {
         </main>
       </div>
 
-      <NewDiscussionDialog open={creating} onOpenChange={setCreating} />
+      <NewDiscussionDialog 
+        open={creating} 
+        onOpenChange={setCreating}
+        onCreated={() => loadDiscussions()}
+      />
     </div>
   );
 }
@@ -220,12 +244,12 @@ function FilterMenu({
     <div className="relative">
       <button
         type="button"
-        onClick={() => setOpen((value) => !value)}
+        onClick={() => setOpen((v) => !v)}
         className={cn(
-          "inline-flex h-8 items-center gap-1.5 rounded-full border px-2.5 text-[11.5px] transition-colors",
+          "inline-flex h-8 items-center gap-1.5 rounded-full border px-2.5 text-xs transition-colors",
           active
-            ? "border-brand/40 bg-brand/10 text-brand"
-            : "border-border/70 bg-surface-raised text-muted-foreground hover:bg-surface-hover hover:text-foreground",
+            ? "border-primary/40 bg-primary/10 text-primary"
+            : "border-border bg-card text-muted-foreground hover:bg-accent hover:text-foreground",
         )}
       >
         <span className="opacity-80">{label}:</span>
@@ -234,14 +258,14 @@ function FilterMenu({
       {open ? (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute left-0 top-full z-50 mt-1.5 min-w-[180px] overflow-hidden rounded-[8px] border border-border/70 bg-popover shadow-lg">
+          <div className="absolute left-0 top-full z-50 mt-1.5 min-w-[180px] overflow-hidden rounded-lg border bg-popover shadow-lg">
             <button
               type="button"
               onClick={() => {
                 onChange(null);
                 setOpen(false);
               }}
-              className={cn("w-full px-3 py-2 text-left text-[12px] hover:bg-surface-hover", value === null && "text-brand")}
+              className={cn("w-full px-3 py-2 text-left text-sm hover:bg-accent", value === null && "text-primary")}
             >
               Any {label.toLowerCase()}
             </button>
@@ -254,7 +278,7 @@ function FilterMenu({
                   onChange(option.value);
                   setOpen(false);
                 }}
-                className={cn("w-full px-3 py-2 text-left text-[12px] hover:bg-surface-hover", value === option.value && "text-brand")}
+                className={cn("w-full px-3 py-2 text-left text-sm hover:bg-accent", value === option.value && "text-primary")}
               >
                 {option.label}
               </button>
@@ -268,15 +292,15 @@ function FilterMenu({
 
 function Empty({ onCreate }: { onCreate: () => void }) {
   return (
-    <div className="rounded-[8px] border border-border/70 bg-background px-6 py-16 text-center">
-      <span className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-full bg-surface-raised">
+    <div className="rounded-lg border bg-card px-6 py-16 text-center">
+      <span className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-full bg-muted">
         <MessagesSquare className="h-5 w-5 text-muted-foreground" />
       </span>
       <h3 className="font-serif text-xl font-normal">Nothing to discuss yet</h3>
-      <p className="mx-auto mt-1.5 max-w-sm text-[13px] leading-relaxed text-muted-foreground">
+      <p className="mx-auto mt-1.5 max-w-sm text-sm leading-relaxed text-muted-foreground">
         Start the next decision. Pull together notes, votes, and tasks in one place.
       </p>
-      <Button onClick={onCreate} className="mt-5 h-8 bg-brand text-[12.5px] text-brand-foreground hover:bg-[hsl(var(--brand-hover))]">
+      <Button onClick={onCreate} className="mt-5">
         <Plus className="mr-1.5 h-3.5 w-3.5" />
         New discussion
       </Button>

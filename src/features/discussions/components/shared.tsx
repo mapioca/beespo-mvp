@@ -6,12 +6,12 @@ import type { AppUser } from "../data/types";
 import type { Tone } from "../lib/meta";
 
 const toneClass: Record<Tone, string> = {
-  neutral: "border-border/70 bg-surface-raised text-foreground/80",
-  primary: "border-brand/30 bg-brand/10 text-brand",
-  success: "border-[hsl(var(--cp-success)/0.3)] bg-[hsl(var(--cp-success)/0.1)] text-[hsl(var(--cp-success))]",
-  warning: "border-[hsl(var(--cp-warning)/0.3)] bg-[hsl(var(--cp-warning)/0.1)] text-[hsl(var(--cp-warning))]",
+  neutral: "border-border bg-muted text-foreground",
+  primary: "border-primary/30 bg-primary/10 text-primary",
+  success: "border-green-500/30 bg-green-500/10 text-green-700 dark:text-green-400",
+  warning: "border-yellow-500/30 bg-yellow-500/10 text-yellow-700 dark:text-yellow-400",
   danger: "border-destructive/30 bg-destructive/10 text-destructive",
-  muted: "border-border/70 bg-surface-raised text-muted-foreground",
+  muted: "border-border bg-muted text-muted-foreground",
 };
 
 export function Pill({
@@ -28,7 +28,7 @@ export function Pill({
   return (
     <span
       className={cn(
-        "inline-flex h-[22px] items-center gap-1.5 rounded-full border px-2 text-[10.5px] font-medium leading-none",
+        "inline-flex h-[22px] items-center gap-1.5 rounded-full border px-2 text-xs font-medium leading-none",
         toneClass[tone],
         className,
       )}
@@ -37,9 +37,9 @@ export function Pill({
         <span
           className={cn(
             "h-1.5 w-1.5 rounded-full",
-            tone === "primary" && "bg-brand",
-            tone === "success" && "bg-[hsl(var(--cp-success))]",
-            tone === "warning" && "bg-[hsl(var(--cp-warning))]",
+            tone === "primary" && "bg-primary",
+            tone === "success" && "bg-green-500",
+            tone === "warning" && "bg-yellow-500",
             tone === "danger" && "bg-destructive",
             (tone === "neutral" || tone === "muted") && "bg-muted-foreground",
           )}
@@ -105,14 +105,14 @@ export function SectionHeader({
     <header className={cn("flex items-start justify-between gap-6", className)}>
       <div className="min-w-0 max-w-[620px]">
         {eyebrow ? (
-          <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+          <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             {eyebrow}
           </div>
         ) : null}
-        <h1 className="mt-2 font-serif text-[34px] font-normal leading-none tracking-normal text-foreground">
+        <h1 className="mt-2 font-serif text-4xl font-normal leading-none tracking-normal text-foreground">
           {title}
         </h1>
-        {subtitle ? <p className="mt-3 text-[14px] leading-6 text-muted-foreground">{subtitle}</p> : null}
+        {subtitle ? <p className="mt-3 text-sm leading-6 text-muted-foreground">{subtitle}</p> : null}
       </div>
       {right ? <div className="shrink-0">{right}</div> : null}
     </header>

@@ -13,9 +13,11 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useDiscussions } from "../lib/store";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import type { DiscussionPriority } from "../data/types";
 import { PRIORITY_LABEL } from "../lib/meta";
+import { useRouter } from "next/navigation";
 
 const PRIORITY_OPTIONS: DiscussionPriority[] = ["urgent", "high", "medium", "low"];
 
@@ -28,36 +30,52 @@ export function NewDiscussionDialog({
   onOpenChange: (open: boolean) => void;
   onCreated?: (id: string) => void;
 }) {
-  const { createDiscussion } = useDiscussions();
+  const router = useRouter();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState<DiscussionPriority>("medium");
-  const [tags, setTags] = useState("");
   const [asDraft, setAsDraft] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const reset = () => {
     setTitle("");
     setDescription("");
     setPriority("medium");
-    setTags("");
     setAsDraft(false);
   };
 
-  const submit = () => {
-    if (!title.trim()) return;
-    const id = createDiscussion({
-      title: title.trim(),
-      description: description.trim() || undefined,
-      priority,
-      tags: tags
-        .split(",")
-        .map((tag) => tag.trim().replace(/^#/, ""))
-        .filter(Boolean),
-      state: asDraft ? "draft" : "active",
-    });
-    reset();
-    onOpenChange(false);
-    onCreated?.(id);
+  const submit = async () => {
+    if (!title.trim() || isSubmitting) return;
+    
+    setIsSubmitting(true);
+    try {
+      const response = await fetch("/api/discussions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: title.trim(),
+          description: description.trim() || undefined,
+          priority,
+          state: asDraft ? "draft" : "active",
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.error) {
+        console.error("Failed to create discussion:", result.error);
+        return;
+      }
+
+      reset();
+      onOpenChange(false);
+      router.refresh();
+      onCreated?.(result.data.id);
+    } catch (error) {
+      console.error("Failed to create discussion:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -68,9 +86,9 @@ export function NewDiscussionDialog({
         if (!nextOpen) reset();
       }}
     >
-      <DialogContent className="max-w-[560px] border-border/70 bg-background p-0">
+      <DialogContent className="max-w-[560px] p-0">
         <DialogHeader className="px-6 pb-3 pt-5">
-          <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">New discussion</div>
+          <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">New discussion</div>
           <DialogTitle className="font-serif text-2xl font-normal italic">What needs deliberation?</DialogTitle>
           <DialogDescription className="sr-only">Create a discussion item.</DialogDescription>
         </DialogHeader>
@@ -79,73 +97,61 @@ export function NewDiscussionDialog({
           <Input
             autoFocus
             value={title}
-            onChange={(event) => setTitle(event.target.value)}
+            onChange={(e) => setTitle(e.target.value)}
             placeholder="A short, clear title"
-            className="h-10 rounded-[8px] border-border/80 bg-surface-sunken text-[14px]"
+            className="h-10"
           />
           <Textarea
             value={description}
-            onChange={(event) => setDescription(event.target.value)}
+            onChange={(e) => setDescription(e.target.value)}
             placeholder="Context (optional). What's the situation, who's affected, what outcome are we hoping for?"
             rows={4}
-            className="resize-none rounded-[8px] border-border/80 bg-surface-sunken text-[13px] leading-relaxed"
+            className="resize-none text-sm leading-relaxed"
           />
 
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <div>
-              <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Priority</div>
-              <Select value={priority} onValueChange={(value) => setPriority(value as DiscussionPriority)}>
-                <SelectTrigger className="h-9 bg-surface-sunken text-[12.5px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {PRIORITY_OPTIONS.map((item) => (
-                    <SelectItem key={item} value={item} className="text-[12.5px]">
-                      {PRIORITY_LABEL[item]}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Tags</div>
-              <Input
-                value={tags}
-                onChange={(event) => setTags(event.target.value)}
-                placeholder="comma, separated"
-                className="h-9 rounded-[8px] border-border/80 bg-surface-sunken text-[12.5px]"
-              />
-            </div>
+          <div>
+            <Label className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Priority</Label>
+            <Select value={priority} onValueChange={(value) => setPriority(value as DiscussionPriority)}>
+              <SelectTrigger className="h-9">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {PRIORITY_OPTIONS.map((item) => (
+                  <SelectItem key={item} value={item}>
+                    {PRIORITY_LABEL[item]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
-          <label className="flex cursor-pointer select-none items-center gap-2 text-[12px] text-muted-foreground">
-            <input
-              type="checkbox"
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="draft"
               checked={asDraft}
-              onChange={(event) => setAsDraft(event.target.checked)}
-              className="accent-brand"
+              onCheckedChange={(checked) => setAsDraft(checked === true)}
             />
-            Save as draft
-          </label>
+            <Label htmlFor="draft" className="text-sm text-muted-foreground cursor-pointer">
+              Save as draft
+            </Label>
+          </div>
         </div>
 
-        <DialogFooter className="border-t border-border/70 px-6 py-4">
+        <DialogFooter className="border-t px-6 py-4">
           <Button
             variant="ghost"
             onClick={() => {
               reset();
               onOpenChange(false);
             }}
-            className="text-[12.5px]"
           >
             Cancel
           </Button>
           <Button
             onClick={submit}
-            disabled={!title.trim()}
-            className="bg-brand text-[12.5px] text-brand-foreground hover:bg-[hsl(var(--brand-hover))]"
+            disabled={!title.trim() || isSubmitting}
           >
-            Open discussion
+            {isSubmitting ? "Creating..." : "Open discussion"}
           </Button>
         </DialogFooter>
       </DialogContent>
