@@ -17,7 +17,6 @@ import {
   Megaphone,
   MessageSquare,
   Moon,
-  MoreVertical,
   Palette,
   Search,
   Settings,
@@ -61,12 +60,12 @@ const sections: SidebarSection[] = [
       { href: "/directory", label: "Directory", icon: BookUser, match: "prefix" },
       { href: "/calendar", label: "Calendar", icon: CalendarDays, match: "prefix", activeAliases: ["/schedule"] },
       { href: "/tasks", label: "Tasks", icon: CheckSquare, match: "prefix" },
-      { href: "/callings", label: "Callings", icon: BriefcaseBusiness, match: "prefix" },
     ],
   },
   {
     label: "My Calling",
     items: [
+      { href: "/callings", label: "Callings", icon: BriefcaseBusiness, match: "prefix" },
       {
         href: "/meetings/sacrament-meeting/program-planner",
         label: "Sacrament Meeting",
@@ -80,15 +79,7 @@ const sections: SidebarSection[] = [
         ],
       },
       { href: "/discussions", label: "Discussions", icon: MessageSquare, match: "prefix" },
-      {
-        href: "",
-        label: "More",
-        icon: MoreVertical,
-        match: "prefix",
-        children: [
-          { href: "/meetings/announcements", label: "Announcements", icon: Megaphone, match: "prefix" },
-        ],
-      },
+      { href: "/meetings/announcements", label: "Announcements", icon: Megaphone, match: "prefix" },
     ],
   },
 ];
@@ -97,7 +88,8 @@ function getInitials(name: string) {
   return name.trim().charAt(0).toUpperCase() || "W";
 }
 
-function isItemActive(pathname: string, item: SidebarItem) {
+function isItemActive(pathname: string | null, item: SidebarItem) {
+  if (!pathname) return false;
   if (item.label === "More") return false;
   if (item.children?.some((child) => isItemActive(pathname, child))) return true;
   if (item.activeAliases?.some((alias) => pathname === alias || pathname.startsWith(`${alias}/`))) {

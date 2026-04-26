@@ -104,7 +104,7 @@ export function DirectoryClient({
                 Directory
               </p>
               <h1 className="font-serif text-3xl font-normal leading-tight tracking-normal text-foreground md:text-[34px]">
-                It&#39;s all about <em className="italic">them</em>
+                The people you <em className="italic">serve</em>
               </h1>
               <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
                 Every member record your workspace depends on - available for callings,

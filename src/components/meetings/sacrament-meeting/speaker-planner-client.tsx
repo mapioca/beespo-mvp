@@ -262,7 +262,7 @@ function RosterRow({ person, spoke, picking, isCurrentSlot, onClick }: RosterRow
       onClick={picking ? onClick : undefined}
       onKeyDown={picking ? (e) => e.key === "Enter" && onClick() : undefined}
       className={cn(
-        "flex items-center gap-2.5 rounded-lg px-2 py-1.5 transition-colors",
+        "flex items-center gap-2.5 rounded-lg px-2 py-1.5 transition-colors hover:bg-surface-hover",
         picking && "cursor-pointer hover:bg-accent",
         isCurrentSlot && "bg-brand/10"
       )}

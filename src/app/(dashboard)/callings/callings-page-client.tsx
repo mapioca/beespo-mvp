@@ -2,9 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState, useMemo } from "react";
-import { Breadcrumbs } from "@/components/dashboard/breadcrumbs";
 import {
-    Users,
     Plus,
     Search,
     MoreHorizontal,
@@ -1091,14 +1089,6 @@ export function CallingsPageClient({
 
     return (
         <div className="flex flex-col h-full bg-muted/30">
-            {/* Breadcrumb */}
-            <Breadcrumbs
-                items={[
-                    { label: "Callings", icon: <Users className="h-3.5 w-3.5" /> },
-                ]}
-                className="bg-transparent ring-0 border-b border-border/60 rounded-none px-4 py-1.5"
-            />
-
             {/* Header */}
             <div className="px-8 lg:px-12 py-10 max-w-[1400px] mx-auto w-full">
                 <header className="flex items-end justify-between gap-6">
@@ -1107,7 +1097,7 @@ export function CallingsPageClient({
                             Callings
                         </div>
                         <h1 className="font-serif text-3xl md:text-[34px] leading-[1.1] tracking-tight text-foreground">
-                            Calling <em className="font-serif italic">deliberation</em>
+                            Who to <em className="font-serif italic">call</em>
                         </h1>
                         <p className="text-[13px] text-muted-foreground mt-2 max-w-xl leading-relaxed">
                             Match members to callings, callings to members. Track each from quiet consideration through sustaining and into LCR.

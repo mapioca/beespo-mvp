@@ -4,6 +4,7 @@ import { useMemo, useState, useEffect } from "react";
 import { MessagesSquare, Plus, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { DiscussionRow } from "@/features/discussions/components/DiscussionRow";
 import { NewDiscussionDialog } from "@/features/discussions/components/NewDiscussionDialog";
@@ -99,7 +100,16 @@ export default function Discussions() {
     return (
       <div className="min-h-full bg-surface-canvas px-5 py-10 text-foreground sm:px-8 lg:px-12">
         <div className="mx-auto max-w-[1100px]">
-          <p className="text-muted-foreground">Loading discussions...</p>
+          <div className="space-y-4">
+            <Skeleton className="h-8 w-48" />
+            <Skeleton className="h-12 w-full max-w-2xl" />
+            <Skeleton className="h-4 w-full max-w-xl" />
+          </div>
+          <div className="mt-10 space-y-3">
+            <Skeleton className="h-24 w-full rounded-lg" />
+            <Skeleton className="h-24 w-full rounded-lg" />
+            <Skeleton className="h-24 w-full rounded-lg" />
+          </div>
         </div>
       </div>
     );
