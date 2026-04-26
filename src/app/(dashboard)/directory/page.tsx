@@ -16,17 +16,12 @@ export default async function DirectoryPage() {
     createClient(),
   ])
 
-  const [{ data: workspace }, { data, count, error }] = await Promise.all([
-    (supabase.from("workspaces") as ReturnType<typeof supabase.from>)
-      .select("name, unit_name")
-      .eq("id", profile.workspace_id)
-      .single(),
+  const { data, count, error } =
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (supabase.from("directory" as any) as any)
+    await (supabase.from("directory" as any) as any)
       .select("id, name, gender, created_at", { count: "exact" })
       .eq("workspace_id", profile.workspace_id)
-      .order("name", { ascending: true }),
-  ])
+      .order("name", { ascending: true })
 
   if (error) {
     console.error("Directory query error:", error)
@@ -44,7 +39,6 @@ export default async function DirectoryPage() {
       members={members}
       totalCount={count ?? members.length}
       workspaceId={profile.workspace_id}
-      wardName={workspace?.unit_name || workspace?.name || "Ward"}
       hasError={Boolean(error)}
     />
   )

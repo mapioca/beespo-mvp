@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
-import { Plus } from "lucide-react"
+import { Plus, Search, X } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { createClient } from "@/lib/supabase/client"
+import { cn } from "@/lib/utils"
 import { DirectoryDetailsPanel } from "./directory-details-panel"
 
 export type DirectoryMember = {
@@ -28,7 +29,6 @@ type DirectoryClientProps = {
   members: DirectoryMember[]
   totalCount: number
   workspaceId: string
-  wardName: string
   hasError?: boolean
 }
 
@@ -39,17 +39,10 @@ function initials(name: string) {
   return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase()
 }
 
-function householdLabel(name: string) {
-  const parts = name.trim().split(/\s+/).filter(Boolean)
-  const familyName = parts.length > 1 ? parts[parts.length - 1] : parts[0]
-  return familyName ? `${familyName} household` : "Ward member"
-}
-
 export function DirectoryClient({
   members,
   totalCount,
   workspaceId,
-  wardName,
   hasError = false,
 }: DirectoryClientProps) {
   const router = useRouter()
@@ -59,11 +52,22 @@ export function DirectoryClient({
   const [isPending, startTransition] = useTransition()
   const [selectedMember, setSelectedMember] = useState<DirectoryMember | null>(null)
   const [detailsOpen, setDetailsOpen] = useState(false)
+  const [search, setSearch] = useState("")
 
   const sortedMembers = useMemo(
     () => [...members].sort((a, b) => a.name.localeCompare(b.name)),
     [members]
   )
+
+  const filteredMembers = useMemo(() => {
+    const query = search.trim().toLowerCase()
+    if (!query) return sortedMembers
+
+    return sortedMembers.filter((member) => {
+      const text = `${member.name} member ward directory`.toLowerCase()
+      return text.includes(query)
+    })
+  }, [search, sortedMembers])
 
   async function handleAddMember() {
     const trimmedName = name.trim()
@@ -91,54 +95,104 @@ export function DirectoryClient({
   }
 
   return (
-    <div className="min-h-full bg-[var(--color-bg-app)] text-[var(--color-text-primary)]">
-      <div className="sticky top-0 z-10 flex h-[52px] min-h-[52px] items-center gap-3 border-b border-[var(--color-border)] bg-[var(--color-bg-app)] px-[22px] backdrop-blur">
-        <div className="flex items-center gap-2 text-[13px] text-[var(--color-text-secondary)]">
-          <strong className="font-medium text-[var(--color-text-primary)]">Ward Directory</strong>
-        </div>
-        <div className="ml-auto flex items-center gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="h-auto rounded-[6px] border-[var(--color-stone-300)] bg-[var(--app-nav-card)] px-3 py-1.5 text-[13px] font-medium text-[var(--color-text-secondary)] hover:border-[var(--color-text-tertiary)] hover:bg-[var(--app-nav-card)]"
-            onClick={() => {
-              setError(null)
-              setDialogOpen(true)
-            }}
-          >
-            <Plus className="h-[13px] w-[13px]" />
-            Add member
-          </Button>
-        </div>
-      </div>
-
-      <main className="mx-auto w-full max-w-[1100px] px-6 py-7 pb-20 sm:px-9">
-        <header className="mb-7 flex items-end gap-5 border-b border-[var(--color-border)] pb-[22px]">
-          <div>
-            <div className="mb-0.5 text-[13px] tracking-[0.02em] text-[var(--color-text-tertiary)]">
-              {wardName}
+    <div className="min-h-full bg-card px-5 py-10 text-foreground sm:px-8 lg:px-12">
+      <main className="mx-auto w-full max-w-[1100px] pb-20">
+        <header className="mb-10">
+          <div className="flex flex-col items-start justify-between gap-6 md:flex-row">
+            <div className="max-w-[620px]">
+              <p className="mb-2 text-xs uppercase tracking-wider text-muted-foreground">
+                Directory
+              </p>
+              <h1 className="font-serif text-3xl font-normal leading-tight tracking-normal text-foreground md:text-[34px]">
+                It&#39;s all about <em className="italic">them</em>
+              </h1>
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
+                Every member record your workspace depends on - available for callings,
+                assignments, meetings, and more.
+              </p>
             </div>
-            <h1 className="m-0 font-serif text-[32px] font-normal tracking-[-0.02em] text-[var(--color-text-primary)]">
-              {totalCount} {totalCount === 1 ? "member" : "members"}
-            </h1>
-            <div className="mt-1 text-[13.5px] text-[var(--color-text-secondary)]">
-              Showing all households. People assigned here appear throughout Beespo.
+
+            <div className="flex shrink-0 items-center gap-3 md:pt-9">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-1 text-[11px] font-medium text-muted-foreground">
+                <span className="h-1.5 w-1.5 rounded-full bg-current" />
+                {totalCount} {totalCount === 1 ? "member" : "members"}
+              </span>
+              <Button
+                type="button"
+                className="h-9 rounded-[8px] bg-brand px-4 text-[12.5px] font-medium text-brand-foreground hover:bg-[hsl(var(--brand-hover))]"
+                onClick={() => {
+                  setError(null)
+                  setDialogOpen(true)
+                }}
+              >
+                <Plus className="mr-1.5 h-3.5 w-3.5" />
+                Add member
+              </Button>
             </div>
           </div>
         </header>
 
+        <div className="mb-8 border-b border-border/70">
+          <div className="flex flex-col gap-4 pb-5 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-8">
+              <button
+                type="button"
+                className="relative -mb-5 border-b-2 border-brand pb-5 text-[13px] font-medium text-foreground"
+              >
+                Members
+                <span className="ml-2 text-[10px] tabular-nums opacity-70">
+                  {filteredMembers.length}
+                </span>
+              </button>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <div className="relative">
+                <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  placeholder="Search directory..."
+                  className="h-8 w-full rounded-[8px] border-border/70 bg-surface-sunken pl-8 pr-8 text-[12.5px] sm:w-[240px]"
+                />
+                {search ? (
+                  <button
+                    type="button"
+                    onClick={() => setSearch("")}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
+                    aria-label="Clear directory search"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                ) : null}
+              </div>
+              <span
+                className={cn(
+                  "hidden text-[11.5px] tabular-nums text-muted-foreground sm:block",
+                  search.trim() && "text-foreground"
+                )}
+              >
+                {filteredMembers.length} of {totalCount}
+              </span>
+            </div>
+          </div>
+        </div>
+
         {hasError ? (
-          <div className="rounded-[10px] border border-[var(--color-border)] bg-[var(--app-nav-card)] px-4 py-3 text-[13px] text-[var(--color-text-secondary)]">
+          <div className="rounded-[8px] border border-border bg-background px-4 py-3 text-[13px] text-muted-foreground">
             Error loading directory. Please try again.
           </div>
         ) : sortedMembers.length === 0 ? (
-          <div className="rounded-[10px] border border-[var(--color-border)] bg-[var(--app-nav-card)] px-4 py-6 text-center text-[13.5px] text-[var(--color-text-secondary)]">
+          <div className="rounded-[8px] border border-border bg-background px-4 py-6 text-center text-[13.5px] text-muted-foreground">
             No members in the directory yet.
+          </div>
+        ) : filteredMembers.length === 0 ? (
+          <div className="rounded-[8px] border border-border bg-background px-4 py-6 text-center text-[13.5px] text-muted-foreground">
+            No members match that search.
           </div>
         ) : (
           <div className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-2.5">
-            {sortedMembers.map((member) => (
+            {filteredMembers.map((member) => (
               <button
                 key={member.id}
                 type="button"
@@ -156,7 +210,7 @@ export function DirectoryClient({
                     {member.name}
                   </div>
                   <div className="mt-px truncate text-[11.5px] text-[var(--color-text-tertiary)]">
-                    {householdLabel(member.name)}
+                    Member
                   </div>
                 </div>
               </button>

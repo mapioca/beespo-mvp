@@ -1339,8 +1339,8 @@ export function SpeakerPlannerClient() {
       />
 
       {/* Header */}
-      <div className="border-b border-border/60 px-4 sm:px-6 lg:px-10 py-10">
-        <div className="mx-auto max-w-7xl">
+      <div className="px-4 py-10 sm:px-6 lg:px-10">
+        <div className="mx-auto max-w-7xl border-b border-border/60 pb-10">
           <header>
             <div className="text-[10px] uppercase tracking-wider font-medium text-muted-foreground mb-2">
               Speaker Planner
@@ -1356,7 +1356,7 @@ export function SpeakerPlannerClient() {
       </div>
 
       {/* Two-pane layout */}
-      <div className="px-4 sm:px-6 lg:px-10 py-8">
+      <div className="px-4 pb-8 sm:px-6 lg:px-10">
         <div className="mx-auto max-w-7xl">
           <div className="grid grid-cols-1 gap-8 xl:grid-cols-[minmax(0,1.45fr)_minmax(340px,0.75fr)] xl:gap-10">
             {/* Left pane: Meeting cards */}
