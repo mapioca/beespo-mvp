@@ -23,7 +23,7 @@ export function KpiActiveDiscussionsWidget({ data }: Props) {
       value={`${data.openCount}`}
       subtitle={`${data.pendingDecisions} decisions · ${data.resolutionRate}% resolved`}
       trend={trend}
-      href="/meetings/agendas/discussions"
+      href="/discussions"
     />
   );
 }

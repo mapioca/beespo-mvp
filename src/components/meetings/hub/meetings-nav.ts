@@ -54,7 +54,7 @@ export function getMeetingsNavItems(isBishopric: boolean): DomainNavItem[] {
       matchMode: "prefix",
       children: [
         {
-          href: "/meetings/agendas/discussions",
+          href: "/discussions",
           label: "Discussions",
           icon: MessageSquare,
           matchMode: "prefix" as const,

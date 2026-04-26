@@ -95,7 +95,7 @@ export function DirectoryClient({
   }
 
   return (
-    <div className="min-h-full bg-card px-5 py-10 text-foreground sm:px-8 lg:px-12">
+    <div className="min-h-full bg-surface-canvas px-5 py-10 text-foreground sm:px-8 lg:px-12">
       <main className="mx-auto w-full max-w-[1100px] pb-20">
         <header className="mb-10">
           <div className="flex flex-col items-start justify-between gap-6 md:flex-row">

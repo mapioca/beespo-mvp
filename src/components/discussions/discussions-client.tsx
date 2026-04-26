@@ -383,8 +383,8 @@ export function DiscussionsClient({
         setShowBulkDeleteDialog(false)
     }
 
-    const handleViewDiscussion = (discussion: Discussion) => {
-        router.push(`/meetings/agendas/discussions/${discussion.id}`)
+    const handleViewDiscussion = () => {
+        router.push("/discussions")
     }
 
     const handleCreateDiscussion = async (formData: DiscussionFormData) => {
@@ -516,7 +516,7 @@ export function DiscussionsClient({
                                 label: discussion.title,
                                 actionLabel: "Open",
                             }))}
-                            onSelect={(discussionId) => router.push(`/meetings/agendas/discussions/${discussionId}`)}
+                            onSelect={() => router.push("/discussions")}
                             emptyText="No matching discussions."
                         />
                         <Button

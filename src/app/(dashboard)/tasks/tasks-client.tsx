@@ -240,7 +240,7 @@ export function TasksClient({ tasks, currentUserId, profiles }: TasksClientProps
         search.trim() !== ""
 
     return (
-        <div className="min-h-full bg-card px-5 py-10 text-foreground sm:px-8 lg:px-12">
+        <div className="min-h-full bg-surface-canvas px-5 py-10 text-foreground sm:px-8 lg:px-12">
             <div className="mx-auto max-w-[1200px]">
                 <header className="flex items-start justify-between gap-6">
                     <div className="max-w-[520px]">

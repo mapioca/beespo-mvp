@@ -148,7 +148,7 @@ export function DiscussionsTable({
             id: discussion.id,
             entityType: "discussion" as const,
             title: discussion.title,
-            href: `/meetings/agendas/discussions/${discussion.id}`,
+            href: "/discussions",
             icon: "discussion" as const,
             parentTitle: null,
         }
@@ -326,7 +326,7 @@ export function DiscussionsTable({
                                 {!hiddenColumns.has("title") && (
                                     <TableCell className="table-cell-title">
                                         <Link
-                                            href={`/meetings/agendas/discussions/${discussion.id}`}
+                                            href="/discussions"
                                             className="table-cell-link text-left"
                                         >
                                             <span>{discussion.title}</span>

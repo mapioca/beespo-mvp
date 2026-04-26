@@ -18,7 +18,7 @@ interface QuickAction {
 
 const QUICK_ACTIONS: QuickAction[] = [
   { id: "new-task",       label: "New task",       href: "/tasks?create=true", icon: CheckSquare },
-  { id: "new-discussion", label: "New discussion", href: "/meetings/agendas/discussions", icon: MessageSquare },
+  { id: "new-discussion", label: "New discussion", href: "/discussions", icon: MessageSquare },
   { id: "new-form",       label: "New form",       href: "/forms/new", icon: ClipboardPen },
   { id: "new-table",      label: "New table",      href: "/data/new", icon: Table2 },
   { id: "new-notebook",   label: "New notebook",   href: "/notebooks/new", icon: NotebookPen },

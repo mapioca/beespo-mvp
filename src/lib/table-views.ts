@@ -162,12 +162,12 @@ export async function createDiscussionView(
   name: string,
   filters: DiscussionViewFilters
 ): Promise<{ data?: DiscussionView; error?: string }> {
-  const r = await _createView("discussions", name, filters, "/meetings/agendas/discussions")
+  const r = await _createView("discussions", name, filters, "/discussions")
   return r as { data?: DiscussionView; error?: string }
 }
 
 export async function deleteDiscussionView(id: string): Promise<{ error?: string }> {
-  return _deleteView(id, "/meetings/agendas/discussions")
+  return _deleteView(id, "/discussions")
 }
 
 // ── Form view actions ─────────────────────────────────────────────────────────

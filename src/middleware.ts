@@ -14,8 +14,16 @@ const DISABLED_ROUTES = [
   "/meetings/assignments",
 ];
 
+const LEGACY_ROUTE_REDIRECTS = [
+  "/meetings/agendas/discussions",
+];
+
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  if (LEGACY_ROUTE_REDIRECTS.some((route) => pathname === route || pathname.startsWith(`${route}/`))) {
+    return NextResponse.redirect(new URL("/discussions", request.url));
+  }
 
   if (DISABLED_ROUTES.some((route) => pathname === route || pathname.startsWith(`${route}/`))) {
     return NextResponse.redirect(new URL("/dashboard", request.url));

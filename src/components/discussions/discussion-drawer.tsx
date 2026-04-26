@@ -281,7 +281,7 @@ export function DiscussionDrawer({ discussion, open, onOpenChange, onDelete }: D
                                 className="w-full justify-start gap-2 h-8 text-xs font-normal border-border/60 hover:bg-control-hover"
                                 asChild
                             >
-                                <Link href={`/meetings/agendas/discussions/${discussion?.id}`}>
+                                <Link href="/discussions">
                                     <ExternalLink className="h-3.5 w-3.5" />
                                     View Full Details
                                 </Link>

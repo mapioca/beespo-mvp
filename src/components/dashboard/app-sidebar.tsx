@@ -79,13 +79,13 @@ const sections: SidebarSection[] = [
           { href: "/meetings/sacrament-meeting/archive", label: "Archive", icon: Archive, match: "prefix" },
         ],
       },
+      { href: "/discussions", label: "Discussions", icon: MessageSquare, match: "prefix" },
       {
         href: "",
         label: "More",
         icon: MoreVertical,
         match: "prefix",
         children: [
-          { href: "/meetings/agendas/discussions", label: "Discussions", icon: MessageSquare, match: "prefix" },
           { href: "/meetings/announcements", label: "Announcements", icon: Megaphone, match: "prefix" },
         ],
       },

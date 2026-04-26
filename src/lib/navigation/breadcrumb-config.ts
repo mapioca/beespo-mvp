@@ -99,28 +99,22 @@ export const breadcrumbConfigs: BreadcrumbConfig[] = [
     ],
   },
   {
-    pattern: "/meetings/agendas/discussions",
+    pattern: "/discussions",
     trail: [
-      { label: "Meetings", href: "/meetings/overview" },
-      { label: "Agendas", href: "/meetings/agendas" },
       { label: "Discussions" },
     ],
   },
   {
-    pattern: "/meetings/agendas/discussions/new",
+    pattern: "/discussions/new",
     trail: [
-      { label: "Meetings", href: "/meetings/overview" },
-      { label: "Agendas", href: "/meetings/agendas" },
-      { label: "Discussions", href: "/meetings/agendas/discussions" },
+      { label: "Discussions", href: "/discussions" },
       { label: "New Discussion" },
     ],
   },
   {
-    pattern: /^\/meetings\/agendas\/discussions\/[^/]+$/,
+    pattern: /^\/discussions\/[^/]+$/,
     trail: [
-      { label: "Meetings", href: "/meetings/overview" },
-      { label: "Agendas", href: "/meetings/agendas" },
-      { label: "Discussions", href: "/meetings/agendas/discussions" },
+      { label: "Discussions", href: "/discussions" },
       { label: "Discussion Details" },
     ],
     dynamic: true,

@@ -49,7 +49,7 @@ function DiscussionCard({ discussion }: { discussion: HomeDiscussion }) {
 
   return (
     <Link
-      href={`/meetings/agendas/discussions/${discussion.id}`}
+      href="/discussions"
       className={cn(
         // matches recents card sizing and shape
         "flex-shrink-0 w-[220px] flex flex-col gap-2.5 rounded-[10px]",
@@ -135,7 +135,7 @@ export function HomeDiscussionsCarousel({ discussions }: HomeDiscussionsCarousel
         <MessageSquare className="h-8 w-8 text-muted-foreground/30" />
         <p className="text-sm text-muted-foreground">No open discussions right now.</p>
         <Link
-          href="/meetings/agendas/discussions"
+          href="/discussions"
           className="text-xs text-[hsl(var(--cp-primary))] hover:underline"
         >
           View all discussions →
