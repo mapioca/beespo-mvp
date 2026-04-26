@@ -3,8 +3,9 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   
@@ -25,7 +26,7 @@ export async function GET(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data, error } = await (supabase.from("discussions") as any)
     .select("*")
-    .eq("id", params.id)
+    .eq("id", id)
     .eq("workspace_id", profile.workspace_id)
     .single();
 
