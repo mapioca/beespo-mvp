@@ -174,11 +174,12 @@ export function AnnouncementsClient({
         setDrawerOpen(true)
     }
 
-     async function handleDelete(id: string) {
-         const supabase = createClient()
-         const { error } = await supabase.from<Announcement>("announcements")
-             .delete()
-             .eq("id", id)
+    async function handleDelete(id: string) {
+        const supabase = createClient()
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { error } = await (supabase.from("announcements") as any)
+            .delete()
+            .eq("id", id)
 
         if (error) {
             toast.error(error.message || "Failed to delete announcement.")
@@ -221,7 +222,8 @@ export function AnnouncementsClient({
             return
         }
 
-         const { data: newAnnouncement, error } = await supabase.from("announcements")
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: newAnnouncement, error } = await (supabase.from("announcements") as any)
             .insert({
                 title: formData.title,
                 content: formData.content,
