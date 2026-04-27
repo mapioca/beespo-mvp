@@ -1,11 +1,28 @@
 "use client"
 
-import { useState, useMemo, useCallback, useTransition, useEffect } from "react"
+import { useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
-import { createPortal } from "react-dom"
+import { format, formatDistanceToNow, isFuture, isPast } from "date-fns"
+import {
+    Calendar,
+    Clock,
+    Eye,
+    Megaphone,
+    MoreHorizontal,
+    Plus,
+    Search,
+    Trash2,
+    X,
+} from "lucide-react"
+
 import { Button } from "@/components/ui/button"
-import { Check, Columns3, Plus, SlidersHorizontal, X, Megaphone } from "lucide-react"
-import { Breadcrumbs } from "@/components/dashboard/breadcrumbs"
+import { Input } from "@/components/ui/input"
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/components/ui/tooltip"
 import {
     AlertDialog,
     AlertDialogAction,
@@ -22,76 +39,53 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog"
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { createClient } from "@/lib/supabase/client"
 import { toast } from "@/lib/toast"
+import { cn } from "@/lib/utils"
+import { richTextToPlainText, sanitizeRichTextHtml } from "@/lib/rich-text"
 import {
-    AnnouncementsTable,
     Announcement,
-    AnnouncementStatus,
     AnnouncementPriority,
+    AnnouncementStatus,
 } from "./announcements-table"
 import { AnnouncementDrawer } from "./announcement-drawer"
 import { AnnouncementForm, AnnouncementFormData } from "./announcement-form"
-import { CreateViewDialog } from "@/components/common/create-view-dialog"
-import {
-    AnnouncementView,
-    AnnouncementViewFilters,
-    createAnnouncementView,
-    deleteAnnouncementView,
-    TableView,
-} from "@/lib/table-views"
-import { cn } from "@/lib/utils"
-import {
-    StandardPopoverMenu,
-    StandardPopoverMenuContent,
-    StandardPopoverMenuItem,
-    StandardPopoverMenuSub,
-    StandardPopoverMenuSubContent,
-    StandardPopoverMenuSubTrigger,
-    StandardPopoverMenuTrigger,
-} from "@/components/ui/standard-popover-menu"
-import { ToolbarIconButton } from "@/components/ui/toolbar-icon-button"
-import { BulkSelectionBar } from "@/components/ui/bulk-selection-bar"
-import { TopbarSearchAction } from "@/components/ui/topbar-search-action"
 
-// ── Filter sections config ────────────────────────────────────────────────────
+type Scope = "all" | "active" | "draft" | "stopped"
 
-const ANNOUNCEMENT_FILTER_SECTIONS = [
-    {
-        sectionLabel: "Status",
-        key: "statuses",
-        optional: true,
-        options: [
-            { value: "draft", label: "Draft" },
-            { value: "active", label: "Active" },
-            { value: "stopped", label: "Stopped" },
-        ],
-    },
-    {
-        sectionLabel: "Priority",
-        key: "priorities",
-        optional: true,
-        options: [
-            { value: "high", label: "High" },
-            { value: "medium", label: "Medium" },
-            { value: "low", label: "Low" },
-        ],
-    },
+const SCOPES: Array<{ key: Scope; label: string }> = [
+    { key: "all", label: "All" },
+    { key: "active", label: "Active" },
+    { key: "draft", label: "Drafts" },
+    { key: "stopped", label: "Stopped" },
 ]
 
-const STATUS_FILTER_OPTIONS = [
-    { value: "draft", label: "Draft" },
-    { value: "active", label: "Active" },
-    { value: "stopped", label: "Stopped" },
-] as const
+const STATUS_LABEL: Record<AnnouncementStatus, string> = {
+    active: "Active",
+    draft: "Drafts",
+    stopped: "Stopped",
+}
 
-const PRIORITY_FILTER_OPTIONS = [
-    { value: "high", label: "High" },
-    { value: "medium", label: "Medium" },
-    { value: "low", label: "Low" },
-] as const
+const STATUS_ORDER: AnnouncementStatus[] = ["active", "draft", "stopped"]
 
-// ── Props ─────────────────────────────────────────────────────────────────────
+const PRIORITY_RANK: Record<AnnouncementPriority, number> = {
+    high: 0,
+    medium: 1,
+    low: 2,
+}
+
+const PRIORITY_LABEL: Record<AnnouncementPriority, string> = {
+    high: "High",
+    medium: "Medium",
+    low: "Low",
+}
 
 interface AnnouncementsClientProps {
     announcements: Announcement[]
@@ -102,208 +96,89 @@ interface AnnouncementsClientProps {
         search: string
         status: string[]
     }
-    initialViews?: AnnouncementView[]
+    initialViews?: unknown[]
 }
 
 export function AnnouncementsClient({
     announcements,
-    statusCounts,
-    priorityCounts,
-    initialViews = [],
 }: AnnouncementsClientProps) {
     const router = useRouter()
-    const [, startDeleteTransition] = useTransition()
-    const [mounted, setMounted] = useState(false)
+
+    const [scope, setScope] = useState<Scope>("active")
+    const [search, setSearch] = useState("")
+    const [priorityFilter, setPriorityFilter] =
+        useState<AnnouncementPriority | null>(null)
+
+    const [creating, setCreating] = useState(false)
+    const [isCreating, setIsCreating] = useState(false)
 
     const [selectedAnnouncement, setSelectedAnnouncement] =
         useState<Announcement | null>(null)
     const [drawerOpen, setDrawerOpen] = useState(false)
 
-    // ── Views state ──────────────────────────────────────────────────────────
-    const [views, setViews] = useState<AnnouncementView[]>(initialViews)
-    const [activeViewId, setActiveViewId] = useState<string | null>(null)
-    const [deletingViewId, setDeletingViewId] = useState<string | null>(null)
+    const [deleteTarget, setDeleteTarget] = useState<Announcement | null>(null)
+    const [isDeleting, setIsDeleting] = useState(false)
 
-    // Search
-    const [search, setSearch] = useState("")
-
-    // Filters
-    const [selectedStatuses, setSelectedStatuses] = useState<
-        AnnouncementStatus[]
-    >([])
-    const [selectedPriorities, setSelectedPriorities] = useState<
-        AnnouncementPriority[]
-    >([])
-
-    // Sort
-    const [sortConfig, setSortConfig] = useState<{
-        key: string
-        direction: "asc" | "desc"
-    } | null>(null)
-
-    // Column visibility
-    const [hiddenColumns, setHiddenColumns] = useState<Set<string>>(new Set())
-
-    // Row selection
-    const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set())
-
-    // Bulk delete
-    const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false)
-    const [isBulkDeleting, setIsBulkDeleting] = useState(false)
-    const [filtersOpen, setFiltersOpen] = useState(false)
-    const [displayOptionsOpen, setDisplayOptionsOpen] = useState(false)
-    const [createFilterDialogOpen, setCreateFilterDialogOpen] = useState(false)
-    const [newAnnouncementModalOpen, setNewAnnouncementModalOpen] = useState(false)
-    const [isCreating, setIsCreating] = useState(false)
-
-    useEffect(() => {
-        setMounted(true)
-    }, [])
-
-    // ── Derived data ────────────────────────────────────────────────────────
-
-    const activeView = useMemo(
-        () => views.find((v) => v.id === activeViewId) ?? null,
-        [views, activeViewId]
+    const counts = useMemo(
+        () => ({
+            all: announcements.length,
+            active: announcements.filter((a) => a.status === "active").length,
+            draft: announcements.filter((a) => a.status === "draft").length,
+            stopped: announcements.filter((a) => a.status === "stopped").length,
+        }),
+        [announcements]
     )
 
-    const filteredAnnouncements = useMemo(() => {
-        let result = announcements
-
-        // Search
-        if (search) {
-            const q = search.toLowerCase()
-            result = result.filter(
-                (a) =>
-                    a.title?.toLowerCase().includes(q) ||
-                    a.content?.toLowerCase().includes(q) ||
-                    a.workspace_announcement_id?.toLowerCase().includes(q)
-            )
-        }
-
-        // Status filter — view overrides manual selection
-        const effectiveStatuses =
-            activeView?.filters.statuses && activeView.filters.statuses.length > 0
-                ? activeView.filters.statuses
-                : selectedStatuses
-        if (effectiveStatuses.length > 0) {
-            result = result.filter((a) =>
-                effectiveStatuses.includes(a.status as AnnouncementStatus)
-            )
-        }
-
-        // Priority filter — view overrides manual selection
-        const effectivePriorities =
-            activeView?.filters.priorities && activeView.filters.priorities.length > 0
-                ? activeView.filters.priorities
-                : selectedPriorities
-        if (effectivePriorities.length > 0) {
-            result = result.filter((a) =>
-                effectivePriorities.includes(a.priority as AnnouncementPriority)
-            )
-        }
-
-        // Sort
-        if (sortConfig) {
-            result = [...result].sort((a, b) => {
-                const { key, direction } = sortConfig
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                let aValue: any = a[key as keyof Announcement]
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                let bValue: any = b[key as keyof Announcement]
-
-                if (aValue === null || aValue === undefined) return 1
-                if (bValue === null || bValue === undefined) return -1
-
-                if (key === "priority") {
-                    const order = { high: 1, medium: 2, low: 3 }
-                    aValue = order[aValue as keyof typeof order] || 99
-                    bValue = order[bValue as keyof typeof order] || 99
+    const filtered = useMemo(() => {
+        const q = search.trim().toLowerCase()
+        return announcements
+            .filter((a) => {
+                if (scope !== "all" && a.status !== scope) return false
+                if (priorityFilter && a.priority !== priorityFilter) return false
+                if (q) {
+                    const hay = `${a.title} ${
+                        a.content ? richTextToPlainText(a.content) : ""
+                    }`.toLowerCase()
+                    if (!hay.includes(q)) return false
                 }
-
-                if (aValue < bValue) return direction === "asc" ? -1 : 1
-                if (aValue > bValue) return direction === "asc" ? 1 : -1
-                return 0
+                return true
             })
+            .sort((a, b) => {
+                const pa =
+                    PRIORITY_RANK[a.priority as AnnouncementPriority] ?? 99
+                const pb =
+                    PRIORITY_RANK[b.priority as AnnouncementPriority] ?? 99
+                if (pa !== pb) return pa - pb
+                return (
+                    new Date(b.created_at).getTime() -
+                    new Date(a.created_at).getTime()
+                )
+            })
+    }, [announcements, scope, priorityFilter, search])
+
+    const grouped = useMemo(() => {
+        const out: Record<AnnouncementStatus, Announcement[]> = {
+            active: [],
+            draft: [],
+            stopped: [],
         }
+        for (const a of filtered) {
+            const key = (a.status as AnnouncementStatus) || "draft"
+            if (out[key]) out[key].push(a)
+        }
+        return out
+    }, [filtered])
 
-        return result
-    }, [
-        announcements,
-        search,
-        selectedStatuses,
-        selectedPriorities,
-        activeView,
-        sortConfig,
-    ])
+    function handleOpen(a: Announcement) {
+        setSelectedAnnouncement(a)
+        setDrawerOpen(true)
+    }
 
-    // ── Handlers ────────────────────────────────────────────────────────────
-
-    const handleSort = useCallback(
-        (key: string, direction: "asc" | "desc") => {
-            setSortConfig((current) => {
-                if (current?.key === key && current.direction === direction)
-                    return null
-                return { key, direction }
-            })
-        },
-        []
-    )
-
-    const handleStatusToggle = useCallback((status: string) => {
-        setSelectedStatuses((prev) =>
-            prev.includes(status as AnnouncementStatus)
-                ? prev.filter((s) => s !== status)
-                : [...prev, status as AnnouncementStatus]
-        )
-    }, [])
-
-    const handlePriorityToggle = useCallback((priority: string) => {
-        setSelectedPriorities((prev) =>
-            prev.includes(priority as AnnouncementPriority)
-                ? prev.filter((p) => p !== priority)
-                : [...prev, priority as AnnouncementPriority]
-        )
-    }, [])
-
-    const handleToggleColumnVisibility = useCallback((column: string) => {
-        setHiddenColumns((prev) => {
-            const next = new Set(prev)
-            const visibleCount = ["title", "priority", "status", "deadline"].filter(
-                (c) => !next.has(c)
-            ).length
-            const isVisible = !next.has(column)
-
-            if (isVisible && visibleCount <= 1) return prev
-
-            if (isVisible) next.add(column)
-            else next.delete(column)
-            return next
-        })
-    }, [])
-
-    const handleToggleRow = useCallback((id: string) => {
-        setSelectedRows((prev) => {
-            const next = new Set(prev)
-            if (next.has(id)) next.delete(id)
-            else next.add(id)
-            return next
-        })
-    }, [])
-
-    const handleToggleAllRows = useCallback(() => {
-        setSelectedRows((prev) => {
-            if (prev.size === filteredAnnouncements.length) return new Set()
-            return new Set(filteredAnnouncements.map((a) => a.id))
-        })
-    }, [filteredAnnouncements])
-
-    const handleDelete = async (id: string) => {
-        const supabase = createClient()
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { error } = await (supabase.from("announcements") as any)
-            .delete()
-            .eq("id", id)
+     async function handleDelete(id: string) {
+         const supabase = createClient()
+         const { error } = await supabase.from<Announcement>("announcements")
+             .delete()
+             .eq("id", id)
 
         if (error) {
             toast.error(error.message || "Failed to delete announcement.")
@@ -313,39 +188,21 @@ export function AnnouncementsClient({
         }
     }
 
-    const handleBulkDelete = async () => {
-        if (selectedRows.size === 0) return
-        setIsBulkDeleting(true)
-        const supabase = createClient()
-        const ids = Array.from(selectedRows)
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { error } = await (supabase.from("announcements") as any)
-            .delete()
-            .in("id", ids)
-
-        if (error) {
-            toast.error(error.message || "Failed to delete items")
-        } else {
-            toast.success(
-                `${ids.length} announcement${ids.length > 1 ? "s" : ""} deleted`
-            )
-            setSelectedRows(new Set())
-            router.refresh()
-        }
-        setIsBulkDeleting(false)
-        setShowBulkDeleteDialog(false)
+    async function confirmDelete() {
+        if (!deleteTarget) return
+        setIsDeleting(true)
+        await handleDelete(deleteTarget.id)
+        setIsDeleting(false)
+        setDeleteTarget(null)
     }
 
-    const handleViewAnnouncement = (announcement: Announcement) => {
-        setSelectedAnnouncement(announcement)
-        setDrawerOpen(true)
-    }
-
-    const handleCreateAnnouncement = async (formData: AnnouncementFormData) => {
+    async function handleCreate(formData: AnnouncementFormData) {
         setIsCreating(true)
         const supabase = createClient()
 
-        const { data: { user } } = await supabase.auth.getUser()
+        const {
+            data: { user },
+        } = await supabase.auth.getUser()
         if (!user) {
             toast.error("Not authenticated. Please log in again.")
             setIsCreating(false)
@@ -364,8 +221,7 @@ export function AnnouncementsClient({
             return
         }
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { data: newAnnouncement, error } = await (supabase.from("announcements") as any)
+         const { data: newAnnouncement, error } = await supabase.from("announcements")
             .insert({
                 title: formData.title,
                 content: formData.content,
@@ -386,432 +242,181 @@ export function AnnouncementsClient({
         }
 
         if (formData.templateIds.length > 0) {
-            const { error: linkError } = await (supabase
-                .from("announcement_templates") as ReturnType<typeof supabase.from>)
-                .insert(
-                    formData.templateIds.map((templateId) => ({
-                        announcement_id: newAnnouncement.id,
-                        template_id: templateId,
-                    }))
-                )
+            const { error: linkError } = await (
+                supabase.from("announcement_templates") as ReturnType<
+                    typeof supabase.from
+                >
+            ).insert(
+                formData.templateIds.map((templateId) => ({
+                    announcement_id: newAnnouncement.id,
+                    template_id: templateId,
+                }))
+            )
             if (linkError) {
                 toast.warning("Created, but could not link to template.")
             }
         }
 
-        toast.success("Announcement created successfully!")
+        toast.success("Announcement created!")
         setIsCreating(false)
-        setNewAnnouncementModalOpen(false)
+        setCreating(false)
         router.refresh()
     }
 
-    function handleViewCreated(view: TableView) {
-        setViews((prev) => [...prev, view as AnnouncementView])
-        setActiveViewId(view.id)
-    }
-
-    async function handleSaveView(name: string, filters: Record<string, string[]>) {
-        return createAnnouncementView(name, filters as AnnouncementViewFilters)
-    }
-
-    function handleDeleteView(viewId: string) {
-        setDeletingViewId(viewId)
-    }
-
-    async function confirmDeleteView() {
-        if (!deletingViewId) return
-        const id = deletingViewId
-        setDeletingViewId(null)
-
-        startDeleteTransition(async () => {
-            const result = await deleteAnnouncementView(id)
-            if (result.error) {
-                toast.error(result.error)
-                return
-            }
-            setViews((prev) => prev.filter((v) => v.id !== id))
-            if (activeViewId === id) setActiveViewId(null)
-            toast.success("View deleted")
-        })
-    }
-
-    // ── Active filter chips ─────────────────────────────────────────────────
-
-    const hasActiveFilters =
-        !activeView &&
-        (search.length > 0 ||
-            selectedStatuses.length > 0 ||
-            selectedPriorities.length > 0 ||
-            hiddenColumns.size > 0)
-
-    // ── Render ──────────────────────────────────────────────────────────────
+    const hasActiveFilter = priorityFilter !== null || search.trim() !== ""
 
     return (
-        <div className="flex flex-col h-full bg-muted/30">
-            {/* Breadcrumb */}
-            <Breadcrumbs
-                items={[
-                    { label: "Announcements", icon: <Megaphone className="h-4 w-4 stroke-[1.6]" /> },
-                ]}
-                className="bg-transparent ring-0 border-b border-border/60 rounded-none px-4 py-1.5"
-                action={
-                    <div className="hidden items-center gap-1 sm:flex">
-                        <TopbarSearchAction
-                            value={search}
-                            onChange={setSearch}
-                            placeholder="Search announcements..."
-                            items={filteredAnnouncements.slice(0, 8).map((announcement) => ({
-                                id: announcement.id,
-                                label: announcement.title,
-                                actionLabel: "Open",
-                            }))}
-                            onSelect={(announcementId) => {
-                                const announcement = filteredAnnouncements.find(
-                                    (item) => item.id === announcementId
-                                )
-                                if (!announcement) return
-                                handleViewAnnouncement(announcement)
-                            }}
-                            emptyText="No matching announcements."
-                        />
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setNewAnnouncementModalOpen(true)}
-                            className="h-7 gap-1 rounded-full px-2.5 text-[length:var(--agenda-control-font-size)] text-nav transition-colors hover:bg-[hsl(var(--agenda-interactive-hover))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--agenda-interactive-focus-ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-                        >
-                            <Plus className="h-3.5 w-3.5 stroke-[1.6]" />
-                            New announcement
-                        </Button>
+        <div className="min-h-full bg-surface-canvas px-5 py-10 text-foreground sm:px-8 lg:px-12">
+            <div className="mx-auto max-w-[1100px]">
+                <header className="flex items-start justify-between gap-6">
+                    <div className="max-w-[620px]">
+                        <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                            Announcements
+                        </div>
+                        <h1 className="mt-2 font-serif text-[34px] font-normal leading-none tracking-normal text-foreground">
+                            Word worth <em className="italic">spreading</em>
+                        </h1>
+                        <p className="mt-3 text-[14px] leading-6 text-muted-foreground">
+                            Time-sensitive notes for your organization &mdash;
+                            posted, prioritized, and visible while they matter.
+                        </p>
                     </div>
-                }
-            />
 
-            {/* Action Bar + View Tabs */}
-            <div className="flex items-center justify-between w-full px-6 pt-3.5 pb-3.5 shrink-0 flex-wrap gap-3">
-                <div className="flex items-center gap-2 flex-wrap min-h-8">
-                    {/* Custom view tabs */}
-                    {views.map((view) => (
-                        <span key={view.id} className="relative group/view inline-flex items-center">
+                    <TooltipProvider delayDuration={150}>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <button
+                                    type="button"
+                                    onClick={() => setCreating(true)}
+                                    aria-label="New announcement"
+                                    className="mt-9 grid h-8 w-8 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-brand/10 hover:text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40"
+                                >
+                                    <Plus className="h-4 w-4" />
+                                </button>
+                            </TooltipTrigger>
+                            <TooltipContent
+                                side="left"
+                                sideOffset={6}
+                                showArrow={false}
+                                className="rounded-[4px] bg-foreground/90 px-1.5 py-0.5 text-[10px] font-medium tracking-tight shadow-sm"
+                            >
+                                New announcement
+                            </TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
+                </header>
+
+                <div className="mt-10 flex items-center gap-8 border-b border-border/70">
+                    {SCOPES.map((item) => {
+                        const active = scope === item.key
+                        return (
                             <button
-                                onClick={() => setActiveViewId(view.id)}
+                                key={item.key}
+                                type="button"
+                                onClick={() => setScope(item.key)}
                                 className={cn(
-                                    "rounded-full border pl-3.5 pr-7 py-1.5 text-[11px] leading-none transition-all shadow-sm",
-                                    activeViewId === view.id
-                                        ? "bg-[hsl(var(--chip-active-bg))] text-[hsl(var(--chip-active-text))] border-transparent font-semibold"
-                                        : "bg-[hsl(var(--chip-bg))] text-[hsl(var(--chip-text))] border-[hsl(var(--chip-border))] hover:bg-[hsl(var(--chip-hover-bg))] hover:text-[hsl(var(--chip-active-text))] font-medium"
+                                    "-mb-px border-b-2 pb-3 text-[13px] transition-colors",
+                                    active
+                                        ? "border-brand text-foreground"
+                                        : "border-transparent text-muted-foreground hover:text-foreground"
                                 )}
                             >
-                                {view.name}
+                                {item.label}
+                                <span className="ml-2 text-[10px] tabular-nums opacity-70">
+                                    {counts[item.key]}
+                                </span>
                             </button>
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation()
-                                    handleDeleteView(view.id)
-                                }}
-                                title="Delete view"
-                                className={cn(
-                                    "absolute right-2 top-1/2 -translate-y-1/2",
-                                    "flex items-center justify-center h-3.5 w-3.5 rounded-full",
-                                    "opacity-0 group-hover/view:opacity-100 transition-opacity",
-                                    activeViewId === view.id
-                                        ? "text-muted-foreground/70 hover:text-foreground"
-                                        : "text-muted-foreground hover:text-foreground"
-                                )}
-                            >
-                                <X className="h-2.5 w-2.5 stroke-[1.6]" />
-                            </button>
-                        </span>
-                    ))}
-
-                    {activeViewId && (
-                        <button
-                            onClick={() => setActiveViewId(null)}
-                            className="inline-flex items-center rounded-full border border-[hsl(var(--chip-border))] px-2.5 py-1.5 text-[11px] text-muted-foreground hover:text-foreground hover:bg-[hsl(var(--chip-hover-bg))] transition-colors"
-                        >
-                            Clear view
-                        </button>
-                    )}
+                        )
+                    })}
                 </div>
 
-                <div className="flex items-center gap-2">
-                    <StandardPopoverMenu open={filtersOpen} onOpenChange={setFiltersOpen}>
-                        <StandardPopoverMenuTrigger asChild>
-                            <ToolbarIconButton
-                                title="Filters"
-                                aria-label="Open filters"
-                            >
-                                <SlidersHorizontal className="h-3.5 w-3.5" />
-                            </ToolbarIconButton>
-                        </StandardPopoverMenuTrigger>
-                        <StandardPopoverMenuContent align="start" className="w-64">
-                            <StandardPopoverMenuSub>
-                                <StandardPopoverMenuSubTrigger
-                                    active={selectedStatuses.length > 0}
-                                    disabled={!!activeView}
-                                >
-                                    Status
-                                </StandardPopoverMenuSubTrigger>
-                                <StandardPopoverMenuSubContent>
-                                    {STATUS_FILTER_OPTIONS.map((opt) => {
-                                        const selected = selectedStatuses.includes(opt.value as AnnouncementStatus)
-                                        return (
-                                            <StandardPopoverMenuItem
-                                                key={opt.value}
-                                                active={selected}
-                                                onSelect={() => handleStatusToggle(opt.value)}
-                                            >
-                                                <span className="flex items-center gap-2">
-                                                    <span className="inline-flex h-4 w-4 items-center justify-center rounded-sm border border-border/60">
-                                                        {selected ? <Check className="h-3 w-3" /> : null}
-                                                    </span>
-                                                    {opt.label}
-                                                </span>
-                                                <span className="ml-auto text-[length:var(--table-header-font-size)] text-muted-foreground">
-                                                    {statusCounts?.[opt.value] || 0}
-                                                </span>
-                                            </StandardPopoverMenuItem>
-                                        )
-                                    })}
-                                </StandardPopoverMenuSubContent>
-                            </StandardPopoverMenuSub>
+                <div className="mt-5 flex flex-wrap items-center gap-2">
+                    <div className="relative">
+                        <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            placeholder="Search announcements..."
+                            className="h-8 w-[240px] rounded-[8px] border-border/70 bg-surface-sunken pl-8 text-[12.5px]"
+                        />
+                    </div>
 
-                            <StandardPopoverMenuSub>
-                                <StandardPopoverMenuSubTrigger
-                                    active={selectedPriorities.length > 0}
-                                    disabled={!!activeView}
-                                >
-                                    Priority
-                                </StandardPopoverMenuSubTrigger>
-                                <StandardPopoverMenuSubContent>
-                                    {PRIORITY_FILTER_OPTIONS.map((opt) => {
-                                        const selected = selectedPriorities.includes(opt.value as AnnouncementPriority)
-                                        return (
-                                            <StandardPopoverMenuItem
-                                                key={opt.value}
-                                                active={selected}
-                                                onSelect={() => handlePriorityToggle(opt.value)}
-                                            >
-                                                <span className="flex items-center gap-2">
-                                                    <span className="inline-flex h-4 w-4 items-center justify-center rounded-sm border border-border/60">
-                                                        {selected ? <Check className="h-3 w-3" /> : null}
-                                                    </span>
-                                                    {opt.label}
-                                                </span>
-                                                <span className="ml-auto text-[length:var(--table-header-font-size)] text-muted-foreground">
-                                                    {priorityCounts?.[opt.value] || 0}
-                                                </span>
-                                            </StandardPopoverMenuItem>
-                                        )
-                                    })}
-                                </StandardPopoverMenuSubContent>
-                            </StandardPopoverMenuSub>
+                    <FilterMenu
+                        label="Priority"
+                        value={priorityFilter}
+                        options={(
+                            ["high", "medium", "low"] as AnnouncementPriority[]
+                        ).map((p) => ({ value: p, label: PRIORITY_LABEL[p] }))}
+                        onChange={(v) =>
+                            setPriorityFilter(v as AnnouncementPriority | null)
+                        }
+                    />
 
-                            {(selectedStatuses.length > 0 || selectedPriorities.length > 0) && !activeView && (
-                                <StandardPopoverMenuItem
-                                    onSelect={() => {
-                                        setSelectedStatuses([])
-                                        setSelectedPriorities([])
-                                    }}
-                                    className="text-muted-foreground"
-                                >
-                                    Clear filters
-                                </StandardPopoverMenuItem>
-                            )}
+                    {hasActiveFilter ? (
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setSearch("")
+                                setPriorityFilter(null)
+                            }}
+                            className="ml-1 inline-flex items-center gap-1 text-[11.5px] text-muted-foreground hover:text-foreground"
+                        >
+                            <X className="h-3 w-3" />
+                            Clear
+                        </button>
+                    ) : null}
 
-                            <div className="my-1 h-px bg-[hsl(var(--menu-separator))]" />
+                    <div className="ml-auto text-[11.5px] tabular-nums text-muted-foreground">
+                        {filtered.length} of {announcements.length}
+                    </div>
+                </div>
 
-                            <StandardPopoverMenuSub>
-                                <StandardPopoverMenuSubTrigger active={!!activeView}>
-                                    Advanced filters
-                                </StandardPopoverMenuSubTrigger>
-                                <StandardPopoverMenuSubContent className="w-64">
-                                    {views.length === 0 ? (
-                                        <p className="px-2 py-1.5 text-xs text-muted-foreground">
-                                            No saved filters yet.
-                                        </p>
-                                    ) : (
-                                        views.map((view) => (
-                                            <StandardPopoverMenuItem
-                                                key={view.id}
-                                                active={activeViewId === view.id}
-                                                onSelect={() => {
-                                                    setActiveViewId(view.id)
-                                                    setFiltersOpen(false)
-                                                }}
-                                            >
-                                                <span className="truncate">{view.name}</span>
-                                            </StandardPopoverMenuItem>
-                                        ))
-                                    )}
-
-                                    <div className="my-1 h-px bg-[hsl(var(--menu-separator))]" />
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            setFiltersOpen(false)
-                                            setCreateFilterDialogOpen(true)
-                                        }}
-                                        className="flex w-full items-center justify-start gap-2 rounded-md px-2.5 py-1.5 text-[length:var(--menu-item-font-size)] text-[hsl(var(--menu-text))] hover:bg-[hsl(var(--menu-hover))]"
-                                    >
-                                        <Plus className="h-3.5 w-3.5" />
-                                        Create new filter
-                                    </button>
-                                </StandardPopoverMenuSubContent>
-                            </StandardPopoverMenuSub>
-                        </StandardPopoverMenuContent>
-                    </StandardPopoverMenu>
-
-                    <StandardPopoverMenu open={displayOptionsOpen} onOpenChange={setDisplayOptionsOpen}>
-                        <StandardPopoverMenuTrigger asChild>
-                            <ToolbarIconButton
-                                title="Display options"
-                                aria-label="Display options"
-                            >
-                                <Columns3 className="h-3.5 w-3.5" />
-                            </ToolbarIconButton>
-                        </StandardPopoverMenuTrigger>
-                        <StandardPopoverMenuContent align="start" className="w-56">
-                            {[
-                                { key: "title", label: "Title" },
-                                { key: "priority", label: "Priority" },
-                                { key: "status", label: "Status" },
-                                { key: "deadline", label: "Deadline" },
-                            ].map((column) => {
-                                const visible = !hiddenColumns.has(column.key)
+                <main className="mt-8 pb-20">
+                    {filtered.length === 0 ? (
+                        <Empty onCreate={() => setCreating(true)} />
+                    ) : scope === "all" ? (
+                        <div className="space-y-10">
+                            {STATUS_ORDER.map((status) => {
+                                const list = grouped[status]
+                                if (list.length === 0) return null
                                 return (
-                                    <StandardPopoverMenuItem
-                                        key={column.key}
-                                        onSelect={() => handleToggleColumnVisibility(column.key)}
-                                        className="gap-2"
-                                    >
-                                        <span className="inline-flex h-4 w-4 items-center justify-center rounded-sm border border-border/60">
-                                            {visible ? <Check className="h-3 w-3" /> : null}
-                                        </span>
-                                        <span>{column.label}</span>
-                                    </StandardPopoverMenuItem>
+                                    <Section
+                                        key={status}
+                                        label={STATUS_LABEL[status]}
+                                        list={list}
+                                        onOpen={handleOpen}
+                                        onDelete={(a) => setDeleteTarget(a)}
+                                    />
                                 )
                             })}
-                            {hiddenColumns.size > 0 && (
-                                <>
-                                    <div className="my-1 h-px bg-[hsl(var(--menu-separator))]" />
-                                    <StandardPopoverMenuItem
-                                        onSelect={() => setHiddenColumns(new Set())}
-                                        className="text-muted-foreground"
-                                    >
-                                        Show all columns
-                                    </StandardPopoverMenuItem>
-                                </>
-                            )}
-                        </StandardPopoverMenuContent>
-                    </StandardPopoverMenu>
-                </div>
+                        </div>
+                    ) : (
+                        <Section
+                            label={STATUS_LABEL[scope as AnnouncementStatus]}
+                            list={filtered}
+                            onOpen={handleOpen}
+                            onDelete={(a) => setDeleteTarget(a)}
+                        />
+                    )}
+                </main>
             </div>
 
-            {/* View filter summary bar */}
-            {activeView && (
-                <div className="flex items-center gap-2 px-6 pb-3 flex-wrap text-[11px] text-muted-foreground">
-                    <span className="font-medium text-foreground">Filters:</span>
-                    {activeView.filters.statuses?.map((s) => (
-                        <span key={s} className="rounded-full bg-[hsl(var(--chip-bg))] border border-[hsl(var(--chip-border))] px-2.5 py-1.5 text-[hsl(var(--chip-text))] leading-none capitalize">
-                            {s}
-                        </span>
-                    ))}
-                    {activeView.filters.priorities?.map((p) => (
-                        <span key={p} className="rounded-full bg-[hsl(var(--chip-bg))] border border-[hsl(var(--chip-border))] px-2.5 py-1.5 text-[hsl(var(--chip-text))] leading-none capitalize">
-                            {p}
-                        </span>
-                    ))}
-                    {search && (
-                        <span className="inline-flex items-center gap-1.5 rounded-full bg-[hsl(var(--chip-bg))] border border-[hsl(var(--chip-border))] px-2.5 py-1.5 text-[hsl(var(--chip-text))] leading-none">
-                            Search: &quot;{search}&quot;
-                            <button onClick={() => setSearch("")} className="ml-1 text-muted-foreground hover:text-foreground">
-                                <X className="h-3 w-3 inline stroke-[1.6]" />
-                            </button>
-                        </span>
-                    )}
-                </div>
-            )}
-
-            {/* Active filter chips */}
-            {hasActiveFilters && selectedRows.size === 0 && (
-                <div className="flex items-center gap-2 px-6 pb-3 flex-wrap">
-                    {search && (
-                        <span className="inline-flex items-center gap-1.5 rounded-full bg-[hsl(var(--chip-bg))] border border-[hsl(var(--chip-border))] px-2.5 py-1.5 text-[11px] font-medium leading-none text-[hsl(var(--chip-text))]">
-                            Search: &quot;{search}&quot;
-                            <button onClick={() => setSearch("")} className="text-muted-foreground hover:text-foreground">
-                                <X className="h-3 w-3 stroke-[1.6]" />
-                            </button>
-                        </span>
-                    )}
-                    {selectedStatuses.map((s) => (
-                        <span key={s} className="inline-flex items-center gap-1.5 rounded-full bg-[hsl(var(--chip-bg))] border border-[hsl(var(--chip-border))] px-2.5 py-1.5 text-[11px] font-medium leading-none text-[hsl(var(--chip-text))] capitalize">
-                            {s}
-                            <button onClick={() => handleStatusToggle(s)} className="text-muted-foreground hover:text-foreground">
-                                <X className="h-3 w-3 stroke-[1.6]" />
-                            </button>
-                        </span>
-                    ))}
-                    {selectedPriorities.map((p) => (
-                        <span key={p} className="inline-flex items-center gap-1.5 rounded-full bg-[hsl(var(--chip-bg))] border border-[hsl(var(--chip-border))] px-2.5 py-1.5 text-[11px] font-medium leading-none text-[hsl(var(--chip-text))] capitalize">
-                            {p}
-                            <button onClick={() => handlePriorityToggle(p)} className="text-muted-foreground hover:text-foreground">
-                                <X className="h-3 w-3 stroke-[1.6]" />
-                            </button>
-                        </span>
-                    ))}
-                    {hiddenColumns.size > 0 && (
-                        <button onClick={() => setHiddenColumns(new Set())} className="inline-flex items-center rounded-full border border-[hsl(var(--chip-border))] px-2.5 py-1.5 text-[11px] text-muted-foreground hover:text-foreground hover:bg-[hsl(var(--chip-hover-bg))] transition-colors">
-                            Show all columns
-                        </button>
-                    )}
-                    <button
-                        onClick={() => {
-                            setSearch("")
-                            setSelectedStatuses([])
-                            setSelectedPriorities([])
-                            setHiddenColumns(new Set())
-                        }}
-                        className="inline-flex items-center rounded-full border border-[hsl(var(--chip-border))] px-2.5 py-1.5 text-[11px] text-muted-foreground hover:text-foreground hover:bg-[hsl(var(--chip-hover-bg))] transition-colors"
-                    >
-                        Clear all
-                    </button>
-                </div>
-            )}
-
-            {/* Table */}
-            <div className="flex-1 overflow-auto px-6 pb-6">
-                <AnnouncementsTable
-                    announcements={filteredAnnouncements}
-                    sortConfig={sortConfig}
-                    onSort={handleSort}
-                    hiddenColumns={hiddenColumns}
-                    selectedRows={selectedRows}
-                    onToggleRow={handleToggleRow}
-                    onToggleAllRows={handleToggleAllRows}
-                    onViewAnnouncement={handleViewAnnouncement}
-                    onDelete={handleDelete}
-                />
-            </div>
-
-            {/* New Announcement Modal */}
-            <Dialog open={newAnnouncementModalOpen} onOpenChange={setNewAnnouncementModalOpen}>
+            <Dialog open={creating} onOpenChange={setCreating}>
                 <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden p-0 gap-0">
                     <DialogHeader className="px-5 py-4 space-y-3">
-                        <DialogTitle>New Announcement</DialogTitle>
+                        <DialogTitle>New announcement</DialogTitle>
                         <p className="text-xs text-muted-foreground">
                             Add a time-based announcement for your organization.
                         </p>
                     </DialogHeader>
                     <AnnouncementForm
-                        onSubmit={handleCreateAnnouncement}
+                        onSubmit={handleCreate}
                         isLoading={isCreating}
-                        onCancel={() => setNewAnnouncementModalOpen(false)}
+                        onCancel={() => setCreating(false)}
                     />
                 </DialogContent>
             </Dialog>
 
-            {/* Drawer */}
             <AnnouncementDrawer
                 announcement={selectedAnnouncement}
                 open={drawerOpen}
@@ -819,72 +424,317 @@ export function AnnouncementsClient({
                 onDelete={handleDelete}
             />
 
-            <CreateViewDialog
-                filterSections={ANNOUNCEMENT_FILTER_SECTIONS}
-                onSave={handleSaveView}
-                onCreated={handleViewCreated}
-                open={createFilterDialogOpen}
-                onOpenChange={setCreateFilterDialogOpen}
-                hideTrigger
-            />
-
-            {/* Bulk delete confirmation */}
-            <AlertDialog open={showBulkDeleteDialog} onOpenChange={setShowBulkDeleteDialog}>
+            <AlertDialog
+                open={!!deleteTarget}
+                onOpenChange={(o) => !o && setDeleteTarget(null)}
+            >
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>
-                            Delete {selectedRows.size} announcement{selectedRows.size > 1 ? "s" : ""}
-                        </AlertDialogTitle>
+                        <AlertDialogTitle>Delete announcement</AlertDialogTitle>
                         <AlertDialogDescription>
-                            This will permanently delete the selected announcement{selectedRows.size > 1 ? "s" : ""}. This action cannot be undone.
+                            Delete &quot;{deleteTarget?.title}&quot;? This
+                            action cannot be undone.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel disabled={isBulkDeleting}>Cancel</AlertDialogCancel>
+                        <AlertDialogCancel disabled={isDeleting}>
+                            Cancel
+                        </AlertDialogCancel>
                         <AlertDialogAction
-                            onClick={handleBulkDelete}
-                            disabled={isBulkDeleting}
+                            onClick={confirmDelete}
+                            disabled={isDeleting}
                             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                         >
-                            {isBulkDeleting ? "Deleting..." : "Delete"}
+                            {isDeleting ? "Deleting..." : "Delete"}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+        </div>
+    )
+}
 
-            {/* Delete view confirmation */}
-            <AlertDialog open={!!deletingViewId} onOpenChange={(o) => { if (!o) setDeletingViewId(null) }}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Delete this view?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            This view will be removed for everyone in your workspace. This action cannot be undone.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel onClick={() => setDeletingViewId(null)}>Cancel</AlertDialogCancel>
-                        <AlertDialogAction
-                            onClick={confirmDeleteView}
-                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                        >
-                            Delete view
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
-
-            {/* Floating bulk selection pill */}
-            {mounted && selectedRows.size > 0 && createPortal(
-                <div className="fixed bottom-6 left-1/2 z-[95] flex -translate-x-1/2 pointer-events-none w-[90vw] sm:w-auto justify-center">
-                    <BulkSelectionBar
-                        selectedCount={selectedRows.size}
-                        onClear={() => setSelectedRows(new Set())}
-                        onDelete={() => setShowBulkDeleteDialog(true)}
-                        isDeleting={isBulkDeleting}
+function Section({
+    label,
+    list,
+    onOpen,
+    onDelete,
+}: {
+    label: string
+    list: Announcement[]
+    onOpen: (a: Announcement) => void
+    onDelete: (a: Announcement) => void
+}) {
+    return (
+        <section>
+            <div className="mb-3 flex items-baseline justify-between px-1">
+                <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                    {label}
+                </span>
+                <span className="text-[11.5px] tabular-nums text-muted-foreground">
+                    {list.length} {list.length === 1 ? "post" : "posts"}
+                </span>
+            </div>
+            <div className="space-y-3">
+                {list.map((a) => (
+                    <AnnouncementCard
+                        key={a.id}
+                        announcement={a}
+                        onOpen={() => onOpen(a)}
+                        onDelete={() => onDelete(a)}
                     />
-                </div>,
-                document.body
+                ))}
+            </div>
+        </section>
+    )
+}
+
+function relativeFromNow(dateStr: string | null | undefined): string | null {
+    if (!dateStr) return null
+    const date = new Date(dateStr)
+    if (isNaN(date.getTime())) return null
+    if (isFuture(date))
+        return `IN ${formatDistanceToNow(date).toUpperCase()}`
+    if (isPast(date))
+        return `${formatDistanceToNow(date).toUpperCase()} AGO`
+    return null
+}
+
+function AnnouncementCard({
+    announcement,
+    onOpen,
+    onDelete,
+}: {
+    announcement: Announcement
+    onOpen: () => void
+    onDelete: () => void
+}) {
+    const priority = (announcement.priority || "medium") as AnnouncementPriority
+    const relativeLabel = relativeFromNow(
+        announcement.deadline ?? announcement.display_until
+    )
+
+    return (
+        <div
+            role="button"
+            tabIndex={0}
+            onClick={onOpen}
+            onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault()
+                    onOpen()
+                }
+            }}
+            className="group relative cursor-pointer rounded-[10px] border border-border/70 bg-background p-5 transition-colors hover:bg-[var(--color-stone-100)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+        >
+            <div className="flex items-start justify-between gap-3">
+                <div className="flex items-center gap-2.5">
+                    <span className="grid h-7 w-7 place-items-center rounded-full bg-brand/10 text-brand">
+                        <Megaphone className="h-3.5 w-3.5" />
+                    </span>
+                    <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-brand">
+                        Announcement
+                    </span>
+                </div>
+
+                <div className="flex items-center gap-3">
+                    {relativeLabel && (
+                        <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-brand">
+                            {relativeLabel}
+                        </span>
+                    )}
+                    <DropdownMenu>
+                        <DropdownMenuTrigger
+                            asChild
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <button
+                                type="button"
+                                className="grid h-7 w-7 place-items-center rounded-full text-muted-foreground opacity-0 transition-opacity hover:bg-muted hover:text-foreground group-hover:opacity-100 focus:opacity-100"
+                                aria-label="Card actions"
+                            >
+                                <MoreHorizontal className="h-4 w-4" />
+                            </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent
+                            align="end"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <DropdownMenuItem onClick={onOpen}>
+                                <Eye className="mr-2 h-4 w-4" />
+                                Open
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                                className="text-destructive focus:text-destructive"
+                                onClick={onDelete}
+                            >
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Delete
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                </div>
+            </div>
+
+            <h3 className="mt-4 font-serif text-[22px] font-normal leading-tight text-foreground">
+                {announcement.title}
+            </h3>
+
+            {announcement.content && (
+                <div
+                    className="mt-2.5 line-clamp-3 text-[13.5px] leading-6 text-muted-foreground [&_a]:underline [&_li]:ml-5 [&_li]:list-disc [&_ol>li]:list-decimal [&_ol]:my-0.5 [&_p]:my-0 [&_strong]:font-semibold [&_ul]:my-0.5"
+                    dangerouslySetInnerHTML={{
+                        __html: sanitizeRichTextHtml(announcement.content),
+                    }}
+                />
             )}
+
+            <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-[11.5px] text-muted-foreground">
+                {announcement.deadline && (
+                    <span className="inline-flex items-center gap-1.5">
+                        <Calendar className="h-3.5 w-3.5" />
+                        <span>
+                            Until{" "}
+                            {format(
+                                new Date(announcement.deadline),
+                                "MMM d, yyyy"
+                            )}
+                        </span>
+                    </span>
+                )}
+                {announcement.display_start && (
+                    <span className="inline-flex items-center gap-1.5">
+                        <Clock className="h-3.5 w-3.5" />
+                        <span>
+                            From{" "}
+                            {format(
+                                new Date(announcement.display_start),
+                                "MMM d"
+                            )}
+                            {announcement.display_until &&
+                                ` to ${format(
+                                    new Date(announcement.display_until),
+                                    "MMM d"
+                                )}`}
+                        </span>
+                    </span>
+                )}
+                <span className="inline-flex items-center gap-1.5 capitalize">
+                    <span
+                        className={cn(
+                            "inline-block h-1.5 w-1.5 rounded-full",
+                            priority === "high" && "bg-destructive",
+                            priority === "medium" && "bg-amber-500",
+                            priority === "low" && "bg-muted-foreground/50"
+                        )}
+                    />
+                    {PRIORITY_LABEL[priority]} priority
+                </span>
+                {announcement.creator?.full_name && (
+                    <span className="ml-auto text-[11px] text-muted-foreground/80">
+                        by {announcement.creator.full_name}
+                    </span>
+                )}
+            </div>
+        </div>
+    )
+}
+
+function FilterMenu({
+    label,
+    value,
+    options,
+    onChange,
+}: {
+    label: string
+    value: string | null
+    options: Array<{ value: string; label: string }>
+    onChange: (value: string | null) => void
+}) {
+    const [open, setOpen] = useState(false)
+    const active = value !== null
+    const current = options.find((o) => o.value === value)
+
+    return (
+        <div className="relative">
+            <button
+                type="button"
+                onClick={() => setOpen((v) => !v)}
+                className={cn(
+                    "inline-flex h-8 items-center gap-1.5 rounded-full border px-2.5 text-[11.5px] transition-colors",
+                    active
+                        ? "border-brand/40 bg-brand/10 text-brand"
+                        : "border-border/70 bg-surface-sunken text-muted-foreground hover:bg-accent hover:text-foreground"
+                )}
+            >
+                <span className="opacity-80">{label}:</span>
+                <span>{current?.label ?? "Any"}</span>
+            </button>
+            {open ? (
+                <>
+                    <div
+                        className="fixed inset-0 z-40"
+                        onClick={() => setOpen(false)}
+                    />
+                    <div className="absolute left-0 top-full z-50 mt-1.5 min-w-[180px] overflow-hidden rounded-[8px] border bg-popover shadow-lg">
+                        <button
+                            type="button"
+                            onClick={() => {
+                                onChange(null)
+                                setOpen(false)
+                            }}
+                            className={cn(
+                                "w-full px-3 py-2 text-left text-[13px] hover:bg-accent",
+                                value === null && "text-brand"
+                            )}
+                        >
+                            Any {label.toLowerCase()}
+                        </button>
+                        <div className="h-px bg-border" />
+                        {options.map((opt) => (
+                            <button
+                                key={opt.value}
+                                type="button"
+                                onClick={() => {
+                                    onChange(opt.value)
+                                    setOpen(false)
+                                }}
+                                className={cn(
+                                    "w-full px-3 py-2 text-left text-[13px] hover:bg-accent",
+                                    value === opt.value && "text-brand"
+                                )}
+                            >
+                                {opt.label}
+                            </button>
+                        ))}
+                    </div>
+                </>
+            ) : null}
+        </div>
+    )
+}
+
+function Empty({ onCreate }: { onCreate: () => void }) {
+    return (
+        <div className="rounded-[10px] border border-border/70 bg-background px-6 py-16 text-center">
+            <span className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+                <Megaphone className="h-5 w-5 text-muted-foreground" />
+            </span>
+            <h3 className="font-serif text-xl font-normal">
+                Nothing to announce yet
+            </h3>
+            <p className="mx-auto mt-1.5 max-w-sm text-[13px] leading-relaxed text-muted-foreground">
+                Post a time-based note for your team. It&apos;ll show up
+                wherever announcements are surfaced.
+            </p>
+            <Button
+                onClick={onCreate}
+                className="mt-5 h-9 rounded-[8px] bg-brand px-4 text-[12.5px] font-medium text-brand-foreground hover:bg-[hsl(var(--brand-hover))]"
+            >
+                <Plus className="mr-1.5 h-3.5 w-3.5" />
+                New announcement
+            </Button>
         </div>
     )
 }
