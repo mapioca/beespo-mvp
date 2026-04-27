@@ -1,5 +1,6 @@
 "use client";
 
+import type React from "react";
 import { CalendarEvent, EventSource } from "@/lib/calendar-helpers";
 import { cn } from "@/lib/utils";
 import { Repeat, MapPin } from "lucide-react";
@@ -32,6 +33,11 @@ export function CalendarEventChip({
   compact = false,
 }: CalendarEventChipProps) {
   const accentColor = getSourceAccent(event.source, event.color);
+  const chipStyle = {
+    "--calendar-event-accent": accentColor,
+    borderColor: `color-mix(in srgb, ${accentColor} 36%, transparent)`,
+    backgroundColor: `color-mix(in srgb, ${accentColor} 12%, transparent)`,
+  } as React.CSSProperties;
 
   return (
     <button
@@ -40,20 +46,26 @@ export function CalendarEventChip({
         onClick(event);
       }}
       className={cn(
-        "w-full text-left rounded-md border-l-[3px] transition-all duration-150",
-        "shadow-none hover:shadow-sm bg-surface-sunken text-foreground hover:bg-surface-hover",
-        compact ? "px-1.5 py-0.5 text-[11px]" : "px-2 py-1.5 text-sm"
+        "group w-full text-left transition-all duration-150",
+        "border text-foreground shadow-none hover:brightness-125 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/35",
+        compact
+          ? "h-5 rounded-full px-1.5 text-[10.5px]"
+          : "rounded-[8px] px-2.5 py-2 text-sm"
       )}
-      style={{ borderLeftColor: accentColor }}
+      style={chipStyle}
     >
       <div className="flex items-center gap-1.5 min-w-0">
+        <span
+          className={cn("shrink-0 rounded-full", compact ? "h-1.5 w-1.5" : "h-2 w-2")}
+          style={{ backgroundColor: accentColor }}
+        />
         {event.isRecurringInstance && (
           <Repeat className={cn("flex-shrink-0 opacity-60", compact ? "h-3 w-3" : "h-3.5 w-3.5")} />
         )}
-        <span className={cn("truncate", compact ? "font-medium" : "font-semibold")}>{event.title}</span>
+        <span className={cn("truncate text-zinc-200", compact ? "font-medium" : "font-semibold")}>{event.title}</span>
       </div>
       {!compact && event.location && (
-        <div className="flex items-center gap-1 mt-0.5 text-xs opacity-70">
+        <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
           <MapPin className="h-3 w-3 stroke-[1.6]" />
           <span className="truncate">{event.location}</span>
         </div>
