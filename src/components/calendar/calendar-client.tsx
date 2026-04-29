@@ -24,11 +24,8 @@ import {
 } from "date-fns";
 import {
   CalendarEvent,
-  expandRecurringEvents,
   meetingsToEvents,
-  tasksToEvents,
   internalEventsToCalendarEvents,
-  getVisibleDateRange,
   groupEventsByDate,
   getClaimedExternalIds,
   applyExternalEventShadowing,
@@ -46,17 +43,9 @@ import type {
   CalendarViewType,
   CalendarVisibility,
   ExternalEventWithColor,
-  CalendarClientProps
+  CalendarClientProps,
 } from "./calendar-types";
 import { createClient } from "@/lib/supabase/client";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 
@@ -67,27 +56,29 @@ type CalendarSubscriptionSummary = {
   is_enabled: boolean | null;
 };
 
-const EVENT_TYPE_META = [
-  { value: "activity", label: "Activity", color: "#f2be5c" },
-  { value: "interview", label: "Interview", color: "#8d6ce8" },
-  { value: "meeting", label: "Meeting", color: "#e47b52" },
-] as const;
+const VIEW_OPTIONS: { value: CalendarViewType; label: string }[] = [
+  { value: "month", label: "Month" },
+  { value: "week", label: "Week" },
+  { value: "day", label: "Day" },
+  { value: "agenda", label: "Agenda" },
+];
+
+const MY_CALENDAR_COLOR = "hsl(var(--brand))";
 
 export function CalendarClient({
-  initialAnnouncements,
   initialMeetings,
-  initialTasks,
   initialEvents = [],
   userRole,
 }: CalendarClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [view] = useState<CalendarViewType>("week");
+  const [view, setView] = useState<CalendarViewType>("month");
+  const [myCalendarOn, setMyCalendarOn] = useState(true);
   const [visibility, setVisibility] = useState<CalendarVisibility>({
-    announcements: true,
+    announcements: false,
     meetings: true,
-    tasks: true,
+    tasks: false,
     events: true,
     external: true,
     externalSubscriptions: {},
@@ -95,27 +86,20 @@ export function CalendarClient({
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
-  // Local state for data (can be updated after creating events)
-  const [announcements] = useState(initialAnnouncements);
   const [meetings] = useState(initialMeetings);
-  const [tasks] = useState(initialTasks);
   const [internalEvents, setInternalEvents] = useState(initialEvents);
 
-  // External events state
   const [externalEvents, setExternalEvents] = useState<ExternalEventWithColor[]>([]);
   const [subscriptions, setSubscriptions] = useState<CalendarSubscriptionSummary[]>([]);
   const [linkedEventIds, setLinkedEventIds] = useState<Set<string>>(new Set());
 
-  // External event preview state
   const [previewEvent, setPreviewEvent] = useState<ExternalEventData | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
 
-  // Import mode - when importing from external event
   const [importingEvent, setImportingEvent] = useState<ExternalEventData | null>(null);
   const [selectedInternalEvent, setSelectedInternalEvent] = useState<EventListItem | null>(null);
   const [detailDrawerOpen, setDetailDrawerOpen] = useState(false);
 
-  // Fetch external events and links
   const fetchExternalEvents = useCallback(async () => {
     const supabase = createClient();
 
@@ -139,7 +123,6 @@ export function CalendarClient({
 
     setSubscriptions(calendarSubscriptions || []);
 
-    // Fetch external events with subscription info
     const { data: events } = await (supabase
       .from("external_calendar_events") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
       .select(`
@@ -154,7 +137,6 @@ export function CalendarClient({
       .eq("calendar_subscriptions.workspace_id", profile.workspace_id)
       .eq("calendar_subscriptions.is_enabled", true);
 
-    // Fetch linked events (for legacy de-duplication)
     const { data: links } = await (supabase
       .from("external_event_links") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
       .select("external_event_id");
@@ -162,7 +144,6 @@ export function CalendarClient({
     const linkedIds = new Set<string>(links?.map((l: { external_event_id: string }) => l.external_event_id) || []);
     setLinkedEventIds(linkedIds);
 
-    // Add color and name from subscription to events
     const eventsWithColor = (events || []).map((e: {
       calendar_subscriptions?: { color: string; name: string };
       external_uid?: string;
@@ -175,7 +156,6 @@ export function CalendarClient({
 
     setExternalEvents(eventsWithColor);
 
-    // Register any new subscription IDs as visible (default on)
     setVisibility((prev) => {
       const newSubs = { ...prev.externalSubscriptions };
       let changed = false;
@@ -193,7 +173,6 @@ export function CalendarClient({
     fetchExternalEvents();
   }, [fetchExternalEvents]);
 
-  // Fetch internal events
   useEffect(() => {
     const fetchInternalEvents = async () => {
       const supabase = createClient();
@@ -243,7 +222,6 @@ export function CalendarClient({
     fetchInternalEvents();
   }, []);
 
-  // Check if user can create events
   const canCreateEvents = userRole === "admin" || userRole === "leader";
 
   useEffect(() => {
@@ -255,25 +233,15 @@ export function CalendarClient({
     setCreateDialogOpen(true);
   }, [canCreateEvents, searchParams]);
 
-  // Get visible date range
-  const dateRange = useMemo(
-    () => getVisibleDateRange(currentDate, view === "agenda" ? "month" : view),
-    [currentDate, view]
-  );
-
-  // Get claimed external IDs from internal events (for shadowing)
   const claimedExternalIds = useMemo(
     () => getClaimedExternalIds(internalEvents),
     [internalEvents]
   );
 
-  // Convert external events to calendar events with shadowing applied
   const externalToCalendarEvents = useCallback(
     (events: ExternalEventWithColor[]): CalendarEvent[] => {
-      // First filter by legacy linked event IDs
       const legacyFiltered = events.filter((e) => !linkedEventIds.has(e.id));
 
-      // Then apply new shadowing logic (filter by claimed external source IDs)
       const shadowed = applyExternalEventShadowing(
         legacyFiltered.map((e) => ({
           ...e,
@@ -304,92 +272,32 @@ export function CalendarClient({
     [linkedEventIds, claimedExternalIds]
   );
 
-  // Expand recurring announcements and create calendar events
   const allEvents = useMemo(() => {
     const events: CalendarEvent[] = [];
 
-    if (visibility.announcements) {
-      const announcementEvents = expandRecurringEvents(
-        announcements,
-        dateRange.start,
-        dateRange.end
-      );
-      events.push(...announcementEvents);
-    }
-
-    if (visibility.meetings) {
+    if (myCalendarOn) {
       events.push(...meetingsToEvents(meetings));
-    }
-
-    if (visibility.tasks) {
-      events.push(...tasksToEvents(tasks));
-    }
-
-    if (visibility.events) {
       events.push(...internalEventsToCalendarEvents(internalEvents));
     }
 
-    if (visibility.external) {
-      // Filter by individual subscription visibility
-      const visibleExternal = externalEvents.filter((e) => {
-        if (!e.subscription_id) return true;
-        const subVisible = visibility.externalSubscriptions[e.subscription_id];
-        // If not yet registered, treat as visible
-        return subVisible === undefined ? true : subVisible;
-      });
-      events.push(...externalToCalendarEvents(visibleExternal));
-    }
+    const visibleExternal = externalEvents.filter((e) => {
+      if (!e.subscription_id) return true;
+      const subVisible = visibility.externalSubscriptions[e.subscription_id];
+      return subVisible === undefined ? true : subVisible;
+    });
+    events.push(...externalToCalendarEvents(visibleExternal));
 
     return events;
-  }, [announcements, meetings, tasks, internalEvents, externalEvents, visibility, dateRange, externalToCalendarEvents]);
+  }, [myCalendarOn, meetings, internalEvents, externalEvents, visibility.externalSubscriptions, externalToCalendarEvents]);
 
-  // Group events by date for display
-  const eventsByDate = useMemo(
-    () => groupEventsByDate(allEvents),
-    [allEvents]
-  );
+  const eventsByDate = useMemo(() => groupEventsByDate(allEvents), [allEvents]);
 
-  const visibleExternalEvents = useMemo(
-    () =>
-      externalEvents.filter((event) => {
-        if (!visibility.external) return false;
-        if (!event.subscription_id) return true;
-        const subVisible = visibility.externalSubscriptions[event.subscription_id];
-        return subVisible === undefined ? true : subVisible;
-      }),
-    [externalEvents, visibility.external, visibility.externalSubscriptions]
-  );
-
-  const appEventCount = useMemo(
-    () => allEvents.filter((event) => event.source !== "external").length,
-    [allEvents]
-  );
-
-  const subscribedEventCount = visibleExternalEvents.length;
-
-  const todayEvents = useMemo(() => {
-    const now = new Date();
-    return allEvents
-      .filter((event) => isSameDay(event.startDate, now))
-      .sort((a, b) => a.startDate.getTime() - b.startDate.getTime())
-      .slice(0, 6);
-  }, [allEvents]);
-
-  const eventTypeCounts = useMemo(() => {
-    return EVENT_TYPE_META.map((type) => ({
-      ...type,
-      count: internalEvents.filter((event) => event.event_type === type.value).length,
-    }));
-  }, [internalEvents]);
-
-  // Navigation handlers
-  const goToToday = useCallback(() => {
-    setCurrentDate(new Date());
-  }, []);
+  const goToToday = useCallback(() => setCurrentDate(new Date()), []);
 
   const goToPrevious = useCallback(() => {
     switch (view) {
       case "month":
+      case "agenda":
         setCurrentDate((d) => subMonths(d, 1));
         break;
       case "week":
@@ -398,15 +306,13 @@ export function CalendarClient({
       case "day":
         setCurrentDate((d) => subDays(d, 1));
         break;
-      case "agenda":
-        setCurrentDate((d) => subMonths(d, 1));
-        break;
     }
   }, [view]);
 
   const goToNext = useCallback(() => {
     switch (view) {
       case "month":
+      case "agenda":
         setCurrentDate((d) => addMonths(d, 1));
         break;
       case "week":
@@ -415,13 +321,9 @@ export function CalendarClient({
       case "day":
         setCurrentDate((d) => addDays(d, 1));
         break;
-      case "agenda":
-        setCurrentDate((d) => addMonths(d, 1));
-        break;
     }
   }, [view]);
 
-  // Handle date click (for creating new events)
   const handleDateClick = useCallback(
     (date: Date) => {
       if (canCreateEvents) {
@@ -433,9 +335,7 @@ export function CalendarClient({
     [canCreateEvents]
   );
 
-  // Handle event click
   const handleEventClick = useCallback((event: CalendarEvent) => {
-    // External events show preview modal
     if (event.source === "external") {
       const extEvent = externalEvents.find((e) => e.id === event.sourceId);
       if (extEvent) {
@@ -456,9 +356,8 @@ export function CalendarClient({
       return;
     }
 
-    // Internal events from events table open in detail drawer
     if (event.source === "event") {
-      const matchingEvent = internalEvents.find((internalEvent) => internalEvent.id === event.sourceId);
+      const matchingEvent = internalEvents.find((e) => e.id === event.sourceId);
       if (matchingEvent) {
         setSelectedInternalEvent({
           id: matchingEvent.id,
@@ -483,68 +382,84 @@ export function CalendarClient({
       return;
     }
 
-    // Navigate to the source entity
-    let path = "";
-    if (event.source === "announcement") {
-      path = `/meetings/announcements/${event.sourceId}`;
-    } else if (event.source === "meeting") {
-      path = `/meetings/${event.sourceId}`;
-    } else if (event.source === "task") {
-      path = `/tasks`;
-    }
-    
-    if (path) {
-      window.location.href = path;
+    if (event.source === "meeting") {
+      const meeting = meetings.find((m) => m.id === event.sourceId);
+      if (meeting) {
+        setSelectedInternalEvent({
+          id: meeting.id,
+          title: meeting.title,
+          description: null,
+          location: null,
+          start_at: meeting.scheduled_date ?? new Date().toISOString(),
+          end_at: meeting.scheduled_date ?? new Date().toISOString(),
+          is_all_day: false,
+          source_type: "meeting",
+          source_id: meeting.id,
+          workspace_event_id: null,
+          external_source_id: null,
+          external_source_type: null,
+        });
+        setDetailDrawerOpen(true);
+      }
     }
   }, [externalEvents, internalEvents]);
 
-  // Toggle calendar visibility
-  useCallback(
-      (key: keyof CalendarVisibility) => {
-        setVisibility((prev) => {
-          const newVal = !prev[key];
-          // When toggling the master "external" flag, sync all per-subscription states
-          if (key === "external") {
-            const newSubs: Record<string, boolean> = {};
-            for (const id of Object.keys(prev.externalSubscriptions)) {
-              newSubs[id] = newVal as boolean;
-            }
-            return { ...prev, external: newVal as boolean, externalSubscriptions: newSubs };
-          }
-          return { ...prev, [key]: newVal };
-        });
-      },
-      []
-  );
-// Toggle individual external subscription visibility
-  const toggleExternalSubscription = useCallback((subscriptionId: string) => {
+  const toggleSubscription = useCallback((subscriptionId: string) => {
     setVisibility((prev) => {
       const updated = {
         ...prev.externalSubscriptions,
-        [subscriptionId]: !prev.externalSubscriptions[subscriptionId],
+        [subscriptionId]: !(prev.externalSubscriptions[subscriptionId] ?? true),
       };
-      // Derive master toggle: all on => true, all off => false, mixed => true (indeterminate handled in sidebar)
-      const values = Object.values(updated);
-      const anyOn = values.some(Boolean);
+      const anyOn = Object.values(updated).some(Boolean);
       return { ...prev, externalSubscriptions: updated, external: anyOn };
     });
   }, []);
 
-  // Handle new event created from dialog
-  const handleEventCreated = useCallback(
-    (newEvent: CalendarEventData) => {
-      setInternalEvents((prev) => [...prev, newEvent]);
-      setImportingEvent(null);
-    },
-    []
-  );
+  const handleEventCreated = useCallback((newEvent: CalendarEventData) => {
+    setInternalEvents((prev) => [...prev, newEvent]);
+    setImportingEvent(null);
+  }, []);
 
-  // Handle import from external event preview
   const handleImportExternal = useCallback((event: ExternalEventData) => {
     setImportingEvent(event);
     setSelectedDate(new Date(event.start_date));
     setPreviewOpen(false);
     setCreateDialogOpen(true);
+  }, []);
+
+  const handleConvertAsIs = useCallback(async (event: ExternalEventData) => {
+    const start = event.is_all_day
+      ? new Date(`${event.start_date}T00:00:00`)
+      : new Date(event.start_date);
+    const end = event.end_date
+      ? (event.is_all_day ? new Date(`${event.end_date}T23:59:59`) : new Date(event.end_date))
+      : new Date(start.getTime() + 60 * 60 * 1000);
+
+    const payload = {
+      title: event.title,
+      event_type: "activity",
+      location: event.location ?? null,
+      description: event.description ?? null,
+      start_at: start.toISOString(),
+      end_at: end.toISOString(),
+      is_all_day: event.is_all_day,
+      date_tbd: false,
+      time_tbd: false,
+      duration_mode: event.is_all_day ? "all_day" : "minutes",
+      duration_minutes: event.is_all_day ? null : 60,
+      external_source_id: event.external_uid ?? event.id,
+      external_source_type: "ics",
+    };
+
+    const response = await fetch("/api/events", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const data = await response.json();
+    if (response.ok && data.event) {
+      setInternalEvents((prev) => [...prev, data.event]);
+    }
   }, []);
 
   const handleInternalEventUpdated = useCallback((updatedEvent: EventListItem) => {
@@ -580,7 +495,8 @@ export function CalendarClient({
     setDetailDrawerOpen(false);
   }, []);
 
-  // Render the appropriate view
+  const periodLabel = useMemo(() => buildPeriodLabel(currentDate, view), [currentDate, view]);
+
   const renderView = () => {
     const commonProps = {
       currentDate,
@@ -603,50 +519,105 @@ export function CalendarClient({
   };
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-[#101112] text-zinc-100">
-      <div className="mx-auto flex w-full max-w-[1800px] flex-col gap-6 px-6 py-8 lg:px-10 xl:px-14">
-        <CalendarHeader
-          canCreateEvents={canCreateEvents}
-          onCreateEvent={() => router.push("/events/new")}
-        />
-
-        <div className="grid min-h-0 gap-8 xl:grid-cols-[minmax(0,1fr)_220px] 2xl:grid-cols-[minmax(0,1fr)_240px]">
-          <main className="min-w-0">
-            <CalendarControls
-              currentDate={currentDate}
-              view={view}
-              onToday={goToToday}
-              onPrevious={goToPrevious}
-              onNext={goToNext}
-            />
-
-            <div className="mt-3 h-[calc(100vh-23rem)] min-h-[500px] overflow-hidden rounded-[8px] border border-white/[0.08] bg-[#131416] shadow-[0_0_0_1px_rgba(255,255,255,0.015)]">
-              <div className="h-full overflow-auto p-0 [&_*]:border-white/10 [&_.bg-surface-raised]:bg-[#131416] [&_.bg-surface-sunken]:bg-[#211916] [&_.text-foreground]:text-zinc-200 [&_.text-muted-foreground]:text-zinc-500">
-                {renderView()}
-              </div>
-            </div>
-          </main>
-
-          <CalendarRightRail
-            currentDate={currentDate}
-            subscriptions={subscriptions}
-            visibility={visibility}
-            appEventCount={appEventCount}
-            subscribedEventCount={subscribedEventCount}
-            allEvents={allEvents}
-            externalEvents={externalEvents}
-            todayEvents={todayEvents}
-            eventTypeCounts={eventTypeCounts}
-            onPreviousMonth={() => setCurrentDate((date) => subMonths(date, 1))}
-            onNextMonth={() => setCurrentDate((date) => addMonths(date, 1))}
-            onSelectDate={setCurrentDate}
-            onToggleExternalSubscription={toggleExternalSubscription}
-            onManageCalendars={() => router.push("/schedule/settings")}
-          />
+    <div className="flex min-h-full flex-col bg-surface-canvas text-foreground">
+      {/* Full-width page header */}
+      <header className="px-5 pb-0 pt-10 sm:px-8 lg:px-12">
+        <div className="max-w-[520px]">
+          <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+            Calendar
+          </div>
+          <h1 className="mt-2 font-serif text-[34px] font-normal leading-none tracking-normal text-foreground">
+            Your time, <em className="italic">organized</em>
+          </h1>
+          <p className="mt-3 text-[14px] leading-6 text-muted-foreground">
+            Meetings, events, and subscriptions — all in one view.
+          </p>
         </div>
+      </header>
+
+      {/* Body: main content + right sidebar (both start below the header) */}
+      <div className="flex min-h-0 flex-1">
+        <div className="flex min-w-0 flex-1 flex-col px-5 py-5 sm:px-8 lg:px-12">
+          <div className="mt-4 flex flex-wrap items-center gap-4">
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={goToPrevious}
+                aria-label="Previous"
+                className="grid h-8 w-8 place-items-center rounded-[7px] text-muted-foreground transition-colors hover:bg-surface-hover hover:text-foreground"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                onClick={goToNext}
+                aria-label="Next"
+                className="grid h-8 w-8 place-items-center rounded-[7px] text-muted-foreground transition-colors hover:bg-surface-hover hover:text-foreground"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+
+            <span className="font-serif text-[32px] font-normal leading-none tracking-normal text-foreground tabular-nums">
+              {periodLabel}
+            </span>
+
+            <div className="ml-auto flex items-center gap-5">
+              <nav className="flex items-center gap-5 border-b border-transparent">
+                {VIEW_OPTIONS.map((option) => {
+                  const active = view === option.value;
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => setView(option.value)}
+                      className={cn(
+                        "border-b-2 pb-1 text-[12.5px] transition-colors",
+                        active
+                          ? "border-brand text-foreground"
+                          : "border-transparent text-muted-foreground hover:text-foreground"
+                      )}
+                    >
+                      {option.label}
+                    </button>
+                  );
+                })}
+              </nav>
+
+              {canCreateEvents && (
+                <button
+                        type="button"
+                        onClick={() => router.push("/events/new")}
+                        aria-label="New event"
+                        className="grid h-8 w-8 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-brand/10 hover:text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40"
+                      >
+                        <Plus className="h-4 w-4" />
+                      </button>
+              )}
+            </div>
+          </div>
+
+          <main className="mt-6 flex-1">
+            {renderView()}
+          </main>
+        </div>
+
+        <CalendarSidebar
+          currentDate={currentDate}
+          eventsByDate={eventsByDate}
+          myCalendarOn={myCalendarOn}
+          onToggleMyCalendar={() => setMyCalendarOn((v) => !v)}
+          subscriptions={subscriptions}
+          externalVisibility={visibility.externalSubscriptions}
+          onToggleSubscription={toggleSubscription}
+          onSelectDate={setCurrentDate}
+          onPrevMonth={() => setCurrentDate((d) => subMonths(d, 1))}
+          onNextMonth={() => setCurrentDate((d) => addMonths(d, 1))}
+          onToday={goToToday}
+          eventsVisible={allEvents.length}
+        />
       </div>
 
-      {/* Create event dialog */}
       {canCreateEvents && (
         <CreateEventDialog
           open={createDialogOpen}
@@ -657,12 +628,12 @@ export function CalendarClient({
         />
       )}
 
-      {/* External event preview */}
       <ExternalEventPreview
         open={previewOpen}
         onOpenChange={setPreviewOpen}
         event={previewEvent}
         onImport={handleImportExternal}
+        onConvertAsIs={handleConvertAsIs}
       />
 
       <EventDetailDrawer
@@ -677,244 +648,157 @@ export function CalendarClient({
   );
 }
 
-function CalendarHeader({
-  canCreateEvents,
-  onCreateEvent,
-}: {
-  canCreateEvents: boolean;
-  onCreateEvent: () => void;
-}) {
-  return (
-    <header className="flex items-start justify-between gap-6">
-      <div className="max-w-[620px]">
-        <p className="mb-2 text-[10px] font-medium uppercase tracking-wider text-zinc-500">
-          Calendar
-        </p>
-        <h1 className="font-serif text-3xl font-normal leading-[1.1] tracking-tight text-zinc-100 md:text-[34px]">
-          The shape of the <span className="italic">week</span>
-        </h1>
-        <p className="mt-2 max-w-xl text-[13px] leading-relaxed text-zinc-500">
-          Ward events alongside the calendars you subscribe to. Pull anything from outside into the work.
-        </p>
-      </div>
-      <div className="flex shrink-0 items-start pt-9">
-        {canCreateEvents && (
-          <TooltipProvider delayDuration={150}>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  type="button"
-                  onClick={onCreateEvent}
-                  aria-label="New event"
-                  className="grid h-8 w-8 place-items-center rounded-full text-zinc-500 transition-colors hover:bg-brand/10 hover:text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40"
-                >
-                  <Plus className="h-4 w-4" />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent
-                side="left"
-                sideOffset={6}
-                showArrow={false}
-                className="rounded-[4px] bg-foreground/90 px-1.5 py-0.5 text-[10px] font-medium tracking-tight shadow-sm"
-              >
-                New event
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        )}
-      </div>
-    </header>
-  );
+function buildPeriodLabel(date: Date, view: CalendarViewType): string {
+  switch (view) {
+    case "month":
+    case "agenda":
+      return format(date, "MMMM yyyy");
+    case "week": {
+      const start = startOfWeek(date, { weekStartsOn: 0 });
+      const end = endOfWeek(date, { weekStartsOn: 0 });
+      const sameMonth = format(start, "MMM") === format(end, "MMM");
+      return sameMonth
+        ? `${format(start, "MMM d")} – ${format(end, "d, yyyy")}`
+        : `${format(start, "MMM d")} – ${format(end, "MMM d, yyyy")}`;
+    }
+    case "day":
+      return format(date, "EEEE, MMM d, yyyy");
+  }
 }
 
-function CalendarControls({
+function CalendarSidebar({
   currentDate,
-  view,
-  onToday,
-  onPrevious,
-  onNext,
-}: {
-  currentDate: Date;
-  view: CalendarViewType;
-  onToday: () => void;
-  onPrevious: () => void;
-  onNext: () => void;
-}) {
-  const label =
-    view === "week"
-      ? `${format(startOfWeek(currentDate, { weekStartsOn: 0 }), "MMM d")} – ${format(endOfWeek(currentDate, { weekStartsOn: 0 }), "MMM d, yyyy")}`
-      : format(currentDate, view === "day" ? "EEE, MMM d, yyyy" : "MMMM yyyy");
-
-  return (
-    <div className="flex flex-wrap items-center gap-2.5">
-      <div className="flex items-center gap-1">
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={onPrevious}
-          className="h-8 w-8 rounded-[7px] border-white/10 bg-transparent text-zinc-500 shadow-none hover:bg-white/5 hover:text-zinc-100"
-          aria-label="Previous"
-        >
-          <ChevronLeft className="h-3.5 w-3.5" />
-        </Button>
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={onNext}
-          className="h-8 w-8 rounded-[7px] border-white/10 bg-transparent text-zinc-500 shadow-none hover:bg-white/5 hover:text-zinc-100"
-          aria-label="Next"
-        >
-          <ChevronRight className="h-3.5 w-3.5" />
-        </Button>
-      </div>
-      <Button
-        variant="outline"
-        onClick={onToday}
-        className="h-8 rounded-[7px] border-white/10 bg-transparent px-3 text-xs text-zinc-500 shadow-none hover:bg-white/5 hover:text-zinc-100"
-      >
-        Today
-      </Button>
-      <h2 className="ml-1 font-serif text-[21px] font-normal leading-none tracking-normal text-zinc-200">
-        {label}
-      </h2>
-    </div>
-  );
-}
-
-function CalendarRightRail({
-  currentDate,
+  eventsByDate,
+  myCalendarOn,
+  onToggleMyCalendar,
   subscriptions,
-  visibility,
-  appEventCount,
-  subscribedEventCount,
-  allEvents,
-  externalEvents,
-  todayEvents,
-  eventTypeCounts,
-  onPreviousMonth,
-  onNextMonth,
+  externalVisibility,
+  onToggleSubscription,
   onSelectDate,
-  onToggleExternalSubscription,
-  onManageCalendars,
+  onPrevMonth,
+  onNextMonth,
+  onToday,
+  eventsVisible,
 }: {
   currentDate: Date;
+  eventsByDate: Map<string, CalendarEvent[]>;
+  myCalendarOn: boolean;
+  onToggleMyCalendar: () => void;
   subscriptions: CalendarSubscriptionSummary[];
-  visibility: CalendarVisibility;
-  appEventCount: number;
-  subscribedEventCount: number;
-  allEvents: CalendarEvent[];
-  externalEvents: ExternalEventWithColor[];
-  todayEvents: CalendarEvent[];
-  eventTypeCounts: Array<(typeof EVENT_TYPE_META)[number] & { count: number }>;
-  onPreviousMonth: () => void;
-  onNextMonth: () => void;
+  externalVisibility: Record<string, boolean>;
+  onToggleSubscription: (id: string) => void;
   onSelectDate: (date: Date) => void;
-  onToggleExternalSubscription: (subscriptionId: string) => void;
-  onManageCalendars: () => void;
+  onPrevMonth: () => void;
+  onNextMonth: () => void;
+  onToday: () => void;
+  eventsVisible: number;
 }) {
   return (
-    <aside className="space-y-6 xl:pt-20">
-      <p className="text-right text-[12px] font-medium text-zinc-500">
-        {appEventCount} app · {subscribedEventCount} subscribed
-      </p>
+    <aside className="hidden w-[260px] shrink-0 flex-col bg-surface-canvas lg:flex">
+      <div className="px-5 pt-6">
+        <MiniCalendar
+          currentDate={currentDate}
+          eventsByDate={eventsByDate}
+          onSelectDate={onSelectDate}
+          onPrevMonth={onPrevMonth}
+          onNextMonth={onNextMonth}
+        />
 
-      <MiniCalendar
-        currentDate={currentDate}
-        events={allEvents}
-        onPreviousMonth={onPreviousMonth}
-        onNextMonth={onNextMonth}
-        onSelectDate={onSelectDate}
-      />
+        <button
+          type="button"
+          onClick={onToday}
+          className="mt-4 text-[12px] font-medium text-muted-foreground transition-colors hover:text-foreground"
+        >
+          Today
+        </button>
+      </div>
 
-      <RailSection
-        title="External Calendars"
-        action={
-          <button
-            type="button"
-            onClick={onManageCalendars}
-            className="text-xl leading-none text-zinc-500 hover:text-zinc-200"
-            aria-label="Manage external calendars"
-          >
-            +
-          </button>
-        }
-      >
-        <div className="space-y-3">
-          {subscriptions.length > 0 ? (
-            subscriptions.map((subscription) => {
-              const isVisible = visibility.externalSubscriptions[subscription.id] ?? true;
-              const count = externalEvents.filter((event) => event.subscription_id === subscription.id).length;
-              return (
-                <label key={subscription.id} className="flex cursor-pointer items-start gap-2.5">
-                  <Checkbox
-                    checked={isVisible}
-                    onCheckedChange={() => onToggleExternalSubscription(subscription.id)}
-                    className="mt-0.5 h-4 w-4 rounded-full border-zinc-700 bg-transparent text-[#101112] data-[state=checked]:border-transparent [&_svg]:h-3 [&_svg]:w-3"
-                    style={{
-                      backgroundColor: isVisible ? subscription.color ?? "#62b7e8" : "transparent",
-                    }}
-                  />
-                  <span className="min-w-0">
-                    <span className="block truncate text-xs font-medium text-zinc-300">{subscription.name}</span>
-                    <span className="text-[11px] text-zinc-600">{count} events</span>
-                  </span>
-                </label>
-              );
-            })
-          ) : (
-            <p className="text-sm text-zinc-600">No external calendars connected</p>
-          )}
-        </div>
-      </RailSection>
+      <div className="px-5 pt-7">
+        <h3 className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/80">
+          Calendars
+        </h3>
+        <ul className="mt-3 space-y-2">
+          <CalendarSidebarItem
+            label="My Calendar"
+            color={MY_CALENDAR_COLOR}
+            checked={myCalendarOn}
+            onToggle={onToggleMyCalendar}
+          />
+          {subscriptions.map((sub) => {
+            const checked = externalVisibility[sub.id] ?? true;
+            return (
+              <CalendarSidebarItem
+                key={sub.id}
+                label={sub.name}
+                color={sub.color ?? "#8b5cf6"}
+                checked={checked}
+                onToggle={() => onToggleSubscription(sub.id)}
+              />
+            );
+          })}
+        </ul>
+      </div>
 
-      <RailSection title="Today">
-        <div className="space-y-4">
-          {todayEvents.length > 0 ? (
-            todayEvents.map((event) => (
-              <div key={`${event.source}-${event.id}`} className="grid grid-cols-[1fr_auto] gap-3 text-xs">
-                <div className="flex min-w-0 items-center gap-2.5">
-                  <span
-                    className="h-2 w-2 shrink-0 rounded-full"
-                    style={{ backgroundColor: getRailEventColor(event) }}
-                  />
-                  <span className="truncate text-zinc-300">{event.title}</span>
-                </div>
-                <span className="text-zinc-500">{event.isAllDay ? "All day" : format(event.startDate, "h:mm a")}</span>
-              </div>
-            ))
-          ) : (
-            <p className="text-sm text-zinc-600">No events today</p>
-          )}
-        </div>
-      </RailSection>
-
-      <RailSection title="Event Types">
-        <div className="space-y-2.5">
-          {eventTypeCounts.map((type) => (
-            <div key={type.value} className="flex items-center gap-2.5 text-xs">
-              <span className="h-2 w-2 rounded-full" style={{ backgroundColor: type.color }} />
-              <span className="text-zinc-400">{type.label}</span>
-              <span className="ml-auto text-xs text-zinc-600">{type.count}</span>
-            </div>
-          ))}
-        </div>
-      </RailSection>
+      <div className="mt-auto border-t border-border/60 px-5 py-3">
+        <p className="text-[11px] text-muted-foreground">
+          <span className="font-semibold text-foreground tabular-nums">{eventsVisible}</span>{" "}
+          {eventsVisible === 1 ? "event" : "events"} visible
+        </p>
+      </div>
     </aside>
+  );
+}
+
+function CalendarSidebarItem({
+  label,
+  color,
+  checked,
+  onToggle,
+}: {
+  label: string;
+  color: string;
+  checked: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <li>
+      <button
+        type="button"
+        onClick={onToggle}
+        className="group flex w-full items-center gap-2 rounded-[5px] px-1 py-1 text-left transition-colors hover:bg-surface-hover/60"
+      >
+        <span
+          className={cn(
+            "h-2 w-2 shrink-0 rounded-full transition-opacity",
+            checked ? "opacity-100" : "opacity-30"
+          )}
+          style={{ backgroundColor: color }}
+        />
+        <span
+          className={cn(
+            "truncate text-[12.5px] transition-colors",
+            checked ? "text-foreground" : "text-muted-foreground/60"
+          )}
+        >
+          {label}
+        </span>
+      </button>
+    </li>
   );
 }
 
 function MiniCalendar({
   currentDate,
-  events,
-  onPreviousMonth,
-  onNextMonth,
+  eventsByDate,
   onSelectDate,
+  onPrevMonth,
+  onNextMonth,
 }: {
   currentDate: Date;
-  events: CalendarEvent[];
-  onPreviousMonth: () => void;
-  onNextMonth: () => void;
+  eventsByDate: Map<string, CalendarEvent[]>;
   onSelectDate: (date: Date) => void;
+  onPrevMonth: () => void;
+  onNextMonth: () => void;
 }) {
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(currentDate);
@@ -923,47 +807,63 @@ function MiniCalendar({
     end: endOfWeek(monthEnd, { weekStartsOn: 0 }),
   });
 
-  const eventDays = new Set(events.map((event) => format(event.startDate, "yyyy-MM-dd")));
-
   return (
     <section>
-      <div className="mb-3 flex items-center justify-between">
-        <h3 className="text-xs font-semibold text-zinc-300">{format(currentDate, "MMMM yyyy")}</h3>
-        <div className="flex items-center gap-2">
-          <button type="button" onClick={onPreviousMonth} className="text-zinc-500 hover:text-zinc-200" aria-label="Previous month">
-            <ChevronLeft className="h-4 w-4" />
-          </button>
-          <button type="button" onClick={onNextMonth} className="text-zinc-500 hover:text-zinc-200" aria-label="Next month">
-            <ChevronRight className="h-4 w-4" />
-          </button>
-        </div>
+      <div className="mb-2.5 flex items-center justify-between">
+        <button
+          type="button"
+          onClick={onPrevMonth}
+          aria-label="Previous month"
+          className="grid h-6 w-6 place-items-center rounded-[5px] text-muted-foreground transition-colors hover:bg-surface-hover hover:text-foreground"
+        >
+          <ChevronLeft className="h-3.5 w-3.5" />
+        </button>
+        <h3 className="text-[12.5px] font-semibold tracking-tight text-foreground">
+          {format(currentDate, "MMM yyyy")}
+        </h3>
+        <button
+          type="button"
+          onClick={onNextMonth}
+          aria-label="Next month"
+          className="grid h-6 w-6 place-items-center rounded-[5px] text-muted-foreground transition-colors hover:bg-surface-hover hover:text-foreground"
+        >
+          <ChevronRight className="h-3.5 w-3.5" />
+        </button>
       </div>
-      <div className="grid grid-cols-7 gap-y-2 text-center text-[11px]">
-        {["S", "M", "T", "W", "T", "F", "S"].map((day, index) => (
-          <div key={`${day}-${index}`} className="font-medium text-zinc-600">
-            {day}
+
+      <div className="grid grid-cols-7 gap-y-0.5 text-center text-[10.5px]">
+        {["S", "M", "T", "W", "T", "F", "S"].map((d, i) => (
+          <div key={`${d}-${i}`} className="pb-1 font-medium text-muted-foreground/60">
+            {d}
           </div>
         ))}
         {gridDays.map((day) => {
           const selected = isSameDay(day, currentDate);
           const muted = !isSameMonth(day, currentDate);
-          const hasEvent = eventDays.has(format(day, "yyyy-MM-dd"));
+          const today = isToday(day);
+          const hasEvent = (eventsByDate.get(format(day, "yyyy-MM-dd"))?.length || 0) > 0;
           return (
             <button
               key={day.toISOString()}
               type="button"
               onClick={() => onSelectDate(day)}
               className={cn(
-                "relative mx-auto flex h-5 w-5 items-center justify-center rounded-full text-[11px] transition-colors",
-                muted ? "text-zinc-700" : "text-zinc-400",
-                selected && "bg-[#ef7d52] font-semibold text-[#17110e]",
-                !selected && isToday(day) && "ring-1 ring-[#ef7d52]/70",
-                !selected && "hover:bg-white/5 hover:text-zinc-200"
+                "relative mx-auto flex h-7 w-7 items-center justify-center rounded-[6px] text-[11.5px] tabular-nums transition-colors",
+                muted && !selected && "text-muted-foreground/40",
+                !muted && !selected && "text-foreground/85",
+                selected && "bg-brand font-semibold text-brand-foreground",
+                !selected && today && "text-brand font-semibold",
+                !selected && "hover:bg-surface-hover"
               )}
             >
               {format(day, "d")}
               {hasEvent && (
-                <span className={cn("absolute bottom-0 h-0.5 w-0.5 rounded-full", selected ? "bg-[#17110e]" : "bg-[#ef7d52]")} />
+                <span
+                  className={cn(
+                    "absolute -bottom-0.5 h-[3px] w-[3px] rounded-full",
+                    selected ? "bg-brand-foreground" : "bg-brand"
+                  )}
+                />
               )}
             </button>
           );
@@ -971,35 +871,4 @@ function MiniCalendar({
       </div>
     </section>
   );
-}
-
-function RailSection({
-  title,
-  action,
-  children,
-}: {
-  title: string;
-  action?: React.ReactNode;
-  children: React.ReactNode;
-}) {
-  return (
-    <section>
-      <div className="mb-3 flex items-center justify-between">
-        <h3 className="text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-500">
-          {title}
-        </h3>
-        {action}
-      </div>
-      {children}
-    </section>
-  );
-}
-
-function getRailEventColor(event: CalendarEvent) {
-  if (event.color) return event.color;
-  if (event.source === "meeting") return "#62b7e8";
-  if (event.source === "task") return "#6ee27f";
-  if (event.source === "announcement") return "#f2be5c";
-  if (event.source === "external") return "#8d6ce8";
-  return "#e47b52";
 }

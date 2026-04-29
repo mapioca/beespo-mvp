@@ -176,7 +176,7 @@ export function EventDetailDrawer({
                 <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
                     <SheetHeader className="space-y-4">
                         <div className="flex items-start justify-between gap-4">
-                            <SheetTitle className="text-xl font-semibold leading-tight">
+                            <SheetTitle className="font-serif text-[22px] font-normal leading-tight">
                                 {event.title}
                             </SheetTitle>
                             <Badge

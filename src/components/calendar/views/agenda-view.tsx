@@ -4,13 +4,13 @@ import {
   format,
   startOfMonth,
   endOfMonth,
+  startOfWeek,
+  endOfWeek,
   eachDayOfInterval,
   isToday,
-
 } from "date-fns";
 import { CalendarEvent, EventSource } from "@/lib/calendar-helpers";
 import { cn } from "@/lib/utils";
-import { Repeat, MapPin, Calendar } from "lucide-react";
 
 interface AgendaViewProps {
   currentDate: Date;
@@ -20,32 +20,21 @@ interface AgendaViewProps {
   onEventClick: (event: CalendarEvent) => void;
 }
 
-function getAgendaAccent(source: EventSource): string {
-  switch (source) {
-    case "announcement":
-      return "hsl(var(--chart-4))";
-    case "meeting":
-      return "hsl(var(--chart-2))";
-    case "task":
-      return "hsl(var(--chart-5))";
-    case "event":
-      return "hsl(var(--chart-1))";
-    case "external":
-      return "hsl(var(--chart-3))";
-  }
+function getAccent(source: EventSource, customColor?: string): string {
+  if (customColor) return customColor;
+  if (source === "external") return "#8b5cf6";
+  return "hsl(var(--brand))";
 }
 
 export function AgendaView({
   currentDate,
   eventsByDate,
-  onDateClick,
   onEventClick,
 }: AgendaViewProps) {
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(currentDate);
   const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
 
-  // Filter days that have events
   const daysWithEvents = days.filter((day) => {
     const dateKey = format(day, "yyyy-MM-dd");
     return (eventsByDate.get(dateKey)?.length || 0) > 0;
@@ -53,111 +42,119 @@ export function AgendaView({
 
   if (daysWithEvents.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-full text-muted-foreground py-16">
-        <Calendar className="h-16 w-16 mb-4 opacity-40" />
-        <p className="text-lg font-medium">No events this month</p>
-        <p className="text-sm mt-1">
-          Click any date in the calendar to add an event
+      <div className="rounded-[10px] border border-border/30 bg-surface-raised px-6 py-20 text-center">
+        <p className="text-[14px] text-foreground">Nothing on the books this month.</p>
+        <p className="mt-1.5 text-[12.5px] text-muted-foreground">
+          Pick a date in the calendar to add an event.
         </p>
       </div>
     );
   }
 
+  // Group days by week (week containing the day)
+  const weekMap = new Map<string, Date[]>();
+  for (const day of daysWithEvents) {
+    const weekKey = format(startOfWeek(day, { weekStartsOn: 0 }), "yyyy-MM-dd");
+    if (!weekMap.has(weekKey)) weekMap.set(weekKey, []);
+    weekMap.get(weekKey)!.push(day);
+  }
+  const weeks = Array.from(weekMap.entries());
+
   return (
-    <div className="space-y-8 max-w-3xl mx-auto">
-      {daysWithEvents.map((day) => {
-        const dateKey = format(day, "yyyy-MM-dd");
-        const dayEvents = eventsByDate.get(dateKey) || [];
-        const isCurrentDay = isToday(day);
+    <div className="rounded-[10px] border border-border/30 bg-surface-raised">
+      {weeks.map(([weekKey, weekDays], wi) => {
+        const weekStart = startOfWeek(weekDays[0], { weekStartsOn: 0 });
+        const weekEnd = endOfWeek(weekDays[0], { weekStartsOn: 0 });
+        const label =
+          format(weekStart, "MMM d") + " – " + format(weekEnd, "MMM d");
 
         return (
-          <div key={dateKey}>
+          <div key={weekKey}>
+            {/* Week header */}
             <div
               className={cn(
-                "flex items-center gap-4 pb-3 mb-3 border-b border-border/50 cursor-pointer group"
+                "border-b border-border/30 bg-surface-sunken/40 px-5 py-2 sm:px-6",
+                wi > 0 && "border-t border-border/30"
               )}
-              onClick={() => onDateClick(day)}
             >
-              <div
-                className={cn(
-                  "flex flex-col items-center justify-center w-16 h-16 rounded-xl transition-colors",
-                  isCurrentDay
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "bg-muted/30 group-hover:bg-accent"
-                )}
-              >
-                <span className="text-[11px] font-semibold uppercase tracking-[0.2em] opacity-80">
-                  {format(day, "EEE")}
-                </span>
-                <span className="text-2xl font-bold">{format(day, "d")}</span>
-              </div>
-              <div className="flex-1">
-                <div className="font-semibold text-lg">{format(day, "EEEE")}</div>
-                <div className="text-sm text-muted-foreground">
-                  {format(day, "MMMM yyyy")}
-                </div>
-              </div>
-              <div className="text-xs text-muted-foreground bg-muted/40 px-3 py-1 rounded-full">
-                {dayEvents.length} event{dayEvents.length !== 1 ? "s" : ""}
-              </div>
+              <span className="text-[10.5px] font-semibold uppercase tracking-[0.16em] text-muted-foreground/70">
+                {label}
+              </span>
             </div>
 
-            <div className="space-y-3 pl-20">
-              {dayEvents.map((event) => {
-                const accentColor = event.color || getAgendaAccent(event.source);
+            <ol className="divide-y divide-border/30">
+              {weekDays.map((day) => {
+                const dateKey = format(day, "yyyy-MM-dd");
+                const dayEvents = eventsByDate.get(dateKey) || [];
+                const isCurrentDay = isToday(day);
+
                 return (
-                  <div
-                    key={event.id}
-                    className={cn(
-                      "p-4 rounded-lg border-l-[3px] cursor-pointer transition-all duration-150 bg-background/80",
-                      "hover:shadow-sm hover:translate-x-0.5 hover:bg-[hsl(var(--table-row-hover))]"
-                    )}
-                    style={{ borderLeftColor: accentColor }}
-                    onClick={() => onEventClick(event)}
+                  <li
+                    key={dateKey}
+                    className="grid grid-cols-[100px_minmax(0,1fr)] gap-6 px-5 py-4 sm:px-6"
                   >
-                    <div className="flex items-start gap-3">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          {event.isRecurringInstance && (
-                            <Repeat className="h-4 w-4 flex-shrink-0 opacity-60" />
-                          )}
-                          <span className="font-semibold text-base">
-                            {event.title}
-                          </span>
-                        </div>
-                        {event.description && (
-                          <p className="text-sm text-muted-foreground line-clamp-2">
-                            {event.description}
-                          </p>
+                    <div className="pt-0.5">
+                      <div
+                        className={cn(
+                          "text-[10px] font-semibold uppercase tracking-[0.18em]",
+                          isCurrentDay ? "text-brand" : "text-muted-foreground/80"
                         )}
-                        {event.location && (
-                          <div className="flex items-center gap-1.5 mt-2 text-sm text-muted-foreground">
-                            <MapPin className="h-3.5 w-3.5" />
-                            <span>{event.location}</span>
-                          </div>
-                        )}
+                      >
+                        {format(day, "EEE")}
                       </div>
-                      <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
-                        <span className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full font-medium capitalize border border-border/60 bg-muted/30">
-                          <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: accentColor }} />
-                          {event.source}
-                        </span>
-                        {event.priority && (
-                          <span
-                            className={cn(
-                              "text-xs px-2.5 py-1 rounded-full font-medium capitalize",
-                              "border border-border/60 bg-muted/30"
-                            )}
-                          >
-                            {event.priority}
-                          </span>
+                      <div
+                        className={cn(
+                          "mt-1 text-[22px] leading-none tabular-nums",
+                          isCurrentDay ? "font-semibold text-brand" : "font-medium text-foreground"
                         )}
+                      >
+                        {format(day, "d")}
+                      </div>
+                      <div className="mt-1 text-[10.5px] text-muted-foreground/70">
+                        {format(day, "MMM")}
                       </div>
                     </div>
-                  </div>
+
+                    <ul className="space-y-px">
+                      {dayEvents.map((event) => {
+                        const accent = getAccent(event.source, event.color);
+                        return (
+                          <li key={event.id}>
+                            <button
+                              type="button"
+                              onClick={() => onEventClick(event)}
+                              className="group grid w-full grid-cols-[80px_minmax(0,1fr)_auto] items-center gap-3 rounded-[6px] px-2 py-1.5 text-left transition-colors hover:bg-surface-hover/50"
+                            >
+                              <span className="text-[11.5px] tabular-nums text-muted-foreground">
+                                {event.isAllDay
+                                  ? "All day"
+                                  : format(event.startDate, "h:mm a").toLowerCase()}
+                              </span>
+                              <span className="flex min-w-0 items-center gap-2">
+                                <span
+                                  className="h-1.5 w-1.5 shrink-0 rounded-full"
+                                  style={{ backgroundColor: accent }}
+                                />
+                                <span className="truncate text-[13px] font-medium text-foreground">
+                                  {event.title}
+                                </span>
+                              </span>
+                              {event.location ? (
+                                <span className="max-w-[180px] truncate text-[11.5px] text-muted-foreground">
+                                  {event.location}
+                                </span>
+                              ) : (
+                                <span />
+                              )}
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </li>
                 );
               })}
-            </div>
+            </ol>
           </div>
         );
       })}

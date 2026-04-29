@@ -30,43 +30,33 @@ export function MonthView({
   onDateClick,
   onEventClick,
 }: MonthViewProps) {
-  // Get all days to display (including days from adjacent months)
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(currentDate);
   const calendarStart = startOfWeek(monthStart, { weekStartsOn: 0 });
   const calendarEnd = endOfWeek(monthEnd, { weekStartsOn: 0 });
-
   const days = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
 
-  // Group days into weeks
   const weeks: Date[][] = [];
   for (let i = 0; i < days.length; i += 7) {
     weeks.push(days.slice(i, i + 7));
   }
 
-  // Calculate number of rows needed (typically 5 or 6)
-  const numWeeks = weeks.length;
-
   return (
-    <div className="flex flex-col h-full rounded-lg border border-border/50 overflow-hidden bg-surface-raised">
-      {/* Weekday header - Notion style */}
-      <div className="grid grid-cols-7 border-b border-border/50 bg-muted/20">
+    <div className="overflow-hidden rounded-[10px] border border-border/30 bg-surface-raised">
+      <div className="grid grid-cols-7 border-b border-border/30">
         {WEEKDAY_NAMES.map((name) => (
           <div
             key={name}
-            className="px-2 py-2.5 text-center text-[11px] font-semibold text-muted-foreground uppercase tracking-[0.2em]"
+            className="px-3 py-2 text-left text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/80"
           >
             {name}
           </div>
         ))}
       </div>
 
-      {/* Calendar grid - Clean Notion aesthetic */}
       <div
-        className="flex-1 grid"
-        style={{
-          gridTemplateRows: `repeat(${numWeeks}, minmax(100px, 1fr))`,
-        }}
+        className="grid"
+        style={{ gridTemplateRows: `repeat(${weeks.length}, minmax(96px, 1fr))` }}
       >
         {weeks.map((week, weekIndex) => (
           <div
@@ -86,30 +76,34 @@ export function MonthView({
                 <div
                   key={dateKey}
                   className={cn(
-                    "p-2 cursor-pointer transition-colors overflow-hidden",
-                    "hover:bg-surface-hover",
-                    !isCurrentMonth && "bg-muted/10",
+                    "group relative cursor-pointer overflow-hidden p-1.5 transition-colors",
+                    "hover:bg-surface-hover/50",
+                    !isCurrentMonth && "bg-surface-sunken/30",
                     dayIndex !== 6 && "border-r border-border/30"
                   )}
                   onClick={() => onDateClick(day)}
                 >
-                  {/* Day number - Notion style */}
-                  <div className="flex items-center justify-start mb-1.5">
+                  {isCurrentDay && (
+                    <span className="absolute inset-x-0 top-0 h-[2px] bg-brand" />
+                  )}
+                  <div className="mb-1.5 flex items-baseline gap-1.5">
                     <span
                       className={cn(
-                        "inline-flex items-center justify-center w-7 h-7 text-sm rounded-full transition-colors",
-                        isCurrentDay
-                          ? "bg-primary text-primary-foreground font-bold"
-                          : isCurrentMonth
-                            ? "font-medium text-foreground hover:bg-accent"
-                            : "text-muted-foreground/60"
+                        "text-[12px] tabular-nums leading-none",
+                        isCurrentDay && "font-semibold text-brand",
+                        !isCurrentDay && isCurrentMonth && "font-medium text-foreground",
+                        !isCurrentMonth && "text-muted-foreground/50"
                       )}
                     >
                       {format(day, "d")}
                     </span>
+                    {dayIndex === 0 && (
+                      <span className="text-[9.5px] font-medium uppercase tracking-[0.16em] text-muted-foreground/50">
+                        {format(day, "MMM")}
+                      </span>
+                    )}
                   </div>
 
-                  {/* Events */}
                   <CalendarEventList
                     events={dayEvents}
                     onClick={onEventClick}
