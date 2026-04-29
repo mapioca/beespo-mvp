@@ -31,13 +31,13 @@ export function QuickActionsWidget({
                     </Link>
                 </Button>
                 <Button asChild variant="outline" className="w-full justify-start h-11 bg-white">
-                    <Link href="/meetings/sacrament-meeting/business/new">
+                    <Link href="/meetings/sacrament/business/new">
                         <Briefcase className="h-4 w-4 mr-3 text-blue-600" />
                         Add Business Item
                     </Link>
                 </Button>
                 <Button asChild variant="outline" className="w-full justify-start h-11 bg-white">
-                    <Link href="/meetings/announcements/new">
+                    <Link href="/meetings/sacrament/announcements/new">
                         <Megaphone className="h-4 w-4 mr-3 text-amber-600" />
                         Create Announcement
                     </Link>

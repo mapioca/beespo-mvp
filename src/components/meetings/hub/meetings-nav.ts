@@ -13,32 +13,32 @@ export function getMeetingsNavItems(isBishopric: boolean): DomainNavItem[] {
     ...(isBishopric
       ? [
           {
-            href: "/meetings/sacrament-meeting",
+            href: "/meetings/sacrament",
             label: "Sacrament Meeting",
             icon: Landmark,
             matchMode: "prefix" as const,
             showOverviewLink: false,
             children: [
               {
-                href: "/meetings/sacrament-meeting/planner",
+                href: "/meetings/sacrament/planner",
                 label: "Program Planner",
                 icon: Landmark,
                 matchMode: "prefix" as const,
               },
               {
-                href: "/meetings/sacrament-meeting/speaker-planner",
+                href: "/meetings/sacrament/speakers",
                 label: "Speaker Planner",
                 icon: UserRoundCheck,
                 matchMode: "prefix" as const,
               },
               {
-                href: "/meetings/sacrament-meeting/archive",
+                href: "/meetings/sacrament/archive",
                 label: "Archive",
                 icon: Landmark,
                 matchMode: "prefix" as const,
               },
               {
-                href: "/meetings/sacrament-meeting/business",
+                href: "/meetings/sacrament/business",
                 label: "Business",
                 icon: Briefcase,
                 matchMode: "prefix" as const,
@@ -88,7 +88,7 @@ export function getMeetingsNavItems(isBishopric: boolean): DomainNavItem[] {
       matchMode: "prefix",
     },
     {
-      href: "/meetings/announcements",
+      href: "/meetings/sacrament/announcements",
       label: "Announcements",
       icon: Megaphone,
       matchMode: "prefix",

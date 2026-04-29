@@ -1332,7 +1332,7 @@ export async function createCallingBusinessItem(
 
     revalidatePath("/callings");
     revalidatePath(`/callings/${processId}`);
-    revalidatePath("/meetings/sacrament-meeting/business");
+    revalidatePath("/meetings/sacrament/business");
     return { success: true, businessItemId: businessItem.id };
 }
 

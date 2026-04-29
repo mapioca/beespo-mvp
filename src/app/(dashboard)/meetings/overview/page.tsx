@@ -25,7 +25,7 @@ const canonicalCards: OverviewCard[] = [
   {
     title: "Sacrament Meeting",
     description: "Coordinate sacrament meeting planning in the bishopric workspace.",
-    href: "/meetings/sacrament-meeting/program-planner",
+    href: "/meetings/sacrament/planner",
     icon: Landmark,
   },
   {
@@ -49,7 +49,7 @@ const canonicalCards: OverviewCard[] = [
   {
     title: "Announcements",
     description: "Manage announcements independently from meeting content.",
-    href: "/meetings/announcements",
+    href: "/meetings/sacrament/announcements",
     icon: Megaphone,
   },
 ]

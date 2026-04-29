@@ -6,16 +6,12 @@ import { useMemo, useState } from "react";
 import {
   Archive,
   BriefcaseBusiness,
-  CalendarDays,
-  CheckSquare,
   ChevronRight,
   BookUser,
   Home,
-  Inbox,
   Landmark,
   LogOut,
   Megaphone,
-  MessageSquare,
   Moon,
   Palette,
   Search,
@@ -56,30 +52,25 @@ const sections: SidebarSection[] = [
     label: "Workspace",
     items: [
       { href: "/dashboard", label: "Home", icon: Home, match: "exact" },
-      { href: "/inbox", label: "Inbox", icon: Inbox, match: "prefix" },
       { href: "/directory", label: "Directory", icon: BookUser, match: "prefix" },
-      { href: "/calendar", label: "Calendar", icon: CalendarDays, match: "prefix", activeAliases: ["/schedule"] },
-      { href: "/tasks", label: "Tasks", icon: CheckSquare, match: "prefix" },
     ],
   },
   {
     label: "My Calling",
     items: [
-      { href: "/callings", label: "Callings", icon: BriefcaseBusiness, match: "prefix" },
       {
-        href: "/meetings/sacrament-meeting/program-planner",
+        href: "/meetings/sacrament/planner",
         label: "Sacrament Meeting",
         icon: Landmark,
         match: "prefix",
         children: [
-          { href: "/meetings/sacrament-meeting/program-planner", label: "Program Planner", icon: Landmark, match: "prefix" },
-          { href: "/meetings/sacrament-meeting/speaker-planner", label: "Speaker Planner", icon: UserRoundCheck, match: "prefix" },
-          { href: "/meetings/sacrament-meeting/business", label: "Business", icon: BriefcaseBusiness, match: "prefix" },
-          { href: "/meetings/sacrament-meeting/archive", label: "Archive", icon: Archive, match: "prefix" },
+          { href: "/meetings/sacrament/planner", label: "Planner", icon: Landmark, match: "prefix" },
+          { href: "/meetings/sacrament/speakers", label: "Speakers", icon: UserRoundCheck, match: "prefix" },
+          { href: "/meetings/sacrament/business", label: "Business", icon: BriefcaseBusiness, match: "prefix" },
+          { href: "/meetings/sacrament/announcements", label: "Announcements", icon: Megaphone, match: "prefix" },
+          { href: "/meetings/sacrament/archive", label: "Archive", icon: Archive, match: "prefix" },
         ],
       },
-      { href: "/discussions", label: "Discussions", icon: MessageSquare, match: "prefix" },
-      { href: "/meetings/announcements", label: "Announcements", icon: Megaphone, match: "prefix" },
     ],
   },
 ];
@@ -198,7 +189,7 @@ export function AppSidebar({
   const toggleCommandPalette = useCommandPaletteStore((state) => state.toggle);
   const { theme, setTheme } = useTheme();
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
-    "/meetings/sacrament-meeting/program-planner": true,
+    "/meetings/sacrament/planner": true,
   });
 
   const workspaceLabel = workspaceName || "Workspace";

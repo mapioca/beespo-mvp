@@ -2,6 +2,12 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 const DISABLED_ROUTES = [
+  "/inbox",
+  "/calendar",
+  "/schedule",
+  "/tasks",
+  "/callings",
+  "/discussions",
   "/library",
   "/forms",
   "/tables",
@@ -14,15 +20,23 @@ const DISABLED_ROUTES = [
   "/meetings/assignments",
 ];
 
-const LEGACY_ROUTE_REDIRECTS = [
-  "/meetings/agendas/discussions",
+const LEGACY_ROUTE_REDIRECTS: Array<{ from: string; to: string }> = [
+  { from: "/meetings/agendas/discussions", to: "/discussions" },
+  { from: "/meetings/sacrament-meeting/program-planner", to: "/meetings/sacrament/planner" },
+  { from: "/meetings/sacrament-meeting/speaker-planner", to: "/meetings/sacrament/speakers" },
+  { from: "/meetings/sacrament-meeting/business", to: "/meetings/sacrament/business" },
+  { from: "/meetings/sacrament-meeting/archive", to: "/meetings/sacrament/archive" },
+  { from: "/meetings/announcements", to: "/meetings/sacrament/announcements" },
 ];
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  if (LEGACY_ROUTE_REDIRECTS.some((route) => pathname === route || pathname.startsWith(`${route}/`))) {
-    return NextResponse.redirect(new URL("/discussions", request.url));
+  for (const { from, to } of LEGACY_ROUTE_REDIRECTS) {
+    if (pathname === from || pathname.startsWith(`${from}/`)) {
+      const newPath = pathname.replace(from, to);
+      return NextResponse.redirect(new URL(newPath, request.url));
+    }
   }
 
   if (DISABLED_ROUTES.some((route) => pathname === route || pathname.startsWith(`${route}/`))) {

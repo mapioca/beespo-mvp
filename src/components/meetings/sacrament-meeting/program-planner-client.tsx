@@ -2528,8 +2528,8 @@ export function SacramentMeetingPlannerClient({
   const breadcrumbItems = useMemo(
     () => [
       { label: "Meetings", href: "/meetings/overview" },
-      { label: "Sacrament Meeting", href: "/meetings/sacrament-meeting/program-planner" },
-      { label: "Program Planner", href: "/meetings/sacrament-meeting/program-planner" },
+      { label: "Sacrament Meeting", href: "/meetings/sacrament/planner" },
+      { label: "Program Planner", href: "/meetings/sacrament/planner" },
       { label: selectedSunday.dateLabel },
     ],
     [selectedSunday.dateLabel]
@@ -3402,11 +3402,11 @@ export function SacramentMeetingPlannerClient({
       }
       if (e.altKey && e.code === "KeyS") {
         e.preventDefault()
-        router.push("/meetings/sacrament-meeting/speaker-planner")
+        router.push("/meetings/sacrament/speakers")
       }
       if (e.altKey && e.code === "KeyB") {
         e.preventDefault()
-        router.push("/meetings/sacrament-meeting/business")
+        router.push("/meetings/sacrament/business")
       }
     }
     window.addEventListener("keydown", handleKeyDown)
@@ -3419,11 +3419,11 @@ export function SacramentMeetingPlannerClient({
         items={breadcrumbItems}
         action={
           <div className="flex items-center gap-2">
-            <Button type="button" variant="ghost" size="sm" onClick={() => router.push("/meetings/sacrament-meeting/speaker-planner")} className="bg-surface-raised border border-border">
+            <Button type="button" variant="ghost" size="sm" onClick={() => router.push("/meetings/sacrament/speakers")} className="bg-surface-raised border border-border">
               Speakers
               <kbd className="ml-1 hidden rounded border border-border bg-surface-sunken px-1 py-0.5 font-mono text-[10px] text-muted-foreground sm:inline">⌥S</kbd>
             </Button>
-            <Button type="button" variant="ghost" size="sm" onClick={() => router.push("/meetings/sacrament-meeting/business")} className="bg-surface-raised border border-border">
+            <Button type="button" variant="ghost" size="sm" onClick={() => router.push("/meetings/sacrament/business")} className="bg-surface-raised border border-border">
               Business
               <kbd className="ml-1 hidden rounded border border-border bg-surface-sunken px-1 py-0.5 font-mono text-[10px] text-muted-foreground sm:inline">⌥B</kbd>
             </Button>

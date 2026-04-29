@@ -139,7 +139,7 @@ export function BusinessClient({ items }: BusinessClientProps) {
     <div className="flex h-full flex-col bg-surface-canvas">
       <Breadcrumbs
         items={[
-          { label: "Meetings", href: "/meetings/sacrament-meeting/program-planner" },
+          { label: "Meetings", href: "/meetings/sacrament/planner" },
           { label: "Business", icon: <Briefcase className="h-4 w-4 stroke-[1.6]" /> },
         ]}
         className="bg-transparent ring-0 border-b border-border/60 rounded-none px-4 py-1.5"

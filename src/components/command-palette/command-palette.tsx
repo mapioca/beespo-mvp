@@ -140,7 +140,7 @@ const commandSections: CommandSection[] = [
         label: "Go to Announcements",
         icon: Megaphone,
         action: "navigate",
-        href: "/meetings/announcements",
+        href: "/meetings/sacrament/announcements",
         keywords: ["announcements", "meetings"],
       },
       {

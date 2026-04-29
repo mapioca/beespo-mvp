@@ -1295,7 +1295,7 @@ export function SpeakerPlannerClient() {
   // ─── Breadcrumb ─────────────────────────────────────────────────────────────
   const breadcrumbItems = useMemo(
     () => [
-      { label: "<- Back to the Planner", href: "/meetings/sacrament-meeting/program-planner" },
+      { label: "<- Back to the Planner", href: "/meetings/sacrament/planner" },
       { label: "Speaker Planner" },
     ],
     []

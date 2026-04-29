@@ -74,27 +74,27 @@ export const breadcrumbConfigs: BreadcrumbConfig[] = [
     trail: [{ label: "Meetings", href: "/meetings/overview" }, { label: "Programs" }],
   },
   {
-    pattern: "/meetings/sacrament-meeting/speaker-planner",
+    pattern: "/meetings/sacrament/speakers",
     trail: [
       { label: "Meetings", href: "/meetings/overview" },
-      { label: "Sacrament Meeting", href: "/meetings/sacrament-meeting/planner" },
+      { label: "Sacrament Meeting", href: "/meetings/sacrament/planner" },
       { label: "Speaker Planner" },
     ],
   },
   {
-    pattern: "/meetings/sacrament-meeting/business",
+    pattern: "/meetings/sacrament/business",
     trail: [
       { label: "Meetings", href: "/meetings/overview" },
-      { label: "Sacrament Meeting", href: "/meetings/sacrament-meeting/planner" },
+      { label: "Sacrament Meeting", href: "/meetings/sacrament/planner" },
       { label: "Business" },
     ],
   },
   {
-    pattern: "/meetings/sacrament-meeting/business/new",
+    pattern: "/meetings/sacrament/business/new",
     trail: [
       { label: "Meetings", href: "/meetings/overview" },
-      { label: "Sacrament Meeting", href: "/meetings/sacrament-meeting/planner" },
-      { label: "Business", href: "/meetings/sacrament-meeting/business" },
+      { label: "Sacrament Meeting", href: "/meetings/sacrament/planner" },
+      { label: "Business", href: "/meetings/sacrament/business" },
       { label: "New Business" },
     ],
   },
@@ -120,7 +120,7 @@ export const breadcrumbConfigs: BreadcrumbConfig[] = [
     dynamic: true,
   },
   {
-    pattern: "/meetings/announcements",
+    pattern: "/meetings/sacrament/announcements",
     trail: [{ label: "Meetings", href: "/meetings/overview" }, { label: "Announcements" }],
   },
   {
