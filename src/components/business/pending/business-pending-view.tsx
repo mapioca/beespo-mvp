@@ -67,6 +67,16 @@ function groupByCategory(
   return groups
 }
 
+function emptyScriptOverrides(): Record<BusinessCategoryKey, string | null> {
+  return {
+    sustaining: null,
+    release: null,
+    confirmation: null,
+    ordination: null,
+    other: null,
+  }
+}
+
 function itemSubtitle(item: BusinessItem): string {
   if (isBusinessCategoryKey(item.category)) {
     return item.position_calling?.trim() || BUSINESS_CATEGORY_LABEL[item.category as BusinessCategoryKey]
@@ -172,13 +182,8 @@ export function BusinessPendingView({ items, onOpenItem }: BusinessPendingViewPr
   const [active, setActive] = useState<BusinessLifecycleStatus>("pending")
   const [meetingDate, setMeetingDate] = useState<string>(getNextSundayIso())
   const [scheduling, setScheduling] = useState(false)
-  const [scriptOverrides, setScriptOverrides] = useState<Record<BusinessCategoryKey, string | null>>({
-    sustaining: null,
-    release: null,
-    confirmation: null,
-    ordination: null,
-    other: null,
-  })
+  const [unschedulingItemId, setUnschedulingItemId] = useState<string | null>(null)
+  const [scriptOverridesByDate, setScriptOverridesByDate] = useState<Record<string, Record<BusinessCategoryKey, string | null>>>({})
   const [selectedItemIds, setSelectedItemIds] = useState<Set<string>>(new Set())
 
   const byStatus = useMemo(() => {
@@ -225,8 +230,15 @@ export function BusinessPendingView({ items, onOpenItem }: BusinessPendingViewPr
   }, [active, activeItems])
 
   const handleScriptOverrideChange = useCallback(
-    (category: BusinessCategoryKey, script: string | null) => {
-      setScriptOverrides((prev) => ({ ...prev, [category]: script }))
+    (date: string, category: BusinessCategoryKey, script: string | null) => {
+      setScriptOverridesByDate((prev) => ({
+        ...prev,
+        [date]: {
+          ...emptyScriptOverrides(),
+          ...prev[date],
+          [category]: script,
+        },
+      }))
     },
     []
   )
@@ -250,19 +262,22 @@ export function BusinessPendingView({ items, onOpenItem }: BusinessPendingViewPr
   const handleDeselectAll = useCallback(() => {
     setSelectedItemIds(new Set());
   }, []);
-  useCallback(async (item: BusinessItem) => {
+  const handleUnschedule = useCallback(async (item: BusinessItem) => {
+    setUnschedulingItemId(item.id)
     const supabase = createClient()
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabase.from("business_items") as any)
-        .update({ action_date: null })
+        .update({ action_date: null, status: "pending" })
         .eq("id", item.id)
     if (error) {
-      toast.error("Failed to unschedule item.")
+      toast.error(error.message || "Failed to move item back to pending.")
     } else {
       toast.success(`${item.person_name} moved back to pending.`)
       router.refresh()
     }
+    setUnschedulingItemId(null)
   }, [router]);
+
   const handleSchedule = useCallback(async () => {
     if (active !== "pending" || selectedItemIds.size === 0 || !meetingDate) return
     setScheduling(true)
@@ -318,8 +333,10 @@ return (
                     items={dateItems}
                     groupedByCategory={dateGrouped}
                     meetingDate={isoDate}
-                    scriptOverrides={scriptOverrides}
-                    onScriptOverrideChange={handleScriptOverrideChange}
+                    scriptOverrides={scriptOverridesByDate[isoDate]}
+                    onScriptOverrideChange={(category, script) =>
+                      handleScriptOverrideChange(isoDate, category, script)
+                    }
                     selectedItemIds={selectedItemIds}
                     onToggleItemSelection={handleToggleItemSelection}
                     onSelectAll={handleSelectAll}
@@ -344,12 +361,12 @@ return (
             onSchedule={handleSchedule}
             scheduling={scheduling}
             onOpenItem={onOpenItem}
-            scriptOverrides={scriptOverrides}
-            onScriptOverrideChange={handleScriptOverrideChange}
             selectedItemIds={selectedItemIds}
             onToggleItemSelection={handleToggleItemSelection}
             onSelectAll={handleSelectAll}
             onDeselectAll={handleDeselectAll}
+            onUnscheduleItem={active === "scheduled" ? handleUnschedule : undefined}
+            unschedulingItemId={unschedulingItemId}
           />
         </div>
       </div>

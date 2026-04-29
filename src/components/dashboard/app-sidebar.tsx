@@ -17,7 +17,7 @@ import {
   Search,
   Settings,
   Sun,
-  UserRoundCheck,
+  MicVocal,
   type LucideIcon,
 } from "lucide-react";
 
@@ -65,7 +65,7 @@ const sections: SidebarSection[] = [
         match: "prefix",
         children: [
           { href: "/meetings/sacrament/planner", label: "Planner", icon: Landmark, match: "prefix" },
-          { href: "/meetings/sacrament/speakers", label: "Speakers", icon: UserRoundCheck, match: "prefix" },
+          { href: "/meetings/sacrament/speakers", label: "Speakers", icon: MicVocal, match: "prefix" },
           { href: "/meetings/sacrament/business", label: "Business", icon: BriefcaseBusiness, match: "prefix" },
           { href: "/meetings/sacrament/announcements", label: "Announcements", icon: Megaphone, match: "prefix" },
           { href: "/meetings/sacrament/archive", label: "Archive", icon: Archive, match: "prefix" },
