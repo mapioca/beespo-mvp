@@ -14,6 +14,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 import { createClient } from "@/lib/supabase/client"
 import { cn } from "@/lib/utils"
 import { DirectoryDetailsPanel } from "./directory-details-panel"
@@ -117,17 +123,31 @@ export function DirectoryClient({
                 <span className="h-1.5 w-1.5 rounded-full bg-current" />
                 {totalCount} {totalCount === 1 ? "member" : "members"}
               </span>
-              <Button
-                type="button"
-                className="h-9 rounded-[8px] bg-brand px-4 text-[12.5px] font-medium text-brand-foreground hover:bg-[hsl(var(--brand-hover))]"
-                onClick={() => {
-                  setError(null)
-                  setDialogOpen(true)
-                }}
-              >
-                <Plus className="mr-1.5 h-3.5 w-3.5" />
-                Add member
-              </Button>
+              <TooltipProvider delayDuration={150}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setError(null)
+                        setDialogOpen(true)
+                      }}
+                      aria-label="Add member"
+                      className="grid h-8 w-8 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-brand/10 hover:text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent
+                    side="left"
+                    sideOffset={6}
+                    showArrow={false}
+                    className="rounded-[4px] bg-foreground/90 px-1.5 py-0.5 text-[10px] font-medium tracking-tight shadow-sm"
+                  >
+                    Add member
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </div>
           </div>
         </header>

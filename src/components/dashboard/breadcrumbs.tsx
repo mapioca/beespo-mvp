@@ -74,7 +74,7 @@ export function Breadcrumbs({ items, className, inlineAction, action }: Breadcru
   }
 
   return (
-    <div className="sticky top-0 z-30 flex-shrink-0">
+    <div className="sticky top-0 z-30 flex-shrink-0 bg-surface-canvas">
       <div
         ref={containerRef}
         className={cn(
@@ -134,7 +134,7 @@ export function Breadcrumbs({ items, className, inlineAction, action }: Breadcru
           </ol>
         </nav>
         {action && (
-          <div className="ml-auto flex items-center justify-end">
+          <div className="ml-auto flex items-center justify-end bg-surface-canvas">
             {action}
           </div>
         )}

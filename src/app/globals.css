@@ -82,6 +82,7 @@
     --cp-divider: 0 0% 92%;
     --cp-hover: 0 0% 93%;
     --cp-active: 0 0% 90%;
+    --surface-canvas: 0 0% 98%; /* Deepest page canvas for light mode */
     --surface-active: 60 4% 90%; /* Selected/active state for light mode */
     --surface-hover: 0 0% 97%; /* Hover state for interactive surfaces in light mode */
     --surface-raised: 0 0% 100%; /* Passive buttons, interactive tiles for light mode */
@@ -374,9 +375,35 @@
     --brand-bg: 226 100% 94%; /* Accent bg: #e0e7ff */
     --brand-hover: 231 67% 64%; /* Accent hover: lighter */
     --brand-active: 231 67% 44%; /* Accent active: darker */
+    --btn-primary-bg: hsl(var(--primary));
+    --btn-primary-text: hsl(var(--primary-foreground));
+    --btn-primary-bg-hover: hsl(var(--brand-hover));
+    --btn-primary-text-hover: hsl(var(--primary-foreground));
+    --btn-primary-bg-active: hsl(var(--brand-active));
+    --btn-primary-text-active: hsl(var(--primary-foreground));
     --btn-primary-bg-disabled: #f5f5f4;
     --btn-primary-text-disabled: #a8a29e;
     --btn-primary-border-disabled: #e7e5e4;
+    --btn-secondary-bg: hsl(var(--secondary));
+    --btn-secondary-text: hsl(var(--secondary-foreground));
+    --btn-secondary-bg-hover: hsl(var(--secondary));
+    --btn-secondary-text-hover: hsl(var(--secondary-foreground));
+    --btn-secondary-bg-active: hsl(var(--secondary));
+    --btn-secondary-text-active: hsl(var(--secondary-foreground));
+    --btn-secondary-bg-disabled: hsl(var(--secondary));
+    --btn-secondary-text-disabled: hsl(var(--secondary-foreground));
+    --btn-tertiary-bg: hsl(var(--background));
+    --btn-tertiary-text: hsl(var(--foreground));
+    --btn-tertiary-border: hsl(var(--input));
+    --btn-tertiary-bg-hover: hsl(var(--accent));
+    --btn-tertiary-text-hover: hsl(var(--accent-foreground));
+    --btn-tertiary-border-hover: hsl(var(--input));
+    --btn-tertiary-bg-active: hsl(var(--accent));
+    --btn-tertiary-text-active: hsl(var(--accent-foreground));
+    --btn-tertiary-border-active: hsl(var(--input));
+    --btn-tertiary-bg-disabled: hsl(var(--background));
+    --btn-tertiary-text-disabled: hsl(var(--muted-foreground));
+    --btn-tertiary-border-disabled: hsl(var(--border));
     --app-nav-bg: #f3f3f1;
     --app-nav-card: #ffffff;
     --app-nav-hover: #eeeeec;
@@ -590,6 +617,35 @@
     --border: var(--cp-border);
     --input: var(--cp-border);
     --ring: var(--brand);
+    --btn-primary-bg: hsl(18, 59%, 60%);
+    --btn-primary-text: hsl(25, 44%, 29%);
+    --btn-primary-bg-hover: hsl(17, 60%, 70%);
+    --btn-primary-text-hover: hsl(18, 33%, 42%);
+    --btn-primary-bg-active: hsl(18, 59%, 80%);
+    --btn-primary-text-active: hsl(12, 68%, 10%);
+    --btn-primary-bg-disabled: hsl(16, 32%, 30%);
+    --btn-primary-text-disabled: hsl(21, 31%, 13%);
+    --btn-primary-border-disabled: transparent;
+    --btn-secondary-bg: hsl(20, 67%, 10%);
+    --btn-secondary-text: hsl(19, 68%, 90%);
+    --btn-secondary-bg-hover: hsl(18, 59%, 20%);
+    --btn-secondary-text-hover: hsl(17, 67%, 85%);
+    --btn-secondary-bg-active: hsl(18, 59%, 30%);
+    --btn-secondary-text-active: hsl(24, 49%, 79%);
+    --btn-secondary-bg-disabled: hsl(16, 32%, 30%);
+    --btn-secondary-text-disabled: hsl(21, 31%, 13%);
+    --btn-tertiary-bg: hsl(0, 0%, 9%);
+    --btn-tertiary-text: hsl(20, 47%, 52%);
+    --btn-tertiary-border: hsl(20, 47%, 52%);
+    --btn-tertiary-bg-hover: hsl(20, 67%, 10%);
+    --btn-tertiary-text-hover: hsl(17, 35%, 54%);
+    --btn-tertiary-border-hover: hsl(17, 35%, 54%);
+    --btn-tertiary-bg-active: hsl(20, 67%, 10%);
+    --btn-tertiary-text-active: hsl(19, 61%, 70%);
+    --btn-tertiary-border-active: hsl(19, 61%, 70%);
+    --btn-tertiary-bg-disabled: hsl(0, 0%, 9%);
+    --btn-tertiary-text-disabled: hsl(15, 18%, 34%);
+    --btn-tertiary-border-disabled: hsl(15, 18%, 34%);
     --landing-nav-height: 4rem;
     --landing-nav-horizontal-padding: 1rem;
     --landing-nav-link-font-size: 0.875rem;
@@ -680,6 +736,7 @@
     --cp-divider: 45 26% 88%;
     --cp-hover: 43 28% 92%;
     --cp-active: 43 30% 87%;
+    --surface-canvas: 45 33% 97%; /* Deepest page canvas for warm mode */
     --surface-active: 46 30% 87%; /* Selected/active state for warm mode */
     --surface-hover: 46 17% 94%; /* Hover state for interactive surfaces in warm mode */
     --surface-raised: 0 0% 100%; /* Passive buttons, interactive tiles for warm mode */
@@ -756,6 +813,35 @@
     --brand-bg: 35 31% 86%;
     --brand-hover: 17 55% 61%; /* Accent hover: lighter */
     --brand-active: 17 55% 41%; /* Accent active: darker */
+    --btn-primary-bg: hsl(18, 60%, 40%);
+    --btn-primary-text: hsl(180, 100%, 99%);
+    --btn-primary-bg-hover: hsl(18, 59%, 30%);
+    --btn-primary-text-hover: hsl(180, 100%, 99%);
+    --btn-primary-bg-active: hsl(18, 59%, 20%);
+    --btn-primary-text-active: hsl(180, 100%, 99%);
+    --btn-primary-bg-disabled: hsl(18, 40%, 76%);
+    --btn-primary-text-disabled: hsl(180, 100%, 99%);
+    --btn-primary-border-disabled: transparent;
+    --btn-secondary-bg: hsl(19, 65%, 90%);
+    --btn-secondary-text: hsl(20, 23%, 28%);
+    --btn-secondary-bg-hover: hsl(18, 59%, 80%);
+    --btn-secondary-text-hover: hsl(20, 23%, 28%);
+    --btn-secondary-bg-active: hsl(17, 60%, 70%);
+    --btn-secondary-text-active: hsl(20, 23%, 28%);
+    --btn-secondary-bg-disabled: hsl(18, 40%, 76%);
+    --btn-secondary-text-disabled: hsl(180, 100%, 99%);
+    --btn-tertiary-bg: hsl(0, 0%, 100%);
+    --btn-tertiary-text: hsl(22, 40%, 54%);
+    --btn-tertiary-border: hsl(22, 40%, 54%);
+    --btn-tertiary-bg-hover: hsl(18, 52%, 95%);
+    --btn-tertiary-text-hover: hsl(22, 40%, 54%);
+    --btn-tertiary-border-hover: hsl(22, 40%, 54%);
+    --btn-tertiary-bg-active: hsl(19, 65%, 90%);
+    --btn-tertiary-text-active: hsl(22, 40%, 54%);
+    --btn-tertiary-border-active: hsl(22, 40%, 54%);
+    --btn-tertiary-bg-disabled: hsl(0, 0%, 100%);
+    --btn-tertiary-text-disabled: hsl(16, 35%, 77%);
+    --btn-tertiary-border-disabled: hsl(16, 35%, 77%);
     --app-nav-bg: #f4f2ea;
     --app-nav-card: #ffffff;
     --app-nav-hover: #f0ede3;

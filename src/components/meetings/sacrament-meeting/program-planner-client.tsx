@@ -3424,27 +3424,28 @@ export function SacramentMeetingPlannerClient({
   }, [router])
 
   return (
-    <div className="min-h-full dark:bg-card">
+    <div className="min-h-full bg-surface-canvas dark:bg-card">
       <Breadcrumbs
+        className="bg-surface-canvas"
         items={breadcrumbItems}
         action={
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 bg-surface-canvas">
             <Button type="button" variant="ghost" size="sm" onClick={() => router.push("/meetings/sacrament/speakers")} className="bg-surface-raised border border-border">
               Speakers
-              <kbd className="ml-1 hidden rounded border border-border bg-surface-sunken px-1 py-0.5 font-mono text-[10px] text-muted-foreground sm:inline">⌥S</kbd>
+              <span className="ml-1 hidden font-mono text-[10px] text-muted-foreground/80 sm:inline">⌥S</span>
             </Button>
             <Button type="button" variant="ghost" size="sm" onClick={() => router.push("/meetings/sacrament/business")} className="bg-surface-raised border border-border">
               Business
-              <kbd className="ml-1 hidden rounded border border-border bg-surface-sunken px-1 py-0.5 font-mono text-[10px] text-muted-foreground sm:inline">⌥B</kbd>
+              <span className="ml-1 hidden font-mono text-[10px] text-muted-foreground/80 sm:inline">⌥B</span>
             </Button>
             <Button type="button" variant="ghost" size="sm" onClick={() => setAudienceOpen(true)} className="bg-surface-raised border border-border">
               Audience
-              <kbd className="ml-1 hidden rounded border border-border bg-surface-sunken px-1 py-0.5 font-mono text-[10px] text-muted-foreground sm:inline">⌥A</kbd>
+              <span className="ml-1 hidden font-mono text-[10px] text-muted-foreground/80 sm:inline">⌥A</span>
             </Button>
-            <Button type="button" variant="outline" size="sm" onClick={() => setConductOpen(true)} className="bg-primary text-primary-foreground border-primary hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/80">
+            <Button type="button" variant="default" size="sm" onClick={() => setConductOpen(true)}>
               <Play className="h-3.5 w-3.5" />
               Conduct
-              <kbd className="ml-1 hidden rounded border border-border bg-surface-sunken px-1 py-0.5 font-mono text-[10px] text-muted-foreground sm:inline">⌥C</kbd>
+              <span className="ml-1 hidden font-mono text-[10px] text-primary-foreground/80 sm:inline">⌥C</span>
             </Button>
           </div>
         }

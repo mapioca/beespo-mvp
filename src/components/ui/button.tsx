@@ -10,13 +10,13 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          "bg-primary text-primary-foreground hover:bg-[hsl(var(--brand-hover))] active:bg-[hsl(var(--brand-active))] disabled:bg-[var(--btn-primary-bg-disabled)] disabled:text-[var(--btn-primary-text-disabled)] disabled:border disabled:border-[var(--btn-primary-border-disabled)] disabled:opacity-100",
+          "bg-[var(--btn-primary-bg)] text-[var(--btn-primary-text)] hover:bg-[var(--btn-primary-bg-hover)] hover:text-[var(--btn-primary-text-hover)] active:bg-[var(--btn-primary-bg-active)] active:text-[var(--btn-primary-text-active)] disabled:bg-[var(--btn-primary-bg-disabled)] disabled:text-[var(--btn-primary-text-disabled)] disabled:border disabled:border-[var(--btn-primary-border-disabled)] disabled:opacity-100",
         destructive:
           "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90 disabled:opacity-50",
         outline:
-          "border border-input bg-background hover:bg-accent hover:text-accent-foreground disabled:opacity-50",
+          "border bg-[var(--btn-tertiary-bg)] border-[var(--btn-tertiary-border)] text-[var(--btn-tertiary-text)] hover:bg-[var(--btn-tertiary-bg-hover)] hover:border-[var(--btn-tertiary-border-hover)] hover:text-[var(--btn-tertiary-text-hover)] active:bg-[var(--btn-tertiary-bg-active)] active:border-[var(--btn-tertiary-border-active)] active:text-[var(--btn-tertiary-text-active)] disabled:bg-[var(--btn-tertiary-bg-disabled)] disabled:border-[var(--btn-tertiary-border-disabled)] disabled:text-[var(--btn-tertiary-text-disabled)] disabled:opacity-100",
         secondary:
-          "bg-secondary text-secondary-foreground hover:bg-secondary/80 disabled:opacity-50",
+          "bg-[var(--btn-secondary-bg)] text-[var(--btn-secondary-text)] hover:bg-[var(--btn-secondary-bg-hover)] hover:text-[var(--btn-secondary-text-hover)] active:bg-[var(--btn-secondary-bg-active)] active:text-[var(--btn-secondary-text-active)] disabled:bg-[var(--btn-secondary-bg-disabled)] disabled:text-[var(--btn-secondary-text-disabled)] disabled:opacity-100",
         ghost: "hover:bg-accent hover:text-accent-foreground disabled:opacity-50",
         link: "text-primary underline-offset-4 hover:underline disabled:opacity-50",
       },

@@ -1,5 +1,4 @@
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
-import { CommandPalette } from "@/components/command-palette";
 import { checkTrustedDevice, checkWorkspaceMfaRequired } from "@/lib/mfa";
 import { getUserNavigationItems } from "@/lib/navigation/user-navigation";
 import { getDashboardRequestContext } from "@/lib/dashboard/request-context";
@@ -61,7 +60,6 @@ export default async function DashboardLayout({
       >
         {children}
       </DashboardShell>
-      <CommandPalette />
     </>
   );
 }

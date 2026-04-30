@@ -5,13 +5,18 @@ import { useRouter } from "next/navigation"
 import { Briefcase, Plus } from "lucide-react"
 
 import { Breadcrumbs } from "@/components/dashboard/breadcrumbs"
-import { Button } from "@/components/ui/button"
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 import { createClient } from "@/lib/supabase/client"
 import { prefetchBusinessFormData } from "@/lib/cache/form-data-cache"
 import { toast } from "@/lib/toast"
@@ -159,16 +164,30 @@ export function BusinessClient({ items }: BusinessClientProps) {
                 Track formal church procedures. The conducting script is generated automatically.
               </p>
             </div>
-            <Button
-              size="sm"
-              onClick={() => setNewBusinessModalOpen(true)}
-              onMouseEnter={() => prefetchBusinessFormData()}
-              onFocus={() => prefetchBusinessFormData()}
-              className="h-9 px-4 text-[13px] bg-foreground text-background hover:bg-foreground/90 shrink-0"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              New business
-            </Button>
+            <TooltipProvider delayDuration={150}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    onClick={() => setNewBusinessModalOpen(true)}
+                    onMouseEnter={() => prefetchBusinessFormData()}
+                    onFocus={() => prefetchBusinessFormData()}
+                    aria-label="New business"
+                    className="mt-9 grid h-8 w-8 shrink-0 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-brand/10 hover:text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent
+                  side="left"
+                  sideOffset={6}
+                  showArrow={false}
+                  className="rounded-[4px] bg-foreground/90 px-1.5 py-0.5 text-[10px] font-medium tracking-tight shadow-sm"
+                >
+                  New business
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </header>
 
           <div className="mt-10">

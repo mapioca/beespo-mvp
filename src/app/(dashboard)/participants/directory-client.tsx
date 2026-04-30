@@ -35,6 +35,12 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/components/ui/tooltip"
 import { createClient } from "@/lib/supabase/client"
 import { clearDirectoryCache } from "@/lib/cache/form-data-cache"
 import { toast } from "@/lib/toast"
@@ -692,15 +698,28 @@ export function DirectoryPageClient({
                             emptyText="No matching directory members."
                         />
                         {canManage && (
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-7 gap-1 rounded-full px-2.5 text-[length:var(--agenda-control-font-size)] text-nav transition-colors hover:bg-[hsl(var(--agenda-interactive-hover))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--agenda-interactive-focus-ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-                                onClick={() => setCreateDialogOpen(true)}
-                            >
-                                <Plus className="h-3.5 w-3.5 stroke-[1.6]" />
-                                New member
-                            </Button>
+                            <TooltipProvider delayDuration={150}>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <button
+                                            type="button"
+                                            onClick={() => setCreateDialogOpen(true)}
+                                            aria-label="New member"
+                                            className="grid h-8 w-8 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-brand/10 hover:text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40"
+                                        >
+                                            <Plus className="h-4 w-4" />
+                                        </button>
+                                    </TooltipTrigger>
+                                    <TooltipContent
+                                        side="left"
+                                        sideOffset={6}
+                                        showArrow={false}
+                                        className="rounded-[4px] bg-foreground/90 px-1.5 py-0.5 text-[10px] font-medium tracking-tight shadow-sm"
+                                    >
+                                        New member
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
                         )}
                     </div>
                 }
