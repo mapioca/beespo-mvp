@@ -82,6 +82,7 @@ import {
 import { createClient } from "@/lib/supabase/client"
 import { generateBusinessScript } from "@/lib/business-script-generator"
 import { generateCombinedBusinessScript, type BusinessCategoryKey } from "@/lib/business/combined-script"
+import { isAnnouncementInWindow } from "@/lib/announcement-utils"
 import type { BusinessItem } from "@/components/business/business-table"
 import { cn } from "@/lib/utils"
 import { PickerModal } from "@/components/ui/picker-modal"
@@ -1122,7 +1123,7 @@ function OpeningSection({
             onSelect={(selected) => {
               const newItems = selected
                 .filter((a) => !announcements.some((item) => item.id === a.id))
-                .map((a) => ({ id: a.id, title: a.title, checked: true, detail: a.description }))
+                .map((a) => ({ id: a.id, title: a.title, checked: true }))
               if (newItems.length) onAnnouncementsChange([...announcements, ...newItems])
             }}
           >
@@ -2602,7 +2603,7 @@ export function SacramentMeetingPlannerClient({
       const [annResult, bizResult, scheduledBizResult] = await Promise.all([
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (supabase.from("announcements") as any)
-          .select("id, title, content")
+          .select("id, title, content, display_start, display_until")
           .eq("status", "active")
           .eq("workspace_id", workspaceId)
           .order("priority", { ascending: true })
@@ -2624,12 +2625,21 @@ export function SacramentMeetingPlannerClient({
 
       if (!isMounted) return
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const announcements: PlannerItem[] = (annResult.data ?? []).map((a: any) => ({
-        id: a.id,
-        title: a.title,
-        checked: false,
-      }))
+      type AnnouncementRow = {
+        id: string
+        title: string
+        display_start?: string | null
+        display_until?: string | null
+      }
+
+      const announcements: PlannerItem[] = ((annResult.data ?? []) as AnnouncementRow[])
+        .filter((announcement) => isAnnouncementInWindow(announcement, selectedSunday.isoDate))
+        .slice(0, 5)
+        .map((announcement) => ({
+          id: announcement.id,
+          title: announcement.title,
+          checked: true,
+        }))
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const pendingBusiness: PlannerItem[] = (bizResult.data ?? []).map((b: any) => ({

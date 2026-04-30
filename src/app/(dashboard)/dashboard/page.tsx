@@ -328,6 +328,8 @@ function PreviewSection({
   items,
   empty,
   hideDetail,
+  maxVisibleItems = 3,
+  totalCount,
 }: {
   href: string;
   eyebrow: string;
@@ -335,7 +337,12 @@ function PreviewSection({
   items: HomeReadinessItem[];
   empty: string;
   hideDetail?: boolean;
+  maxVisibleItems?: number;
+  totalCount?: number;
 }) {
+  const visibleItems = items.slice(0, maxVisibleItems);
+  const remainingCount = Math.max(0, (totalCount ?? items.length) - visibleItems.length);
+
   return (
     <Link
       href={href}
@@ -352,17 +359,24 @@ function PreviewSection({
         {items.length === 0 ? (
           <li className="text-[12.5px] italic text-muted-foreground">{empty}</li>
         ) : (
-          items.slice(0, 3).map((item) => (
-            <li key={item.id} className="flex items-start gap-2.5 text-[12.5px] text-foreground/90">
-              <span className="mt-[7px] h-1 w-1 shrink-0 rounded-full bg-brand" />
-              <span className="min-w-0">
-                <span>{item.title}</span>
-                {!hideDetail && item.detail ? (
-                  <span className="text-muted-foreground"> · {item.detail}</span>
-                ) : null}
-              </span>
-            </li>
-          ))
+          <>
+            {visibleItems.map((item) => (
+              <li key={item.id} className="flex items-start gap-2.5 text-[12.5px] text-foreground/90">
+                <span className="mt-[7px] h-1 w-1 shrink-0 rounded-full bg-brand" />
+                <span className="min-w-0">
+                  <span>{item.title}</span>
+                  {!hideDetail && item.detail ? (
+                    <span className="text-muted-foreground"> · {item.detail}</span>
+                  ) : null}
+                </span>
+              </li>
+            ))}
+            {remainingCount > 0 ? (
+              <li className="pl-3.5 text-[12.5px] font-medium text-muted-foreground">
+                + {remainingCount} more
+              </li>
+            ) : null}
+          </>
         )}
       </ul>
     </Link>
@@ -400,6 +414,8 @@ export default async function DashboardPage() {
               items={readiness.businessItems}
               empty="No business this week."
               hideDetail
+              maxVisibleItems={5}
+              totalCount={readiness.businessCount}
             />
             <PreviewSection
               href="/meetings/sacrament/announcements"
@@ -407,6 +423,9 @@ export default async function DashboardPage() {
               title="To read"
               items={readiness.announcements}
               empty="Nothing to announce."
+              hideDetail
+              maxVisibleItems={5}
+              totalCount={readiness.announcementCount}
             />
           </section>
         </section>

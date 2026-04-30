@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { isAnnouncementInWindow } from "@/lib/announcement-utils";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -199,19 +200,6 @@ type PlannerMeetingState = {
   fastEntries?: AgendaEntry[];
 };
 
-type PlannerItem = {
-  id: string;
-  title: string;
-  checked?: boolean;
-  detail?: string | null;
-};
-
-type PlannerNotes = {
-  announcements?: PlannerItem[];
-  business?: PlannerItem[];
-  initialized?: boolean;
-};
-
 type ConfirmationStatus = "confirmed" | "pending" | "missing";
 
 export interface HomeReadinessPerson {
@@ -382,28 +370,6 @@ function parseMeetingState(value: unknown, meetingDate: string): PlannerMeetingS
   };
 }
 
-function parseNotesState(value: unknown): PlannerNotes | null {
-  if (!isRecord(value)) return null;
-  return {
-    announcements: Array.isArray(value.announcements)
-      ? (value.announcements as PlannerItem[])
-      : undefined,
-    business: Array.isArray(value.business)
-      ? (value.business as PlannerItem[])
-      : undefined,
-    initialized: value.initialized === true,
-  };
-}
-function selectedItems(items: PlannerItem[] | undefined): HomeReadinessItem[] {
-  return (items ?? [])
-    .filter((item) => item.checked === true)
-    .map((item) => ({
-      id: item.id,
-      title: item.title,
-      detail: item.detail ?? null,
-    }));
-}
-
 function visibleEntries(meeting: PlannerMeetingState) {
   return meeting.specialType === "fast-testimony"
     ? meeting.fastEntries ?? []
@@ -492,12 +458,11 @@ async function fetchFallbackItems(
   const [announcementResult, businessResult] = await Promise.all([
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (supabase.from("announcements") as any)
-      .select("id, title, content", { count: "exact" })
+      .select("id, title, content, display_start, display_until")
       .eq("workspace_id", workspaceId)
       .eq("status", "active")
       .order("priority", { ascending: true })
-      .order("created_at", { ascending: false })
-      .limit(5),
+      .order("created_at", { ascending: false }),
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (supabase.from("business_items") as any)
       .select("id, person_name, position_calling, category", { count: "exact" })
@@ -511,6 +476,8 @@ async function fetchFallbackItems(
     id: string;
     title: string;
     content: string | null;
+    display_start: string | null;
+    display_until: string | null;
   };
 
   type BusinessRow = {
@@ -520,14 +487,19 @@ async function fetchFallbackItems(
     category: string | null;
   };
 
+  const eligibleAnnouncements = ((announcementResult.data ?? []) as AnnouncementRow[])
+    .filter((item) => isAnnouncementInWindow(item, meetingDate));
+
   return {
-    announcementCount: announcementResult.count ?? 0,
+    announcementCount: eligibleAnnouncements.length,
     businessCount: businessResult.count ?? businessResult.data?.length ?? 0,
-    announcements: ((announcementResult.data ?? []) as AnnouncementRow[]).map((item) => ({
-      id: item.id,
-      title: item.title,
-      detail: item.content,
-    })),
+    announcements: eligibleAnnouncements
+      .slice(0, 5)
+      .map((item) => ({
+        id: item.id,
+        title: item.title,
+        detail: null,
+      })),
     businessItems: ((businessResult.data ?? []) as BusinessRow[]).map((item) => ({
       id: item.id,
       title: item.position_calling
@@ -643,8 +615,6 @@ export async function fetchSacramentHomeData(
     | null;
 
   const meeting = parseMeetingState(plannerEntry?.meeting_state, meetingDate);
-  const notes = parseNotesState(plannerEntry?.notes_state);
-  const notesInitialized = notes?.initialized === true;
   const { speakers, prayers } = getPeopleFromMeeting(meeting, confirmationStatuses);
   const people = [...speakers, ...prayers];
   const assignedRequiredCount = people.filter((person) => person.status === "confirmed").length;
@@ -653,7 +623,7 @@ export async function fetchSacramentHomeData(
   const meetingTitle = meeting.title?.trim() || meetingType;
 
   const businessItemsList = fallbackItems.businessItems;
-  const announcementsList = notesInitialized ? selectedItems(notes.announcements) : fallbackItems.announcements;
+  const announcementsList = fallbackItems.announcements;
 
   return {
     meetingDate,
@@ -669,7 +639,7 @@ export async function fetchSacramentHomeData(
       (plannerEntry?.meeting_state as { assignments?: unknown } | undefined)?.assignments,
       "conductor"
     ),
-    announcementCount: announcementsList.length,
+    announcementCount: fallbackItems.announcementCount,
     businessCount: fallbackItems.businessCount,
     announcements: announcementsList,
     businessItems: businessItemsList,

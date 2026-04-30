@@ -13,23 +13,32 @@ export function isAnnouncementInWindow(
 ): boolean {
   if (!meetingDate) return true
 
-  const date = meetingDate instanceof Date ? meetingDate : new Date(meetingDate)
-  if (isNaN(date.getTime())) return true
-
-  // Normalize to midnight for date-only comparisons
-  const dayStart = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+  const dayStart = toLocalCalendarDay(meetingDate)
+  if (!dayStart) return true
 
   if (announcement.display_start) {
-    const start = new Date(announcement.display_start)
-    const startDay = new Date(start.getFullYear(), start.getMonth(), start.getDate())
+    const startDay = toLocalCalendarDay(announcement.display_start)
+    if (!startDay) return true
     if (dayStart < startDay) return false
   }
 
   if (announcement.display_until) {
-    const until = new Date(announcement.display_until)
-    const untilDay = new Date(until.getFullYear(), until.getMonth(), until.getDate())
+    const untilDay = toLocalCalendarDay(announcement.display_until)
+    if (!untilDay) return true
     if (dayStart > untilDay) return false
   }
 
   return true
+}
+
+function toLocalCalendarDay(value: Date | string): Date | null {
+  if (value instanceof Date) {
+    if (isNaN(value.getTime())) return null
+    return new Date(value.getFullYear(), value.getMonth(), value.getDate())
+  }
+
+  const datePart = value.match(/^\d{4}-\d{2}-\d{2}/)?.[0]
+  const date = new Date(datePart ? `${datePart}T00:00:00` : value)
+  if (isNaN(date.getTime())) return null
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate())
 }
