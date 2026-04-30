@@ -172,6 +172,9 @@ type StaticEntry = {
   title: string;
   assigneeField?: AgendaAssigneeField;
   assigneeName?: string;
+  hymnId?: string;
+  hymnNumber?: number;
+  hymnTitle?: string;
 };
 
 type SpeakerEntry = {
@@ -202,6 +205,12 @@ type PlannerMeetingState = {
 
 type ConfirmationStatus = "confirmed" | "pending" | "missing";
 
+// Speakers/prayers: full lifecycle (unassigned → pending → confirmed).
+// Conducting/presiding: assignment-only (unassigned → assigned), no confirm step.
+// Hymns: chosen-only (not chosen → chosen).
+export type AssignmentOnlyStatus = "assigned" | "unassigned";
+export type HymnStatus = "chosen" | "unchosen";
+
 export interface HomeReadinessPerson {
   id: string;
   role: string;
@@ -216,23 +225,54 @@ export interface HomeReadinessItem {
   detail: string | null;
 }
 
+export interface HomeAssignmentSlot {
+  id: string;
+  role: string;
+  name: string | null;
+  status: AssignmentOnlyStatus;
+}
+
+export interface HomeHymnSlot {
+  id: string;
+  role: string;
+  hymnNumber: number | null;
+  hymnTitle: string | null;
+  status: HymnStatus;
+}
+
 export interface SacramentHomeData {
   meetingDate: string;
   meetingTitle: string;
   meetingType: string;
   meetingTime: string;
   plannerHref: string;
-  presidingName: string | null;
-  conductingName: string | null;
+  presiding: HomeAssignmentSlot;
+  conducting: HomeAssignmentSlot;
   announcementCount: number;
   businessCount: number;
   announcements: HomeReadinessItem[];
   businessItems: HomeReadinessItem[];
   speakers: HomeReadinessPerson[];
   prayers: HomeReadinessPerson[];
-  assignedRequiredCount: number;
+  hymns: HomeHymnSlot[];
+  programApplicable: boolean;
+  confirmedRequiredCount: number;
   totalRequiredCount: number;
   updatedAt: string | null;
+}
+
+export interface UpcomingSacramentSummary {
+  meetingDate: string;
+  meetingType: string;
+  plannerHref: string;
+  isProgramApplicable: boolean;
+  speakersAssigned: number;
+  speakersTotal: number;
+  prayersAssigned: number;
+  prayersTotal: number;
+  hymnsChosen: number;
+  hymnsTotal: number;
+  hasAnyData: boolean;
 }
 
 function localIsoDate(date: Date) {
@@ -290,6 +330,7 @@ function getMeetingTypeLabel(specialType: MeetingSpecialType) {
 
 function defaultStandardEntries(isoDate: string): AgendaEntry[] {
   return [
+    { id: "opening-hymn", kind: "static", title: "Opening Hymn" },
     {
       id: "invocation",
       kind: "static",
@@ -297,6 +338,7 @@ function defaultStandardEntries(isoDate: string): AgendaEntry[] {
       assigneeField: "invocation",
       assigneeName: "",
     },
+    { id: "sacrament-hymn", kind: "static", title: "Sacrament Hymn" },
     {
       id: `${isoDate}-speaker-1`,
       kind: "speaker",
@@ -309,6 +351,7 @@ function defaultStandardEntries(isoDate: string): AgendaEntry[] {
       title: "Speaker",
       speakerName: "",
     },
+    { id: "closing-hymn", kind: "static", title: "Closing Hymn" },
     {
       id: "benediction",
       kind: "static",
@@ -319,8 +362,9 @@ function defaultStandardEntries(isoDate: string): AgendaEntry[] {
   ];
 }
 
-function defaultFastEntries() {
+function defaultFastEntries(): AgendaEntry[] {
   return [
+    { id: "opening-hymn", kind: "static", title: "Opening Hymn" },
     {
       id: "invocation",
       kind: "static",
@@ -328,6 +372,8 @@ function defaultFastEntries() {
       assigneeField: "invocation" as const,
       assigneeName: "",
     },
+    { id: "sacrament-hymn", kind: "static", title: "Sacrament Hymn" },
+    { id: "closing-hymn", kind: "static", title: "Closing Hymn" },
     {
       id: "benediction",
       kind: "static",
@@ -390,14 +436,53 @@ function personStatus(
   return confirmationByRoleAndName.get(`${role}:${name.toLowerCase()}`) ?? "pending";
 }
 
+function isProgramApplicable(meeting: PlannerMeetingState) {
+  return (
+    meeting.specialType !== "general-conference" &&
+    meeting.specialType !== "stake-conference"
+  );
+}
+
+const HYMN_ROLE_LABELS: Record<string, string> = {
+  "opening-hymn": "Opening",
+  "sacrament-hymn": "Sacrament",
+  "closing-hymn": "Closing",
+  "intermediate-hymn": "Intermediate",
+  "rest-hymn": "Rest",
+};
+
+function isHymnEntry(entry: AgendaEntry): entry is StaticEntry {
+  if (entry.kind !== "static") return false;
+  const id = entry.id ?? "";
+  return id.includes("hymn");
+}
+
+function hymnRoleLabel(entry: StaticEntry) {
+  return HYMN_ROLE_LABELS[entry.id] ?? entry.title ?? "Hymn";
+}
+
+function getHymnsFromMeeting(meeting: PlannerMeetingState): HomeHymnSlot[] {
+  if (!isProgramApplicable(meeting)) return [];
+  const entries = visibleEntries(meeting);
+  return entries.filter(isHymnEntry).map((entry) => {
+    const title = entry.hymnTitle?.trim() || null;
+    const number = typeof entry.hymnNumber === "number" ? entry.hymnNumber : null;
+    const chosen = Boolean(title || number);
+    return {
+      id: entry.id,
+      role: hymnRoleLabel(entry),
+      hymnNumber: number,
+      hymnTitle: title,
+      status: chosen ? "chosen" : "unchosen",
+    };
+  });
+}
+
 function getPeopleFromMeeting(
   meeting: PlannerMeetingState,
   confirmationByRoleAndName: Map<string, ConfirmationStatus>
 ) {
-  if (
-    meeting.specialType === "general-conference" ||
-    meeting.specialType === "stake-conference"
-  ) {
+  if (!isProgramApplicable(meeting)) {
     return { speakers: [], prayers: [] };
   }
 
@@ -448,6 +533,19 @@ function getAssignmentName(
   const value = assignments[field];
   if (typeof value !== "string") return null;
   return normalizePersonName(value);
+}
+
+function buildAssignmentSlot(
+  id: "presiding" | "conducting",
+  role: string,
+  name: string | null
+): HomeAssignmentSlot {
+  return {
+    id,
+    role,
+    name,
+    status: name ? "assigned" : "unassigned",
+  };
 }
 
 async function fetchFallbackItems(
@@ -615,9 +713,11 @@ export async function fetchSacramentHomeData(
     | null;
 
   const meeting = parseMeetingState(plannerEntry?.meeting_state, meetingDate);
+  const programApplicable = isProgramApplicable(meeting);
   const { speakers, prayers } = getPeopleFromMeeting(meeting, confirmationStatuses);
+  const hymns = getHymnsFromMeeting(meeting);
   const people = [...speakers, ...prayers];
-  const assignedRequiredCount = people.filter((person) => person.status === "confirmed").length;
+  const confirmedRequiredCount = people.filter((person) => person.status === "confirmed").length;
   const totalRequiredCount = people.length;
   const meetingType = getMeetingTypeLabel(meeting.specialType ?? "standard");
   const meetingTitle = meeting.title?.trim() || meetingType;
@@ -625,28 +725,110 @@ export async function fetchSacramentHomeData(
   const businessItemsList = fallbackItems.businessItems;
   const announcementsList = fallbackItems.announcements;
 
+  const assignments = (plannerEntry?.meeting_state as { assignments?: unknown } | undefined)
+    ?.assignments;
+  const presidingName = getAssignmentName(assignments, "presiding");
+  const conductingName = getAssignmentName(assignments, "conductor");
+
   return {
     meetingDate,
     meetingTitle,
     meetingType,
     meetingTime: meeting.meetingTime?.trim() || "9:00 AM",
     plannerHref: `/meetings/sacrament/planner?date=${meetingDate}`,
-    presidingName: getAssignmentName(
-      (plannerEntry?.meeting_state as { assignments?: unknown } | undefined)?.assignments,
-      "presiding"
-    ),
-    conductingName: getAssignmentName(
-      (plannerEntry?.meeting_state as { assignments?: unknown } | undefined)?.assignments,
-      "conductor"
-    ),
+    presiding: buildAssignmentSlot("presiding", "Presiding", presidingName),
+    conducting: buildAssignmentSlot("conducting", "Conducting", conductingName),
     announcementCount: fallbackItems.announcementCount,
     businessCount: fallbackItems.businessCount,
     announcements: announcementsList,
     businessItems: businessItemsList,
     speakers,
     prayers,
-    assignedRequiredCount,
+    hymns,
+    programApplicable,
+    confirmedRequiredCount,
     totalRequiredCount,
     updatedAt: plannerEntry?.updated_at ?? null,
   };
+}
+
+// ── Looking Ahead ───────────────────────────────────────────────────────────
+
+export async function fetchUpcomingSacramentSummaries(
+  supabase: SupabaseClient,
+  workspaceId: string,
+  fromIsoDate: string,
+  count = 3
+): Promise<UpcomingSacramentSummary[]> {
+  const dates: string[] = [];
+  for (let i = 1; i <= count; i++) {
+    dates.push(isoDatePlusDays(fromIsoDate, i * 7));
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data } = await (supabase.from("sacrament_planner_entries") as any)
+    .select("meeting_date, meeting_state")
+    .eq("workspace_id", workspaceId)
+    .in("meeting_date", dates);
+
+  const byDate = new Map<string, unknown>();
+  for (const row of (data ?? []) as Array<{ meeting_date: string; meeting_state: unknown }>) {
+    byDate.set(row.meeting_date, row.meeting_state);
+  }
+
+  return dates.map((date) => {
+    const rawState = byDate.get(date);
+    const meeting = parseMeetingState(rawState, date);
+    const meetingType = getMeetingTypeLabel(meeting.specialType ?? "standard");
+    const programApplicable = isProgramApplicable(meeting);
+
+    if (!programApplicable) {
+      return {
+        meetingDate: date,
+        meetingType,
+        plannerHref: `/meetings/sacrament/planner?date=${date}`,
+        isProgramApplicable: false,
+        speakersAssigned: 0,
+        speakersTotal: 0,
+        prayersAssigned: 0,
+        prayersTotal: 0,
+        hymnsChosen: 0,
+        hymnsTotal: 0,
+        hasAnyData: byDate.has(date),
+      };
+    }
+
+    const entries = visibleEntries(meeting);
+    const speakers = entries.filter(
+      (entry): entry is SpeakerEntry => entry.kind === "speaker"
+    );
+    const prayers = entries.filter(
+      (entry): entry is StaticEntry =>
+        entry.kind === "static" &&
+        (entry.assigneeField === "invocation" || entry.assigneeField === "benediction")
+    );
+    const hymns = entries.filter(isHymnEntry);
+
+    const speakersAssigned = speakers.filter((s) => normalizePersonName(s.speakerName))
+      .length;
+    const prayersAssigned = prayers.filter((p) => normalizePersonName(p.assigneeName))
+      .length;
+    const hymnsChosen = hymns.filter(
+      (h) => Boolean(h.hymnTitle?.trim()) || typeof h.hymnNumber === "number"
+    ).length;
+
+    return {
+      meetingDate: date,
+      meetingType,
+      plannerHref: `/meetings/sacrament/planner?date=${date}`,
+      isProgramApplicable: true,
+      speakersAssigned,
+      speakersTotal: speakers.length,
+      prayersAssigned,
+      prayersTotal: prayers.length,
+      hymnsChosen,
+      hymnsTotal: hymns.length,
+      hasAnyData: byDate.has(date),
+    };
+  });
 }
