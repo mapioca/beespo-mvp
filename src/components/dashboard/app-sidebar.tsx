@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Archive,
   BriefcaseBusiness,
@@ -191,6 +191,8 @@ export function AppSidebar({
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
     "/meetings/sacrament/planner": true,
   });
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
 
   const workspaceLabel = workspaceName || "Workspace";
   const workspaceInitials = getInitials(workspaceLabel);
@@ -217,58 +219,76 @@ export function AppSidebar({
 
   return (
     <aside className="flex h-full w-[248px] shrink-0 flex-col gap-0.5 overflow-y-auto border-r border-[var(--app-nav-border)] bg-[var(--app-nav-bg)] px-2.5 py-3.5">
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <button
-            type="button"
-            className="mb-2 flex w-full flex-col gap-0.5 rounded-[8px] border border-[var(--app-nav-border)] bg-[var(--app-nav-card)] px-3 py-2.5 text-left text-[12px] transition-colors hover:bg-[var(--app-nav-hover)]"
-            aria-label="Workspace menu"
-          >
-            <span className="flex items-center gap-2.5">
-              <span className="grid h-7 w-7 shrink-0 place-items-center rounded-[8px] bg-[var(--app-nav-inverse)] font-serif text-[12px] font-medium italic text-[var(--app-nav-inverse-text)]">
-                {workspaceInitials}
+      {mounted ? (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              className="mb-2 flex w-full flex-col gap-0.5 rounded-[8px] border border-[var(--app-nav-border)] bg-[var(--app-nav-card)] px-3 py-2.5 text-left text-[12px] transition-colors hover:bg-[var(--app-nav-hover)]"
+              aria-label="Workspace menu"
+            >
+              <span className="flex items-center gap-2.5">
+                <span className="grid h-7 w-7 shrink-0 place-items-center rounded-[8px] bg-[var(--app-nav-inverse)] font-serif text-[12px] font-medium italic text-[var(--app-nav-inverse-text)]">
+                  {workspaceInitials}
+                </span>
+                <span className="min-w-0">
+                  <span className="block truncate font-serif text-[14px] text-[var(--app-nav-strong)]">{workspaceLabel}</span>
+                  <span className="block truncate text-[11px] text-[var(--app-nav-muted)]">{userName || userId.slice(0, 8)}</span>
+                </span>
               </span>
-              <span className="min-w-0">
-                <span className="block truncate font-serif text-[14px] text-[var(--app-nav-strong)]">{workspaceLabel}</span>
-                <span className="block truncate text-[11px] text-[var(--app-nav-muted)]">{userName || userId.slice(0, 8)}</span>
-              </span>
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" side="right" className="w-52">
+            <DropdownMenuItem asChild>
+              <Link href="/settings">
+                <Settings className="h-4 w-4" />
+                Workspace settings
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={toggleCommandPalette}>
+              <Search className="h-4 w-4" />
+              Search
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => setTheme("warm")}>
+              <Palette className="h-4 w-4" />
+              Warm mode
+              {theme === "warm" ? <span className="ml-auto text-xs text-muted-foreground">On</span> : null}
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setTheme("light")}>
+              <Sun className="h-4 w-4" />
+              Light mode
+              {theme === "light" ? <span className="ml-auto text-xs text-muted-foreground">On</span> : null}
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setTheme("dark")}>
+              <Moon className="h-4 w-4" />
+              Dark mode
+              {theme === "dark" ? <span className="ml-auto text-xs text-muted-foreground">On</span> : null}
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
+              <LogOut className="h-4 w-4" />
+              Sign out
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ) : (
+        <button
+          type="button"
+          className="mb-2 flex w-full flex-col gap-0.5 rounded-[8px] border border-[var(--app-nav-border)] bg-[var(--app-nav-card)] px-3 py-2.5 text-left text-[12px] transition-colors hover:bg-[var(--app-nav-hover)]"
+          aria-label="Workspace menu"
+        >
+          <span className="flex items-center gap-2.5">
+            <span className="grid h-7 w-7 shrink-0 place-items-center rounded-[8px] bg-[var(--app-nav-inverse)] font-serif text-[12px] font-medium italic text-[var(--app-nav-inverse-text)]">
+              {workspaceInitials}
             </span>
-          </button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" side="right" className="w-52">
-          <DropdownMenuItem asChild>
-            <Link href="/settings">
-              <Settings className="h-4 w-4" />
-              Workspace settings
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={toggleCommandPalette}>
-            <Search className="h-4 w-4" />
-            Search
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={() => setTheme("warm")}>
-            <Palette className="h-4 w-4" />
-            Warm mode
-            {theme === "warm" ? <span className="ml-auto text-xs text-muted-foreground">On</span> : null}
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setTheme("light")}>
-            <Sun className="h-4 w-4" />
-            Light mode
-            {theme === "light" ? <span className="ml-auto text-xs text-muted-foreground">On</span> : null}
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setTheme("dark")}>
-            <Moon className="h-4 w-4" />
-            Dark mode
-            {theme === "dark" ? <span className="ml-auto text-xs text-muted-foreground">On</span> : null}
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
-            <LogOut className="h-4 w-4" />
-            Sign out
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+            <span className="min-w-0">
+              <span className="block truncate font-serif text-[14px] text-[var(--app-nav-strong)]">{workspaceLabel}</span>
+              <span className="block truncate text-[11px] text-[var(--app-nav-muted)]">{userName || userId.slice(0, 8)}</span>
+            </span>
+          </span>
+        </button>
+      )}
 
       {sectionsWithOpenState.map((section) => (
         <div key={section.label}>
