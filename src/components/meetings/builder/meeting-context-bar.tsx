@@ -16,7 +16,6 @@ import {
     Tablet,
     Trash2,
 } from "lucide-react";
-import { ZoomIcon } from "@/components/ui/zoom-icon";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -96,16 +95,6 @@ interface MeetingContextBarProps {
     onProgramPreviewDeviceChange: (device: "phone" | "tablet" | "desktop") => void;
     /** Workspace slug for program URL */
     workspaceSlug: string | null;
-    /** Zoom join URL (null if no zoom meeting linked) */
-    zoomJoinUrl: string | null;
-    /** Whether user has Zoom connected via Settings */
-    isZoomConnected: boolean;
-    /** Whether Zoom meeting creation is in progress */
-    isCreatingZoom: boolean;
-    /** Open the Zoom meeting management sheet */
-    onOpenZoomSheet: () => void;
-    /** Trigger the "Add Zoom" flow */
-    onAddZoom: () => void;
     /** Delete the meeting — resolves when done */
     onDelete?: () => Promise<void>;
     /** Whether the meeting is live */
@@ -159,11 +148,6 @@ export function MeetingContextBar({
     programPreviewDevice,
     onProgramPreviewDeviceChange,
     workspaceSlug,
-    zoomJoinUrl,
-    isZoomConnected,
-    isCreatingZoom,
-    onOpenZoomSheet,
-    onAddZoom,
     onDelete,
     canEdit = true,
     lastAutosaveAt = null,
@@ -425,39 +409,6 @@ export function MeetingContextBar({
                         <Loader2 className="h-3 w-3 shrink-0 animate-spin text-muted-foreground" />
                     )}
                 </DropdownMenuItem>
-
-                <DropdownMenuSeparator />
-
-                {isLeader && initialMeetingId ? (
-                    zoomJoinUrl ? (
-                        <DropdownMenuItem onSelect={onOpenZoomSheet}>
-                            <ZoomIcon className="h-4 w-4" />
-                            Open Zoom
-                        </DropdownMenuItem>
-                    ) : isZoomConnected ? (
-                        <DropdownMenuItem
-                            onSelect={onAddZoom}
-                            disabled={isCreatingZoom}
-                        >
-                            {isCreatingZoom ? (
-                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                            ) : (
-                                <ZoomIcon className="h-4 w-4" />
-                            )}
-                            Add Zoom meeting
-                        </DropdownMenuItem>
-                    ) : (
-                        <DropdownMenuItem disabled>
-                            <ZoomIcon className="h-4 w-4" />
-                            Connect Zoom in Settings
-                        </DropdownMenuItem>
-                    )
-                ) : (
-                    <DropdownMenuItem disabled>
-                        <ZoomIcon className="h-4 w-4" />
-                        Zoom unavailable
-                    </DropdownMenuItem>
-                )}
 
                 {isLeader && initialMeetingId && (
                     <>

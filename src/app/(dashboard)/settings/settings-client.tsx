@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
@@ -22,9 +21,8 @@ import { TeamMembersList } from "@/components/team/team-members-list";
 import { PendingInvitations } from "@/components/team/pending-invitations";
 import { ChangePasswordForm } from "@/components/auth/change-password-form";
 import { DeleteAccountDialog } from "@/components/auth/delete-account-dialog";
-import { Building2, Users, Users2, Save, Loader2, User, AlertTriangle, Plug, Bell, Shield, Languages } from "lucide-react";
+import { Building2, Users, Users2, Save, Loader2, User, AlertTriangle, Bell, Shield, Languages } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
-import { ZoomFullLogo } from "@/components/ui/zoom-icon";
 import { SharingGroupsTab } from "@/components/settings/sharing-groups-tab";
 import { NotificationPreferencesTab } from "@/components/settings/notification-preferences-tab";
 import { MfaSettings } from "@/components/settings/mfa-settings";
@@ -81,7 +79,6 @@ interface SettingsClientProps {
         email: string;
         roleTitle: string;
     };
-    isZoomConnected: boolean;
     sharingGroups: SharingGroupWithMembers[];
     workspaceMembers: WorkspaceMember[];
     languagePreference: "ENG" | "SPA";
@@ -113,7 +110,6 @@ export function SettingsClient({
     currentUserId,
     currentUserRole,
     currentUserDetails,
-    isZoomConnected,
     sharingGroups,
     workspaceMembers,
     languagePreference,
@@ -126,26 +122,11 @@ export function SettingsClient({
     const [userRoleTitle, setUserRoleTitle] = useState(currentUserDetails.roleTitle);
     const [isSaving, setIsSaving] = useState(false);
     const [isSavingProfile, setIsSavingProfile] = useState(false);
-    const [isDisconnectingZoom, setIsDisconnectingZoom] = useState(false);
     const [mfaRequired, setMfaRequired] = useState(workspace.mfa_required);
     const [isSavingMfa, setIsSavingMfa] = useState(false);
     const [sacramentLanguage, setSacramentLanguage] = useState<"ENG" | "SPA">(languagePreference);
     const [isSavingLanguage, setIsSavingLanguage] = useState(false);
     const isAdmin = currentUserRole === "admin";
-
-    const handleDisconnectZoom = async () => {
-        setIsDisconnectingZoom(true);
-        try {
-            const res = await fetch("/api/auth/zoom/disconnect", { method: "POST" });
-            if (!res.ok) throw new Error("Failed to disconnect");
-            toast.success("Zoom disconnected");
-            router.refresh();
-        } catch {
-            toast.error("Failed to disconnect Zoom. Please try again.");
-        } finally {
-            setIsDisconnectingZoom(false);
-        }
-    };
 
     const hasProfileChanges = userFullName !== currentUserDetails.fullName || userRoleTitle !== currentUserDetails.roleTitle;
 
@@ -263,10 +244,6 @@ export function SettingsClient({
                     <TabsTrigger value="notifications" className="gap-2">
                         <Bell className="h-4 w-4" />
                         Notifications
-                    </TabsTrigger>
-                    <TabsTrigger value="integrations" className="gap-2">
-                        <Plug className="h-4 w-4" />
-                        Integrations
                     </TabsTrigger>
                     <TabsTrigger value="language" className="gap-2">
                         <Languages className="h-4 w-4" />
@@ -494,57 +471,6 @@ export function SettingsClient({
 
                 <TabsContent value="notifications" className="space-y-6">
                     <NotificationPreferencesTab />
-                </TabsContent>
-
-                <TabsContent value="integrations" className="space-y-6">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Integrations</CardTitle>
-                            <CardDescription>
-                                Connect third-party services to enhance your meeting workflow
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="flex items-center justify-between p-4 rounded-lg border">
-                                <div className="flex items-center gap-3">
-                                    <div className="h-10 w-10 overflow-hidden rounded-lg">
-                                        <ZoomFullLogo className="h-full w-full" />
-                                    </div>
-                                    <div>
-                                        <p className="font-medium">Zoom</p>
-                                        <p className="text-sm text-muted-foreground">
-                                            Connect your personal Zoom account to create meetings from agendas
-                                        </p>
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-2 shrink-0 ml-4">
-                                    {isZoomConnected ? (
-                                        <>
-                                            <Badge variant="secondary" className="text-green-600 bg-green-500/10">
-                                                Connected
-                                            </Badge>
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={handleDisconnectZoom}
-                                                disabled={isDisconnectingZoom}
-                                            >
-                                                {isDisconnectingZoom ? (
-                                                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                                ) : (
-                                                    "Disconnect"
-                                                )}
-                                            </Button>
-                                        </>
-                                    ) : (
-                                        <Button asChild size="sm">
-                                            <Link href="/api/auth/zoom/authorize">Connect Zoom</Link>
-                                        </Button>
-                                    )}
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
                 </TabsContent>
 
                 <TabsContent value="language" className="space-y-6">

@@ -90,8 +90,6 @@ export default async function MeetingPage({
             <MeetingDetailsPageClient
                 meeting={meetingRow}
                 event={event ?? null}
-                totalDuration={0}
-                isZoomFreeAccount={null}
             />
         </div>
     );

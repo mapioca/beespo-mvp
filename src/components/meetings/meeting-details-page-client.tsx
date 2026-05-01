@@ -25,7 +25,6 @@ import {
   SettingsGroup,
   SettingsRow,
 } from "@/components/settings/settings-surface";
-import { ZoomMeetingSheet } from "@/components/meetings/zoom-meeting-sheet";
 import { FormRichTextEditor } from "@/components/ui/form-rich-text-editor";
 import { DirectoryMemberSearch } from "@/components/meetings/directory-member-select";
 import type { Database } from "@/types/database";
@@ -34,7 +33,6 @@ import {
   ClipboardList,
   ExternalLink,
   PanelsTopLeft,
-  Video,
 } from "lucide-react";
 
 type MeetingRow = Database["public"]["Tables"]["meetings"]["Row"];
@@ -53,8 +51,6 @@ interface LinkedEvent {
 interface MeetingDetailsPageClientProps {
   meeting: MeetingRow & { modality?: Modality | null };
   event: LinkedEvent | null;
-  totalDuration: number;
-  isZoomFreeAccount: boolean | null;
 }
 
 const MODALITY_LABELS: Record<Modality, string> = {
@@ -254,12 +250,9 @@ function InlineRoleRow({
 export function MeetingDetailsPageClient({
   meeting,
   event,
-  totalDuration,
-  isZoomFreeAccount,
 }: MeetingDetailsPageClientProps) {
   const router = useRouter();
   const [isSaving, startTransition] = useTransition();
-  const [isZoomOpen, setIsZoomOpen] = useState(false);
   const [localMeeting, setLocalMeeting] = useState(meeting);
 
   const initialDate = meeting.scheduled_date
@@ -279,9 +272,6 @@ export function MeetingDetailsPageClient({
   const [planName, setPlanName] = useState("");
 
   const planType = (localMeeting.plan_type as PlanType | null) ?? null;
-
-  const modalityValue = (localMeeting as { modality?: Modality | null }).modality ?? null;
-  const canUseZoom = modalityValue === "online" || modalityValue === "hybrid";
 
   const externalPlanUrl = (localMeeting as { external_plan_url?: string | null }).external_plan_url ?? null;
 
@@ -632,42 +622,8 @@ export function MeetingDetailsPageClient({
             </SettingsSection>
           )}
 
-          {canUseZoom && (
-            <SettingsSection
-              title="Zoom"
-              description="Host or share the online session for this meeting."
-              titleClassName="text-[12px] font-medium uppercase tracking-[0.5px] text-[#57534e]"
-              descriptionClassName="text-[13px]"
-            >
-              <Button
-                variant="outline"
-                className="h-9 rounded-lg"
-                onClick={() => setIsZoomOpen(true)}
-              >
-                <Video className="mr-2 h-4 w-4" />
-                {(localMeeting as { zoom_meeting_id?: string | null }).zoom_meeting_id
-                  ? "Manage Zoom meeting"
-                  : "Set up Zoom meeting"}
-              </Button>
-            </SettingsSection>
-          )}
-
         </SettingsPageShell>
       </div>
-
-
-      {canUseZoom && (
-        <ZoomMeetingSheet
-          meeting={localMeeting}
-          totalDuration={totalDuration}
-          isZoomFreeAccount={isZoomFreeAccount}
-          open={isZoomOpen}
-          onOpenChange={setIsZoomOpen}
-          onMeetingUpdate={(updated) =>
-            setLocalMeeting((prev) => ({ ...prev, ...updated }))
-          }
-        />
-      )}
     </>
   );
 }
