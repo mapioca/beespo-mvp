@@ -118,7 +118,7 @@ export function AssignmentForm({
   // Group filtered agendas to find unique meetings
   const uniqueMeetings = Array.from(new Set(filteredAgendas.map((a) => a.meetings?.id))).map(id => {
     return filteredAgendas.find((a) => a.meetings?.id === id)?.meetings;
-  }).filter(Boolean);
+  }).filter((m): m is NonNullable<AgendaItem["meetings"]> => Boolean(m));
 
   const currentMeetingItems = filteredAgendas.filter((a) => a.meetings?.id === selectedMeetingId);
 
@@ -330,7 +330,7 @@ export function AssignmentForm({
                     <div>
                       <div className="px-2.5 py-1.5 text-xs font-semibold text-muted-foreground">Select a meeting</div>
                       <div className="max-h-[220px] overflow-y-auto">
-                        {uniqueMeetings.map((meeting: NonNullable<AgendaItem["meetings"]>) => (
+                        {uniqueMeetings.map((meeting) => (
                           <button
                             key={meeting.id}
                             type="button"

@@ -35,11 +35,11 @@ function SignupContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   // Check for workspace invitation token in URL
-  const invitationToken = searchParams.get("invitation_token");
-  const invitedEmail = searchParams.get("email");
-  const redirectTo = searchParams.get("redirect");
-  const useTemplateId = searchParams.get("use");
-  const safeRedirect = safeInternalPath(redirectTo, "/library");
+  const invitationToken = searchParams?.get("invitation_token");
+  const invitedEmail = searchParams?.get("email");
+  const redirectTo = searchParams?.get("redirect");
+  const useTemplateId = searchParams?.get("use");
+  const safeRedirect = safeInternalPath(redirectTo ?? null, "/library");
   const loginHref = `/login?${new URLSearchParams(
     Object.fromEntries(
       [

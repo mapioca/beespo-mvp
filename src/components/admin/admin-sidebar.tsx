@@ -60,7 +60,7 @@ export function AdminSidebar({ userName, userEmail }: AdminSidebarProps) {
           {navItems.map((item) => {
             const isActive =
               pathname === item.href ||
-              (item.href !== "/dashboard" && pathname.startsWith(item.href));
+              (item.href !== "/dashboard" && pathname?.startsWith(item.href));
 
             return (
               <Link

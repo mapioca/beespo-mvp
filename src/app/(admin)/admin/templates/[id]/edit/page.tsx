@@ -10,7 +10,7 @@ import { createClient } from "@/lib/supabase/client";
 export default function EditTemplatePage() {
   const router = useRouter();
   const params = useParams();
-  const templateId = params.id as string;
+  const templateId = params?.id as string;
   const [templateData, setTemplateData] = useState<{
     name: string;
     description: string;

@@ -28,7 +28,7 @@ export function Breadcrumbs({ items, className, inlineAction, action }: Breadcru
   const pathname = usePathname()
   const containerRef = useRef<HTMLDivElement | null>(null)
   const [isElevated, setIsElevated] = useState(false)
-  const trail: BreadcrumbItemWithIcon[] = items ?? getBreadcrumbTrail(pathname)
+  const trail: BreadcrumbItemWithIcon[] = items ?? getBreadcrumbTrail(pathname || "")
   const mobileNav = useMobileNav()
 
   useEffect(() => {

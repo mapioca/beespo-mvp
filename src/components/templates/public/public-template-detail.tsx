@@ -18,7 +18,7 @@ export function PublicTemplateDetail({ template, relatedTemplates }: PublicTempl
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
   const redirectPath = useMemo(() => {
-    const nextPath = searchParams.get("redirect");
+    const nextPath = searchParams?.get("redirect");
     if (!nextPath) return "/library";
     if (!nextPath.startsWith("/")) return "/library";
     if (nextPath.startsWith("//")) return "/library";
@@ -27,7 +27,7 @@ export function PublicTemplateDetail({ template, relatedTemplates }: PublicTempl
 
   const galleryHref = useMemo(() => {
     const params = new URLSearchParams();
-    const kind = searchParams.get("kind");
+    const kind = searchParams?.get("kind");
     if (kind) params.set("kind", kind);
     params.set("redirect", redirectPath);
     return `/templates?${params.toString()}`;
@@ -35,7 +35,7 @@ export function PublicTemplateDetail({ template, relatedTemplates }: PublicTempl
 
   const relatedHref = (slug: string) => {
     const params = new URLSearchParams();
-    const kind = searchParams.get("kind");
+    const kind = searchParams?.get("kind");
     if (kind) params.set("kind", kind);
     params.set("redirect", redirectPath);
     return `/templates/${slug}?${params.toString()}`;

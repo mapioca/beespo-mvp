@@ -13,6 +13,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
+import { LandingThemeToggle } from "@/components/landing/theme-toggle";
 
 const NAV_ITEMS = [
   { label: "Templates", href: "/templates" },
@@ -101,12 +102,13 @@ export function Nav() {
               <LandingNavLink
                 key={item.href}
                 item={item}
-                pathname={pathname}
+                pathname={pathname || "/"}
                 variant="desktop"
               />
             );
           })}
-          <LandingNavLink item={GET_STARTED_ITEM} pathname={pathname} variant="desktop" cta />
+          <LandingThemeToggle />
+          <LandingNavLink item={GET_STARTED_ITEM} pathname={pathname || "/"} variant="desktop" cta />
         </div>
         <Sheet>
           <SheetTrigger asChild>
@@ -133,7 +135,7 @@ export function Nav() {
                   <SheetClose key={item.href} asChild>
                     <LandingNavLink
                       item={item}
-                      pathname={pathname}
+                      pathname={pathname || "/"}
                       variant="mobile"
                     />
                   </SheetClose>
@@ -142,11 +144,15 @@ export function Nav() {
               <SheetClose asChild>
                 <LandingNavLink
                   item={GET_STARTED_ITEM}
-                  pathname={pathname}
+                  pathname={pathname || "/"}
                   variant="mobile"
                   cta
                 />
               </SheetClose>
+              <div className="mt-4 flex items-center justify-between rounded-md border px-3 py-2">
+                <span className="text-sm">Theme</span>
+                <LandingThemeToggle />
+              </div>
             </div>
           </SheetContent>
         </Sheet>

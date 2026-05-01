@@ -120,7 +120,7 @@ export function SettingsClient({
 }: SettingsClientProps) {
     const router = useRouter();
     const searchParams = useSearchParams();
-    const defaultTab = searchParams.get("tab") || "account";
+    const defaultTab = searchParams?.get("tab") || "account";
     const [workspaceName, setWorkspaceName] = useState(workspace.name);
     const [userFullName, setUserFullName] = useState(currentUserDetails.fullName);
     const [userRoleTitle, setUserRoleTitle] = useState(currentUserDetails.roleTitle);

@@ -15,9 +15,9 @@ import type { CreateEventFormProps } from "@/components/events/create-event-form
 export function CreateEventFormLoader() {
   const searchParams = useSearchParams();
 
-  const rawType = searchParams.get("type");
-  const rawPlan = searchParams.get("plan");
-  const rawDate = searchParams.get("date");
+  const rawType = searchParams?.get("type");
+  const rawPlan = searchParams?.get("plan");
+  const rawDate = searchParams?.get("date");
 
   const plan = rawPlan === "agenda" || rawPlan === "program" ? rawPlan : undefined;
 

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 
 import { PublicGallery } from "@/components/templates/public/public-gallery";
 import type { PublicTemplate } from "@/components/templates/public/types";
@@ -47,7 +48,9 @@ export default async function PublicTemplatesGalleryPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }}
       />
       <section className="container mx-auto px-4 py-10 sm:py-12">
-        <PublicGallery templates={templates} />
+        <Suspense fallback={<div>Loading...</div>}>
+          <PublicGallery templates={templates} />
+        </Suspense>
       </section>
     </>
   );

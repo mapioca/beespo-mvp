@@ -60,7 +60,7 @@ export function EventsClient({ events: initialEvents, totalCount, currentSearch 
         }
         searchTimeoutRef.current = setTimeout(() => {
             startTransition(() => {
-                const params = new URLSearchParams(searchParams.toString());
+                const params = new URLSearchParams(searchParams?.toString());
                 if (value) {
                     params.set("search", value);
                 } else {

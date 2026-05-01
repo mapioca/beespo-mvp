@@ -402,7 +402,7 @@ export function CalendarClient({
         setDetailDrawerOpen(true);
       }
     }
-  }, [externalEvents, internalEvents]);
+  }, [externalEvents, internalEvents, meetings]);
 
   const toggleSubscription = useCallback((subscriptionId: string) => {
     setVisibility((prev) => {

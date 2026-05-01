@@ -28,8 +28,8 @@ const entryConfig: Record<EntryType, { title: string; description: string; icon:
 
 function MeetingBuilderContent() {
     const searchParams = useSearchParams();
-    const templateIdFromUrl = searchParams.get("templateId");
-    const rawEntry = searchParams.get("entry");
+    const templateIdFromUrl = searchParams?.get("templateId");
+    const rawEntry = searchParams?.get("entry");
     const entry: EntryType =
         rawEntry === "program" || rawEntry === "meeting" || rawEntry === "agenda"
             ? rawEntry

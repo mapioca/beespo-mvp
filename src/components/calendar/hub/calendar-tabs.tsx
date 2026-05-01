@@ -21,11 +21,11 @@ export function CalendarTabs() {
 
     // Determine active tab from pathname
     const getActiveTab = () => {
-        const segments = pathname.split("/")
+        const segments = pathname?.split("/") || []
         // /schedule/calendar -> view
         // /schedule/events -> events
-        if (pathname.startsWith("/schedule/events")) return "events"
-        if (pathname.startsWith("/schedule/calendar")) return "view"
+        if (pathname?.startsWith("/schedule/events")) return "events"
+        if (pathname?.startsWith("/schedule/calendar")) return "view"
         const tabSlug = segments[2]
         return CALENDAR_TABS.find((tab) => tab.slug === tabSlug)?.slug || "view"
     }

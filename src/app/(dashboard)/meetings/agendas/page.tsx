@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
 import { MeetingsClient } from "@/components/meetings/meetings-client"
+import type { Meeting } from "@/components/meetings/meetings-table"
 import { Metadata } from "next"
 import { AgendaFilter } from "@/lib/agenda-views"
 import { getDashboardRequestContext } from "@/lib/dashboard/request-context"
@@ -101,7 +102,8 @@ export default async function AgendasPage() {
   ])
 
   // Build annotated shared-with-me meeting list
-  const sharedMeetings = (inboundShareData || []).flatMap((share: { meetings: { templates?: { id: string; name: string } | null; workspaces?: { name?: string } | null }; permission: string; shared_by_profile?: { full_name?: string } }) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const sharedMeetings = (Array.isArray(inboundShareData) ? inboundShareData : []).flatMap((share: { meetings: { plan_type?: string | null; templates?: { id: string; name: string } | null; workspaces?: { name?: string } | null }; permission: string; shared_by_profile?: { full_name?: string } }) => {
     const m = share.meetings
     if (!m || !isAgendaMeeting(m)) return []
     return [
@@ -117,7 +119,7 @@ export default async function AgendasPage() {
   })
 
   // Build Set of outward-shared meeting IDs (serialised as array for client)
-  const sharedOutwardIds: string[] = (outboundShareData || []).map(
+  const sharedOutwardIds: string[] = (Array.isArray(outboundShareData) ? outboundShareData : []).map(
     (row: { meeting_id: string }) => row.meeting_id
   )
 
@@ -164,7 +166,7 @@ export default async function AgendasPage() {
       isLeader={isLeader}
       statusCounts={statusCounts}
       templateCounts={templateCounts}
-      sharedMeetings={sharedMeetings}
+      sharedMeetings={sharedMeetings as unknown as Meeting[]}
       sharedOutwardIds={sharedOutwardIds}
       initialFilters={initialFilters}
       workspace="agendas"

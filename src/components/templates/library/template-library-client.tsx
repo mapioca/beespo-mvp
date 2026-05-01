@@ -63,17 +63,17 @@ export function TemplateLibraryClient({ templates, workspaceId, currentUserId, i
   const searchParams = useSearchParams();
   const supabase = createClient();
   const [search, setSearch] = useState("");
-  const [source, setSource] = useState(() => searchParams.get("tab") ?? "mine");
+  const [source, setSource] = useState(() => searchParams?.get("tab") ?? "mine");
   const [kind, setKind] = useState<"agenda" | "program" | "event" | "form" | null>(initialKind ?? null);
 
   // Sync source tab when URL param changes (e.g. after clone redirect)
   useEffect(() => {
-    if (searchParams.get("tab") === "mine") setSource("mine");
+    if (searchParams?.get("tab") === "mine") setSource("mine");
   }, [searchParams]);
 
   useEffect(() => {
-    const imported = searchParams.get("imported");
-    const importError = searchParams.get("importError");
+    const imported = searchParams?.get("imported");
+    const importError = searchParams?.get("importError");
     if (!imported && !importError) return;
 
     if (imported) {
@@ -84,7 +84,7 @@ export function TemplateLibraryClient({ templates, workspaceId, currentUserId, i
       toast.error("Failed to import template. Please try again.");
     }
 
-    const params = new URLSearchParams(searchParams.toString());
+    const params = new URLSearchParams(searchParams?.toString());
     params.delete("imported");
     params.delete("importError");
     params.delete("use");

@@ -87,7 +87,7 @@ export function DomainShell({
     const next: Record<string, boolean> = {}
     for (const item of items) {
       if (!item.children?.length) continue
-      next[item.href] = item.children.some((child) => isItemActive(pathname, child))
+      next[item.href] = item.children.some((child) => isItemActive(pathname || "", child))
     }
     return next
   }, [items, pathname])
@@ -140,9 +140,9 @@ export function DomainShell({
               const Icon = item.icon
               const hasChildren = Boolean(item.children?.length)
               const hasActiveChild = hasChildren
-                ? item.children!.some((child) => isItemActive(pathname, child))
+                ? item.children!.some((child) => isItemActive(pathname || "", child))
                 : false
-              const itemIsDirectlyActive = isItemActive(pathname, item) && !hasActiveChild
+              const itemIsDirectlyActive = isItemActive(pathname || "", item) && !hasActiveChild
               const isExpanded = hasChildren
                 ? (expandedGroups[item.href] ?? hasActiveChild)
                 : false
@@ -191,7 +191,7 @@ export function DomainShell({
                         ) : null}
                         {item.children!.map((child) => {
                           const ChildIcon = child.icon
-                          const childIsActive = isItemActive(pathname, child)
+                          const childIsActive = isItemActive(pathname || "", child)
 
                           return child.disabled ? (
                             <span

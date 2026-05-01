@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { PublicTemplateDetail } from "@/components/templates/public/public-template-detail";
 
@@ -95,7 +96,9 @@ export default async function PublicTemplateDetailPage({ params }: TemplateDetai
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <PublicTemplateDetail template={template} relatedTemplates={relatedTemplates} />
+      <Suspense fallback={<div>Loading...</div>}>
+        <PublicTemplateDetail template={template} relatedTemplates={relatedTemplates} />
+      </Suspense>
     </>
   );
 }

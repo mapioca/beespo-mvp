@@ -45,16 +45,16 @@ export async function createSavedPlanFilter(
   } = await supabase.auth.getUser()
   if (!user) return { error: "Not authenticated" }
 
-  const { data: profile } = await supabase
-    .from("profiles")
+  const { data: profile } = await (supabase
+    .from("profiles") as ReturnType<typeof supabase.from>)
     .select("workspace_id")
     .eq("id", user.id)
     .single()
 
   if (!profile?.workspace_id) return { error: "No workspace found" }
 
-  const { data, error } = await supabase
-    .from("agenda_views")
+  const { data, error } = await (supabase
+    .from("agenda_views") as ReturnType<typeof supabase.from>)
     .insert({
       name: name.trim(),
       filters,

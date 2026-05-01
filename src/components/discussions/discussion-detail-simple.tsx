@@ -75,7 +75,7 @@ export function DiscussionDetailSimple({ discussion, notes: initialNotes, tasks,
     if (!body) return;
 
     const supabase = createClient();
-    const { error } = await supabase.from("discussion_notes").insert({
+    const { error } = await (supabase.from("discussion_notes") as ReturnType<typeof supabase.from>).insert({
       discussion_id: discussion.id,
       content: body,
       note_kind: noteKind,
@@ -96,8 +96,8 @@ export function DiscussionDetailSimple({ discussion, notes: initialNotes, tasks,
     if (!body) return;
 
     const supabase = createClient();
-    const { data, error } = await supabase
-      .from("spiritual_impressions")
+    const { data, error } = await (supabase
+      .from("spiritual_impressions") as ReturnType<typeof supabase.from>)
       .insert({
         discussion_id: discussion.id,
         content: body,

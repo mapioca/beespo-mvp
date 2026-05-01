@@ -2,8 +2,9 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
-import { WaitlistForm } from "./waitlist-form";
 import { ChevronDown } from "lucide-react";
+import { WaitlistForm } from "./waitlist-form";
+import { HeroBackground } from "./hero-background";
 
 const rotatingTools = [
   "spreadsheets and group texts?",
@@ -13,7 +14,6 @@ const rotatingTools = [
   "text chains and printouts?",
 ];
 
-// Use the longest text to reserve consistent space
 const longestText = "shared folders and sticky notes?";
 
 export function Hero() {
@@ -23,36 +23,46 @@ export function Hero() {
     const interval = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % rotatingTools.length);
     }, 3000);
-
     return () => clearInterval(interval);
   }, []);
 
-  const scrollToBenefits = () => {
-    const benefitsSection = document.getElementById("benefits");
-    if (benefitsSection) {
-      benefitsSection.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
+  const scrollToFirst = () => {
+    const target = document.getElementById("feature-planner");
+    target?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
   return (
-    <section className="pt-32 pb-16 md:pt-40 md:pb-24 px-4">
-      <div className="container mx-auto text-center">
+    <section className="relative overflow-hidden px-4 pb-24 pt-28 md:pb-32 md:pt-36">
+      <HeroBackground />
+      <div className="container relative mx-auto text-center">
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-          className="max-w-4xl mx-auto"
+          className="mx-auto max-w-4xl"
         >
+          <span
+            className="mb-6 inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium"
+            style={{
+              borderColor: "hsl(var(--landing-demo-border))",
+              background: "hsl(var(--landing-demo-surface) / 0.6)",
+              color: "hsl(var(--landing-demo-muted))",
+              backdropFilter: "blur(8px)",
+            }}
+          >
+            <span
+              className="h-1.5 w-1.5 rounded-full"
+              style={{ background: "hsl(var(--landing-demo-accent))" }}
+            />
+            Built for sacrament meeting planning
+          </span>
           <h1 className="text-hero font-bold tracking-tighter">
             Still running your presidency on
           </h1>
-          {/* Fixed height container for rotating text */}
           <div className="relative inline-block w-full">
-            {/* Invisible longest text to reserve height */}
-            <span className="text-hero font-bold tracking-tighter invisible block">
+            <span className="text-hero invisible block font-bold tracking-tighter">
               {longestText}
             </span>
-            {/* Visible rotating text - absolutely positioned */}
             <span className="absolute inset-0 flex items-start justify-center">
               <AnimatePresence mode="wait">
                 <motion.span
@@ -62,6 +72,9 @@ export function Hero() {
                   exit={{ opacity: 0, y: -20 }}
                   transition={{ duration: 0.3 }}
                   className="text-hero font-bold tracking-tighter underline decoration-2 underline-offset-4"
+                  style={{
+                    textDecorationColor: "hsl(var(--landing-demo-accent))",
+                  }}
                 >
                   {rotatingTools[currentIndex]}
                 </motion.span>
@@ -74,9 +87,11 @@ export function Hero() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
-          className="text-hero-sub text-muted-foreground mt-6 max-w-xl mx-auto leading-relaxed"
+          className="text-hero-sub mx-auto mt-6 max-w-xl leading-relaxed"
+          style={{ color: "hsl(var(--landing-demo-muted))" }}
         >
-          There&apos;s a better way.
+          One workspace for the whole sacrament meeting — program, speakers,
+          announcements, ward business.
         </motion.p>
 
         <motion.div
@@ -86,30 +101,38 @@ export function Hero() {
           className="mt-10 flex flex-col items-center"
         >
           <WaitlistForm />
-          <p className="mt-4 text-xs text-muted-foreground">
+          <p
+            className="mt-4 text-xs"
+            style={{ color: "hsl(var(--landing-demo-subtle))" }}
+          >
             Built by church members who&apos;ve been there.
           </p>
         </motion.div>
 
-        {/* Transition to features */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 0.8, delay: 0.6, ease: [0.16, 1, 0.3, 1] }}
+          transition={{ duration: 0.8, delay: 0.6 }}
           className="mt-20 flex flex-col items-center"
         >
           <button
-            onClick={scrollToBenefits}
-            className="group flex flex-col items-center cursor-pointer hover:opacity-70 transition-opacity"
+            onClick={scrollToFirst}
+            className="group flex flex-col items-center cursor-pointer transition-opacity hover:opacity-70"
           >
-            <span className="text-sm text-muted-foreground mb-3">
-              See what&apos;s possible
+            <span
+              className="mb-3 text-sm"
+              style={{ color: "hsl(var(--landing-demo-muted))" }}
+            >
+              See how it works
             </span>
             <motion.div
               animate={{ y: [0, 6, 0] }}
               transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
             >
-              <ChevronDown className="w-5 h-5 text-muted-foreground" />
+              <ChevronDown
+                className="h-5 w-5"
+                style={{ color: "hsl(var(--landing-demo-muted))" }}
+              />
             </motion.div>
           </button>
         </motion.div>

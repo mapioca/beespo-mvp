@@ -60,7 +60,7 @@ export function MeetingsFilters({
 
     // Helper to update URL params
     const updateUrlParams = useCallback((updates: Record<string, string | null>) => {
-        const params = new URLSearchParams(searchParams.toString());
+        const params = new URLSearchParams(searchParams?.toString());
 
         // Reset to page 1 when filters change
         params.set("page", "1");

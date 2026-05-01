@@ -82,7 +82,7 @@ export function AppRail({ userName, userId }: AppRailProps) {
       >
         {navItems.map((item) => {
           const Icon = item.icon
-          const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`)
+          const isActive = pathname === item.href || pathname?.startsWith(`${item.href}/`)
 
           return (
             <Link

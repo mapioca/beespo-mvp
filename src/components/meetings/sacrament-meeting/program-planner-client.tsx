@@ -2492,7 +2492,7 @@ export function SacramentMeetingPlannerClient({
   sundaysRef.current = sundays
 
   const selectedSunday = useMemo(() => {
-    const selectedDate = searchParams.get("date")
+    const selectedDate = searchParams?.get("date")
     return sundays.find((sunday) => sunday.isoDate === selectedDate) ?? sundays[0]
   }, [searchParams, sundays])
 
@@ -2949,7 +2949,7 @@ export function SacramentMeetingPlannerClient({
   }, [meetingsByDate, meetingTypeOverridesByDate, notesByDate])
 
   useEffect(() => {
-    const selectedDate = searchParams.get("date")
+    const selectedDate = searchParams?.get("date")
     if (!selectedDate) {
       return
     }
@@ -2963,7 +2963,7 @@ export function SacramentMeetingPlannerClient({
   }, [searchParams, sundays])
 
   const handleSelectSunday = (isoDate: string) => {
-    const params = new URLSearchParams(searchParams.toString())
+    const params = new URLSearchParams(searchParams?.toString())
     params.set("date", isoDate)
     router.replace(`${pathname}?${params.toString()}`, { scroll: false })
   }

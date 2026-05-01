@@ -15,8 +15,8 @@ export default async function DiscussionDetailPage({
     redirect("/login");
   }
 
-  const { data: profile } = await supabase
-    .from("profiles")
+  const { data: profile } = await (supabase
+    .from("profiles") as ReturnType<typeof supabase.from>)
     .select("workspace_id")
     .eq("id", user.id)
     .single();

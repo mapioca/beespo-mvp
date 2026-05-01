@@ -117,6 +117,11 @@ export function CreateDirectoryViewDialog({
     setHistoryFilter("")
   }
 
+  function closeDialog() {
+    if (!isControlled) setInternalOpen(false)
+    onOpenChange?.(false)
+  }
+
   function toggleTag(id: string) {
     setSelectedTags((prev) =>
       prev.includes(id) ? prev.filter((t) => t !== id) : [...prev, id]
@@ -395,7 +400,7 @@ export function CreateDirectoryViewDialog({
                 type="button"
                 variant="outline"
                 onClick={() => {
-                  setOpen(false)
+                  closeDialog()
                   reset()
                 }}
                 disabled={isPending}

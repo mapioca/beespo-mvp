@@ -29,8 +29,8 @@ function safeInternalPath(pathname: string | null, fallback: string) {
 export default function LoginClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectTo = searchParams.get("redirect");
-  const useTemplateId = searchParams.get("use");
+  const redirectTo = searchParams?.get("redirect");
+  const useTemplateId = searchParams?.get("use");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -57,7 +57,7 @@ export default function LoginClient() {
         }
       } else if (data.user) {
         if (redirectTo || useTemplateId) {
-          const safeRedirect = safeInternalPath(redirectTo, "/library");
+          const safeRedirect = safeInternalPath(redirectTo ?? null, "/library");
           toast.success("You've been logged in successfully.");
           if (useTemplateId) {
             const importUrl = `/library/import?use=${encodeURIComponent(useTemplateId)}&redirect=${encodeURIComponent(safeRedirect)}`;
@@ -177,7 +177,7 @@ export default function LoginClient() {
                   ? `/signup?${new URLSearchParams(
                       Object.fromEntries(
                         [
-                          ["redirect", safeInternalPath(redirectTo, "/library")],
+                          ["redirect", safeInternalPath(redirectTo ?? null, "/library")],
                           ["use", useTemplateId ?? ""],
                         ].filter((entry) => entry[1].length > 0)
                       )

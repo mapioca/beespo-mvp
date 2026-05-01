@@ -46,10 +46,10 @@ export function PublicGallery({ templates }: PublicGalleryProps) {
   const [kind, setKind] = useState<GalleryKindFilter>("all");
   const [tag, setTag] = useState<string>("all");
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
-  const redirectPath = safeRedirectPath(searchParams.get("redirect"));
+  const redirectPath = safeRedirectPath(searchParams?.get("redirect") ?? null);
 
   useEffect(() => {
-    setKind(normalizeKindParam(searchParams.get("kind")));
+    setKind(normalizeKindParam(searchParams?.get("kind") ?? null));
   }, [searchParams]);
 
   useEffect(() => {

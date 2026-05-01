@@ -152,8 +152,8 @@ export function EventsListClient({ events, canManageEvents = false }: EventsList
         setLocalEvents(events)
     }, [events])
 
-    const createdIdsParam = searchParams.get("created")
-    const createParam = searchParams.get("create")
+    const createdIdsParam = searchParams?.get("created")
+    const createParam = searchParams?.get("create")
     const createdIds = createdIdsParam
         ? createdIdsParam.split(",").map((id) => id.trim()).filter(Boolean)
         : []
@@ -236,7 +236,7 @@ export function EventsListClient({ events, canManageEvents = false }: EventsList
     const handleCreateDialogOpenChange = (open: boolean) => {
         setCreateDialogOpen(open)
         if (!open && createParam === "event") {
-            const params = new URLSearchParams(searchParams.toString())
+            const params = new URLSearchParams(searchParams?.toString())
             params.delete("create")
             const nextQuery = params.toString()
             router.replace(nextQuery ? `/schedule/events?${nextQuery}` : "/schedule/events")

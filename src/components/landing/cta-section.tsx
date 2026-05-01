@@ -5,13 +5,19 @@ import { WaitlistForm } from "./waitlist-form";
 
 export function CTASection() {
   return (
-    <section className="py-16 md:py-24 px-4 border-t border-neutral-100">
+    <section
+      className="border-t px-4 py-20 md:py-28"
+      style={{ borderColor: "hsl(var(--landing-demo-divider))" }}
+    >
       <div className="container mx-auto max-w-2xl text-center">
         <AnimateOnScroll>
-          <h2 className="text-2xl md:text-3xl font-semibold tracking-tight mb-4">
+          <h2 className="mb-4 text-2xl font-semibold tracking-tight md:text-3xl">
             Ready to try a better way?
           </h2>
-          <p className="text-muted-foreground mb-8">
+          <p
+            className="mb-8"
+            style={{ color: "hsl(var(--landing-demo-muted))" }}
+          >
             Join the waitlist and be the first to know when we launch.
           </p>
           <div className="flex justify-center">

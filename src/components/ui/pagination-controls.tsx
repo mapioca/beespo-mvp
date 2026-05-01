@@ -23,7 +23,7 @@ export function PaginationControls({
 
     // Helper to generate the URL for a specific page while KEEPING other params
     const createPageUrl = (pageNumber: number | string) => {
-        const params = new URLSearchParams(searchParams.toString());
+        const params = new URLSearchParams(searchParams?.toString());
         params.set('page', pageNumber.toString());
         return `${pathname}?${params.toString()}`;
     };

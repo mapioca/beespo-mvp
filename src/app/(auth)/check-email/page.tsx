@@ -16,7 +16,7 @@ import { Mail, ArrowLeft, Loader2 } from "lucide-react";
 
 function CheckEmailContent() {
     const searchParams = useSearchParams();
-    const email = searchParams.get("email");
+    const email = searchParams?.get("email");
 
     return (
         <Card className="border-border">

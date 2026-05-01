@@ -13,8 +13,8 @@ export async function GET(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { data: profile } = await supabase
-    .from("profiles")
+  const { data: profile } = await (supabase
+    .from("profiles") as ReturnType<typeof supabase.from>)
     .select("workspace_id")
     .eq("id", user.id)
     .single();

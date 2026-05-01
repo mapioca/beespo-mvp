@@ -186,7 +186,7 @@ export function CreateEventForm({
           .map((template) => ({
             id: template.id,
             name: template.name,
-            kind: template.template_kind === "program" ? "program" : "agenda",
+            kind: (template.template_kind === "program" ? "program" : "agenda") as PlanType,
           }));
         setTemplateOptions(mapped);
         setIsLoadingTemplates(false);

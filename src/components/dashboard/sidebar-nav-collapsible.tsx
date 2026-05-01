@@ -39,6 +39,7 @@ export function SidebarNavCollapsible({
   const parentIsDirectlyActive =
     pathname === item.href ||
     (item.matchMode === "prefix" &&
+      item.href &&
       pathname.startsWith(item.href) &&
       !item.children.some(
         (child) =>
