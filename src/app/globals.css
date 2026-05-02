@@ -1239,7 +1239,6 @@
     border: 1px solid hsl(var(--border) / 0.6);
     background-color: hsl(var(--background));
     padding: 0.875rem 1rem;
-    box-shadow: 0 1px 0 rgba(15, 23, 42, 0.03), 0 8px 24px rgba(15, 23, 42, 0.05);
   }
 
   .overview-row-icon {

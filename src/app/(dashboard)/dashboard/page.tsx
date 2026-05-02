@@ -3,12 +3,10 @@ import Link from "next/link";
 import {
   AlertTriangle,
   ArrowUpRight,
-  BriefcaseBusiness,
   Check,
   ChevronRight,
   Circle,
   Clock3,
-  Megaphone,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -435,25 +433,27 @@ function QueueCard({
           {emptyCopy}
         </div>
       ) : (
-        <div className="mt-4 divide-y divide-border/50">
+        <div className="mt-4 space-y-3">
           {items.map((item) => (
             <Link
               key={item.id}
               href={href}
-              className="group flex items-start gap-3 px-1 py-3 transition-colors hover:bg-muted/30"
+              className="group block rounded-[18px] transition-transform duration-150 hover:-translate-y-0.5"
             >
-              <span className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-foreground/45" />
-              <div className="min-w-0 flex-1">
-                <div className="text-[13.5px] font-medium leading-5 text-foreground">
-                  {item.title}
-                </div>
-                {item.detail ? (
-                  <div className="mt-0.5 text-[12.5px] text-muted-foreground">
-                    {item.detail}
+              <div className="flex items-start gap-3 rounded-[18px] border border-border/60 bg-background px-4 py-3.5">
+                <span className="mt-[7px] inline-flex h-2.5 w-2.5 shrink-0 rounded-full bg-[hsl(var(--secondary-border))]" />
+                <div className="min-w-0 flex-1 pt-px">
+                  <div className="text-[13.5px] font-medium leading-5 text-foreground">
+                    {item.title}
                   </div>
-                ) : null}
+                  {item.detail ? (
+                    <div className="mt-1 text-[12.5px] text-muted-foreground">
+                      {item.detail}
+                    </div>
+                  ) : null}
+                </div>
+                <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-foreground/65 transition-transform group-hover:translate-x-0.5" />
               </div>
-              <ArrowUpRight className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground/65 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
             </Link>
           ))}
         </div>
@@ -535,7 +535,6 @@ function SundaySnapshotCard({
           value={data.businessCount > 0 ? `${pluralize(data.businessCount, "item")}` : "Clear"}
           tone={data.businessCount > 0 ? "muted" : "ok"}
           href="/meetings/sacrament/business"
-          icon={BriefcaseBusiness}
         />
         <SnapshotRow
           label="Announcements"
@@ -546,7 +545,6 @@ function SundaySnapshotCard({
           }
           tone={data.announcementCount > 0 ? "muted" : "ok"}
           href="/meetings/sacrament/announcements"
-          icon={Megaphone}
         />
       </div>
     </section>
@@ -586,15 +584,15 @@ export default async function DashboardPage() {
             <div className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
               {formatHeaderDate()}
             </div>
-            <h1 className="font-serif text-[22px] leading-[1.02] tracking-tight text-foreground sm:text-[28px] lg:text-[34px]">
+            <h1 className="font-serif text-[18px] leading-[1.08] tracking-[-0.01em] text-muted-foreground sm:text-[22px] lg:text-[26px]">
               {getGreeting()},{" "}
-              <span className="text-brand">
+              <span className="text-foreground">
                 <em>{firstName}</em>
               </span>
               .
             </h1>
-            <p className="max-w-3xl text-[15px] leading-7 text-muted-foreground sm:text-[16px]">
-              Here&apos;s how the ward is shaping up for the week ahead.
+            <p className="max-w-3xl text-[12.5px] leading-5 text-muted-foreground/75 sm:text-[13px]">
+              Sunday readiness at a glance.
             </p>
           </div>
         </section>
