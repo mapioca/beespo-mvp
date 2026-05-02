@@ -39,6 +39,15 @@
     --color-eggplant-900: hsl(306, 15%, 28%);
     --color-eggplant-950: hsl(307, 22%, 16%);
 
+    /* Secondary Dark - Moody Blue */
+    --color-moody-blue-100: hsl(222, 55%, 94%);
+    --color-moody-blue-200: hsl(223, 54%, 89%);
+    --color-moody-blue-300: hsl(225, 51%, 82%);
+    --color-moody-blue-400: hsl(229, 49%, 74%);
+    --color-moody-blue-800: hsl(238, 30%, 41%);
+    --color-moody-blue-900: hsl(238, 27%, 29%);
+    --color-moody-blue-950: hsl(238, 25%, 20%);
+
     /* Accent - Cool Blue */
     --color-accent-50: #e0e7ff;
     --color-accent-200: #c7d2fe;
@@ -538,10 +547,10 @@
     --popover-foreground: var(--cp-text);
     --primary: var(--brand);
     --primary-foreground: var(--brand-foreground);
-    --secondary: var(--cp-surface-2);
-    --secondary-foreground: var(--cp-text);
-    --secondary-border: transparent;
-    --secondary-hover: var(--cp-hover);
+    --secondary: 238 25% 20%;
+    --secondary-foreground: 222 55% 94%;
+    --secondary-border: 238 30% 41%;
+    --secondary-hover: 238 27% 29%;
     --muted: var(--cp-surface-2);
     --muted-foreground: var(--cp-text-muted);
     --accent: var(--cp-hover);
@@ -628,25 +637,25 @@
     --button-primary: 0 0% 100%;
     --button-primary-hover: 0 0% 88%;
     --button-primary-foreground: 0 0% 100%;
-    --primary-pill-bg: var(--brand);
-    --primary-pill-foreground: var(--brand-foreground);
-    --primary-pill-border: transparent;
-    --primary-pill-hover: var(--brand-hover);
-    --primary-chip-fill-bg: var(--brand);
-    --primary-chip-fill-foreground: var(--brand-foreground);
-    --primary-chip-fill-hover: var(--brand-hover);
-    --secondary-chip-fill-bg: var(--cp-surface-2);
-    --secondary-chip-fill-foreground: var(--cp-text);
-    --secondary-chip-fill-hover: var(--cp-hover);
-    --primary-icon-bg: color-mix(in srgb, hsl(var(--brand)) 20%, transparent);
-    --primary-icon-border: color-mix(in srgb, hsl(var(--brand)) 40%, transparent);
-    --primary-icon-fill: hsl(var(--brand));
-    --secondary-icon-bg: var(--cp-surface-2);
-    --secondary-icon-border: var(--cp-border);
-    --secondary-icon-fill: var(--cp-text-muted);
-    --pill: 0 0% 18%;
-    --pill-foreground: 0 0% 90%;
-    --pill-border: transparent;
+    --primary-pill-bg: 7 49% 15%;
+    --primary-pill-foreground: 28 62% 92%;
+    --primary-pill-border: 9 49% 34%;
+    --primary-pill-hover: 9 46% 28%;
+    --primary-chip-fill-bg: 7 49% 15%;
+    --primary-chip-fill-foreground: 28 62% 92%;
+    --primary-chip-fill-hover: 9 46% 28%;
+    --secondary-chip-fill-bg: 238 25% 20%;
+    --secondary-chip-fill-foreground: 222 55% 94%;
+    --secondary-chip-fill-hover: 238 27% 29%;
+    --primary-icon-bg: 25 60% 83%;
+    --primary-icon-border: 25 60% 72%;
+    --primary-icon-fill: 9 49% 34%;
+    --secondary-icon-bg: 223 54% 89%;
+    --secondary-icon-border: 225 51% 82%;
+    --secondary-icon-fill: 229 49% 74%;
+    --pill: 238 25% 20%;
+    --pill-foreground: 222 55% 94%;
+    --pill-border: 238 30% 41%;
     --control: 0 0% 10%;
     --control-foreground: 0 0% 75%;
     --control-border: 0 0% 20%;
@@ -865,10 +874,10 @@
     --popover-foreground: var(--cp-text);
     --primary: var(--brand);
     --primary-foreground: var(--brand-foreground);
-    --secondary: var(--cp-surface-2);
-    --secondary-foreground: var(--cp-text);
-    --secondary-border: transparent;
-    --secondary-hover: var(--cp-hover);
+    --secondary: 300 22% 95%;
+    --secondary-foreground: 307 22% 16%;
+    --secondary-border: 302 21% 73%;
+    --secondary-hover: 300 21% 91%;
     --muted: var(--cp-surface-2);
     --muted-foreground: var(--cp-text-muted);
     --accent: var(--cp-hover);
@@ -1200,6 +1209,77 @@
 
   .text-pill {
     color: hsl(var(--pill-foreground));
+  }
+
+  .overview-card {
+    border: 1px solid hsl(var(--border) / 0.7);
+    background-color: hsl(var(--background));
+    border-radius: 30px;
+    padding: 1.5rem;
+    box-shadow: 0 1px 0 rgba(15, 23, 42, 0.03);
+  }
+
+  .overview-row-link {
+    display: block;
+    border-radius: 22px;
+    transition: transform 150ms ease;
+  }
+
+  .overview-row-link:hover {
+    background-color: transparent;
+    transform: translateY(-2px);
+  }
+
+  .overview-row-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    border-radius: 22px;
+    border: 1px solid hsl(var(--border) / 0.6);
+    background-color: hsl(var(--background));
+    padding: 0.875rem 1rem;
+    box-shadow: 0 1px 0 rgba(15, 23, 42, 0.03), 0 8px 24px rgba(15, 23, 42, 0.05);
+  }
+
+  .overview-row-icon {
+    display: inline-flex;
+    height: 2.25rem;
+    width: 2.25rem;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9999px;
+    border: 1px solid hsl(var(--secondary-icon-border));
+    background-color: hsl(var(--secondary-icon-bg));
+    color: hsl(var(--secondary-icon-fill));
+  }
+
+  .overview-row-icon.is-critical {
+    border: 1px solid hsl(var(--primary-icon-border));
+    background-color: hsl(var(--primary-icon-bg));
+    color: hsl(var(--primary-icon-fill));
+  }
+
+  .overview-row-icon.is-warning,
+  .overview-row-icon.is-ok,
+  .overview-row-icon.is-muted {
+    border-color: hsl(var(--secondary-icon-border));
+    background-color: hsl(var(--secondary-icon-bg));
+    color: hsl(var(--secondary-icon-fill));
+  }
+
+  .overview-row-value-inline {
+    display: block;
+    color: hsl(var(--muted-foreground));
+  }
+
+  .overview-row-value-trailing {
+    display: none;
+  }
+
+  .overview-row-chevron {
+    display: block;
   }
 
   .bg-icon-primary {

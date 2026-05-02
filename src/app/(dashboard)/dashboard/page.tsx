@@ -3,7 +3,12 @@ import Link from "next/link";
 import {
   AlertTriangle,
   ArrowUpRight,
-
+  BriefcaseBusiness,
+  Check,
+  ChevronRight,
+  Circle,
+  Clock3,
+  Megaphone,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -341,30 +346,62 @@ function SnapshotRow({
   value,
   tone = "muted",
   href,
+  icon,
 }: {
   label: string;
   value: string;
   tone?: Tone;
   href?: string;
+  icon?: React.ComponentType<{ className?: string }>;
 }) {
-  const toneState = toneClasses(tone);
-  const showWarning = tone === "critical";
+  const isLink = Boolean(href);
+  const toneClass =
+    tone === "critical"
+      ? "is-critical"
+      : tone === "warning"
+        ? "is-warning"
+        : tone === "ok"
+          ? "is-ok"
+          : "is-muted";
+  const MetricIcon =
+    icon ??
+    (tone === "critical"
+      ? AlertTriangle
+      : tone === "warning"
+        ? Clock3
+        : tone === "ok"
+          ? Check
+          : Circle);
   const content = (
-    <div className="flex items-center justify-between gap-3 rounded-[12px] border border-border/60 bg-surface-body/80 px-3.5 py-3">
-      <div className="flex items-center gap-2">
-        {showWarning ? (
-          <span className="inline-flex h-6 w-6 items-center justify-center rounded-full border bg-icon-primary border-icon-primary text-icon-primary">
-            <AlertTriangle className="h-3.5 w-3.5" />
-          </span>
-        ) : null}
-        <span className="text-[12.5px] font-medium text-muted-foreground">{label}</span>
+    <div className="overview-row-card">
+      <div className="flex min-w-0 items-center gap-3">
+        <span
+          className={cn("overview-row-icon", toneClass)}
+        >
+          <MetricIcon
+            className={cn(tone === "muted" ? "h-3 w-3" : "h-3.5 w-3.5")}
+            strokeWidth={tone === "critical" ? 2 : 2.8}
+          />
+        </span>
+        <div className="min-w-0">
+          <div className="text-[14px] font-semibold text-foreground">{label}</div>
+          <div className="overview-row-value-inline text-[12.5px] font-medium">{value}</div>
+        </div>
       </div>
-      <span className={cn("text-[12.5px] font-medium", toneState.text)}>{value}</span>
+      <div className="flex items-center gap-3 shrink-0">
+        <div className="overview-row-value-trailing text-[12.5px] font-medium">{value}</div>
+        {isLink ? (
+          <ChevronRight className="overview-row-chevron h-4.5 w-4.5 shrink-0 text-foreground/75" />
+        ) : null}
+      </div>
     </div>
   );
 
   return href ? (
-    <Link href={href} className="block transition-colors hover:bg-muted/20 rounded-[12px]">
+    <Link
+      href={href}
+      className="overview-row-link"
+    >
       {content}
     </Link>
   ) : (
@@ -390,7 +427,7 @@ function QueueCard({
       <PanelHeader
         label={label}
         labelClassName="!font-sans text-[14px] font-medium normal-case tracking-normal text-foreground"
-        action={<TonePill tone={count > 0 ? "muted" : "ok"}>{count > 0 ? pluralize(count, "item") : "Clear"}</TonePill>}
+        action={<TonePill tone="secondary">{count > 0 ? pluralize(count, "item") : "Clear"}</TonePill>}
       />
 
       {count === 0 ? (
@@ -445,14 +482,14 @@ function SundaySnapshotCard({
   const readiness = readinessStats(data);
 
   return (
-    <section className={cn(PANEL_BASE, PANEL_PAD)}>
+    <section className="overview-card sm:px-6 sm:py-6">
       <PanelHeader
         label="Overview"
         labelClassName="!font-sans text-[14px] font-medium normal-case tracking-normal text-foreground"
-        action={<TonePill tone="muted">{readiness.percent}% ready</TonePill>}
+        action={<TonePill tone="secondary">{readiness.percent}% ready</TonePill>}
       />
 
-      <div className="mt-4 space-y-2">
+      <div className="mt-5 space-y-3">
         <SnapshotRow
           label="Leadership"
           value={
@@ -498,6 +535,7 @@ function SundaySnapshotCard({
           value={data.businessCount > 0 ? `${pluralize(data.businessCount, "item")}` : "Clear"}
           tone={data.businessCount > 0 ? "muted" : "ok"}
           href="/meetings/sacrament/business"
+          icon={BriefcaseBusiness}
         />
         <SnapshotRow
           label="Announcements"
@@ -508,6 +546,7 @@ function SundaySnapshotCard({
           }
           tone={data.announcementCount > 0 ? "muted" : "ok"}
           href="/meetings/sacrament/announcements"
+          icon={Megaphone}
         />
       </div>
     </section>
