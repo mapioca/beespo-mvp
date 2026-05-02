@@ -91,7 +91,7 @@ export function Nav() {
         <Link
           href="/"
           className="text-[length:var(--landing-nav-logo-font-size)] font-bold tracking-tight transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-          style={{ color: "var(--brand-walnut)" }}
+          style={{ color: "var(--lp-ink)" }}
         >
           Beespo
         </Link>

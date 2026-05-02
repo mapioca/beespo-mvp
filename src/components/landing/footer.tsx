@@ -6,13 +6,11 @@ export function Footer() {
   return (
     <footer
       className="px-4 pb-12 pt-4"
-      style={{ background: "var(--brand-cream)" }}
+      style={{ background: "var(--lp-bg)" }}
     >
       <div
         className="container mx-auto max-w-6xl rounded-2xl px-8 py-12 md:px-14 md:py-16"
-        style={{
-          background: "color-mix(in srgb, var(--brand-walnut) 6%, var(--brand-cream))",
-        }}
+        style={{ background: "var(--lp-surface)" }}
       >
         <div className="grid gap-12 md:grid-cols-[1.2fr_1fr_1fr]">
           {/* Brand column */}
@@ -20,13 +18,13 @@ export function Footer() {
             <Link
               href="/"
               className="inline-block text-2xl font-bold tracking-tight"
-              style={{ color: "var(--brand-walnut)" }}
+              style={{ color: "var(--lp-ink)" }}
             >
               Beespo
             </Link>
             <p
               className="mt-4 max-w-xs text-[15px] leading-relaxed"
-              style={{ color: "color-mix(in srgb, var(--brand-walnut) 75%, transparent)" }}
+              style={{ color: "color-mix(in srgb, var(--lp-ink) 75%, transparent)" }}
             >
               The first workspace built for the bishopric. Plan sacrament
               meeting, track speakers, run ward business — without losing a
@@ -34,7 +32,7 @@ export function Footer() {
             </p>
             <p
               className="mt-6 text-xs"
-              style={{ color: "color-mix(in srgb, var(--brand-walnut) 55%, transparent)" }}
+              style={{ color: "color-mix(in srgb, var(--lp-ink) 55%, transparent)" }}
             >
               A product of Bishopric Technologies LLC
             </p>
@@ -44,7 +42,7 @@ export function Footer() {
           <div>
             <h3
               className="text-[11px] font-semibold uppercase tracking-[0.16em]"
-              style={{ color: "color-mix(in srgb, var(--brand-walnut) 55%, transparent)" }}
+              style={{ color: "color-mix(in srgb, var(--lp-ink) 55%, transparent)" }}
             >
               Explore
             </h3>
@@ -53,7 +51,7 @@ export function Footer() {
                 <Link
                   href="/support"
                   className="text-[15px] transition-colors hover:opacity-70"
-                  style={{ color: "var(--brand-walnut)" }}
+                  style={{ color: "var(--lp-ink)" }}
                 >
                   Support
                 </Link>
@@ -62,7 +60,7 @@ export function Footer() {
                 <Link
                   href="/terms"
                   className="text-[15px] transition-colors hover:opacity-70"
-                  style={{ color: "var(--brand-walnut)" }}
+                  style={{ color: "var(--lp-ink)" }}
                 >
                   Terms
                 </Link>
@@ -71,7 +69,7 @@ export function Footer() {
                 <Link
                   href="/privacy"
                   className="text-[15px] transition-colors hover:opacity-70"
-                  style={{ color: "var(--brand-walnut)" }}
+                  style={{ color: "var(--lp-ink)" }}
                 >
                   Privacy
                 </Link>
@@ -83,7 +81,7 @@ export function Footer() {
           <div>
             <h3
               className="text-[11px] font-semibold uppercase tracking-[0.16em]"
-              style={{ color: "color-mix(in srgb, var(--brand-walnut) 55%, transparent)" }}
+              style={{ color: "color-mix(in srgb, var(--lp-ink) 55%, transparent)" }}
             >
               Account
             </h3>
@@ -92,7 +90,7 @@ export function Footer() {
                 <Link
                   href="/login"
                   className="text-[15px] transition-colors hover:opacity-70"
-                  style={{ color: "var(--brand-walnut)" }}
+                  style={{ color: "var(--lp-ink)" }}
                 >
                   Sign In
                 </Link>
@@ -101,7 +99,7 @@ export function Footer() {
                 <Link
                   href="/#waitlist"
                   className="text-[15px] transition-colors hover:opacity-70"
-                  style={{ color: "var(--brand-burnt)" }}
+                  style={{ color: "var(--lp-accent)" }}
                 >
                   Request access
                 </Link>
@@ -112,11 +110,11 @@ export function Footer() {
 
         <div
           className="mt-12 border-t pt-6"
-          style={{ borderColor: "color-mix(in srgb, var(--brand-walnut) 14%, transparent)" }}
+          style={{ borderColor: "color-mix(in srgb, var(--lp-ink) 14%, transparent)" }}
         >
           <p
             className="text-xs"
-            style={{ color: "color-mix(in srgb, var(--brand-walnut) 55%, transparent)" }}
+            style={{ color: "color-mix(in srgb, var(--lp-ink) 55%, transparent)" }}
           >
             &copy; {currentYear} Beespo. All rights reserved.
           </p>

@@ -5,17 +5,17 @@ import { WaitlistForm } from "./waitlist-form";
 import { GeometricComposition } from "./geometric-composition";
 
 const namedFeatures = [
-  { label: "Planner", color: "var(--brand-burnt)" },
-  { label: "Speakers", color: "var(--brand-walnut)" },
-  { label: "Business", color: "var(--brand-taupe)" },
-  { label: "Directory", color: "var(--brand-burnt)" },
+  { label: "Planner", color: "var(--lp-accent)" },
+  { label: "Speakers", color: "var(--lp-ink)" },
+  { label: "Business", color: "var(--lp-soft)" },
+  { label: "Directory", color: "var(--lp-accent)" },
 ];
 
 export function Hero() {
   return (
     <section
       className="relative overflow-hidden px-4 pb-20 pt-20 md:pb-28 md:pt-24"
-      style={{ background: "var(--brand-cream)" }}
+      style={{ background: "var(--lp-bg)" }}
     >
       <div className="container relative mx-auto">
         <div className="grid items-center gap-12 lg:grid-cols-[1.05fr_1fr] lg:gap-16">
@@ -28,7 +28,7 @@ export function Hero() {
           >
             <h1
               className="text-hero font-bold tracking-tighter"
-              style={{ color: "var(--brand-walnut)" }}
+              style={{ color: "var(--lp-ink)" }}
             >
               Your calling shouldn&apos;t
               <br />
@@ -36,7 +36,7 @@ export function Hero() {
               <span
                 className="italic"
                 style={{
-                  color: "var(--brand-burnt)",
+                  color: "var(--lp-accent)",
                   fontFamily: "var(--font-serif, ui-serif, Georgia, serif)",
                 }}
               >
@@ -47,7 +47,7 @@ export function Hero() {
 
             <p
               className="text-hero-sub mx-auto mt-6 max-w-xl leading-relaxed lg:mx-0"
-              style={{ color: "color-mix(in srgb, var(--brand-walnut) 80%, transparent)" }}
+              style={{ color: "color-mix(in srgb, var(--lp-ink) 80%, transparent)" }}
             >
               Beespo is the first workspace built for the bishopric — so
               speakers, business, announcements, and meeting history live in
@@ -58,7 +58,7 @@ export function Hero() {
               <WaitlistForm />
               <p
                 className="text-xs"
-                style={{ color: "color-mix(in srgb, var(--brand-walnut) 60%, transparent)" }}
+                style={{ color: "color-mix(in srgb, var(--lp-ink) 60%, transparent)" }}
               >
                 Built by ward members who&apos;ve sat in the chairs.
               </p>
@@ -69,7 +69,7 @@ export function Hero() {
                 <span
                   key={f.label}
                   className="inline-flex items-center gap-2 text-[13px] font-medium tracking-wide uppercase"
-                  style={{ color: "var(--brand-walnut)" }}
+                  style={{ color: "var(--lp-ink)" }}
                 >
                   <span
                     className="inline-block h-2.5 w-2.5"

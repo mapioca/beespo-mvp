@@ -106,11 +106,14 @@
     --topbar-title-weight: 500;
     --topbar-title-color: var(--color-text-primary);
 
-    /* Brand palette — landing page geometric system */
-    --brand-cream: #f9faf9;
-    --brand-burnt: #cb6538;
-    --brand-walnut: #6e5345;
-    --brand-taupe: #988d7a;
+    /* Landing-page brand palette — themable across light/dark.
+       Semantic role > literal color name (e.g. "ink" is dark in light mode,
+       light in dark mode). All landing components reference these tokens. */
+    --lp-bg: #f9faf9;
+    --lp-surface: #f1ece2;
+    --lp-ink: #6e5345;
+    --lp-accent: #cb6538;
+    --lp-soft: #988d7a;
 
     /* Calm Precision */
     --cp-canvas: 0 0% 98%;
@@ -500,6 +503,13 @@
   }
 
   .dark {
+    /* Landing-page brand palette — dark mode */
+    --lp-bg: #14100c;
+    --lp-surface: #1f1812;
+    --lp-ink: #f1e7d6;
+    --lp-accent: #e07a4f;
+    --lp-soft: #998b78;
+
     --color-stone-50: #141416;
     --color-stone-100: #1f1f22;
     --color-stone-200: #26262a;

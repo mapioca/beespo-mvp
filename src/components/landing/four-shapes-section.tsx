@@ -11,19 +11,19 @@ type FeatureCard = {
 };
 
 const SIZE = 160;
-const cream = "#f9faf9";
-const burnt = "#cb6538";
-const walnut = "#6e5345";
-const taupe = "#988d7a";
+const BG = "var(--lp-bg)";
+const ACCENT = "var(--lp-accent)";
+const INK = "var(--lp-ink)";
+const SOFT = "var(--lp-soft)";
 
 function PlannerArt() {
   return (
     <svg viewBox={`0 0 ${SIZE} ${SIZE}`} className="h-full w-full">
-      <rect width={SIZE} height={SIZE} fill={burnt} />
-      <rect x="20" y="40" width="120" height="14" fill={cream} />
-      <rect x="20" y="64" width="80" height="14" fill={cream} opacity="0.55" />
-      <rect x="20" y="88" width="100" height="14" fill={cream} opacity="0.7" />
-      <rect x="20" y="112" width="60" height="14" fill={cream} opacity="0.45" />
+      <rect width={SIZE} height={SIZE} style={{ fill: ACCENT }} />
+      <rect x="20" y="40" width="120" height="14" style={{ fill: BG }} />
+      <rect x="20" y="64" width="80" height="14" style={{ fill: BG }} opacity="0.55" />
+      <rect x="20" y="88" width="100" height="14" style={{ fill: BG }} opacity="0.7" />
+      <rect x="20" y="112" width="60" height="14" style={{ fill: BG }} opacity="0.45" />
     </svg>
   );
 }
@@ -31,14 +31,9 @@ function PlannerArt() {
 function SpeakersArt() {
   return (
     <svg viewBox={`0 0 ${SIZE} ${SIZE}`} className="h-full w-full">
-      <rect width={SIZE} height={SIZE} fill={cream} />
-      <circle cx="56" cy="80" r="34" fill={walnut} />
-      <circle cx="104" cy="80" r="34" fill={burnt} />
-      <path
-        d={`M 56 80 m -34 0 a 34 34 0 0 0 68 0 Z`}
-        fill={cream}
-        opacity="0"
-      />
+      <rect width={SIZE} height={SIZE} style={{ fill: BG }} />
+      <circle cx="56" cy="80" r="34" style={{ fill: INK }} />
+      <circle cx="104" cy="80" r="34" style={{ fill: ACCENT }} />
     </svg>
   );
 }
@@ -46,12 +41,9 @@ function SpeakersArt() {
 function BusinessArt() {
   return (
     <svg viewBox={`0 0 ${SIZE} ${SIZE}`} className="h-full w-full">
-      <rect width={SIZE} height={SIZE} fill={walnut} />
-      <path
-        d={`M 0 80 A 80 80 0 0 1 160 80 Z`}
-        fill={cream}
-      />
-      <circle cx="80" cy="80" r="14" fill={burnt} />
+      <rect width={SIZE} height={SIZE} style={{ fill: INK }} />
+      <path d={`M 0 80 A 80 80 0 0 1 160 80 Z`} style={{ fill: BG }} />
+      <circle cx="80" cy="80" r="14" style={{ fill: ACCENT }} />
     </svg>
   );
 }
@@ -59,10 +51,9 @@ function BusinessArt() {
 function DirectoryArt() {
   return (
     <svg viewBox={`0 0 ${SIZE} ${SIZE}`} className="h-full w-full">
-      <rect width={SIZE} height={SIZE} fill={cream} />
-      {/* Two opposing quarter-circles forming a leaf — different shapes fitting together */}
-      <path d={`M 0 0 L 160 0 A 160 160 0 0 0 0 160 Z`} fill={taupe} />
-      <path d={`M 160 160 L 0 160 A 160 160 0 0 0 160 0 Z`} fill={burnt} />
+      <rect width={SIZE} height={SIZE} style={{ fill: BG }} />
+      <path d={`M 0 0 L 160 0 A 160 160 0 0 0 0 160 Z`} style={{ fill: SOFT }} />
+      <path d={`M 160 160 L 0 160 A 160 160 0 0 0 160 0 Z`} style={{ fill: ACCENT }} />
     </svg>
   );
 }
@@ -135,19 +126,19 @@ function FeatureTile({ feature, index }: { feature: FeatureCard; index: number }
       <div>
         <p
           className="text-[11px] font-semibold uppercase tracking-[0.14em]"
-          style={{ color: "var(--brand-burnt)" }}
+          style={{ color: "var(--lp-accent)" }}
         >
           {feature.name}
         </p>
         <h3
           className="mt-2 text-[22px] font-bold leading-tight tracking-tight"
-          style={{ color: "var(--brand-walnut)" }}
+          style={{ color: "var(--lp-ink)" }}
         >
           {feature.headline}
         </h3>
         <p
           className="mt-3 text-[15px] leading-relaxed"
-          style={{ color: "color-mix(in srgb, var(--brand-walnut) 75%, transparent)" }}
+          style={{ color: "color-mix(in srgb, var(--lp-ink) 75%, transparent)" }}
         >
           {feature.description}
         </p>
@@ -161,19 +152,19 @@ export function FourShapesSection() {
     <section
       id="features"
       className="relative px-4 py-24 md:py-32"
-      style={{ background: "var(--brand-cream)" }}
+      style={{ background: "var(--lp-bg)" }}
     >
       <div className="container mx-auto">
         <div className="mx-auto max-w-2xl text-center">
           <p
             className="text-[11px] font-semibold uppercase tracking-[0.18em]"
-            style={{ color: "var(--brand-burnt)" }}
+            style={{ color: "var(--lp-accent)" }}
           >
             What&#39;s inside
           </p>
           <h2
             className="mt-4 text-4xl font-bold tracking-tight md:text-5xl"
-            style={{ color: "var(--brand-walnut)" }}
+            style={{ color: "var(--lp-ink)" }}
           >
             Four shapes.
             <br />
@@ -181,7 +172,7 @@ export function FourShapesSection() {
           </h2>
           <p
             className="mx-auto mt-5 max-w-xl text-lg leading-relaxed"
-            style={{ color: "color-mix(in srgb, var(--brand-walnut) 75%, transparent)" }}
+            style={{ color: "color-mix(in srgb, var(--lp-ink) 75%, transparent)" }}
           >
             Every presidency operates a little differently. Beespo gives each
             of you the same simple pieces — and lets the ward keep what was
