@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-export function Footer() {
+export function Footer({ isAuthenticated = false }: { isAuthenticated?: boolean }) {
   const currentYear = new Date().getFullYear();
 
   return (
@@ -86,24 +86,38 @@ export function Footer() {
               Account
             </h3>
             <ul className="mt-5 space-y-3">
-              <li>
-                <Link
-                  href="/login"
-                  className="text-[15px] transition-colors hover:opacity-70"
-                  style={{ color: "var(--lp-ink)" }}
-                >
-                  Sign In
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/#waitlist"
-                  className="text-[15px] transition-colors hover:opacity-70"
-                  style={{ color: "var(--lp-accent)" }}
-                >
-                  Request access
-                </Link>
-              </li>
+              {isAuthenticated ? (
+                <li>
+                  <Link
+                    href="/dashboard"
+                    className="text-[15px] transition-colors hover:opacity-70"
+                    style={{ color: "var(--lp-accent)" }}
+                  >
+                    Open dashboard
+                  </Link>
+                </li>
+              ) : (
+                <>
+                  <li>
+                    <Link
+                      href="/login"
+                      className="text-[15px] transition-colors hover:opacity-70"
+                      style={{ color: "var(--lp-ink)" }}
+                    >
+                      Sign In
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      href="/#waitlist"
+                      className="text-[15px] transition-colors hover:opacity-70"
+                      style={{ color: "var(--lp-accent)" }}
+                    >
+                      Request access
+                    </Link>
+                  </li>
+                </>
+              )}
             </ul>
           </div>
         </div>
