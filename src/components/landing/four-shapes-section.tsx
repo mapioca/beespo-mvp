@@ -11,10 +11,10 @@ type FeatureCard = {
 };
 
 const SIZE = 160;
-const cream = "var(--brand-cream)";
-const burnt = "var(--brand-burnt)";
-const walnut = "var(--brand-walnut)";
-const taupe = "var(--brand-taupe)";
+const cream = "#f9faf9";
+const burnt = "#cb6538";
+const walnut = "#6e5345";
+const taupe = "#988d7a";
 
 function PlannerArt() {
   return (

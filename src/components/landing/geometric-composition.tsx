@@ -1,9 +1,9 @@
 "use client";
 
-const CREAM = "var(--brand-cream)";
-const BURNT = "var(--brand-burnt)";
-const WALNUT = "var(--brand-walnut)";
-const TAUPE = "var(--brand-taupe)";
+const CREAM = "#f9faf9";
+const BURNT = "#cb6538";
+const WALNUT = "#6e5345";
+const TAUPE = "#988d7a";
 
 const C = 120; // cell size
 const VB = C * 4; // 480
