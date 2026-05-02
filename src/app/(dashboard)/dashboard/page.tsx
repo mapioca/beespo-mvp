@@ -143,18 +143,18 @@ function attentionPoints(data: SacramentHomeData) {
 function toneClasses(tone: Tone) {
   if (tone === "primary") {
     return {
-      dot: "bg-[hsl(18,57%,69%)] dark:bg-[hsl(18,56%,79%)]",
-      text: "text-[hsl(16,54%,20%)] dark:text-[hsl(18,56%,79%)]",
-      pill: "border-[hsl(18,57%,69%)] bg-[hsl(18,57%,80%)] text-[hsl(16,54%,20%)] dark:border-[hsl(6,43%,34%)] dark:bg-[hsl(18,63%,20%)] dark:text-[hsl(18,56%,79%)]",
-      bar: "bg-[hsl(18,57%,69%)] dark:bg-[hsl(18,56%,79%)]",
+      dot: "bg-[hsl(var(--primary-pill-border))]",
+      text: "text-[hsl(var(--primary-pill-foreground))]",
+      pill: "border-[hsl(var(--primary-pill-border))] bg-[hsl(var(--primary-pill-bg))] text-[hsl(var(--primary-pill-foreground))] hover:bg-[hsl(var(--primary-pill-hover))]",
+      bar: "bg-[hsl(var(--primary-pill-border))]",
     };
   }
   if (tone === "secondary") {
     return {
-      dot: "bg-[hsl(12,51%,32%)] dark:bg-[hsl(12,70%,72%)]",
-      text: "text-[hsl(12,51%,32%)] dark:text-[hsl(12,70%,72%)]",
-      pill: "border-transparent bg-[hsl(10,82%,91%)] text-[hsl(12,51%,32%)] dark:border-[hsl(20,56%,39%)] dark:bg-[hsl(19,92%,10%)] dark:text-[hsl(12,70%,72%)]",
-      bar: "bg-[hsl(12,51%,32%)] dark:bg-[hsl(12,70%,72%)]",
+      dot: "bg-[hsl(var(--secondary-border))]",
+      text: "text-[hsl(var(--secondary-foreground))]",
+      pill: "border-[hsl(var(--secondary-border))] bg-[hsl(var(--secondary))] text-[hsl(var(--secondary-foreground))] hover:bg-[hsl(var(--secondary-hover))]",
+      bar: "bg-[hsl(var(--secondary-border))]",
     };
   }
   if (tone === "critical") {
@@ -224,7 +224,7 @@ function TonePill({ tone, children }: { tone: Tone; children: ReactNode }) {
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium",
+        "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium transition-colors",
         classes.pill
       )}
     >
@@ -349,13 +349,12 @@ function SnapshotRow({
 }) {
   const toneState = toneClasses(tone);
   const showWarning = tone === "critical";
-  const primaryTone = toneClasses("primary");
   const content = (
     <div className="flex items-center justify-between gap-3 rounded-[12px] border border-border/60 bg-surface-body/80 px-3.5 py-3">
       <div className="flex items-center gap-2">
         {showWarning ? (
-          <span className={cn("inline-flex h-6 w-6 items-center justify-center rounded-full border", primaryTone.pill)}>
-            <AlertTriangle className={cn("h-3.5 w-3.5", primaryTone.text)} />
+          <span className="inline-flex h-6 w-6 items-center justify-center rounded-full border bg-icon-primary border-icon-primary text-icon-primary">
+            <AlertTriangle className="h-3.5 w-3.5" />
           </span>
         ) : null}
         <span className="text-[12.5px] font-medium text-muted-foreground">{label}</span>

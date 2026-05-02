@@ -13,6 +13,32 @@
     --color-stone-600: #4e5258;
     --color-stone-900: #0f1011;
 
+    /* Primary - Red Damask */
+    --color-red-damask-50: hsl(25, 67%, 96%);
+    --color-red-damask-100: hsl(28, 62%, 92%);
+    --color-red-damask-200: hsl(25, 60%, 83%);
+    --color-red-damask-300: hsl(25, 60%, 72%);
+    --color-red-damask-400: hsl(21, 59%, 61%);
+    --color-red-damask-500: hsl(18, 59%, 51%);
+    --color-red-damask-600: hsl(14, 55%, 48%);
+    --color-red-damask-700: hsl(11, 54%, 40%);
+    --color-red-damask-800: hsl(9, 49%, 34%);
+    --color-red-damask-900: hsl(9, 46%, 28%);
+    --color-red-damask-950: hsl(7, 49%, 15%);
+
+    /* Secondary - Eggplant */
+    --color-eggplant-50: hsl(300, 27%, 98%);
+    --color-eggplant-100: hsl(300, 22%, 95%);
+    --color-eggplant-200: hsl(300, 21%, 91%);
+    --color-eggplant-300: hsl(300, 22%, 83%);
+    --color-eggplant-400: hsl(302, 21%, 73%);
+    --color-eggplant-500: hsl(302, 19%, 61%);
+    --color-eggplant-600: hsl(303, 16%, 49%);
+    --color-eggplant-700: hsl(304, 17%, 37%);
+    --color-eggplant-800: hsl(304, 17%, 33%);
+    --color-eggplant-900: hsl(306, 15%, 28%);
+    --color-eggplant-950: hsl(307, 22%, 16%);
+
     /* Accent - Cool Blue */
     --color-accent-50: #e0e7ff;
     --color-accent-200: #c7d2fe;
@@ -88,8 +114,8 @@
     --surface-raised: 0 0% 100%; /* Passive buttons, interactive tiles for light mode */
     --surface-sunken: 0 0% 96%; /* Recessed inputs, wells for light mode */
     --surface-body: 0 0% 99%; /* Lighter shade of surface-raised */
-    --cp-focus: 231 67% 54%;
-    --cp-primary: 231 67% 54%;
+    --cp-focus: 18 59% 51%;
+    --cp-primary: 18 59% 51%;
     --cp-primary-foreground: 0 0% 100%;
     --cp-danger: 0 75% 54%;
     --cp-warning: 37 85% 52%;
@@ -125,8 +151,10 @@
     --popover-foreground: var(--cp-text);
     --primary: var(--brand);
     --primary-foreground: var(--brand-foreground);
-    --secondary: var(--cp-surface-2);
-    --secondary-foreground: var(--cp-text);
+    --secondary: 300 22% 95%;
+    --secondary-foreground: 307 22% 16%;
+    --secondary-border: 302 21% 73%;
+    --secondary-hover: 300 21% 91%;
     --muted: var(--cp-surface-2);
     --muted-foreground: var(--cp-text-muted);
     --accent: var(--cp-hover);
@@ -226,8 +254,25 @@
     --button-primary: 0 0% 0%;
     --button-primary-hover: 0 0% 12%;
     --button-primary-foreground: 0 0% 100%;
-    --pill: 0 0% 92%;
-    --pill-foreground: 0 0% 20%;
+    --primary-pill-bg: 28 62% 92%;
+    --primary-pill-foreground: 7 49% 15%;
+    --primary-pill-border: 21 59% 61%;
+    --primary-pill-hover: 25 60% 83%;
+    --primary-chip-fill-bg: 25 60% 72%;
+    --primary-chip-fill-foreground: 7 49% 15%;
+    --primary-chip-fill-hover: 21 59% 61%;
+    --secondary-chip-fill-bg: 300 22% 83%;
+    --secondary-chip-fill-foreground: 307 22% 16%;
+    --secondary-chip-fill-hover: 302 21% 73%;
+    --primary-icon-bg: 25 60% 83%;
+    --primary-icon-border: 25 60% 72%;
+    --primary-icon-fill: 21 59% 61%;
+    --secondary-icon-bg: 300 21% 91%;
+    --secondary-icon-border: 300 22% 83%;
+    --secondary-icon-fill: 302 21% 73%;
+    --pill: 300 22% 95%;
+    --pill-foreground: 307 22% 16%;
+    --pill-border: 302 21% 73%;
     --control: 0 0% 100%;
     --control-foreground: 0 0% 35%;
     --control-border: 0 0% 87%;
@@ -334,15 +379,15 @@
     --landing-demo-muted: var(--cp-text-muted);
     --landing-demo-subtle: var(--cp-text-subtle);
     --landing-demo-accent: var(--cp-primary);
-    --landing-demo-accent-soft: 231 67% 96%;
+    --landing-demo-accent-soft: 25 67% 96%;
     --landing-demo-success: var(--cp-success);
     --landing-demo-success-soft: 150 55% 92%;
     --landing-demo-warning: var(--cp-warning);
     --landing-demo-warning-soft: 37 85% 92%;
     --landing-demo-shadow: 0 32px 80px -24px rgba(15, 16, 17, 0.18), 0 8px 24px -8px rgba(15, 16, 17, 0.08);
-    --landing-cursor-fill: 231 67% 54%;
+    --landing-cursor-fill: 18 59% 51%;
     --landing-cursor-ring: 0 0% 100%;
-    --landing-glow-primary: 231 67% 54%;
+    --landing-glow-primary: 18 59% 51%;
     --landing-glow-secondary: 24 80% 60%;
     --landing-glow-opacity: 0.18;
     --landing-grain-opacity: 0.04;
@@ -388,15 +433,15 @@
     --form-checkbox-border: var(--cp-border);
     --form-checkbox-focus: var(--cp-focus);
     --form-checkbox-check: var(--cp-primary);
-    --form-checkbox-checked-bg: 231 67% 54%; /* accent-600 #3b5bdb */
-    --form-checkbox-checked-border: 231 67% 54%;
+    --form-checkbox-checked-bg: 18 59% 51%; /* red-damask-500 */
+    --form-checkbox-checked-border: 18 59% 51%;
     --form-checkbox-checked-check: 0 0% 100%;
     --nav-secondary-hover-hsl: 220 10% 45%;
-    --brand: 231 67% 54%; /* Accent: #3b5bdb */
+    --brand: 18 59% 51%; /* Red Damask 500 */
     --brand-foreground: 0 0% 100%;
-    --brand-bg: 226 100% 94%; /* Accent bg: #e0e7ff */
-    --brand-hover: 231 67% 64%; /* Accent hover: lighter */
-    --brand-active: 231 67% 44%; /* Accent active: darker */
+    --brand-bg: 28 62% 92%; /* Red Damask 100 */
+    --brand-hover: 21 59% 61%; /* Red Damask 400 */
+    --brand-active: 14 55% 48%; /* Red Damask 600 */
     --btn-primary-bg: hsl(var(--primary));
     --btn-primary-text: hsl(var(--primary-foreground));
     --btn-primary-bg-hover: hsl(var(--brand-hover));
@@ -495,6 +540,8 @@
     --primary-foreground: var(--brand-foreground);
     --secondary: var(--cp-surface-2);
     --secondary-foreground: var(--cp-text);
+    --secondary-border: transparent;
+    --secondary-hover: var(--cp-hover);
     --muted: var(--cp-surface-2);
     --muted-foreground: var(--cp-text-muted);
     --accent: var(--cp-hover);
@@ -581,8 +628,25 @@
     --button-primary: 0 0% 100%;
     --button-primary-hover: 0 0% 88%;
     --button-primary-foreground: 0 0% 100%;
+    --primary-pill-bg: var(--brand);
+    --primary-pill-foreground: var(--brand-foreground);
+    --primary-pill-border: transparent;
+    --primary-pill-hover: var(--brand-hover);
+    --primary-chip-fill-bg: var(--brand);
+    --primary-chip-fill-foreground: var(--brand-foreground);
+    --primary-chip-fill-hover: var(--brand-hover);
+    --secondary-chip-fill-bg: var(--cp-surface-2);
+    --secondary-chip-fill-foreground: var(--cp-text);
+    --secondary-chip-fill-hover: var(--cp-hover);
+    --primary-icon-bg: color-mix(in srgb, hsl(var(--brand)) 20%, transparent);
+    --primary-icon-border: color-mix(in srgb, hsl(var(--brand)) 40%, transparent);
+    --primary-icon-fill: hsl(var(--brand));
+    --secondary-icon-bg: var(--cp-surface-2);
+    --secondary-icon-border: var(--cp-border);
+    --secondary-icon-fill: var(--cp-text-muted);
     --pill: 0 0% 18%;
     --pill-foreground: 0 0% 90%;
+    --pill-border: transparent;
     --control: 0 0% 10%;
     --control-foreground: 0 0% 75%;
     --control-border: 0 0% 20%;
@@ -803,6 +867,8 @@
     --primary-foreground: var(--brand-foreground);
     --secondary: var(--cp-surface-2);
     --secondary-foreground: var(--cp-text);
+    --secondary-border: transparent;
+    --secondary-hover: var(--cp-hover);
     --muted: var(--cp-surface-2);
     --muted-foreground: var(--cp-text-muted);
     --accent: var(--cp-hover);
@@ -866,6 +932,22 @@
     --btn-primary-bg-disabled: hsl(18, 40%, 76%);
     --btn-primary-text-disabled: hsl(180, 100%, 99%);
     --btn-primary-border-disabled: transparent;
+    --primary-pill-bg: var(--brand-bg);
+    --primary-pill-foreground: 7 49% 15%;
+    --primary-pill-border: transparent;
+    --primary-pill-hover: 35 31% 80%;
+    --primary-chip-fill-bg: 25 60% 72%;
+    --primary-chip-fill-foreground: 7 49% 15%;
+    --primary-chip-fill-hover: 21 59% 61%;
+    --secondary-chip-fill-bg: 300 22% 83%;
+    --secondary-chip-fill-foreground: 307 22% 16%;
+    --secondary-chip-fill-hover: 302 21% 73%;
+    --primary-icon-bg: 25 60% 83%;
+    --primary-icon-border: 25 60% 72%;
+    --primary-icon-fill: 21 59% 61%;
+    --secondary-icon-bg: 300 21% 91%;
+    --secondary-icon-border: 300 22% 83%;
+    --secondary-icon-fill: 302 21% 73%;
     --btn-secondary-bg: hsl(19, 65%, 90%);
     --btn-secondary-text: hsl(20, 23%, 28%);
     --btn-secondary-bg-hover: hsl(18, 59%, 80%);
@@ -1118,6 +1200,30 @@
 
   .text-pill {
     color: hsl(var(--pill-foreground));
+  }
+
+  .bg-icon-primary {
+    background-color: hsl(var(--primary-icon-bg));
+  }
+
+  .border-icon-primary {
+    border-color: hsl(var(--primary-icon-border));
+  }
+
+  .text-icon-primary {
+    color: hsl(var(--primary-icon-fill));
+  }
+
+  .bg-icon-secondary {
+    background-color: hsl(var(--secondary-icon-bg));
+  }
+
+  .border-icon-secondary {
+    border-color: hsl(var(--secondary-icon-border));
+  }
+
+  .text-icon-secondary {
+    color: hsl(var(--secondary-icon-fill));
   }
 
   .bg-control {
