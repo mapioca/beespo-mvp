@@ -26,7 +26,7 @@ const T_PANEL_TITLE =
   "text-[15px] font-semibold tracking-[-0.01em] text-foreground";
 const PANEL_BASE =
   "rounded-[22px] border border-border/70 bg-background shadow-[0_1px_0_rgba(15,23,42,0.03)]";
-const PANEL_PAD = "px-4 py-4 sm:px-5 sm:py-5";
+const PANEL_PAD = "px-5 py-5 sm:px-6 sm:py-6";
 
 type Tone = "primary" | "secondary" | "critical" | "warning" | "ok" | "muted";
 
@@ -192,6 +192,15 @@ function toneClasses(tone: Tone) {
   };
 }
 
+function SoftSecondaryPill({ children }: { children: ReactNode }) {
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full border border-[hsl(var(--secondary-border))]/75 bg-[hsl(var(--secondary))]/65 px-2 py-0.5 text-[10.5px] font-medium text-[hsl(var(--secondary-foreground))]/85">
+      <span className="h-1.5 w-1.5 rounded-full bg-[hsl(var(--secondary-border))]/70" />
+      {children}
+    </span>
+  );
+}
+
 function metricTone(missing: number, pending = 0): Tone {
   if (missing > 0) return "critical";
   if (pending > 0) return "warning";
@@ -260,18 +269,18 @@ function AssignmentSummarySegment({
     >
       <div className="flex items-start justify-between gap-3">
         <div className="text-[14px] font-medium text-foreground">{label}</div>
-        <div className="flex items-center gap-1 text-[12px] text-muted-foreground">
+        <div className="flex items-center gap-1 text-[11px] text-muted-foreground/75 transition-colors group-hover:text-muted-foreground">
           Review
-          <ArrowUpRight className="h-3.5 w-3.5 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+          <ArrowUpRight className="h-3.5 w-3.5 opacity-80 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:opacity-100" />
         </div>
       </div>
-      <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1">
-        <div className="[font-family:var(--font-inter),system-ui,sans-serif] tabular-nums text-[28px] font-semibold tracking-[-0.03em] text-brand">
+      <div className="mt-2.5 flex flex-wrap items-center gap-x-2 gap-y-1.5">
+        <div className="[font-family:var(--font-inter),system-ui,sans-serif] tabular-nums text-[24px] font-semibold tracking-[-0.025em] text-brand sm:text-[25px]">
           {value}
         </div>
         <div className="text-[12px] font-medium text-muted-foreground/80">{detail}</div>
         {badge ? (
-          <TonePill tone="secondary">{badge}</TonePill>
+          <SoftSecondaryPill>{badge}</SoftSecondaryPill>
         ) : null}
       </div>
     </Link>
@@ -383,13 +392,13 @@ function SnapshotRow({
         </span>
         <div className="min-w-0">
           <div className="text-[14px] font-semibold text-foreground">{label}</div>
-          <div className="overview-row-value-inline text-[12.5px] font-medium">{value}</div>
+        <div className="overview-row-value-inline text-[12.5px] font-medium">{value}</div>
         </div>
       </div>
       <div className="flex items-center gap-3 shrink-0">
         <div className="overview-row-value-trailing text-[12.5px] font-medium">{value}</div>
         {isLink ? (
-          <ChevronRight className="overview-row-chevron h-4.5 w-4.5 shrink-0 text-foreground/75" />
+          <ChevronRight className="overview-row-chevron h-4 w-4 shrink-0 text-muted-foreground/70" />
         ) : null}
       </div>
     </div>
@@ -433,26 +442,26 @@ function QueueCard({
           {emptyCopy}
         </div>
       ) : (
-        <div className="mt-4 space-y-3">
+        <div className="mt-5 space-y-3">
           {items.map((item) => (
             <Link
               key={item.id}
               href={href}
-              className="group block rounded-[18px] transition-transform duration-150 hover:-translate-y-0.5"
+              className="group block rounded-[18px] transition-colors duration-150"
             >
-              <div className="flex items-start gap-3 rounded-[18px] border border-border/60 bg-background px-4 py-3.5">
-                <span className="mt-[7px] inline-flex h-2.5 w-2.5 shrink-0 rounded-full bg-[hsl(var(--secondary-border))]" />
+              <div className="flex items-start gap-3 rounded-[18px] border border-border/60 bg-background px-4 py-3.5 transition-colors group-hover:border-border/80 group-hover:bg-surface-body/40">
+                <span className="mt-[8px] inline-flex h-2 w-2 shrink-0 rounded-full bg-[hsl(var(--secondary-border))]/60" />
                 <div className="min-w-0 flex-1 pt-px">
-                  <div className="text-[13.5px] font-medium leading-5 text-foreground">
+                  <div className="text-[13px] font-medium leading-5 text-foreground">
                     {item.title}
                   </div>
                   {item.detail ? (
-                    <div className="mt-1 text-[12.5px] text-muted-foreground">
+                    <div className="mt-1 text-[12px] leading-5 text-muted-foreground/85">
                       {item.detail}
                     </div>
                   ) : null}
                 </div>
-                <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-foreground/65 transition-transform group-hover:translate-x-0.5" />
+                <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground/70 transition-all group-hover:translate-x-0.5 group-hover:text-muted-foreground" />
               </div>
             </Link>
           ))}
@@ -578,7 +587,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="h-full w-full overflow-y-auto bg-surface-canvas text-foreground">
-      <main className="mx-auto flex w-full max-w-[1240px] flex-col gap-4 px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+      <main className="mx-auto flex w-full max-w-[1240px] flex-col gap-5 px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
         <section className="px-1 py-2 sm:px-2">
           <div className="flex flex-col gap-3">
             <div className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
@@ -597,19 +606,24 @@ export default async function DashboardPage() {
           </div>
         </section>
 
-        <section className={cn(PANEL_BASE, "px-4 py-4 sm:px-5 sm:py-5")}>
+        <section
+          className={cn(
+            PANEL_BASE,
+            "rounded-[26px] border-border/75 px-6 py-5 shadow-[0_1px_0_rgba(15,23,42,0.03),0_12px_30px_rgba(15,23,42,0.04)] sm:px-7 sm:py-6"
+          )}
+        >
           <div className="flex flex-col gap-5">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-              <div className="min-w-0">
-                <div className="mb-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+              <div className="min-w-0 max-w-3xl">
+                <div className="mb-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground/85">
                   Coming up next
                 </div>
-                <div className="mt-2 flex flex-wrap items-center gap-2">
-                  <h1 className="font-serif text-3xl leading-[1.1] tracking-tight text-foreground md:text-[34px]">
+                <div className="mt-1 flex flex-wrap items-center gap-2">
+                  <h1 className="font-serif text-[34px] leading-[1.02] tracking-[-0.03em] text-foreground md:text-[40px]">
                     {data.meetingTitle}
                   </h1>
                 </div>
-                <div className="mt-3 flex flex-wrap items-center gap-2">
+                <div className="mt-4 flex flex-wrap items-center gap-2.5">
                   <TonePill tone={attentionCount > 0 ? "primary" : "ok"}>
                     {attentionCount > 0
                       ? `${pluralize(attentionCount, "attention point")}`
@@ -621,7 +635,7 @@ export default async function DashboardPage() {
               </div>
 
               <div className="flex flex-col gap-2 sm:flex-row">
-                <Button asChild className="h-10 rounded-full px-4 text-[13px] font-medium">
+                <Button asChild className="h-11 rounded-full px-5 text-[13px] font-medium shadow-none">
                   <Link href={data.plannerHref}>
                     Open planner
                     <ArrowUpRight className="h-4 w-4" />
@@ -646,7 +660,7 @@ export default async function DashboardPage() {
           plannerHref={data.plannerHref}
         />
 
-        <div className="grid gap-4 xl:grid-cols-3">
+        <div className="grid gap-5 xl:grid-cols-3">
           <SundaySnapshotCard data={data} />
           <QueueCard
             label="Business"
