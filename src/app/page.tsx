@@ -1,22 +1,19 @@
 import type { Metadata } from "next";
 import { Nav } from "@/components/landing/nav";
 import { Hero } from "@/components/landing/hero";
-import { FeaturePlannerDemo } from "@/components/landing/feature-planner-demo";
-import { FeatureSpeakersDemo } from "@/components/landing/feature-speakers-demo";
-import { FeatureAnnouncementsDemo } from "@/components/landing/feature-announcements-demo";
-import { FeatureBusinessDemo } from "@/components/landing/feature-business-demo";
+import { FourShapesSection } from "@/components/landing/four-shapes-section";
 import { CTASection } from "@/components/landing/cta-section";
 import { FAQSection } from "@/components/landing/faq-section";
 import { Footer } from "@/components/landing/footer";
 
 export const metadata: Metadata = {
-  title: "Beespo — The Workspace for Church Leaders",
+  title: "Beespo — The Workspace for the Bishopric",
   description:
-    "One workspace for the whole sacrament meeting — program, speakers, announcements, ward business. Built for church leaders.",
+    "The first workspace built for ward leadership — planner, speakers, business, and directory in one place that outlasts every release.",
   openGraph: {
-    title: "Beespo — The Workspace for Church Leaders",
+    title: "Beespo — The Workspace for the Bishopric",
     description:
-      "One workspace for the whole sacrament meeting — program, speakers, announcements, ward business. Built for church leaders.",
+      "The first workspace built for ward leadership — planner, speakers, business, and directory in one place that outlasts every release.",
     type: "website",
   },
 };
@@ -25,7 +22,7 @@ export default function Home() {
   return (
     <div
       className="min-h-screen flex flex-col"
-      style={{ background: "hsl(var(--landing-page-bg))" }}
+      style={{ background: "var(--brand-cream)" }}
     >
       <Nav />
       <main
@@ -33,10 +30,7 @@ export default function Home() {
         className="flex-1 pt-[var(--landing-nav-height)]"
       >
         <Hero />
-        <FeaturePlannerDemo />
-        <FeatureSpeakersDemo />
-        <FeatureAnnouncementsDemo />
-        <FeatureBusinessDemo />
+        <FourShapesSection />
         <CTASection />
         <FAQSection />
       </main>

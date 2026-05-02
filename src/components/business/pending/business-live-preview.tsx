@@ -783,6 +783,7 @@ export function BusinessReviewPanel({
                         <>
                           {activeStatus === "pending" && (
                             <Checkbox
+                              variant="form"
                               checked={isSelected}
                               onCheckedChange={() => {
                                 // Prevent event propagation to avoid triggering the item open

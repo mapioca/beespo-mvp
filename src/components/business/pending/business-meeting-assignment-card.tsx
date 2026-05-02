@@ -1,11 +1,12 @@
 "use client"
 
-import { useMemo } from "react"
+import { useEffect, useState } from "react"
 import { format } from "date-fns"
 import { Calendar } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { BusinessItem } from "@/components/business/business-table"
 import { readPlannerDraftMeta, getDefaultMeetingTitle } from "@/lib/sundays"
+import type { MeetingSpecialType } from "@/lib/sundays"
 import { isBusinessCategoryKey, BUSINESS_CATEGORY_LABEL } from "@/lib/business/combined-script"
 
 interface BusinessMeetingAssignmentCardProps {
@@ -26,9 +27,17 @@ export function BusinessMeetingAssignmentCard({
   items,
   onOpenItem,
 }: BusinessMeetingAssignmentCardProps) {
-  const draftMeta = useMemo(() => readPlannerDraftMeta(), [])
-  const meta = draftMeta[meetingDate]
-  const meetingTitle = meta?.title?.trim() || getDefaultMeetingTitle(meta?.specialType ?? "standard")
+  const [metaTitle, setMetaTitle] = useState<string | null>(null)
+  const [metaSpecialType, setMetaSpecialType] = useState<MeetingSpecialType | null>(null)
+
+  useEffect(() => {
+    const draftMeta = readPlannerDraftMeta()
+    const meta = draftMeta[meetingDate]
+    setMetaTitle(meta?.title?.trim() || null)
+    setMetaSpecialType(meta?.specialType || null)
+  }, [meetingDate])
+
+  const meetingTitle = metaTitle || getDefaultMeetingTitle(metaSpecialType ?? "standard")
   const dateLabel = format(new Date(`${meetingDate}T12:00:00`), "EEEE, MMMM d, yyyy")
 
   return (

@@ -27,6 +27,7 @@ const T_PANEL_TITLE =
 const PANEL_BASE =
   "rounded-[22px] border border-border/70 bg-background shadow-[0_1px_0_rgba(15,23,42,0.03)]";
 const PANEL_PAD = "px-5 py-5 sm:px-6 sm:py-6";
+const CHEVRON_CLASS = "h-[15px] w-[15px] shrink-0 text-muted-foreground/70";
 
 type Tone = "primary" | "secondary" | "critical" | "warning" | "ok" | "muted";
 
@@ -398,7 +399,7 @@ function SnapshotRow({
       <div className="flex items-center gap-3 shrink-0">
         <div className="overview-row-value-trailing text-[12.5px] font-medium">{value}</div>
         {isLink ? (
-          <ChevronRight className="overview-row-chevron h-4 w-4 shrink-0 text-muted-foreground/70" />
+          <ChevronRight className={cn("overview-row-chevron", CHEVRON_CLASS)} />
         ) : null}
       </div>
     </div>
@@ -449,19 +450,19 @@ function QueueCard({
               href={href}
               className="group block rounded-[18px] transition-colors duration-150"
             >
-              <div className="flex items-start gap-3 rounded-[18px] border border-border/60 bg-background px-4 py-3.5 transition-colors group-hover:border-border/80 group-hover:bg-surface-body/40">
-                <span className="mt-[8px] inline-flex h-2 w-2 shrink-0 rounded-full bg-[hsl(var(--secondary-border))]/60" />
+              <div className="flex min-h-[88px] items-start gap-3 rounded-[18px] border border-border/60 bg-background px-4 py-3.5 transition-colors group-hover:border-border/80 group-hover:bg-surface-body/40">
+                <span className="mt-[8px] inline-flex h-1.5 w-1.5 shrink-0 rounded-full bg-[hsl(var(--secondary-border))]/60" />
                 <div className="min-w-0 flex-1 pt-px">
-                  <div className="text-[13px] font-medium leading-5 text-foreground">
+                  <div className="text-[13.5px] font-medium leading-[1.35] text-foreground">
                     {item.title}
                   </div>
                   {item.detail ? (
-                    <div className="mt-1 text-[12px] leading-5 text-muted-foreground/85">
+                    <div className="mt-1.5 text-[12.5px] leading-[1.4] text-muted-foreground/85">
                       {item.detail}
                     </div>
                   ) : null}
                 </div>
-                <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground/70 transition-all group-hover:translate-x-0.5 group-hover:text-muted-foreground" />
+                <ChevronRight className={cn(CHEVRON_CLASS, "mt-0.5 transition-all group-hover:translate-x-0.5 group-hover:text-muted-foreground")} />
               </div>
             </Link>
           ))}

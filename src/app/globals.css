@@ -106,6 +106,12 @@
     --topbar-title-weight: 500;
     --topbar-title-color: var(--color-text-primary);
 
+    /* Brand palette — landing page geometric system */
+    --brand-cream: #f9faf9;
+    --brand-burnt: #cb6538;
+    --brand-walnut: #6e5345;
+    --brand-taupe: #988d7a;
+
     /* Calm Precision */
     --cp-canvas: 0 0% 98%;
     --cp-surface: 0 0% 100%;
@@ -442,8 +448,8 @@
     --form-checkbox-border: var(--cp-border);
     --form-checkbox-focus: var(--cp-focus);
     --form-checkbox-check: var(--cp-primary);
-    --form-checkbox-checked-bg: 18 59% 51%; /* red-damask-500 */
-    --form-checkbox-checked-border: 18 59% 51%;
+    --form-checkbox-checked-bg: 14 55% 48%; /* red-damask-600 */
+    --form-checkbox-checked-border: 14 55% 48%;
     --form-checkbox-checked-check: 0 0% 100%;
     --nav-secondary-hover-hsl: 220 10% 45%;
     --brand: 18 59% 51%; /* Red Damask 500 */
@@ -634,8 +640,8 @@
     --drawer-text-section: 13.5px;
     --drawer-text-menu-item: 13.5px;
     --drawer-text-title: 15.5px;
-    --button-primary: 0 0% 100%;
-    --button-primary-hover: 0 0% 88%;
+    --button-primary: 18 59% 51%;
+    --button-primary-hover: 21 59% 61%;
     --button-primary-foreground: 0 0% 100%;
     --primary-pill-bg: 7 49% 15%;
     --primary-pill-foreground: 28 62% 92%;
@@ -712,12 +718,12 @@
     --border: var(--cp-border);
     --input: var(--cp-border);
     --ring: var(--brand);
-    --btn-primary-bg: hsl(18, 59%, 60%);
-    --btn-primary-text: hsl(25, 44%, 29%);
-    --btn-primary-bg-hover: hsl(17, 60%, 70%);
-    --btn-primary-text-hover: hsl(18, 33%, 42%);
-    --btn-primary-bg-active: hsl(18, 59%, 80%);
-    --btn-primary-text-active: hsl(12, 68%, 10%);
+    --btn-primary-bg: hsl(18, 59%, 51%);
+    --btn-primary-text: hsl(0, 0%, 100%);
+    --btn-primary-bg-hover: hsl(21, 59%, 61%);
+    --btn-primary-text-hover: hsl(0, 0%, 100%);
+    --btn-primary-bg-active: hsl(14, 55%, 48%);
+    --btn-primary-text-active: hsl(0, 0%, 100%);
     --btn-primary-bg-disabled: hsl(16, 32%, 30%);
     --btn-primary-text-disabled: hsl(21, 31%, 13%);
     --btn-primary-border-disabled: transparent;
@@ -799,9 +805,9 @@
     --form-checkbox-border: var(--cp-border);
     --form-checkbox-focus: var(--cp-focus);
     --form-checkbox-check: var(--cp-primary);
-    --form-checkbox-checked-bg: 17 65% 63%;
-    --form-checkbox-checked-border: 17 65% 63%;
-    --form-checkbox-checked-check: 240 5% 10%;
+    --form-checkbox-checked-bg: 9 46% 28%; /* red-damask-900 */
+    --form-checkbox-checked-border: 9 46% 28%;
+    --form-checkbox-checked-check: 25 60% 83%; /* red-damask-200 */
     --nav-secondary-hover-hsl: 0 0% 100%;
     --brand: 17 65% 63%; /* Accent: #e08361 */
     --brand-foreground: 0 0% 100%;
@@ -988,8 +994,8 @@
     --app-nav-border: #e6e1d1;
     --app-nav-inverse: #141413;
     --app-nav-inverse-text: #faf9f5;
-    --form-checkbox-checked-bg: 17 55% 51%;
-    --form-checkbox-checked-border: 17 55% 51%;
+    --form-checkbox-checked-bg: 14 55% 48%; /* red-damask-600 */
+    --form-checkbox-checked-border: 14 55% 48%;
     --form-checkbox-checked-check: 0 0% 100%;
   }
 }

@@ -99,6 +99,14 @@ export const breadcrumbConfigs: BreadcrumbConfig[] = [
     ],
   },
   {
+    pattern: "/meetings/sacrament/archive",
+    trail: [
+      { label: "Meetings", href: "/meetings/overview" },
+      { label: "Sacrament Meeting", href: "/meetings/sacrament/planner" },
+      { label: "Archive" },
+    ],
+  },
+  {
     pattern: "/discussions",
     trail: [
       { label: "Discussions" },
