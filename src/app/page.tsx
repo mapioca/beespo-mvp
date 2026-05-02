@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { createClient } from "@/lib/supabase/server";
 import { Nav } from "@/components/landing/nav";
 import { Hero } from "@/components/landing/hero";
 import { FourShapesSection } from "@/components/landing/four-shapes-section";
@@ -18,13 +19,19 @@ export const metadata: Metadata = {
   },
 };
 
-export default function Home() {
+export default async function Home() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const isAuthenticated = Boolean(user);
+
   return (
     <div
       className="min-h-screen flex flex-col"
       style={{ background: "var(--lp-bg)" }}
     >
-      <Nav />
+      <Nav isAuthenticated={isAuthenticated} />
       <main
         id="main-content"
         className="flex-1 pt-[var(--landing-nav-height)]"
@@ -34,7 +41,7 @@ export default function Home() {
         <CTASection />
         <FAQSection />
       </main>
-      <Footer />
+      <Footer isAuthenticated={isAuthenticated} />
     </div>
   );
 }

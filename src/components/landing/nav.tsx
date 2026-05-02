@@ -15,13 +15,15 @@ import {
 import { cn } from "@/lib/utils";
 import { LandingThemeToggle } from "@/components/landing/theme-toggle";
 
-const NAV_ITEMS = [
+const PUBLIC_NAV_ITEMS = [
   { label: "Terms", href: "/terms" },
   { label: "Privacy", href: "/privacy" },
   { label: "Support", href: "/support" },
-  { label: "Sign In", href: "/login" },
 ] as const;
+
+const SIGN_IN_ITEM = { label: "Sign In", href: "/login" } as const;
 const GET_STARTED_ITEM = { label: "Get Started", href: "/signup" } as const;
+const OPEN_DASHBOARD_ITEM = { label: "Open Dashboard", href: "/dashboard" } as const;
 
 function isNavItemActive(pathname: string, href: string) {
   if (pathname === href) return true;
@@ -79,8 +81,12 @@ function LandingNavLink({
   );
 }
 
-export function Nav() {
+export function Nav({ isAuthenticated = false }: { isAuthenticated?: boolean }) {
   const pathname = usePathname();
+  const navItems = isAuthenticated
+    ? PUBLIC_NAV_ITEMS
+    : [...PUBLIC_NAV_ITEMS, SIGN_IN_ITEM];
+  const ctaItem = isAuthenticated ? OPEN_DASHBOARD_ITEM : GET_STARTED_ITEM;
 
   return (
     <nav
@@ -96,7 +102,7 @@ export function Nav() {
           Beespo
         </Link>
         <div className="hidden items-center gap-1 sm:flex">
-          {NAV_ITEMS.map((item) => {
+          {navItems.map((item) => {
             return (
               <LandingNavLink
                 key={item.href}
@@ -107,7 +113,7 @@ export function Nav() {
             );
           })}
           <LandingThemeToggle />
-          <LandingNavLink item={GET_STARTED_ITEM} pathname={pathname || "/"} variant="desktop" cta />
+          <LandingNavLink item={ctaItem} pathname={pathname || "/"} variant="desktop" cta />
         </div>
         <Sheet>
           <SheetTrigger asChild>
@@ -129,7 +135,7 @@ export function Nav() {
               Primary site navigation links
             </SheetDescription>
             <div className="mt-10 flex flex-col gap-2">
-              {NAV_ITEMS.map((item) => {
+              {navItems.map((item) => {
                 return (
                   <SheetClose key={item.href} asChild>
                     <LandingNavLink
@@ -142,7 +148,7 @@ export function Nav() {
               })}
               <SheetClose asChild>
                 <LandingNavLink
-                  item={GET_STARTED_ITEM}
+                  item={ctaItem}
                   pathname={pathname || "/"}
                   variant="mobile"
                   cta

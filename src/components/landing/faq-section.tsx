@@ -62,66 +62,98 @@ export function FAQSection() {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
 
   return (
-    <section className="py-16 md:py-24 px-4 bg-neutral-50">
+    <section
+      className="px-4 py-16 md:py-24"
+      style={{ background: "var(--lp-bg)" }}
+    >
       <div className="container mx-auto max-w-3xl">
-        <AnimateOnScroll className="text-center mb-12">
-          <span className="text-xs font-mono text-neutral-400 tracking-widest uppercase">
+        <AnimateOnScroll className="mb-12 text-center">
+          <span
+            className="text-[11px] font-semibold uppercase tracking-[0.18em]"
+            style={{ color: "var(--lp-accent)" }}
+          >
             FAQ
           </span>
-          <h2 className="text-2xl md:text-3xl font-semibold mt-2 tracking-tight">
+          <h2
+            className="mt-3 text-2xl font-semibold tracking-tight md:text-3xl"
+            style={{ color: "var(--lp-ink)" }}
+          >
             Questions you might have
           </h2>
         </AnimateOnScroll>
 
         <div className="space-y-3">
-          {faqs.map((faq, index) => (
-            <AnimateOnScroll key={index} delay={index * 0.03}>
-              <div className="bg-white border border-neutral-200">
-                <button
-                  onClick={() =>
-                    setOpenIndex(openIndex === index ? null : index)
-                  }
-                  className="w-full flex items-start gap-4 p-5 text-left hover:bg-neutral-50 transition-colors"
+          {faqs.map((faq, index) => {
+            const isOpen = openIndex === index;
+            return (
+              <AnimateOnScroll key={index} delay={index * 0.03}>
+                <div
+                  className="rounded-xl"
+                  style={{
+                    background: "var(--lp-surface)",
+                    border: "1px solid color-mix(in srgb, var(--lp-ink) 12%, transparent)",
+                  }}
                 >
-                  <span className="text-xs font-mono text-neutral-400 mt-0.5 flex-shrink-0">
-                    {String(index + 1).padStart(2, "0")}
-                  </span>
-                  <span className="flex-1 text-sm font-medium text-neutral-900 leading-relaxed">
-                    {faq.question}
-                  </span>
-                  <motion.div
-                    animate={{ rotate: openIndex === index ? 180 : 0 }}
-                    transition={{ duration: 0.2 }}
-                    className="flex-shrink-0 mt-0.5"
+                  <button
+                    onClick={() => setOpenIndex(isOpen ? null : index)}
+                    className="flex w-full items-start gap-4 p-5 text-left transition-colors"
+                    style={{ color: "var(--lp-ink)" }}
                   >
-                    {openIndex === index ? (
-                      <Minus className="w-4 h-4 text-neutral-400" />
-                    ) : (
-                      <Plus className="w-4 h-4 text-neutral-400" />
-                    )}
-                  </motion.div>
-                </button>
-
-                <AnimatePresence>
-                  {openIndex === index && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.2 }}
-                      className="overflow-hidden"
+                    <span
+                      className="mt-0.5 flex-shrink-0 font-mono text-xs"
+                      style={{ color: "color-mix(in srgb, var(--lp-ink) 50%, transparent)" }}
                     >
-                      <div className="px-5 pb-5 pl-14">
-                        <p className="text-sm text-neutral-600 leading-relaxed">
-                          {faq.answer}
-                        </p>
-                      </div>
+                      {String(index + 1).padStart(2, "0")}
+                    </span>
+                    <span
+                      className="flex-1 text-sm font-medium leading-relaxed"
+                      style={{ color: "var(--lp-ink)" }}
+                    >
+                      {faq.question}
+                    </span>
+                    <motion.div
+                      animate={{ rotate: isOpen ? 180 : 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="mt-0.5 flex-shrink-0"
+                    >
+                      {isOpen ? (
+                        <Minus
+                          className="h-4 w-4"
+                          style={{ color: "color-mix(in srgb, var(--lp-ink) 60%, transparent)" }}
+                        />
+                      ) : (
+                        <Plus
+                          className="h-4 w-4"
+                          style={{ color: "color-mix(in srgb, var(--lp-ink) 60%, transparent)" }}
+                        />
+                      )}
                     </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            </AnimateOnScroll>
-          ))}
+                  </button>
+
+                  <AnimatePresence>
+                    {isOpen && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="overflow-hidden"
+                      >
+                        <div className="px-5 pb-5 pl-14">
+                          <p
+                            className="text-sm leading-relaxed"
+                            style={{ color: "color-mix(in srgb, var(--lp-ink) 75%, transparent)" }}
+                          >
+                            {faq.answer}
+                          </p>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </AnimateOnScroll>
+            );
+          })}
         </div>
       </div>
     </section>
