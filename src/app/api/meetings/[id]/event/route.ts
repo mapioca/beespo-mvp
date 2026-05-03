@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { canEdit } from "@/lib/auth/role-permissions";
 import { z } from "zod";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -26,10 +27,10 @@ async function getAuthorizedProfile() {
         return { supabase, error: NextResponse.json({ error: "No workspace found" }, { status: 404 }) };
     }
 
-    if (!["admin", "leader"].includes(profile.role)) {
+    if (!canEdit(profile.role)) {
         return {
             supabase,
-            error: NextResponse.json({ error: "Only admins and leaders can manage event links" }, { status: 403 }),
+            error: NextResponse.json({ error: "You do not have permission to manage event links" }, { status: 403 }),
         };
     }
 

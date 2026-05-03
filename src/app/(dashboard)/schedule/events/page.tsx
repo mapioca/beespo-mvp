@@ -3,6 +3,7 @@ import { Metadata } from "next"
 import { EventsListClient, type EventListItem } from "@/components/calendar/events"
 import { startOfMonth, endOfMonth, addMonths, subMonths } from "date-fns"
 import { getDashboardRequestContext } from "@/lib/dashboard/request-context"
+import { canEdit } from "@/lib/auth/role-permissions"
 
 export const metadata: Metadata = {
     title: "Events | Beespo",
@@ -99,7 +100,7 @@ export default async function ScheduleEventsPage() {
             : null,
     }))
 
-    const canManageEvents = profile.role === "admin" || profile.role === "leader"
+    const canManageEvents = canEdit(profile.role)
 
     return <EventsListClient events={eventItems} canManageEvents={canManageEvents} />
 }

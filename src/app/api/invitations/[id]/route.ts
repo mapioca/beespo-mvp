@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { sendInviteEmail } from '@/lib/email/send-invite-email';
 import { getAppUrlFromRequest } from '@/lib/url/app-url';
+import { canManage, formatRoleLabel } from '@/lib/auth/role-permissions';
 
 
 type Params = { params: Promise<{ id: string }> };
@@ -23,8 +24,8 @@ export async function DELETE(request: NextRequest, { params }: Params) {
         .eq('id', user.id)
         .single();
 
-    if (profile?.role !== 'admin') {
-        return NextResponse.json({ error: 'Only admins can revoke invitations' }, { status: 403 });
+    if (!canManage(profile?.role)) {
+        return NextResponse.json({ error: 'Only owners and admins can revoke invitations' }, { status: 403 });
     }
 
     // Revoke the invitation
@@ -58,8 +59,8 @@ export async function POST(request: NextRequest, { params }: Params) {
         .eq('id', user.id)
         .single();
 
-    if (profile?.role !== 'admin') {
-        return NextResponse.json({ error: 'Only admins can resend invitations' }, { status: 403 });
+    if (!canManage(profile?.role)) {
+        return NextResponse.json({ error: 'Only owners and admins can resend invitations' }, { status: 403 });
     }
 
     // Get the invitation
@@ -90,7 +91,7 @@ export async function POST(request: NextRequest, { params }: Params) {
         toEmail: invitation.email,
         inviterName: profile.full_name,
         workspaceName: workspace?.name || 'your workspace',
-        role: invitation.role.charAt(0).toUpperCase() + invitation.role.slice(1),
+        role: formatRoleLabel(invitation.role),
         inviteLink,
     });
 

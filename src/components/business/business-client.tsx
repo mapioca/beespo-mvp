@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Briefcase, Plus } from "lucide-react"
+import { canEdit } from "@/lib/auth/role-permissions"
 
 import { Breadcrumbs } from "@/components/dashboard/breadcrumbs"
 import {
@@ -82,8 +83,8 @@ export function BusinessClient({ items }: BusinessClientProps) {
       .eq("id", user.id)
       .single()
 
-    if (!profile || !["leader", "admin"].includes(profile.role)) {
-      toast.error("Only leaders and admins can create business items.")
+    if (!canEdit(profile?.role)) {
+      toast.error("You do not have permission to create business items.")
       setIsCreating(false)
       return
     }

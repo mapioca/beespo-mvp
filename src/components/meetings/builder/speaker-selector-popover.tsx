@@ -13,6 +13,7 @@ import { Search, Speech, Check, Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import { toast } from "@/lib/toast";
+import { canEdit } from "@/lib/auth/role-permissions";
 
 interface Speaker {
     id: string;
@@ -151,8 +152,8 @@ export function SpeakerSelectorPopover({
             return;
         }
 
-        if (!["leader", "admin"].includes(profile.role)) {
-            toast.error("Only leaders and admins can create speakers.");
+        if (!canEdit(profile.role)) {
+            toast.error("You do not have permission to create speakers.");
             setIsSubmitting(false);
             return;
         }

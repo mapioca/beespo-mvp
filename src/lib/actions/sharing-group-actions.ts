@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { canEdit } from "@/lib/auth/role-permissions";
 import type { SharingGroup, SharingGroupWithMembers, ShareActivityAction } from "@/types/share";
 
 // ── Audit log helper ──────────────────────────────────────────────────────────
@@ -169,8 +170,8 @@ export async function createSharingGroup({
     return { data: null, error: "No workspace found" };
   }
 
-  if (!["admin", "leader"].includes(profile.role)) {
-    return { data: null, error: "Only admins and leaders can create sharing groups" };
+  if (!canEdit(profile.role)) {
+    return { data: null, error: "You do not have permission to create sharing groups" };
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -247,8 +248,8 @@ export async function updateSharingGroup(
     return { error: "No workspace found" };
   }
 
-  if (!["admin", "leader"].includes(profile.role)) {
-    return { error: "Only admins and leaders can update sharing groups" };
+  if (!canEdit(profile.role)) {
+    return { error: "You do not have permission to update sharing groups" };
   }
 
   const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
@@ -304,8 +305,8 @@ export async function deleteSharingGroup(
     return { error: "No workspace found" };
   }
 
-  if (!["admin", "leader"].includes(profile.role)) {
-    return { error: "Only admins and leaders can delete sharing groups" };
+  if (!canEdit(profile.role)) {
+    return { error: "You do not have permission to delete sharing groups" };
   }
 
   // Verify group belongs to workspace
@@ -383,8 +384,8 @@ export async function addGroupMember(
     return { error: "No workspace found" };
   }
 
-  if (!["admin", "leader"].includes(profile.role)) {
-    return { error: "Only admins and leaders can add group members" };
+  if (!canEdit(profile.role)) {
+    return { error: "You do not have permission to add group members" };
   }
 
   // Verify group belongs to workspace
@@ -453,8 +454,8 @@ export async function removeGroupMember(
     return { error: "No workspace found" };
   }
 
-  if (!["admin", "leader"].includes(profile.role)) {
-    return { error: "Only admins and leaders can remove group members" };
+  if (!canEdit(profile.role)) {
+    return { error: "You do not have permission to remove group members" };
   }
 
   // Verify group belongs to workspace

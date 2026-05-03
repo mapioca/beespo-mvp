@@ -36,13 +36,15 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/lib/toast";
-import { MoreHorizontal, Shield, User, Eye, UserMinus, Crown } from "lucide-react";
+import { MoreHorizontal, Crown, Shield, Pencil, MessageSquare, Eye, UserMinus } from "lucide-react";
+import type { UserRole } from "@/types/database";
+import { canManage, isOwner, INVITABLE_ROLES, formatRoleLabel } from "@/lib/auth/role-permissions";
 
 interface TeamMember {
     id: string;
     email: string;
     full_name: string;
-    role: "admin" | "leader" | "guest";
+    role: UserRole;
     created_at: string;
 }
 
@@ -53,10 +55,12 @@ interface TeamMembersListProps {
     onMemberUpdated: () => void;
 }
 
-const roleConfig = {
-    admin: { label: "Admin", icon: Shield, variant: "default" as const },
-    leader: { label: "Leader", icon: User, variant: "secondary" as const },
-    guest: { label: "Guest", icon: Eye, variant: "outline" as const },
+const roleConfig: Record<UserRole, { label: string; icon: typeof Crown; variant: "default" | "secondary" | "outline" }> = {
+    owner:     { label: "Owner",     icon: Crown,         variant: "default"   },
+    admin:     { label: "Admin",     icon: Shield,        variant: "default"   },
+    editor:    { label: "Editor",    icon: Pencil,        variant: "secondary" },
+    commenter: { label: "Commenter", icon: MessageSquare, variant: "secondary" },
+    viewer:    { label: "Viewer",    icon: Eye,           variant: "outline"   },
 };
 
 export function TeamMembersList({
@@ -68,7 +72,8 @@ export function TeamMembersList({
     const [removingId, setRemovingId] = useState<string | null>(null);
     const [transferringTo, setTransferringTo] = useState<TeamMember | null>(null);
     const [isLoading, setIsLoading] = useState(false);
-    const isAdmin = currentUserRole === "admin";
+    const canManageTeam = canManage(currentUserRole);
+    const canTransferOwnership = isOwner(currentUserRole);
 
     const handleRoleChange = async (memberId: string, newRole: string) => {
         setIsLoading(true);
@@ -134,7 +139,7 @@ export function TeamMembersList({
                 throw new Error(data.error || "Failed to transfer ownership");
             }
 
-            toast.success("Ownership Transferred", { description: `${transferringTo.full_name} is now an admin.` });
+            toast.success("Ownership Transferred", { description: `${transferringTo.full_name} is now the owner.` });
             onMemberUpdated();
         } catch (error) {
             toast.error(error instanceof Error ? error.message : "Failed to transfer ownership");
@@ -152,7 +157,7 @@ export function TeamMembersList({
                         <TableHead>Name</TableHead>
                         <TableHead>Email</TableHead>
                         <TableHead>Role</TableHead>
-                        {isAdmin && <TableHead className="w-[70px]">Actions</TableHead>}
+                        {canManageTeam && <TableHead className="w-[70px]">Actions</TableHead>}
                     </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -171,19 +176,19 @@ export function TeamMembersList({
                                 </TableCell>
                                 <TableCell className="text-muted-foreground">{member.email}</TableCell>
                                 <TableCell>
-                                    {isAdmin && !isCurrentUser ? (
+                                    {canManageTeam && !isCurrentUser && member.role !== "owner" ? (
                                         <Select
                                             value={member.role}
                                             onValueChange={(value) => handleRoleChange(member.id, value)}
                                             disabled={isLoading}
                                         >
-                                            <SelectTrigger className="w-[130px]">
+                                            <SelectTrigger className="w-[140px]">
                                                 <SelectValue />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                <SelectItem value="admin">Admin</SelectItem>
-                                                <SelectItem value="leader">Leader</SelectItem>
-                                                <SelectItem value="guest">Guest</SelectItem>
+                                                {INVITABLE_ROLES.map((r) => (
+                                                    <SelectItem key={r} value={r}>{formatRoleLabel(r)}</SelectItem>
+                                                ))}
                                             </SelectContent>
                                         </Select>
                                     ) : (
@@ -193,9 +198,9 @@ export function TeamMembersList({
                                         </Badge>
                                     )}
                                 </TableCell>
-                                {isAdmin && (
+                                {canManageTeam && (
                                     <TableCell>
-                                        {!isCurrentUser && (
+                                        {!isCurrentUser && member.role !== "owner" && (
                                             <DropdownMenu>
                                                 <DropdownMenuTrigger asChild>
                                                     <Button variant="ghost" size="icon" disabled={isLoading}>
@@ -203,13 +208,13 @@ export function TeamMembersList({
                                                     </Button>
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end">
-                                                    {member.role !== "admin" && (
+                                                    {canTransferOwnership && (
                                                         <DropdownMenuItem onClick={() => setTransferringTo(member)}>
                                                             <Crown className="mr-2 h-4 w-4" />
-                                                            Make Admin
+                                                            Make Owner
                                                         </DropdownMenuItem>
                                                     )}
-                                                    <DropdownMenuSeparator />
+                                                    {canTransferOwnership && <DropdownMenuSeparator />}
                                                     <DropdownMenuItem
                                                         className="text-destructive"
                                                         onClick={() => setRemovingId(member.id)}
@@ -254,15 +259,15 @@ export function TeamMembersList({
             <AlertDialog open={!!transferringTo} onOpenChange={() => setTransferringTo(null)}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Make Admin</AlertDialogTitle>
+                        <AlertDialogTitle>Transfer Ownership</AlertDialogTitle>
                         <AlertDialogDescription>
-                            This will give {transferringTo?.full_name} full admin access to the workspace settings and member management.
+                            This will make {transferringTo?.full_name} the owner of this workspace. You will be demoted to Admin. Only owners can transfer billing, ownership, or delete the workspace. This action cannot be undone without their cooperation.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                         <AlertDialogCancel disabled={isLoading}>Cancel</AlertDialogCancel>
                         <AlertDialogAction onClick={handleTransferOwnership} disabled={isLoading}>
-                            {isLoading ? "Processing..." : "Make Admin"}
+                            {isLoading ? "Processing..." : "Transfer Ownership"}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

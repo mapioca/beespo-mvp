@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState, useTransition } from "react"
 import { createPortal } from "react-dom"
 import { useRouter } from "next/navigation"
 import { Check, ClipboardList, Columns3, Plus, SlidersHorizontal, X } from "lucide-react"
+import { canEdit } from "@/lib/auth/role-permissions"
 
 import { Breadcrumbs } from "@/components/dashboard/breadcrumbs"
 import { Button } from "@/components/ui/button"
@@ -335,8 +336,8 @@ export function AssignmentsClient({ assignments, initialViews = [] }: Assignment
       .eq("id", user.id)
       .single()
 
-    if (!profile || !["leader", "admin"].includes(profile.role)) {
-      toast.error("Only leaders and admins can create assignments.")
+    if (!canEdit(profile?.role)) {
+      toast.error("You do not have permission to create assignments.")
       setIsCreating(false)
       return
     }

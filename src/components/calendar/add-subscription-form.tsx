@@ -8,6 +8,7 @@ import { CalendarSubscription } from "@/types/database";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "@/lib/toast";
 import { isValidICalUrl } from "@/lib/ical-parser";
+import { canManage } from "@/lib/auth/role-permissions";
 import { AlertCircle, Calendar, Loader2 } from "lucide-react";
 
 interface AddSubscriptionFormProps {
@@ -78,8 +79,8 @@ export function AddSubscriptionForm({ onCreated }: AddSubscriptionFormProps) {
       .eq("id", user.id)
       .single();
 
-    if (!profile || profile.role !== "admin") {
-      toast.error("Only admins can add calendar subscriptions");
+    if (!canManage(profile?.role)) {
+      toast.error("Only owners and admins can add calendar subscriptions");
       setIsLoading(false);
       return;
     }

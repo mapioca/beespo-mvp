@@ -127,6 +127,7 @@
     --cp-hover: 0 0% 93%;
     --cp-active: 0 0% 90%;
     --surface-canvas: 0 0% 98%; /* Deepest page canvas for light mode */
+    --surface-base: 0 0% 100%;   /* Cards, panels, sidebars, popover/select content */
     --surface-active: 60 4% 90%; /* Selected/active state for light mode */
     --surface-hover: 0 0% 97%; /* Hover state for interactive surfaces in light mode */
     --surface-raised: 0 0% 100%; /* Passive buttons, interactive tiles for light mode */
@@ -956,6 +957,7 @@
     --cp-hover: 43 28% 92%;
     --cp-active: 43 30% 87%;
     --surface-canvas: 45 33% 97%; /* Deepest page canvas for warm mode */
+    --surface-base: 0 0% 100%;   /* Cards, panels, sidebars, popover/select content */
     --surface-active: 46 30% 87%; /* Selected/active state for warm mode */
     --surface-hover: 46 17% 94%; /* Hover state for interactive surfaces in warm mode */
     --surface-raised: 0 0% 100%; /* Passive buttons, interactive tiles for warm mode */

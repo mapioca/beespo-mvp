@@ -14,6 +14,7 @@ import {
 import { Filter, Settings, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { UserRole, CalendarSubscription } from "@/types/database";
+import { canManage } from "@/lib/auth/role-permissions";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "@/lib/toast";
 
@@ -34,7 +35,7 @@ export function CalendarFilterPopover({
   userRole,
   onSyncComplete,
 }: CalendarFilterPopoverProps) {
-  const isAdmin = userRole === "admin";
+  const isAdmin = canManage(userRole);
   const [subscriptions, setSubscriptions] = useState<CalendarSubscription[]>([]);
   const [isLoadingSubscriptions, setIsLoadingSubscriptions] = useState(true);
   const [isSyncingAll, setIsSyncingAll] = useState(false);
