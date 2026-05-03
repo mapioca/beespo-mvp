@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 
-export type AppTheme = "warm" | "light" | "dark";
+export type AppTheme = "light" | "dark";
 
 type ThemeContextValue = {
   theme: AppTheme;
@@ -12,6 +12,11 @@ type ThemeContextValue = {
 const STORAGE_KEY = "beespo-theme";
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
+function normalizeTheme(theme: string | null): AppTheme {
+  if (theme === "dark") return "dark";
+  return "light";
+}
+
 function applyTheme(theme: AppTheme) {
   document.documentElement.dataset.theme = theme;
   document.documentElement.classList.toggle("dark", theme === "dark");
@@ -20,15 +25,13 @@ function applyTheme(theme: AppTheme) {
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<AppTheme>(() => {
     if (typeof window === "undefined") return "light";
-    const stored = window.localStorage.getItem(STORAGE_KEY);
-    return stored === "warm" || stored === "dark" || stored === "light" ? stored : "light";
+    return normalizeTheme(window.localStorage.getItem(STORAGE_KEY));
   });
 
   useEffect(() => {
-    const stored = window.localStorage.getItem(STORAGE_KEY);
-    const initialTheme: AppTheme =
-      stored === "warm" || stored === "dark" || stored === "light" ? stored : "light";
+    const initialTheme = normalizeTheme(window.localStorage.getItem(STORAGE_KEY));
     setThemeState(initialTheme);
+    window.localStorage.setItem(STORAGE_KEY, initialTheme);
     applyTheme(initialTheme);
   }, []);
 

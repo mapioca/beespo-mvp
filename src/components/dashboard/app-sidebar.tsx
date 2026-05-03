@@ -13,7 +13,6 @@ import {
   LogOut,
   Megaphone,
   Moon,
-  Palette,
   Search,
   Settings,
   Sun,
@@ -250,11 +249,6 @@ export function AppSidebar({
               Search
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => setTheme("warm")}>
-              <Palette className="h-4 w-4" />
-              Warm mode
-              {theme === "warm" ? <span className="ml-auto text-xs text-muted-foreground">On</span> : null}
-            </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setTheme("light")}>
               <Sun className="h-4 w-4" />
               Light mode

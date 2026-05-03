@@ -837,7 +837,7 @@
     --app-nav-inverse-text: #17171a;
   }
 
-  [data-theme="warm"] {
+  [data-theme="light"] {
     --color-stone-50: #faf9f5;
     --color-stone-100: #f4f2ea;
     --color-stone-200: #e6e1d1;

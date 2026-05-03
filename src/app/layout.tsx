@@ -13,7 +13,9 @@ const inter = Inter({
 const themeInitScript = `
 try {
   var theme = localStorage.getItem("beespo-theme");
-  if (theme !== "warm" && theme !== "dark" && theme !== "light") theme = "light";
+  if (theme === "warm") theme = "light";
+  if (theme !== "dark" && theme !== "light") theme = "light";
+  localStorage.setItem("beespo-theme", theme);
   document.documentElement.dataset.theme = theme;
   document.documentElement.classList.toggle("dark", theme === "dark");
 } catch (_) {}
@@ -37,7 +39,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={inter.variable} suppressHydrationWarning>
+    <html
+      lang="en"
+      data-theme="light"
+      className={inter.variable}
+      suppressHydrationWarning
+    >
       <body className="antialiased">
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
         <a href="#main-content" className="skip-link">
