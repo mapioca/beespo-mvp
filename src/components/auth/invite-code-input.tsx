@@ -15,6 +15,9 @@ interface InviteCodeInputProps {
     required?: boolean;
     autoValidate?: boolean;
     className?: string;
+    inputStyle?: React.CSSProperties;
+    labelStyle?: React.CSSProperties;
+    helperTextStyle?: React.CSSProperties;
 }
 
 type ValidationStatus = "idle" | "validating" | "valid" | "invalid";
@@ -27,6 +30,9 @@ export function InviteCodeInput({
     required = true,
     autoValidate = true,
     className,
+    inputStyle,
+    labelStyle,
+    helperTextStyle,
 }: InviteCodeInputProps) {
     const [validationStatus, setValidationStatus] = useState<ValidationStatus>("idle");
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -118,7 +124,7 @@ export function InviteCodeInput({
 
     return (
         <div className={cn("space-y-2", className)}>
-            <Label htmlFor="inviteCode">
+            <Label htmlFor="inviteCode" style={labelStyle}>
                 Invite Code {required && <span className="text-destructive">*</span>}
             </Label>
             <div className="flex gap-2">
@@ -132,10 +138,11 @@ export function InviteCodeInput({
                         disabled={disabled}
                         required={required}
                         className={cn(
-                            "uppercase tracking-wider font-mono pr-8",
+                            "rounded-md uppercase tracking-wider font-mono pr-8 placeholder:opacity-60",
                             validationStatus === "valid" && "border-green-500 focus-visible:ring-green-500",
                             validationStatus === "invalid" && "border-destructive focus-visible:ring-destructive"
                         )}
+                        style={inputStyle}
                     />
                     <div className="absolute right-2 top-1/2 -translate-y-1/2">
                         {getStatusIcon()}
@@ -158,7 +165,7 @@ export function InviteCodeInput({
             {validationStatus === "valid" && (
                 <p className="text-sm text-green-600">Code verified successfully!</p>
             )}
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs" style={helperTextStyle}>
                 Enter the invite code you received to create an account.
             </p>
         </div>

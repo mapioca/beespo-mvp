@@ -19,6 +19,10 @@ interface WizardFooterProps {
   className?: string;
 }
 
+const inkSubtle = 'color-mix(in srgb, var(--lp-ink) 65%, transparent)';
+const inkBorder = '1px solid color-mix(in srgb, var(--lp-ink) 18%, transparent)';
+const trackBg = 'color-mix(in srgb, var(--lp-ink) 10%, transparent)';
+
 export function WizardFooter({
   currentStep,
   totalSteps,
@@ -37,12 +41,19 @@ export function WizardFooter({
 
   return (
     <div className={cn('w-full', className)}>
-      {/* Navigation buttons */}
       {!hideNavigation && (
-        <div className="flex items-center justify-between mb-6">
+        <div className="mb-6 flex items-center justify-between">
           <div>
             {canGoBack && (
-              <Button variant="outline" onClick={onBack} className="gap-2 font-medium">
+              <Button
+                onClick={onBack}
+                className="gap-2 rounded-md font-medium transition-opacity hover:opacity-80"
+                style={{
+                  background: 'var(--lp-bg)',
+                  color: 'var(--lp-ink)',
+                  border: inkBorder,
+                }}
+              >
                 <ArrowLeft className="h-4 w-4" />
                 Back
               </Button>
@@ -54,7 +65,8 @@ export function WizardFooter({
               <Button
                 variant="ghost"
                 onClick={onSkip}
-                className="text-gray-500 font-medium hover:text-gray-900"
+                className="bg-transparent font-medium transition-opacity hover:bg-transparent hover:opacity-100"
+                style={{ color: inkSubtle }}
               >
                 Skip this step
               </Button>
@@ -62,20 +74,20 @@ export function WizardFooter({
             <Button
               onClick={onContinue}
               disabled={!canContinue}
-              className="gap-2 font-medium bg-black hover:bg-gray-900 text-white"
+              className="gap-2 rounded-md border-0 font-medium transition-opacity hover:opacity-90 disabled:opacity-50"
+              style={{ background: 'var(--lp-accent)', color: 'var(--lp-bg)' }}
             >
-              {continueLabel || (isLastStep ? 'Complete Setup' : 'Continue')}
+              {continueLabel || (isLastStep ? 'Complete setup' : 'Continue')}
               <ArrowRight className="h-4 w-4" />
             </Button>
           </div>
         </div>
       )}
 
-      {/* Progress bar */}
-      <div className="h-1 bg-gray-100 rounded-full overflow-hidden">
+      <div className="h-1 overflow-hidden rounded-full" style={{ background: trackBg }}>
         <div
-          className="h-full bg-black transition-all duration-300 ease-out rounded-full"
-          style={{ width: `${progress}%` }}
+          className="h-full rounded-full transition-all duration-300 ease-out"
+          style={{ width: `${progress}%`, background: 'var(--lp-accent)' }}
         />
       </div>
     </div>

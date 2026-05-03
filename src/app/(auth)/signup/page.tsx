@@ -446,6 +446,9 @@ function SignupContent() {
               onChange={setInviteCode}
               onValidationComplete={handleInviteValidation}
               disabled={isLoading}
+              inputStyle={inputStyle}
+              labelStyle={{ color: "var(--lp-ink)" }}
+              helperTextStyle={{ color: inkSubtle }}
             />
           </>
         )}

@@ -5,16 +5,28 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardFooter,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card";
 import { toast } from "@/lib/toast";
 import { createClient } from "@/lib/supabase/client";
+
+const inkSubtle = "color-mix(in srgb, var(--lp-ink) 65%, transparent)";
+const inkBorder = "1px solid color-mix(in srgb, var(--lp-ink) 18%, transparent)";
+const inputStyle = {
+    background: "var(--lp-bg)",
+    color: "var(--lp-ink)",
+    border: "1px solid color-mix(in srgb, var(--lp-ink) 22%, transparent)",
+};
+const accentBtnStyle = { background: "var(--lp-accent)", color: "var(--lp-bg)" };
+
+function AuthCard({ children }: { children: React.ReactNode }) {
+    return (
+        <div
+            className="rounded-2xl p-7 sm:p-8"
+            style={{ background: "var(--lp-surface)", border: inkBorder }}
+        >
+            {children}
+        </div>
+    );
+}
 
 export default function ResetPasswordPage() {
     // Memoize the Supabase client to prevent recreation on each render
@@ -142,81 +154,103 @@ export default function ResetPasswordPage() {
 
     if (isVerifying) {
         return (
-            <Card className="border-border">
-                <CardHeader className="space-y-1">
-                    <CardTitle className="text-2xl font-bold">Verifying Link</CardTitle>
-                    <CardDescription>
+            <AuthCard>
+                <div className="space-y-1">
+                    <h1 className="text-2xl font-bold tracking-tight" style={{ color: "var(--lp-ink)" }}>
+                        Verifying link
+                    </h1>
+                    <p className="text-sm" style={{ color: inkSubtle }}>
                         Please wait while we verify your secure link...
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div className="flex justify-center p-4">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                    </div>
-                </CardContent>
-            </Card>
+                    </p>
+                </div>
+                <div className="mt-6 flex justify-center p-4">
+                    <div
+                        className="h-8 w-8 animate-spin rounded-full border-b-2"
+                        style={{ borderColor: "var(--lp-accent)" }}
+                    />
+                </div>
+            </AuthCard>
         );
     }
 
     if (!hasSession) {
         return (
-            <Card className="border-border">
-                <CardHeader className="space-y-1">
-                    <CardTitle className=" text-2xl font-bold text-destructive">Invalid Link</CardTitle>
-                    <CardDescription>
+            <AuthCard>
+                <div className="space-y-1">
+                    <h1
+                        className="text-2xl font-bold tracking-tight"
+                        style={{ color: "var(--lp-accent)" }}
+                    >
+                        Invalid link
+                    </h1>
+                    <p className="text-sm" style={{ color: inkSubtle }}>
                         Unable to verify your session. The link may have expired or is invalid.
-                    </CardDescription>
-                </CardHeader>
-                <CardFooter>
-                    <Button className="w-full" onClick={() => router.push('/forgot-password')}>
-                        Request New Link
-                    </Button>
-                </CardFooter>
-            </Card>
+                    </p>
+                </div>
+                <Button
+                    className="mt-6 w-full rounded-md border-0 transition-opacity hover:opacity-90"
+                    onClick={() => router.push('/forgot-password')}
+                    style={accentBtnStyle}
+                >
+                    Request new link
+                </Button>
+            </AuthCard>
         );
     }
 
     return (
-        <Card className="border-border">
-            <CardHeader className="space-y-1">
-                <CardTitle className="text-2xl font-bold">Reset password</CardTitle>
-                <CardDescription>
+        <AuthCard>
+            <div className="space-y-1">
+                <h1 className="text-2xl font-bold tracking-tight" style={{ color: "var(--lp-ink)" }}>
+                    Reset password
+                </h1>
+                <p className="text-sm" style={{ color: inkSubtle }}>
                     Enter your new password below.
-                </CardDescription>
-            </CardHeader>
-            <form onSubmit={handleSubmit}>
-                <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                        <Label htmlFor="password">New Password</Label>
-                        <Input
-                            id="password"
-                            type="password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            required
-                            disabled={isLoading}
-                            minLength={6}
-                        />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="confirmPassword">Confirm Password</Label>
-                        <Input
-                            id="confirmPassword"
-                            type="password"
-                            value={confirmPassword}
-                            onChange={(e) => setConfirmPassword(e.target.value)}
-                            required
-                            disabled={isLoading}
-                            minLength={6}
-                        />
-                    </div>
-                </CardContent>
-                <CardFooter className="flex flex-col space-y-4">
-                    <Button type="submit" className="w-full" disabled={isLoading}>
-                        {isLoading ? "Resetting password..." : "Reset password"}
-                    </Button>
-                </CardFooter>
+                </p>
+            </div>
+            <form onSubmit={handleSubmit} className="mt-6 space-y-5">
+                <div className="space-y-2">
+                    <Label htmlFor="password" style={{ color: "var(--lp-ink)" }}>
+                        New password
+                    </Label>
+                    <Input
+                        id="password"
+                        type="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                        disabled={isLoading}
+                        minLength={6}
+                        className="rounded-md"
+                        style={inputStyle}
+                    />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="confirmPassword" style={{ color: "var(--lp-ink)" }}>
+                        Confirm password
+                    </Label>
+                    <Input
+                        id="confirmPassword"
+                        type="password"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        required
+                        disabled={isLoading}
+                        minLength={6}
+                        className="rounded-md"
+                        style={inputStyle}
+                    />
+                </div>
+
+                <Button
+                    type="submit"
+                    className="w-full rounded-md border-0 transition-opacity hover:opacity-90"
+                    disabled={isLoading}
+                    style={accentBtnStyle}
+                >
+                    {isLoading ? "Resetting password..." : "Reset password"}
+                </Button>
             </form>
-        </Card>
+        </AuthCard>
     );
 }
