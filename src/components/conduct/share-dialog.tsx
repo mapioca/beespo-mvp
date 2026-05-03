@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Share2, Link, Mail, Download } from "lucide-react";
+import { Share2, Mail, Download } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ShareRecipientsTab, PublicLinkTab, ExportTab, ShareAnalyticsBadge } from "@/components/share";
+import { ShareRecipientsTab, ExportTab, ShareAnalyticsBadge } from "@/components/share";
 import { useShareDialogStore } from "@/stores/share-dialog-store";
 import type { Database } from "@/types/database";
 import type { ShareDialogTab } from "@/types/share";
@@ -21,7 +21,9 @@ type Meeting = Database["public"]["Tables"]["meetings"]["Row"];
 
 interface ShareDialogProps {
   meeting: Meeting;
-  workspaceSlug: string | null;
+  // Workspace slug + onUpdate retained for caller compatibility; the public-link
+  // tab moved to /settings?tab=audience and no longer needs them here.
+  workspaceSlug?: string | null;
   onUpdate?: (meeting: Meeting) => void;
   // Controlled mode props
   open?: boolean;
@@ -34,12 +36,10 @@ interface ShareDialogProps {
 
 export function ShareDialog({
   meeting,
-  workspaceSlug,
-  onUpdate,
   open: controlledOpen,
   onOpenChange: controlledOnOpenChange,
   hideTrigger = false,
-  defaultTab = "public-link",
+  defaultTab = "invite",
 }: ShareDialogProps) {
   const [internalOpen, setInternalOpen] = useState(false);
 
@@ -167,33 +167,18 @@ export function ShareDialog({
           onValueChange={(value) => setActiveTab(value as ShareDialogTab)}
           className="mt-4"
         >
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="public-link" className="flex items-center gap-1.5">
-              <Link className="h-4 w-4" />
-              <span className="hidden sm:inline">Public Link</span>
-              <span className="sm:hidden">Link</span>
-            </TabsTrigger>
+          <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="invite" className="flex items-center gap-1.5">
               <Mail className="h-4 w-4" />
-              <span className="hidden sm:inline">Invite</span>
-              <span className="sm:hidden">Invite</span>
+              <span>Invite</span>
             </TabsTrigger>
             <TabsTrigger value="export" className="flex items-center gap-1.5">
               <Download className="h-4 w-4" />
-              <span className="hidden sm:inline">Export</span>
-              <span className="sm:hidden">Export</span>
+              <span>Export</span>
             </TabsTrigger>
           </TabsList>
 
           <div className="mt-4">
-            <TabsContent value="public-link" className="m-0">
-              <PublicLinkTab
-                meeting={meeting}
-                workspaceSlug={workspaceSlug}
-                onUpdate={onUpdate}
-              />
-            </TabsContent>
-
             <TabsContent value="invite" className="m-0">
               <ShareRecipientsTab meetingId={meeting.id} />
             </TabsContent>

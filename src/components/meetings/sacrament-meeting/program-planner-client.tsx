@@ -43,6 +43,7 @@ import { CSS } from "@dnd-kit/utilities"
 
 import { Breadcrumbs } from "@/components/dashboard/breadcrumbs"
 import { SacramentMeetingAudienceView } from "@/components/meetings/sacrament-meeting/audience-client"
+import { AudiencePublishButton } from "@/components/meetings/sacrament-meeting/audience-publish-button"
 import { ConductView } from "@/components/meetings/sacrament-meeting/conduct-view"
 import { HymnSelectorModal } from "@/components/meetings/hymn-selector-modal"
 import { AnnouncementSelectorPopover } from "@/components/meetings/builder/announcement-selector-popover"
@@ -3442,6 +3443,7 @@ export function SacramentMeetingPlannerClient({
               Audience
               <span className="ml-1 hidden font-mono text-[10px] text-muted-foreground/80 sm:inline">⌥A</span>
             </Button>
+            <AudiencePublishButton isoDate={selectedSunday.isoDate} />
             <Button type="button" variant="default" size="sm" onClick={() => setConductOpen(true)}>
               <Play className="h-3.5 w-3.5" />
               Conduct

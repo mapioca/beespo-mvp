@@ -24,13 +24,17 @@ export default function PublicLayout({
       <main className="flex-1 flex flex-col">{children}</main>
 
       <footer className="mt-auto bg-transparent">
-        <div className="container mx-auto px-4 py-4 text-center text-sm text-muted-foreground">
+        <div className="container mx-auto flex flex-col items-center gap-1 px-4 py-4 text-center text-sm text-muted-foreground">
           <Link
             href="https://beespo.com"
             className="hover:text-foreground transition-colors"
           >
             Powered by Beespo
           </Link>
+          <p className="max-w-prose text-xs text-muted-foreground/80">
+            Beespo is an independent product, not affiliated with or endorsed by
+            The Church of Jesus Christ of Latter-day Saints.
+          </p>
         </div>
       </footer>
     </div>
