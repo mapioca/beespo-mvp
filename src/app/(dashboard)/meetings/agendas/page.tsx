@@ -4,6 +4,7 @@ import type { Meeting } from "@/components/meetings/meetings-table"
 import { Metadata } from "next"
 import { AgendaFilter } from "@/lib/agenda-views"
 import { getDashboardRequestContext } from "@/lib/dashboard/request-context"
+import { canEdit } from "@/lib/auth/role-permissions"
 import { cache } from "react"
 
 export const metadata: Metadata = {
@@ -26,7 +27,7 @@ export default async function AgendasPage() {
     createClient(),
   ])
 
-  const isLeader = profile.role === "leader" || profile.role === "admin"
+  const isLeader = canEdit(profile.role)
 
   // Fetch workspace slug
   const { data: workspace } = await (

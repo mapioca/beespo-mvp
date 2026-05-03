@@ -8,6 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { Settings, X, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { UserRole, CalendarSubscription } from "@/types/database";
+import { canManage } from "@/lib/auth/role-permissions";
 import { CalendarSettingsDialog } from "./calendar-settings-dialog";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "@/lib/toast";
@@ -34,7 +35,7 @@ export function CalendarSidebar({
   userRole,
   onSyncComplete,
 }: CalendarSidebarProps) {
-  const isAdmin = userRole === "admin";
+  const isAdmin = canManage(userRole);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [subscriptions, setSubscriptions] = useState<CalendarSubscription[]>([]);
   const [isLoadingSubscriptions, setIsLoadingSubscriptions] = useState(true);

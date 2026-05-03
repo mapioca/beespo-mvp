@@ -28,6 +28,7 @@ import type {
   WorkspaceMemberRole,
   WorkspaceInvitationData,
 } from '@/types/onboarding';
+import { INVITABLE_ROLES, formatRoleLabel } from '@/lib/auth/role-permissions';
 import { ONBOARDING_STEPS, INVITED_USER_ONBOARDING_STEPS } from '@/types/onboarding';
 import {
   Users,
@@ -76,8 +77,8 @@ export default function OnboardingPage() {
 
   // Invite rows state - start with 2 empty rows
   const [inviteRows, setInviteRows] = useState<Array<{ email: string; role: WorkspaceMemberRole }>>([
-    { email: '', role: 'leader' },
-    { email: '', role: 'leader' },
+    { email: '', role: 'editor' },
+    { email: '', role: 'editor' },
   ]);
   const [inviteErrors, setInviteErrors] = useState<Record<number, string>>({});
 
@@ -372,7 +373,7 @@ export default function OnboardingPage() {
 
   const addInviteRow = () => {
     if (inviteRows.length < 5) {
-      setInviteRows((prev) => [...prev, { email: '', role: 'leader' }]);
+      setInviteRows((prev) => [...prev, { email: '', role: 'editor' }]);
     }
   };
 
@@ -417,18 +418,7 @@ export default function OnboardingPage() {
   };
 
   // Format role for display
-  const formatRole = (role: string) => {
-    switch (role) {
-      case 'admin':
-        return 'Admin';
-      case 'leader':
-        return 'Leader';
-      case 'guest':
-        return 'Guest';
-      default:
-        return 'Member';
-    }
-  };
+  const formatRole = (role: string) => formatRoleLabel(role) || 'Member';
 
   // Loading state while checking auth
   if (isCheckingAuth) {
@@ -732,9 +722,9 @@ export default function OnboardingPage() {
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="admin">Admin</SelectItem>
-                            <SelectItem value="leader">Leader</SelectItem>
-                            <SelectItem value="guest">Guest</SelectItem>
+                            {INVITABLE_ROLES.map((r) => (
+                              <SelectItem key={r} value={r}>{formatRoleLabel(r)}</SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                         {inviteRows.length > 1 && (

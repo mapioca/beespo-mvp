@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import { canEdit } from "@/lib/auth/role-permissions";
 import {
     Popover,
     PopoverContent,
@@ -210,8 +211,8 @@ export function DiscussionSelectorPopover({
                 .eq("id", user.id)
                 .single();
 
-            if (!profile || !["leader", "admin"].includes(profile.role)) {
-                toast.error("Only leaders and admins can create discussions.");
+            if (!canEdit(profile?.role)) {
+                toast.error("You do not have permission to create discussions.");
                 return;
             }
 

@@ -18,6 +18,7 @@ import { arrayMove, sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { format } from "date-fns";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "@/lib/toast";
+import { canEdit as roleCanEdit } from "@/lib/auth/role-permissions";
 import { cn } from "@/lib/utils";
 import { PropertiesPane } from "./properties-pane";
 import { ToolboxPane } from "./toolbox-pane";
@@ -316,7 +317,7 @@ export function MeetingBuilder({
                     setWorkspaceSlug(profile.workspaces.slug);
                 }
                 const role = profile?.role;
-                setIsLeader(role === "leader" || role === "admin");
+                setIsLeader(roleCanEdit(role));
             }
 
             // Only load Beespo official + user's own workspace templates

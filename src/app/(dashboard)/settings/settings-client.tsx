@@ -35,6 +35,8 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import type { SharingGroupWithMembers } from "@/types/share";
+import type { UserRole } from "@/types/database";
+import { canManage, canEdit } from "@/lib/auth/role-permissions";
 
 interface Workspace {
     id: string;
@@ -48,7 +50,7 @@ interface TeamMember {
     id: string;
     email: string;
     full_name: string;
-    role: "admin" | "leader" | "guest";
+    role: UserRole;
     created_at: string;
 }
 
@@ -126,7 +128,7 @@ export function SettingsClient({
     const [isSavingMfa, setIsSavingMfa] = useState(false);
     const [sacramentLanguage, setSacramentLanguage] = useState<"ENG" | "SPA">(languagePreference);
     const [isSavingLanguage, setIsSavingLanguage] = useState(false);
-    const isAdmin = currentUserRole === "admin";
+    const isAdmin = canManage(currentUserRole);
 
     const hasProfileChanges = userFullName !== currentUserDetails.fullName || userRoleTitle !== currentUserDetails.roleTitle;
 
@@ -465,7 +467,7 @@ export function SettingsClient({
                     <SharingGroupsTab
                         sharingGroups={sharingGroups}
                         workspaceMembers={workspaceMembers}
-                        canManage={isAdmin || currentUserRole === "leader"}
+                        canManage={canEdit(currentUserRole)}
                     />
                 </TabsContent>
 

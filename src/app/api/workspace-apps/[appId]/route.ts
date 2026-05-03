@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
+import { canEdit } from '@/lib/auth/role-permissions';
 
 // GET /api/workspace-apps/[appId] - Get workspace app details
 export async function GET(
@@ -70,8 +71,8 @@ export async function DELETE(
         return NextResponse.json({ error: 'No workspace found' }, { status: 404 });
     }
 
-    if (!['admin', 'leader'].includes(profile.role)) {
-        return NextResponse.json({ error: 'Only admins and leaders can remove apps' }, { status: 403 });
+    if (!canEdit(profile.role)) {
+        return NextResponse.json({ error: 'You do not have permission to remove apps' }, { status: 403 });
     }
 
     // Check if the workspace app exists

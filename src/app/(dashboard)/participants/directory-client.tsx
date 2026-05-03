@@ -43,6 +43,7 @@ import {
 } from "@/components/ui/tooltip"
 import { createClient } from "@/lib/supabase/client"
 import { clearDirectoryCache } from "@/lib/cache/form-data-cache"
+import { canEdit } from "@/lib/auth/role-permissions"
 import { toast } from "@/lib/toast"
 import {
     DirectoryTable,
@@ -180,7 +181,7 @@ export function DirectoryPageClient({
     const router = useRouter()
     const [, startDeleteTransition] = useTransition()
     const [mounted, setMounted] = useState(false)
-    const canManage = userRole === "leader" || userRole === "admin"
+    const canManage = canEdit(userRole)
 
     // ── Views state ──────────────────────────────────────────────────────────
     const [views, setViews] = useState<DirectoryView[]>(initialViews)

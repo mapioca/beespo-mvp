@@ -2,6 +2,7 @@
 
 import type React from "react";
 import { useState, useMemo, useCallback, useEffect } from "react";
+import { canEdit } from "@/lib/auth/role-permissions";
 import { useRouter } from "next/navigation";
 import { useSearchParams } from "next/navigation";
 import {
@@ -222,7 +223,7 @@ export function CalendarClient({
     fetchInternalEvents();
   }, []);
 
-  const canCreateEvents = userRole === "admin" || userRole === "leader";
+  const canCreateEvents = canEdit(userRole);
 
   useEffect(() => {
     if (!canCreateEvents) return;

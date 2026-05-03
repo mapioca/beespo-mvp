@@ -3,6 +3,7 @@
 import * as React from "react";
 import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
+import { canEdit as canEditRole } from "@/lib/auth/role-permissions";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
@@ -93,7 +94,7 @@ export function CallingsClient({ callings, teamMembers, userRole }: CallingsClie
     const [creating, setCreating] = useState(false);
     const [selectedCallingId, setSelectedCallingId] = useState<string | null>(null);
 
-    const canEdit = ['admin', 'leader'].includes(userRole);
+    const canEdit = canEditRole(userRole);
 
     // Get unique organizations from callings
     const organizations = useMemo(() => {

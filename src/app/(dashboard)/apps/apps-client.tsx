@@ -9,6 +9,7 @@ import { toast } from "@/lib/toast";
 import { AppWindow, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import type { App, WorkspaceAppWithApp } from "@/types/apps";
+import { canEdit } from "@/lib/auth/role-permissions";
 
 interface AppsClientProps {
     apps: App[];
@@ -24,7 +25,7 @@ export function AppsClient({ apps, workspaceApps, userRole }: AppsClientProps) {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
 
-    const canManageApps = ["admin", "leader"].includes(userRole);
+    const canManageApps = canEdit(userRole);
 
     // Initialize store with SSR data
     useEffect(() => {

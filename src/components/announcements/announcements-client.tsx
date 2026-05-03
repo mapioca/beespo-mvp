@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { format, formatDistanceToNow, isFuture, isPast } from "date-fns"
+import { canEdit } from "@/lib/auth/role-permissions"
 import {
     Calendar,
     Clock,
@@ -216,8 +217,8 @@ export function AnnouncementsClient({
             .eq("id", user.id)
             .single()
 
-        if (!profile || !["leader", "admin"].includes(profile.role)) {
-            toast.error("Only leaders and admins can create announcements.")
+        if (!canEdit(profile?.role)) {
+            toast.error("You do not have permission to create announcements.")
             setIsCreating(false)
             return
         }

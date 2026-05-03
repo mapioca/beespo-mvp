@@ -22,6 +22,21 @@ import {
 } from "@/components/ui/select";
 import { toast } from "@/lib/toast";
 import { UserPlus } from "lucide-react";
+import { INVITABLE_ROLES } from "@/lib/auth/role-permissions";
+
+const ROLE_DESCRIPTIONS: Record<(typeof INVITABLE_ROLES)[number], string> = {
+    admin: "User and settings management (no billing or ownership)",
+    editor: "Can create and edit content",
+    commenter: "Read access plus the ability to comment",
+    viewer: "Read-only access",
+};
+
+const ROLE_LABEL_TITLECASE: Record<(typeof INVITABLE_ROLES)[number], string> = {
+    admin: "Admin",
+    editor: "Editor",
+    commenter: "Commenter",
+    viewer: "Viewer",
+};
 
 interface InviteMemberDialogProps {
     onInviteSent: () => void;
@@ -30,7 +45,7 @@ interface InviteMemberDialogProps {
 export function InviteMemberDialog({ onInviteSent }: InviteMemberDialogProps) {
     const [open, setOpen] = useState(false);
     const [email, setEmail] = useState("");
-    const [role, setRole] = useState<string>("leader");
+    const [role, setRole] = useState<string>("editor");
     const [isLoading, setIsLoading] = useState(false);
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -57,7 +72,7 @@ export function InviteMemberDialog({ onInviteSent }: InviteMemberDialogProps) {
             }
 
             setEmail("");
-            setRole("leader");
+            setRole("editor");
             setOpen(false);
             onInviteSent();
         } catch (error) {
@@ -103,24 +118,14 @@ export function InviteMemberDialog({ onInviteSent }: InviteMemberDialogProps) {
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="admin">
-                                        <div className="flex flex-col items-start">
-                                            <span className="font-medium">Admin</span>
-                                            <span className="text-xs text-muted-foreground">Full control over settings and members</span>
-                                        </div>
-                                    </SelectItem>
-                                    <SelectItem value="leader">
-                                        <div className="flex flex-col items-start">
-                                            <span className="font-medium">Leader</span>
-                                            <span className="text-xs text-muted-foreground">Can create and edit content</span>
-                                        </div>
-                                    </SelectItem>
-                                    <SelectItem value="guest">
-                                        <div className="flex flex-col items-start">
-                                            <span className="font-medium">Guest</span>
-                                            <span className="text-xs text-muted-foreground">Read-only access</span>
-                                        </div>
-                                    </SelectItem>
+                                    {INVITABLE_ROLES.map((r) => (
+                                        <SelectItem key={r} value={r}>
+                                            <div className="flex flex-col items-start">
+                                                <span className="font-medium">{ROLE_LABEL_TITLECASE[r]}</span>
+                                                <span className="text-xs text-muted-foreground">{ROLE_DESCRIPTIONS[r]}</span>
+                                            </div>
+                                        </SelectItem>
+                                    ))}
                                 </SelectContent>
                             </Select>
                         </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { canEdit } from "@/lib/auth/role-permissions";
 import {
     Dialog,
     DialogContent,
@@ -84,8 +85,8 @@ export function CreateSpeakerDialog({
             .eq("id", user.id)
             .single();
 
-        if (!profile || !["leader", "admin"].includes(profile.role)) {
-            toast.error("Only leaders and admins can create speakers.");
+        if (!canEdit(profile?.role)) {
+            toast.error("You do not have permission to create speakers.");
             setIsLoading(false);
             return;
         }

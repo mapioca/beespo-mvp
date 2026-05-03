@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { TeamWorkloadData, DragHandleProps } from "@/types/dashboard";
 import { WidgetCard } from "./widget-card";
+import { formatRoleLabel } from "@/lib/auth/role-permissions";
 
 interface Props {
   data: TeamWorkloadData;
@@ -23,7 +24,7 @@ function getInitials(name: string): string {
 }
 
 function formatRole(role: string): string {
-  return role.charAt(0).toUpperCase() + role.slice(1);
+  return formatRoleLabel(role);
 }
 
 type LoadLevel = "good" | "busy" | "overburdened";

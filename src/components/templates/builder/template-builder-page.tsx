@@ -17,6 +17,7 @@ import {
 import { arrayMove, sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "@/lib/toast";
+import { canEdit } from "@/lib/auth/role-permissions";
 import { TemplateMetadataHeader } from "./template-metadata-header";
 import { TemplateCanvas } from "./template-canvas";
 import { ToolboxPane } from "@/components/meetings/builder/toolbox-pane";
@@ -190,8 +191,8 @@ export function TemplateBuilderPage() {
 
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const p = profile as any;
-            if (!p || !["admin", "leader"].includes(p.role)) {
-                toast.error("Only admins and leaders can create templates.");
+            if (!canEdit(p?.role)) {
+                toast.error("You do not have permission to create templates.");
                 setIsSaving(false);
                 return;
             }
