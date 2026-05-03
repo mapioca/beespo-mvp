@@ -8,6 +8,7 @@ import {
   type CreateEventAndMeetingInput,
   type LinkMeetingToEventInput,
 } from "@/lib/validations/event-meeting";
+import { canEdit } from "@/lib/auth/role-permissions";
 
 export async function quickCreateMeeting(): Promise<
   { meetingId: string } | { error: string }
@@ -26,8 +27,8 @@ export async function quickCreateMeeting(): Promise<
     .single();
 
   if (!profile?.workspace_id) return { error: "No workspace found" };
-  if (!["admin", "leader"].includes((profile as { role: string }).role)) {
-    return { error: "Only admins and leaders can create meetings" };
+  if (!canEdit((profile as { role: string }).role)) {
+    return { error: "You do not have permission to create meetings" };
   }
 
   const now = new Date();

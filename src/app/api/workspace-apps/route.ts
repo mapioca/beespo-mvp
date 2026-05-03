@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
+import { canEdit } from '@/lib/auth/role-permissions';
 
 // GET /api/workspace-apps - List apps connected to the current workspace
 export async function GET() {
@@ -58,8 +59,8 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'No workspace found' }, { status: 404 });
     }
 
-    if (!['admin', 'leader'].includes(profile.role)) {
-        return NextResponse.json({ error: 'Only admins and leaders can add apps' }, { status: 403 });
+    if (!canEdit(profile.role)) {
+        return NextResponse.json({ error: 'You do not have permission to add apps' }, { status: 403 });
     }
 
     // Parse request body

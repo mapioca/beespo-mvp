@@ -4,6 +4,7 @@ import { getDashboardRequestContext } from "@/lib/dashboard/request-context"
 
 import { CalendarSubscriptionsSettings } from "@/components/calendar/settings/calendar-subscriptions-settings"
 import type { CalendarSubscription } from "@/types/database"
+import { canManage } from "@/lib/auth/role-permissions"
 
 export const metadata: Metadata = {
   title: "Calendar Settings | Beespo",
@@ -26,7 +27,7 @@ export default async function ScheduleSettingsPage() {
     <CalendarSubscriptionsSettings
       initialSubscriptions={(subscriptions ?? []) as CalendarSubscription[]}
       workspaceId={profile.workspace_id}
-      isAdmin={profile.role === "admin"}
+      isAdmin={canManage(profile.role)}
     />
   )
 }

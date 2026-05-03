@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
+import { canEdit } from '@/lib/auth/role-permissions'
 import type { DirectoryTag } from '@/types/database'
 
 export async function getDirectoryTags() {
@@ -53,7 +54,7 @@ export async function createDirectoryTag(payload: { name: string; color: string 
     return { data: null, error: 'Profile not found' }
   }
 
-  if (!['admin', 'leader'].includes(profile.role)) {
+  if (!canEdit(profile.role)) {
     return { data: null, error: 'Insufficient permissions' }
   }
 
@@ -96,7 +97,7 @@ export async function deleteDirectoryTag(tagId: string) {
     return { error: 'Profile not found' }
   }
 
-  if (!['admin', 'leader'].includes(profile.role)) {
+  if (!canEdit(profile.role)) {
     return { error: 'Insufficient permissions' }
   }
 
@@ -146,7 +147,7 @@ export async function assignTagToDirectoryEntry(directoryId: string, tagId: stri
     return { error: 'Profile not found' }
   }
 
-  if (!['admin', 'leader'].includes(profile.role)) {
+  if (!canEdit(profile.role)) {
     return { error: 'Insufficient permissions' }
   }
 
@@ -211,7 +212,7 @@ export async function removeTagFromDirectoryEntry(directoryId: string, tagId: st
     return { error: 'Profile not found' }
   }
 
-  if (!['admin', 'leader'].includes(profile.role)) {
+  if (!canEdit(profile.role)) {
     return { error: 'Insufficient permissions' }
   }
 
@@ -262,7 +263,7 @@ export async function updateDirectoryTag(tagId: string, payload: { name: string;
     return { data: null, error: 'Profile not found' }
   }
 
-  if (!['admin', 'leader'].includes(profile.role)) {
+  if (!canEdit(profile.role)) {
     return { data: null, error: 'Insufficient permissions' }
   }
 

@@ -47,8 +47,8 @@ export const featureSchema = z.enum([
 // Email validation for teammate invites
 export const emailSchema = z.string().email('Please enter a valid email address');
 
-// Workspace member role for invitations
-export const workspaceMemberRoleSchema = z.enum(['admin', 'leader', 'guest']);
+// Workspace member role for invitations (owner not invitable)
+export const workspaceMemberRoleSchema = z.enum(['admin', 'editor', 'commenter', 'viewer']);
 
 // Teammate invite schema
 export const teammateInviteSchema = z.object({

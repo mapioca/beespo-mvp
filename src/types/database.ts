@@ -22,7 +22,7 @@ export type OrganizationType =
   | 'sunday_school';
 
 // User roles
-export type UserRole = 'admin' | 'leader' | 'guest';
+export type UserRole = 'owner' | 'admin' | 'editor' | 'commenter' | 'viewer';
 export type FavoriteEntityType = 'meeting' | 'table' | 'form' | 'discussion' | 'notebook' | 'note';
 export type MeetingPlanType = 'agenda' | 'program';
 export type PlanDocumentStatus = 'draft' | 'finalized' | 'archived';

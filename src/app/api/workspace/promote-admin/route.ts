@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
+import { canManage } from '@/lib/auth/role-permissions';
 
 export async function POST(request: NextRequest) {
     const supabase = await createClient();
@@ -20,8 +21,8 @@ export async function POST(request: NextRequest) {
         .eq('id', user.id)
         .single();
 
-    if (currentProfile?.role !== 'admin') {
-        return NextResponse.json({ error: 'Only admins can promote members' }, { status: 403 });
+    if (!canManage(currentProfile?.role)) {
+        return NextResponse.json({ error: 'Only owners and admins can promote members' }, { status: 403 });
     }
 
     // Verify target is in same workspace

@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { sendInviteEmail } from '@/lib/email/send-invite-email';
 import { getAppUrlFromRequest } from '@/lib/url/app-url';
+import { canManage, INVITABLE_ROLES, formatRoleLabel } from '@/lib/auth/role-permissions';
 import { z } from 'zod';
 
 // GET /api/invitations - List pending invitations for workspace
@@ -70,8 +71,8 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'No workspace found' }, { status: 404 });
     }
 
-    if (profile.role !== 'admin') {
-        return NextResponse.json({ error: 'Only admins can invite members' }, { status: 403 });
+    if (!canManage(profile.role)) {
+        return NextResponse.json({ error: 'Only owners and admins can invite members' }, { status: 403 });
     }
 
     // Get workspace details
@@ -97,7 +98,7 @@ export async function POST(request: NextRequest) {
     }
     const validatedEmail = emailValidation.data;
 
-    if (!['admin', 'leader', 'guest'].includes(role)) {
+    if (!(INVITABLE_ROLES as readonly string[]).includes(role)) {
         return NextResponse.json({ error: 'Invalid role' }, { status: 400 });
     }
 
@@ -151,7 +152,7 @@ export async function POST(request: NextRequest) {
         toEmail: validatedEmail,
         inviterName: profile.full_name,
         workspaceName: workspace?.name || 'your workspace',
-        role: role.charAt(0).toUpperCase() + role.slice(1),
+        role: formatRoleLabel(role),
         inviteLink,
     });
 

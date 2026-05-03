@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { canEdit, EDIT_ROLES } from "@/lib/auth/role-permissions";
 import callingsCatalog from "@/data/callings.json";
 import type {
     CallingCandidateStatus,
@@ -33,7 +34,7 @@ async function getCallingProfile(
         .single();
 
     if (!profile?.workspace_id) return { error: "Profile not found" };
-    if (requireEditor && !['admin', 'leader'].includes(profile.role)) {
+    if (requireEditor && !canEdit(profile.role)) {
         return { error: "Insufficient permissions" };
     }
 
@@ -778,7 +779,7 @@ export async function createCandidateName(name: string) {
         .single();
 
     if (!profile?.workspace_id) return { error: "Profile not found" };
-    if (!['admin', 'leader'].includes(profile.role)) return { error: "Insufficient permissions" };
+    if (!canEdit(profile.role)) return { error: "Insufficient permissions" };
 
     // Check for existing name first
     const { data: existing } = await (supabase
@@ -956,7 +957,7 @@ export async function createCalling(data: {
         .single();
 
     if (!profile?.workspace_id) return { error: "Profile not found" };
-    if (!['admin', 'leader'].includes(profile.role)) return { error: "Insufficient permissions" };
+    if (!canEdit(profile.role)) return { error: "Insufficient permissions" };
 
     const { data: calling, error } = await (supabase
         .from("callings") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -1284,7 +1285,7 @@ export async function createCallingBusinessItem(
         .single();
 
     if (!profile?.workspace_id) return { error: "Profile not found" };
-    if (!["admin", "leader"].includes(profile.role)) {
+    if (!canEdit(profile.role)) {
         return { error: "Insufficient permissions" };
     }
 
@@ -1336,7 +1337,7 @@ export async function createCallingBusinessItem(
     return { success: true, businessItemId: businessItem.id };
 }
 
-// Fetch workspace members who can be assigned tasks (admins + leaders).
+// Fetch workspace members who can be assigned tasks (edit-tier roles: owner, admin, editor).
 export async function getWorkspaceAssignees() {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
@@ -1354,7 +1355,7 @@ export async function getWorkspaceAssignees() {
         .from("profiles") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
         .select("id, full_name, email, role")
         .eq("workspace_id", profile.workspace_id)
-        .in("role", ["admin", "leader"])
+        .in("role", EDIT_ROLES as readonly string[])
         .order("full_name", { ascending: true });
 
     if (error) {

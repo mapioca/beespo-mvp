@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
+import { canManage, INVITABLE_ROLES } from '@/lib/auth/role-permissions';
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -20,8 +21,8 @@ export async function PATCH(request: NextRequest, { params }: Params) {
         .eq('id', user.id)
         .single();
 
-    if (currentProfile?.role !== 'admin') {
-        return NextResponse.json({ error: 'Only admins can change member roles' }, { status: 403 });
+    if (!canManage(currentProfile?.role)) {
+        return NextResponse.json({ error: 'Only owners and admins can change member roles' }, { status: 403 });
     }
 
     // Get target member's profile
@@ -38,23 +39,15 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     const body = await request.json();
     const { role } = body;
 
-    if (!['admin', 'leader', 'guest'].includes(role)) {
-        return NextResponse.json({ error: 'Invalid role' }, { status: 400 });
+    if (!(INVITABLE_ROLES as readonly string[]).includes(role)) {
+        return NextResponse.json({ error: 'Invalid role. Use the Transfer Ownership flow to assign owner.' }, { status: 400 });
     }
 
-    // Prevent demoting the last admin
-    if (targetProfile.role === 'admin' && role !== 'admin') {
-        const { count } = await (supabase
-            .from('profiles') as any) // eslint-disable-line @typescript-eslint/no-explicit-any
-            .select('*', { count: 'exact', head: true })
-            .eq('workspace_id', currentProfile.workspace_id)
-            .eq('role', 'admin');
-
-        if (count <= 1) {
-            return NextResponse.json({
-                error: 'Cannot change role - workspace must have at least one admin'
-            }, { status: 400 });
-        }
+    // Cannot change the owner's role here — ownership transfer goes through /api/team/transfer.
+    if (targetProfile.role === 'owner') {
+        return NextResponse.json({
+            error: 'Cannot change the workspace owner’s role. Transfer ownership first.'
+        }, { status: 400 });
     }
 
     // Update role
@@ -87,8 +80,8 @@ export async function DELETE(request: NextRequest, { params }: Params) {
         .eq('id', user.id)
         .single();
 
-    if (currentProfile?.role !== 'admin') {
-        return NextResponse.json({ error: 'Only admins can remove members' }, { status: 403 });
+    if (!canManage(currentProfile?.role)) {
+        return NextResponse.json({ error: 'Only owners and admins can remove members' }, { status: 403 });
     }
 
     // Cannot remove yourself
@@ -107,19 +100,11 @@ export async function DELETE(request: NextRequest, { params }: Params) {
         return NextResponse.json({ error: 'Member not found in workspace' }, { status: 404 });
     }
 
-    // Prevent removing the last admin
-    if (targetProfile.role === 'admin') {
-        const { count } = await (supabase
-            .from('profiles') as any) // eslint-disable-line @typescript-eslint/no-explicit-any
-            .select('*', { count: 'exact', head: true })
-            .eq('workspace_id', currentProfile.workspace_id)
-            .eq('role', 'admin');
-
-        if (count <= 1) {
-            return NextResponse.json({
-                error: 'Cannot remove - workspace must have at least one admin'
-            }, { status: 400 });
-        }
+    // Cannot remove the workspace owner; ownership must be transferred first.
+    if (targetProfile.role === 'owner') {
+        return NextResponse.json({
+            error: 'Cannot remove the workspace owner. Transfer ownership first.'
+        }, { status: 400 });
     }
 
     // Remove from workspace (set workspace_id to null, preserving data)

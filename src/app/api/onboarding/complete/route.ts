@@ -11,6 +11,7 @@ import {
   getOrganizationKeyFromDbType,
 } from '@/lib/onboarding/filters';
 import type { OrganizationKey, RoleKey } from '@/types/onboarding';
+import { formatRoleLabel } from '@/lib/auth/role-permissions';
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
@@ -208,7 +209,7 @@ async function handleWorkspaceCreation(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const workspaceId = (workspace as any).id;
 
-  // Create profile for user as admin (owner)
+  // Create profile for user as workspace owner
   const { error: profileError } = await (supabase
     .from('profiles') as ReturnType<typeof supabase.from>)
     .insert({
@@ -216,7 +217,7 @@ async function handleWorkspaceCreation(
       email: user.email!,
       full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
       workspace_id: workspaceId,
-      role: 'admin',
+      role: 'owner',
       role_title: roleTitle,
       feature_interests: formData.featureInterests,
       feature_tier: featureTier,
@@ -248,16 +249,6 @@ async function handleWorkspaceCreation(
 
   // Create invitations for teammates
   const invitationResults: { email: string; role: string; success: boolean; error?: string }[] = [];
-
-  // Helper to format role for display
-  const formatRoleLabel = (role: string) => {
-    switch (role) {
-      case 'admin': return 'Admin';
-      case 'leader': return 'Leader';
-      case 'guest': return 'Guest';
-      default: return 'Member';
-    }
-  };
 
   for (const invite of formData.teammateInvites) {
     // Check if there's already a pending invitation

@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { linkMeetingToEventSchema } from "@/lib/validations/event-meeting";
+import { canEdit } from "@/lib/auth/role-permissions";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET() {
@@ -57,8 +58,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "No workspace found" }, { status: 404 });
   }
 
-  if (!["admin", "leader"].includes(profile.role)) {
-    return NextResponse.json({ error: "Only admins and leaders can create meetings" }, { status: 403 });
+  if (!canEdit(profile.role)) {
+    return NextResponse.json({ error: "You do not have permission to create meetings" }, { status: 403 });
   }
 
   const body = await request.json();

@@ -3,6 +3,7 @@ import { MeetingsClient } from "@/components/meetings/meetings-client"
 import { Metadata } from "next"
 import { AgendaFilter } from "@/lib/agenda-views"
 import { getDashboardRequestContext } from "@/lib/dashboard/request-context"
+import { canEdit } from "@/lib/auth/role-permissions"
 
 export const metadata: Metadata = {
   title: "Programs | Beespo",
@@ -15,7 +16,7 @@ export default async function ProgramsPage() {
     createClient(),
   ])
 
-  const isLeader = profile.role === "leader" || profile.role === "admin"
+  const isLeader = canEdit(profile.role)
 
   const { data: workspace } = await (
     supabase.from("workspaces") as ReturnType<typeof supabase.from>

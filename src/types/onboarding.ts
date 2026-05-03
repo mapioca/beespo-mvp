@@ -78,8 +78,8 @@ export interface FeatureOption {
 }
 
 // Complete form data for onboarding
-// Workspace member role for invitations
-export type WorkspaceMemberRole = 'admin' | 'leader' | 'guest';
+// Workspace member role for invitations (owner not invitable; assigned via ownership transfer only)
+export type WorkspaceMemberRole = 'admin' | 'editor' | 'commenter' | 'viewer';
 
 // Teammate invite with email and role
 export interface TeammateInvite {

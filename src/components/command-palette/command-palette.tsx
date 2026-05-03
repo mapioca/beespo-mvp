@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { canEdit } from "@/lib/auth/role-permissions";
 import {
   CalendarDays,
   MessagesSquare,
@@ -408,8 +409,8 @@ export function CommandPalette() {
         const ctx = await getWorkspaceContext();
         if (!ctx) return;
         const { supabase, user, profile } = ctx;
-        if (!["leader", "admin"].includes(profile.role)) {
-          toast.error("Only leaders and admins can create discussions.");
+        if (!canEdit(profile.role)) {
+          toast.error("You do not have permission to create discussions.");
           return;
         }
         const { error } = await (supabase.from("discussions") as ReturnType<typeof supabase.from>)
@@ -439,8 +440,8 @@ export function CommandPalette() {
         const ctx = await getWorkspaceContext();
         if (!ctx) return;
         const { supabase, user, profile } = ctx;
-        if (!["leader", "admin"].includes(profile.role)) {
-          toast.error("Only leaders and admins can create business items.");
+        if (!canEdit(profile.role)) {
+          toast.error("You do not have permission to create business items.");
           return;
         }
         const { error } = await (supabase.from("business_items") as ReturnType<typeof supabase.from>)
@@ -469,8 +470,8 @@ export function CommandPalette() {
         const ctx = await getWorkspaceContext();
         if (!ctx) return;
         const { supabase, user, profile } = ctx;
-        if (!["leader", "admin"].includes(profile.role)) {
-          toast.error("Only leaders and admins can create announcements.");
+        if (!canEdit(profile.role)) {
+          toast.error("You do not have permission to create announcements.");
           return;
         }
         const { error } = await (supabase.from("announcements") as ReturnType<typeof supabase.from>)

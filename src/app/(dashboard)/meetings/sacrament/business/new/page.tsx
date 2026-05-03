@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase/client";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { BusinessItemForm, BusinessItemFormData } from "@/components/business/business-item-form";
+import { canEdit } from "@/lib/auth/role-permissions";
 
 export default function NewBusinessItemPage() {
   const router = useRouter();
@@ -35,8 +36,8 @@ export default function NewBusinessItemPage() {
       .eq("id", user.id)
       .single();
 
-    if (!profile || !["leader", "admin"].includes(profile.role)) {
-      toast.error("Only leaders and admins can create business items.");
+    if (!canEdit(profile?.role)) {
+      toast.error("You do not have permission to create business items.");
       setIsLoading(false);
       return;
     }

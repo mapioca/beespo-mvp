@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { createPortal } from "react-dom"
 import { Button } from "@/components/ui/button"
 import { Check, Columns3, Plus, SlidersHorizontal, X, MessageSquare } from "lucide-react"
+import { canEdit } from "@/lib/auth/role-permissions"
 import { Breadcrumbs } from "@/components/dashboard/breadcrumbs"
 import {
     AlertDialog,
@@ -404,8 +405,8 @@ export function DiscussionsClient({
             .eq("id", user.id)
             .single()
 
-        if (!profile || !["leader", "admin"].includes(profile.role)) {
-            toast.error("Only leaders and admins can create discussions.")
+        if (!canEdit(profile?.role)) {
+            toast.error("You do not have permission to create discussions.")
             setIsCreating(false)
             return
         }
