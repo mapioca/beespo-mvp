@@ -17,6 +17,7 @@ export type Workspace = {
     type: string;
     organization_type: string;
     mfa_required: boolean;
+    slug: string | null;
 };
 
 export default async function SettingsPage() {
@@ -99,6 +100,14 @@ export default async function SettingsPage() {
         .eq("workspace_id", profile.workspace_id)
         .order("name", { ascending: true });
 
+    // Audience link (workspace-scoped, may not exist yet — created lazily on first visit)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: audienceLinkRow } = await (supabase.from("workspace_audience_links") as any)
+        .select("token")
+        .eq("workspace_id", profile.workspace_id)
+        .maybeSingle();
+    const audienceLinkToken: string | null = audienceLinkRow?.token ?? null;
+
     const sharingGroups: SharingGroupWithMembers[] = (rawSharingGroups ?? []).map(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (g: any) => ({
@@ -127,6 +136,7 @@ export default async function SettingsPage() {
                 email: m.email,
                 full_name: m.full_name,
             }))}
+            audienceLinkToken={audienceLinkToken}
         />
     );
 }

@@ -21,11 +21,12 @@ import { TeamMembersList } from "@/components/team/team-members-list";
 import { PendingInvitations } from "@/components/team/pending-invitations";
 import { ChangePasswordForm } from "@/components/auth/change-password-form";
 import { DeleteAccountDialog } from "@/components/auth/delete-account-dialog";
-import { Building2, Users, Users2, Save, Loader2, User, AlertTriangle, Bell, Shield, Languages } from "lucide-react";
+import { Building2, Users, Users2, Save, Loader2, User, AlertTriangle, Bell, Shield, Languages, Radio } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { SharingGroupsTab } from "@/components/settings/sharing-groups-tab";
 import { NotificationPreferencesTab } from "@/components/settings/notification-preferences-tab";
 import { MfaSettings } from "@/components/settings/mfa-settings";
+import { AudienceLinkTab } from "@/components/settings/audience-link-tab";
 import { updateLanguagePreference } from "@/lib/actions/profile-actions";
 import {
     Select,
@@ -44,6 +45,7 @@ interface Workspace {
     type: string;
     organization_type: string;
     mfa_required: boolean;
+    slug: string | null;
 }
 
 interface TeamMember {
@@ -84,6 +86,7 @@ interface SettingsClientProps {
     sharingGroups: SharingGroupWithMembers[];
     workspaceMembers: WorkspaceMember[];
     languagePreference: "ENG" | "SPA";
+    audienceLinkToken: string | null;
 }
 
 const workspaceTypeLabels: Record<string, string> = {
@@ -115,6 +118,7 @@ export function SettingsClient({
     sharingGroups,
     workspaceMembers,
     languagePreference,
+    audienceLinkToken,
 }: SettingsClientProps) {
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -242,6 +246,10 @@ export function SettingsClient({
                     <TabsTrigger value="sharing-groups" className="gap-2">
                         <Users2 className="h-4 w-4" />
                         Sharing Groups
+                    </TabsTrigger>
+                    <TabsTrigger value="audience" className="gap-2">
+                        <Radio className="h-4 w-4" />
+                        Audience
                     </TabsTrigger>
                     <TabsTrigger value="notifications" className="gap-2">
                         <Bell className="h-4 w-4" />
@@ -467,6 +475,15 @@ export function SettingsClient({
                     <SharingGroupsTab
                         sharingGroups={sharingGroups}
                         workspaceMembers={workspaceMembers}
+                        canManage={canEdit(currentUserRole)}
+                    />
+                </TabsContent>
+
+                <TabsContent value="audience" className="space-y-6">
+                    <AudienceLinkTab
+                        workspaceSlug={workspace.slug}
+                        workspaceName={workspace.name}
+                        initialToken={audienceLinkToken}
                         canManage={canEdit(currentUserRole)}
                     />
                 </TabsContent>
