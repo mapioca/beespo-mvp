@@ -5,11 +5,9 @@ import {
     Table,
     TableBody,
     TableCell,
-    TableHead,
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
-import { Checkbox } from "@/components/ui/checkbox"
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -29,9 +27,98 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Megaphone, Eye, Trash2 } from "lucide-react"
 import { format } from "date-fns"
-import { DataTableColumnHeader } from "@/components/ui/data-table-header"
 import { TableRowActionTrigger } from "@/components/ui/table-row-action-trigger"
-import { StatusIndicator } from "@/components/ui/status-indicator"
+import { cn } from "@/lib/utils"
+import { SortableTableHeader } from "@/components/ui/sortable-table-header"
+
+// ── Priority Bars Component ──────────────────────────────────────────────────
+
+function PriorityBars({ priority }: { priority: string }) {
+    const level = priority === "high" ? 3 : priority === "medium" ? 2 : 1
+
+    return (
+        <span
+            className="inline-flex items-end gap-0.5 text-foreground/58"
+            aria-label={formatLabel(priority)}
+            title={formatLabel(priority)}
+        >
+            {[0, 1, 2].map((index) => (
+                <span
+                    key={index}
+                    className={cn(
+                        "w-1 rounded-full bg-current transition-opacity",
+                        index === 0 && "h-2",
+                        index === 1 && "h-3",
+                        index === 2 && "h-4",
+                        index < level ? "opacity-100" : "opacity-20"
+                    )}
+                />
+            ))}
+        </span>
+    )
+}
+
+// ── Editable Priority Cell ───────────────────────────────────────────────────
+
+function PriorityCell({
+    priority,
+    onUpdatePriority,
+    announcementId,
+}: {
+    priority: string
+    onUpdatePriority?: (id: string, priority: string) => Promise<void>
+    announcementId: string
+}) {
+    const [open, setOpen] = useState(false)
+
+    const priorityOptions = [
+        { value: "low", label: "Low" },
+        { value: "medium", label: "Medium" },
+        { value: "high", label: "High" },
+    ]
+
+    if (!onUpdatePriority) {
+        return <PriorityBars priority={priority} />
+    }
+
+    return (
+        <DropdownMenu open={open} onOpenChange={setOpen}>
+            <DropdownMenuTrigger
+                onClick={(e) => e.stopPropagation()}
+                className="flex h-7 items-center justify-center gap-1.5 rounded-full px-2 hover:bg-black/5 dark:hover:bg-white/10 outline-none transition-colors focus-visible:ring-1 focus-visible:ring-ring"
+            >
+                <PriorityBars priority={priority} />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-36">
+                {priorityOptions.map((opt) => (
+                    <DropdownMenuItem
+                        key={opt.value}
+                        onClick={(e) => {
+                            e.stopPropagation()
+                            onUpdatePriority(announcementId, opt.value)
+                            setOpen(false)
+                        }}
+                        className="gap-2 text-[13px]"
+                    >
+                        <PriorityBars priority={opt.value} />
+                        {opt.label}
+                    </DropdownMenuItem>
+                ))}
+            </DropdownMenuContent>
+        </DropdownMenu>
+    )
+}
+import {
+    StandardActionsHeadCell,
+    StandardSelectAllHeadCell,
+    StandardSelectableRow,
+    StandardTableShell,
+} from "@/components/ui/standard-data-table"
+import {
+    standardTableHeaderRowVariants,
+    standardTableHeaderVariants,
+    standardTableVariants,
+} from "@/components/ui/table-standard"
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -53,32 +140,15 @@ export interface Announcement {
     creator?: { full_name?: string | null } | null
 }
 
-// ── Filter option data ──────────────────────────────────────────────────────
-
-const STATUS_OPTIONS = [
-    { value: "draft", label: "Draft" },
-    { value: "active", label: "Active" },
-    { value: "stopped", label: "Stopped" },
-]
-
-const PRIORITY_OPTIONS = [
-    { value: "low", label: "Low" },
-    { value: "medium", label: "Medium" },
-    { value: "high", label: "High" },
-]
-
 // ── Helpers ──────────────────────────────────────────────────────────────────
+
+function formatLabel(value: string): string {
+    return value.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())
+}
 
 function formatStatus(status: string): string {
     return status.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())
 }
-
-const STATUS_TONES: Record<string, "neutral" | "info" | "success" | "warning" | "danger"> = {
-    draft: "neutral",
-    active: "success",
-    stopped: "danger",
-}
-
 // ── Props ───────────────────────────────────────────────────────────────────
 
 interface AnnouncementsTableProps {
@@ -86,20 +156,8 @@ interface AnnouncementsTableProps {
     // Sort
     sortConfig?: { key: string; direction: "asc" | "desc" } | null
     onSort?: (key: string, direction: "asc" | "desc") => void
-    // Search (applied from Title header)
-    searchValue?: string
-    onSearchChange?: (value: string) => void
-    // Status filter
-    selectedStatuses?: AnnouncementStatus[]
-    statusCounts?: Record<string, number>
-    onStatusToggle?: (status: string) => void
-    // Priority filter
-    selectedPriorities?: AnnouncementPriority[]
-    priorityCounts?: Record<string, number>
-    onPriorityToggle?: (priority: string) => void
     // Column visibility
     hiddenColumns?: Set<string>
-    onHideColumn?: (column: string) => void
     // Row selection
     selectedRows?: Set<string>
     onToggleRow?: (id: string) => void
@@ -107,6 +165,7 @@ interface AnnouncementsTableProps {
     // Actions
     onViewAnnouncement?: (announcement: Announcement) => void
     onDelete?: (id: string) => Promise<void>
+    onUpdatePriority?: (id: string, priority: string) => Promise<void>
 }
 
 // ── Component ───────────────────────────────────────────────────────────────
@@ -115,21 +174,13 @@ export function AnnouncementsTable({
     announcements,
     sortConfig,
     onSort,
-    searchValue,
-    onSearchChange,
-    selectedStatuses = [],
-    statusCounts,
-    onStatusToggle,
-    selectedPriorities = [],
-    priorityCounts,
-    onPriorityToggle,
     hiddenColumns = new Set(),
-    onHideColumn,
     selectedRows = new Set(),
     onToggleRow,
     onToggleAllRows,
     onViewAnnouncement,
     onDelete,
+    onUpdatePriority,
 }: AnnouncementsTableProps) {
     const [deleteTarget, setDeleteTarget] = useState<Announcement | null>(null)
     const [isDeleting, setIsDeleting] = useState(false)
@@ -153,94 +204,69 @@ export function AnnouncementsTable({
 
     return (
         <>
-            <div className="table-shell-standard">
-            <Table className="text-[13px]">
-                <TableHeader>
-                    <TableRow className="table-header-row-standard">
-                        {/* Checkbox */}
-                        <TableHead className="w-10 table-cell-check">
-                            <Checkbox
-                                checked={allSelected}
-                                onCheckedChange={() => onToggleAllRows?.()}
-                            />
-                        </TableHead>
+            <StandardTableShell variant="app" className="overflow-hidden">
+            <Table className={standardTableVariants({ density: "compact", dividers: "subtle" })}>
+                <TableHeader className={standardTableHeaderVariants({ sticky: true, variant: "app" })}>
+                    <TableRow className={standardTableHeaderRowVariants({ variant: "app" })}>
+                        <StandardSelectAllHeadCell
+                            checked={allSelected}
+                            onToggle={() => onToggleAllRows?.()}
+                            variant="app"
+                        />
 
                         {/* Title */}
                         {!hiddenColumns.has("title") && (
-                            <DataTableColumnHeader
+                            <SortableTableHeader
+                                sortKey="title"
                                 label="Title"
-                                sortActive={sortConfig?.key === "title"}
-                                sortDirection={sortConfig?.direction}
-                                onSortAsc={() => onSort?.("title", "asc")}
-                                onSortDesc={() => onSort?.("title", "desc")}
-                                searchable
-                                searchValue={searchValue}
-                                onSearchChange={onSearchChange}
-                                searchPlaceholder="Search announcements..."
-                                onHide={() => onHideColumn?.("title")}
+                                defaultDirection="asc"
+                                sortConfig={sortConfig}
+                                onSort={onSort}
+                                variant="app"
                                 className="min-w-[250px]"
                             />
                         )}
 
                         {/* Priority */}
                         {!hiddenColumns.has("priority") && (
-                            <DataTableColumnHeader
+                            <SortableTableHeader
+                                sortKey="priority"
                                 label="Priority"
-                                sortActive={sortConfig?.key === "priority"}
-                                sortDirection={sortConfig?.direction}
-                                onSortAsc={() => onSort?.("priority", "asc")}
-                                onSortDesc={() =>
-                                    onSort?.("priority", "desc")
-                                }
-                                filterOptions={PRIORITY_OPTIONS.map((opt) => ({
-                                    ...opt,
-                                    count: priorityCounts?.[opt.value] || 0,
-                                }))}
-                                selectedFilters={selectedPriorities}
-                                onFilterToggle={onPriorityToggle}
-                                onHide={() => onHideColumn?.("priority")}
-                                className="w-[120px]"
+                                defaultDirection="asc"
+                                sortConfig={sortConfig}
+                                onSort={onSort}
+                                variant="app"
+                                className="w-[120px] text-center"
                             />
                         )}
 
                         {/* Status */}
                         {!hiddenColumns.has("status") && (
-                            <DataTableColumnHeader
+                            <SortableTableHeader
+                                sortKey="status"
                                 label="Status"
-                                sortActive={sortConfig?.key === "status"}
-                                sortDirection={sortConfig?.direction}
-                                onSortAsc={() => onSort?.("status", "asc")}
-                                onSortDesc={() => onSort?.("status", "desc")}
-                                filterOptions={STATUS_OPTIONS.map((opt) => ({
-                                    ...opt,
-                                    count: statusCounts?.[opt.value] || 0,
-                                }))}
-                                selectedFilters={selectedStatuses}
-                                onFilterToggle={onStatusToggle}
-                                onHide={() => onHideColumn?.("status")}
-                                className="w-[120px]"
+                                defaultDirection="asc"
+                                sortConfig={sortConfig}
+                                onSort={onSort}
+                                variant="app"
+                                className="w-[120px] text-center"
                             />
                         )}
 
                         {/* Deadline */}
                         {!hiddenColumns.has("deadline") && (
-                            <DataTableColumnHeader
-                                label="Deadline"
-                                sortActive={sortConfig?.key === "deadline"}
-                                sortDirection={sortConfig?.direction}
-                                onSortAsc={() => onSort?.("deadline", "asc")}
-                                onSortDesc={() =>
-                                    onSort?.("deadline", "desc")
-                                }
-                                onHide={() => onHideColumn?.("deadline")}
-                                className="w-[130px]"
+                            <SortableTableHeader
+                                sortKey="deadline"
+                                label="Announce Until"
+                                defaultDirection="desc"
+                                sortConfig={sortConfig}
+                                onSort={onSort}
+                                variant="app"
+                                className="w-[130px] text-center"
                             />
                         )}
 
-                        {/* Actions */}
-                        <TableHead className="w-[52px]">
-                            <span className="sr-only">Actions</span>
-                        </TableHead>
+                        <StandardActionsHeadCell variant="app" />
                     </TableRow>
                 </TableHeader>
 
@@ -261,83 +287,13 @@ export function AnnouncementsTable({
                         </TableRow>
                     ) : (
                         announcements.map((announcement) => (
-                            <TableRow
+                            <StandardSelectableRow
                                 key={announcement.id}
-                                data-state={selectedRows.has(announcement.id) ? "selected" : undefined}
-                                className="group transition-[background-color,box-shadow] duration-150 ease-out hover:bg-[hsl(var(--table-row-hover))] hover:shadow-[inset_0_0_0_1px_hsl(var(--table-shell-border)/0.28)] data-[state=selected]:bg-[hsl(var(--table-row-selected))] data-[state=selected]:shadow-[inset_0_0_0_1px_hsl(var(--table-shell-border)/0.4)]"
-                            >
-                                {/* Checkbox */}
-                                <TableCell className="table-cell-check">
-                                    <Checkbox
-                                        checked={selectedRows.has(
-                                            announcement.id
-                                        )}
-                                        className="opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100 data-[state=checked]:opacity-100"
-                                        onCheckedChange={() =>
-                                            onToggleRow?.(announcement.id)
-                                        }
-                                    />
-                                </TableCell>
-
-                                {/* Title */}
-                                {!hiddenColumns.has("title") && (
-                                    <TableCell className="table-cell-title">
-                                        <button
-                                            onClick={() =>
-                                                onViewAnnouncement?.(
-                                                    announcement
-                                                )
-                                            }
-                                            className="hover:underline text-left"
-                                        >
-                                            <div className="flex flex-col">
-                                                <span>
-                                                    {announcement.title}
-                                                </span>
-                                                {announcement.content && (
-                                                    <span className="text-[12px] text-muted-foreground/80 truncate max-w-[280px]">
-                                                        {announcement.content}
-                                                    </span>
-                                                )}
-                                            </div>
-                                        </button>
-                                    </TableCell>
-                                )}
-
-                                {/* Priority */}
-                                {!hiddenColumns.has("priority") && (
-                                    <TableCell className="table-cell-meta text-[11.5px] text-foreground/56 capitalize">
-                                        {announcement.priority}
-                                    </TableCell>
-                                )}
-
-                                {/* Status */}
-                                {!hiddenColumns.has("status") && (
-                                    <TableCell className="table-cell-meta !px-2 capitalize">
-                                        <StatusIndicator
-                                            label={formatStatus(announcement.status)}
-                                            tone={STATUS_TONES[announcement.status] || "neutral"}
-                                            className="text-[11.5px] text-foreground/66"
-                                        />
-                                    </TableCell>
-                                )}
-
-                                {/* Deadline */}
-                                {!hiddenColumns.has("deadline") && (
-                                    <TableCell className="table-cell-meta !px-2 text-[11.5px] text-foreground/56">
-                                        {announcement.deadline
-                                            ? format(
-                                                  new Date(
-                                                      announcement.deadline
-                                                  ),
-                                                  "MMM d, yyyy"
-                                              )
-                                            : "—"}
-                                    </TableCell>
-                                )}
-
-                                {/* Actions */}
-                                <TableCell className="table-cell-actions">
+                                id={announcement.id}
+                                selected={selectedRows.has(announcement.id)}
+                                onToggle={onToggleRow}
+                                className="focus-within:bg-transparent focus-within:shadow-none"
+                                actions={
                                     <DropdownMenu>
                                         <DropdownMenuTrigger asChild>
                                             <TableRowActionTrigger />
@@ -371,13 +327,61 @@ export function AnnouncementsTable({
                                             )}
                                         </DropdownMenuContent>
                                     </DropdownMenu>
-                                </TableCell>
-                            </TableRow>
+                                }
+                            >
+                                {/* Title */}
+                                {!hiddenColumns.has("title") && (
+                                    <TableCell className="table-cell-title">
+                                        <button
+                                            onClick={() =>
+                                                onViewAnnouncement?.(
+                                                    announcement
+                                                )
+                                            }
+                                            className="table-cell-link text-left"
+                                        >
+                                            <span>{announcement.title}</span>
+                                        </button>
+                                    </TableCell>
+                                )}
+
+                                {/* Priority */}
+                                {!hiddenColumns.has("priority") && (
+                                    <TableCell className="table-cell-meta text-[11.5px] text-foreground/56 capitalize text-center">
+                                        <PriorityCell
+                                            priority={announcement.priority}
+                                            onUpdatePriority={onUpdatePriority}
+                                            announcementId={announcement.id}
+                                        />
+                                    </TableCell>
+                                )}
+
+                                {/* Status */}
+                                {!hiddenColumns.has("status") && (
+                                    <TableCell className="table-cell-meta !px-2 capitalize text-[11.5px] text-foreground/66 text-center">
+                                        {formatStatus(announcement.status)}
+                                    </TableCell>
+                                )}
+
+                                {/* Deadline */}
+                                {!hiddenColumns.has("deadline") && (
+                                    <TableCell className="table-cell-meta !px-2 text-[11.5px] text-foreground/56 text-center">
+                                        {announcement.deadline
+                                            ? format(
+                                                  new Date(
+                                                      announcement.deadline
+                                                  ),
+                                                  "MMM d"
+                                              )
+                                            : ""}
+                                    </TableCell>
+                                )}
+                            </StandardSelectableRow>
                         ))
                     )}
                 </TableBody>
             </Table>
-            </div>
+            </StandardTableShell>
 
             {/* Delete confirmation dialog */}
             <AlertDialog

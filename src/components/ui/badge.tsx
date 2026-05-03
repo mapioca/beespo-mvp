@@ -9,9 +9,13 @@ const badgeVariants = cva(
     variants: {
       variant: {
         default:
-          "border-transparent bg-primary text-primary-foreground shadow hover:bg-primary/80",
+          "border-[hsl(var(--primary-pill-border))] bg-[hsl(var(--primary-pill-bg))] text-[hsl(var(--primary-pill-foreground))] shadow hover:bg-[hsl(var(--primary-pill-hover))]",
+        primaryFill:
+          "border-transparent bg-[hsl(var(--primary-chip-fill-bg))] text-[hsl(var(--primary-chip-fill-foreground))] hover:bg-[hsl(var(--primary-chip-fill-hover))]",
         secondary:
-          "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80",
+          "border-[hsl(var(--secondary-border))] bg-secondary text-secondary-foreground hover:bg-[hsl(var(--secondary-hover))]",
+        secondaryFill:
+          "border-transparent bg-[hsl(var(--secondary-chip-fill-bg))] text-[hsl(var(--secondary-chip-fill-foreground))] hover:bg-[hsl(var(--secondary-chip-fill-hover))]",
         destructive:
           "border-transparent bg-destructive text-destructive-foreground shadow hover:bg-destructive/80",
         outline: "text-foreground",

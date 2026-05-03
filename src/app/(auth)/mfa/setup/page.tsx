@@ -6,7 +6,7 @@ import { MfaSetup } from "@/components/mfa/mfa-setup";
 
 function MfaSetupContent() {
   const searchParams = useSearchParams();
-  const required = searchParams.get("required") === "true";
+  const required = searchParams?.get("required") === "true";
 
   return <MfaSetup required={required} />;
 }

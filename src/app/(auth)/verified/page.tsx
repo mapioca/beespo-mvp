@@ -1,7 +1,9 @@
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle2 } from "lucide-react";
 import Link from "next/link";
+
+const inkSubtle = "color-mix(in srgb, var(--lp-ink) 65%, transparent)";
+const inkBorder = "1px solid color-mix(in srgb, var(--lp-ink) 18%, transparent)";
 
 export default async function VerifiedPage({
   searchParams,
@@ -10,39 +12,48 @@ export default async function VerifiedPage({
 }) {
   const params = await searchParams;
   let nextPath = "/onboarding";
-  
+
   if (typeof params.next === "string") {
     nextPath = params.next;
   }
 
-  // Ensure next path starts with a slash and isn't just the root
   if (!nextPath.startsWith("/") || nextPath === "/") {
     nextPath = "/onboarding";
   }
 
   return (
-    <Card className="border-border">
-      <CardHeader className="text-center pb-2">
-        <div className="flex justify-center mb-6">
-          <div className="h-20 w-20 bg-green-50 rounded-full flex items-center justify-center border border-green-100">
-            <CheckCircle2 className="h-10 w-10 text-green-600" />
-          </div>
+    <div
+      className="rounded-2xl p-7 sm:p-8"
+      style={{ background: "var(--lp-surface)", border: inkBorder }}
+    >
+      <div className="flex flex-col items-center text-center">
+        <div
+          className="mb-5 flex h-16 w-16 items-center justify-center rounded-full"
+          style={{ background: "color-mix(in srgb, var(--lp-accent) 14%, transparent)" }}
+        >
+          <CheckCircle2 className="h-8 w-8" style={{ color: "var(--lp-accent)" }} />
         </div>
-        <CardTitle className="text-2xl font-bold tracking-tight">Email Verified!</CardTitle>
-        <CardDescription className="text-base mt-2 text-gray-500">
+        <h1 className="text-2xl font-bold tracking-tight" style={{ color: "var(--lp-ink)" }}>
+          Email verified
+        </h1>
+        <p className="mt-2 text-sm" style={{ color: inkSubtle }}>
           Your email address has been successfully verified.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="text-center text-muted-foreground pb-6">
-        <p>Thank you for confirming your email. You can now use all the features of your account.</p>
-      </CardContent>
-      <CardFooter className="flex flex-col space-y-4">
-        <Button asChild className="w-full font-medium h-11">
-          <Link href={nextPath}>
-            {nextPath.includes("dashboard") ? "Continue to Dashboard" : "Continue to Onboarding"}
-          </Link>
-        </Button>
-      </CardFooter>
-    </Card>
+        </p>
+      </div>
+
+      <p className="mt-5 text-center text-sm" style={{ color: inkSubtle }}>
+        Thank you for confirming your email. You can now use all the features of your account.
+      </p>
+
+      <Button
+        asChild
+        className="mt-6 h-11 w-full rounded-md border-0 font-medium transition-opacity hover:opacity-90"
+        style={{ background: "var(--lp-accent)", color: "var(--lp-bg)" }}
+      >
+        <Link href={nextPath}>
+          {nextPath.includes("dashboard") ? "Continue to dashboard" : "Continue to onboarding"}
+        </Link>
+      </Button>
+    </div>
   );
 }

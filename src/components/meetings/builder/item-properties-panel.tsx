@@ -7,6 +7,7 @@ import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { HymnSelectorPopover } from "./hymn-selector-popover";
 import { ParticipantSelectorPopover } from "./participant-selector-popover";
@@ -31,7 +32,9 @@ interface ItemPropertiesPanelProps {
     onUpdateDuration?: (id: string, newDuration: number) => void;
     onSelectHymn?: (hymn: { id: string; number: number; title: string }) => void;
     onSelectParticipant?: (participant: { id: string; name: string }) => void;
+    onToggleByInvitation?: (enabled: boolean) => void;
     onSelectSpeaker?: (speaker: SpeakerSelection) => void;
+    onToggleSpeakerByInvitation?: (enabled: boolean) => void;
     selectedSpeakerIdsInMeeting?: string[];
     onAddToContainer?: () => void;
     onRemoveChildItem?: (childId: string) => void;
@@ -48,7 +51,9 @@ export function ItemPropertiesPanel({
     onUpdateDuration,
     onSelectHymn,
     onSelectParticipant,
+    onToggleByInvitation,
     onSelectSpeaker,
+    onToggleSpeakerByInvitation,
     selectedSpeakerIdsInMeeting = [],
     onAddToContainer,
     onRemoveChildItem,
@@ -56,6 +61,11 @@ export function ItemPropertiesPanel({
     onSelectBusiness,
     onSelectAnnouncement,
 }: ItemPropertiesPanelProps) {
+    const isPrayerLikeItem = (title?: string | null) =>
+        !!title && /prayer|invocation|benediction/i.test(title);
+    const isByInvitation = item.participant_name === "By invitation" && !item.participant_id;
+    const isSpeakerByInvitation = item.speaker_name === "By invitation" && !item.speaker_id;
+
     const [showSacramentPrayers, setShowSacramentPrayers] = useState(false);
     const [sacramentLanguage, setSacramentLanguage] = useState("");
     const [showItemNotes, setShowItemNotes] = useState(false);
@@ -290,51 +300,105 @@ export function ItemPropertiesPanel({
                 {(item.requires_participant || item.config?.requires_assignee) &&
                     item.category !== "speaker" && (
                         <div className="space-y-1.5">
+                            {isPrayerLikeItem(item.title) && (
+                                <div className="flex items-center justify-between gap-3 pb-1">
+                                    <Label
+                                        htmlFor={`by-invitation-${item.id}`}
+                                        className="text-[11px] text-muted-foreground cursor-pointer"
+                                    >
+                                        Assign by invitation
+                                    </Label>
+                                    <Switch
+                                        id={`by-invitation-${item.id}`}
+                                        checked={isByInvitation}
+                                        onCheckedChange={(checked) => onToggleByInvitation?.(checked === true)}
+                                    />
+                                </div>
+                            )}
                             <Label className="text-[11px] text-muted-foreground">Assignable person</Label>
-                            <ParticipantSelectorPopover
-                                currentParticipantId={item.participant_id || undefined}
-                                onSelect={(p) => onSelectParticipant?.(p)}
-                            >
+                            {isByInvitation ? (
                                 <button
                                     type="button"
+                                    disabled
                                     className={cn(
-                                        "w-full h-8 px-3 border border-dashed rounded-md text-sm flex items-center justify-center gap-2 transition-all",
-                                        "hover:border-solid hover:bg-control-hover border-border/60 text-muted-foreground",
-                                        item.participant_name && "border-solid bg-control-hover border-control text-foreground font-medium"
+                                        "w-full h-8 px-3 border rounded-md text-sm flex items-center justify-center gap-2",
+                                        "bg-muted/40 border-border/50 text-muted-foreground/70 cursor-not-allowed"
                                     )}
                                 >
-                                    <span className="truncate">
-                                        {item.participant_name || "Select Participant..."}
-                                    </span>
+                                    <span className="truncate">Select Participant...</span>
                                 </button>
-                            </ParticipantSelectorPopover>
+                            ) : (
+                                <ParticipantSelectorPopover
+                                    currentParticipantId={item.participant_id || undefined}
+                                    onSelect={(p) => onSelectParticipant?.(p)}
+                                >
+                                    <button
+                                        type="button"
+                                        className={cn(
+                                            "w-full h-8 px-3 border border-dashed rounded-md text-sm flex items-center justify-center gap-2 transition-all",
+                                            "hover:border-solid hover:bg-control-hover border-border/60 text-muted-foreground",
+                                            item.participant_name && "border-solid bg-control-hover border-control text-foreground font-medium"
+                                        )}
+                                    >
+                                        <span className="truncate">
+                                            {item.participant_name || "Select Participant..."}
+                                        </span>
+                                    </button>
+                                </ParticipantSelectorPopover>
+                            )}
                         </div>
                     )}
 
                 {/* Speaker selector */}
                 {item.category === "speaker" && (
                     <div className="space-y-1.5">
+                        <div className="flex items-center justify-between gap-3 pb-1">
+                            <Label
+                                htmlFor={`speaker-by-invitation-${item.id}`}
+                                className="text-[11px] text-muted-foreground cursor-pointer"
+                            >
+                                Assign by invitation
+                            </Label>
+                            <Switch
+                                id={`speaker-by-invitation-${item.id}`}
+                                checked={isSpeakerByInvitation}
+                                onCheckedChange={(checked) => onToggleSpeakerByInvitation?.(checked === true)}
+                            />
+                        </div>
                         <Label className="text-[11px] text-muted-foreground">Speaker</Label>
-                        <SpeakerSelectorPopover
-                            currentSpeakerId={item.speaker_id || undefined}
-                            selectedSpeakerIdsInMeeting={selectedSpeakerIdsInMeeting}
-                            onSelect={(speaker) => onSelectSpeaker?.(speaker)}
-                        >
+                        {isSpeakerByInvitation ? (
                             <button
                                 type="button"
+                                disabled
                                 className={cn(
-                                    "w-full h-8 px-3 border border-dashed rounded-md text-sm flex items-center justify-center gap-2 transition-all",
-                                    "hover:border-solid hover:bg-control-hover border-border/60 text-muted-foreground",
-                                    item.speaker_name && "border-solid bg-control-hover border-control text-foreground font-medium"
+                                    "w-full h-8 px-3 border rounded-md text-sm flex items-center justify-center gap-2",
+                                    "bg-muted/40 border-border/50 text-muted-foreground/70 cursor-not-allowed"
                                 )}
                             >
-                                <span className="truncate">
-                                    {item.speaker_name
-                                        ? `${item.speaker_name}${item.speaker_topic ? ` — ${item.speaker_topic}` : ""}`
-                                        : "Select Speaker..."}
-                                </span>
+                                <span className="truncate">Select Speaker...</span>
                             </button>
-                        </SpeakerSelectorPopover>
+                        ) : (
+                            <SpeakerSelectorPopover
+                                currentSpeakerId={item.speaker_id || undefined}
+                                selectedSpeakerIdsInMeeting={selectedSpeakerIdsInMeeting}
+                                onSelect={(speaker) => onSelectSpeaker?.(speaker)}
+                            >
+                                <button
+                                    type="button"
+                                    className={cn(
+                                        "w-full h-8 px-3 border border-dashed rounded-md text-sm flex items-center justify-center gap-2 transition-all",
+                                        "hover:border-solid hover:bg-control-hover border-border/60 text-muted-foreground",
+                                        item.speaker_name && "border-solid bg-control-hover border-control text-foreground font-medium"
+                                    )}
+                                >
+                                    <span className="truncate">
+                                        {item.speaker_name
+                                            ? `${item.speaker_name}${item.speaker_topic ? ` — ${item.speaker_topic}` : ""}`
+                                            : "Select Speaker..."}
+                                    </span>
+                                </button>
+                            </SpeakerSelectorPopover>
+                        )}
                     </div>
                 )}
 

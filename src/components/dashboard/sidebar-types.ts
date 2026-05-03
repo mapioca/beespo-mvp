@@ -8,6 +8,7 @@ export interface NavItemLeaf {
   href: string
   icon: LucideIcon | React.ElementType
   label: string
+  matchMode?: "exact" | "prefix"
 }
 
 /**
@@ -18,6 +19,8 @@ export interface NavItemParent {
   label: string
   children: NavItemLeaf[]
   defaultOpen?: boolean
+  href?: string
+  matchMode?: "exact" | "prefix"
 }
 
 /**
@@ -52,6 +55,6 @@ export interface NavSection {
  * Sidebar state persisted to localStorage
  */
 export interface SidebarState {
-  isCollapsed: boolean
+  isPinned: boolean
   expandedGroups: Record<string, boolean>
 }

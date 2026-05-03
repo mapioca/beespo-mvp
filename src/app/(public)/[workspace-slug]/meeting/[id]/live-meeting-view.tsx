@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useRef } from "react";
 import { format } from "date-fns";
 import { Clock, Check, Wifi, WifiOff, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -9,7 +8,6 @@ import {
   getConnectionStatusColor,
   getConnectionStatusLabel,
 } from "@/hooks/use-live-meeting";
-import { getOrCreateFingerprint, getReferrer, getUserAgent } from "@/lib/share/fingerprint";
 import type { Database } from "@/types/database";
 
 type Meeting = Database["public"]["Tables"]["meetings"]["Row"];
@@ -49,43 +47,12 @@ export function LiveMeetingView({
   initialMeeting,
   initialAgendaItems,
 }: LiveMeetingViewProps) {
-  const hasTrackedView = useRef(false);
-
   const { meeting, agendaItems, connectionStatus, lastUpdated, refresh } = useLiveMeeting({
     meetingId,
     initialMeeting,
     initialAgendaItems,
     enabled: true,
   });
-
-  // Track view on mount
-  useEffect(() => {
-    if (hasTrackedView.current) return;
-
-    const trackView = async () => {
-      try {
-        const fingerprint = await getOrCreateFingerprint();
-        const referrer = getReferrer();
-        const userAgent = getUserAgent();
-
-        await fetch(`/api/share/${meetingId}/track-view`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            visitor_fingerprint: fingerprint,
-            referrer,
-            user_agent: userAgent,
-          }),
-        });
-
-        hasTrackedView.current = true;
-      } catch (error) {
-        console.error("Failed to track view:", error);
-      }
-    };
-
-    trackView();
-  }, [meetingId]);
 
   if (!meeting) {
     return (

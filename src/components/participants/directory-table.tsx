@@ -5,7 +5,6 @@ import {
     Table,
     TableBody,
     TableCell,
-    TableHead,
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
@@ -28,6 +27,11 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@/components/ui/popover"
+import {
     Eye,
     Trash2,
     Users,
@@ -38,8 +42,10 @@ import {
 } from "lucide-react"
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
-import { DataTableColumnHeader } from "@/components/ui/data-table-header"
 import { TableRowActionTrigger } from "@/components/ui/table-row-action-trigger"
+import { SortableTableHeader } from "@/components/ui/sortable-table-header"
+import { StandardActionsHeadCell, StandardSelectAllHeadCell, StandardTableShell } from "@/components/ui/standard-data-table"
+import { standardTableHeaderRowVariants, standardTableHeaderVariants, standardTableVariants } from "@/components/ui/table-standard"
 import {
     getParticipantHistory,
     getSpeakingAssignments,
@@ -63,6 +69,7 @@ export interface MeetingAssignmentSummary {
 export interface Participant {
     id: string
     name: string
+    gender?: "male" | "female" | null
     created_at: string
     created_by: string | null
     profiles?: { full_name: string } | null
@@ -84,6 +91,71 @@ const ITEM_TYPE_LABELS: Record<string, string> = {
     announcement: "Announcement",
 }
 
+// ── GenderCell ───────────────────────────────────────────────────────────────
+
+function GenderCell({
+    participantId,
+    gender,
+    onUpdate,
+}: {
+    participantId: string
+    gender?: "male" | "female" | null
+    onUpdate: (id: string, gender: "male" | "female") => Promise<void>
+}) {
+    const [open, setOpen] = useState(false)
+    const [saving, setSaving] = useState(false)
+
+    if (gender === "male") {
+        return <span className="text-xs text-muted-foreground">Male</span>
+    }
+    if (gender === "female") {
+        return <span className="text-xs text-muted-foreground">Female</span>
+    }
+
+    const pick = async (value: "male" | "female") => {
+        setSaving(true)
+        await onUpdate(participantId, value)
+        setSaving(false)
+        setOpen(false)
+    }
+
+    return (
+        <Popover open={open} onOpenChange={setOpen}>
+            <PopoverTrigger asChild>
+                <button
+                    className="text-xs text-muted-foreground/50 border border-dashed border-border/50 rounded px-1.5 py-0.5 hover:border-border hover:text-muted-foreground transition-colors"
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    Set gender
+                </button>
+            </PopoverTrigger>
+            <PopoverContent
+                side="bottom"
+                align="start"
+                className="w-auto p-1"
+                onClick={(e) => e.stopPropagation()}
+            >
+                <div className="flex gap-1">
+                    <button
+                        disabled={saving}
+                        onClick={() => pick("male")}
+                        className="rounded px-3 py-1.5 text-xs font-medium hover:bg-muted transition-colors disabled:opacity-50"
+                    >
+                        Male
+                    </button>
+                    <button
+                        disabled={saving}
+                        onClick={() => pick("female")}
+                        className="rounded px-3 py-1.5 text-xs font-medium hover:bg-muted transition-colors disabled:opacity-50"
+                    >
+                        Female
+                    </button>
+                </div>
+            </PopoverContent>
+        </Popover>
+    )
+}
+
 // ── Props ───────────────────────────────────────────────────────────────────
 
 interface DirectoryTableProps {
@@ -91,12 +163,8 @@ interface DirectoryTableProps {
     // Sort
     sortConfig?: { key: string; direction: "asc" | "desc" } | null
     onSort?: (key: string, direction: "asc" | "desc") => void
-    // Search
-    searchValue?: string
-    onSearchChange?: (value: string) => void
     // Column visibility
     hiddenColumns?: Set<string>
-    onHideColumn?: (column: string) => void
     // Row selection
     selectedRows?: Set<string>
     onToggleRow?: (id: string) => void
@@ -105,6 +173,7 @@ interface DirectoryTableProps {
     onViewParticipant?: (participant: Participant) => void
     onAddSpeakingAssignment?: (participant: Participant) => void
     onDelete?: (id: string) => Promise<void>
+    onUpdateGender?: (id: string, gender: "male" | "female") => Promise<void>
 }
 
 // ── Component ───────────────────────────────────────────────────────────────
@@ -113,16 +182,14 @@ export function DirectoryTable({
     participants,
     sortConfig,
     onSort,
-    searchValue,
-    onSearchChange,
     hiddenColumns = new Set(),
-    onHideColumn,
     selectedRows = new Set(),
     onToggleRow,
     onToggleAllRows,
     onViewParticipant,
     onAddSpeakingAssignment,
     onDelete,
+    onUpdateGender,
 }: DirectoryTableProps) {
     const [deleteTarget, setDeleteTarget] = useState<Participant | null>(null)
     const [isDeleting, setIsDeleting] = useState(false)
@@ -146,7 +213,7 @@ export function DirectoryTable({
         participants.length > 0 && selectedRows.size === participants.length
 
     const visibleColumns =
-        ["name"].filter((c) => !hiddenColumns.has(c)).length + 2 // +2 for checkbox + actions
+        ["name", "gender"].filter((c) => !hiddenColumns.has(c)).length + 2 // +2 for checkbox + actions
 
     const toggleExpand = useCallback(
         async (participant: Participant) => {
@@ -200,38 +267,42 @@ export function DirectoryTable({
 
     return (
         <>
-            <div className="table-shell-standard">
-            <Table className="text-[13px]">
-                <TableHeader>
-                    <TableRow className="table-header-row-standard">
-                        {/* Checkbox */}
-                        <TableHead className="w-10 table-cell-check">
-                            <Checkbox
-                                checked={allSelected}
-                                onCheckedChange={() => onToggleAllRows?.()}
-                            />
-                        </TableHead>
+            <StandardTableShell variant="app" className="overflow-hidden">
+            <Table className={standardTableVariants({ density: "compact", dividers: "subtle" })}>
+                <TableHeader className={standardTableHeaderVariants({ sticky: true, variant: "app" })}>
+                    <TableRow className={standardTableHeaderRowVariants({ variant: "app" })}>
+                        <StandardSelectAllHeadCell
+                            checked={allSelected}
+                            onToggle={() => onToggleAllRows?.()}
+                            variant="app"
+                        />
 
                         {/* Name */}
                         {!hiddenColumns.has("name") && (
-                            <DataTableColumnHeader
+                            <SortableTableHeader
+                                sortKey="name"
                                 label="Name"
-                                sortActive={sortConfig?.key === "name"}
-                                sortDirection={sortConfig?.direction}
-                                onSortAsc={() => onSort?.("name", "asc")}
-                                onSortDesc={() => onSort?.("name", "desc")}
-                                searchable
-                                searchValue={searchValue}
-                                onSearchChange={onSearchChange}
-                                searchPlaceholder="Search directory..."
-                                onHide={() => onHideColumn?.("name")}
+                                defaultDirection="asc"
+                                sortConfig={sortConfig}
+                                onSort={onSort}
+                                variant="app"
                             />
                         )}
 
-                        {/* Actions */}
-                        <TableHead className="w-[52px]">
-                            <span className="sr-only">Actions</span>
-                        </TableHead>
+                        {/* Gender */}
+                        {!hiddenColumns.has("gender") && (
+                            <SortableTableHeader
+                                sortKey="gender"
+                                label="Gender"
+                                defaultDirection="asc"
+                                sortConfig={sortConfig}
+                                onSort={onSort}
+                                variant="app"
+                                className="w-28"
+                            />
+                        )}
+
+                        <StandardActionsHeadCell variant="app" />
                     </TableRow>
                 </TableHeader>
 
@@ -277,6 +348,7 @@ export function DirectoryTable({
                                                 checked={selectedRows.has(
                                                     participant.id
                                                 )}
+                                                variant="table"
                                                 className="opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100 data-[state=checked]:opacity-100"
                                                 onCheckedChange={() =>
                                                     onToggleRow?.(
@@ -307,6 +379,28 @@ export function DirectoryTable({
                                                         </div>
                                                     )}
                                                 </div>
+                                            </TableCell>
+                                        )}
+
+                                        {/* Gender */}
+                                        {!hiddenColumns.has("gender") && (
+                                            <TableCell
+                                                className="py-0"
+                                                onClick={(e) => e.stopPropagation()}
+                                            >
+                                                {onUpdateGender ? (
+                                                    <GenderCell
+                                                        participantId={participant.id}
+                                                        gender={participant.gender}
+                                                        onUpdate={onUpdateGender}
+                                                    />
+                                                ) : participant.gender === "male" ? (
+                                                    <span className="text-xs text-muted-foreground">Male</span>
+                                                ) : participant.gender === "female" ? (
+                                                    <span className="text-xs text-muted-foreground">Female</span>
+                                                ) : (
+                                                    <span className="text-xs text-muted-foreground/40">—</span>
+                                                )}
                                             </TableCell>
                                         )}
 
@@ -486,7 +580,7 @@ export function DirectoryTable({
                     )}
                 </TableBody>
             </Table>
-            </div>
+            </StandardTableShell>
 
             {/* Delete confirmation dialog */}
             <AlertDialog

@@ -9,9 +9,13 @@ import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
+    DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Pencil, Share2, Trash2, FolderOpen } from "lucide-react";
+import { MoreHorizontal, Pencil, Share2, Trash2, FolderOpen, Star, StarOff } from "lucide-react";
+import { toggleFavorite } from "@/lib/actions/navigation-actions";
+import { useNavigationStore } from "@/stores/navigation-store";
+import { toast } from "@/lib/toast";
 
 interface NotebookCardProps {
     id: string;
@@ -36,6 +40,32 @@ export function NotebookCard({
 }: NotebookCardProps) {
     const cover = getCoverById(coverStyle);
     const updatedLabel = formatDistanceToNow(new Date(updatedAt), { addSuffix: true });
+    const isFavorite = useNavigationStore((state) => state.isFavorite);
+    const applyFavoriteToggle = useNavigationStore((state) => state.applyFavoriteToggle);
+
+    const handleFavoriteToggle = async () => {
+        const navigationItem = {
+            id,
+            entityType: "notebook" as const,
+            title,
+            href: `/notebooks/${id}`,
+            icon: "notebook" as const,
+            parentTitle: null,
+        };
+        const currentlyFavorite = isFavorite("notebook", id);
+        const nextFavorite = !currentlyFavorite;
+
+        applyFavoriteToggle(navigationItem, nextFavorite);
+
+        const result = await toggleFavorite(navigationItem);
+        if ("error" in result) {
+            applyFavoriteToggle(navigationItem, currentlyFavorite);
+            toast.error(result.error ?? "Unable to update favorite.");
+            return;
+        }
+
+        applyFavoriteToggle(result.item, result.favorited);
+    };
 
     return (
         <div className="group">
@@ -105,6 +135,17 @@ export function NotebookCard({
                                 <Pencil className="mr-2 h-4 w-4" />
                                 Edit
                             </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => void handleFavoriteToggle()}>
+                            {isFavorite("notebook", id) ? (
+                                <StarOff className="mr-2 h-4 w-4" />
+                            ) : (
+                                <Star className="mr-2 h-4 w-4" />
+                            )}
+                            {isFavorite("notebook", id)
+                                ? "Remove from favorites"
+                                : "Add to favorites"}
                         </DropdownMenuItem>
                         <DropdownMenuItem
                             onClick={() => onDelete?.(id, title)}

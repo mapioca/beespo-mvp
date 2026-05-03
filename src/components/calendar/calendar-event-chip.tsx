@@ -1,77 +1,35 @@
 "use client";
 
+import type React from "react";
+import { format } from "date-fns";
 import { CalendarEvent, EventSource } from "@/lib/calendar-helpers";
 import { cn } from "@/lib/utils";
-import { Repeat, MapPin } from "lucide-react";
 
 interface CalendarEventChipProps {
   event: CalendarEvent;
   onClick: (event: CalendarEvent) => void;
   compact?: boolean;
+  showTime?: boolean;
 }
 
-// Notion-inspired color schemes for events
-function getNotionColors(source: EventSource, customColor?: string): {
-  border: string;
-  bg: string;
-  text: string;
-  hoverBg: string;
-} {
-  // If custom color provided (for external events), use it
-  if (customColor) {
-    return {
-      border: `border-l-[${customColor}]`,
-      bg: "bg-purple-50 dark:bg-purple-950/30",
-      text: "text-purple-900 dark:text-purple-100",
-      hoverBg: "hover:bg-purple-100 dark:hover:bg-purple-900/40",
-    };
-  }
-
-  switch (source) {
-    case "announcement":
-      return {
-        border: "border-l-amber-400",
-        bg: "bg-amber-50/60 dark:bg-amber-950/20",
-        text: "text-amber-800 dark:text-amber-100",
-        hoverBg: "hover:bg-amber-100/60 dark:hover:bg-amber-900/30",
-      };
-    case "meeting":
-      return {
-        border: "border-l-blue-400",
-        bg: "bg-blue-50/60 dark:bg-blue-950/20",
-        text: "text-blue-800 dark:text-blue-100",
-        hoverBg: "hover:bg-blue-100/60 dark:hover:bg-blue-900/30",
-      };
-    case "task":
-      return {
-        border: "border-l-green-400",
-        bg: "bg-green-50/60 dark:bg-green-950/20",
-        text: "text-green-800 dark:text-green-100",
-        hoverBg: "hover:bg-green-100/60 dark:hover:bg-green-900/30",
-      };
-    case "event":
-      return {
-        border: "border-l-indigo-400",
-        bg: "bg-indigo-50/60 dark:bg-indigo-950/20",
-        text: "text-indigo-800 dark:text-indigo-100",
-        hoverBg: "hover:bg-indigo-100/60 dark:hover:bg-indigo-900/30",
-      };
-    case "external":
-      return {
-        border: "border-l-purple-400",
-        bg: "bg-purple-50/60 dark:bg-purple-950/20",
-        text: "text-purple-800 dark:text-purple-100",
-        hoverBg: "hover:bg-purple-100/60 dark:hover:bg-purple-900/30",
-      };
-  }
+function getSourceAccent(source: EventSource, customColor?: string): string {
+  if (customColor) return customColor;
+  // Internal sources (meeting + event) all roll up to brand — they are "My Calendar"
+  if (source === "external") return "#8b5cf6";
+  return "hsl(var(--brand))";
 }
 
 export function CalendarEventChip({
   event,
   onClick,
   compact = false,
+  showTime = false,
 }: CalendarEventChipProps) {
-  const colors = getNotionColors(event.source, event.color);
+  const accent = getSourceAccent(event.source, event.color);
+  const style = {
+    "--accent": accent,
+    backgroundColor: `color-mix(in srgb, ${accent} 10%, transparent)`,
+  } as React.CSSProperties;
 
   return (
     <button
@@ -79,29 +37,27 @@ export function CalendarEventChip({
         e.stopPropagation();
         onClick(event);
       }}
+      style={style}
       className={cn(
-        "w-full text-left rounded-md border-l-[3px] transition-all duration-150",
-        "shadow-none hover:shadow-sm",
-        colors.border,
-        colors.bg,
-        colors.text,
-        colors.hoverBg,
-        compact ? "px-1.5 py-0.5 text-[11px]" : "px-2 py-1.5 text-sm"
+        "group flex w-full min-w-0 items-center gap-1 overflow-hidden text-left text-foreground transition-colors",
+        "hover:[background-color:color-mix(in_srgb,var(--accent)_18%,transparent)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-brand/50",
+        compact
+          ? "rounded-full px-1.5 py-px text-[10.5px] leading-[1.6]"
+          : "rounded-full px-2 py-1 text-[12px] leading-snug"
       )}
-      style={event.color ? { borderLeftColor: event.color } : undefined}
     >
-      <div className="flex items-center gap-1.5 min-w-0">
-        {event.isRecurringInstance && (
-          <Repeat className={cn("flex-shrink-0 opacity-60", compact ? "h-3 w-3" : "h-3.5 w-3.5")} />
+      <span
+        className="h-1.5 w-1.5 shrink-0 rounded-full"
+        style={{ backgroundColor: accent }}
+      />
+      <div className="flex min-w-0 items-baseline gap-1">
+        {showTime && !event.isAllDay && (
+          <span className="shrink-0 text-[10px] font-medium tabular-nums text-muted-foreground">
+            {format(event.startDate, "h:mm").toLowerCase()}
+          </span>
         )}
-        <span className={cn("truncate", compact ? "font-medium" : "font-semibold")}>{event.title}</span>
+        <span className="truncate font-medium">{event.title}</span>
       </div>
-      {!compact && event.location && (
-        <div className="flex items-center gap-1 mt-0.5 text-xs opacity-70">
-          <MapPin className="h-3 w-3 stroke-[1.6]" />
-          <span className="truncate">{event.location}</span>
-        </div>
-      )}
     </button>
   );
 }
@@ -111,6 +67,7 @@ interface CalendarEventListProps {
   onClick: (event: CalendarEvent) => void;
   maxVisible?: number;
   compact?: boolean;
+  showTime?: boolean;
 }
 
 export function CalendarEventList({
@@ -118,27 +75,24 @@ export function CalendarEventList({
   onClick,
   maxVisible = 3,
   compact = false,
+  showTime = false,
 }: CalendarEventListProps) {
   const visibleEvents = events.slice(0, maxVisible);
   const hiddenCount = events.length - maxVisible;
 
   return (
-    <div className={cn("space-y-0.5", compact ? "space-y-px" : "space-y-1")}>
+    <div className={cn("space-y-0.5", !compact && "space-y-1")}>
       {visibleEvents.map((event) => (
         <CalendarEventChip
           key={event.id}
           event={event}
           onClick={onClick}
           compact={compact}
+          showTime={showTime}
         />
       ))}
       {hiddenCount > 0 && (
-        <div
-          className={cn(
-            "text-muted-foreground text-center cursor-pointer hover:text-foreground",
-            compact ? "text-xs py-0.5" : "text-sm py-1"
-          )}
-        >
+        <div className="px-1 pt-0.5 text-[10.5px] font-medium text-muted-foreground">
           +{hiddenCount} more
         </div>
       )}

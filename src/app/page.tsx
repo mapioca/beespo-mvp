@@ -1,36 +1,47 @@
 import type { Metadata } from "next";
+import { createClient } from "@/lib/supabase/server";
 import { Nav } from "@/components/landing/nav";
 import { Hero } from "@/components/landing/hero";
-import { BenefitGrid } from "@/components/landing/benefit-grid";
-import { FeatureSection } from "@/components/landing/feature-section";
-import { FAQSection } from "@/components/landing/faq-section";
+import { FourShapesSection } from "@/components/landing/four-shapes-section";
 import { CTASection } from "@/components/landing/cta-section";
+import { FAQSection } from "@/components/landing/faq-section";
 import { Footer } from "@/components/landing/footer";
 
 export const metadata: Metadata = {
-  title: "Beespo — The Workspace for Church Leaders",
+  title: "Beespo — The Workspace for the Bishopric",
   description:
-    "Still running your presidency on spreadsheets and group texts? One shared workspace for meetings, callings, tasks, and notes. Built for church leaders.",
+    "The first workspace built for ward leadership — planner, speakers, business, and directory in one place that outlasts every release.",
   openGraph: {
-    title: "Beespo — The Workspace for Church Leaders",
+    title: "Beespo — The Workspace for the Bishopric",
     description:
-      "Still running your presidency on spreadsheets and group texts? One shared workspace for meetings, callings, tasks, and notes. Built for church leaders.",
+      "The first workspace built for ward leadership — planner, speakers, business, and directory in one place that outlasts every release.",
     type: "website",
   },
 };
 
-export default function Home() {
+export default async function Home() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const isAuthenticated = Boolean(user);
+
   return (
-    <div className="min-h-screen flex flex-col">
-      <Nav />
-      <main className="flex-1 pt-16">
+    <div
+      className="min-h-screen flex flex-col"
+      style={{ background: "var(--lp-bg)" }}
+    >
+      <Nav isAuthenticated={isAuthenticated} />
+      <main
+        id="main-content"
+        className="flex-1 pt-[var(--landing-nav-height)]"
+      >
         <Hero />
-        <BenefitGrid />
-        <FeatureSection />
+        <FourShapesSection />
         <CTASection />
         <FAQSection />
       </main>
-      <Footer />
+      <Footer isAuthenticated={isAuthenticated} />
     </div>
   );
 }

@@ -7,13 +7,14 @@ const STORAGE_KEY = "beespo-sidebar-state"
 const DEBOUNCE_MS = 300
 
 const defaultState: SidebarState = {
-  isCollapsed: false,
+  isPinned: true,
   expandedGroups: {},
 }
 
 /**
- * Hook to manage sidebar state with localStorage persistence
- * Handles SSR-safe hydration and debounced writes
+ * Hook to manage sidebar state with localStorage persistence.
+ * isPinned controls whether the sidebar stays expanded (true) or
+ * collapses by default and only expands on hover (false).
  */
 export function useSidebarState(defaultExpandedGroups?: Record<string, boolean>) {
   const [state, setState] = useState<SidebarState>({
@@ -30,7 +31,7 @@ export function useSidebarState(defaultExpandedGroups?: Record<string, boolean>)
       if (stored) {
         const parsed = JSON.parse(stored) as Partial<SidebarState>
         setState((prev) => ({
-          isCollapsed: parsed.isCollapsed ?? prev.isCollapsed,
+          isPinned: parsed.isPinned ?? prev.isPinned,
           expandedGroups: {
             ...prev.expandedGroups,
             ...parsed.expandedGroups,
@@ -66,12 +67,12 @@ export function useSidebarState(defaultExpandedGroups?: Record<string, boolean>)
     }
   }, [state, isHydrated])
 
-  const setIsCollapsed = useCallback((collapsed: boolean) => {
-    setState((prev) => ({ ...prev, isCollapsed: collapsed }))
+  const setIsPinned = useCallback((pinned: boolean) => {
+    setState((prev) => ({ ...prev, isPinned: pinned }))
   }, [])
 
-  const toggleCollapsed = useCallback(() => {
-    setState((prev) => ({ ...prev, isCollapsed: !prev.isCollapsed }))
+  const togglePinned = useCallback(() => {
+    setState((prev) => ({ ...prev, isPinned: !prev.isPinned }))
   }, [])
 
   const setGroupExpanded = useCallback((groupId: string, expanded: boolean) => {
@@ -105,9 +106,9 @@ export function useSidebarState(defaultExpandedGroups?: Record<string, boolean>)
   )
 
   return {
-    isCollapsed: state.isCollapsed,
-    setIsCollapsed,
-    toggleCollapsed,
+    isPinned: state.isPinned,
+    setIsPinned,
+    togglePinned,
     isGroupExpanded,
     setGroupExpanded,
     toggleGroup,

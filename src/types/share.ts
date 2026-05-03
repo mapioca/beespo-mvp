@@ -112,7 +112,7 @@ export interface PublicMeetingData {
   title: string;
   description: string | null;
   scheduled_date: string;
-  status: 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
+  status: 'draft' | 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
   is_publicly_shared: boolean;
   share_uuid: string;
 }

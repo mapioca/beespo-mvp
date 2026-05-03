@@ -56,14 +56,22 @@ export function PillSelector({
     return currentValues.length >= maxSelections && !currentValues.includes(optionValue);
   };
 
+  const unselectedStyle = {
+    background: 'var(--lp-bg)',
+    color: 'var(--lp-ink)',
+    border: '1px solid color-mix(in srgb, var(--lp-ink) 18%, transparent)',
+  };
+  const selectedStyle = {
+    background: 'var(--lp-accent)',
+    color: 'var(--lp-bg)',
+    border: '1px solid var(--lp-accent)',
+  };
+
   return (
     <div
       role={multiple ? 'group' : 'radiogroup'}
       aria-label={ariaLabel}
-      className={cn(
-        'flex flex-wrap justify-start gap-3',
-        className
-      )}
+      className={cn('flex flex-wrap justify-start gap-3', className)}
     >
       {options.map((option) => {
         const selected = isSelected(option.value);
@@ -78,37 +86,19 @@ export function PillSelector({
             aria-disabled={disabled}
             onClick={() => !disabled && handleSelect(option.value)}
             disabled={disabled}
+            style={selected ? selectedStyle : unselectedStyle}
             className={cn(
-              'flex items-center gap-2',
-              'px-4 py-2.5 whitespace-nowrap',
-              'rounded-xl border transition-all duration-200 ease-in-out',
-              'focus:outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2',
-              // Default state
-              !selected && 'border-gray-200 bg-white text-gray-700',
-              // Hover state (unselected)
-              !selected && !disabled && 'hover:border-gray-400 hover:bg-gray-50',
-              // Selected state - inverted (solid black)
-              selected && 'border-black bg-black text-white',
-              // Disabled state
-              disabled && 'opacity-40 cursor-not-allowed hover:border-gray-200 hover:bg-white'
+              'flex items-center gap-2 whitespace-nowrap rounded-xl px-4 py-2.5',
+              'transition-all duration-200 ease-in-out',
+              'focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
+              !selected && !disabled && 'hover:opacity-90',
+              disabled && 'cursor-not-allowed opacity-40'
             )}
           >
-            {/* Label */}
-            <span
-              className={cn(
-                'text-sm font-medium',
-                'transition-colors duration-200'
-              )}
-            >
-              {option.label}
-            </span>
-
-            {/* Checkmark */}
+            <span className="text-sm font-medium">{option.label}</span>
             <div
               className={cn(
-                'flex-shrink-0 w-4 h-4',
-                'flex items-center justify-center',
-                'transition-all duration-200',
+                'flex h-4 w-4 flex-shrink-0 items-center justify-center transition-all duration-200',
                 selected ? 'scale-100 opacity-100' : 'scale-0 opacity-0'
               )}
             >

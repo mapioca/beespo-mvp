@@ -21,7 +21,11 @@ function SubmitButton() {
     <Button
       type="submit"
       disabled={pending}
-      className="w-full sm:w-auto min-w-[180px] rounded-sm"
+      className="w-full min-w-[180px] rounded-md border-0 transition-opacity hover:opacity-90 sm:w-auto"
+      style={{
+        background: "var(--lp-accent)",
+        color: "var(--lp-bg)",
+      }}
     >
       {pending ? (
         <>
@@ -65,9 +69,14 @@ export function WaitlistForm() {
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-        className="flex items-center gap-2 text-foreground bg-secondary px-6 py-3 rounded-sm"
+        className="flex items-center gap-2 rounded-md px-6 py-3"
+        style={{
+          background: "var(--lp-surface)",
+          color: "var(--lp-ink)",
+          border: "1px solid color-mix(in srgb, var(--lp-ink) 14%, transparent)",
+        }}
       >
-        <CheckCircle2 className="h-5 w-5" />
+        <CheckCircle2 className="h-5 w-5" style={{ color: "var(--lp-accent)" }} />
         <span className="font-medium">{optimisticState.message}</span>
       </motion.div>
     );
@@ -85,13 +94,18 @@ export function WaitlistForm() {
       }}
       className="w-full max-w-md space-y-3"
     >
-      <div className="flex flex-col sm:flex-row gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row">
         <Input
           type="email"
           name="email"
           placeholder="Enter your email address"
           required
-          className="flex-1 rounded-sm border-neutral-300 focus:border-foreground focus:ring-foreground transition-colors"
+          className="flex-1 rounded-md transition-colors placeholder:opacity-60"
+          style={{
+            background: "var(--lp-bg)",
+            color: "var(--lp-ink)",
+            border: "1px solid color-mix(in srgb, var(--lp-ink) 22%, transparent)",
+          }}
           autoComplete="email"
         />
         <SubmitButton />
@@ -101,7 +115,8 @@ export function WaitlistForm() {
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-          className="flex items-center gap-2 text-sm text-destructive"
+          className="flex items-center gap-2 text-sm"
+          style={{ color: "var(--lp-accent)" }}
         >
           <AlertCircle className="h-4 w-4 flex-shrink-0" />
           {optimisticState.error}

@@ -1,4 +1,4 @@
-import Image from "next/image";
+import Link from "next/link";
 
 export default function AuthLayout({
   children,
@@ -6,20 +6,24 @@ export default function AuthLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4 sm:px-6 lg:px-8">
+    <div
+      className="flex min-h-screen flex-col items-center justify-center px-4 py-10 sm:px-6 lg:px-8"
+      style={{ background: "var(--lp-bg)" }}
+    >
       <div className="w-full max-w-md space-y-8">
         <div className="flex flex-col items-center text-center">
-          <div className="relative h-16 w-48 mb-4">
-            <Image
-              src="/images/beespo-logo-full.svg"
-              alt="Beespo"
-              fill
-              className="object-contain"
-              priority
-            />
-          </div>
-          <p className="text-sm text-muted-foreground">
-            Leadership Management Platform
+          <Link
+            href="/"
+            className="text-3xl font-bold tracking-tight transition-opacity hover:opacity-80"
+            style={{ color: "var(--lp-ink)" }}
+          >
+            Beespo
+          </Link>
+          <p
+            className="mt-2 text-sm"
+            style={{ color: "color-mix(in srgb, var(--lp-ink) 65%, transparent)" }}
+          >
+            The workspace for the bishopric
           </p>
         </div>
         {children}

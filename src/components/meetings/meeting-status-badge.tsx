@@ -11,6 +11,7 @@ interface MeetingStatusBadgeProps {
 
 export function MeetingStatusBadge({ status, className }: MeetingStatusBadgeProps) {
   const variants: Record<MeetingStatus, string> = {
+    draft: "bg-amber-100 text-amber-800 hover:bg-amber-200 border-amber-200",
     scheduled: "bg-blue-100 text-blue-800 hover:bg-blue-200 border-blue-200",
     in_progress: "bg-green-100 text-green-800 hover:bg-green-200 border-green-200 animate-pulse",
     completed: "bg-gray-100 text-gray-800 hover:bg-gray-200 border-gray-200",
@@ -18,6 +19,7 @@ export function MeetingStatusBadge({ status, className }: MeetingStatusBadgeProp
   };
 
   const labels: Record<MeetingStatus, string> = {
+    draft: "Draft",
     scheduled: "Scheduled",
     in_progress: "In Progress",
     completed: "Completed",

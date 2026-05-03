@@ -1,4 +1,6 @@
-import type { CallingProcessStage } from "@/types/database";
+import type { CallingProcessStage, CallingStageStatus, CallingStageStatuses } from "@/types/database";
+
+export type ResolvedStageStatuses = Record<CallingProcessStage, CallingStageStatus>;
 
 export function getStageInfo(stage: CallingProcessStage) {
     const stages: Record<CallingProcessStage, { label: string; description: string; order: number }> = {
@@ -15,4 +17,52 @@ export function getStageInfo(stage: CallingProcessStage) {
 
 export function getAllStages(): CallingProcessStage[] {
     return ['defined', 'approved', 'extended', 'accepted', 'sustained', 'set_apart', 'recorded_lcr'];
+}
+
+// Resolve stage_statuses into a fully-populated record. If the JSON is empty
+// (e.g. legacy rows), fall back to interpreting current_stage as "last
+// completed" so display stays correct until a stage is toggled.
+export function resolveStageStatuses(
+    stageStatuses: CallingStageStatuses | null | undefined,
+    currentStage: CallingProcessStage
+): ResolvedStageStatuses {
+    const stages = getAllStages();
+    const currentIdx = stages.indexOf(currentStage);
+    const fallback = {} as ResolvedStageStatuses;
+    for (let i = 0; i < stages.length; i++) {
+        fallback[stages[i]] = i <= currentIdx ? "complete" : "pending";
+    }
+
+    if (!stageStatuses || Object.keys(stageStatuses).length === 0) {
+        return fallback;
+    }
+
+    const result = { ...fallback };
+    for (const stage of stages) {
+        const value = stageStatuses[stage];
+        if (value === "complete" || value === "pending" || value === "declined") {
+            result[stage] = value;
+        }
+    }
+    return result;
+}
+
+export function hasDeclinedStage(statuses: ResolvedStageStatuses): boolean {
+    return Object.values(statuses).some((status) => status === "declined");
+}
+
+export function highestCompletedStageIndex(statuses: ResolvedStageStatuses): number {
+    const stages = getAllStages();
+    for (let i = stages.length - 1; i >= 0; i--) {
+        if (statuses[stages[i]] === "complete") return i;
+    }
+    return -1;
+}
+
+export function firstPendingStage(statuses: ResolvedStageStatuses): CallingProcessStage | null {
+    return getAllStages().find((stage) => statuses[stage] === "pending") ?? null;
+}
+
+export function countCompletedStages(statuses: ResolvedStageStatuses): number {
+    return Object.values(statuses).filter((status) => status === "complete").length;
 }

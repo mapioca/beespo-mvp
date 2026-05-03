@@ -54,19 +54,21 @@ export function MeetingDashboardActions({ meeting, isLeader }: MeetingDashboardA
                             Edit Agenda
                         </Link>
                     </Button>
-                    <Button size="sm" className="bg-green-600 hover:bg-green-700" onClick={() => handleStatusChange('in_progress')} disabled={isLoading}>
-                        <Play className="w-4 h-4 mr-2" />
-                        Start Meeting
-                    </Button>
+                    {meeting.plan_type === "program" && (
+                        <Button size="sm" className="bg-green-600 hover:bg-green-700" onClick={() => handleStatusChange('in_progress')} disabled={isLoading}>
+                            <Play className="w-4 h-4 mr-2" />
+                            Start Program
+                        </Button>
+                    )}
                 </>
             )}
 
-            {meeting.status === 'in_progress' && (
+            {meeting.status === 'in_progress' && meeting.plan_type === "program" && (
                 <>
                     <Button asChild size="sm" className="bg-blue-600 hover:bg-blue-700">
                         <Link href={`/meetings/${meeting.id}/conduct`}>
                             <Play className="w-4 h-4 mr-2" />
-                            Conduct
+                            Conduct Program
                         </Link>
                     </Button>
                     <Button variant="outline" size="sm" onClick={() => handleStatusChange('completed')} disabled={isLoading}>

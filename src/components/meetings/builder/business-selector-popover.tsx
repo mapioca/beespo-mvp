@@ -90,13 +90,6 @@ const CATEGORY_OPTIONS = [
         requiresOffice: true,
     },
     {
-        value: "setting_apart",
-        label: "Setting Apart",
-        description: "Sustain and set apart for a calling",
-        requiresCalling: true,
-        requiresGender: true,
-    },
-    {
         value: "other",
         label: "Other",
         description: "Custom business item",

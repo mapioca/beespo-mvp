@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -16,20 +16,14 @@ import {
 import { PillSelector } from '@/components/onboarding/pill-selector';
 import { WizardFooter } from '@/components/onboarding/wizard-footer';
 import { toast } from '@/lib/toast';
-import { UNIT_TYPES } from '@/lib/onboarding/constants';
 import {
-  getOrganizationsForUnit,
   getOrganizationKeyFromDbType,
   getRolesForOrganization,
   getRoleTitle,
-  getUnitNamePlaceholder,
-  getUnitNameHelperText,
   generateWorkspaceName,
 } from '@/lib/onboarding/filters';
 import type {
   OnboardingFormData,
-  UnitType,
-  OrganizationKey,
   RoleKey,
   WorkspaceMemberRole,
   WorkspaceInvitationData,
@@ -37,20 +31,6 @@ import type {
 import { ONBOARDING_STEPS, INVITED_USER_ONBOARDING_STEPS } from '@/types/onboarding';
 import {
   Users,
-  Building2,
-  Church,
-  MapPin,
-  Landmark,
-  Crown,
-  FileText,
-  Shield,
-  Heart,
-  Zap,
-  Star,
-  Smile,
-  BookOpen,
-  Globe,
-  Building,
   Plus,
   X,
   Loader2,
@@ -58,26 +38,12 @@ import {
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
-const unitIconMap: Record<string, React.ReactNode> = {
-  Users: <Users className="h-5 w-5" />,
-  Building2: <Building2 className="h-5 w-5" />,
-  Church: <Church className="h-5 w-5" />,
-  MapPin: <MapPin className="h-5 w-5" />,
-  Landmark: <Landmark className="h-5 w-5" />,
-};
-
-const orgIconMap: Record<string, React.ReactNode> = {
-  Crown: <Crown className="h-5 w-5" />,
-  Users: <Users className="h-5 w-5" />,
-  FileText: <FileText className="h-5 w-5" />,
-  Shield: <Shield className="h-5 w-5" />,
-  Heart: <Heart className="h-5 w-5" />,
-  Zap: <Zap className="h-5 w-5" />,
-  Star: <Star className="h-5 w-5" />,
-  Smile: <Smile className="h-5 w-5" />,
-  BookOpen: <BookOpen className="h-5 w-5" />,
-  Globe: <Globe className="h-5 w-5" />,
-  Building: <Building className="h-5 w-5" />,
+const inkSubtle = 'color-mix(in srgb, var(--lp-ink) 65%, transparent)';
+const inkBorder = '1px solid color-mix(in srgb, var(--lp-ink) 18%, transparent)';
+const inputStyle = {
+  background: 'var(--lp-bg)',
+  color: 'var(--lp-ink)',
+  border: '1px solid color-mix(in srgb, var(--lp-ink) 22%, transparent)',
 };
 
 const LOADING_MESSAGES = [
@@ -115,9 +81,12 @@ export default function OnboardingPage() {
   ]);
   const [inviteErrors, setInviteErrors] = useState<Record<number, string>>({});
 
+  // Beespo currently only ships the bishopric workspace, so unitType and
+  // organization are pinned. The wizard only collects role, ward name, and
+  // optional teammate invites.
   const [formData, setFormData] = useState<OnboardingFormData>({
     unitType: 'ward',
-    organization: '',
+    organization: 'bishopric',
     role: '',
     unitName: '',
     teammateInvites: [],
@@ -238,17 +207,13 @@ export default function OnboardingPage() {
       }
     }
 
-    // Regular flow
+    // Regular flow (3 steps: role → ward name → invites)
     switch (step) {
       case 1:
-        return Boolean(formData.unitType);
-      case 2:
-        return Boolean(formData.organization);
-      case 3:
         return Boolean(formData.role);
-      case 4:
+      case 2:
         return formData.unitName.trim().length >= 2;
-      case 5:
+      case 3:
         return true;
       default:
         return false;
@@ -264,16 +229,7 @@ export default function OnboardingPage() {
     field: K,
     value: OnboardingFormData[K]
   ) => {
-    setFormData((prev) => {
-      const updated = { ...prev, [field]: value };
-      if (field === 'unitType') {
-        updated.organization = '';
-        updated.role = '';
-      } else if (field === 'organization') {
-        updated.role = '';
-      }
-      return updated;
-    });
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleSubmitCreate = async () => {
@@ -355,15 +311,11 @@ export default function OnboardingPage() {
       return;
     }
 
-    // Regular flow
-    // Sync invite rows to formData on step 5
-    if (step === 5) {
+    // Regular flow — invite step is the last step
+    if (step === TOTAL_STEPS) {
       if (!syncInvitesToFormData()) {
         return; // Validation errors exist
       }
-    }
-
-    if (step === TOTAL_STEPS) {
       handleSubmitCreate();
     } else {
       setStep((prev) => prev + 1);
@@ -380,8 +332,8 @@ export default function OnboardingPage() {
   };
 
   const handleSkip = () => {
-    // On step 5, sync valid invites even when skipping
-    if (!isInvitedUser && step === 5) {
+    // On the invites step, sync valid invites even when skipping
+    if (!isInvitedUser && step === TOTAL_STEPS) {
       syncInvitesToFormData();
     }
 
@@ -481,29 +433,35 @@ export default function OnboardingPage() {
   // Loading state while checking auth
   if (isCheckingAuth) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-100/50 backdrop-blur-sm">
-        <Loader2 className="h-8 w-8 text-primary animate-spin" />
+      <div
+        className="flex min-h-screen items-center justify-center"
+        style={{ background: 'var(--lp-bg)' }}
+      >
+        <Loader2 className="h-8 w-8 animate-spin" style={{ color: 'var(--lp-accent)' }} />
       </div>
     );
   }
 
-  // Loading state
+  // Submitting state
   if (isSubmitting) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-100/50 backdrop-blur-sm">
-        <div className="text-center space-y-8">
-          <div className="relative w-20 h-20 mx-auto">
-            <div className="absolute inset-0 rounded-full border-4 border-primary/20" />
-            <div className="w-full h-full flex items-center justify-center">
-              <Loader2 className="h-12 w-12 text-primary animate-spin" />
-            </div>
-          </div>
+      <div
+        className="flex min-h-screen items-center justify-center"
+        style={{ background: 'var(--lp-bg)' }}
+      >
+        <div className="space-y-8 text-center">
+          <Loader2
+            className="mx-auto h-12 w-12 animate-spin"
+            style={{ color: 'var(--lp-accent)' }}
+          />
           <div className="space-y-2">
-            <h2 className="text-xl font-semibold">
+            <h2 className="text-xl font-semibold" style={{ color: 'var(--lp-ink)' }}>
               {isComplete ? 'All set!' : currentLoadingMessages[loadingMessageIndex]}
             </h2>
-            <p className="text-gray-500">
-              {isComplete ? 'Redirecting you to your dashboard...' : 'This will only take a moment'}
+            <p style={{ color: inkSubtle }}>
+              {isComplete
+                ? 'Redirecting you to your dashboard...'
+                : 'This will only take a moment'}
             </p>
           </div>
         </div>
@@ -511,18 +469,27 @@ export default function OnboardingPage() {
     );
   }
 
+  // Bishopric roles for the regular flow (ward + bishopric is hard-coded)
+  const bishopricRoleOptions = getRolesForOrganization('bishopric', 'ward');
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100/50 backdrop-blur-sm p-6">
-      <div className="w-full max-w-3xl flex flex-col min-h-[600px] bg-white rounded-2xl border border-gray-100 shadow-xl shadow-gray-200/50 p-8 md:p-12">
-        {/* Logo */}
+    <div
+      className="flex min-h-screen items-center justify-center p-6"
+      style={{ background: 'var(--lp-bg)' }}
+    >
+      <div
+        className="flex min-h-[600px] w-full max-w-3xl flex-col rounded-2xl p-8 md:p-12"
+        style={{ background: 'var(--lp-surface)', border: inkBorder }}
+      >
+        {/* Brand wordmark */}
         <div className="mb-8">
-          <Image
-            src="/images/beespo-logo-full.svg"
-            alt="Beespo"
-            width={140}
-            height={40}
-            className="h-10 w-auto"
-          />
+          <Link
+            href="/"
+            className="text-2xl font-bold tracking-tight transition-opacity hover:opacity-80"
+            style={{ color: 'var(--lp-ink)' }}
+          >
+            Beespo
+          </Link>
         </div>
 
         {/* Step content - flex-1 to fill available space */}
@@ -533,43 +500,58 @@ export default function OnboardingPage() {
               {/* Step 1: Welcome */}
               {step === 1 && invitationData && (
                 <div className="space-y-6">
-                  <div className="flex justify-center mb-6">
-                    <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
-                      <PartyPopper className="h-8 w-8 text-primary" />
+                  <div className="mb-6 flex justify-center">
+                    <div
+                      className="flex h-16 w-16 items-center justify-center rounded-full"
+                      style={{ background: 'color-mix(in srgb, var(--lp-accent) 14%, transparent)' }}
+                    >
+                      <PartyPopper className="h-8 w-8" style={{ color: 'var(--lp-accent)' }} />
                     </div>
                   </div>
                   <div className="space-y-2 text-center">
-                    <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">
-                      Welcome to Beespo!
+                    <h1
+                      className="text-2xl font-bold tracking-tight lg:text-3xl"
+                      style={{ color: 'var(--lp-ink)' }}
+                    >
+                      Welcome to Beespo
                     </h1>
-                    <p className="text-gray-500 text-lg">
+                    <p className="text-lg" style={{ color: inkSubtle }}>
                       You&apos;ve been invited to join
                     </p>
-                    <p className="text-xl font-semibold text-gray-900">
+                    <p className="text-xl font-semibold" style={{ color: 'var(--lp-ink)' }}>
                       {invitationData.workspaceName}
                     </p>
                     <div className="pt-4">
-                      <span className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary rounded-full text-sm font-medium">
+                      <span
+                        className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium"
+                        style={{
+                          background: 'color-mix(in srgb, var(--lp-accent) 12%, transparent)',
+                          color: 'var(--lp-accent)',
+                        }}
+                      >
                         <Users className="h-4 w-4" />
                         You&apos;ll be joining as {formatRole(invitationData.role)}
                       </span>
                     </div>
                   </div>
-                  <p className="text-center text-gray-500 pt-4">
+                  <p className="pt-4 text-center" style={{ color: inkSubtle }}>
                     Just a quick step to complete your profile and you&apos;ll be ready to collaborate with your team.
                   </p>
                 </div>
               )}
 
-              {/* Step 2: Role Title */}
+              {/* Step 2: Role */}
               {step === 2 && (
                 <div className="space-y-6">
                   <div className="space-y-2">
-                    <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">
-                      What is your calling or role?
+                    <h1
+                      className="text-2xl font-bold tracking-tight lg:text-3xl"
+                      style={{ color: 'var(--lp-ink)' }}
+                    >
+                      What is your calling?
                     </h1>
-                    <p className="text-gray-500">
-                      Select your role in the organization so your profile matches this workspace.
+                    <p style={{ color: inkSubtle }}>
+                      Select your role in the bishopric so your profile matches this workspace.
                     </p>
                   </div>
                   <div className="space-y-4">
@@ -581,20 +563,26 @@ export default function OnboardingPage() {
                       }))}
                       value={selectedInvitedRole}
                       onChange={(value) => setSelectedInvitedRole(value as RoleKey)}
-                      ariaLabel="Select your role"
+                      ariaLabel="Select your calling"
                     />
                     {selectedInvitedRole && invitedOrganizationKey && (
-                      <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 space-y-1">
-                        <p className="text-sm font-medium text-gray-500">
+                      <div
+                        className="space-y-1 rounded-xl p-4"
+                        style={{
+                          background: 'var(--lp-bg)',
+                          border: inkBorder,
+                        }}
+                      >
+                        <p className="text-sm font-medium" style={{ color: inkSubtle }}>
                           You&apos;ll appear as:
                         </p>
-                        <p className="font-semibold text-gray-900">
+                        <p className="font-semibold" style={{ color: 'var(--lp-ink)' }}>
                           {getRoleTitle(selectedInvitedRole, invitedOrganizationKey)}
                         </p>
                       </div>
                     )}
                     {invitedRoleOptions.length === 0 && (
-                      <p className="text-sm text-destructive">
+                      <p className="text-sm" style={{ color: 'var(--lp-accent)' }}>
                         We couldn&apos;t determine the available roles for this workspace.
                       </p>
                     )}
@@ -604,113 +592,86 @@ export default function OnboardingPage() {
             </>
           )}
 
-          {/* REGULAR WORKSPACE CREATION FLOW */}
+          {/* REGULAR WORKSPACE CREATION FLOW (bishopric of a ward) */}
           {!isInvitedUser && (
             <>
-              {/* Step 1: Unit Type */}
+              {/* Step 1: Calling */}
               {step === 1 && (
                 <div className="space-y-6">
                   <div className="space-y-2">
-                    <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">
-                      What type of unit are you serving in?
+                    <h1
+                      className="text-2xl font-bold tracking-tight lg:text-3xl"
+                      style={{ color: 'var(--lp-ink)' }}
+                    >
+                      What is your calling in the bishopric?
                     </h1>
-                    <p className="text-gray-500">
-                      Select the type of church unit your organization belongs to.
+                    <p style={{ color: inkSubtle }}>
+                      Beespo is built for the bishopric of a ward. Select your role.
                     </p>
                   </div>
                   <PillSelector
-                    options={UNIT_TYPES.map((type) => ({
-                      ...type,
-                      icon: unitIconMap[type.icon] || null,
-                    }))}
-                    value={formData.unitType}
-                    onChange={(v) => updateFormData('unitType', v as UnitType)}
-                    ariaLabel="Select unit type"
-                  />
-                </div>
-              )}
-
-              {step === 2 && (
-                <div className="space-y-6">
-                  <div className="space-y-2">
-                    <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">
-                      Which organization are you part of?
-                    </h1>
-                    <p className="text-gray-500">
-                      Select the organization you serve in.
-                    </p>
-                  </div>
-                  <PillSelector
-                    options={getOrganizationsForUnit(formData.unitType).map((org) => ({
-                      ...org,
-                      icon: orgIconMap[org.icon] || null,
-                    }))}
-                    value={formData.organization}
-                    onChange={(v) => updateFormData('organization', v as OrganizationKey)}
-                    ariaLabel="Select organization"
-                  />
-                </div>
-              )}
-
-              {step === 3 && (
-                <div className="space-y-6">
-                  <div className="space-y-2">
-                    <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">
-                      What is your calling or role?
-                    </h1>
-                    <p className="text-gray-500">
-                      Select your role in the organization.
-                    </p>
-                  </div>
-                  <PillSelector
-                    options={getRolesForOrganization(
-                      formData.organization as OrganizationKey,
-                      formData.unitType
-                    ).map((role) => ({
+                    options={bishopricRoleOptions.map((role) => ({
                       value: role.value,
                       label: role.label,
                       description: role.description,
                     }))}
                     value={formData.role}
                     onChange={(v) => updateFormData('role', v as RoleKey)}
-                    ariaLabel="Select your role"
+                    ariaLabel="Select your calling"
                   />
                 </div>
               )}
 
-              {step === 4 && (
+              {/* Step 2: Ward name */}
+              {step === 2 && (
                 <div className="space-y-6">
                   <div className="space-y-2">
-                    <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">
-                      What is the name of your unit?
+                    <h1
+                      className="text-2xl font-bold tracking-tight lg:text-3xl"
+                      style={{ color: 'var(--lp-ink)' }}
+                    >
+                      What is the name of your ward?
                     </h1>
-                    <p className="text-gray-500">
-                      {getUnitNameHelperText(formData.unitType)}
+                    <p style={{ color: inkSubtle }}>
+                      Enter the name of your ward (without &quot;Ward&quot;).
                     </p>
                   </div>
                   <div className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="unitName" className="text-sm text-gray-500 font-medium">Unit Name</Label>
+                      <Label
+                        htmlFor="unitName"
+                        className="text-sm font-medium"
+                        style={{ color: inkSubtle }}
+                      >
+                        Ward name
+                      </Label>
                       <Input
                         id="unitName"
                         type="text"
-                        placeholder={getUnitNamePlaceholder(formData.unitType)}
+                        placeholder="e.g., Riverside"
                         value={formData.unitName}
                         onChange={(e) => updateFormData('unitName', e.target.value)}
-                        className="text-base h-12 rounded-lg border-gray-200 focus:border-black focus:ring-2 focus:ring-black focus:ring-offset-0"
+                        className="h-12 rounded-lg text-base placeholder:opacity-60"
+                        style={inputStyle}
                         autoFocus
                       />
                     </div>
                     {formData.unitName.trim() && (
-                      <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 space-y-1">
-                        <p className="text-sm font-medium text-gray-500">
+                      <div
+                        className="space-y-1 rounded-xl p-4"
+                        style={{
+                          background: 'var(--lp-bg)',
+                          border: inkBorder,
+                        }}
+                      >
+                        <p className="text-sm font-medium" style={{ color: inkSubtle }}>
                           Your workspace will be named:
                         </p>
-                        <p className="font-semibold text-gray-900">
+                        <p className="font-semibold" style={{ color: 'var(--lp-ink)' }}>
                           {generateWorkspaceName(
                             formData.unitName.trim(),
-                            formData.organization as OrganizationKey,
-                            formData.unitType
+                            'bishopric',
+                            'ward'
                           )}
                         </p>
                       </div>
@@ -719,38 +680,55 @@ export default function OnboardingPage() {
                 </div>
               )}
 
-              {step === 5 && (
+              {/* Step 3: Invite teammates */}
+              {step === 3 && (
                 <div className="space-y-6">
                   <div className="space-y-2">
-                    <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">
-                      Invite people to your workspace
+                    <h1
+                      className="text-2xl font-bold tracking-tight lg:text-3xl"
+                      style={{ color: 'var(--lp-ink)' }}
+                    >
+                      Invite the rest of your bishopric
                     </h1>
-                    <p className="text-gray-500">
-                      Optionally add teammates to collaborate with. You can always invite more later.
+                    <p style={{ color: inkSubtle }}>
+                      Counselors, executive secretary, ward clerk — you can add anyone now or invite them later.
                     </p>
                   </div>
 
                   {/* Invite rows */}
                   <div className="space-y-3">
                     {inviteRows.map((row, index) => (
-                      <div key={index} className="flex gap-2 items-start">
+                      <div key={index} className="flex items-start gap-2">
                         <div className="flex-1">
                           <Input
                             type="email"
                             placeholder="colleague@example.com"
                             value={row.email}
                             onChange={(e) => updateInviteRow(index, 'email', e.target.value)}
-                            className={`h-10 ${inviteErrors[index] ? 'border-destructive' : ''}`}
+                            className="h-10 rounded-md placeholder:opacity-60"
+                            style={
+                              inviteErrors[index]
+                                ? { ...inputStyle, border: '1px solid var(--lp-accent)' }
+                                : inputStyle
+                            }
                           />
                           {inviteErrors[index] && (
-                            <p className="text-xs text-destructive mt-1">{inviteErrors[index]}</p>
+                            <p
+                              className="mt-1 text-xs"
+                              style={{ color: 'var(--lp-accent)' }}
+                            >
+                              {inviteErrors[index]}
+                            </p>
                           )}
                         </div>
                         <Select
                           value={row.role}
                           onValueChange={(value) => updateInviteRow(index, 'role', value)}
                         >
-                          <SelectTrigger className="w-[120px] h-10">
+                          <SelectTrigger
+                            className="h-10 w-[120px] rounded-md"
+                            style={inputStyle}
+                          >
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -765,7 +743,8 @@ export default function OnboardingPage() {
                             variant="ghost"
                             size="icon"
                             onClick={() => removeInviteRow(index)}
-                            className="h-10 w-10 text-gray-400 hover:text-gray-900"
+                            className="h-10 w-10 bg-transparent hover:bg-transparent hover:opacity-70"
+                            style={{ color: inkSubtle }}
                           >
                             <X className="h-4 w-4" />
                           </Button>
@@ -774,15 +753,16 @@ export default function OnboardingPage() {
                     ))}
                   </div>
 
-                  {/* Add another button */}
+                  {/* Add another */}
                   {inviteRows.length < 5 && (
                     <Button
                       type="button"
                       variant="ghost"
                       onClick={addInviteRow}
-                      className="text-gray-500 hover:text-gray-900"
+                      className="bg-transparent hover:bg-transparent hover:opacity-80"
+                      style={{ color: 'var(--lp-accent)' }}
                     >
-                      <Plus className="h-4 w-4 mr-2" />
+                      <Plus className="mr-2 h-4 w-4" />
                       Add another
                     </Button>
                   )}
@@ -803,10 +783,11 @@ export default function OnboardingPage() {
           onBack={handleBack}
           onSkip={handleSkip}
           onContinue={handleNext}
-          continueLabel={isInvitedUser && step === TOTAL_STEPS ? 'Join Workspace' : undefined}
-          className="pt-8 flex-shrink-0"
+          continueLabel={isInvitedUser && step === TOTAL_STEPS ? 'Join workspace' : undefined}
+          className="flex-shrink-0 pt-8"
         />
       </div>
     </div>
   );
 }
+

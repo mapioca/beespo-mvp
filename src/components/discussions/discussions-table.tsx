@@ -5,11 +5,9 @@ import {
     Table,
     TableBody,
     TableCell,
-    TableHead,
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
-import { Checkbox } from "@/components/ui/checkbox"
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -27,12 +25,26 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { Eye, Trash2, MessagesSquare } from "lucide-react"
+import { Eye, Trash2, MessagesSquare, Star, StarOff } from "lucide-react"
 import { format } from "date-fns"
-import { DataTableColumnHeader } from "@/components/ui/data-table-header"
 import Link from "next/link"
 import { TableRowActionTrigger } from "@/components/ui/table-row-action-trigger"
-import { StatusIndicator } from "@/components/ui/status-indicator"
+import { SortableTableHeader } from "@/components/ui/sortable-table-header"
+import {
+    StandardActionsHeadCell,
+    StandardSelectAllHeadCell,
+    StandardSelectableRow,
+    StandardTableShell,
+} from "@/components/ui/standard-data-table"
+import {
+    standardTableHeaderRowVariants,
+    standardTableHeaderVariants,
+    standardTableVariants,
+} from "@/components/ui/table-standard"
+import { toggleFavorite } from "@/lib/actions/navigation-actions"
+import { useNavigationStore } from "@/stores/navigation-store"
+import { toast } from "@/lib/toast"
+import { cn } from "@/lib/utils"
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -54,47 +66,34 @@ export interface Discussion {
     creator?: { full_name?: string | null } | null
 }
 
-// ── Filter option data ──────────────────────────────────────────────────────
-
-const STATUS_OPTIONS = [
-    { value: "new", label: "New" },
-    { value: "active", label: "Active" },
-    { value: "decision_required", label: "Decision Required" },
-    { value: "monitoring", label: "Monitoring" },
-    { value: "resolved", label: "Resolved" },
-    { value: "deferred", label: "Deferred" },
-]
-
-const PRIORITY_OPTIONS = [
-    { value: "low", label: "Low" },
-    { value: "medium", label: "Medium" },
-    { value: "high", label: "High" },
-]
-
-const CATEGORY_OPTIONS = [
-    { value: "general", label: "General" },
-    { value: "budget", label: "Budget" },
-    { value: "personnel", label: "Personnel" },
-    { value: "programs", label: "Programs" },
-    { value: "facilities", label: "Facilities" },
-    { value: "welfare", label: "Welfare" },
-    { value: "youth", label: "Youth" },
-    { value: "activities", label: "Activities" },
-]
-
 // ── Badge helpers ───────────────────────────────────────────────────────────
 
 function formatLabel(value: string): string {
     return value.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())
 }
+function PriorityBars({ priority }: { priority: string }) {
+    const level = priority === "high" ? 3 : priority === "medium" ? 2 : 1
 
-const STATUS_TONES: Record<string, "neutral" | "info" | "success" | "warning" | "danger"> = {
-    new: "info",
-    active: "success",
-    decision_required: "warning",
-    monitoring: "info",
-    resolved: "neutral",
-    deferred: "neutral",
+    return (
+        <span
+            className="inline-flex items-end gap-0.5 text-foreground/58"
+            aria-label={formatLabel(priority)}
+            title={formatLabel(priority)}
+        >
+            {[0, 1, 2].map((index) => (
+                <span
+                    key={index}
+                    className={cn(
+                        "w-1 rounded-full bg-current transition-opacity",
+                        index === 0 && "h-2",
+                        index === 1 && "h-3",
+                        index === 2 && "h-4",
+                        index < level ? "opacity-100" : "opacity-20"
+                    )}
+                />
+            ))}
+        </span>
+    )
 }
 
 // ── Props ───────────────────────────────────────────────────────────────────
@@ -104,24 +103,8 @@ interface DiscussionsTableProps {
     // Sort
     sortConfig?: { key: string; direction: "asc" | "desc" } | null
     onSort?: (key: string, direction: "asc" | "desc") => void
-    // Search (applied from Title header)
-    searchValue?: string
-    onSearchChange?: (value: string) => void
-    // Status filter
-    selectedStatuses?: DiscussionStatus[]
-    statusCounts?: Record<string, number>
-    onStatusToggle?: (status: string) => void
-    // Priority filter
-    selectedPriorities?: DiscussionPriority[]
-    priorityCounts?: Record<string, number>
-    onPriorityToggle?: (priority: string) => void
-    // Category filter
-    selectedCategories?: DiscussionCategory[]
-    categoryCounts?: Record<string, number>
-    onCategoryToggle?: (category: string) => void
     // Column visibility
     hiddenColumns?: Set<string>
-    onHideColumn?: (column: string) => void
     // Row selection
     selectedRows?: Set<string>
     onToggleRow?: (id: string) => void
@@ -137,19 +120,7 @@ export function DiscussionsTable({
     discussions,
     sortConfig,
     onSort,
-    searchValue,
-    onSearchChange,
-    selectedStatuses = [],
-    statusCounts,
-    onStatusToggle,
-    selectedPriorities = [],
-    priorityCounts,
-    onPriorityToggle,
-    selectedCategories = [],
-    categoryCounts,
-    onCategoryToggle,
     hiddenColumns = new Set(),
-    onHideColumn,
     selectedRows = new Set(),
     onToggleRow,
     onToggleAllRows,
@@ -158,6 +129,8 @@ export function DiscussionsTable({
 }: DiscussionsTableProps) {
     const [deleteTarget, setDeleteTarget] = useState<Discussion | null>(null)
     const [isDeleting, setIsDeleting] = useState(false)
+    const isFavorite = useNavigationStore((state) => state.isFavorite)
+    const applyFavoriteToggle = useNavigationStore((state) => state.applyFavoriteToggle)
 
     const handleDelete = async () => {
         if (!deleteTarget || !onDelete) return
@@ -170,6 +143,30 @@ export function DiscussionsTable({
     const allSelected =
         discussions.length > 0 && selectedRows.size === discussions.length
 
+    const handleFavoriteToggle = async (discussion: Discussion) => {
+        const navigationItem = {
+            id: discussion.id,
+            entityType: "discussion" as const,
+            title: discussion.title,
+            href: "/discussions",
+            icon: "discussion" as const,
+            parentTitle: null,
+        }
+        const currentlyFavorite = isFavorite("discussion", discussion.id)
+        const nextFavorite = !currentlyFavorite
+
+        applyFavoriteToggle(navigationItem, nextFavorite)
+
+        const result = await toggleFavorite(navigationItem)
+        if ("error" in result) {
+            applyFavoriteToggle(navigationItem, currentlyFavorite)
+            toast.error(result.error ?? "Unable to update favorite.")
+            return
+        }
+
+        applyFavoriteToggle(result.item, result.favorited)
+    }
+
     // Count visible columns for empty state colspan
     const visibleColumns =
         ["title", "category", "status", "priority", "due_date"]
@@ -177,109 +174,82 @@ export function DiscussionsTable({
 
     return (
         <>
-            <div className="table-shell-standard">
-            <Table className="text-[13px]">
-                <TableHeader>
-                    <TableRow className="table-header-row-standard">
-                        {/* Checkbox */}
-                        <TableHead className="w-10 table-cell-check">
-                            <Checkbox
-                                checked={allSelected}
-                                onCheckedChange={() => onToggleAllRows?.()}
-                            />
-                        </TableHead>
+            <StandardTableShell variant="app" className="overflow-hidden">
+            <Table className={standardTableVariants({ density: "compact", dividers: "subtle" })}>
+                <TableHeader className={standardTableHeaderVariants({ sticky: true, variant: "app" })}>
+                    <TableRow className={standardTableHeaderRowVariants({ variant: "app" })}>
+                        <StandardSelectAllHeadCell
+                            checked={allSelected}
+                            onToggle={() => onToggleAllRows?.()}
+                            variant="app"
+                        />
 
                         {/* Title */}
                         {!hiddenColumns.has("title") && (
-                            <DataTableColumnHeader
+                            <SortableTableHeader
+                                sortKey="title"
                                 label="Title"
-                                sortActive={sortConfig?.key === "title"}
-                                sortDirection={sortConfig?.direction}
-                                onSortAsc={() => onSort?.("title", "asc")}
-                                onSortDesc={() => onSort?.("title", "desc")}
-                                searchable
-                                searchValue={searchValue}
-                                onSearchChange={onSearchChange}
-                                searchPlaceholder="Search discussions..."
-                                onHide={() => onHideColumn?.("title")}
+                                defaultDirection="asc"
+                                sortConfig={sortConfig}
+                                onSort={onSort}
+                                variant="app"
                                 className="min-w-[250px]"
                             />
                         )}
 
                         {/* Category */}
                         {!hiddenColumns.has("category") && (
-                            <DataTableColumnHeader
+                            <SortableTableHeader
+                                sortKey="category"
                                 label="Category"
-                                sortActive={sortConfig?.key === "category"}
-                                sortDirection={sortConfig?.direction}
-                                onSortAsc={() => onSort?.("category", "asc")}
-                                onSortDesc={() => onSort?.("category", "desc")}
-                                filterOptions={CATEGORY_OPTIONS.map((opt) => ({
-                                    ...opt,
-                                    count: categoryCounts?.[opt.value] || 0,
-                                }))}
-                                selectedFilters={selectedCategories}
-                                onFilterToggle={onCategoryToggle}
-                                onHide={() => onHideColumn?.("category")}
+                                defaultDirection="asc"
+                                sortConfig={sortConfig}
+                                onSort={onSort}
+                                variant="app"
                                 className="w-[180px]"
                             />
                         )}
 
                         {/* Status */}
                         {!hiddenColumns.has("status") && (
-                            <DataTableColumnHeader
+                            <SortableTableHeader
+                                sortKey="status"
                                 label="Status"
-                                sortActive={sortConfig?.key === "status"}
-                                sortDirection={sortConfig?.direction}
-                                onSortAsc={() => onSort?.("status", "asc")}
-                                onSortDesc={() => onSort?.("status", "desc")}
-                                filterOptions={STATUS_OPTIONS.map((opt) => ({
-                                    ...opt,
-                                    count: statusCounts?.[opt.value] || 0,
-                                }))}
-                                selectedFilters={selectedStatuses}
-                                onFilterToggle={onStatusToggle}
-                                onHide={() => onHideColumn?.("status")}
+                                defaultDirection="asc"
+                                sortConfig={sortConfig}
+                                onSort={onSort}
+                                variant="app"
                                 className="w-[160px]"
                             />
                         )}
 
                         {/* Priority */}
                         {!hiddenColumns.has("priority") && (
-                            <DataTableColumnHeader
+                            <SortableTableHeader
+                                sortKey="priority"
                                 label="Priority"
-                                sortActive={sortConfig?.key === "priority"}
-                                sortDirection={sortConfig?.direction}
-                                onSortAsc={() => onSort?.("priority", "asc")}
-                                onSortDesc={() => onSort?.("priority", "desc")}
-                                filterOptions={PRIORITY_OPTIONS.map((opt) => ({
-                                    ...opt,
-                                    count: priorityCounts?.[opt.value] || 0,
-                                }))}
-                                selectedFilters={selectedPriorities}
-                                onFilterToggle={onPriorityToggle}
-                                onHide={() => onHideColumn?.("priority")}
+                                defaultDirection="asc"
+                                sortConfig={sortConfig}
+                                onSort={onSort}
+                                variant="app"
                                 className="w-[120px]"
                             />
                         )}
 
                         {/* Due Date */}
                         {!hiddenColumns.has("due_date") && (
-                            <DataTableColumnHeader
+                            <SortableTableHeader
+                                sortKey="due_date"
                                 label="Due Date"
-                                sortActive={sortConfig?.key === "due_date"}
-                                sortDirection={sortConfig?.direction}
-                                onSortAsc={() => onSort?.("due_date", "asc")}
-                                onSortDesc={() => onSort?.("due_date", "desc")}
-                                onHide={() => onHideColumn?.("due_date")}
+                                defaultDirection="desc"
+                                sortConfig={sortConfig}
+                                onSort={onSort}
+                                variant="app"
                                 className="w-[130px]"
                             />
                         )}
 
-                        {/* Actions */}
-                        <TableHead className="w-[52px]">
-                            <span className="sr-only">Actions</span>
-                        </TableHead>
+                        <StandardActionsHeadCell variant="app" />
                     </TableRow>
                 </TableHeader>
 
@@ -300,82 +270,13 @@ export function DiscussionsTable({
                         </TableRow>
                     ) : (
                         discussions.map((discussion) => (
-                            <TableRow
+                            <StandardSelectableRow
                                 key={discussion.id}
-                                data-state={selectedRows.has(discussion.id) ? "selected" : undefined}
-                                className="group transition-[background-color,box-shadow] duration-150 ease-out hover:bg-[hsl(var(--table-row-hover))] hover:shadow-[inset_0_0_0_1px_hsl(var(--table-shell-border)/0.28)] data-[state=selected]:bg-[hsl(var(--table-row-selected))] data-[state=selected]:shadow-[inset_0_0_0_1px_hsl(var(--table-shell-border)/0.4)]"
-                            >
-                                {/* Checkbox */}
-                                <TableCell className="table-cell-check">
-                                    <Checkbox
-                                        checked={selectedRows.has(discussion.id)}
-                                        className="opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100 data-[state=checked]:opacity-100"
-                                        onCheckedChange={() =>
-                                            onToggleRow?.(discussion.id)
-                                        }
-                                    />
-                                </TableCell>
-
-                                {/* Title */}
-                                {!hiddenColumns.has("title") && (
-                                    <TableCell className="table-cell-title">
-                                        <Link
-                                            href={`/meetings/discussions/${discussion.id}`}
-                                            className="hover:underline text-left"
-                                        >
-                                            <div className="flex flex-col">
-                                                <span>
-                                                    {discussion.title}
-                                                </span>
-                                                {discussion.description && (
-                                                    <span className="text-[12px] text-muted-foreground/80 line-clamp-1">
-                                                        {discussion.description}
-                                                    </span>
-                                                )}
-                                            </div>
-                                        </Link>
-                                    </TableCell>
-                                )}
-
-                                {/* Category */}
-                                {!hiddenColumns.has("category") && (
-                                    <TableCell className="table-cell-meta text-[11.5px] text-foreground/56 capitalize whitespace-nowrap">
-                                        {formatLabel(discussion.category)}
-                                    </TableCell>
-                                )}
-
-                                {/* Status */}
-                                {!hiddenColumns.has("status") && (
-                                    <TableCell className="table-cell-meta !px-2 capitalize">
-                                        <StatusIndicator
-                                            label={formatLabel(discussion.status)}
-                                            tone={STATUS_TONES[discussion.status] || "neutral"}
-                                            className="text-[11.5px] text-foreground/66"
-                                        />
-                                    </TableCell>
-                                )}
-
-                                {/* Priority */}
-                                {!hiddenColumns.has("priority") && (
-                                    <TableCell className="table-cell-meta text-[11.5px] text-foreground/56 capitalize">
-                                        {formatLabel(discussion.priority)}
-                                    </TableCell>
-                                )}
-
-                                {/* Due Date */}
-                                {!hiddenColumns.has("due_date") && (
-                                    <TableCell className="table-cell-meta !px-2 text-[11.5px] text-foreground/56">
-                                        {discussion.due_date
-                                            ? format(
-                                                  new Date(discussion.due_date),
-                                                  "MMM d, yyyy"
-                                              )
-                                            : "—"}
-                                    </TableCell>
-                                )}
-
-                                {/* Actions */}
-                                <TableCell className="table-cell-actions">
+                                id={discussion.id}
+                                selected={selectedRows.has(discussion.id)}
+                                onToggle={onToggleRow}
+                                className="focus-within:bg-transparent focus-within:shadow-none"
+                                actions={
                                     <DropdownMenu>
                                         <DropdownMenuTrigger asChild>
                                             <TableRowActionTrigger />
@@ -390,6 +291,16 @@ export function DiscussionsTable({
                                             >
                                                 <Eye className="mr-2 h-4 w-4 stroke-[1.6]" />
                                                 View
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem onClick={() => void handleFavoriteToggle(discussion)}>
+                                                {isFavorite("discussion", discussion.id) ? (
+                                                    <StarOff className="mr-2 h-4 w-4 stroke-[1.6]" />
+                                                ) : (
+                                                    <Star className="mr-2 h-4 w-4 stroke-[1.6]" />
+                                                )}
+                                                {isFavorite("discussion", discussion.id)
+                                                    ? "Remove from favorites"
+                                                    : "Add to favorites"}
                                             </DropdownMenuItem>
                                             {onDelete && (
                                                 <>
@@ -409,13 +320,58 @@ export function DiscussionsTable({
                                             )}
                                         </DropdownMenuContent>
                                     </DropdownMenu>
-                                </TableCell>
-                            </TableRow>
+                                }
+                            >
+                                {/* Title */}
+                                {!hiddenColumns.has("title") && (
+                                    <TableCell className="table-cell-title">
+                                        <Link
+                                            href="/discussions"
+                                            className="table-cell-link text-left"
+                                        >
+                                            <span>{discussion.title}</span>
+                                        </Link>
+                                    </TableCell>
+                                )}
+
+                                {/* Category */}
+                                {!hiddenColumns.has("category") && (
+                                    <TableCell className="table-cell-meta text-[11.5px] text-foreground/56 capitalize whitespace-nowrap">
+                                        {formatLabel(discussion.category)}
+                                    </TableCell>
+                                )}
+
+                                {/* Status */}
+                                {!hiddenColumns.has("status") && (
+                                    <TableCell className="table-cell-meta !px-2 capitalize text-[11.5px] text-foreground/66">
+                                        {formatLabel(discussion.status)}
+                                    </TableCell>
+                                )}
+
+                                {/* Priority */}
+                                {!hiddenColumns.has("priority") && (
+                                    <TableCell className="table-cell-meta text-[11.5px] text-foreground/56 capitalize">
+                                        <PriorityBars priority={discussion.priority} />
+                                    </TableCell>
+                                )}
+
+                                {/* Due Date */}
+                                {!hiddenColumns.has("due_date") && (
+                                    <TableCell className="table-cell-meta !px-2 text-[11.5px] text-foreground/56">
+                                        {discussion.due_date
+                                            ? format(
+                                                  new Date(discussion.due_date),
+                                                  "MMM d"
+                                              )
+                                            : null}
+                                    </TableCell>
+                                )}
+                            </StandardSelectableRow>
                         ))
                     )}
                 </TableBody>
             </Table>
-            </div>
+            </StandardTableShell>
 
             {/* Delete confirmation dialog */}
             <AlertDialog

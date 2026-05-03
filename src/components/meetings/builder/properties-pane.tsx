@@ -28,6 +28,7 @@ interface PropertiesPaneProps {
     templates: Template[];
     meetingNotes?: string | null;
     onUpdateMeetingNotes?: (newNotes: string) => void;
+    readOnly?: boolean;
 }
 
 interface TimePartComboboxProps {
@@ -174,6 +175,7 @@ export function PropertiesPane({
     templates,
     meetingNotes,
     onUpdateMeetingNotes,
+    readOnly = false,
 }: PropertiesPaneProps) {
     const { watch, setValue } = useFormContext();
 
@@ -255,7 +257,7 @@ export function PropertiesPane({
 
     return (
         <div className="h-full flex flex-col overflow-y-auto p-3 pr-5 bg-background">
-            <div className="flex-1 px-2 py-1 space-y-6">
+            <fieldset disabled={readOnly} className="flex-1 px-2 py-1 space-y-6">
                 {/* General Settings */}
                 <div className="space-y-2">
                     <div className="-mx-2 px-2 py-1">
@@ -684,6 +686,7 @@ export function PropertiesPane({
                                 onSave={async (content) => onUpdateMeetingNotes?.(content)}
                                 placeholder="Add notes for the overall meeting..."
                                 placeholderFontSize="var(--builder-text-xs)"
+                                disabled={readOnly}
                             />
                         </div>
                     ) : (
@@ -709,7 +712,7 @@ export function PropertiesPane({
                         </div>
                     )}
                 </div>
-            </div>
+            </fieldset>
         </div>
     );
 }

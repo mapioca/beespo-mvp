@@ -1,6 +1,9 @@
 import { cache } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { revalidateTag, unstable_cache } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { measureAsync } from "@/lib/performance/measure";
 import type { Database } from "@/types/database";
 import type {
   FavoriteEntityType,
@@ -17,6 +20,8 @@ type UserNavigationContext = {
   userId: string;
   workspaceId: string;
 };
+
+const USER_NAVIGATION_REVALIDATE_SECONDS = 60;
 
 type SavedFavoriteRow = Database["public"]["Tables"]["user_favorites"]["Row"];
 type SavedRecentRow = Database["public"]["Tables"]["user_recent_items"]["Row"];
@@ -47,9 +52,23 @@ const NAVIGATION_ICON_BY_TYPE: Record<FavoriteEntityType, FavoriteEntityType> = 
   note: "note",
 };
 
+function isMissingTableError(errorMessage: string | null | undefined, tableName: string): boolean {
+  if (!errorMessage) return false;
+  const normalized = errorMessage.toLowerCase();
+  return (
+    normalized.includes("could not find the table") &&
+    normalized.includes(`'public.${tableName.toLowerCase()}'`)
+  );
+}
+
 async function getCurrentNavigationContext(
-  supabase: NavigationDbClient
+  supabase: NavigationDbClient,
+  providedContext?: UserNavigationContext
 ): Promise<UserNavigationContext | null> {
+  if (providedContext) {
+    return providedContext;
+  }
+
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -73,6 +92,66 @@ async function getCurrentNavigationContext(
     userId: user.id,
     workspaceId: profileData.workspace_id,
   };
+}
+
+function getUserNavigationCacheTag(context: UserNavigationContext) {
+  return `dashboard-navigation:${context.workspaceId}:${context.userId}`;
+}
+
+async function fetchUserNavigationItemsForContext(
+  context: UserNavigationContext
+): Promise<UserNavigationItems> {
+  const supabase = createAdminClient() as unknown as NavigationDbClient;
+
+  const [favoritesResult, recentsResult] = await Promise.all([
+    fromTable(supabase, "user_favorites")
+      .select("entity_id, entity_type, title, href, parent_title, position")
+      .eq("user_id", context.userId)
+      .eq("workspace_id", context.workspaceId)
+      .order("position", { ascending: true })
+      .order("updated_at", { ascending: false }),
+    fromTable(supabase, "user_recent_items")
+      .select("entity_id, entity_type, title, href, parent_title, last_viewed_at")
+      .eq("user_id", context.userId)
+      .eq("workspace_id", context.workspaceId)
+      .order("last_viewed_at", { ascending: false }),
+  ]);
+
+  const favoritesRows = (favoritesResult.data ?? []) as SavedFavoriteRow[];
+  const recentRows = (recentsResult.data ?? []) as SavedRecentRow[];
+  const validIds = await getValidEntityIds(supabase, context.workspaceId, [
+    ...favoritesRows,
+    ...recentRows,
+  ]);
+
+  const favorites: NavigationFavoriteItem[] = favoritesRows
+    .filter((row) => validIds.get(row.entity_type as FavoriteEntityType)?.has(row.entity_id))
+    .map((row) => ({
+      ...hydrateNavigationItem(row),
+      position: row.position,
+    }));
+
+  const recents: NavigationRecentItem[] = recentRows
+    .filter((row) => validIds.get(row.entity_type as FavoriteEntityType)?.has(row.entity_id))
+    .map((row) => ({
+      ...hydrateNavigationItem(row),
+      lastViewedAt: row.last_viewed_at,
+    }));
+
+  return { favorites, recents };
+}
+
+async function getCachedNavigationItemsForContext(
+  context: UserNavigationContext
+): Promise<UserNavigationItems> {
+  return unstable_cache(
+    async () => fetchUserNavigationItemsForContext(context),
+    ["dashboard-navigation", context.workspaceId, context.userId],
+    {
+      revalidate: USER_NAVIGATION_REVALIDATE_SECONDS,
+      tags: [getUserNavigationCacheTag(context)],
+    }
+  )();
 }
 
 function hydrateNavigationItem(
@@ -229,7 +308,7 @@ async function resolveCanonicalNavigationItem(
         id: discussion.id,
         entityType: "discussion",
         title: discussion.title,
-        href: `/meetings/discussions/${discussion.id}`,
+        href: "/discussions",
         icon: "discussion",
         parentTitle: null,
       };
@@ -294,53 +373,26 @@ async function resolveCanonicalNavigationItem(
   }
 }
 
-export const getUserNavigationItems = cache(async (): Promise<UserNavigationItems> => {
-  const supabase = await createClient();
-  const context = await getCurrentNavigationContext(supabase);
+export const getUserNavigationItems = cache(async (
+  contextOverride?: UserNavigationContext
+): Promise<UserNavigationItems> => {
+  return measureAsync("dashboard.navigation_items", async () => {
+    if (contextOverride) {
+      return getCachedNavigationItemsForContext(contextOverride);
+    }
 
-  if (!context) {
-    return {
-      favorites: [],
-      recents: [],
-    };
-  }
+    const supabase = await createClient();
+    const context = await getCurrentNavigationContext(supabase);
 
-  const [favoritesResult, recentsResult] = await Promise.all([
-    fromTable(supabase, "user_favorites")
-      .select("*")
-      .eq("user_id", context.userId)
-      .eq("workspace_id", context.workspaceId)
-      .order("position", { ascending: true })
-      .order("updated_at", { ascending: false }),
-    fromTable(supabase, "user_recent_items")
-      .select("*")
-      .eq("user_id", context.userId)
-      .eq("workspace_id", context.workspaceId)
-      .order("last_viewed_at", { ascending: false }),
-  ]);
+    if (!context) {
+      return {
+        favorites: [],
+        recents: [],
+      };
+    }
 
-  const favoritesRows = (favoritesResult.data ?? []) as SavedFavoriteRow[];
-  const recentRows = (recentsResult.data ?? []) as SavedRecentRow[];
-  const validIds = await getValidEntityIds(supabase, context.workspaceId, [
-    ...favoritesRows,
-    ...recentRows,
-  ]);
-
-  const favorites: NavigationFavoriteItem[] = favoritesRows
-    .filter((row) => validIds.get(row.entity_type as FavoriteEntityType)?.has(row.entity_id))
-    .map((row) => ({
-      ...hydrateNavigationItem(row),
-      position: row.position,
-    }));
-
-  const recents: NavigationRecentItem[] = recentRows
-    .filter((row) => validIds.get(row.entity_type as FavoriteEntityType)?.has(row.entity_id))
-    .map((row) => ({
-      ...hydrateNavigationItem(row),
-      lastViewedAt: row.last_viewed_at,
-    }));
-
-  return { favorites, recents };
+    return getCachedNavigationItemsForContext(context);
+  }, { thresholdMs: 25 });
 });
 
 export async function isUserFavorite(
@@ -403,6 +455,8 @@ export async function toggleFavoriteForCurrentUser(item: NavigationItemInput) {
       return { error: error.message } as const;
     }
 
+    revalidateTag(getUserNavigationCacheTag(context));
+
     return {
       favorited: false,
       item: canonicalItem,
@@ -432,6 +486,8 @@ export async function toggleFavoriteForCurrentUser(item: NavigationItemInput) {
     return { error: error.message } as const;
   }
 
+  revalidateTag(getUserNavigationCacheTag(context));
+
   return {
     favorited: true,
     item: canonicalItem,
@@ -460,6 +516,8 @@ export async function removeFavoriteForCurrentUser(
     return { error: error.message } as const;
   }
 
+  revalidateTag(getUserNavigationCacheTag(context));
+
   return { success: true as const };
 }
 
@@ -477,7 +535,21 @@ export async function recordRecentVisitForCurrentUser(item: NavigationItemInput)
     item
   );
 
-  if (!canonicalItem) {
+  const fallbackItem: NavigationItem | null =
+    item.title && item.href
+      ? {
+          id: item.id,
+          entityType: item.entityType,
+          title: item.title,
+          href: item.href,
+          icon: item.entityType,
+          parentTitle: item.parentTitle ?? null,
+        }
+      : null;
+
+  const resolvedItem = canonicalItem ?? fallbackItem;
+
+  if (!resolvedItem) {
     return { error: "Item not found" as const };
   }
 
@@ -487,32 +559,38 @@ export async function recordRecentVisitForCurrentUser(item: NavigationItemInput)
     .upsert(
       {
         user_id: context.userId,
-        entity_type: canonicalItem.entityType,
-        entity_id: canonicalItem.id,
+        entity_type: resolvedItem.entityType,
+        entity_id: resolvedItem.id,
         workspace_id: context.workspaceId,
-        title: canonicalItem.title,
-        href: canonicalItem.href,
-        parent_title: canonicalItem.parentTitle,
+        title: resolvedItem.title,
+        href: resolvedItem.href,
+        parent_title: resolvedItem.parentTitle,
         last_viewed_at: lastViewedAt,
       },
       { onConflict: "user_id,entity_type,entity_id" }
     );
 
   if (upsertRecentError) {
+    if (isMissingTableError(upsertRecentError.message, "user_recent_items")) {
+      return {
+        item: resolvedItem,
+        lastViewedAt,
+      };
+    }
     return { error: upsertRecentError.message } as const;
   }
 
   await fromTable(supabase, "user_favorites")
     .update({
-      title: canonicalItem.title,
-      href: canonicalItem.href,
-      parent_title: canonicalItem.parentTitle,
+      title: resolvedItem.title,
+      href: resolvedItem.href,
+      parent_title: resolvedItem.parentTitle,
       updated_at: new Date().toISOString(),
     })
     .eq("user_id", context.userId)
     .eq("workspace_id", context.workspaceId)
-    .eq("entity_type", canonicalItem.entityType)
-    .eq("entity_id", canonicalItem.id);
+    .eq("entity_type", resolvedItem.entityType)
+    .eq("entity_id", resolvedItem.id);
 
   const { data: staleRows } = await fromTable(supabase, "user_recent_items")
     .select("entity_type, entity_id")
@@ -533,8 +611,10 @@ export async function recordRecentVisitForCurrentUser(item: NavigationItemInput)
       .or(clauses);
   }
 
+  revalidateTag(getUserNavigationCacheTag(context));
+
   return {
-    item: canonicalItem,
+    item: resolvedItem,
     lastViewedAt,
   };
 }
@@ -558,8 +638,13 @@ export async function removeRecentForCurrentUser(
     .eq("entity_id", entityId);
 
   if (error) {
+    if (isMissingTableError(error.message, "user_recent_items")) {
+      return { success: true as const };
+    }
     return { error: error.message } as const;
   }
+
+  revalidateTag(getUserNavigationCacheTag(context));
 
   return { success: true as const };
 }

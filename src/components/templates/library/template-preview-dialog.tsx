@@ -11,7 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { TemplateAgendaPreview } from "@/components/templates/template-agenda-preview";
-import { cloneTemplateAction } from "@/app/(dashboard)/templates/library/actions";
+import { cloneTemplateAction } from "@/app/(dashboard)/library/actions";
 import { toast } from "@/lib/toast";
 import { LibraryTemplate } from "./types";
 import { X } from "lucide-react";
@@ -53,7 +53,7 @@ export function TemplatePreviewDialog({ template, open, onOpenChange, workspaceI
           description: "The template has been added to your workspace.",
         });
         onOpenChange(false);
-        router.push("/templates/library?tab=mine");
+        router.push("/library?tab=mine");
       } else {
         toast.error(result.error ?? "Failed to import template. Please try again.");
       }

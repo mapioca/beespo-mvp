@@ -1,14 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useState, useCallback } from "react";
+import { formatDistanceToNow } from "date-fns";
 import {
-    ArrowLeftRight,
     Link,
     Loader2,
     FileText,
     FileCode,
     FileType,
-    CalendarDays,
     ClipboardList,
     MoreHorizontal,
     Monitor,
@@ -17,7 +16,6 @@ import {
     Tablet,
     Trash2,
 } from "lucide-react";
-import { ZoomIcon } from "@/components/ui/zoom-icon";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -38,6 +36,13 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
+    StandardPopoverMenu,
+    StandardPopoverMenuContent,
+    StandardPopoverMenuItem,
+    StandardPopoverMenuShortcut,
+    StandardPopoverMenuTrigger,
+} from "@/components/ui/standard-popover-menu";
+import {
     Dialog,
     DialogContent,
     DialogHeader,
@@ -48,6 +53,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { toast } from "@/lib/toast";
+import { FavoriteButton } from "@/components/navigation/favorite-button";
 import {
     generateMeetingPdf,
     generateMeetingDocx,
@@ -89,20 +95,39 @@ interface MeetingContextBarProps {
     onProgramPreviewDeviceChange: (device: "phone" | "tablet" | "desktop") => void;
     /** Workspace slug for program URL */
     workspaceSlug: string | null;
-    /** Zoom join URL (null if no zoom meeting linked) */
-    zoomJoinUrl: string | null;
-    /** Whether user has Zoom connected via Settings */
-    isZoomConnected: boolean;
-    /** Whether Zoom meeting creation is in progress */
-    isCreatingZoom: boolean;
-    /** Open the Zoom meeting management sheet */
-    onOpenZoomSheet: () => void;
-    /** Trigger the "Add Zoom" flow */
-    onAddZoom: () => void;
     /** Delete the meeting — resolves when done */
     onDelete?: () => Promise<void>;
     /** Whether the meeting is live */
     isLive?: boolean;
+    /** Whether current user can edit meeting content */
+    canEdit?: boolean;
+    /** Last successful autosave timestamp */
+    lastAutosaveAt?: Date | null;
+    /** Current autosave lifecycle status */
+    autosaveStatus?: "idle" | "saving" | "saved" | "error";
+    /** Current attached plan type */
+    planType?: "agenda" | "program" | null;
+    /** Linked event summary */
+    linkedEvent?: {
+        id: string;
+        title: string;
+        start_at: string;
+        location: string | null;
+        workspace_event_id?: string | null;
+    } | null;
+    /** Current meeting status */
+    meetingStatus?: "draft" | "scheduled" | "in_progress" | "completed" | "cancelled" | null;
+    /** Callback when event/plan linkage changes */
+    onMeetingMetaChange?: (updates: {
+        planType?: "agenda" | "program" | null;
+        linkedEvent?: {
+            id: string;
+            title: string;
+            start_at: string;
+            location: string | null;
+            workspace_event_id?: string | null;
+        } | null;
+    }) => void;
 }
 
 export function MeetingContextBar({
@@ -115,20 +140,19 @@ export function MeetingContextBar({
     onSaveAsNew,
     onSaveAsTemplate,
     mode,
-    onModeChange,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    onModeChange: _onModeChange,
     isLeader,
     totalDuration,
     itemCount,
     programPreviewDevice,
     onProgramPreviewDeviceChange,
     workspaceSlug,
-    zoomJoinUrl,
-    isZoomConnected,
-    isCreatingZoom,
-    onOpenZoomSheet,
-    onAddZoom,
     onDelete,
-}: MeetingContextBarProps) {
+    canEdit = true,
+    lastAutosaveAt = null,
+    autosaveStatus = "idle"
+    }: MeetingContextBarProps) {
     const [saveAsNewOpen, setSaveAsNewOpen] = useState(false);
     const [newTitle, setNewTitle] = useState("");
     const [isSavingAsNew, setIsSavingAsNew] = useState(false);
@@ -137,6 +161,7 @@ export function MeetingContextBar({
     const [isDeleting, setIsDeleting] = useState(false);
     const [deviceMenuOpen, setDeviceMenuOpen] = useState(false);
     const [isMac, setIsMac] = useState(false);
+    const [, setAutosaveClockTick] = useState(0);
 
     const openSaveAsNew = useCallback(() => {
         setNewTitle(title ? `${title} (Copy)` : "");
@@ -150,15 +175,6 @@ export function MeetingContextBar({
         setIsMac(/Mac|iPhone|iPad|iPod/i.test(platform + userAgent));
     }, []);
 
-    const modeShortcuts = useMemo(
-        () => ({
-            planning: isMac ? "⌥⌘1" : "Ctrl+Alt+1",
-            "print-preview": isMac ? "⌥⌘2" : "Ctrl+Alt+2",
-            program: isMac ? "⌥⌘3" : "Ctrl+Alt+3",
-        }),
-        [isMac]
-    );
-
     const saveShortcuts = useMemo(
         () => ({
             save: isMac ? "⌘S" : "Ctrl+S",
@@ -169,11 +185,20 @@ export function MeetingContextBar({
     );
 
     useEffect(() => {
+        if (!lastAutosaveAt) return;
+        const id = window.setInterval(() => {
+            setAutosaveClockTick((v) => v + 1);
+        }, 60_000);
+        return () => window.clearInterval(id);
+    }, [lastAutosaveAt]);
+
+    useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             const key = e.key.toLowerCase();
             const hasCmdOrCtrl = e.metaKey || e.ctrlKey;
 
             if (!hasCmdOrCtrl) return;
+            if (!canEdit) return;
 
             // Save (Cmd/Ctrl + S)
             if (!e.altKey && !e.shiftKey && key === "s") {
@@ -204,7 +229,7 @@ export function MeetingContextBar({
 
         window.addEventListener("keydown", handleKeyDown);
         return () => window.removeEventListener("keydown", handleKeyDown);
-    }, [isCreating, isValid, onSave, onSaveAsTemplate, openSaveAsNew]);
+    }, [isCreating, isValid, onSave, onSaveAsTemplate, openSaveAsNew, canEdit]);
 
     const handleCopyLink = async () => {
         const url = initialMeetingId
@@ -298,6 +323,13 @@ export function MeetingContextBar({
         : initialMeetingId
             ? "Save"
             : "Create Agenda";
+    const autosaveLabel = (() => {
+        if (!canEdit) return "Read-only";
+        if (autosaveStatus === "saving") return "Saving draft...";
+        if (autosaveStatus === "error") return "Autosave failed";
+        if (lastAutosaveAt) return `Saved ${formatDistanceToNow(lastAutosaveAt, { addSuffix: true })}`;
+        return "Autosave pending";
+    })();
 
     const deviceOptions = {
         phone: { label: "Phone", icon: Smartphone },
@@ -305,10 +337,11 @@ export function MeetingContextBar({
         desktop: { label: "Desktop", icon: Monitor },
     } as const;
     const CurrentDeviceIcon = deviceOptions[programPreviewDevice].icon;
-    const moreMenu = (
+    const renderMoreMenu = (triggerId: string) => (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
                 <button
+                    id={triggerId}
                     type="button"
                     title="More options"
                     className={cn(
@@ -377,39 +410,6 @@ export function MeetingContextBar({
                     )}
                 </DropdownMenuItem>
 
-                <DropdownMenuSeparator />
-
-                {isLeader && initialMeetingId ? (
-                    zoomJoinUrl ? (
-                        <DropdownMenuItem onSelect={onOpenZoomSheet}>
-                            <ZoomIcon className="h-4 w-4" />
-                            Open Zoom
-                        </DropdownMenuItem>
-                    ) : isZoomConnected ? (
-                        <DropdownMenuItem
-                            onSelect={onAddZoom}
-                            disabled={isCreatingZoom}
-                        >
-                            {isCreatingZoom ? (
-                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                            ) : (
-                                <ZoomIcon className="h-4 w-4" />
-                            )}
-                            Add Zoom meeting
-                        </DropdownMenuItem>
-                    ) : (
-                        <DropdownMenuItem disabled>
-                            <ZoomIcon className="h-4 w-4" />
-                            Connect Zoom in Settings
-                        </DropdownMenuItem>
-                    )
-                ) : (
-                    <DropdownMenuItem disabled>
-                        <ZoomIcon className="h-4 w-4" />
-                        Zoom unavailable
-                    </DropdownMenuItem>
-                )}
-
                 {isLeader && initialMeetingId && (
                     <>
                         <DropdownMenuSeparator />
@@ -428,24 +428,44 @@ export function MeetingContextBar({
 
     return (
         <>
-            <Breadcrumbs
-                items={[
-                    { label: "Meetings", href: "/meetings/agendas", icon: <CalendarDays className="h-4 w-4 stroke-[1.6]" /> },
-                    { label: "Agendas", href: "/meetings/agendas", icon: <ClipboardList className="h-4 w-4 stroke-[1.6]" /> },
-                    { label: title || "Untitled Agenda", icon: <FileText className="h-4 w-4 stroke-[1.6]" /> },
-                ]}
-                className="rounded-none bg-chrome px-4 py-0"
-                inlineAction={<div className="hidden sm:flex">{moreMenu}</div>}
-                action={
-                    <div className="flex flex-wrap items-center gap-1.5 sm:flex-nowrap">
+            <div className="bg-chrome">
+                <Breadcrumbs
+                    items={[
+                        { label: "Agendas", href: "/meetings/agendas", icon: <ClipboardList className="h-4 w-4 stroke-[1.6]" /> },
+                        { label: title || "Untitled Agenda", icon: <FileText className="h-4 w-4 stroke-[1.6]" /> },
+                    ]}
+                    className="rounded-none bg-chrome px-4 py-0"
+                    inlineAction={<div className="hidden sm:flex">{renderMoreMenu("meeting-context-more-desktop")}</div>}
+                    action={
+                        <div className="flex flex-wrap items-center gap-1.5 sm:flex-nowrap">
+                        {initialMeetingId ? (
+                            <FavoriteButton
+                                item={{
+                                    id: initialMeetingId,
+                                    entityType: "meeting",
+                                    title: title || "Untitled Agenda",
+                                    href: `/meetings/${initialMeetingId}`,
+                                }}
+                                variant="ghost"
+                                size="icon"
+                                className={cn(
+                                    "inline-flex h-8 w-8 items-center justify-center rounded-full",
+                                    "border border-control bg-control text-foreground hover:bg-control-hover"
+                                )}
+                                iconClassName="h-4 w-4 stroke-[1.6]"
+                                activeClassName="border-amber-300 text-foreground"
+                            />
+                        ) : null}
+
                         {mode === "program" && (
                             <DropdownMenu open={deviceMenuOpen} onOpenChange={setDeviceMenuOpen}>
                                 <DropdownMenuTrigger asChild>
                                     <button
+                                        id="meeting-context-device-menu-trigger"
                                         type="button"
                                         title="Preview device"
                                         className={cn(
-                                            "inline-flex h-8 w-8 items-center justify-center rounded-full sm:w-auto",
+                                            "inline-flex h-8 w-8 select-none items-center justify-center rounded-full sm:w-auto [&>*]:pointer-events-none",
                                             "border border-control bg-control text-foreground hover:bg-control-hover",
                                             "px-0 sm:px-3.5 gap-2",
                                             "transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
@@ -485,49 +505,11 @@ export function MeetingContextBar({
                             </DropdownMenu>
                         )}
 
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <button
-                                    type="button"
-                                    title="Switch mode"
-                                    className={cn(
-                                        "inline-flex h-8 w-8 items-center justify-center rounded-full sm:w-auto",
-                                        "border border-control bg-control text-foreground hover:bg-control-hover",
-                                        "px-0 sm:px-3.5 gap-2",
-                                        "transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                                    )}
-                                >
-                                    <ArrowLeftRight className="h-4 w-4 stroke-[1.6]" />
-                                    <span className="hidden sm:inline text-[12px] ml-1">Switch mode</span>
-                                    <span className="sr-only">Switch mode</span>
-                                </button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-56">
-                                <DropdownMenuItem onSelect={() => onModeChange("planning")} className={cn(mode === "planning" && "font-medium")}>
-                                    Planning
-                                    <span className="ml-auto text-[11px] text-muted-foreground tabular-nums">
-                                        {modeShortcuts.planning}
-                                    </span>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onSelect={() => onModeChange("print-preview")} className={cn(mode === "print-preview" && "font-medium")}>
-                                    Print Preview
-                                    <span className="ml-auto text-[11px] text-muted-foreground tabular-nums">
-                                        {modeShortcuts["print-preview"]}
-                                    </span>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onSelect={() => onModeChange("program")} className={cn(mode === "program" && "font-medium")}>
-                                    Program
-                                    <span className="ml-auto text-[11px] text-muted-foreground tabular-nums">
-                                        {modeShortcuts.program}
-                                    </span>
-                                </DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
-
-                        {isLeader && (
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
+                        {isLeader && canEdit && (
+                            <StandardPopoverMenu>
+                                <StandardPopoverMenuTrigger asChild>
                                     <button
+                                        id="meeting-context-save-menu-trigger"
                                         type="button"
                                         title="Save options"
                                         className={cn(
@@ -543,42 +525,48 @@ export function MeetingContextBar({
                                         <span className="hidden sm:inline text-[12px] ml-1">Save</span>
                                         <span className="sr-only">Save options</span>
                                     </button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="w-52">
-                                <DropdownMenuItem onSelect={onSave} disabled={isCreating || !isValid}>
+                                </StandardPopoverMenuTrigger>
+                                <StandardPopoverMenuContent align="end">
+                                <StandardPopoverMenuItem onSelect={onSave} disabled={isCreating || !isValid}>
                                     {isCreating && <Loader2 className="h-3.5 w-3.5 mr-2 animate-spin" />}
                                     {saveLabel}
-                                    <span className="ml-auto text-[11px] text-muted-foreground tabular-nums">
+                                    <StandardPopoverMenuShortcut className="tabular-nums">
                                         {saveShortcuts.save}
-                                    </span>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onSelect={onSaveAsTemplate} disabled={isCreating || !isValid}>
+                                    </StandardPopoverMenuShortcut>
+                                </StandardPopoverMenuItem>
+                                <StandardPopoverMenuItem onSelect={onSaveAsTemplate} disabled={isCreating || !isValid}>
                                     Save as Template
-                                    <span className="ml-auto text-[11px] text-muted-foreground tabular-nums">
+                                    <StandardPopoverMenuShortcut className="tabular-nums">
                                         {saveShortcuts.template}
-                                    </span>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onSelect={openSaveAsNew} disabled={isCreating || !isValid}>
+                                    </StandardPopoverMenuShortcut>
+                                </StandardPopoverMenuItem>
+                                <StandardPopoverMenuItem onSelect={openSaveAsNew} disabled={isCreating || !isValid}>
                                     Save as New Meeting
-                                    <span className="ml-auto text-[11px] text-muted-foreground tabular-nums">
+                                    <StandardPopoverMenuShortcut className="tabular-nums">
                                         {saveShortcuts.newMeeting}
-                                    </span>
-                                </DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
+                                    </StandardPopoverMenuShortcut>
+                                </StandardPopoverMenuItem>
+                                </StandardPopoverMenuContent>
+                            </StandardPopoverMenu>
                         )}
 
                         <div className="sm:hidden">
-                            {moreMenu}
+                            {renderMoreMenu("meeting-context-more-mobile")}
                         </div>
 
                         <div className="hidden sm:block h-4 w-px bg-border/60" />
                         <span className="hidden sm:block whitespace-nowrap text-[11px] font-medium text-control">
                             {itemCount} {itemCount === 1 ? "item" : "items"} &bull; {totalDuration} min
                         </span>
-                    </div>
-                }
-            />
+                        <div className="hidden sm:block h-4 w-px bg-border/60" />
+                        <span className="hidden sm:block whitespace-nowrap text-[11px] font-medium text-control">
+                            {autosaveLabel}
+                        </span>
+                        </div>
+                    }
+                />
+
+            </div>
 
             {/* Save as New Meeting — dialog */}
             <Dialog open={saveAsNewOpen} onOpenChange={(o) => !isSavingAsNew && setSaveAsNewOpen(o)}>

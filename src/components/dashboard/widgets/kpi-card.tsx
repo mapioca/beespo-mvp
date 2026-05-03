@@ -28,24 +28,24 @@ export function KpiCard({
   return (
     <Link
       href={href}
-      className="block bg-white rounded-xl ring-1 ring-gray-200 shadow-sm p-4 hover:shadow-md transition-shadow"
+      className="dashboard-widget-surface block rounded-xl p-4 transition-shadow"
     >
       <div className="flex items-start justify-between">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-2">
-            <div className="p-1.5 bg-gray-100 rounded-lg shrink-0">
+            <div className="dashboard-widget-icon rounded-lg p-1.5 shrink-0">
               {icon}
             </div>
             <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground truncate">
               {label}
             </p>
           </div>
-          <p className="text-2xl font-bold text-gray-900">{value}</p>
+          <p className="text-2xl font-bold text-foreground">{value}</p>
           <p
             className={cn(
               "text-xs mt-0.5 truncate",
-              trend === "up" && "text-emerald-600",
-              trend === "down" && "text-red-500",
+              trend === "up" && "text-[hsl(var(--dashboard-kpi-trend-up))]",
+              trend === "down" && "text-[hsl(var(--dashboard-kpi-trend-down))]",
               trend === "neutral" && "text-muted-foreground"
             )}
           >

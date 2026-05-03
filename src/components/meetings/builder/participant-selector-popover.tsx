@@ -36,6 +36,7 @@ export function ParticipantSelectorPopover({
     const [isLoading, setIsLoading] = useState(false);
     const [isCreating, setIsCreating] = useState(false);
     const [newName, setNewName] = useState("");
+    const [newGender, setNewGender] = useState<"male" | "female" | null>(null);
 
     const loadParticipants = useCallback(async () => {
         setIsLoading(true);
@@ -113,6 +114,7 @@ export function ParticipantSelectorPopover({
         const { data, error } = await (supabase.from("directory") as any)
             .insert({
                 name: newName.trim(),
+                gender: newGender,
                 workspace_id: profile.workspace_id,
                 created_by: user.id
             })
@@ -124,6 +126,7 @@ export function ParticipantSelectorPopover({
             onSelect({ id: data.id, name: data.name });
             setIsCreating(false);
             setNewName("");
+            setNewGender(null);
             setOpen(false);
         } else if (error) {
             console.error("Error creating participant:", error);
@@ -136,6 +139,7 @@ export function ParticipantSelectorPopover({
             if (!val) {
                 setIsCreating(false);
                 setNewName("");
+                setNewGender(null);
                 setSearch("");
             }
         }}>
@@ -170,6 +174,32 @@ export function ParticipantSelectorPopover({
                                     if (e.key === "Escape") setIsCreating(false);
                                 }}
                             />
+                            <div className="flex gap-1">
+                                <button
+                                    type="button"
+                                    onClick={() => setNewGender(newGender === "male" ? null : "male")}
+                                    className={cn(
+                                        "flex-1 rounded px-2 py-1 text-xs border transition-colors",
+                                        newGender === "male"
+                                            ? "bg-primary text-primary-foreground border-primary"
+                                            : "border-border/60 text-muted-foreground hover:border-border hover:text-foreground"
+                                    )}
+                                >
+                                    Male
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setNewGender(newGender === "female" ? null : "female")}
+                                    className={cn(
+                                        "flex-1 rounded px-2 py-1 text-xs border transition-colors",
+                                        newGender === "female"
+                                            ? "bg-primary text-primary-foreground border-primary"
+                                            : "border-border/60 text-muted-foreground hover:border-border hover:text-foreground"
+                                    )}
+                                >
+                                    Female
+                                </button>
+                            </div>
                             <div className="flex gap-2">
                                 <Button size="sm" type="button" className="h-7 flex-1 text-xs" onClick={handleCreate} disabled={!newName.trim()}>
                                     Create & Select

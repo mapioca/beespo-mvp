@@ -1,6 +1,6 @@
 "use client";
 
-import {useState, useEffect, useCallback, useRef} from "react";
+import {useState, useEffect, useCallback, useRef, useMemo} from "react";
 import { useRouter } from "next/navigation";
 import {
     DndContext,
@@ -34,8 +34,6 @@ import { ValidationModal, ValidationItem, ValidationState } from "../validation-
 import { PrintPreviewPane } from "./print-preview-pane";
 import { ProgramModePane } from "./program-mode-pane";
 import type { ProgramStyleSettings } from "../program/program-style";
-import { ZoomMeetingSheet } from "@/components/meetings/zoom-meeting-sheet";
-import { ZoomIcon } from "@/components/ui/zoom-icon";
 import { generateMeetingMarkdown } from "@/lib/generate-meeting-markdown";
 import { saveMeetingMarkdown } from "@/lib/actions/meeting-actions";
 import { useForm } from "react-hook-form";
@@ -43,9 +41,10 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Form } from "@/components/ui/form";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription } from "@/components/ui/sheet";
-import { List, Loader2, Info } from "lucide-react";
+import { List, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { MeetingContextBar } from "./meeting-context-bar";
+import { MeetingPlanTopBar } from "./meeting-plan-top-bar";
 import {
     Dialog,
     DialogContent,
@@ -57,6 +56,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { RecentVisitTracker } from "@/components/navigation/recent-visit-tracker";
 
 const meetingFormSchema = z.object({
     title: z.string().min(1, "Title is required"),
@@ -74,16 +74,34 @@ type MeetingFormValues = z.infer<typeof meetingFormSchema>;
 interface MeetingBuilderProps {
     initialTemplateId?: string | null;
     initialMeetingId?: string;
+    initialEntryType?: "agenda" | "program" | "meeting";
+    initialMode?: BuilderMode;
 }
 
-export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingBuilderProps) {
+type AutosaveStatus = "idle" | "saving" | "saved" | "error";
+type MeetingStatus = "draft" | "scheduled" | "in_progress" | "completed" | "cancelled";
+type PlanType = "agenda" | "program" | null;
+
+export function MeetingBuilder({
+    initialTemplateId,
+    initialMeetingId,
+    initialEntryType = "agenda",
+    initialMode,
+}: MeetingBuilderProps) {
     const router = useRouter();
+    const defaultTitleByEntry = {
+        agenda: "Untitled Agenda",
+        program: "Untitled Program",
+        meeting: "Untitled Meeting",
+    } as const;
+    const defaultBuilderMode: BuilderMode =
+        initialMode ?? (initialMeetingId ? "print-preview" : initialEntryType === "program" ? "program" : "planning");
 
     // Form state
     const form = useForm<MeetingFormValues>({
         resolver: zodResolver(meetingFormSchema),
         defaultValues: {
-            title: "Untitled Meeting Agenda",
+            title: defaultTitleByEntry[initialEntryType],
             date: new Date(),
             time: "07:00",
             templateId: initialTemplateId || null,
@@ -98,6 +116,10 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
     const date = form.watch("date");
     const time = form.watch("time");
     const selectedTemplateId = form.watch("templateId");
+    const conductingValue = form.watch("conducting");
+    const presidingValue = form.watch("presiding");
+    const choristerValue = form.watch("chorister");
+    const pianistOrganistValue = form.watch("pianistOrganist");
 
     const setTitle = useCallback((t: string) => form.setValue("title", t, { shouldValidate: true }), [form]);
 
@@ -129,11 +151,13 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
     const [isCreating, setIsCreating] = useState(false);
 
     // Builder mode state — default to print-preview when editing existing, planning when creating new
-    const [builderMode, setBuilderMode] = useState<BuilderMode>(initialMeetingId ? "print-preview" : "planning");
+    const [builderMode, setBuilderMode] = useState<BuilderMode>(defaultBuilderMode);
     const [programPreviewDevice, setProgramPreviewDevice] = useState<"phone" | "tablet" | "desktop">("phone");
     const [workspaceName, setWorkspaceName] = useState("");
     const [workspaceSlug, setWorkspaceSlug] = useState<string | null>(null);
-    const [isLeader, setIsLeader] = useState(true); // assume leader until proven otherwise
+    const [isLeader, setIsLeader] = useState(false);
+    const canEdit = isLeader;
+    const BY_INVITATION_LABEL = "By invitation";
     const [isLive, setIsLive] = useState(false);
     const [isTogglingLive, setIsTogglingLive] = useState(false);
     const [programStyle, setProgramStyle] = useState<ProgramStyleSettings | null>(null);
@@ -167,17 +191,28 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
 
     // Meeting-level notes state
     const [meetingNotes, setMeetingNotes] = useState<string | null>(null);
+    const [autosaveStatus, setAutosaveStatus] = useState<AutosaveStatus>("idle");
+    const [lastAutosaveAt, setLastAutosaveAt] = useState<Date | null>(null);
+    const [isMeetingLoaded, setIsMeetingLoaded] = useState(!initialMeetingId);
+    const [meetingStatus, setMeetingStatus] = useState<MeetingStatus | null>(null);
+    const [planType, setPlanType] = useState<PlanType>(null);
+    const [linkedEvent, setLinkedEvent] = useState<{
+        id: string;
+        title: string;
+        start_at: string;
+        location: string | null;
+        workspace_event_id?: string | null;
+    } | null>(null);
+    const draftHashRef = useRef<string>("");
+    const serverHashRef = useRef<string>("");
 
-    // Zoom — track if this meeting has a linked Zoom meeting so we can sync on save
-    const [linkedZoomMeetingId, setLinkedZoomMeetingId] = useState<string | null>(null);
-    const [zoomJoinUrl, setZoomJoinUrl] = useState<string | null>(null);
-    const [zoomStartUrl, setZoomStartUrl] = useState<string | null>(null);
-    const [zoomPasscode, setZoomPasscode] = useState<string | null>(null);
-    const [isZoomConnected, setIsZoomConnected] = useState(false);
-    const [zoomSheetOpen, setZoomSheetOpen] = useState(false);
-    const [zoomCreateOpen, setZoomCreateOpen] = useState(false);
-    const [zoomCreateDuration, setZoomCreateDuration] = useState(0);
-    const [isCreatingZoom, setIsCreatingZoom] = useState(false);
+    const draftStorageKey = useMemo(
+        () =>
+            initialMeetingId
+                ? `beespo:meeting:draft:${initialMeetingId}`
+                : `beespo:meeting:draft:new:${initialEntryType}:${initialTemplateId || "none"}`,
+        [initialMeetingId, initialEntryType, initialTemplateId]
+    );
 
     // DnD sensors
     const sensors = useSensors(
@@ -239,6 +274,7 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                 target.isContentEditable;
 
             if (builderMode !== "planning") return;
+            if (!canEdit) return;
             if (isFormField) return;
             if (e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) return;
             if (e.key.toLowerCase() !== "i") return;
@@ -253,7 +289,7 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
 
         window.addEventListener("keydown", handleKeyDown);
         return () => window.removeEventListener("keydown", handleKeyDown);
-    }, [builderMode, selectedItemId, canvasItems]);
+    }, [builderMode, selectedItemId, canvasItems, canEdit]);
 
     // Load templates & workspace name
     useEffect(() => {
@@ -281,21 +317,6 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                 }
                 const role = profile?.role;
                 setIsLeader(role === "leader" || role === "admin");
-
-                // Check if user has Zoom connected
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const { data: zoomApp } = await (supabase.from("apps") as any)
-                    .select("id")
-                    .eq("slug", "zoom")
-                    .single();
-                if (zoomApp?.id) {
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    const { count } = await (supabase.from("app_tokens") as any)
-                        .select("*", { count: "exact", head: true })
-                        .eq("user_id", user.id)
-                        .eq("app_id", zoomApp.id);
-                    setIsZoomConnected((count ?? 0) > 0);
-                }
             }
 
             // Only load Beespo official + user's own workspace templates
@@ -324,7 +345,16 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
             // Load meeting details
             const { data: meetingData, error: meetingError } = await supabase
                 .from("meetings")
-                .select("*")
+                .select(`
+                    *,
+                    event:events!event_id (
+                        id,
+                        title,
+                        start_at,
+                        location,
+                        workspace_event_id
+                    )
+                `)
                 .eq("id", initialMeetingId)
                 .single();
 
@@ -333,7 +363,25 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
 
             if (meetingError || !meeting) {
                 toast.error("Failed to load meeting details");
+                setIsMeetingLoaded(true);
                 return;
+            }
+
+            setMeetingStatus((meeting.status as MeetingStatus) || "scheduled");
+            setPlanType((meeting.plan_type as PlanType) ?? null);
+            setLinkedEvent(
+                meeting.event
+                    ? {
+                        id: meeting.event.id,
+                        title: meeting.event.title,
+                        start_at: meeting.event.start_at,
+                        location: meeting.event.location ?? null,
+                        workspace_event_id: meeting.event.workspace_event_id ?? null,
+                    }
+                    : null
+            );
+            if (meeting.status === "draft") {
+                setBuilderMode("planning");
             }
 
             form.setValue("title", meeting.title);
@@ -341,18 +389,6 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                 const scheduledDate = new Date(meeting.scheduled_date);
                 form.setValue("date", scheduledDate);
                 form.setValue("time", format(scheduledDate, "HH:mm"));
-            }
-            if (meeting.zoom_meeting_id) {
-                setLinkedZoomMeetingId(meeting.zoom_meeting_id);
-            }
-            if (meeting.zoom_join_url) {
-                setZoomJoinUrl(meeting.zoom_join_url);
-            }
-            if (meeting.zoom_start_url) {
-                setZoomStartUrl(meeting.zoom_start_url);
-            }
-            if (meeting.zoom_passcode) {
-                setZoomPasscode(meeting.zoom_passcode);
             }
             if (meeting.notes && typeof meeting.notes === "string") {
                 setMeetingNotes(meeting.notes);
@@ -372,6 +408,7 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
 
             if (itemsError || !agendaItems) {
                 toast.error("Failed to load agenda items");
+                setIsMeetingLoaded(true);
                 return;
             }
 
@@ -440,10 +477,238 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
             const containerIds = items.filter((i) => i.isContainer).map((i) => i.id);
             setExpandedContainers(new Set(containerIds));
             setCanvasItems(items);
+            const loadedPayload = {
+                title: meeting.title || "",
+                date: meeting.scheduled_date ? new Date(meeting.scheduled_date).toISOString() : new Date().toISOString(),
+                time: meeting.scheduled_date ? format(new Date(meeting.scheduled_date), "HH:mm") : "07:00",
+                templateId: meeting.template_id || null,
+                conducting: form.getValues("conducting") || "",
+                presiding: form.getValues("presiding") || "",
+                chorister: form.getValues("chorister") || "",
+                pianistOrganist: form.getValues("pianistOrganist") || "",
+                meetingNotes: (meeting.notes as string | null) || "",
+                canvasItems: items,
+            };
+            const loadedHash = JSON.stringify(loadedPayload);
+            draftHashRef.current = loadedHash;
+            serverHashRef.current = loadedHash;
+            setIsMeetingLoaded(true);
         };
 
         loadExistingMeeting();
     }, [initialMeetingId, form]);
+
+    // Restore local draft when creating a brand-new meeting.
+    useEffect(() => {
+        if (initialMeetingId || !canEdit) return;
+
+        try {
+            const raw = localStorage.getItem(draftStorageKey);
+            if (!raw) return;
+
+            const parsed = JSON.parse(raw) as {
+                title?: string;
+                date?: string;
+                time?: string;
+                templateId?: string | null;
+                conducting?: string;
+                presiding?: string;
+                chorister?: string;
+                pianistOrganist?: string;
+                meetingNotes?: string | null;
+                canvasItems?: CanvasItem[];
+            };
+
+            if (parsed.title) form.setValue("title", parsed.title);
+            if (parsed.date) form.setValue("date", new Date(parsed.date));
+            if (parsed.time) form.setValue("time", parsed.time);
+            if (parsed.templateId !== undefined) form.setValue("templateId", parsed.templateId);
+            if (parsed.conducting !== undefined) form.setValue("conducting", parsed.conducting);
+            if (parsed.presiding !== undefined) form.setValue("presiding", parsed.presiding);
+            if (parsed.chorister !== undefined) form.setValue("chorister", parsed.chorister);
+            if (parsed.pianistOrganist !== undefined) form.setValue("pianistOrganist", parsed.pianistOrganist);
+            if (parsed.meetingNotes !== undefined) setMeetingNotes(parsed.meetingNotes);
+            if (Array.isArray(parsed.canvasItems)) {
+                setCanvasItems(parsed.canvasItems);
+                const containerIds = parsed.canvasItems.filter((i) => i.isContainer).map((i) => i.id);
+                setExpandedContainers(new Set(containerIds));
+            }
+
+            toast.success("Draft restored", { description: "Recovered your unsaved agenda changes." });
+        } catch {
+            // Ignore malformed draft payloads
+        }
+    }, [initialMeetingId, canEdit, draftStorageKey, form]);
+
+    // Autosave draft to local storage and, for existing meetings, autosave to the database.
+    useEffect(() => {
+        if (!canEdit) return;
+        if (initialMeetingId && !isMeetingLoaded) return;
+        if (!date || Number.isNaN(date.getTime())) return;
+
+        const draftPayload = {
+            title,
+            date: date.toISOString(),
+            time,
+            templateId: selectedTemplateId,
+            conducting: conductingValue || "",
+            presiding: presidingValue || "",
+            chorister: choristerValue || "",
+            pianistOrganist: pianistOrganistValue || "",
+            meetingNotes: meetingNotes || "",
+            canvasItems,
+        };
+        const payloadHash = JSON.stringify(draftPayload);
+
+        const timeout = window.setTimeout(async () => {
+            if (payloadHash === draftHashRef.current && (!initialMeetingId || payloadHash === serverHashRef.current)) {
+                return;
+            }
+
+            setAutosaveStatus("saving");
+
+            try {
+                localStorage.setItem(draftStorageKey, payloadHash);
+                draftHashRef.current = payloadHash;
+
+                if (!initialMeetingId) {
+                    const [hours, minutes] = time.split(":").map(Number);
+                    const scheduledDate = new Date(date);
+                    scheduledDate.setHours(hours, minutes);
+
+                    const agendaJson = canvasItems.map((item) => ({
+                        title: item.title,
+                        description: item.description,
+                        item_notes: item.item_notes || null,
+                        duration_minutes: item.duration_minutes,
+                        order_index: item.order_index,
+                        item_type: item.category,
+                        hymn_id: item.hymn_id || null,
+                        speaker_id: item.speaker_id || null,
+                        speaker_topic: item.speaker_topic || null,
+                        participant_id: item.participant_id || null,
+                        participant_name: item.participant_name || item.speaker_name || null,
+                        discussion_id: item.discussion_id || null,
+                        business_item_id: item.business_item_id || null,
+                        announcement_id: item.announcement_id || null,
+                        structural_type: item.structural_type || null,
+                        child_items: item.isContainer && item.childItems ? item.childItems.map((child) => ({
+                            title: child.title,
+                            description: child.description,
+                            item_notes: child.item_notes || null,
+                            discussion_id: child.discussion_id || null,
+                            business_item_id: child.business_item_id || null,
+                            announcement_id: child.announcement_id || null,
+                            person_name: child.person_name || null,
+                            position_calling: child.position_calling || null,
+                            business_category: child.business_category || null,
+                            business_details: child.business_details || null,
+                        })) : null,
+                    }));
+
+                    const supabase = createClient();
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    const { data, error } = await (supabase as any).rpc("create_meeting_draft_with_agenda", {
+                        p_template_id: selectedTemplateId && selectedTemplateId !== "none" ? selectedTemplateId : null,
+                        p_title: title,
+                        p_scheduled_date: scheduledDate.toISOString(),
+                        p_agenda_items: agendaJson,
+                        p_notes: meetingNotes,
+                    });
+
+                    if (error || !data) {
+                        throw new Error(error?.message || "Draft autosave failed");
+                    }
+
+                    serverHashRef.current = payloadHash;
+                    setLastAutosaveAt(new Date());
+                    setAutosaveStatus("saved");
+                    localStorage.removeItem(draftStorageKey);
+                    router.replace(`/meetings/${data}`);
+                    router.refresh();
+                    return;
+                }
+
+                if (payloadHash === serverHashRef.current) {
+                    setLastAutosaveAt(new Date());
+                    setAutosaveStatus("saved");
+                    return;
+                }
+
+                const [hours, minutes] = time.split(":").map(Number);
+                const scheduledDate = new Date(date);
+                scheduledDate.setHours(hours, minutes);
+
+                const agendaJson = canvasItems.map((item) => ({
+                    title: item.title,
+                    description: item.description,
+                    item_notes: item.item_notes || null,
+                    duration_minutes: item.duration_minutes,
+                    order_index: item.order_index,
+                    item_type: item.category,
+                    hymn_id: item.hymn_id || null,
+                    speaker_id: item.speaker_id || null,
+                    speaker_topic: item.speaker_topic || null,
+                    participant_id: item.participant_id || null,
+                    participant_name: item.participant_name || item.speaker_name || null,
+                    discussion_id: item.discussion_id || null,
+                    business_item_id: item.business_item_id || null,
+                    announcement_id: item.announcement_id || null,
+                    structural_type: item.structural_type || null,
+                    child_items: item.isContainer && item.childItems ? item.childItems.map((child) => ({
+                        title: child.title,
+                        description: child.description,
+                        item_notes: child.item_notes || null,
+                        discussion_id: child.discussion_id || null,
+                        business_item_id: child.business_item_id || null,
+                        announcement_id: child.announcement_id || null,
+                        person_name: child.person_name || null,
+                        position_calling: child.position_calling || null,
+                        business_category: child.business_category || null,
+                        business_details: child.business_details || null,
+                    })) : null,
+                }));
+
+                const supabase = createClient();
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const { error } = await (supabase as any).rpc("update_meeting_with_agenda", {
+                    p_meeting_id: initialMeetingId,
+                    p_title: title,
+                    p_scheduled_date: scheduledDate.toISOString(),
+                    p_agenda_items: agendaJson,
+                    p_notes: meetingNotes,
+                });
+
+                if (error) {
+                    throw new Error(error.message || "Autosave failed");
+                }
+
+                serverHashRef.current = payloadHash;
+                setLastAutosaveAt(new Date());
+                setAutosaveStatus("saved");
+            } catch {
+                setAutosaveStatus("error");
+            }
+        }, 1500);
+
+        return () => window.clearTimeout(timeout);
+    }, [
+        canEdit,
+        initialMeetingId,
+        isMeetingLoaded,
+        router,
+        draftStorageKey,
+        title,
+        date,
+        time,
+        selectedTemplateId,
+        conductingValue,
+        presidingValue,
+        choristerValue,
+        pianistOrganistValue,
+        canvasItems,
+        meetingNotes,
+    ]);
 
     const getLiveUrl = useCallback(() => {
         if (!initialMeetingId || !workspaceSlug) return null;
@@ -578,7 +843,7 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
 
             const { data: linkedAnnouncements } = await (supabase
                 .from("announcement_templates") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
-                .select("announcement_id, announcements(id, title, content, status, priority)")
+                .select("announcement_id, announcements(id, title, content, status, priority, display_start, display_until)")
                 .eq("template_id", templateId);
 
             // Build canvas items
@@ -993,6 +1258,22 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
         setUnifiedModalOpen(false);
     }, [selectedItemId]);
 
+    const handleToggleByInvitation = useCallback((enabled: boolean) => {
+        if (!selectedItemId) return;
+
+        setCanvasItems((prev) =>
+            prev.map((item) =>
+                item.id === selectedItemId
+                    ? enabled
+                        ? { ...item, participant_id: undefined, participant_name: BY_INVITATION_LABEL }
+                        : (item.participant_name === BY_INVITATION_LABEL
+                            ? { ...item, participant_name: undefined }
+                            : item)
+                    : item
+            )
+        );
+    }, [selectedItemId]);
+
     const handleSelectSpeaker = useCallback((speaker: SpeakerSelection) => {
         if (selectedItemId) {
             setCanvasItems((prev) =>
@@ -1010,6 +1291,33 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
             );
         }
         setUnifiedModalOpen(false);
+    }, [selectedItemId]);
+
+    const handleToggleSpeakerByInvitation = useCallback((enabled: boolean) => {
+        if (!selectedItemId) return;
+
+        setCanvasItems((prev) =>
+            prev.map((item) =>
+                item.id === selectedItemId
+                    ? enabled
+                        ? {
+                            ...item,
+                            speaker_id: undefined,
+                            speaker_name: BY_INVITATION_LABEL,
+                            speaker_topic: null,
+                            speaker_is_confirmed: false,
+                        }
+                        : (item.speaker_name === BY_INVITATION_LABEL
+                            ? {
+                                ...item,
+                                speaker_name: undefined,
+                                speaker_topic: null,
+                                speaker_is_confirmed: undefined,
+                            }
+                            : item)
+                    : item
+            )
+        );
     }, [selectedItemId]);
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -1177,32 +1485,32 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                 });
             }
 
-            if (item.requires_participant && item.category !== "speaker" && !item.participant_id) {
+            if (item.requires_participant && item.category !== "speaker" && !item.participant_id && !item.participant_name) {
                 items.push({
                     id: `${item.id}-participant`,
                     title: item.title,
                     status: "warning",
                     message: "Participant not assigned",
                 });
-            } else if (item.requires_participant && item.participant_id) {
+            } else if (item.requires_participant && (item.participant_id || item.participant_name)) {
                 items.push({
                     id: `${item.id}-participant`,
-                    title: `${item.title} - ${item.participant_name}`,
+                    title: `${item.title} - ${item.participant_name || "Assigned"}`,
                     status: "success",
                 });
             }
 
-            if (item.category === "speaker" && !item.speaker_id) {
+            if (item.category === "speaker" && !item.speaker_id && !item.speaker_name) {
                 items.push({
                     id: `${item.id}-speaker`,
                     title: item.title,
                     status: "warning",
                     message: "Speaker not assigned",
                 });
-            } else if (item.category === "speaker" && item.speaker_id) {
+            } else if (item.category === "speaker" && (item.speaker_id || item.speaker_name)) {
                 items.push({
                     id: `${item.id}-speaker`,
-                    title: `${item.title} - ${item.speaker_name}`,
+                    title: `${item.title} - ${item.speaker_name || "Assigned"}`,
                     status: "success",
                 });
             }
@@ -1242,6 +1550,10 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
     }, [canvasItems]);
 
     const handleValidate = useCallback(() => {
+        if (!canEdit) {
+            toast.error("Read-only access", { description: "Guests can view agendas but cannot make changes." });
+            return;
+        }
         setValidationModalOpen(true);
         setValidationState("validating");
         setValidationItems([]);
@@ -1261,10 +1573,14 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                 setValidationState("success");
             }
         }, 800);
-    }, [validateAgenda]);
+    }, [validateAgenda, canEdit]);
 
     // Create meeting
     const handleCreateMeeting = useCallback(async () => {
+        if (!canEdit) {
+            toast.error("Read-only access", { description: "Guests can view agendas but cannot make changes." });
+            return;
+        }
         setIsCreating(true);
 
         try {
@@ -1356,6 +1672,27 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                     return;
                 }
 
+                if (meetingStatus === "draft") {
+                    // Promote a persisted draft into a scheduled meeting on explicit save.
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    const { error: statusError } = await (supabase.from("meetings") as any)
+                        .update({ status: "scheduled" })
+                        .eq("id", initialMeetingId);
+
+                    if (statusError) {
+                        toast.error("Failed to publish draft", { description: statusError.message });
+                        setValidationItems([{
+                            id: "error-publish",
+                            title: "Failed to publish draft",
+                            status: "error",
+                            message: statusError.message,
+                        }]);
+                        setValidationState("error");
+                        return;
+                    }
+                    setMeetingStatus("scheduled");
+                }
+
                 // Fire-and-forget: persist markdown agenda
                 const markdown = generateMeetingMarkdown({
                     title, date: date!, time,
@@ -1371,17 +1708,8 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                 // Fire-and-forget
                 saveMeetingMarkdown(initialMeetingId, markdown).catch(() => { });
 
-                // Sync the linked Zoom meeting's start time (keepalive so it survives the redirect)
-                if (linkedZoomMeetingId) {
-                    fetch(`/api/meetings/${initialMeetingId}/zoom`, {
-                        method: "PATCH",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ start_time: scheduledDate.toISOString() }),
-                        keepalive: true,
-                    }).catch(() => { });
-                }
-
                 toast.success("Meeting updated", { description: "Redirecting..." });
+                localStorage.removeItem(draftStorageKey);
                 router.push(`/meetings/${initialMeetingId}`);
                 router.refresh();
                 return;
@@ -1437,6 +1765,7 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                 saveMeetingMarkdown(fallbackData, fallbackMarkdown).catch(() => { });
 
                 toast.success("Meeting created", { description: "Redirecting..." });
+                localStorage.removeItem(draftStorageKey);
                 router.push(`/meetings/${fallbackData}`);
                 router.refresh();
                 return;
@@ -1468,6 +1797,7 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
             saveMeetingMarkdown(data, markdown).catch(() => { });
 
             toast.success("Meeting created", { description: "Redirecting..." });
+            localStorage.removeItem(draftStorageKey);
             router.push(`/meetings/${data}`);
             router.refresh();
         } catch (err: unknown) {
@@ -1482,7 +1812,7 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
         } finally {
             setIsCreating(false);
         }
-    }, [canvasItems, date, time, title, selectedTemplateId, router, form, workspaceName, initialMeetingId, meetingNotes, linkedZoomMeetingId]);
+    }, [canvasItems, date, time, title, selectedTemplateId, router, form, workspaceName, initialMeetingId, meetingNotes, canEdit, draftStorageKey, meetingStatus]);
 
     // Duplicate the current agenda as a brand-new meeting with a different name
     const handleSaveAsNew = useCallback(async (newTitle: string) => {
@@ -1721,65 +2051,9 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
         }
     }, [canvasItems]);
 
-    // ─── Zoom handlers ──────────────────────────────────────────────
-    const handleCreateZoom = useCallback(() => {
-        if (!isZoomConnected) {
-            toast.error("Zoom not connected", {
-                description: "Go to Settings → Integrations to connect your Zoom account.",
-            });
-            return;
-        }
-        const duration = canvasItems.reduce((acc, item) => acc + (item.duration_minutes || 0), 0);
-        setZoomCreateDuration(duration > 0 ? duration : 40);
-        setZoomCreateOpen(true);
-    }, [isZoomConnected, canvasItems]);
-
-    const handleConfirmCreateZoom = useCallback(async () => {
-        if (!initialMeetingId) return;
-        setIsCreatingZoom(true);
-        setZoomCreateOpen(false);
-        try {
-            const res = await fetch(`/api/meetings/${initialMeetingId}/zoom`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ duration: zoomCreateDuration }),
-            });
-            if (!res.ok) {
-                const data = await res.json();
-                if (data.error === "zoom_not_connected") {
-                    toast.error("Zoom not connected", {
-                        description: "Go to Settings → Integrations to connect your Zoom account.",
-                    });
-                } else {
-                    toast.error("Failed to create Zoom meeting. Please try again.");
-                }
-                return;
-            }
-            const result = await res.json();
-            setZoomJoinUrl(result.zoom_join_url);
-            setZoomStartUrl(result.zoom_start_url);
-            setZoomPasscode(result.zoom_passcode);
-            if (result.zoom_meeting_id) setLinkedZoomMeetingId(result.zoom_meeting_id);
-            toast.success("Zoom meeting created");
-        } catch {
-            toast.error("Failed to create Zoom meeting. Please try again.");
-        } finally {
-            setIsCreatingZoom(false);
-        }
-    }, [initialMeetingId, zoomCreateDuration]);
-
     // ─── Delete handler ──────────────────────────────────────────
     const handleDeleteMeeting = useCallback(async () => {
         if (!initialMeetingId) return;
-
-        // Cancel linked Zoom meeting first
-        if (linkedZoomMeetingId) {
-            try {
-                await fetch(`/api/meetings/${initialMeetingId}/zoom`, { method: "DELETE" });
-            } catch {
-                // Non-fatal — proceed with deletion
-            }
-        }
 
         const supabase = createClient();
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -1789,7 +2063,7 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
 
         router.push("/meetings/agendas");
         router.refresh();
-    }, [initialMeetingId, linkedZoomMeetingId, router]);
+    }, [initialMeetingId, router]);
 
     const isValid = title.trim() !== "" && date !== undefined;
     const totalDuration = canvasItems.reduce((acc, item) => acc + (item.duration_minutes || 0), 0);
@@ -1820,16 +2094,30 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
         return format(d, "h:mm a");
     })();
 
+    const recentNavigationItem = useMemo(
+        () =>
+            initialMeetingId
+                ? {
+                    id: initialMeetingId,
+                    entityType: "meeting" as const,
+                    title: title || "Untitled Agenda",
+                    href: `/meetings/${initialMeetingId}`,
+                  }
+                : null,
+        [initialMeetingId, title]
+    );
+
     return (
         <Form {...form}>
+            <RecentVisitTracker item={recentNavigationItem} />
             <TooltipProvider delayDuration={1200}>
             <form onSubmit={(e) => { e.preventDefault(); handleValidate(); }} className="h-full min-h-0 flex flex-col overflow-hidden bg-panel">
                 <DndContext
                     sensors={sensors}
                     collisionDetection={closestCenter}
-                    onDragStart={handleDragStart}
-                    onDragOver={handleDragOver}
-                    onDragEnd={handleDragEnd}
+                    onDragStart={canEdit ? handleDragStart : undefined}
+                    onDragOver={canEdit ? handleDragOver : undefined}
+                    onDragEnd={canEdit ? handleDragEnd : undefined}
                 >
                     <div className="flex-1 flex flex-col overflow-hidden">
                         {/* Global Top Bar (all screen sizes) */}
@@ -1851,18 +2139,53 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                                 programPreviewDevice={programPreviewDevice}
                                 onProgramPreviewDeviceChange={setProgramPreviewDevice}
                                 workspaceSlug={workspaceSlug}
-                                zoomJoinUrl={zoomJoinUrl}
-                                isZoomConnected={isZoomConnected}
-                                isCreatingZoom={isCreatingZoom}
-                                onOpenZoomSheet={() => setZoomSheetOpen(true)}
-                                onAddZoom={handleCreateZoom}
                                 onDelete={handleDeleteMeeting}
                                 isLive={isLive}
+                                canEdit={canEdit}
+                                lastAutosaveAt={lastAutosaveAt}
+                                autosaveStatus={autosaveStatus}
+                                planType={planType}
+                                linkedEvent={linkedEvent}
+                                meetingStatus={meetingStatus}
+                                onMeetingMetaChange={(updates) => {
+                                    if (updates.planType !== undefined) {
+                                        setPlanType(updates.planType);
+                                    }
+                                    if (updates.linkedEvent !== undefined) {
+                                        setLinkedEvent(updates.linkedEvent);
+                                    }
+                                }}
                             />
                         </div>
 
                         {builderMode === "planning" && (
                             <>
+                                {/* Unified plan top bar (inline essentials + role popover) */}
+                                <MeetingPlanTopBar
+                                    title={title}
+                                    onTitleChange={canEdit ? setTitle : () => {}}
+                                    date={date ?? null}
+                                    onDateChange={(d) => canEdit && form.setValue("date", d, { shouldValidate: true })}
+                                    time={time ?? ""}
+                                    onTimeChange={(t) => canEdit && form.setValue("time", t, { shouldValidate: true })}
+                                    presiding={presidingValue ?? ""}
+                                    onPresidingChange={(v) => canEdit && form.setValue("presiding", v, { shouldValidate: true })}
+                                    conducting={conductingValue ?? ""}
+                                    onConductingChange={(v) => canEdit && form.setValue("conducting", v, { shouldValidate: true })}
+                                    chorister={choristerValue ?? ""}
+                                    onChoristerChange={(v) => canEdit && form.setValue("chorister", v, { shouldValidate: true })}
+                                    organist={pianistOrganistValue ?? ""}
+                                    onOrganistChange={(v) => canEdit && form.setValue("pianistOrganist", v, { shouldValidate: true })}
+                                    location={linkedEvent?.location ?? null}
+                                    templates={templates}
+                                    templateId={selectedTemplateId === "none" ? null : selectedTemplateId}
+                                    onTemplateChange={(next) =>
+                                        canEdit && form.setValue("templateId", next, { shouldValidate: true })
+                                    }
+                                    canvasItemCount={canvasItems.length}
+                                    canEdit={canEdit}
+                                />
+
                                 {/* Mobile sheet toggle (hidden on lg+) — toolbox & properties */}
                                 <div className="lg:hidden flex items-center justify-between px-4 py-2 border-b bg-background shrink-0">
                                     <Sheet>
@@ -1875,7 +2198,7 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                                             <SheetTitle className="sr-only">Library</SheetTitle>
                                             <SheetDescription className="sr-only">Agenda items library</SheetDescription>
                                             <ToolboxPane
-                                                onAddItem={handleAddCanvasItem}
+                                                onAddItem={canEdit ? handleAddCanvasItem : () => {}}
                                                 onItemsLoaded={setToolboxItems}
                                                 pinnedIds={pinnedToolboxIds}
                                                 recentIds={recentToolboxIds}
@@ -1883,7 +2206,7 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                                                 outlineItems={canvasItems}
                                                 selectedItemId={selectedItemId}
                                                 onSelectItem={setSelectedItemId}
-                                                onDuplicateItem={handleDuplicateItem}
+                                                onDuplicateItem={canEdit ? handleDuplicateItem : undefined}
                                             />
                                         </SheetContent>
                                     </Sheet>
@@ -1904,34 +2227,20 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                                                 templates={templates}
                                                 meetingNotes={meetingNotes}
                                                 onUpdateMeetingNotes={setMeetingNotes}
+                                                readOnly={!canEdit}
                                             />
                                         </SheetContent>
                                     </Sheet>
                                 </div>
 
-                                {/* 3-Column Workspace */}
+                                {/* 2-Column Workspace (canvas left, toolbox right) */}
                                 <div className="flex-1 flex overflow-hidden">
-                                    {/* Left Pane - Library */}
-                                    <div className="hidden lg:block w-64 h-full overflow-hidden shrink-0">
-                                        <ToolboxPane
-                                            onAddItem={handleAddCanvasItem}
-                                            onItemsLoaded={setToolboxItems}
-                                            pinnedIds={pinnedToolboxIds}
-                                            recentIds={recentToolboxIds}
-                                            onTogglePin={togglePinnedToolboxItem}
-                                            outlineItems={canvasItems}
-                                            selectedItemId={selectedItemId}
-                                            onSelectItem={setSelectedItemId}
-                                            onDuplicateItem={handleDuplicateItem}
-                                        />
-                                    </div>
-
                                     {/* Center Pane - Canvas */}
                                     <div className="flex-1 h-full overflow-hidden min-w-0">
                                         <AgendaCanvas
                                             items={canvasItems}
-                                            onRemoveItem={handleRemoveItem}
-                                            onDuplicateItem={handleDuplicateItem}
+                                            onRemoveItem={canEdit ? handleRemoveItem : () => {}}
+                                            onDuplicateItem={canEdit ? handleDuplicateItem : undefined}
                                             title={title}
                                             dateLabel={formattedDateLabel}
                                             timeLabel={formattedTimeLabel}
@@ -1940,34 +2249,43 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                                             selectedItemId={selectedItemId}
                                             onSelectItem={setSelectedItemId}
                                             isOver={isOverCanvas}
-                                            onUpdateItem={handleUpdateTitle}
-                                            onUpdateDescription={handleUpdateDescription}
-                                            onUpdateItemNotes={handleUpdateItemNotes}
-                                            onUpdateDuration={handleUpdateDuration}
-                                            onSelectHymn={handleSelectHymn}
-                                            onSelectParticipant={handleSelectParticipant}
-                                            onSelectDiscussion={(discs) => handleAddManyToContainer(discs, "discussion")}
-                                            onSelectBusiness={(biz) => handleAddManyToContainer(biz, "business")}
-                                            onSelectAnnouncement={(ann) => handleAddManyToContainer(ann, "announcement")}
-                                            onSelectSpeaker={handleSelectSpeaker}
+                                            onUpdateItem={canEdit ? handleUpdateTitle : undefined}
+                                            onUpdateDescription={canEdit ? handleUpdateDescription : undefined}
+                                            onUpdateItemNotes={canEdit ? handleUpdateItemNotes : undefined}
+                                            onUpdateDuration={canEdit ? handleUpdateDuration : undefined}
+                                            onSelectHymn={canEdit ? handleSelectHymn : undefined}
+                                            onSelectParticipant={canEdit ? handleSelectParticipant : undefined}
+                                            onToggleByInvitation={canEdit ? handleToggleByInvitation : undefined}
+                                            onSelectDiscussion={canEdit ? (discs) => handleAddManyToContainer(discs, "discussion") : undefined}
+                                            onSelectBusiness={canEdit ? (biz) => handleAddManyToContainer(biz, "business") : undefined}
+                                            onSelectAnnouncement={canEdit ? (ann) => handleAddManyToContainer(ann, "announcement") : undefined}
+                                            onSelectSpeaker={canEdit ? handleSelectSpeaker : undefined}
+                                            onToggleSpeakerByInvitation={canEdit ? handleToggleSpeakerByInvitation : undefined}
                                             selectedSpeakerIdsInMeeting={selectedSpeakerIds}
-                                            onAddToContainer={openContainerAddForSelected}
-                                            onRemoveChildItem={handleRemoveChildFromSelected}
+                                            onAddToContainer={canEdit ? openContainerAddForSelected : undefined}
+                                            onRemoveChildItem={canEdit ? handleRemoveChildFromSelected : undefined}
                                             toolboxItems={toolboxItems}
                                             pinnedIds={pinnedToolboxIds}
                                             recentIds={recentToolboxIds}
-                                            onInsertItemAt={handleInsertCanvasItemAt}
+                                            onInsertItemAt={canEdit ? handleInsertCanvasItemAt : undefined}
                                             openInsertAt={insertRequestIndex}
                                             onInsertOpenHandled={() => setInsertRequestIndex(null)}
                                         />
                                     </div>
 
-                                    {/* Right Pane - Properties */}
-                                    <div className="hidden lg:block w-[260px] h-full overflow-hidden shrink-0">
-                                        <PropertiesPane
-                                            templates={templates}
-                                            meetingNotes={meetingNotes}
-                                            onUpdateMeetingNotes={setMeetingNotes}
+                                    {/* Right Pane - Toolbox (Library) */}
+                                    <div className="hidden lg:block w-80 h-full overflow-hidden shrink-0 border-l border-border/60">
+                                        <ToolboxPane
+                                            onAddItem={canEdit ? handleAddCanvasItem : () => {}}
+                                            onItemsLoaded={setToolboxItems}
+                                            pinnedIds={pinnedToolboxIds}
+                                            recentIds={recentToolboxIds}
+                                            onTogglePin={togglePinnedToolboxItem}
+                                            outlineItems={canvasItems}
+                                            selectedItemId={selectedItemId}
+                                            onSelectItem={setSelectedItemId}
+                                            onDuplicateItem={canEdit ? handleDuplicateItem : undefined}
+                                            planType={initialEntryType === "program" ? "program" : "agenda"}
                                         />
                                     </div>
                                 </div>
@@ -2155,87 +2473,6 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                                 >
                                     {isSavingTemplate ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                                     Save Template
-                                </Button>
-                            </DialogFooter>
-                        </DialogContent>
-                    </Dialog>
-                    {/* Zoom management sheet */}
-                    {initialMeetingId && zoomJoinUrl && (
-                        <ZoomMeetingSheet
-                            meeting={{
-                                id: initialMeetingId,
-                                title: form.getValues("title"),
-                                scheduled_date: (() => {
-                                    const d = form.getValues("date");
-                                    const t = form.getValues("time");
-                                    if (!d) return null;
-                                    const dt = new Date(d);
-                                    if (t) {
-                                        const [h, m] = t.split(":");
-                                        dt.setHours(parseInt(h), parseInt(m));
-                                    }
-                                    return dt.toISOString();
-                                })(),
-                                zoom_meeting_id: linkedZoomMeetingId,
-                                zoom_join_url: zoomJoinUrl,
-                                zoom_start_url: zoomStartUrl,
-                                zoom_passcode: zoomPasscode,
-                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                            } as any}
-                            totalDuration={totalDuration}
-                            isZoomFreeAccount={null}
-                            open={zoomSheetOpen}
-                            onOpenChange={setZoomSheetOpen}
-                            onMeetingUpdate={(fields) => {
-                                if ("zoom_join_url" in fields) setZoomJoinUrl(fields.zoom_join_url ?? null);
-                                if ("zoom_start_url" in fields) setZoomStartUrl(fields.zoom_start_url ?? null);
-                                if ("zoom_passcode" in fields) setZoomPasscode(fields.zoom_passcode ?? null);
-                                if ("zoom_meeting_id" in fields) setLinkedZoomMeetingId(fields.zoom_meeting_id ?? null);
-                            }}
-                        />
-                    )}
-
-                    {/* Add Zoom — create dialog */}
-                    <Dialog open={zoomCreateOpen} onOpenChange={(o) => !isCreatingZoom && setZoomCreateOpen(o)}>
-                        <DialogContent className="sm:max-w-sm">
-                            <DialogHeader>
-                                <DialogTitle className="flex items-center gap-2">
-                                    <ZoomIcon className="h-4 w-4" />
-                                    Add Zoom Meeting
-                                </DialogTitle>
-                            </DialogHeader>
-                            <div className="space-y-4 py-1">
-                                <div className="space-y-1.5">
-                                    <label className="text-sm font-medium">Duration (minutes)</label>
-                                    <Input
-                                        type="number"
-                                        min={1}
-                                        max={600}
-                                        value={zoomCreateDuration}
-                                        onChange={(e) => setZoomCreateDuration(Number(e.target.value))}
-                                        className="h-9"
-                                    />
-                                    {totalDuration === 0 && (
-                                        <p className="text-xs text-muted-foreground">
-                                            No items are timed yet — enter a duration manually.
-                                        </p>
-                                    )}
-                                </div>
-                                <div className="flex gap-2.5 rounded-md border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-400">
-                                    <Info className="h-3.5 w-3.5 mt-0.5 shrink-0" />
-                                    <span>
-                                        {zoomCreateDuration > 40
-                                            ? "Free Zoom accounts are capped at 40 minutes. Participants may be disconnected after that."
-                                            : "Free Zoom accounts are limited to 40-minute meetings. Upgrade at zoom.us for longer sessions."}
-                                    </span>
-                                </div>
-                            </div>
-                            <DialogFooter>
-                                <Button variant="outline" size="sm" type="button" onClick={() => setZoomCreateOpen(false)}>
-                                    Cancel
-                                </Button>
-                                <Button size="sm" type="button" onClick={handleConfirmCreateZoom} disabled={!zoomCreateDuration}>
-                                    Create Zoom Meeting
                                 </Button>
                             </DialogFooter>
                         </DialogContent>

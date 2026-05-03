@@ -101,8 +101,8 @@ export function RecurrencePicker({
                   className={cn(
                     "px-3 py-1.5 text-sm rounded-md border transition-colors",
                     isSelected
-                      ? "bg-[hsl(var(--accent-warm))] text-foreground border-[hsl(var(--accent-warm-hover))]"
-                      : "bg-background hover:bg-[hsl(var(--accent-warm)/0.6)] border-border/60"
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "bg-background hover:bg-accent border-border/60"
                   )}
                 >
                   {day.label}
