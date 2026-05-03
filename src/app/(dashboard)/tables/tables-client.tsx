@@ -1,10 +1,11 @@
 "use client"
 
-import { useState, useMemo, useCallback } from "react"
+import { useState, useMemo, useCallback, useEffect } from "react"
+import { createPortal } from "react-dom"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { Plus, X, Trash2 } from "lucide-react"
+import { Check, Columns3, Plus, SlidersHorizontal, Table2, X } from "lucide-react"
 import { Breadcrumbs } from "@/components/dashboard/breadcrumbs"
 import {
     AlertDialog,
@@ -19,6 +20,18 @@ import {
 import { toast } from "@/lib/toast"
 import { deleteTable } from "@/lib/actions/table-actions"
 import { TablesListTable, TableWithCount } from "@/components/tables/tables-list-table"
+import { BulkSelectionBar } from "@/components/ui/bulk-selection-bar"
+import { TopbarSearchAction } from "@/components/ui/topbar-search-action"
+import {
+    StandardPopoverMenu,
+    StandardPopoverMenuContent,
+    StandardPopoverMenuItem,
+    StandardPopoverMenuSub,
+    StandardPopoverMenuSubContent,
+    StandardPopoverMenuSubTrigger,
+    StandardPopoverMenuTrigger,
+} from "@/components/ui/standard-popover-menu"
+import { ToolbarIconButton } from "@/components/ui/toolbar-icon-button"
 
 interface TablesClientProps {
     tables: TableWithCount[]
@@ -26,6 +39,7 @@ interface TablesClientProps {
 
 export function TablesClient({ tables }: TablesClientProps) {
     const router = useRouter()
+    const [mounted, setMounted] = useState(false)
 
     // Search
     const [search, setSearch] = useState("")
@@ -45,6 +59,13 @@ export function TablesClient({ tables }: TablesClientProps) {
     // Bulk delete
     const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false)
     const [isBulkDeleting, setIsBulkDeleting] = useState(false)
+    const [filtersOpen, setFiltersOpen] = useState(false)
+    const [displayOptionsOpen, setDisplayOptionsOpen] = useState(false)
+    const [descriptionFilter, setDescriptionFilter] = useState<"all" | "with_description" | "without_description">("all")
+
+    useEffect(() => {
+        setMounted(true)
+    }, [])
 
     // ── Derived data ─────────────────────────────────────────────────────────
 
@@ -57,6 +78,14 @@ export function TablesClient({ tables }: TablesClientProps) {
                 (t) =>
                     t.name.toLowerCase().includes(q) ||
                     t.description?.toLowerCase().includes(q)
+            )
+        }
+
+        if (descriptionFilter !== "all") {
+            result = result.filter((table) =>
+                descriptionFilter === "with_description"
+                    ? Boolean(table.description?.trim())
+                    : !table.description?.trim()
             )
         }
 
@@ -77,7 +106,7 @@ export function TablesClient({ tables }: TablesClientProps) {
         }
 
         return result
-    }, [tables, search, sortConfig])
+    }, [tables, search, descriptionFilter, sortConfig])
 
     // ── Handlers ─────────────────────────────────────────────────────────────
 
@@ -88,10 +117,16 @@ export function TablesClient({ tables }: TablesClientProps) {
         })
     }, [])
 
-    const handleHideColumn = useCallback((column: string) => {
+    const handleToggleColumnVisibility = useCallback((column: string) => {
         setHiddenColumns((prev) => {
             const next = new Set(prev)
-            next.add(column)
+            const visibleCount = ["name", "row_count", "created_at"].filter(
+                (c) => !next.has(c)
+            ).length
+            const isVisible = !next.has(column)
+            if (isVisible && visibleCount <= 1) return prev
+            if (isVisible) next.add(column)
+            else next.delete(column)
             return next
         })
     }, [])
@@ -144,55 +179,126 @@ export function TablesClient({ tables }: TablesClientProps) {
 
     // ── Active filters ────────────────────────────────────────────────────────
 
-    const hasActiveFilters = search.length > 0 || hiddenColumns.size > 0
+    const hasActiveFilters =
+        search.length > 0 || hiddenColumns.size > 0 || descriptionFilter !== "all"
 
     // ── Render ────────────────────────────────────────────────────────────────
 
     return (
         <div className="flex flex-col h-full bg-muted/20">
             {/* Breadcrumb */}
-            <Breadcrumbs className="bg-transparent ring-0 border-b border-border/60 rounded-none px-4 py-1.5" />
+            <Breadcrumbs
+                items={[{ label: "Tables", icon: <Table2 className="h-3.5 w-3.5" /> }]}
+                className="bg-transparent ring-0 border-b border-border/60 rounded-none px-4 py-1.5"
+                action={
+                    <div className="hidden items-center gap-1 sm:flex">
+                        <TopbarSearchAction
+                            value={search}
+                            onChange={setSearch}
+                            placeholder="Search tables..."
+                            items={filteredTables.slice(0, 8).map((table) => ({
+                                id: table.id,
+                                label: table.name,
+                                actionLabel: "Open",
+                            }))}
+                            onSelect={(tableId) => router.push(`/tables/${tableId}`)}
+                            emptyText="No matching tables."
+                        />
+                        <Button
+                            asChild
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 gap-1 rounded-full px-2.5 text-[length:var(--agenda-control-font-size)] text-nav transition-colors hover:bg-[hsl(var(--agenda-interactive-hover))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--agenda-interactive-focus-ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                        >
+                            <Link href="/tables/new" className="flex items-center gap-1">
+                                <Plus className="h-3.5 w-3.5 stroke-[1.6]" />
+                                New table
+                            </Link>
+                        </Button>
+                    </div>
+                }
+            />
 
-            {/* Action Bar */}
-            <div className="flex items-center justify-between w-full px-6 pt-4 pb-3 shrink-0 flex-wrap gap-3">
-                <div className="flex items-center gap-1.5 flex-wrap">
-                    {/* Placeholder for future tabs */}
+            <div className="flex items-center justify-between w-full px-6 pt-3.5 pb-3.5 shrink-0 flex-wrap gap-3 border-b border-border/45">
+                <div className="flex items-center gap-2 flex-wrap min-h-8">
+                    <StandardPopoverMenu open={filtersOpen} onOpenChange={setFiltersOpen}>
+                        <StandardPopoverMenuTrigger asChild>
+                            <ToolbarIconButton title="Filters" aria-label="Open filters">
+                                <SlidersHorizontal className="h-3.5 w-3.5" />
+                            </ToolbarIconButton>
+                        </StandardPopoverMenuTrigger>
+                        <StandardPopoverMenuContent align="start" className="w-56">
+                            <StandardPopoverMenuSub>
+                                <StandardPopoverMenuSubTrigger active={descriptionFilter !== "all"}>
+                                    Description
+                                </StandardPopoverMenuSubTrigger>
+                                <StandardPopoverMenuSubContent>
+                                    {[
+                                        { value: "with_description", label: "With description" },
+                                        { value: "without_description", label: "Without description" },
+                                    ].map((opt) => (
+                                        <StandardPopoverMenuItem
+                                            key={opt.value}
+                                            active={descriptionFilter === opt.value}
+                                            onSelect={() => setDescriptionFilter(opt.value as "with_description" | "without_description")}
+                                        >
+                                            {opt.label}
+                                        </StandardPopoverMenuItem>
+                                    ))}
+                                </StandardPopoverMenuSubContent>
+                            </StandardPopoverMenuSub>
+                            {descriptionFilter !== "all" && (
+                                <StandardPopoverMenuItem
+                                    onSelect={() => setDescriptionFilter("all")}
+                                    className="text-muted-foreground"
+                                >
+                                    Clear filters
+                                </StandardPopoverMenuItem>
+                            )}
+                        </StandardPopoverMenuContent>
+                    </StandardPopoverMenu>
+
+                    <StandardPopoverMenu open={displayOptionsOpen} onOpenChange={setDisplayOptionsOpen}>
+                        <StandardPopoverMenuTrigger asChild>
+                            <ToolbarIconButton title="Display options" aria-label="Display options">
+                                <Columns3 className="h-3.5 w-3.5" />
+                            </ToolbarIconButton>
+                        </StandardPopoverMenuTrigger>
+                        <StandardPopoverMenuContent align="start" className="w-56">
+                            {[
+                                { key: "name", label: "Name" },
+                                { key: "row_count", label: "Rows" },
+                                { key: "created_at", label: "Created" },
+                            ].map((column) => {
+                                const visible = !hiddenColumns.has(column.key)
+                                return (
+                                    <StandardPopoverMenuItem
+                                        key={column.key}
+                                        onSelect={() => handleToggleColumnVisibility(column.key)}
+                                        className="gap-2"
+                                    >
+                                        <span className="inline-flex h-4 w-4 items-center justify-center rounded-sm border border-border/60">
+                                            {visible ? <Check className="h-3 w-3" /> : null}
+                                        </span>
+                                        <span>{column.label}</span>
+                                    </StandardPopoverMenuItem>
+                                )
+                            })}
+                            {hiddenColumns.size > 0 && (
+                                <>
+                                    <div className="my-1 h-px bg-[hsl(var(--menu-separator))]" />
+                                    <StandardPopoverMenuItem
+                                        onSelect={() => setHiddenColumns(new Set())}
+                                        className="text-muted-foreground"
+                                    >
+                                        Show all columns
+                                    </StandardPopoverMenuItem>
+                                </>
+                            )}
+                        </StandardPopoverMenuContent>
+                    </StandardPopoverMenu>
                 </div>
-
-                <Button
-                    asChild
-                    className="rounded-full border border-button-primary bg-button-primary px-3.5 py-1 text-xs font-medium text-button-primary hover:bg-button-primary-hover"
-                >
-                    <Link href="/tables/new" className="flex items-center gap-1.5">
-                        <Plus className="h-3.5 w-3.5 stroke-[1.6]" />
-                        New
-                    </Link>
-                </Button>
             </div>
-
-            {/* Selection action bar */}
-            {selectedRows.size > 0 && (
-                <div className="flex items-center gap-3 px-6 pb-3 shrink-0">
-                    <span className="inline-flex items-center rounded-full bg-[hsl(var(--accent-warm))] px-2.5 py-1 text-[11px] font-medium text-slate-800 border border-border/50 tabular-nums">
-                        {selectedRows.size} selected
-                    </span>
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-7 px-2.5 text-xs text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30"
-                        onClick={() => setShowBulkDeleteDialog(true)}
-                    >
-                        <Trash2 className="mr-1.5 h-3 w-3 stroke-[1.6]" />
-                        Delete
-                    </Button>
-                    <button
-                        onClick={() => setSelectedRows(new Set())}
-                        className="text-xs text-muted-foreground hover:text-foreground ml-auto"
-                    >
-                        Deselect all
-                    </button>
-                </div>
-            )}
 
             {/* Active filter chips */}
             {hasActiveFilters && selectedRows.size === 0 && (
@@ -211,17 +317,29 @@ export function TablesClient({ tables }: TablesClientProps) {
                     {hiddenColumns.size > 0 && (
                         <button
                             onClick={() => setHiddenColumns(new Set())}
-                            className="text-xs text-muted-foreground hover:text-foreground underline"
+                            className="inline-flex items-center rounded-full border border-[hsl(var(--chip-border))] px-2.5 py-1.5 text-[11px] text-muted-foreground hover:text-foreground hover:bg-[hsl(var(--chip-hover-bg))] transition-colors"
                         >
                             Show all columns
                         </button>
+                    )}
+                    {descriptionFilter !== "all" && (
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-[hsl(var(--chip-bg))] border border-[hsl(var(--chip-border))] px-2.5 py-1.5 text-[11px] font-medium leading-none text-[hsl(var(--chip-text))]">
+                            {descriptionFilter === "with_description" ? "With description" : "Without description"}
+                            <button
+                                onClick={() => setDescriptionFilter("all")}
+                                className="text-muted-foreground hover:text-foreground"
+                            >
+                                <X className="h-3 w-3 stroke-[1.6]" />
+                            </button>
+                        </span>
                     )}
                     <button
                         onClick={() => {
                             setSearch("")
                             setHiddenColumns(new Set())
+                            setDescriptionFilter("all")
                         }}
-                        className="text-xs text-muted-foreground hover:text-foreground"
+                        className="inline-flex items-center rounded-full border border-[hsl(var(--chip-border))] px-2.5 py-1.5 text-[11px] text-muted-foreground hover:text-foreground hover:bg-[hsl(var(--chip-hover-bg))] transition-colors"
                     >
                         Clear all
                     </button>
@@ -234,10 +352,7 @@ export function TablesClient({ tables }: TablesClientProps) {
                     tables={filteredTables}
                     sortConfig={sortConfig}
                     onSort={handleSort}
-                    searchValue={search}
-                    onSearchChange={setSearch}
                     hiddenColumns={hiddenColumns}
-                    onHideColumn={handleHideColumn}
                     selectedRows={selectedRows}
                     onToggleRow={handleToggleRow}
                     onToggleAllRows={handleToggleAllRows}
@@ -273,6 +388,18 @@ export function TablesClient({ tables }: TablesClientProps) {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+
+            {mounted && selectedRows.size > 0 && createPortal(
+                <div className="fixed bottom-6 left-1/2 z-[95] flex -translate-x-1/2 pointer-events-none w-[90vw] sm:w-auto justify-center">
+                    <BulkSelectionBar
+                        selectedCount={selectedRows.size}
+                        onClear={() => setSelectedRows(new Set())}
+                        onDelete={() => setShowBulkDeleteDialog(true)}
+                        isDeleting={isBulkDeleting}
+                    />
+                </div>,
+                document.body
+            )}
         </div>
     )
 }

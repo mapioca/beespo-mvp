@@ -12,6 +12,13 @@ import {
   ClipboardList,
   Table2,
   BookOpen,
+  Home,
+  Calendar,
+  NotebookPen,
+  PanelsTopLeft,
+  LayoutTemplate,
+  Database,
+  ArrowRight,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import {
@@ -65,7 +72,9 @@ interface CommandEntry {
     | "task"
     | "form"
     | "table"
-    | "notebook";
+    | "notebook"
+    | "navigate";
+  href?: string;
   keywords?: string[];
 }
 
@@ -75,6 +84,99 @@ interface CommandSection {
 }
 
 const commandSections: CommandSection[] = [
+  {
+    heading: "Go to",
+    items: [
+      {
+        id: "goto-home",
+        label: "Go to Home",
+        icon: Home,
+        action: "navigate",
+        href: "/dashboard",
+        keywords: ["home", "dashboard"],
+      },
+      {
+        id: "goto-schedule",
+        label: "Go to Schedule",
+        icon: Calendar,
+        action: "navigate",
+        href: "/schedule/calendar",
+        keywords: ["schedule", "calendar"],
+      },
+      {
+        id: "goto-meetings",
+        label: "Go to Meetings",
+        icon: CalendarDays,
+        action: "navigate",
+        href: "/meetings",
+        keywords: ["meetings"],
+      },
+      {
+        id: "goto-agendas",
+        label: "Go to Agendas",
+        icon: NotebookPen,
+        action: "navigate",
+        href: "/meetings/agendas",
+        keywords: ["agendas", "meetings"],
+      },
+      {
+        id: "goto-programs",
+        label: "Go to Programs",
+        icon: PanelsTopLeft,
+        action: "navigate",
+        href: "/meetings/programs",
+        keywords: ["programs", "meetings"],
+      },
+      {
+        id: "goto-assignments",
+        label: "Go to Assignments",
+        icon: ClipboardList,
+        action: "navigate",
+        href: "/meetings/assignments",
+        keywords: ["assignments", "meetings"],
+      },
+      {
+        id: "goto-announcements",
+        label: "Go to Announcements",
+        icon: Megaphone,
+        action: "navigate",
+        href: "/meetings/sacrament/announcements",
+        keywords: ["announcements", "meetings"],
+      },
+      {
+        id: "goto-templates",
+        label: "Go to Templates",
+        icon: LayoutTemplate,
+        action: "navigate",
+        href: "/library",
+        keywords: ["templates", "library"],
+      },
+      {
+        id: "goto-callings",
+        label: "Go to Callings",
+        icon: HandHeart,
+        action: "navigate",
+        href: "/callings",
+        keywords: ["callings"],
+      },
+      {
+        id: "goto-tasks",
+        label: "Go to Tasks",
+        icon: CheckSquare,
+        action: "navigate",
+        href: "/tasks",
+        keywords: ["tasks"],
+      },
+      {
+        id: "goto-data",
+        label: "Go to Data",
+        icon: Database,
+        action: "navigate",
+        href: "/data",
+        keywords: ["data"],
+      },
+    ],
+  },
   {
     heading: "Meetings",
     items: [
@@ -198,8 +300,12 @@ export function CommandPalette() {
 
   useHotkeys("k", useCallback(toggle, [toggle]));
 
-  const openCreateDialog = (action: CommandEntry["action"]) => {
+  const openCreateDialog = (action: CommandEntry["action"], href?: string) => {
     close();
+    if (action === "navigate" && href) {
+      router.push(href);
+      return;
+    }
     setActiveAction(action);
     setCreateOpen(true);
   };
@@ -538,10 +644,11 @@ export function CommandPalette() {
                     key={item.id}
                     value={item.label}
                     keywords={item.keywords}
-                    onSelect={() => openCreateDialog(item.action)}
+                    onSelect={() => openCreateDialog(item.action, item.href)}
                   >
                     <item.icon className="mr-2 h-4 w-4" />
                     {item.label}
+                    {item.action === "navigate" && <ArrowRight className="ml-auto h-3 w-3 opacity-50" />}
                   </CommandItem>
                 ))}
               </CommandGroup>
@@ -692,7 +799,6 @@ export function CommandPalette() {
                     <SelectItem value="release">Release</SelectItem>
                     <SelectItem value="confirmation">Confirmation</SelectItem>
                     <SelectItem value="ordination">Ordination</SelectItem>
-                    <SelectItem value="setting_apart">Setting Apart</SelectItem>
                     <SelectItem value="other">Other</SelectItem>
                   </SelectContent>
                 </Select>

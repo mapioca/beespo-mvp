@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import {
   format,
   setHours,
@@ -9,7 +10,6 @@ import {
 } from "date-fns";
 import { CalendarEvent } from "@/lib/calendar-helpers";
 import { CalendarEventChip } from "../calendar-event-chip";
-import { cn } from "@/lib/utils";
 
 interface DayViewProps {
   currentDate: Date;
@@ -19,7 +19,89 @@ interface DayViewProps {
   onEventClick: (event: CalendarEvent) => void;
 }
 
-const HOURS = Array.from({ length: 24 }, (_, i) => i);
+const HOUR_HEIGHT = 72;
+const ALL_HOURS = Array.from({ length: 24 }, (_, i) => i);
+const SCROLL_TO_HOUR = 7;
+
+interface PositionedEvent {
+  event: CalendarEvent;
+  top: number;
+  height: number;
+  col: number;
+  cols: number;
+}
+
+function layoutDayEvents(
+  events: CalendarEvent[],
+  firstHour: number,
+  lastHour: number,
+  hourHeight: number
+): PositionedEvent[] {
+  const items = events
+    .filter((e) => {
+      const h = getHours(e.startDate);
+      return h >= firstHour && h <= lastHour;
+    })
+    .map((event) => {
+      const startMin = getHours(event.startDate) * 60 + getMinutes(event.startDate);
+      const durationMins = event.endDate
+        ? Math.max(20, (event.endDate.getTime() - event.startDate.getTime()) / 60000)
+        : 45;
+      return { event, start: startMin, end: startMin + durationMins };
+    })
+    .sort((a, b) => a.start - b.start || a.end - b.end);
+
+  const result: PositionedEvent[] = [];
+  let cluster: typeof items = [];
+  let clusterEnd = -Infinity;
+
+  const flush = () => {
+    const cols: (typeof items)[] = [];
+    const placement = new Map<typeof items[number], number>();
+    for (const it of cluster) {
+      let placed = false;
+      for (let i = 0; i < cols.length; i++) {
+        const last = cols[i][cols[i].length - 1];
+        if (last.end <= it.start) {
+          cols[i].push(it);
+          placement.set(it, i);
+          placed = true;
+          break;
+        }
+      }
+      if (!placed) {
+        cols.push([it]);
+        placement.set(it, cols.length - 1);
+      }
+    }
+    const total = cols.length;
+    for (const it of cluster) {
+      const top = ((it.start - firstHour * 60) / 60) * hourHeight;
+      const height = Math.max(28, ((it.end - it.start) / 60) * hourHeight - 2);
+      result.push({
+        event: it.event,
+        top,
+        height,
+        col: placement.get(it) ?? 0,
+        cols: total,
+      });
+    }
+  };
+
+  for (const it of items) {
+    if (cluster.length === 0 || it.start < clusterEnd) {
+      cluster.push(it);
+      clusterEnd = Math.max(clusterEnd, it.end);
+    } else {
+      flush();
+      cluster = [it];
+      clusterEnd = it.end;
+    }
+  }
+  if (cluster.length) flush();
+
+  return result;
+}
 
 export function DayView({
   currentDate,
@@ -27,99 +109,105 @@ export function DayView({
   onDateClick,
   onEventClick,
 }: DayViewProps) {
+  const scrollRef = useRef<HTMLDivElement>(null);
   const dateKey = format(currentDate, "yyyy-MM-dd");
   const dayEvents = eventsByDate.get(dateKey) || [];
-  const allDayEvents = dayEvents.filter((e) => e.isAllDay);
-  const timedEvents = dayEvents.filter((e) => !e.isAllDay);
+  const allDay = dayEvents.filter((e) => e.isAllDay);
+  const timed = dayEvents.filter((e) => !e.isAllDay);
   const isCurrentDay = isToday(currentDate);
+  const hours = ALL_HOURS;
+  const firstHour = 0;
+  const lastHour = 23;
 
-  // Get events that start at a specific hour
-  const getEventsAtHour = (hour: number): CalendarEvent[] => {
-    return timedEvents.filter((e) => getHours(e.startDate) === hour);
-  };
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = SCROLL_TO_HOUR * HOUR_HEIGHT;
+    }
+  }, []);
 
-  // Calculate current time indicator position
   const now = new Date();
-  const currentHour = getHours(now);
-  const currentMinute = getMinutes(now);
-  const timeIndicatorTop = isCurrentDay
-    ? (currentHour * 60 + currentMinute) / (24 * 60) * 100
-    : -1;
+  const nowHour = getHours(now);
+  const nowMinute = getMinutes(now);
+  const nowVisible = isCurrentDay;
+  const nowTop = (nowHour + nowMinute / 60) * HOUR_HEIGHT;
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className={cn("p-4 border-b border-border/60 bg-background/60", isCurrentDay && "bg-[hsl(var(--accent-warm)/0.25)]")}>
-        <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
-          {format(currentDate, "EEEE")}
-        </div>
-        <div className={cn("text-2xl font-bold", isCurrentDay && "text-foreground")}>
-          {format(currentDate, "MMMM d, yyyy")}
-        </div>
-      </div>
-
-      {/* All-day events */}
-      {allDayEvents.length > 0 && (
-        <div className="p-3 border-b border-border/50 bg-[hsl(var(--accent-warm)/0.25)]">
-          <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground mb-2">
-            All-day events
+    <div className="overflow-hidden rounded-[10px] border border-border/60 bg-surface-raised">
+      {allDay.length > 0 && (
+        <div className="border-b border-border/50 px-4 py-2.5">
+          <div className="mb-1 text-[9.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/70">
+            All day
           </div>
-          <div className="space-y-1">
-            {allDayEvents.map((event) => (
-              <CalendarEventChip
-                key={event.id}
-                event={event}
-                onClick={onEventClick}
-              />
+          <div className="flex flex-wrap gap-1.5">
+            {allDay.map((event) => (
+              <div key={event.id} className="max-w-[280px]">
+                <CalendarEventChip event={event} onClick={onEventClick} compact />
+              </div>
             ))}
           </div>
         </div>
       )}
 
-      {/* Time grid */}
-      <div className="flex-1 overflow-auto relative">
-        {/* Current time indicator */}
-        {timeIndicatorTop >= 0 && (
-          <div
-            className="absolute left-0 right-0 border-t-2 border-red-500 z-10 pointer-events-none"
-            style={{ top: `${timeIndicatorTop}%` }}
-          >
-            <div className="absolute -left-1 -top-1.5 w-3 h-3 rounded-full bg-red-500" />
-          </div>
-        )}
-
-        {/* Hours */}
-        <div className="divide-y">
-          {HOURS.map((hour) => {
-            const hourEvents = getEventsAtHour(hour);
-            return (
-              <div
-                key={hour}
-                className="flex min-h-20 hover:bg-[hsl(var(--accent-warm)/0.35)] cursor-pointer"
-                onClick={() => onDateClick(setHours(currentDate, hour))}
-              >
-                {/* Time label */}
-                <div className="w-20 p-2 text-sm text-muted-foreground text-right border-r border-border/50 flex-shrink-0">
-                  {format(setHours(new Date(), hour), "h a")}
-                </div>
-                {/* Event area */}
-                <div className="flex-1 p-1">
-                  {hourEvents.length > 0 && (
-                    <div className="space-y-1">
-                      {hourEvents.map((event) => (
-                        <CalendarEventChip
-                          key={event.id}
-                          event={event}
-                          onClick={onEventClick}
-                        />
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })}
+      <div ref={scrollRef} className="overflow-y-auto" style={{ height: 600 }}>
+        <div className="relative grid grid-cols-[72px_minmax(0,1fr)]">
+        <div className="relative">
+          {hours.map((hour, i) => (
+            <div
+              key={hour}
+              className="flex justify-end pr-3 text-[10.5px] font-medium tabular-nums text-muted-foreground/70"
+              style={{ height: HOUR_HEIGHT }}
+            >
+              {i === 0 ? null : (
+                <span className="-translate-y-1.5 leading-none">
+                  {format(setHours(new Date(), hour), "h a").toLowerCase()}
+                </span>
+              )}
+            </div>
+          ))}
         </div>
+
+        <div className="relative border-l border-border/40">
+          {hours.map((hour) => (
+            <div
+              key={hour}
+              className="relative cursor-pointer border-b border-border/30 transition-colors hover:bg-surface-hover/40"
+              style={{ height: HOUR_HEIGHT }}
+              onClick={() => onDateClick(setHours(currentDate, hour))}
+            />
+          ))}
+
+          <div className="pointer-events-none absolute inset-0 px-2">
+            {layoutDayEvents(timed, firstHour, lastHour, HOUR_HEIGHT).map((p) => {
+              const widthPct = 100 / p.cols;
+              const leftPct = p.col * widthPct;
+              return (
+                <div
+                  key={p.event.id}
+                  className="pointer-events-auto absolute"
+                  style={{
+                    top: p.top,
+                    height: p.height,
+                    left: `${leftPct}%`,
+                    width: `calc(${widthPct}% - 3px)`,
+                  }}
+                >
+                  <CalendarEventChip event={p.event} onClick={onEventClick} showTime />
+                </div>
+              );
+            })}
+          </div>
+
+          {nowVisible && (
+            <div
+              className="pointer-events-none absolute inset-x-0 z-10 flex items-center"
+              style={{ top: nowTop }}
+            >
+              <span className="-ml-[3px] h-1.5 w-1.5 rounded-full bg-brand" />
+              <span className="h-px flex-1 bg-brand" />
+            </div>
+          )}
+        </div>
+      </div>
       </div>
     </div>
   );

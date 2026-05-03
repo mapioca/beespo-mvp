@@ -1,4 +1,5 @@
 import { Metadata } from "next";
+import { LegalPageShell, LegalSection } from "@/components/legal/legal-page-shell";
 import { TermsContent } from "@/components/auth/terms-content";
 
 export const metadata: Metadata = {
@@ -8,14 +9,21 @@ export const metadata: Metadata = {
 
 export default function TermsPage() {
   return (
-    <div>
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight">Terms of Use</h1>
-        <p className="text-muted-foreground mt-2">Last updated: January 12, 2026</p>
-      </div>
-      <div className="prose prose-sm max-w-none">
+    <LegalPageShell
+      eyebrow="Legal"
+      title="Terms"
+      accent="of use"
+      description={
+        <>
+          The operating terms for access to Beespo, our related services, and the responsibilities
+          attached to each account.
+          <p className="mt-2 text-sm">Last updated: January 12, 2026</p>
+        </>
+      }
+    >
+      <LegalSection title="Agreement" kicker="Service terms">
         <TermsContent />
-      </div>
-    </div>
+      </LegalSection>
+    </LegalPageShell>
   );
 }

@@ -1,6 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { createClient } from "@/lib/supabase/client"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Calendar } from "@/components/ui/calendar"
 import {
     Table,
     TableBody,
@@ -9,7 +12,7 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
-import { Checkbox } from "@/components/ui/checkbox"
+import { Badge } from "@/components/ui/badge"
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -27,11 +30,24 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { Eye, Trash2, CheckSquare } from "lucide-react"
+import { Eye, Trash2, CheckSquare, CircleDashed, CircleCheck, ChevronDown, ChevronUp, ChevronsUp, CalendarIcon, UserCircle } from "lucide-react"
 import { format } from "date-fns"
-import { DataTableColumnHeader } from "@/components/ui/data-table-header"
 import { TableRowActionTrigger } from "@/components/ui/table-row-action-trigger"
-import { StatusIndicator } from "@/components/ui/status-indicator"
+import { SortableTableHeader } from "@/components/ui/sortable-table-header"
+import {
+    StandardActionsHeadCell,
+    StandardSelectAllHeadCell,
+    StandardSelectableRow,
+    StandardTableShell,
+} from "@/components/ui/standard-data-table"
+import {
+    standardStickyHeadCellVariants,
+    standardTableHeaderRowVariants,
+    standardTableHeaderVariants,
+    standardTableVariants,
+} from "@/components/ui/table-standard"
+import { cn } from "@/lib/utils"
+import { updateTask } from "@/lib/actions/task-actions"
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -51,34 +67,18 @@ export interface Task {
     created_by?: string | null
     assignee?: { full_name: string; email?: string } | null
     labels?: Array<{ id: string; name: string; color: string }>
+    tags?: string[] | null
 }
-
-// ── Filter option data ──────────────────────────────────────────────────────
-
-const STATUS_OPTIONS = [
-    { value: "pending", label: "Pending" },
-    { value: "in_progress", label: "In Progress" },
-    { value: "completed", label: "Completed" },
-    { value: "cancelled", label: "Cancelled" },
-]
-
-const PRIORITY_OPTIONS = [
-    { value: "low", label: "Low" },
-    { value: "medium", label: "Medium" },
-    { value: "high", label: "High" },
-]
 
 // ── Badge helpers ───────────────────────────────────────────────────────────
 
 function formatLabel(value: string): string {
     return value.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())
 }
-
-const STATUS_TONES: Record<string, "neutral" | "info" | "success" | "warning" | "danger"> = {
-    pending: "warning",
-    in_progress: "info",
-    completed: "neutral",
-    cancelled: "danger",
+export interface Profile {
+    id: string;
+    full_name: string;
+    email?: string;
 }
 
 // ── Props ───────────────────────────────────────────────────────────────────
@@ -88,20 +88,8 @@ interface TasksTableProps {
     // Sort
     sortConfig?: { key: string; direction: "asc" | "desc" } | null
     onSort?: (key: string, direction: "asc" | "desc") => void
-    // Search (applied from Title header)
-    searchValue?: string
-    onSearchChange?: (value: string) => void
-    // Status filter
-    selectedStatuses?: TaskStatus[]
-    statusCounts?: Record<string, number>
-    onStatusToggle?: (status: string) => void
-    // Priority filter
-    selectedPriorities?: TaskPriority[]
-    priorityCounts?: Record<string, number>
-    onPriorityToggle?: (priority: string) => void
     // Column visibility
     hiddenColumns?: Set<string>
-    onHideColumn?: (column: string) => void
     // Row selection
     selectedRows?: Set<string>
     onToggleRow?: (id: string) => void
@@ -117,16 +105,7 @@ export function TasksTable({
     tasks,
     sortConfig,
     onSort,
-    searchValue,
-    onSearchChange,
-    selectedStatuses = [],
-    statusCounts,
-    onStatusToggle,
-    selectedPriorities = [],
-    priorityCounts,
-    onPriorityToggle,
     hiddenColumns = new Set(),
-    onHideColumn,
     selectedRows = new Set(),
     onToggleRow,
     onToggleAllRows,
@@ -144,112 +123,138 @@ export function TasksTable({
         setDeleteTarget(null)
     }
 
+    const [isUpdating, setIsUpdating] = useState<string | null>(null)
+    const [profiles, setProfiles] = useState<Profile[]>([])
+
+    // Load available profiles (members) for assignment
+    useEffect(() => {
+        const fetchProfiles = async () => {
+            const supabase = createClient()
+            const { data } = await supabase
+                .from('profiles')
+                .select('id, full_name, email')
+                .order('full_name')
+            if (data) setProfiles(data)
+        }
+        fetchProfiles()
+    }, [])
+
+    const handleUpdateStatus = async (taskId: string, newStatus: string) => {
+        setIsUpdating(taskId + '-status')
+        await updateTask(taskId, { status: newStatus })
+        setIsUpdating(null)
+    }
+
+    const handleUpdatePriority = async (taskId: string, newPriority: "low" | "medium" | "high") => {
+        setIsUpdating(taskId + '-priority')
+        await updateTask(taskId, { priority: newPriority })
+        setIsUpdating(null)
+    }
+
+    const handleUpdateAssignee = async (taskId: string, newAssigneeId: string | null) => {
+        setIsUpdating(taskId + '-assignee')
+        await updateTask(taskId, { assigned_to: newAssigneeId })
+        setIsUpdating(null)
+    }
+
+    const handleUpdateDueDate = async (taskId: string, date: Date | undefined) => {
+        setIsUpdating(taskId + '-duedate')
+        await updateTask(taskId, { due_date: date ? format(date, 'yyyy-MM-dd') : null })
+        setIsUpdating(null)
+    }
+
     const allSelected =
         tasks.length > 0 && selectedRows.size === tasks.length
 
     const visibleColumns =
-        ["title", "status", "priority", "assignee", "due_date"]
+        ["title", "status", "priority", "tags", "assignee", "due_date"]
             .filter((c) => !hiddenColumns.has(c)).length + 2 // +2 for checkbox + actions
 
     return (
         <>
-            <div className="table-shell-standard">
-            <Table>
-                <TableHeader>
-                    <TableRow className="table-header-row-standard">
-                        {/* Checkbox */}
-                        <TableHead className="w-10 table-cell-check">
-                            <Checkbox
-                                checked={allSelected}
-                                onCheckedChange={() => onToggleAllRows?.()}
-                            />
-                        </TableHead>
+            <StandardTableShell variant="app" className="overflow-hidden">
+            <Table className={standardTableVariants({ density: "compact", dividers: "subtle" })}>
+                <TableHeader className={standardTableHeaderVariants({ sticky: true, variant: "app" })}>
+                    <TableRow className={standardTableHeaderRowVariants({ variant: "app" })}>
+                        <StandardSelectAllHeadCell
+                            checked={allSelected}
+                            onToggle={() => onToggleAllRows?.()}
+                            variant="app"
+                        />
 
                         {/* Title */}
                         {!hiddenColumns.has("title") && (
-                            <DataTableColumnHeader
+                            <SortableTableHeader
+                                sortKey="title"
                                 label="Title"
-                                sortActive={sortConfig?.key === "title"}
-                                sortDirection={sortConfig?.direction}
-                                onSortAsc={() => onSort?.("title", "asc")}
-                                onSortDesc={() => onSort?.("title", "desc")}
-                                searchable
-                                searchValue={searchValue}
-                                onSearchChange={onSearchChange}
-                                searchPlaceholder="Search tasks..."
-                                onHide={() => onHideColumn?.("title")}
+                                defaultDirection="asc"
+                                sortConfig={sortConfig}
+                                onSort={onSort}
+                                variant="app"
                                 className="min-w-[250px]"
                             />
                         )}
 
                         {/* Status */}
                         {!hiddenColumns.has("status") && (
-                            <DataTableColumnHeader
+                            <SortableTableHeader
+                                sortKey="status"
                                 label="Status"
-                                sortActive={sortConfig?.key === "status"}
-                                sortDirection={sortConfig?.direction}
-                                onSortAsc={() => onSort?.("status", "asc")}
-                                onSortDesc={() => onSort?.("status", "desc")}
-                                filterOptions={STATUS_OPTIONS.map((opt) => ({
-                                    ...opt,
-                                    count: statusCounts?.[opt.value] || 0,
-                                }))}
-                                selectedFilters={selectedStatuses}
-                                onFilterToggle={onStatusToggle}
-                                onHide={() => onHideColumn?.("status")}
+                                defaultDirection="asc"
+                                sortConfig={sortConfig}
+                                onSort={onSort}
+                                variant="app"
                                 className="w-[160px]"
                             />
                         )}
 
                         {/* Priority */}
                         {!hiddenColumns.has("priority") && (
-                            <DataTableColumnHeader
+                            <SortableTableHeader
+                                sortKey="priority"
                                 label="Priority"
-                                sortActive={sortConfig?.key === "priority"}
-                                sortDirection={sortConfig?.direction}
-                                onSortAsc={() => onSort?.("priority", "asc")}
-                                onSortDesc={() => onSort?.("priority", "desc")}
-                                filterOptions={PRIORITY_OPTIONS.map((opt) => ({
-                                    ...opt,
-                                    count: priorityCounts?.[opt.value] || 0,
-                                }))}
-                                selectedFilters={selectedPriorities}
-                                onFilterToggle={onPriorityToggle}
-                                onHide={() => onHideColumn?.("priority")}
+                                defaultDirection="asc"
+                                sortConfig={sortConfig}
+                                onSort={onSort}
+                                variant="app"
                                 className="w-[120px]"
                             />
                         )}
 
+                        {/* Tags */}
+                        {!hiddenColumns.has("tags") && (
+                            <TableHead className={cn(standardStickyHeadCellVariants({ variant: "app", kind: "data" }), "w-[160px] whitespace-nowrap")}>
+                                Tags
+                            </TableHead>
+                        )}
+
                         {/* Assignee */}
                         {!hiddenColumns.has("assignee") && (
-                            <DataTableColumnHeader
+                            <SortableTableHeader
+                                sortKey="assignee"
                                 label="Assignee"
-                                sortActive={sortConfig?.key === "assignee"}
-                                sortDirection={sortConfig?.direction}
-                                onSortAsc={() => onSort?.("assignee", "asc")}
-                                onSortDesc={() => onSort?.("assignee", "desc")}
-                                onHide={() => onHideColumn?.("assignee")}
+                                defaultDirection="asc"
+                                sortConfig={sortConfig}
+                                onSort={onSort}
+                                variant="app"
                                 className="w-[160px]"
                             />
                         )}
 
                         {/* Due Date */}
                         {!hiddenColumns.has("due_date") && (
-                            <DataTableColumnHeader
+                            <SortableTableHeader
+                                sortKey="due_date"
                                 label="Due Date"
-                                sortActive={sortConfig?.key === "due_date"}
-                                sortDirection={sortConfig?.direction}
-                                onSortAsc={() => onSort?.("due_date", "asc")}
-                                onSortDesc={() => onSort?.("due_date", "desc")}
-                                onHide={() => onHideColumn?.("due_date")}
+                                defaultDirection="desc"
+                                sortConfig={sortConfig}
+                                onSort={onSort}
+                                variant="app"
                                 className="w-[130px]"
                             />
                         )}
 
-                        {/* Actions */}
-                        <TableHead className="w-[52px]">
-                            <span className="sr-only">Actions</span>
-                        </TableHead>
+                        <StandardActionsHeadCell variant="app" />
                     </TableRow>
                 </TableHeader>
 
@@ -270,80 +275,15 @@ export function TasksTable({
                         </TableRow>
                     ) : (
                         tasks.map((task) => (
-                            <TableRow
+                            <StandardSelectableRow
                                 key={task.id}
-                                data-state={selectedRows.has(task.id) ? "selected" : undefined}
-                                className="group transition-[background-color,box-shadow] duration-150 ease-out hover:bg-[hsl(var(--table-row-hover))] hover:shadow-[inset_0_0_0_1px_hsl(var(--table-shell-border)/0.28)] data-[state=selected]:bg-[hsl(var(--table-row-selected))] data-[state=selected]:shadow-[inset_0_0_0_1px_hsl(var(--table-shell-border)/0.4)]"
-                            >
-                                {/* Checkbox */}
-                                <TableCell className="table-cell-check">
-                                    <Checkbox
-                                        checked={selectedRows.has(task.id)}
-                                        className="opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100 data-[state=checked]:opacity-100"
-                                        onCheckedChange={() =>
-                                            onToggleRow?.(task.id)
-                                        }
-                                    />
-                                </TableCell>
-
-                                {/* Title */}
-                                {!hiddenColumns.has("title") && (
-                                    <TableCell className="table-cell-title">
-                                        <button
-                                            onClick={() => onViewTask?.(task)}
-                                            className="hover:underline text-left"
-                                        >
-                                            <div className="flex flex-col">
-                                                <span>{task.title}</span>
-                                                {task.description && (
-                                                    <span className="text-xs text-muted-foreground line-clamp-1">
-                                                        {task.description}
-                                                    </span>
-                                                )}
-                                            </div>
-                                        </button>
-                                    </TableCell>
-                                )}
-
-                                {/* Status */}
-                                {!hiddenColumns.has("status") && (
-                                    <TableCell className="table-cell-meta !px-2">
-                                        <StatusIndicator
-                                            label={formatLabel(task.status)}
-                                            tone={STATUS_TONES[task.status] || "neutral"}
-                                            className="text-[11.5px] text-foreground/66"
-                                        />
-                                    </TableCell>
-                                )}
-
-                                {/* Priority */}
-                                {!hiddenColumns.has("priority") && (
-                                    <TableCell className="table-cell-meta text-[11.5px] text-foreground/56">
-                                        {task.priority ? formatLabel(task.priority) : "—"}
-                                    </TableCell>
-                                )}
-
-                                {/* Assignee */}
-                                {!hiddenColumns.has("assignee") && (
-                                    <TableCell className="table-cell-meta text-[11.5px] text-foreground/56">
-                                        {task.assignee?.full_name || "—"}
-                                    </TableCell>
-                                )}
-
-                                {/* Due Date */}
-                                {!hiddenColumns.has("due_date") && (
-                                    <TableCell className="table-cell-meta !px-2 text-[11.5px] text-foreground/56">
-                                        {task.due_date
-                                            ? format(
-                                                  new Date(task.due_date),
-                                                  "MMM d, yyyy"
-                                              )
-                                            : "—"}
-                                    </TableCell>
-                                )}
-
-                                {/* Actions */}
-                                <TableCell className="table-cell-actions">
+                                id={task.id}
+                                selected={selectedRows.has(task.id)}
+                                onToggle={onToggleRow}
+                                onRowClick={onViewTask ? () => onViewTask(task) : undefined}
+                                selectOnRowClick={false}
+                                className="focus-within:bg-transparent focus-within:shadow-none"
+                                actions={
                                     <DropdownMenu>
                                         <DropdownMenuTrigger asChild>
                                             <TableRowActionTrigger />
@@ -373,13 +313,190 @@ export function TasksTable({
                                             )}
                                         </DropdownMenuContent>
                                     </DropdownMenu>
-                                </TableCell>
-                            </TableRow>
+                                }
+                            >
+                                {/* Title */}
+                                {!hiddenColumns.has("title") && (
+                                    <TableCell className="table-cell-title">
+                                        <button
+                                            onClick={() => onViewTask?.(task)}
+                                            className="table-cell-link text-left"
+                                        >
+                                            <span>{task.title}</span>
+                                        </button>
+                                    </TableCell>
+                                )}
+
+                                {/* Status */}
+                                {!hiddenColumns.has("status") && (
+                                    <TableCell className="table-cell-meta !px-2">
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <button 
+                                                    disabled={isUpdating === task.id + '-status'}
+                                                    className="flex items-center justify-start gap-1.5 focus:outline-none hover:bg-black/5 dark:hover:bg-white/5 rounded px-1.5 py-0.5 -ml-1.5 transition-colors text-[11.5px] text-foreground/66 font-medium leading-5 disabled:opacity-50"
+                                                >
+                                                    {task.status === "completed" ? (
+                                                        <CircleCheck className="h-3 w-3" />
+                                                    ) : (
+                                                        <CircleDashed className="h-3 w-3" />
+                                                    )}
+                                                    <span>{formatLabel(task.status)}</span>
+                                                </button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="start" className="w-[140px]">
+                                                <DropdownMenuItem onClick={() => handleUpdateStatus(task.id, 'pending')}>
+                                                    <div className="flex items-center gap-2">
+                                                        <CircleDashed className="h-3 w-3" />
+                                                        Pending
+                                                    </div>
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem onClick={() => handleUpdateStatus(task.id, 'completed')}>
+                                                    <div className="flex items-center gap-2">
+                                                        <CircleCheck className="h-3 w-3" />
+                                                        Completed
+                                                    </div>
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    </TableCell>
+                                )}
+
+                                {/* Priority */}
+                                {!hiddenColumns.has("priority") && (
+                                    <TableCell className="table-cell-meta text-[11.5px] text-foreground/56">
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <button 
+                                                    disabled={isUpdating === task.id + '-priority'}
+                                                    className="flex items-center justify-start gap-1.5 focus:outline-none hover:bg-black/5 dark:hover:bg-white/5 rounded px-1.5 py-0.5 -ml-1.5 transition-colors font-medium leading-5 disabled:opacity-50"
+                                                >
+                                                    {task.priority === 'low' && <ChevronDown className="h-3 w-3" />}
+                                                    {task.priority === 'medium' && <ChevronUp className="h-3 w-3" />}
+                                                    {task.priority === 'high' && <ChevronsUp className="h-3 w-3" />}
+                                                    <span>{task.priority ? formatLabel(task.priority) : "—"}</span>
+                                                </button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="start" className="w-[140px]">
+                                                <DropdownMenuItem onClick={() => handleUpdatePriority(task.id, 'low')}>
+                                                    <div className="flex items-center gap-2">
+                                                        <ChevronDown className="h-3 w-3" />
+                                                        Low
+                                                    </div>
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem onClick={() => handleUpdatePriority(task.id, 'medium')}>
+                                                    <div className="flex items-center gap-2">
+                                                        <ChevronUp className="h-3 w-3" />
+                                                        Medium
+                                                    </div>
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem onClick={() => handleUpdatePriority(task.id, 'high')}>
+                                                    <div className="flex items-center gap-2">
+                                                        <ChevronsUp className="h-3 w-3" />
+                                                        High
+                                                    </div>
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    </TableCell>
+                                )}
+
+                                {/* Tags */}
+                                {!hiddenColumns.has("tags") && (
+                                    <TableCell className="table-cell-meta px-2">
+                                        <div className="flex flex-wrap gap-1">
+                                            {task.tags && task.tags.length > 0 ? (
+                                                task.tags.map((tag, i) => (
+                                                    <Badge key={i} variant="secondary" className="text-[10px] leading-tight px-1.5 py-0">
+                                                        {tag}
+                                                    </Badge>
+                                                ))
+                                            ) : (
+                                                <span className="text-[11.5px] text-foreground/56">—</span>
+                                            )}
+                                        </div>
+                                    </TableCell>
+                                )}
+
+                                {/* Assignee */}
+                                {!hiddenColumns.has("assignee") && (
+                                    <TableCell className="table-cell-meta text-[11.5px] text-foreground/56">
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <button 
+                                                    disabled={isUpdating === task.id + '-assignee'}
+                                                    className="flex items-center justify-start gap-1.5 focus:outline-none hover:bg-black/5 dark:hover:bg-white/5 rounded px-1.5 py-0.5 -ml-1.5 transition-colors disabled:opacity-50"
+                                                >
+                                                    {task.assignee?.full_name ? (
+                                                        <>
+                                                            <UserCircle className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                                                            <span className="truncate max-w-[120px]">{task.assignee.full_name}</span>
+                                                        </>
+                                                    ) : "—"}
+                                                </button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="start" className="w-[180px] max-h-[300px] overflow-y-auto">
+                                                <DropdownMenuItem onClick={() => handleUpdateAssignee(task.id, null)}>
+                                                    <div className="flex items-center gap-2 text-muted-foreground w-full">
+                                                        <UserCircle className="h-3 w-3 shrink-0" />
+                                                        Unassigned
+                                                    </div>
+                                                </DropdownMenuItem>
+                                                {profiles.length > 0 && <DropdownMenuSeparator />}
+                                                {profiles.map((p) => (
+                                                    <DropdownMenuItem key={p.id} onClick={() => handleUpdateAssignee(task.id, p.id)}>
+                                                        <div className="flex items-center gap-2 w-full">
+                                                            <UserCircle className="h-3 w-3 text-muted-foreground shrink-0" />
+                                                            <span className="truncate">{p.full_name}</span>
+                                                        </div>
+                                                    </DropdownMenuItem>
+                                                ))}
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    </TableCell>
+                                )}
+
+                                {/* Due Date */}
+                                {!hiddenColumns.has("due_date") && (
+                                    <TableCell className="table-cell-meta !px-2 text-[11.5px] text-foreground/56">
+                                        <Popover>
+                                            <PopoverTrigger asChild>
+                                                <button 
+                                                    disabled={isUpdating === task.id + '-duedate'}
+                                                    className="flex items-center justify-start gap-1.5 focus:outline-none hover:bg-black/5 dark:hover:bg-white/5 rounded px-1.5 py-0.5 -ml-1.5 transition-colors disabled:opacity-50"
+                                                >
+                                                    {task.due_date ? (
+                                                        <>
+                                                            <CalendarIcon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                                                            <span>{format(new Date(task.due_date + "T00:00:00"), "MMM d, yyyy")}</span>
+                                                        </>
+                                                    ) : "—"}
+                                                </button>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-auto p-0" align="start">
+                                                <Calendar
+                                                    mode="single"
+                                                    selected={task.due_date ? new Date(task.due_date + "T00:00:00") : undefined}
+                                                    onSelect={(date) => {
+                                                        if (date) {
+                                                            // Keep local time components to prevent date-fns from shifting it backwards when setting states
+                                                            handleUpdateDueDate(task.id, date)
+                                                        } else {
+                                                            handleUpdateDueDate(task.id, undefined)
+                                                        }
+                                                    }}
+                                                    initialFocus
+                                                />
+                                            </PopoverContent>
+                                        </Popover>
+                                    </TableCell>
+                                )}
+                            </StandardSelectableRow>
                         ))
                     )}
                 </TableBody>
             </Table>
-            </div>
+            </StandardTableShell>
 
             {/* Delete confirmation dialog */}
             <AlertDialog

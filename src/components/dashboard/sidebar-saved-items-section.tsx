@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   BookOpen,
+  Clock3,
   ChevronRight,
   ClipboardList,
   ExternalLink,
@@ -13,6 +14,7 @@ import {
   MessageSquare,
   MoreHorizontal,
   NotebookTabs,
+  Pin,
   StarOff,
   Table2,
   Undo2,
@@ -50,6 +52,7 @@ interface SidebarSavedItemsSectionProps {
   title: string;
   items: SavedItem[];
   isCollapsed: boolean;
+  sidebarExpanded?: boolean;
   itemType: "favorites" | "recents";
 }
 
@@ -66,11 +69,13 @@ function SavedItemRow({
   item,
   isActive,
   itemType,
+  sidebarExpanded = true,
   onMenuOpen,
 }: {
   item: SavedItem;
   isActive: boolean;
   itemType: "favorites" | "recents";
+  sidebarExpanded?: boolean;
   onMenuOpen?: (open: boolean) => void;
 }) {
   const applyFavoriteToggle = useNavigationStore((state) => state.applyFavoriteToggle);
@@ -107,22 +112,33 @@ function SavedItemRow({
   return (
     <div
       className={cn(
-        "group flex items-center rounded-lg transition-colors",
-        isActive ? "bg-nav-selected" : "hover:bg-nav-hover"
+        "group flex items-center rounded-md transition-[background-color,color,box-shadow] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
+        sidebarExpanded && isActive
+          ? "bg-nav-selected shadow-[inset_0_0_0_1px_hsl(var(--nav-active-border))]"
+          : !isActive && "hover:bg-nav-hover"
       )}
     >
       <Link
         href={item.href}
         className={cn(
-          "flex min-w-0 flex-1 items-center gap-2.5 px-3 py-1.5 transition-colors",
-          isActive ? "text-foreground font-medium" : "text-muted-foreground hover:text-foreground"
+          "flex min-w-0 flex-1 items-center gap-2 px-2 py-1 transition-colors",
+          isActive ? "text-nav-strong font-semibold" : "text-nav hover:text-nav-strong"
         )}
       >
-        <Icon className="h-4 w-4 shrink-0 stroke-[1.6]" />
+        {/* Icon wrapper — always 26x26 with -m-1 so it occupies 18px of layout space */}
+        <span
+          className={cn(
+            "flex items-center justify-center shrink-0 h-[26px] w-[26px] -m-1 rounded-[6px]",
+            "transition-[background-color,box-shadow] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
+            !sidebarExpanded && isActive && "bg-nav-selected shadow-[inset_0_0_0_1px_hsl(var(--nav-active-border))]"
+          )}
+        >
+          <Icon className="h-[18px] w-[18px] shrink-0 stroke-[1.6]" />
+        </span>
         <div className="min-w-0">
-          <p className="truncate text-sm">{item.title}</p>
+          <p className="truncate text-[12.5px]">{item.title}</p>
           {item.parentTitle ? (
-            <p className="truncate text-[11px] text-muted-foreground/90">
+            <p className="truncate text-[10.5px] text-nav-muted">
               {item.parentTitle}
             </p>
           ) : null}
@@ -136,7 +152,7 @@ function SavedItemRow({
             className={cn(
               "mr-1 flex h-6 w-6 shrink-0 items-center justify-center rounded transition-opacity",
               "opacity-0 group-hover:opacity-100 data-[state=open]:opacity-100",
-              "hover:bg-nav-hover focus-visible:outline-none"
+              "hover:bg-nav-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             )}
             onClick={(event) => event.preventDefault()}
           >
@@ -179,10 +195,11 @@ export function SidebarSavedItemsSection({
   title,
   items,
   isCollapsed,
+  sidebarExpanded = true,
   itemType,
 }: SidebarSavedItemsSectionProps) {
   const pathname = usePathname();
-  const [isExpanded, setIsExpanded] = useState(true);
+  const [isExpanded, setIsExpanded] = useState(false);
   const [flyoutOpen, setFlyoutOpen] = useState(false);
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -213,18 +230,28 @@ export function SidebarSavedItemsSection({
     return null;
   }
 
+  if (items.length === 0) {
+    return null;
+  }
+
+  const SectionIcon = itemType === "favorites" ? Pin : Clock3;
+
   return (
-    <div className="mt-3 px-2.5">
+    <div className="mt-3 px-2">
       <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
         <Popover open={flyoutEnabled && flyoutOpen} onOpenChange={() => {}}>
           <PopoverAnchor asChild>
             <CollapsibleTrigger
-              className="group flex w-full items-center gap-1 rounded-md px-3 py-1 transition-colors hover:bg-nav-hover"
+              className="group flex h-[30px] w-full items-center gap-2 rounded-md px-2 transition-colors hover:bg-nav-hover"
               onMouseEnter={openFlyout}
               onMouseLeave={scheduleFlyoutClose}
             >
-              <span className="flex-1 text-left text-[11px] font-medium text-muted-foreground">
+              <SectionIcon className="h-[18px] w-[18px] shrink-0 text-nav-muted" />
+              <span className="flex-1 text-left text-[11px] font-semibold tracking-[0.02em] text-nav-muted whitespace-nowrap">
                 {title}
+              </span>
+              <span className="rounded-full bg-control px-1.5 py-0.5 text-[10px] font-medium text-nav-muted shrink-0">
+                {items.length}
               </span>
               <ChevronRight
                 className={cn(
@@ -246,53 +273,38 @@ export function SidebarSavedItemsSection({
             onOpenAutoFocus={(event) => event.preventDefault()}
             onInteractOutside={(event) => event.preventDefault()}
           >
-            <p className="px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+            <p className="px-2 py-1 text-[10px] font-semibold tracking-[0.04em] text-muted-foreground">
               {title}
             </p>
             <div className="mt-0.5 space-y-0.5">
-              {items.length === 0 ? (
-                <p className="px-2 py-2 text-xs text-muted-foreground">
-                  {itemType === "favorites"
-                    ? "No favorites yet."
-                    : "No recent items yet."}
-                </p>
-              ) : (
-                items.map((item) => (
-                  <SavedItemRow
-                    key={`${item.entityType}-${item.id}`}
-                    item={item}
-                    itemType={itemType}
-                    isActive={pathname === item.href}
-                    onMenuOpen={(open) => {
-                      if (open) {
-                        openFlyout();
-                      }
-                    }}
-                  />
-                ))
-              )}
+              {items.map((item) => (
+                <SavedItemRow
+                  key={`${item.entityType}-${item.id}`}
+                  item={item}
+                  itemType={itemType}
+                  isActive={pathname === item.href}
+                  onMenuOpen={(open) => {
+                    if (open) {
+                      openFlyout();
+                    }
+                  }}
+                />
+              ))}
             </div>
           </PopoverContent>
         </Popover>
 
         <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down">
           <div className="mt-0.5 space-y-0.5">
-            {items.length === 0 ? (
-              <p className="px-3 py-1.5 text-xs text-muted-foreground">
-                {itemType === "favorites"
-                  ? "No favorites yet."
-                  : "No recent items yet."}
-              </p>
-            ) : (
-              items.map((item) => (
-                <SavedItemRow
-                  key={`${item.entityType}-${item.id}`}
-                  item={item}
-                  itemType={itemType}
-                  isActive={pathname === item.href}
-                />
-              ))
-            )}
+            {items.map((item) => (
+              <SavedItemRow
+                key={`${item.entityType}-${item.id}`}
+                item={item}
+                itemType={itemType}
+                isActive={pathname === item.href}
+                sidebarExpanded={sidebarExpanded}
+              />
+            ))}
           </div>
         </CollapsibleContent>
       </Collapsible>

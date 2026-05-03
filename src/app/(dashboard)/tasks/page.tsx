@@ -1,15 +1,12 @@
 import { createClient } from "@/lib/supabase/server"
-import { redirect } from "next/navigation"
 import { TasksClient } from "./tasks-client"
 import { Metadata } from "next"
-import { TaskView } from "@/lib/table-views"
+import { getDashboardRequestContext } from "@/lib/dashboard/request-context"
 
 export const metadata: Metadata = {
     title: "Tasks | Beespo",
     description: "Manage your action items and assignments",
 }
-
-export const dynamic = "force-dynamic"
 
 type TaskWithRelations = {
     id: string
@@ -23,36 +20,22 @@ type TaskWithRelations = {
     created_at: string
     created_by?: string | null
     assignee: { full_name: string; email: string } | null
+    tags?: string[] | null
     labels: { label: { id: string; name: string; color: string } }[]
 }
 
 export default async function TasksPage() {
-    const supabase = await createClient()
-
-    const {
-        data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-        redirect("/login")
-    }
-
-    const { data: profile } = await (
-        supabase.from("profiles") as ReturnType<typeof supabase.from>
-    )
-        .select("workspace_id, role")
-        .eq("id", user.id)
-        .single()
-
-    if (!profile || !profile.workspace_id) {
-        redirect("/onboarding")
-    }
+    const [{ user, profile }, supabase] = await Promise.all([
+        getDashboardRequestContext(),
+        createClient(),
+    ])
 
     // Fetch all tasks (no pagination — client handles filtering/scroll)
     const { data: rawTasks, error } = await supabase
         .from("tasks")
         .select(
-            `*,
+            `id, title, description, status, priority, due_date, assigned_to, workspace_task_id, created_at, created_by,
+            tags,
             assignee:profiles!tasks_assigned_to_fkey(full_name, email),
             labels:task_label_assignments(label:task_labels(id, name, color))`
         )
@@ -75,43 +58,18 @@ export default async function TasksPage() {
         })
     )
 
-    // Compute counts for filter badges
-    const statusCounts: Record<string, number> = {
-        pending: 0,
-        in_progress: 0,
-        completed: 0,
-        cancelled: 0,
-    }
-    const priorityCounts: Record<string, number> = {
-        low: 0,
-        medium: 0,
-        high: 0,
-    }
-
-    tasks.forEach((t) => {
-        if (t.status in statusCounts)
-            statusCounts[t.status as keyof typeof statusCounts]++
-        if (t.priority && t.priority in priorityCounts)
-            priorityCounts[t.priority as keyof typeof priorityCounts]++
-    })
-
-    // Fetch workspace-scoped task views
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: taskViewsData } = await (supabase.from("agenda_views") as any)
-        .select("*")
+    const { data: profilesData } = await supabase
+        .from("profiles")
+        .select("id, full_name, email")
         .eq("workspace_id", profile.workspace_id)
-        .eq("view_type", "tasks")
-        .order("created_at", { ascending: true })
-
-    const initialViews: TaskView[] = taskViewsData ?? []
+        .eq("is_deleted", false)
+        .order("full_name", { ascending: true })
 
     return (
         <TasksClient
             tasks={tasks}
-            totalCount={tasks.length}
-            statusCounts={statusCounts}
-            priorityCounts={priorityCounts}
-            initialViews={initialViews}
+            currentUserId={user.id}
+            profiles={profilesData ?? []}
         />
     )
 }

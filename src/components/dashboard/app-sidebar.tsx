@@ -1,226 +1,319 @@
-"use client"
+"use client";
 
-import Link from "next/link"
-import { usePathname } from "next/navigation"
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
 import {
-  Home,
-  Calendar,
-  CalendarDays,
-  CheckSquare,
-  BookOpen,
-  PanelLeftClose,
-  PanelLeft,
-  HandHeart,
-  ClipboardList,
-  Table2,
-  MessagesSquare,
-  NotebookTabs,
+  Archive,
+  BriefcaseBusiness,
+  ChevronRight,
   BookUser,
-  Handshake,
+  Home,
+  Landmark,
+  LogOut,
   Megaphone,
-  Library,
-  Database,
-} from "lucide-react"
-import { cn } from "@/lib/utils"
-import { TooltipProvider } from "@/components/ui/tooltip"
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
-import { SidebarUserProfile } from "@/components/dashboard/sidebar-user-profile"
-import { Button } from "@/components/ui/button"
-import { NavSection } from "./sidebar-types"
-import { SidebarNavSection } from "./sidebar-nav-section"
-import { SidebarSavedItemsSection } from "./sidebar-saved-items-section"
-import { useSidebarState } from "@/hooks/use-sidebar-state"
-import { useNavigationStore } from "@/stores/navigation-store"
+  Moon,
+  Search,
+  Settings,
+  Sun,
+  MicVocal,
+  type LucideIcon,
+} from "lucide-react";
 
-const navSections: NavSection[] = [
+import { createClient } from "@/lib/supabase/client";
+import { cn } from "@/lib/utils";
+import { useTheme } from "@/components/theme/theme-provider";
+import { useCommandPaletteStore } from "@/stores/command-palette-store";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
+type SidebarItem = {
+  href: string;
+  label: string;
+  icon: LucideIcon;
+  soon?: boolean;
+  match?: "exact" | "prefix";
+  activeAliases?: string[];
+  children?: SidebarItem[];
+};
+
+type SidebarSection = {
+  label: string;
+  items: SidebarItem[];
+};
+const sections: SidebarSection[] = [
   {
-    id: "main",
-    title: "", // No section header for clean look
+    label: "Workspace",
     items: [
-      { href: "/dashboard", icon: Home, label: "Home" },
-      { href: "/calendar", icon: Calendar, label: "Calendar" },
+      { href: "/dashboard", label: "Home", icon: Home, match: "exact" },
+      { href: "/directory", label: "Directory", icon: BookUser, match: "prefix" },
+    ],
+  },
+  {
+    label: "My Calling",
+    items: [
       {
-        icon: CalendarDays,
-        label: "Meetings",
+        href: "/meetings/sacrament/planner",
+        label: "Sacrament Meeting",
+        icon: Landmark,
+        match: "prefix",
         children: [
-          { href: "/meetings/agendas", icon: NotebookTabs, label: "Agendas" },
-          { href: "/meetings/business", icon: Handshake, label: "Business" },
-          { href: "/meetings/announcements", icon: Megaphone, label: "Announcements" },
-          { href: "/meetings/discussions", icon: MessagesSquare, label: "Discussions" },
-          { href: "/meetings/directory", icon: BookUser, label: "Directory" },
-          { href: "/templates/library", icon: Library, label: "Templates" },
-        ]
-      },
-      { href: "/callings", icon: HandHeart, label: "Callings" },
-      { href: "/tasks", icon: CheckSquare, label: "Tasks" },
-      {
-        icon: Database,
-        label: "Data",
-        children: [
-          { href: "/forms", icon: ClipboardList, label: "Forms" },
-          { href: "/tables", icon: Table2, label: "Tables" },
-          { href: "/notebooks", icon: BookOpen, label: "Notebooks" },
+          { href: "/meetings/sacrament/planner", label: "Planner", icon: Landmark, match: "prefix" },
+          { href: "/meetings/sacrament/speakers", label: "Speakers", icon: MicVocal, match: "prefix" },
+          { href: "/meetings/sacrament/business", label: "Business", icon: BriefcaseBusiness, match: "prefix" },
+          { href: "/meetings/sacrament/announcements", label: "Announcements", icon: Megaphone, match: "prefix" },
+          { href: "/meetings/sacrament/archive", label: "Archive", icon: Archive, match: "prefix" },
         ],
       },
     ],
   },
-]
+];
 
-// Default expanded groups (Agenda is open by default, Apps collapsed)
-const defaultExpandedGroups: Record<string, boolean> = {
-  "management-agenda": true,
+function getInitials(name: string) {
+  return name.trim().charAt(0).toUpperCase() || "W";
 }
 
-interface AppSidebarProps {
-  workspaceName: string
-  userName: string
-  userEmail: string
-  userId: string
-  userAvatarUrl?: string
-  userRoleTitle?: string
-  className?: string
-  forceCollapsed?: boolean
-  hideCollapseToggle?: boolean
+function isItemActive(pathname: string | null, item: SidebarItem) {
+  if (!pathname) return false;
+  if (item.label === "More") return false;
+  if (item.children?.some((child) => isItemActive(pathname, child))) return true;
+  if (item.activeAliases?.some((alias) => pathname === alias || pathname.startsWith(`${alias}/`))) {
+    return true;
+  }
+  if (item.match === "exact") return pathname === item.href;
+  return pathname === item.href || pathname.startsWith(`${item.href}/`);
 }
 
-export function AppSidebar({
-  workspaceName,
-  userName,
-  userEmail,
-  userId,
-  userAvatarUrl,
-  userRoleTitle,
-  className,
-  forceCollapsed,
-  hideCollapseToggle,
-}: AppSidebarProps) {
-  const pathname = usePathname()
-  const favorites = useNavigationStore((state) => state.favorites)
-  const recents = useNavigationStore((state) => state.recents)
+function NavRow({
+  item,
+  depth = 0,
+  isOpen,
+  onToggle,
+}: {
+  item: SidebarItem;
+  depth?: number;
+  isOpen?: boolean;
+  onToggle?: () => void;
+}) {
+  const pathname = usePathname();
+  const Icon = item.icon;
+  const active = isItemActive(pathname, item);
+  const hasChildren = Boolean(item.children?.length);
+  const isMore = item.label === "More" && hasChildren;
 
-  const {
-    isCollapsed: storedCollapsed,
-    toggleCollapsed,
-    isGroupExpanded,
-    toggleGroup,
-  } = useSidebarState(defaultExpandedGroups)
-  const isCollapsed = forceCollapsed ?? storedCollapsed
+  const className = cn(
+    "group relative flex w-full items-center gap-2.5 rounded-[6px] px-2.5 py-[7px] text-left text-[13.5px] text-[var(--app-nav-text)] transition-colors duration-75",
+    depth > 0 && "py-1.5 pl-8 text-[13px]",
+    item.soon ? "cursor-default opacity-75" : "hover:bg-[var(--app-nav-hover)]",
+    active && !item.soon && "bg-[var(--app-nav-active)] font-medium text-[var(--app-nav-strong)]"
+  );
+
+  const content = (
+    <>
+      <Icon className={cn("h-[15px] w-[15px] shrink-0 text-[var(--app-nav-icon)]", active && "text-[var(--app-nav-strong)]")} strokeWidth={1.8} />
+      <span className="min-w-0 flex-1 truncate">{item.label}</span>
+      {item.soon ? <span className="rounded-full border border-[var(--app-nav-border)] bg-[var(--app-nav-card)] px-1.5 py-px text-[10px] uppercase tracking-[0.04em] text-[var(--app-nav-muted)]">Soon</span> : null}
+      {hasChildren && !isMore ? (
+        <ChevronRight className={cn("h-3.5 w-3.5 shrink-0 text-[var(--app-nav-muted)] transition-transform", isOpen && "rotate-90")} />
+      ) : null}
+    </>
+  );
+
+  if (isMore) {
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button type="button" className={className} aria-expanded={isOpen}>
+            {content}
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" side="right" className="w-48">
+          {item.children!.map((child) => {
+            const ChildIcon = child.icon;
+            const childActive = isItemActive(pathname, child);
+            return (
+              <DropdownMenuItem key={child.href} asChild>
+                <Link
+                  href={child.href}
+                  className={cn(
+                    "flex w-full items-center gap-2.5 text-[13px]",
+                    childActive && "bg-[var(--app-nav-active)] font-medium text-[var(--app-nav-strong)]"
+                  )}
+                >
+                  <ChildIcon className="h-[15px] w-[15px] shrink-0" strokeWidth={1.8} />
+                  {child.label}
+                </Link>
+              </DropdownMenuItem>
+            );
+          })}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
+  }
+
+  if (hasChildren) {
+    return (
+      <button type="button" className={className} onClick={onToggle} aria-expanded={isOpen}>
+        {content}
+      </button>
+    );
+  }
+
+  if (item.soon) {
+    return <div className={className}>{content}</div>;
+  }
 
   return (
-    <TooltipProvider delayDuration={0}>
-      <aside
-        className={cn(
-          "shrink-0 flex flex-col h-full bg-app-shell",
-          "transition-[width] duration-300 ease-in-out",
-          isCollapsed ? "w-14" : "w-52",
-          className
-        )}
-      >
-        {/* Header with Logo and Toggle */}
-        <div className="border-b-0">
-          <div
-            className={cn(
-              "flex transition-all duration-300 ease-in-out",
-              isCollapsed
-                ? "flex-col items-center justify-center gap-4 py-4"
-                : "flex-row items-center justify-between px-4 pt-2.5 pb-1.5"
-            )}
-          >
-            <Link
-              href="/dashboard"
-              className="block select-none"
-              aria-label="Beespo home"
+    <Link href={item.href} className={className}>
+      {content}
+    </Link>
+  );
+}
+export function AppSidebar({
+  userName,
+  userId,
+  workspaceName,
+}: {
+  userName: string;
+  userId: string;
+  workspaceName?: string;
+}) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const toggleCommandPalette = useCommandPaletteStore((state) => state.toggle);
+  const { theme, setTheme } = useTheme();
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
+    "/meetings/sacrament/planner": true,
+  });
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+
+  const workspaceLabel = workspaceName || "Workspace";
+  const workspaceInitials = getInitials(workspaceLabel);
+
+  const sectionsWithOpenState = useMemo(
+    () =>
+      sections.map((section) => ({
+        ...section,
+        items: section.items.map((item) => ({
+          ...item,
+          isOpen:
+            openGroups[item.href] ??
+            Boolean(item.children?.some((child) => isItemActive(pathname, child))),
+        })),
+      })),
+    [openGroups, pathname]
+  );
+
+  const handleSignOut = async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push("/login");
+  };
+
+  return (
+    <aside className="flex h-full w-[248px] shrink-0 flex-col gap-0.5 overflow-y-auto border-r border-[var(--app-nav-border)] bg-[var(--app-nav-bg)] px-2.5 py-3.5">
+      {mounted ? (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              className="mb-2 flex w-full flex-col gap-0.5 rounded-[8px] border border-[var(--app-nav-border)] bg-[var(--app-nav-card)] px-3 py-2.5 text-left text-[12px] transition-colors hover:bg-[var(--app-nav-hover)]"
+              aria-label="Workspace menu"
             >
-              {isCollapsed ? (
-                <span className="flex items-center justify-center h-8 w-8 text-sm font-semibold text-foreground leading-none">
-                  B
+              <span className="flex items-center gap-2.5">
+                <span className="grid h-7 w-7 shrink-0 place-items-center rounded-[8px] bg-[var(--app-nav-inverse)] font-serif text-[12px] font-medium italic text-[var(--app-nav-inverse-text)]">
+                  {workspaceInitials}
                 </span>
-              ) : (
-                <span className="text-nav-strong text-[15px] font-semibold leading-none tracking-tight">
-                  Beespo
+                <span className="min-w-0">
+                  <span className="block truncate font-serif text-[14px] text-[var(--app-nav-strong)]">{workspaceLabel}</span>
+                  <span className="block truncate text-[11px] text-[var(--app-nav-muted)]">{userName || userId.slice(0, 8)}</span>
                 </span>
-              )}
-            </Link>
+              </span>
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" side="right" className="w-52">
+            <DropdownMenuItem asChild>
+              <Link href="/settings">
+                <Settings className="h-4 w-4" />
+                Workspace settings
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={toggleCommandPalette}>
+              <Search className="h-4 w-4" />
+              Search
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => setTheme("light")}>
+              <Sun className="h-4 w-4" />
+              Light mode
+              {theme === "light" ? <span className="ml-auto text-xs text-muted-foreground">On</span> : null}
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setTheme("dark")}>
+              <Moon className="h-4 w-4" />
+              Dark mode
+              {theme === "dark" ? <span className="ml-auto text-xs text-muted-foreground">On</span> : null}
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
+              <LogOut className="h-4 w-4" />
+              Sign out
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ) : (
+        <button
+          type="button"
+          className="mb-2 flex w-full flex-col gap-0.5 rounded-[8px] border border-[var(--app-nav-border)] bg-[var(--app-nav-card)] px-3 py-2.5 text-left text-[12px] transition-colors hover:bg-[var(--app-nav-hover)]"
+          aria-label="Workspace menu"
+        >
+          <span className="flex items-center gap-2.5">
+            <span className="grid h-7 w-7 shrink-0 place-items-center rounded-[8px] bg-[var(--app-nav-inverse)] font-serif text-[12px] font-medium italic text-[var(--app-nav-inverse-text)]">
+              {workspaceInitials}
+            </span>
+            <span className="min-w-0">
+              <span className="block truncate font-serif text-[14px] text-[var(--app-nav-strong)]">{workspaceLabel}</span>
+              <span className="block truncate text-[11px] text-[var(--app-nav-muted)]">{userName || userId.slice(0, 8)}</span>
+            </span>
+          </span>
+        </button>
+      )}
 
-            {/* Toggle Button */}
-            {!hideCollapseToggle && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={toggleCollapsed}
-                    className="text-nav h-8 w-8 shrink-0 hover:text-nav-strong"
-                    disabled={forceCollapsed !== undefined}
-                  >
-                    {isCollapsed ? (
-                      <PanelLeft className="h-4 w-4 stroke-[1.6]" />
-                    ) : (
-                      <PanelLeftClose className="h-4 w-4 stroke-[1.6]" />
-                    )}
-                    <span className="sr-only">
-                      {isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-                    </span>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="right">
-                  {isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-                </TooltipContent>
-              </Tooltip>
-            )}
+      {sectionsWithOpenState.map((section) => (
+        <div key={section.label}>
+          <div className="px-3 pb-1 pt-3 text-[11px] font-medium uppercase tracking-[0.06em] text-[var(--app-nav-muted)]">
+            {section.label}
           </div>
-
-          {/* Workspace Name - Below Logo */}
-          {!isCollapsed && (
-            <div className="px-4 pb-3">
-              <p className="text-nav-muted truncate text-[11px] font-medium">
-                {workspaceName}
-              </p>
-            </div>
-          )}
+          <div className="flex flex-col gap-0.5">
+            {section.items.map((item) => (
+              <div key={item.href}>
+                <NavRow
+                  item={item}
+                  isOpen={item.isOpen}
+                  onToggle={() =>
+                    setOpenGroups((current) => ({
+                      ...current,
+                      [item.href]: !item.isOpen,
+                    }))
+                  }
+                />
+                {item.children?.length && item.isOpen ? (
+                  <div className="mt-0.5 flex flex-col gap-0.5">
+                    {item.children.map((child) => (
+                      <NavRow key={child.href} item={child} depth={1} />
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+            ))}
+          </div>
         </div>
-
-        {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto py-3">
-          {navSections.map((section, index) => (
-            <SidebarNavSection
-              key={section.id}
-              section={section}
-              pathname={pathname}
-              isCollapsed={isCollapsed}
-              isGroupExpanded={isGroupExpanded}
-              toggleGroup={toggleGroup}
-              isFirst={index === 0}
-            />
-          ))}
-          <SidebarSavedItemsSection
-            title="Favorites"
-            items={favorites}
-            isCollapsed={isCollapsed}
-            itemType="favorites"
-          />
-          <SidebarSavedItemsSection
-            title="Recents"
-            items={recents}
-            isCollapsed={isCollapsed}
-            itemType="recents"
-          />
-        </nav>
-
-        {/* User Profile */}
-        <SidebarUserProfile
-          name={userName}
-          email={userEmail}
-          userId={userId}
-          roleTitle={userRoleTitle}
-          avatarUrl={userAvatarUrl}
-          isCollapsed={isCollapsed}
-        />
-      </aside>
-    </TooltipProvider>
-  )
+      ))}
+    </aside>
+  );
 }

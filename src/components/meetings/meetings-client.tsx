@@ -4,8 +4,12 @@ import { useState, useMemo, useCallback, useTransition, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { createPortal } from "react-dom"
+import { Check, ClipboardList, Columns3, PanelsTopLeft, Plus, Search, SlidersHorizontal, X } from "lucide-react"
+import type { LucideIcon } from "lucide-react"
+
+import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { Plus, X, Trash2 } from "lucide-react"
+import { BulkSelectionBar } from "@/components/ui/bulk-selection-bar"
 import {
     AlertDialog,
     AlertDialogAction,
@@ -16,19 +20,78 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import {
+    StandardPopoverMenu,
+    StandardPopoverMenuContent,
+    StandardPopoverMenuItem,
+    StandardPopoverMenuSub,
+    StandardPopoverMenuSubContent,
+    StandardPopoverMenuSubTrigger,
+    StandardPopoverMenuTrigger,
+} from "@/components/ui/standard-popover-menu"
+import { Breadcrumbs } from "@/components/dashboard/breadcrumbs"
+import { CreateFilterDialog } from "./create-filter-dialog"
+import { MeetingsTable, Meeting, MeetingStatus, Template } from "./meetings-table"
 import { createClient } from "@/lib/supabase/client"
 import { toast } from "@/lib/toast"
-import {
-    MeetingsTable,
-    Meeting,
-    MeetingStatus,
-    Template,
-} from "./meetings-table"
-import { Breadcrumbs } from "@/components/dashboard/breadcrumbs"
-import { CalendarDays, ClipboardList } from "lucide-react"
-import { AgendaView, deleteAgendaView } from "@/lib/agenda-views"
-import { CreateViewDialog } from "./create-view-dialog"
-import { cn } from "@/lib/utils"
+import { AgendaFilter, deleteSavedPlanFilter } from "@/lib/agenda-views"
+
+interface PlanWorkspaceConfig {
+    singularLabel: string
+    pluralLabel: string
+    breadcrumbLabel: string
+    searchPlaceholder: string
+    createLabel: string
+    createHref: string
+    viewType: string
+    path: string
+    emptyText: string
+    sharedEmptyText: string
+    icon: LucideIcon
+    tabLabels: {
+        mine: string
+        shared: string
+        all: string
+    }
+}
+
+const agendaWorkspaceConfig: PlanWorkspaceConfig = {
+    singularLabel: "agenda",
+    pluralLabel: "agendas",
+    breadcrumbLabel: "Agendas",
+    searchPlaceholder: "Search agendas...",
+    createLabel: "New agenda",
+    createHref: "/events/new?plan=agenda",
+    viewType: "agendas",
+    path: "/meetings/agendas",
+    emptyText: "No agendas found.",
+    sharedEmptyText: "No agendas shared with you yet.",
+    icon: ClipboardList,
+    tabLabels: {
+        mine: "My agendas",
+        shared: "Shared with me",
+        all: "All agendas",
+    },
+}
+
+const programWorkspaceConfig: PlanWorkspaceConfig = {
+    singularLabel: "program",
+    pluralLabel: "programs",
+    breadcrumbLabel: "Programs",
+    searchPlaceholder: "Search programs...",
+    createLabel: "New program",
+    createHref: "/events/new?plan=program",
+    viewType: "programs",
+    path: "/meetings/programs",
+    emptyText: "No programs found.",
+    sharedEmptyText: "No programs shared with you yet.",
+    icon: PanelsTopLeft,
+    tabLabels: {
+        mine: "My programs",
+        shared: "Shared with me",
+        all: "All programs",
+    },
+}
 
 interface MeetingsClientProps {
     meetings: Meeting[]
@@ -39,7 +102,8 @@ interface MeetingsClientProps {
     templateCounts: Record<string, number>
     sharedMeetings?: Meeting[]
     sharedOutwardIds?: string[]
-    initialViews?: AgendaView[]
+    initialFilters?: AgendaFilter[]
+    workspace?: "agendas" | "programs"
 }
 
 export function MeetingsClient({
@@ -51,48 +115,39 @@ export function MeetingsClient({
     templateCounts,
     sharedMeetings = [],
     sharedOutwardIds = [],
-    initialViews = [],
+    initialFilters = [],
+    workspace = "agendas",
 }: MeetingsClientProps) {
     const router = useRouter()
     const [, startDeleteTransition] = useTransition()
     const [mounted, setMounted] = useState(false)
+    const [isLoading, setIsLoading] = useState(true)
 
-    // ── Views state ──────────────────────────────────────────────────────────
-    const [views, setViews] = useState<AgendaView[]>(initialViews)
-    const [activeViewId, setActiveViewId] = useState<string | null>(null)
-    const [deletingViewId, setDeletingViewId] = useState<string | null>(null)
+    useEffect(() => {
+        if (meetings.length > 0) {
+            setIsLoading(false)
+        }
+    }, [meetings])
+    const workspaceConfig = workspace === "programs" ? programWorkspaceConfig : agendaWorkspaceConfig
 
-    // Category filter (used when no custom view is active)
-    const [activeCategory, setActiveCategory] = useState<"mine" | "shared" | "all">("mine")
-
-    // Search
+    const [savedFilters, setSavedFilters] = useState<AgendaFilter[]>(initialFilters)
+    const [activeFilterId, setActiveFilterId] = useState<string | null>(null)
+    const [deletingFilterId, setDeletingFilterId] = useState<string | null>(null)
+    const [activeCategory] = useState<"mine" | "shared" | "all">("mine")
     const [search, setSearch] = useState("")
-
-    // Filters
     const [selectedStatuses, setSelectedStatuses] = useState<MeetingStatus[]>([])
     const [selectedTemplates, setSelectedTemplates] = useState<string[]>([])
-
-    // Sort
-    const [sortConfig, setSortConfig] = useState<{
-        key: string
-        direction: "asc" | "desc"
-    } | null>(null)
-
-    // Column visibility
+    const [sortConfig, setSortConfig] = useState<{ key: string; direction: "asc" | "desc" } | null>(null)
     const [hiddenColumns, setHiddenColumns] = useState<Set<string>>(new Set())
-
-    // Row selection
     const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set())
-
-    // Bulk delete
     const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false)
     const [isBulkDeleting, setIsBulkDeleting] = useState(false)
+    const [savedFiltersOpen, setSavedFiltersOpen] = useState(false)
+    const [displayOptionsOpen, setDisplayOptionsOpen] = useState(false)
 
     useEffect(() => {
         setMounted(true)
     }, [])
-
-    // ── Derived data ─────────────────────────────────────────────────────────
 
     const sharedOutwardSet = useMemo(
         () => new Set(sharedOutwardIds),
@@ -108,15 +163,13 @@ export function MeetingsClient({
         [meetings, sharedOutwardSet]
     )
 
-    // Resolve the active view object
-    const activeView = useMemo(
-        () => views.find((v) => v.id === activeViewId) ?? null,
-        [views, activeViewId]
+    const activeFilter = useMemo(
+        () => savedFilters.find((filter) => filter.id === activeFilterId) ?? null,
+        [savedFilters, activeFilterId]
     )
 
     const filteredMeetings = useMemo(() => {
-        // Determine which category to use
-        const effectiveCategory = activeView?.filters.category ?? activeCategory
+        const effectiveCategory = activeFilter?.filters.category ?? activeCategory
 
         let result: Meeting[] =
             effectiveCategory === "mine"
@@ -125,7 +178,6 @@ export function MeetingsClient({
                   ? sharedMeetings
                   : [...annotatedMeetings, ...sharedMeetings]
 
-        // Search (always applied, even in views)
         if (search) {
             const q = search.toLowerCase()
             result = result.filter(
@@ -135,10 +187,9 @@ export function MeetingsClient({
             )
         }
 
-        // Status filter — use view's statuses if active, otherwise manual selection
         const effectiveStatuses =
-            activeView?.filters.statuses && activeView.filters.statuses.length > 0
-                ? activeView.filters.statuses
+            activeFilter?.filters.statuses && activeFilter.filters.statuses.length > 0
+                ? activeFilter.filters.statuses
                 : selectedStatuses
 
         if (effectiveStatuses.length > 0) {
@@ -147,10 +198,9 @@ export function MeetingsClient({
             )
         }
 
-        // Template filter — use view's templateIds if active, otherwise manual selection
         const effectiveTemplates =
-            activeView?.filters.templateIds && activeView.filters.templateIds.length > 0
-                ? activeView.filters.templateIds
+            activeFilter?.filters.templateIds && activeFilter.filters.templateIds.length > 0
+                ? activeFilter.filters.templateIds
                 : selectedTemplates
 
         if (effectiveTemplates.length > 0) {
@@ -158,35 +208,27 @@ export function MeetingsClient({
             const templateIds = effectiveTemplates.filter((id) => id !== "no-template")
             result = result.filter((m) => {
                 if (hasNoTemplate && !m.template_id) return true
-                if (templateIds.length > 0 && m.template_id && templateIds.includes(m.template_id))
+                if (templateIds.length > 0 && m.template_id && templateIds.includes(m.template_id)) {
                     return true
+                }
                 return false
             })
         }
 
-        // Zoom filter (view only)
-        if (activeView?.filters.hasZoom) {
+        if (activeFilter?.filters.hasZoom) {
             result = result.filter((m) => !!m.zoom_meeting_id)
         }
 
-        // Sort
         if (sortConfig) {
             result = [...result].sort((a, b) => {
                 const { key, direction } = sortConfig
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const aValue: any =
-                    key === "template"
-                        ? a.templates?.name || ""
-                        : a[key as keyof Meeting]
+                const aValue: any = key === "template" ? a.templates?.name || "" : a[key as keyof Meeting]
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const bValue: any =
-                    key === "template"
-                        ? b.templates?.name || ""
-                        : b[key as keyof Meeting]
+                const bValue: any = key === "template" ? b.templates?.name || "" : b[key as keyof Meeting]
 
                 if (aValue === null || aValue === undefined) return 1
                 if (bValue === null || bValue === undefined) return -1
-
                 if (aValue < bValue) return direction === "asc" ? -1 : 1
                 if (aValue > bValue) return direction === "asc" ? 1 : -1
                 return 0
@@ -195,28 +237,19 @@ export function MeetingsClient({
 
         return result
     }, [
-        activeView,
         activeCategory,
+        activeFilter,
         annotatedMeetings,
-        sharedMeetings,
         search,
         selectedStatuses,
         selectedTemplates,
+        sharedMeetings,
         sortConfig,
     ])
 
-    // ── Handlers ─────────────────────────────────────────────────────────────
-
-    const handleSort = useCallback(
-        (key: string, direction: "asc" | "desc") => {
-            setSortConfig((current) => {
-                if (current?.key === key && current.direction === direction)
-                    return null
-                return { key, direction }
-            })
-        },
-        []
-    )
+    const handleSort = useCallback((key: string, direction: "asc" | "desc") => {
+        setSortConfig({ key, direction })
+    }, [])
 
     const handleStatusToggle = useCallback((status: string) => {
         setSelectedStatuses((prev) =>
@@ -234,10 +267,17 @@ export function MeetingsClient({
         )
     }, [])
 
-    const handleHideColumn = useCallback((column: string) => {
+    const handleToggleColumnVisibility = useCallback((column: string) => {
         setHiddenColumns((prev) => {
             const next = new Set(prev)
-            next.add(column)
+            const visibleCount = ["title", "template", "status", "scheduled_date", "scheduled_time"].filter(
+                (c) => !next.has(c)
+            ).length
+            const isVisible = !next.has(column)
+
+            if (isVisible && visibleCount <= 1) return prev
+            if (isVisible) next.add(column)
+            else next.delete(column)
             return next
         })
     }, [])
@@ -265,66 +305,48 @@ export function MeetingsClient({
         const ids = Array.from(selectedRows)
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await (supabase.from("agenda_items") as any)
-            .delete()
-            .in("meeting_id", ids)
+        await (supabase.from("agenda_items") as any).delete().in("meeting_id", ids)
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { error } = await (supabase.from("meetings") as any)
-            .delete()
-            .in("id", ids)
+        const { error } = await (supabase.from("meetings") as any).delete().in("id", ids)
 
         if (error) {
-            toast.error(error.message || "Failed to delete meetings")
+            toast.error(error.message || `Failed to delete ${workspaceConfig.pluralLabel}`)
         } else {
             toast.success(
-                `${ids.length} agenda${ids.length > 1 ? "s" : ""} deleted`
+                `${ids.length} ${workspaceConfig.singularLabel}${ids.length > 1 ? "s" : ""} deleted`
             )
             setSelectedRows(new Set())
             router.refresh()
         }
+
         setIsBulkDeleting(false)
         setShowBulkDeleteDialog(false)
     }
 
-    function handleViewCreated(view: AgendaView) {
-        setViews((prev) => [...prev, view])
-        setActiveViewId(view.id)
+    function handleFilterCreated(filter: AgendaFilter) {
+        setSavedFilters((prev) => [...prev, filter])
+        setActiveFilterId(filter.id)
     }
 
-    function handleDeleteView(viewId: string) {
-        setDeletingViewId(viewId)
-    }
-
-    async function confirmDeleteView() {
-        if (!deletingViewId) return
-        const id = deletingViewId
-        setDeletingViewId(null)
+    async function confirmDeleteFilter() {
+        if (!deletingFilterId) return
+        const id = deletingFilterId
+        setDeletingFilterId(null)
 
         startDeleteTransition(async () => {
-            const result = await deleteAgendaView(id)
+            const result = await deleteSavedPlanFilter(id, workspaceConfig.path)
             if (result.error) {
                 toast.error(result.error)
                 return
             }
-            setViews((prev) => prev.filter((v) => v.id !== id))
-            if (activeViewId === id) setActiveViewId(null)
-            toast.success("View deleted")
+            setSavedFilters((prev) => prev.filter((filter) => filter.id !== id))
+            if (activeFilterId === id) setActiveFilterId(null)
+            toast.success("Filter deleted")
         })
     }
-
-    // ── Active filter chips ───────────────────────────────────────────────────
-
-    // In view mode, manual filter chips are not relevant (view owns the filters)
-    const hasActiveFilters =
-        !activeView &&
-        (search.length > 0 ||
-            selectedStatuses.length > 0 ||
-            selectedTemplates.length > 0 ||
-            hiddenColumns.size > 0)
-
-    function formatStatusLabel(s: string) {
-        return s.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())
+    function formatStatusLabel(status: string) {
+        return status.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())
     }
 
     function getTemplateName(id: string) {
@@ -332,254 +354,407 @@ export function MeetingsClient({
         return templates.find((t) => t.id === id)?.name || id
     }
 
-    // ── Render ────────────────────────────────────────────────────────────────
+    const clearAllFilters = useCallback(() => {
+        setActiveFilterId(null)
+        setSelectedStatuses([])
+        setSelectedTemplates([])
+        setHiddenColumns(new Set())
+    }, [])
+
+    const statusFilterOptions = [
+        { value: "draft", label: "Draft" },
+        { value: "scheduled", label: "Scheduled" },
+        { value: "in_progress", label: "In Progress" },
+        { value: "completed", label: "Completed" },
+        { value: "cancelled", label: "Cancelled" },
+    ] as const
+
+    const templateFilterOptions = [
+        {
+            value: "no-template",
+            label: "No Template",
+            count: templateCounts?.["no-template"] || 0,
+        },
+        ...templates.map((t) => ({
+            value: t.id,
+            label: t.name,
+            count: templateCounts?.[t.id] || 0,
+        })),
+    ]
+
+    if (isLoading) {
+        return (
+            <div className="flex h-full flex-col bg-muted/30">
+                <div className="flex items-center justify-center min-h-[calc(100vh-4rem)]">
+                    <div className="flex flex-col items-center gap-4">
+                        <div className="h-8 w-8 animate-spin rounded-full border-4 border-border border-t-foreground" />
+                        <p className="text-sm text-muted-foreground">Loading agendas...</p>
+                    </div>
+                </div>
+            </div>
+        )
+    }
 
     return (
-        <div className="flex flex-col h-full bg-muted/30">
-            {/* Breadcrumb */}
+        <div className="flex h-full flex-col bg-muted/30">
             <Breadcrumbs
                 items={[
-                    { label: "Meetings", href: "/meetings/agendas", icon: <CalendarDays className="h-3.5 w-3.5" /> },
-                    { label: "Agendas", icon: <ClipboardList className="h-3.5 w-3.5" /> },
+                    { label: "Meetings", href: "/meetings/overview" },
+                    { label: workspaceConfig.breadcrumbLabel },
                 ]}
-                className="bg-transparent ring-0 border-b border-border/60 rounded-none px-4 py-1.5"
+                className="bg-transparent ring-0 rounded-none border-b border-border/45 px-4 py-1.5"
+                action={
+                    <div className="hidden items-center gap-1 sm:flex">
+                        <label className={cn(
+                            "inline-flex h-7 cursor-text items-center gap-1.5 rounded-full border-0 px-2.5 text-[length:var(--agenda-control-font-size)] transition-colors",
+                            search
+                                ? "bg-[hsl(var(--agenda-interactive-active))] text-foreground"
+                                : "text-nav hover:bg-[hsl(var(--agenda-interactive-hover))]"
+                        )}>
+                            <Search className="h-3.5 w-3.5 shrink-0" />
+                            <input
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                                placeholder={search ? "" : "Search"}
+                                className="w-[2.75rem] min-w-0 bg-transparent outline-none placeholder:text-nav focus:w-36 transition-[width] duration-150"
+                                aria-label="Search"
+                            />
+                            {search && (
+                                <button
+                                    type="button"
+                                    onClick={() => setSearch("")}
+                                    className="rounded-full p-0.5 hover:bg-black/10 dark:hover:bg-white/20"
+                                    aria-label="Clear search"
+                                >
+                                    <X className="h-3 w-3" />
+                                </button>
+                            )}
+                        </label>
+
+                        {(() => {
+                            const isFiltered = selectedStatuses.length > 0 || selectedTemplates.length > 0 || !!activeFilter
+                            return (
+                            <div className={cn(
+                                "inline-flex h-7 items-center overflow-hidden transition-colors",
+                                isFiltered
+                                    ? "rounded-full bg-[hsl(var(--agenda-interactive-active))] text-foreground"
+                                    : "rounded-full"
+                            )}>
+                        <StandardPopoverMenu open={savedFiltersOpen} onOpenChange={setSavedFiltersOpen}>
+                            <StandardPopoverMenuTrigger asChild>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    aria-label="Open filters"
+                                    className={cn(
+                                        "h-full gap-1 border-0 px-2.5 text-[length:var(--agenda-control-font-size)] shadow-none ring-0 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--agenda-interactive-focus-ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                                        isFiltered
+                                            ? "rounded-none text-foreground hover:bg-black/5 dark:hover:bg-white/10 data-[state=open]:bg-black/8"
+                                            : "rounded-full text-nav hover:bg-[hsl(var(--agenda-interactive-hover))] data-[state=open]:bg-[hsl(var(--agenda-interactive-active))]"
+                                    )}
+                                >
+                                    <SlidersHorizontal className="h-3.5 w-3.5" />
+                                    {isFiltered ? `Filters: ${[
+                                        ...selectedStatuses.map(formatStatusLabel),
+                                        ...selectedTemplates.map(getTemplateName),
+                                        ...(activeFilter ? [activeFilter.name] : []),
+                                    ].join(", ")}` : "Filters"}
+                                </Button>
+                            </StandardPopoverMenuTrigger>
+                            <StandardPopoverMenuContent align="end" className="w-64">
+                                <StandardPopoverMenuSub>
+                                    <StandardPopoverMenuSubTrigger
+                                        active={selectedStatuses.length > 0}
+                                        disabled={!!activeFilter}
+                                    >
+                                        Status
+                                    </StandardPopoverMenuSubTrigger>
+                                    <StandardPopoverMenuSubContent>
+                                        {statusFilterOptions.map((opt) => {
+                                            const selected = selectedStatuses.includes(opt.value as MeetingStatus)
+                                            return (
+                                                <StandardPopoverMenuItem
+                                                    key={opt.value}
+                                                    active={selected}
+                                                    onSelect={() => handleStatusToggle(opt.value)}
+                                                >
+                                                    <span className="flex items-center gap-2">
+                                                        <span className="inline-flex h-4 w-4 items-center justify-center rounded-sm border border-border/60">
+                                                            {selected ? <Check className="h-3 w-3" /> : null}
+                                                        </span>
+                                                        {opt.label}
+                                                    </span>
+                                                    <span className="ml-auto text-[length:var(--table-header-font-size)] text-muted-foreground">
+                                                        {statusCounts?.[opt.value] || 0}
+                                                    </span>
+                                                </StandardPopoverMenuItem>
+                                            )
+                                        })}
+                                    </StandardPopoverMenuSubContent>
+                                </StandardPopoverMenuSub>
+
+                                <StandardPopoverMenuSub>
+                                    <StandardPopoverMenuSubTrigger
+                                        active={selectedTemplates.length > 0}
+                                        disabled={!!activeFilter}
+                                    >
+                                        Template
+                                    </StandardPopoverMenuSubTrigger>
+                                    <StandardPopoverMenuSubContent className="max-h-72 overflow-y-auto">
+                                        {templateFilterOptions.map((opt) => {
+                                            const selected = selectedTemplates.includes(opt.value)
+                                            return (
+                                                <StandardPopoverMenuItem
+                                                    key={opt.value}
+                                                    active={selected}
+                                                    onSelect={() => handleTemplateToggle(opt.value)}
+                                                >
+                                                    <span className="flex min-w-0 items-center gap-2">
+                                                        <span className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-sm border border-border/60">
+                                                            {selected ? <Check className="h-3 w-3" /> : null}
+                                                        </span>
+                                                        <span className="truncate">{opt.label}</span>
+                                                    </span>
+                                                    <span className="ml-auto shrink-0 text-[length:var(--table-header-font-size)] text-muted-foreground">
+                                                        {opt.count}
+                                                    </span>
+                                                </StandardPopoverMenuItem>
+                                            )
+                                        })}
+                                    </StandardPopoverMenuSubContent>
+                                </StandardPopoverMenuSub>
+
+                                {(selectedStatuses.length > 0 || selectedTemplates.length > 0) && !activeFilter && (
+                                    <StandardPopoverMenuItem
+                                        onSelect={() => {
+                                            setSelectedStatuses([])
+                                            setSelectedTemplates([])
+                                        }}
+                                        className="text-muted-foreground"
+                                    >
+                                        Clear filters
+                                    </StandardPopoverMenuItem>
+                                )}
+
+                                <div className="my-1 h-px bg-[hsl(var(--menu-separator))]" />
+
+                                <StandardPopoverMenuSub>
+                                    <StandardPopoverMenuSubTrigger active={!!activeFilter}>
+                                        Advanced filters
+                                    </StandardPopoverMenuSubTrigger>
+                                    <StandardPopoverMenuSubContent className="w-64">
+                                        {savedFilters.length === 0 ? (
+                                            <p className="px-2 py-1.5 text-xs text-muted-foreground">
+                                                No saved filters yet.
+                                            </p>
+                                        ) : (
+                                            savedFilters.map((filter) => (
+                                                <StandardPopoverMenuItem
+                                                    key={filter.id}
+                                                    active={activeFilterId === filter.id}
+                                                    onSelect={() => {
+                                                        setActiveFilterId(filter.id)
+                                                        setSavedFiltersOpen(false)
+                                                    }}
+                                                    className="group"
+                                                >
+                                                    <span className="truncate">{filter.name}</span>
+                                                    <button
+                                                        type="button"
+                                                        onClick={(event) => {
+                                                            event.stopPropagation()
+                                                            setDeletingFilterId(filter.id)
+                                                        }}
+                                                        className="rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:text-foreground group-hover:opacity-100"
+                                                        aria-label={`Delete filter ${filter.name}`}
+                                                    >
+                                                        <X className="h-3 w-3" />
+                                                    </button>
+                                                </StandardPopoverMenuItem>
+                                            ))
+                                        )}
+
+                                        <div className="my-1 h-px bg-[hsl(var(--menu-separator))]" />
+                                        <CreateFilterDialog
+                                            templates={templates}
+                                            viewType={workspaceConfig.viewType}
+                                            path={workspaceConfig.path}
+                                            entityLabelPlural={workspaceConfig.pluralLabel}
+                                            onCreated={(filter) => {
+                                                handleFilterCreated(filter)
+                                                setSavedFiltersOpen(false)
+                                            }}
+                                            renderTrigger={(openDialog) => (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setSavedFiltersOpen(false)
+                                                        openDialog()
+                                                    }}
+                                                    className="flex w-full items-center justify-start gap-2 rounded-md px-2.5 py-1.5 text-[length:var(--menu-item-font-size)] text-[hsl(var(--menu-text))] hover:bg-[hsl(var(--menu-hover))]"
+                                                >
+                                                    <Plus className="h-3.5 w-3.5" />
+                                                    Create new filter
+                                                </button>
+                                            )}
+                                        />
+                                    </StandardPopoverMenuSubContent>
+                                </StandardPopoverMenuSub>
+                            </StandardPopoverMenuContent>
+                        </StandardPopoverMenu>
+
+                        {isFiltered && (
+                            <button
+                                type="button"
+                                onClick={clearAllFilters}
+                                className="mr-1.5 rounded-full p-0.5 hover:bg-black/10 dark:hover:bg-white/20"
+                                aria-label="Clear all filters"
+                            >
+                                <X className="h-3 w-3" />
+                            </button>
+                        )}
+                        </div>
+                            )
+                        })()}
+
+                        {(() => {
+                            const columnLabels: Record<string, string> = {
+                                title: "Title", template: "Template", status: "Status",
+                                scheduled_date: "Date", scheduled_time: "Time", share_status: "Share Status",
+                            }
+                            const hasHidden = hiddenColumns.size > 0
+                            const hiddenLabels = [...hiddenColumns].map(k => columnLabels[k] ?? k)
+                            return (
+                            <div className={cn(
+                                "inline-flex h-7 items-center overflow-hidden transition-colors",
+                                hasHidden
+                                    ? "rounded-full bg-[hsl(var(--agenda-interactive-active))] text-foreground"
+                                    : "rounded-full"
+                            )}>
+                        <StandardPopoverMenu open={displayOptionsOpen} onOpenChange={setDisplayOptionsOpen}>
+                            <StandardPopoverMenuTrigger asChild>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    aria-label="Display options"
+                                    className={cn(
+                                        "h-full gap-1 border-0 px-2.5 text-[length:var(--agenda-control-font-size)] shadow-none ring-0 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--agenda-interactive-focus-ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                                        hasHidden
+                                            ? "rounded-none text-foreground hover:bg-black/5 dark:hover:bg-white/10 data-[state=open]:bg-black/8"
+                                            : "rounded-full text-nav hover:bg-[hsl(var(--agenda-interactive-hover))] data-[state=open]:bg-[hsl(var(--agenda-interactive-active))]"
+                                    )}
+                                >
+                                    <Columns3 className="h-3.5 w-3.5" />
+                                    {hasHidden ? `Hidden: ${hiddenLabels.join(", ")}` : "Display"}
+                                </Button>
+                            </StandardPopoverMenuTrigger>
+                            <StandardPopoverMenuContent align="end" className="w-56">
+                                {[
+                                    { key: "title", label: "Title" },
+                                    { key: "template", label: "Template" },
+                                    { key: "status", label: "Status" },
+                                    { key: "scheduled_date", label: "Date" },
+                                    { key: "scheduled_time", label: "Time" },
+                                    { key: "share_status", label: "Share Status" },
+                                ].map((column) => {
+                                    const visible = !hiddenColumns.has(column.key)
+                                    return (
+                                        <StandardPopoverMenuItem
+                                            key={column.key}
+                                            onSelect={() => handleToggleColumnVisibility(column.key)}
+                                            className="gap-2"
+                                        >
+                                            <span className="inline-flex h-4 w-4 items-center justify-center rounded-sm border border-border/60">
+                                                {visible ? <Check className="h-3 w-3" /> : null}
+                                            </span>
+                                            <span>{column.label}</span>
+                                        </StandardPopoverMenuItem>
+                                    )
+                                })}
+                                {hiddenColumns.size > 0 && (
+                                    <>
+                                        <div className="my-1 h-px bg-[hsl(var(--menu-separator))]" />
+                                        <StandardPopoverMenuItem
+                                            onSelect={() => setHiddenColumns(new Set())}
+                                            className="text-muted-foreground"
+                                        >
+                                            Show all columns
+                                        </StandardPopoverMenuItem>
+                                    </>
+                                )}
+                            </StandardPopoverMenuContent>
+                        </StandardPopoverMenu>
+
+                        {hasHidden && (
+                            <button
+                                type="button"
+                                onClick={() => setHiddenColumns(new Set())}
+                                className="mr-1.5 rounded-full p-0.5 hover:bg-black/10 dark:hover:bg-white/20"
+                                aria-label="Show all columns"
+                            >
+                                <X className="h-3 w-3" />
+                            </button>
+                        )}
+                        </div>
+                            )
+                        })()}
+
+                        {isLeader && (
+                            <Button
+                                asChild
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 gap-1 rounded-full px-2.5 text-[length:var(--agenda-control-font-size)] text-nav transition-colors hover:bg-[hsl(var(--agenda-interactive-hover))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--agenda-interactive-focus-ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                            >
+                                <Link href={workspaceConfig.createHref}>
+                                    <Plus className="h-3.5 w-3.5 stroke-[1.6]" />
+                                    {workspaceConfig.createLabel}
+                                </Link>
+                            </Button>
+                        )}
+                    </div>
+                }
             />
 
-            {/* Action Bar + Tabs */}
-            <div className="flex items-center justify-between w-full px-6 pt-3.5 pb-3.5 shrink-0 flex-wrap gap-3 border-b border-border/45">
-                <div className="flex items-center gap-2 flex-wrap min-h-8">
-                    {/* Built-in tabs */}
-                    {(
-                        [
-                            { value: "mine", label: "My Meetings" },
-                            { value: "shared", label: "Shared with Me" },
-                            { value: "all", label: "All" },
-                    ] as const
-                ).map(({ value, label }) => (
-                    <button
-                        key={value}
-                        onClick={() => {
-                            setActiveViewId(null)
-                            setActiveCategory(value)
-                        }}
-                        className={
-                            activeViewId === null && activeCategory === value
-                                ? "rounded-full border border-transparent px-3.5 py-1.5 text-[11px] font-semibold leading-none bg-[hsl(var(--chip-active-bg))] text-[hsl(var(--chip-active-text))] transition-all shadow-[0_1px_0_rgba(15,23,42,0.1)]"
-                                : "rounded-full border px-3.5 py-1.5 text-[11px] font-medium leading-none bg-[hsl(var(--chip-bg))] text-[hsl(var(--chip-text))] border-[hsl(var(--chip-border))] hover:bg-[hsl(var(--chip-hover-bg))] hover:text-[hsl(var(--chip-active-text))] transition-all"
-                        }
-                    >
-                        {label}
-                    </button>
-                ))}
 
-                {/* Divider before custom views */}
-                {views.length > 0 && (
-                    <span className="h-5 w-px bg-border/80 mx-1.5 shrink-0" aria-hidden />
-                )}
-
-                {/* Custom view tabs */}
-                {views.map((view) => (
-                    <span key={view.id} className="relative group/view inline-flex items-center">
-                        <button
-                            onClick={() => setActiveViewId(view.id)}
-                            className={cn(
-                                "rounded-full border pl-3.5 pr-7 py-1 text-[11px] leading-none transition-all shadow-sm",
-                                activeViewId === view.id
-                                    ? "bg-[hsl(var(--chip-active-bg))] text-[hsl(var(--chip-active-text))] border-transparent font-semibold"
-                                    : "bg-[hsl(var(--chip-bg))] text-[hsl(var(--chip-text))] border-[hsl(var(--chip-border))] hover:bg-[hsl(var(--chip-hover-bg))] hover:text-[hsl(var(--chip-active-text))] font-medium"
-                            )}
-                        >
-                            {view.name}
-                        </button>
-                        {/* Delete (×) button — appears on hover */}
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation()
-                                handleDeleteView(view.id)
-                            }}
-                            title="Delete view"
-                                className={cn(
-                                    "absolute right-2 top-1/2 -translate-y-1/2",
-                                    "flex items-center justify-center h-3.5 w-3.5 rounded-full",
-                                    "opacity-0 group-hover/view:opacity-100 group-focus-within/view:opacity-100 transition-opacity",
-                                    activeViewId === view.id
-                                        ? "text-muted-foreground/70 hover:text-foreground"
-                                        : "text-muted-foreground hover:text-foreground"
-                            )}
-                        >
-                            <X className="h-2.5 w-2.5 stroke-[1.6]" />
-                        </button>
-                    </span>
-                ))}
-
-                    <CreateViewDialog
-                        templates={templates}
-                        onCreated={handleViewCreated}
-                    />
-                </div>
-
-                {isLeader && (
-                    <Button asChild size="sm" className="h-8 rounded-full px-3.5 text-[11px] font-semibold shadow-sm">
-                        <Link href="/meetings/new" className="flex items-center gap-1.5">
-                            <Plus className="h-3.5 w-3.5 stroke-[1.6]" />
-                            New
-                        </Link>
-                    </Button>
-                )}
-            </div>
-
-            {/* View filter summary bar (shown when a custom view is active) */}
-            {activeView && (
-                <div className="flex items-center gap-2 px-6 pb-3 flex-wrap text-[11px] text-muted-foreground">
-                    <span className="font-medium text-foreground">Filters:</span>
-                    <span className="rounded-full bg-[hsl(var(--chip-bg))] border border-[hsl(var(--chip-border))] px-2.5 py-1.5 capitalize text-[hsl(var(--chip-text))] leading-none">
-                        {activeView.filters.category ?? "all"} meetings
-                    </span>
-                    {activeView.filters.statuses?.map((s) => (
-                        <span key={s} className="rounded-full bg-[hsl(var(--chip-bg))] border border-[hsl(var(--chip-border))] px-2.5 py-1.5 text-[hsl(var(--chip-text))] leading-none">
-                            {formatStatusLabel(s)}
-                        </span>
-                    ))}
-                    {activeView.filters.templateIds?.map((id) => (
-                        <span key={id} className="rounded-full bg-[hsl(var(--chip-bg))] border border-[hsl(var(--chip-border))] px-2.5 py-1.5 text-[hsl(var(--chip-text))] leading-none">
-                            {getTemplateName(id)}
-                        </span>
-                    ))}
-                    {activeView.filters.hasZoom && (
-                        <span className="rounded-full bg-[hsl(var(--chip-bg))] border border-[hsl(var(--chip-border))] px-2.5 py-1.5 text-[hsl(var(--chip-text))] leading-none">🎥 Has Zoom</span>
-                    )}
-                    {search && (
-                        <span className="inline-flex items-center gap-1.5 rounded-full bg-[hsl(var(--chip-bg))] border border-[hsl(var(--chip-border))] px-2.5 py-1.5 text-[hsl(var(--chip-text))] leading-none">
-                            Search: &quot;{search}&quot;
-                            <button
-                                onClick={() => setSearch("")}
-                                className="ml-1 text-muted-foreground hover:text-foreground"
-                            >
-                                <X className="h-3 w-3 inline stroke-[1.6]" />
-                            </button>
-                        </span>
-                    )}
-                </div>
-            )}
-
-            {/* Active filter chips — only in non-view mode */}
-            {hasActiveFilters && selectedRows.size === 0 && (
-                <div className="flex items-center gap-2 px-6 pb-3 flex-wrap">
-                    {search && (
-                        <span className="inline-flex items-center gap-1.5 rounded-full bg-[hsl(var(--chip-bg))] border border-[hsl(var(--chip-border))] px-2.5 py-1.5 text-[11px] font-medium leading-none text-[hsl(var(--chip-text))]">
-                            Search: &quot;{search}&quot;
-                            <button
-                                onClick={() => setSearch("")}
-                                className="text-muted-foreground hover:text-foreground"
-                            >
-                                <X className="h-3 w-3 stroke-[1.6]" />
-                            </button>
-                        </span>
-                    )}
-                    {selectedStatuses.map((s) => (
-                        <span
-                            key={s}
-                            className="inline-flex items-center gap-1.5 rounded-full bg-[hsl(var(--chip-bg))] border border-[hsl(var(--chip-border))] px-2.5 py-1.5 text-[11px] font-medium leading-none text-[hsl(var(--chip-text))]"
-                        >
-                            {formatStatusLabel(s)}
-                            <button
-                                onClick={() => handleStatusToggle(s)}
-                                className="text-muted-foreground hover:text-foreground"
-                            >
-                                <X className="h-3 w-3 stroke-[1.6]" />
-                            </button>
-                        </span>
-                    ))}
-                    {selectedTemplates.map((id) => (
-                        <span
-                            key={id}
-                            className="inline-flex items-center gap-1.5 rounded-full bg-[hsl(var(--chip-bg))] border border-[hsl(var(--chip-border))] px-2.5 py-1.5 text-[11px] font-medium leading-none text-[hsl(var(--chip-text))]"
-                        >
-                            {getTemplateName(id)}
-                            <button
-                                onClick={() => handleTemplateToggle(id)}
-                                className="text-muted-foreground hover:text-foreground"
-                            >
-                                <X className="h-3 w-3 stroke-[1.6]" />
-                            </button>
-                        </span>
-                    ))}
-                    {hiddenColumns.size > 0 && (
-                        <button
-                            onClick={() => setHiddenColumns(new Set())}
-                            className="inline-flex items-center rounded-full border border-[hsl(var(--chip-border))] px-2.5 py-1.5 text-[11px] text-muted-foreground hover:text-foreground hover:bg-[hsl(var(--chip-hover-bg))] transition-colors"
-                        >
-                            Show all columns
-                        </button>
-                    )}
-                    <button
-                        onClick={() => {
-                            setSearch("")
-                            setSelectedStatuses([])
-                            setSelectedTemplates([])
-                            setHiddenColumns(new Set())
-                        }}
-                        className="inline-flex items-center rounded-full border border-[hsl(var(--chip-border))] px-2.5 py-1.5 text-[11px] text-muted-foreground hover:text-foreground hover:bg-[hsl(var(--chip-hover-bg))] transition-colors"
-                    >
-                        Clear all
-                    </button>
-                </div>
-            )}
-
-            {/* Table */}
-            <div className="flex-1 overflow-auto px-6 pb-6">
-                {activeCategory === "shared" && !activeView && sharedMeetings.length === 0 && !search ? (
-                    <div className="flex flex-col items-center justify-center h-48 text-center">
-                        <p className="text-muted-foreground text-sm">
-                            No meetings shared with you yet.
+            <div className="flex-1 overflow-auto pb-5">
+                {activeCategory === "shared" && !activeFilter && sharedMeetings.length === 0 && !search ? (
+                    <div className="flex h-48 flex-col items-center justify-center text-center">
+                        <p className="text-sm text-muted-foreground">
+                            {workspaceConfig.sharedEmptyText}
                         </p>
                     </div>
                 ) : (
                     <MeetingsTable
                         meetings={filteredMeetings}
-                        templates={templates}
                         workspaceSlug={workspaceSlug}
                         isLeader={isLeader}
                         sortConfig={sortConfig}
                         onSort={handleSort}
-                        searchValue={search}
-                        onSearchChange={setSearch}
-                        selectedStatuses={activeView?.filters.statuses as MeetingStatus[] ?? selectedStatuses}
-                        statusCounts={statusCounts}
-                        onStatusToggle={activeView ? undefined : handleStatusToggle}
-                        selectedTemplates={activeView?.filters.templateIds ?? selectedTemplates}
-                        templateCounts={templateCounts}
-                        onTemplateToggle={activeView ? undefined : handleTemplateToggle}
                         hiddenColumns={hiddenColumns}
-                        onHideColumn={handleHideColumn}
                         selectedRows={selectedRows}
                         onToggleRow={handleToggleRow}
                         onToggleAllRows={handleToggleAllRows}
+                        workspace={workspace}
+                        emptyText={workspaceConfig.emptyText}
                     />
                 )}
             </div>
 
-            {/* Bulk delete confirmation */}
-            <AlertDialog
-                open={showBulkDeleteDialog}
-                onOpenChange={setShowBulkDeleteDialog}
-            >
+            <AlertDialog open={showBulkDeleteDialog} onOpenChange={setShowBulkDeleteDialog}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle>
-                            Delete {selectedRows.size} agenda
+                            Delete {selectedRows.size} {workspaceConfig.singularLabel}
                             {selectedRows.size > 1 ? "s" : ""}
                         </AlertDialogTitle>
                         <AlertDialogDescription>
-                            This will permanently delete the selected agenda
-                            {selectedRows.size > 1 ? "s" : ""} and all their
-                            agenda items. This action cannot be undone.
+                            This will permanently delete the selected {workspaceConfig.singularLabel}
+                            {selectedRows.size > 1 ? "s" : ""} and all their plan content. This action cannot be undone.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel disabled={isBulkDeleting}>
-                            Cancel
-                        </AlertDialogCancel>
+                        <AlertDialogCancel disabled={isBulkDeleting}>Cancel</AlertDialogCancel>
                         <AlertDialogAction
                             onClick={handleBulkDelete}
                             disabled={isBulkDeleting}
@@ -591,55 +766,34 @@ export function MeetingsClient({
                 </AlertDialogContent>
             </AlertDialog>
 
-            {/* Delete view confirmation */}
-            <AlertDialog
-                open={!!deletingViewId}
-                onOpenChange={(o) => { if (!o) setDeletingViewId(null) }}
-            >
+            <AlertDialog open={!!deletingFilterId} onOpenChange={(open) => { if (!open) setDeletingFilterId(null) }}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Delete this view?</AlertDialogTitle>
+                        <AlertDialogTitle>Delete this filter?</AlertDialogTitle>
                         <AlertDialogDescription>
-                            This view will be removed for everyone in your workspace.
-                            This action cannot be undone.
+                            This filter will be removed for everyone in your workspace. This action cannot be undone.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel onClick={() => setDeletingViewId(null)}>
-                            Cancel
-                        </AlertDialogCancel>
+                        <AlertDialogCancel onClick={() => setDeletingFilterId(null)}>Cancel</AlertDialogCancel>
                         <AlertDialogAction
-                            onClick={confirmDeleteView}
+                            onClick={confirmDeleteFilter}
                             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                         >
-                            Delete view
+                            Delete filter
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
 
-            {/* Floating bulk selection pill */}
             {mounted && selectedRows.size > 0 && createPortal(
-                <div className="fixed bottom-6 left-1/2 z-[95] flex -translate-x-1/2 pointer-events-none w-[90vw] sm:w-auto justify-center">
-                    <div className="pointer-events-auto inline-flex items-center gap-2 rounded-full border border-border/80 bg-background/96 px-2.5 py-2 text-foreground shadow-[0_10px_30px_rgba(15,23,42,0.12)] backdrop-blur-sm">
-                        <span className="inline-flex items-center rounded-full border border-border/70 bg-muted/55 px-2.5 py-1 text-[11px] font-semibold tabular-nums text-foreground/85">
-                            {selectedRows.size} selected
-                        </span>
-                        <span className="h-4 w-px bg-border/70" aria-hidden />
-                        <button
-                            onClick={() => setSelectedRows(new Set())}
-                            className="rounded-full px-2.5 py-1 text-[11px] font-medium text-foreground/70 hover:text-foreground hover:bg-muted/55 transition-colors"
-                        >
-                            Deselect
-                        </button>
-                        <button
-                            onClick={() => setShowBulkDeleteDialog(true)}
-                            className="inline-flex items-center gap-1.5 rounded-full border border-rose-200 bg-rose-50/70 px-2.5 py-1 text-[11px] font-semibold text-rose-700 hover:bg-rose-100/75 transition-colors"
-                        >
-                            <Trash2 className="h-3 w-3 stroke-[1.7]" />
-                            Delete
-                        </button>
-                    </div>
+                <div className="fixed bottom-6 left-1/2 z-[95] flex w-[90vw] -translate-x-1/2 justify-center pointer-events-none sm:w-auto">
+                    <BulkSelectionBar
+                        selectedCount={selectedRows.size}
+                        onClear={() => setSelectedRows(new Set())}
+                        onDelete={() => setShowBulkDeleteDialog(true)}
+                        isDeleting={isBulkDeleting}
+                    />
                 </div>,
                 document.body
             )}

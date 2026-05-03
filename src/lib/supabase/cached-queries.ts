@@ -9,7 +9,7 @@ export type CachedProfile = {
   role_title: string;
   feature_tier: FeatureTier | null;
   last_read_release_note_at: string | null;
-  workspaces: { name: string } | null;
+  workspaces: { name: string; organization_type: string | null } | null;
 } | null;
 
 /**
@@ -24,7 +24,7 @@ export const getProfile = cache(async (userId: string): Promise<CachedProfile> =
   const supabase = await createClient();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data } = await (supabase.from("profiles") as any)
-    .select("full_name, workspace_id, role, role_title, feature_tier, last_read_release_note_at, workspaces(name)")
+    .select("full_name, workspace_id, role, role_title, feature_tier, last_read_release_note_at, workspaces(name, organization_type)")
     .eq("id", userId)
     .eq("is_deleted", false)
     .single();

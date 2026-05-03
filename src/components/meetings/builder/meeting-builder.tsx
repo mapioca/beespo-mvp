@@ -34,8 +34,6 @@ import { ValidationModal, ValidationItem, ValidationState } from "../validation-
 import { PrintPreviewPane } from "./print-preview-pane";
 import { ProgramModePane } from "./program-mode-pane";
 import type { ProgramStyleSettings } from "../program/program-style";
-import { ZoomMeetingSheet } from "@/components/meetings/zoom-meeting-sheet";
-import { ZoomIcon } from "@/components/ui/zoom-icon";
 import { generateMeetingMarkdown } from "@/lib/generate-meeting-markdown";
 import { saveMeetingMarkdown } from "@/lib/actions/meeting-actions";
 import { useForm } from "react-hook-form";
@@ -43,9 +41,10 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Form } from "@/components/ui/form";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription } from "@/components/ui/sheet";
-import { List, Loader2, Info } from "lucide-react";
+import { List, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { MeetingContextBar } from "./meeting-context-bar";
+import { MeetingPlanTopBar } from "./meeting-plan-top-bar";
 import {
     Dialog,
     DialogContent,
@@ -75,19 +74,34 @@ type MeetingFormValues = z.infer<typeof meetingFormSchema>;
 interface MeetingBuilderProps {
     initialTemplateId?: string | null;
     initialMeetingId?: string;
+    initialEntryType?: "agenda" | "program" | "meeting";
+    initialMode?: BuilderMode;
 }
 
 type AutosaveStatus = "idle" | "saving" | "saved" | "error";
 type MeetingStatus = "draft" | "scheduled" | "in_progress" | "completed" | "cancelled";
+type PlanType = "agenda" | "program" | null;
 
-export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingBuilderProps) {
+export function MeetingBuilder({
+    initialTemplateId,
+    initialMeetingId,
+    initialEntryType = "agenda",
+    initialMode,
+}: MeetingBuilderProps) {
     const router = useRouter();
+    const defaultTitleByEntry = {
+        agenda: "Untitled Agenda",
+        program: "Untitled Program",
+        meeting: "Untitled Meeting",
+    } as const;
+    const defaultBuilderMode: BuilderMode =
+        initialMode ?? (initialMeetingId ? "print-preview" : initialEntryType === "program" ? "program" : "planning");
 
     // Form state
     const form = useForm<MeetingFormValues>({
         resolver: zodResolver(meetingFormSchema),
         defaultValues: {
-            title: "Untitled Meeting Agenda",
+            title: defaultTitleByEntry[initialEntryType],
             date: new Date(),
             time: "07:00",
             templateId: initialTemplateId || null,
@@ -137,7 +151,7 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
     const [isCreating, setIsCreating] = useState(false);
 
     // Builder mode state — default to print-preview when editing existing, planning when creating new
-    const [builderMode, setBuilderMode] = useState<BuilderMode>(initialMeetingId ? "print-preview" : "planning");
+    const [builderMode, setBuilderMode] = useState<BuilderMode>(defaultBuilderMode);
     const [programPreviewDevice, setProgramPreviewDevice] = useState<"phone" | "tablet" | "desktop">("phone");
     const [workspaceName, setWorkspaceName] = useState("");
     const [workspaceSlug, setWorkspaceSlug] = useState<string | null>(null);
@@ -181,26 +195,23 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
     const [lastAutosaveAt, setLastAutosaveAt] = useState<Date | null>(null);
     const [isMeetingLoaded, setIsMeetingLoaded] = useState(!initialMeetingId);
     const [meetingStatus, setMeetingStatus] = useState<MeetingStatus | null>(null);
+    const [planType, setPlanType] = useState<PlanType>(null);
+    const [linkedEvent, setLinkedEvent] = useState<{
+        id: string;
+        title: string;
+        start_at: string;
+        location: string | null;
+        workspace_event_id?: string | null;
+    } | null>(null);
     const draftHashRef = useRef<string>("");
     const serverHashRef = useRef<string>("");
-
-    // Zoom — track if this meeting has a linked Zoom meeting so we can sync on save
-    const [linkedZoomMeetingId, setLinkedZoomMeetingId] = useState<string | null>(null);
-    const [zoomJoinUrl, setZoomJoinUrl] = useState<string | null>(null);
-    const [zoomStartUrl, setZoomStartUrl] = useState<string | null>(null);
-    const [zoomPasscode, setZoomPasscode] = useState<string | null>(null);
-    const [isZoomConnected, setIsZoomConnected] = useState(false);
-    const [zoomSheetOpen, setZoomSheetOpen] = useState(false);
-    const [zoomCreateOpen, setZoomCreateOpen] = useState(false);
-    const [zoomCreateDuration, setZoomCreateDuration] = useState(0);
-    const [isCreatingZoom, setIsCreatingZoom] = useState(false);
 
     const draftStorageKey = useMemo(
         () =>
             initialMeetingId
                 ? `beespo:meeting:draft:${initialMeetingId}`
-                : `beespo:meeting:draft:new:${initialTemplateId || "none"}`,
-        [initialMeetingId, initialTemplateId]
+                : `beespo:meeting:draft:new:${initialEntryType}:${initialTemplateId || "none"}`,
+        [initialMeetingId, initialEntryType, initialTemplateId]
     );
 
     // DnD sensors
@@ -306,21 +317,6 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                 }
                 const role = profile?.role;
                 setIsLeader(role === "leader" || role === "admin");
-
-                // Check if user has Zoom connected
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const { data: zoomApp } = await (supabase.from("apps") as any)
-                    .select("id")
-                    .eq("slug", "zoom")
-                    .single();
-                if (zoomApp?.id) {
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    const { count } = await (supabase.from("app_tokens") as any)
-                        .select("*", { count: "exact", head: true })
-                        .eq("user_id", user.id)
-                        .eq("app_id", zoomApp.id);
-                    setIsZoomConnected((count ?? 0) > 0);
-                }
             }
 
             // Only load Beespo official + user's own workspace templates
@@ -349,7 +345,16 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
             // Load meeting details
             const { data: meetingData, error: meetingError } = await supabase
                 .from("meetings")
-                .select("*")
+                .select(`
+                    *,
+                    event:events!event_id (
+                        id,
+                        title,
+                        start_at,
+                        location,
+                        workspace_event_id
+                    )
+                `)
                 .eq("id", initialMeetingId)
                 .single();
 
@@ -363,6 +368,18 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
             }
 
             setMeetingStatus((meeting.status as MeetingStatus) || "scheduled");
+            setPlanType((meeting.plan_type as PlanType) ?? null);
+            setLinkedEvent(
+                meeting.event
+                    ? {
+                        id: meeting.event.id,
+                        title: meeting.event.title,
+                        start_at: meeting.event.start_at,
+                        location: meeting.event.location ?? null,
+                        workspace_event_id: meeting.event.workspace_event_id ?? null,
+                    }
+                    : null
+            );
             if (meeting.status === "draft") {
                 setBuilderMode("planning");
             }
@@ -372,18 +389,6 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                 const scheduledDate = new Date(meeting.scheduled_date);
                 form.setValue("date", scheduledDate);
                 form.setValue("time", format(scheduledDate, "HH:mm"));
-            }
-            if (meeting.zoom_meeting_id) {
-                setLinkedZoomMeetingId(meeting.zoom_meeting_id);
-            }
-            if (meeting.zoom_join_url) {
-                setZoomJoinUrl(meeting.zoom_join_url);
-            }
-            if (meeting.zoom_start_url) {
-                setZoomStartUrl(meeting.zoom_start_url);
-            }
-            if (meeting.zoom_passcode) {
-                setZoomPasscode(meeting.zoom_passcode);
             }
             if (meeting.notes && typeof meeting.notes === "string") {
                 setMeetingNotes(meeting.notes);
@@ -838,7 +843,7 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
 
             const { data: linkedAnnouncements } = await (supabase
                 .from("announcement_templates") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
-                .select("announcement_id, announcements(id, title, content, status, priority)")
+                .select("announcement_id, announcements(id, title, content, status, priority, display_start, display_until)")
                 .eq("template_id", templateId);
 
             // Build canvas items
@@ -1703,16 +1708,6 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                 // Fire-and-forget
                 saveMeetingMarkdown(initialMeetingId, markdown).catch(() => { });
 
-                // Sync the linked Zoom meeting's start time (keepalive so it survives the redirect)
-                if (linkedZoomMeetingId) {
-                    fetch(`/api/meetings/${initialMeetingId}/zoom`, {
-                        method: "PATCH",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ start_time: scheduledDate.toISOString() }),
-                        keepalive: true,
-                    }).catch(() => { });
-                }
-
                 toast.success("Meeting updated", { description: "Redirecting..." });
                 localStorage.removeItem(draftStorageKey);
                 router.push(`/meetings/${initialMeetingId}`);
@@ -1817,7 +1812,7 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
         } finally {
             setIsCreating(false);
         }
-    }, [canvasItems, date, time, title, selectedTemplateId, router, form, workspaceName, initialMeetingId, meetingNotes, linkedZoomMeetingId, canEdit, draftStorageKey, meetingStatus]);
+    }, [canvasItems, date, time, title, selectedTemplateId, router, form, workspaceName, initialMeetingId, meetingNotes, canEdit, draftStorageKey, meetingStatus]);
 
     // Duplicate the current agenda as a brand-new meeting with a different name
     const handleSaveAsNew = useCallback(async (newTitle: string) => {
@@ -2056,65 +2051,9 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
         }
     }, [canvasItems]);
 
-    // ─── Zoom handlers ──────────────────────────────────────────────
-    const handleCreateZoom = useCallback(() => {
-        if (!isZoomConnected) {
-            toast.error("Zoom not connected", {
-                description: "Go to Settings → Integrations to connect your Zoom account.",
-            });
-            return;
-        }
-        const duration = canvasItems.reduce((acc, item) => acc + (item.duration_minutes || 0), 0);
-        setZoomCreateDuration(duration > 0 ? duration : 40);
-        setZoomCreateOpen(true);
-    }, [isZoomConnected, canvasItems]);
-
-    const handleConfirmCreateZoom = useCallback(async () => {
-        if (!initialMeetingId) return;
-        setIsCreatingZoom(true);
-        setZoomCreateOpen(false);
-        try {
-            const res = await fetch(`/api/meetings/${initialMeetingId}/zoom`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ duration: zoomCreateDuration }),
-            });
-            if (!res.ok) {
-                const data = await res.json();
-                if (data.error === "zoom_not_connected") {
-                    toast.error("Zoom not connected", {
-                        description: "Go to Settings → Integrations to connect your Zoom account.",
-                    });
-                } else {
-                    toast.error("Failed to create Zoom meeting. Please try again.");
-                }
-                return;
-            }
-            const result = await res.json();
-            setZoomJoinUrl(result.zoom_join_url);
-            setZoomStartUrl(result.zoom_start_url);
-            setZoomPasscode(result.zoom_passcode);
-            if (result.zoom_meeting_id) setLinkedZoomMeetingId(result.zoom_meeting_id);
-            toast.success("Zoom meeting created");
-        } catch {
-            toast.error("Failed to create Zoom meeting. Please try again.");
-        } finally {
-            setIsCreatingZoom(false);
-        }
-    }, [initialMeetingId, zoomCreateDuration]);
-
     // ─── Delete handler ──────────────────────────────────────────
     const handleDeleteMeeting = useCallback(async () => {
         if (!initialMeetingId) return;
-
-        // Cancel linked Zoom meeting first
-        if (linkedZoomMeetingId) {
-            try {
-                await fetch(`/api/meetings/${initialMeetingId}/zoom`, { method: "DELETE" });
-            } catch {
-                // Non-fatal — proceed with deletion
-            }
-        }
 
         const supabase = createClient();
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -2124,7 +2063,7 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
 
         router.push("/meetings/agendas");
         router.refresh();
-    }, [initialMeetingId, linkedZoomMeetingId, router]);
+    }, [initialMeetingId, router]);
 
     const isValid = title.trim() !== "" && date !== undefined;
     const totalDuration = canvasItems.reduce((acc, item) => acc + (item.duration_minutes || 0), 0);
@@ -2200,21 +2139,53 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                                 programPreviewDevice={programPreviewDevice}
                                 onProgramPreviewDeviceChange={setProgramPreviewDevice}
                                 workspaceSlug={workspaceSlug}
-                                zoomJoinUrl={zoomJoinUrl}
-                                isZoomConnected={isZoomConnected}
-                                isCreatingZoom={isCreatingZoom}
-                                onOpenZoomSheet={() => setZoomSheetOpen(true)}
-                                onAddZoom={handleCreateZoom}
                                 onDelete={handleDeleteMeeting}
                                 isLive={isLive}
                                 canEdit={canEdit}
                                 lastAutosaveAt={lastAutosaveAt}
                                 autosaveStatus={autosaveStatus}
+                                planType={planType}
+                                linkedEvent={linkedEvent}
+                                meetingStatus={meetingStatus}
+                                onMeetingMetaChange={(updates) => {
+                                    if (updates.planType !== undefined) {
+                                        setPlanType(updates.planType);
+                                    }
+                                    if (updates.linkedEvent !== undefined) {
+                                        setLinkedEvent(updates.linkedEvent);
+                                    }
+                                }}
                             />
                         </div>
 
                         {builderMode === "planning" && (
                             <>
+                                {/* Unified plan top bar (inline essentials + role popover) */}
+                                <MeetingPlanTopBar
+                                    title={title}
+                                    onTitleChange={canEdit ? setTitle : () => {}}
+                                    date={date ?? null}
+                                    onDateChange={(d) => canEdit && form.setValue("date", d, { shouldValidate: true })}
+                                    time={time ?? ""}
+                                    onTimeChange={(t) => canEdit && form.setValue("time", t, { shouldValidate: true })}
+                                    presiding={presidingValue ?? ""}
+                                    onPresidingChange={(v) => canEdit && form.setValue("presiding", v, { shouldValidate: true })}
+                                    conducting={conductingValue ?? ""}
+                                    onConductingChange={(v) => canEdit && form.setValue("conducting", v, { shouldValidate: true })}
+                                    chorister={choristerValue ?? ""}
+                                    onChoristerChange={(v) => canEdit && form.setValue("chorister", v, { shouldValidate: true })}
+                                    organist={pianistOrganistValue ?? ""}
+                                    onOrganistChange={(v) => canEdit && form.setValue("pianistOrganist", v, { shouldValidate: true })}
+                                    location={linkedEvent?.location ?? null}
+                                    templates={templates}
+                                    templateId={selectedTemplateId === "none" ? null : selectedTemplateId}
+                                    onTemplateChange={(next) =>
+                                        canEdit && form.setValue("templateId", next, { shouldValidate: true })
+                                    }
+                                    canvasItemCount={canvasItems.length}
+                                    canEdit={canEdit}
+                                />
+
                                 {/* Mobile sheet toggle (hidden on lg+) — toolbox & properties */}
                                 <div className="lg:hidden flex items-center justify-between px-4 py-2 border-b bg-background shrink-0">
                                     <Sheet>
@@ -2262,23 +2233,8 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                                     </Sheet>
                                 </div>
 
-                                {/* 3-Column Workspace */}
+                                {/* 2-Column Workspace (canvas left, toolbox right) */}
                                 <div className="flex-1 flex overflow-hidden">
-                                    {/* Left Pane - Library */}
-                                    <div className="hidden lg:block w-64 h-full overflow-hidden shrink-0">
-                                        <ToolboxPane
-                                            onAddItem={canEdit ? handleAddCanvasItem : () => {}}
-                                            onItemsLoaded={setToolboxItems}
-                                            pinnedIds={pinnedToolboxIds}
-                                            recentIds={recentToolboxIds}
-                                            onTogglePin={togglePinnedToolboxItem}
-                                            outlineItems={canvasItems}
-                                            selectedItemId={selectedItemId}
-                                            onSelectItem={setSelectedItemId}
-                                            onDuplicateItem={canEdit ? handleDuplicateItem : undefined}
-                                        />
-                                    </div>
-
                                     {/* Center Pane - Canvas */}
                                     <div className="flex-1 h-full overflow-hidden min-w-0">
                                         <AgendaCanvas
@@ -2317,13 +2273,19 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                                         />
                                     </div>
 
-                                    {/* Right Pane - Properties */}
-                                    <div className="hidden lg:block w-[260px] h-full overflow-hidden shrink-0">
-                                        <PropertiesPane
-                                            templates={templates}
-                                            meetingNotes={meetingNotes}
-                                            onUpdateMeetingNotes={setMeetingNotes}
-                                            readOnly={!canEdit}
+                                    {/* Right Pane - Toolbox (Library) */}
+                                    <div className="hidden lg:block w-80 h-full overflow-hidden shrink-0 border-l border-border/60">
+                                        <ToolboxPane
+                                            onAddItem={canEdit ? handleAddCanvasItem : () => {}}
+                                            onItemsLoaded={setToolboxItems}
+                                            pinnedIds={pinnedToolboxIds}
+                                            recentIds={recentToolboxIds}
+                                            onTogglePin={togglePinnedToolboxItem}
+                                            outlineItems={canvasItems}
+                                            selectedItemId={selectedItemId}
+                                            onSelectItem={setSelectedItemId}
+                                            onDuplicateItem={canEdit ? handleDuplicateItem : undefined}
+                                            planType={initialEntryType === "program" ? "program" : "agenda"}
                                         />
                                     </div>
                                 </div>
@@ -2511,87 +2473,6 @@ export function MeetingBuilder({ initialTemplateId, initialMeetingId }: MeetingB
                                 >
                                     {isSavingTemplate ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                                     Save Template
-                                </Button>
-                            </DialogFooter>
-                        </DialogContent>
-                    </Dialog>
-                    {/* Zoom management sheet */}
-                    {initialMeetingId && zoomJoinUrl && (
-                        <ZoomMeetingSheet
-                            meeting={{
-                                id: initialMeetingId,
-                                title: form.getValues("title"),
-                                scheduled_date: (() => {
-                                    const d = form.getValues("date");
-                                    const t = form.getValues("time");
-                                    if (!d) return null;
-                                    const dt = new Date(d);
-                                    if (t) {
-                                        const [h, m] = t.split(":");
-                                        dt.setHours(parseInt(h), parseInt(m));
-                                    }
-                                    return dt.toISOString();
-                                })(),
-                                zoom_meeting_id: linkedZoomMeetingId,
-                                zoom_join_url: zoomJoinUrl,
-                                zoom_start_url: zoomStartUrl,
-                                zoom_passcode: zoomPasscode,
-                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                            } as any}
-                            totalDuration={totalDuration}
-                            isZoomFreeAccount={null}
-                            open={zoomSheetOpen}
-                            onOpenChange={setZoomSheetOpen}
-                            onMeetingUpdate={(fields) => {
-                                if ("zoom_join_url" in fields) setZoomJoinUrl(fields.zoom_join_url ?? null);
-                                if ("zoom_start_url" in fields) setZoomStartUrl(fields.zoom_start_url ?? null);
-                                if ("zoom_passcode" in fields) setZoomPasscode(fields.zoom_passcode ?? null);
-                                if ("zoom_meeting_id" in fields) setLinkedZoomMeetingId(fields.zoom_meeting_id ?? null);
-                            }}
-                        />
-                    )}
-
-                    {/* Add Zoom — create dialog */}
-                    <Dialog open={zoomCreateOpen} onOpenChange={(o) => !isCreatingZoom && setZoomCreateOpen(o)}>
-                        <DialogContent className="sm:max-w-sm">
-                            <DialogHeader>
-                                <DialogTitle className="flex items-center gap-2">
-                                    <ZoomIcon className="h-4 w-4" />
-                                    Add Zoom Meeting
-                                </DialogTitle>
-                            </DialogHeader>
-                            <div className="space-y-4 py-1">
-                                <div className="space-y-1.5">
-                                    <label className="text-sm font-medium">Duration (minutes)</label>
-                                    <Input
-                                        type="number"
-                                        min={1}
-                                        max={600}
-                                        value={zoomCreateDuration}
-                                        onChange={(e) => setZoomCreateDuration(Number(e.target.value))}
-                                        className="h-9"
-                                    />
-                                    {totalDuration === 0 && (
-                                        <p className="text-xs text-muted-foreground">
-                                            No items are timed yet — enter a duration manually.
-                                        </p>
-                                    )}
-                                </div>
-                                <div className="flex gap-2.5 rounded-md border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-400">
-                                    <Info className="h-3.5 w-3.5 mt-0.5 shrink-0" />
-                                    <span>
-                                        {zoomCreateDuration > 40
-                                            ? "Free Zoom accounts are capped at 40 minutes. Participants may be disconnected after that."
-                                            : "Free Zoom accounts are limited to 40-minute meetings. Upgrade at zoom.us for longer sessions."}
-                                    </span>
-                                </div>
-                            </div>
-                            <DialogFooter>
-                                <Button variant="outline" size="sm" type="button" onClick={() => setZoomCreateOpen(false)}>
-                                    Cancel
-                                </Button>
-                                <Button size="sm" type="button" onClick={handleConfirmCreateZoom} disabled={!zoomCreateDuration}>
-                                    Create Zoom Meeting
                                 </Button>
                             </DialogFooter>
                         </DialogContent>

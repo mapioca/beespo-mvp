@@ -104,37 +104,27 @@ export interface OnboardingStep {
   canSkip: boolean;
 }
 
-// Step configuration for workspace creation flow (5 steps)
+// Step configuration for workspace creation flow.
+// Beespo currently only supports the bishopric of a ward, so the unit-type
+// and organization steps are hard-coded and removed from the wizard.
 export const ONBOARDING_STEPS: OnboardingStep[] = [
   {
     id: 1,
-    title: 'Unit Type',
-    description: 'What type of unit are you serving in?',
+    title: 'Calling',
+    description: 'What is your calling in the bishopric?',
     canSkip: false,
   },
   {
     id: 2,
-    title: 'Organization',
-    description: 'Which organization are you part of?',
+    title: 'Ward',
+    description: 'What is the name of your ward?',
     canSkip: false,
   },
   {
     id: 3,
-    title: 'Role',
-    description: 'What is your calling or role?',
-    canSkip: false,
-  },
-  {
-    id: 4,
-    title: 'Unit Name',
-    description: 'What is the name of your unit?',
-    canSkip: false,
-  },
-  {
-    id: 5,
     title: 'Teammates',
-    description: 'Invite your presidency or team members',
-    canSkip: false,
+    description: 'Invite the rest of your bishopric',
+    canSkip: true,
   },
 ];
 

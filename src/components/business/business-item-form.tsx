@@ -2,16 +2,9 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -19,32 +12,37 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
-import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { TemplateSelector } from "@/components/templates/template-selector";
+import { Check } from "lucide-react";
+import { PickerModal } from "@/components/ui/picker-modal";
+import { createClient } from "@/lib/supabase/client";
+import {
+  getDirectoryCache,
+  setDirectoryCache,
+  clearDirectoryCache,
+  getWorkspaceProfile,
+} from "@/lib/cache/form-data-cache";
+import {
+  ModalForm,
+  ModalFormBody,
+  ModalFormFooter,
+  ModalFormSection,
+} from "@/components/ui/modal-form-layout";
+import callingsCatalog from "@/data/callings.json";
 import {
   generateBusinessScript,
   validateBusinessItemDetails,
   PRIESTHOOD_OFFICES,
   getPriesthoodFromOffice,
-  formatOffice,
-  formatPriesthood,
   type Language,
   type Gender,
   type PriesthoodOffice,
   type BusinessItemDetails,
   type BusinessItem,
 } from "@/lib/business-script-generator";
-import {
-  FileText,
-  User,
-  Briefcase,
-  AlertCircle,
-  CheckCircle2,
-} from "lucide-react";
+
+const escapeRegExp = (value: string): string =>
+  value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 // Props for the form
 interface BusinessItemFormProps {
@@ -65,6 +63,7 @@ interface BusinessItemFormProps {
   isLoading?: boolean;
   // Mode
   mode?: "create" | "edit";
+  onCancel?: () => void;
 }
 
 // Form data structure
@@ -76,6 +75,7 @@ export interface BusinessItemFormData {
   actionDate: string;
   notes: string;
   details: BusinessItemDetails;
+  templateIds: string[];
   templateId: string | null;
 }
 
@@ -111,13 +111,6 @@ const CATEGORY_OPTIONS = [
     requiresOffice: true,
   },
   {
-    value: "setting_apart",
-    label: "Setting Apart",
-    description: "Sustain and set apart for a calling",
-    requiresCalling: true,
-    requiresGender: true,
-  },
-  {
     value: "other",
     label: "Other",
     description: "Custom business item",
@@ -126,31 +119,73 @@ const CATEGORY_OPTIONS = [
   },
 ];
 
+interface DirectoryPersonOption {
+  id: string;
+  name: string;
+  gender: Gender | null;
+}
+
+type CallingLevel = "ward" | "branch" | "stake" | "district";
+
+interface CallingCatalogEntry {
+  id: string;
+  organization: string;
+  level: CallingLevel;
+  labels: { en: string; es: string };
+  active: boolean;
+}
+
+const mapWorkspaceTypeToCallingLevel = (workspaceType: string | null): CallingLevel | null => {
+  if (workspaceType === "group") return "ward";
+  if (
+    workspaceType === "ward" ||
+    workspaceType === "branch" ||
+    workspaceType === "stake" ||
+    workspaceType === "district"
+  ) {
+    return workspaceType;
+  }
+  return null;
+};
+
 export function BusinessItemForm({
   initialData,
   onSubmit,
   isLoading = false,
   mode = "create",
+  onCancel,
 }: BusinessItemFormProps) {
+  type RequiredFieldKey =
+    | "personName"
+    | "category"
+    | "positionCalling"
+    | "gender"
+    | "office";
+
   // Form state
   const [personName, setPersonName] = useState(initialData?.personName || "");
+  const [selectedDirectoryPersonId, setSelectedDirectoryPersonId] = useState<string>("");
+  const [personOpen, setPersonOpen] = useState(false);
+  const [personSearch, setPersonSearch] = useState("");
+  const [directoryPeople, setDirectoryPeople] = useState<DirectoryPersonOption[]>([]);
+  const [isDirectoryLoading, setIsDirectoryLoading] = useState(false);
+  const [isUpdatingDirectoryGender, setIsUpdatingDirectoryGender] = useState(false);
+  const [workspaceCallingLevel, setWorkspaceCallingLevel] = useState<CallingLevel | null>(null);
   const [positionCalling, setPositionCalling] = useState(
     initialData?.positionCalling || ""
   );
   const [category, setCategory] = useState(initialData?.category || "");
-  const [status, setStatus] = useState(initialData?.status || "pending");
-  const [actionDate, setActionDate] = useState(initialData?.actionDate || "");
-  const [notes, setNotes] = useState(initialData?.notes || "");
-  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(
-    initialData?.templateId || null
+  const [notes] = useState(initialData?.notes || "");
+  const [selectedTemplateIds] = useState<string[]>(
+    initialData?.templateId ? [initialData.templateId] : []
   );
+  const [callingOpen, setCallingOpen] = useState(false);
+  const [callingSearch, setCallingSearch] = useState("");
+  const [selectedCallingId, setSelectedCallingId] = useState<string>("");
 
   // Details state (structured metadata)
-  const [language, setLanguage] = useState<Language>(
+  const [language] = useState<Language>(
     initialData?.details?.language || "ENG"
-  );
-  const [gender, setGender] = useState<Gender | undefined>(
-    initialData?.details?.gender
   );
   const [office, setOffice] = useState<PriesthoodOffice | undefined>(
     initialData?.details?.office
@@ -158,9 +193,50 @@ export function BusinessItemForm({
   const [customScript, setCustomScript] = useState(
     initialData?.details?.customScript || ""
   );
+  const [touched, setTouched] = useState<Record<RequiredFieldKey, boolean>>({
+    personName: false,
+    category: false,
+    positionCalling: false,
+    gender: false,
+    office: false,
+  });
 
   // Get current category config
   const categoryConfig = CATEGORY_OPTIONS.find((c) => c.value === category);
+  const selectedDirectoryPerson = useMemo(
+    () => directoryPeople.find((person) => person.id === selectedDirectoryPersonId) ?? null,
+    [directoryPeople, selectedDirectoryPersonId]
+  );
+  const languageKey = language === "SPA" ? "es" : "en";
+  const availableCallings = useMemo(() => {
+    const callings = callingsCatalog as CallingCatalogEntry[];
+    return callings.filter((calling) =>
+      calling.active &&
+      (workspaceCallingLevel ? calling.level === workspaceCallingLevel : false)
+    );
+  }, [workspaceCallingLevel]);
+  const filteredCallings = useMemo(() => {
+    if (!callingSearch.trim()) return availableCallings;
+    const q = callingSearch.toLowerCase();
+    return availableCallings.filter((calling) =>
+      calling.labels.en.toLowerCase().includes(q) ||
+      calling.labels.es.toLowerCase().includes(q) ||
+      calling.organization.toLowerCase().includes(q)
+    );
+  }, [availableCallings, callingSearch]);
+  const selectedCalling = useMemo(
+    () => availableCallings.find((calling) => calling.id === selectedCallingId) ?? null,
+    [availableCallings, selectedCallingId]
+  );
+  const filteredPeople = useMemo(() => {
+    const q = personSearch.trim().toLowerCase();
+    if (!q) return directoryPeople;
+    return directoryPeople.filter((p) => p.name.toLowerCase().includes(q));
+  }, [directoryPeople, personSearch]);
+  const effectiveGender: Gender | undefined =
+    category === "ordination"
+      ? "male"
+      : selectedDirectoryPerson?.gender ?? undefined;
 
   // Auto-set priesthood type from office
   const priesthood = office ? getPriesthoodFromOffice(office) : undefined;
@@ -174,13 +250,13 @@ export function BusinessItemForm({
       notes: notes || null,
       details: {
         language,
-        gender: category === "ordination" ? "male" : gender,
+        gender: effectiveGender,
         office,
         priesthood,
         customScript: category === "other" ? customScript : undefined,
       },
     }),
-    [personName, positionCalling, category, notes, language, gender, office, priesthood, customScript]
+    [personName, positionCalling, category, notes, language, effectiveGender, office, priesthood, customScript]
   );
 
   // Generate script preview
@@ -189,39 +265,114 @@ export function BusinessItemForm({
     return generateBusinessScript(businessItem);
   }, [businessItem, category]);
 
-  // Validation
+  const scriptVariableTokens = useMemo(() => {
+    const tokens = new Set<string>();
+
+    const trimmedName = personName.trim();
+    const trimmedCalling = positionCalling.trim();
+    if (trimmedName) tokens.add(trimmedName);
+    if (trimmedCalling) tokens.add(trimmedCalling);
+
+    return Array.from(tokens)
+      .map((token) => token.trim())
+      .filter(Boolean)
+      .sort((a, b) => b.length - a.length);
+  }, [personName, positionCalling]);
+  useMemo(() => {
+    if (!scriptPreview || scriptVariableTokens.length === 0) return scriptPreview;
+
+    const regex = new RegExp(`(${scriptVariableTokens
+        .map((token) => {
+          const escapedToken = escapeRegExp(token);
+          const shouldUseWordBoundaries = /^[\p{L}\p{N}_]+$/u.test(token);
+          return shouldUseWordBoundaries ? `\\b${escapedToken}\\b` : escapedToken;
+        })
+        .join("|")})`, "g");
+    const tokenSet = new Set(scriptVariableTokens);
+
+    return scriptPreview.split(regex).map((part, index) => {
+      if (!part) return null;
+      if (tokenSet.has(part)) {
+        return (
+            <span key={`${part}-${index}`} className="font-medium text-[hsl(var(--brand))]">
+            {part}
+          </span>
+        );
+      }
+
+      return <span key={`text-${index}`}>{part}</span>;
+    });
+  }, [scriptPreview, scriptVariableTokens]);
+
+  /** Validation **/
   const validation = useMemo(() => {
     if (!category) return { valid: false, errors: ["Select a category"] };
-    if (!personName.trim()) return { valid: false, errors: ["Name is required"] };
+    if (!selectedDirectoryPersonId) return { valid: false, errors: ["Person is required"] };
 
     return validateBusinessItemDetails(
       category,
       positionCalling,
       businessItem.details
     );
-  }, [category, personName, positionCalling, businessItem.details]);
+  }, [category, selectedDirectoryPersonId, positionCalling, businessItem.details]);
+
+  const fieldErrors = useMemo(() => {
+    const errors: Partial<Record<RequiredFieldKey, string>> = {};
+
+    if (!selectedDirectoryPersonId) {
+      errors.personName = "Person name is required.";
+    }
+    if (!category) {
+      errors.category = "Category is required.";
+    }
+    if (categoryConfig?.requiresCalling && !positionCalling.trim()) {
+      errors.positionCalling = "Calling is required.";
+    }
+    if (categoryConfig?.requiresOffice && !office) {
+      errors.office = "Priesthood office is required.";
+    }
+    return errors;
+  }, [selectedDirectoryPersonId, category, categoryConfig, positionCalling, office]);
+
+  const markTouched = (field: RequiredFieldKey) => {
+    setTouched((prev) => ({ ...prev, [field]: true }));
+  };
+
+  const touchAllRequiredFields = () => {
+    setTouched({
+      personName: true,
+      category: true,
+      positionCalling: Boolean(categoryConfig?.requiresCalling),
+      office: Boolean(categoryConfig?.requiresOffice),
+      gender: Boolean(categoryConfig?.requiresGender),
+    });
+  };
 
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!validation.valid) return;
+    if (!validation.valid) {
+      touchAllRequiredFields();
+      return;
+    }
 
     const formData: BusinessItemFormData = {
       personName,
       positionCalling,
       category,
-      status,
-      actionDate,
+      status: "pending",
+      actionDate: "",
       notes,
       details: {
         language,
-        gender: category === "ordination" ? "male" : gender,
+        gender: effectiveGender,
         office,
         priesthood,
         customScript: category === "other" ? customScript : undefined,
       },
-      templateId: selectedTemplateId,
+      templateIds: selectedTemplateIds,
+      templateId: selectedTemplateIds[0] ?? null,
     };
 
     await onSubmit(formData);
@@ -234,382 +385,435 @@ export function BusinessItemForm({
     }
   }, [category]);
 
-  return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Main Form Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle>
-            {mode === "create" ? "Create New" : "Edit"} Business Item
-          </CardTitle>
-          <CardDescription>
-            Add a formal church procedure to track. The conducting script will
-            be generated automatically.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Person Name - Always visible */}
-          <div className="space-y-2">
-            <Label htmlFor="personName" className="flex items-center gap-2">
-              <User className="h-4 w-4" />
-              Person Name *
-            </Label>
-            <Input
-              id="personName"
-              value={personName}
-              onChange={(e) => setPersonName(e.target.value)}
-              placeholder="e.g., John Smith"
-              required
-              disabled={isLoading}
-            />
-          </div>
+  // Eagerly hydrate from cache on mount — the prefetch from the parent page
+  // will have already populated the module-level caches in most cases,
+  // so this runs synchronously with zero flash.
+  useEffect(() => {
+    const wp = getWorkspaceProfile();
+    if (wp) {
+      setWorkspaceCallingLevel(mapWorkspaceTypeToCallingLevel(wp.workspaceType));
+      const cached = getDirectoryCache(wp.workspaceId);
+      if (cached) {
+        setDirectoryPeople(cached);
+        return; // fully resolved from cache — no loading state at all
+      }
+    }
+    // Cache miss — fall back to async fetch
+    loadDirectoryPeople();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-          {/* Category Selection */}
-          <div className="space-y-2">
-            <Label htmlFor="category" className="flex items-center gap-2">
-              <Briefcase className="h-4 w-4" />
-              Category *
-            </Label>
+  const loadDirectoryPeople = async () => {
+    if (isDirectoryLoading) return;
+    setIsDirectoryLoading(true);
+    const supabase = createClient();
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      setIsDirectoryLoading(false);
+      return;
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: profile } = await (supabase.from("profiles") as any)
+      .select("workspace_id, workspaces(type)")
+      .eq("id", user.id)
+      .single();
+
+    if (!profile?.workspace_id) {
+      setIsDirectoryLoading(false);
+      return;
+    }
+
+    setWorkspaceCallingLevel(
+      mapWorkspaceTypeToCallingLevel(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ((profile as any).workspaces?.type as string | null) ?? null
+      )
+    );
+
+    // Return cached data if available
+    const cached = getDirectoryCache(profile.workspace_id);
+    if (cached) {
+      setDirectoryPeople(cached);
+      setIsDirectoryLoading(false);
+      return;
+    }
+
+    // Try with gender column first; fallback for environments where migration isn't applied yet.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data, error } = await (supabase.from("directory") as any)
+      .select("id, name, gender")
+      .eq("workspace_id", profile.workspace_id)
+      .order("name");
+
+    if (error) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: fallbackData, error: fallbackError } = await (supabase.from("directory") as any)
+        .select("id, name")
+        .eq("workspace_id", profile.workspace_id)
+        .order("name");
+
+      if (fallbackError) {
+        console.error("Failed to load members for business form:", fallbackError);
+        setIsDirectoryLoading(false);
+        return;
+      }
+
+      const normalized = ((fallbackData || []) as Array<{ id: string; name: string }>).map((person) => ({
+        ...person,
+        gender: null as null,
+      }));
+      setDirectoryCache(profile.workspace_id, normalized);
+      setDirectoryPeople(normalized);
+      setIsDirectoryLoading(false);
+      return;
+    }
+
+    const people = (data || []) as DirectoryPersonOption[];
+    setDirectoryCache(profile.workspace_id, people);
+    setDirectoryPeople(people);
+    setIsDirectoryLoading(false);
+  };
+
+  useEffect(() => {
+    if (!selectedDirectoryPersonId || !selectedDirectoryPerson) return;
+    setPersonName(selectedDirectoryPerson.name);
+  }, [selectedDirectoryPersonId, selectedDirectoryPerson]);
+
+  useEffect(() => {
+    if (!selectedCalling) {
+      if (categoryConfig?.requiresCalling) {
+        setPositionCalling("");
+      }
+      return;
+    }
+    setPositionCalling(selectedCalling.labels[languageKey]);
+  }, [selectedCalling, languageKey, categoryConfig?.requiresCalling]);
+
+  useEffect(() => {
+    if (!initialData?.positionCalling || selectedCallingId || availableCallings.length === 0) return;
+    const match = availableCallings.find((calling) =>
+      calling.labels.en === initialData.positionCalling ||
+      calling.labels.es === initialData.positionCalling
+    );
+    if (match) {
+      setSelectedCallingId(match.id);
+      setPositionCalling(match.labels[languageKey]);
+    }
+  }, [initialData?.positionCalling, selectedCallingId, availableCallings, languageKey]);
+
+  useEffect(() => {
+    if (!initialData?.personName || directoryPeople.length === 0 || selectedDirectoryPersonId) return;
+    const match = directoryPeople.find((person) => person.name === initialData.personName);
+    if (match) {
+      setSelectedDirectoryPersonId(match.id);
+      setPersonName(match.name);
+    }
+  }, [initialData?.personName, directoryPeople, selectedDirectoryPersonId]);
+
+  const handleSetDirectoryGender = async (value: Gender) => {
+    if (!selectedDirectoryPersonId || !selectedDirectoryPerson) return;
+    setIsUpdatingDirectoryGender(true);
+    const supabase = createClient();
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase.from("directory") as any)
+      .update({ gender: value })
+      .eq("id", selectedDirectoryPersonId);
+
+    if (error) {
+      console.error("Failed to update member gender:", error);
+      setIsUpdatingDirectoryGender(false);
+      return;
+    }
+
+    setDirectoryPeople((prev) => {
+      const updated = prev.map((person) =>
+        person.id === selectedDirectoryPersonId
+          ? { ...person, gender: value }
+          : person
+      );
+      // Keep cache in sync
+      clearDirectoryCache();
+      return updated;
+    });
+    setIsUpdatingDirectoryGender(false);
+  };
+
+  useEffect(() => {
+    setTouched((prev) => ({
+      ...prev,
+      positionCalling: categoryConfig?.requiresCalling ? prev.positionCalling : false,
+      office: categoryConfig?.requiresOffice ? prev.office : false,
+      gender: categoryConfig?.requiresGender ? prev.gender : false,
+    }));
+  }, [categoryConfig]);
+
+  return (
+    <ModalForm onSubmit={handleSubmit}>
+      <ModalFormBody className="w-full space-y-4 pt-2 pb-2">
+        <ModalFormSection>
+          <div className="max-w-[32rem] space-y-2">
+            <Label htmlFor="category">Category*</Label>
             <Select
               value={category}
-              onValueChange={setCategory}
+              onValueChange={(value) => {
+                setCategory(value);
+                markTouched("category");
+              }}
               disabled={isLoading}
               required
             >
-              <SelectTrigger id="category">
+              <SelectTrigger
+                id="category"
+                className={cn(
+                  touched.category && fieldErrors.category && "border-destructive focus:ring-destructive/30"
+                )}
+              >
                 <SelectValue placeholder="Select category" />
               </SelectTrigger>
               <SelectContent>
-                {CATEGORY_OPTIONS.map((opt) => (
+                {CATEGORY_OPTIONS
+                  .filter((opt) => opt.value !== "other")
+                  .map((opt) => (
                   <SelectItem key={opt.value} value={opt.value}>
-                    <div className="flex flex-col">
-                      <span>{opt.label}</span>
-                      <span className="text-xs text-muted-foreground">
-                        {opt.description}
-                      </span>
-                    </div>
+                    {opt.label}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
+            {touched.category && fieldErrors.category && (
+              <p className="text-xs text-destructive">{fieldErrors.category}</p>
+            )}
           </div>
 
-          {/* Script Language Selection */}
-          <div className="space-y-2">
-            <Label htmlFor="scriptLanguage" className="flex items-center gap-2">
-              <FileText className="h-4 w-4" />
-              Script Language *
-            </Label>
-            <Select
-              value={language}
-              onValueChange={(v) => setLanguage(v as Language)}
-              disabled={isLoading}
-              required
-            >
-              <SelectTrigger id="scriptLanguage">
-                <SelectValue placeholder="Select language" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ENG">English</SelectItem>
-                <SelectItem value="SPA">Español</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Conditional Fields Based on Category */}
-          {category && (
-            <div className="space-y-4 pt-4 border-t">
-              {/* Position/Calling - for sustaining, release, setting_apart */}
-              {categoryConfig?.requiresCalling && (
-                <div className="space-y-2">
-                  <Label htmlFor="positionCalling">
-                    Position/Calling *
-                  </Label>
-                  <Input
-                    id="positionCalling"
-                    value={positionCalling}
-                    onChange={(e) => setPositionCalling(e.target.value)}
-                    placeholder="e.g., Sunday School President"
-                    required
-                    disabled={isLoading}
+          <div className="grid max-w-[34rem] grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="personName">Person Name*</Label>
+              <Input
+                id="personName"
+                value={personName}
+                onClick={() => setPersonOpen(true)}
+                placeholder={isDirectoryLoading ? "Loading members..." : "Select a person"}
+                readOnly
+                disabled={isLoading}
+                className={cn(
+                  "cursor-pointer",
+                  touched.personName && fieldErrors.personName && "border-destructive focus:ring-destructive/30"
+                )}
+              />
+              <PickerModal
+                open={personOpen}
+                onOpenChange={(open) => { setPersonOpen(open); if (!open) setPersonSearch(""); }}
+                title="Assign person"
+                searchSlot={
+                  <input
+                    className="w-full bg-transparent px-4 py-2.5 text-sm outline-none placeholder:text-muted-foreground"
+                    placeholder={isDirectoryLoading ? "Loading..." : "Search members..."}
+                    value={personSearch}
+                    onChange={(e) => setPersonSearch(e.target.value)}
+                    autoFocus
                   />
-                </div>
+                }
+              >
+                {isDirectoryLoading ? (
+                  <div className="flex items-center justify-center py-10">
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
+                  </div>
+                ) : filteredPeople.length === 0 ? (
+                  <div className="px-5 py-8 text-center text-[13px] text-muted-foreground">No members match.</div>
+                ) : (
+                  filteredPeople.map((person) => (
+                    <button
+                      key={person.id}
+                      type="button"
+                      onClick={() => {
+                        setSelectedDirectoryPersonId(person.id);
+                        setPersonName(person.name);
+                        markTouched("personName");
+                        setPersonOpen(false);
+                        setPersonSearch("");
+                      }}
+                      className="flex w-full items-center gap-3 px-[18px] py-2 text-left transition-colors hover:bg-surface-hover"
+                    >
+                      <div className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-surface-sunken text-[11px] font-semibold text-muted-foreground">
+                        {person.name.trim().split(/\s+/).slice(0, 2).map((p) => p[0]?.toUpperCase()).join("")}
+                      </div>
+                      <span className="truncate text-[14px] text-foreground">{person.name}</span>
+                    </button>
+                  ))
+                )}
+              </PickerModal>
+              {touched.personName && fieldErrors.personName && (
+                <p className="text-xs text-destructive">{fieldErrors.personName}</p>
               )}
-
-              {/* Priesthood Office - for ordination */}
-              {categoryConfig?.requiresOffice && (
-                <div className="space-y-3">
-                  <Label>Priesthood Office *</Label>
-                  <div className="grid grid-cols-2 gap-4">
-                    {/* Aaronic Priesthood */}
-                    <div className="space-y-2">
-                      <Badge variant="outline" className="mb-2">
-                        Aaronic Priesthood
-                      </Badge>
-                      <RadioGroup
-                        value={office}
-                        onValueChange={(v) => setOffice(v as PriesthoodOffice)}
-                        className="space-y-2"
+              {selectedDirectoryPerson &&
+                categoryConfig?.requiresGender &&
+                !selectedDirectoryPerson.gender && (
+                  <div className="space-y-2 rounded-md border border-border/60 bg-muted/30 p-2.5">
+                    <p className="text-xs text-muted-foreground">
+                      This person is missing gender in Directory. Set it once to continue.
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleSetDirectoryGender("male")}
+                        disabled={isUpdatingDirectoryGender || isLoading}
+                        className="h-7 rounded-full px-2.5 text-[11px]"
                       >
-                        {PRIESTHOOD_OFFICES.filter(
-                          (o) => o.priesthood === "aaronic"
-                        ).map((o) => (
-                          <div
-                            key={o.value}
-                            className="flex items-center space-x-2"
-                          >
-                            <RadioGroupItem
-                              value={o.value}
-                              id={o.value}
-                              disabled={isLoading}
-                            />
-                            <Label
-                              htmlFor={o.value}
-                              className="font-normal cursor-pointer"
-                            >
-                              {o.label}
-                            </Label>
-                          </div>
-                        ))}
-                      </RadioGroup>
-                    </div>
-                    {/* Melchizedek Priesthood */}
-                    <div className="space-y-2">
-                      <Badge variant="outline" className="mb-2">
-                        Melchizedek Priesthood
-                      </Badge>
-                      <RadioGroup
-                        value={office}
-                        onValueChange={(v) => setOffice(v as PriesthoodOffice)}
-                        className="space-y-2"
+                        Set as Male
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleSetDirectoryGender("female")}
+                        disabled={isUpdatingDirectoryGender || isLoading}
+                        className="h-7 rounded-full px-2.5 text-[11px]"
                       >
-                        {PRIESTHOOD_OFFICES.filter(
-                          (o) => o.priesthood === "melchizedek"
-                        ).map((o) => (
-                          <div
-                            key={o.value}
-                            className="flex items-center space-x-2"
-                          >
-                            <RadioGroupItem
-                              value={o.value}
-                              id={o.value}
-                              disabled={isLoading}
-                            />
-                            <Label
-                              htmlFor={o.value}
-                              className="font-normal cursor-pointer"
-                            >
-                              {o.label}
-                            </Label>
-                          </div>
-                        ))}
-                      </RadioGroup>
+                        Set as Female
+                      </Button>
                     </div>
                   </div>
-                  {office && (
-                    <p className="text-sm text-muted-foreground">
-                      Selected: <strong>{formatOffice(office)}</strong> in the{" "}
-                      <strong>{formatPriesthood(priesthood)}</strong> Priesthood
-                    </p>
-                  )}
-                </div>
-              )}
-
-              {/* Gender Selection - for categories that need pronouns */}
-              {categoryConfig?.requiresGender && (
-                <div className="space-y-2">
-                  <Label>Gender (for correct pronouns) *</Label>
-                  <RadioGroup
-                    value={gender}
-                    onValueChange={(v) => setGender(v as Gender)}
-                    className="flex gap-4"
-                  >
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem
-                        value="male"
-                        id="male"
-                        disabled={isLoading}
-                      />
-                      <Label htmlFor="male" className="font-normal cursor-pointer">
-                        Brother (he/him)
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem
-                        value="female"
-                        id="female"
-                        disabled={isLoading}
-                      />
-                      <Label htmlFor="female" className="font-normal cursor-pointer">
-                        Sister (she/her)
-                      </Label>
-                    </div>
-                  </RadioGroup>
-                </div>
-              )}
-
-              {/* Custom Script - for "other" category */}
-              {category === "other" && (
-                <div className="space-y-2">
-                  <Label htmlFor="customScript">
-                    Custom Script (optional)
-                  </Label>
-                  <Textarea
-                    id="customScript"
-                    value={customScript}
-                    onChange={(e) => setCustomScript(e.target.value)}
-                    placeholder="Enter custom conducting script or leave blank to use notes"
-                    rows={4}
-                    disabled={isLoading}
-                  />
-                </div>
-              )}
-            </div>
-          )}
-
-          <Separator />
-
-          {/* Status and Notes */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="status">Status</Label>
-              <Select
-                value={status}
-                onValueChange={setStatus}
-                disabled={isLoading}
-              >
-                <SelectTrigger id="status">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
-                </SelectContent>
-              </Select>
+                )}
             </div>
 
-            {status === "completed" && (
+            {categoryConfig?.requiresOffice ? (
               <div className="space-y-2">
-                <Label htmlFor="actionDate">Action Date</Label>
+                <Label htmlFor="priesthoodOffice">Priesthood Office*</Label>
+                <Select
+                  value={office}
+                  onValueChange={(value) => {
+                    setOffice(value as PriesthoodOffice);
+                    markTouched("office");
+                  }}
+                  disabled={isLoading}
+                  required
+                >
+                  <SelectTrigger
+                    id="priesthoodOffice"
+                    className={cn(
+                      touched.office && fieldErrors.office && "border-destructive focus:ring-destructive/30"
+                    )}
+                  >
+                    <SelectValue placeholder="Select office" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PRIESTHOOD_OFFICES.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {touched.office && fieldErrors.office && (
+                  <p className="text-xs text-destructive">{fieldErrors.office}</p>
+                )}
+              </div>
+            ) : categoryConfig?.requiresCalling ? (
+              <div className="space-y-2">
+                <Label htmlFor="positionCalling">Calling*</Label>
                 <Input
-                  id="actionDate"
-                  type="date"
-                  value={actionDate}
-                  onChange={(e) => setActionDate(e.target.value)}
+                  id="positionCalling"
+                  value={selectedCalling ? selectedCalling.labels[languageKey] : ""}
+                  onClick={() => setCallingOpen(true)}
+                  placeholder="Select calling..."
+                  readOnly
+                  disabled={isLoading}
+                  className={cn(
+                    "cursor-pointer",
+                    touched.positionCalling && fieldErrors.positionCalling && "border-destructive"
+                  )}
+                />
+                <PickerModal
+                  open={callingOpen}
+                  onOpenChange={setCallingOpen}
+                  title="Select Calling"
+                  searchSlot={
+                    <input
+                      className="w-full bg-transparent px-4 py-2.5 text-sm outline-none placeholder:text-muted-foreground"
+                      placeholder="Search callings..."
+                      value={callingSearch}
+                      onChange={(e) => setCallingSearch(e.target.value)}
+                      autoFocus
+                    />
+                  }
+                >
+                  <div className="px-1">
+                    {filteredCallings.length === 0 && (
+                      <div className="px-2.5 py-6 text-center text-[13px] text-muted-foreground">
+                        {workspaceCallingLevel ? "No callings found." : "Unsupported workspace type for callings."}
+                      </div>
+                    )}
+                    {filteredCallings.map((calling) => (
+                      <button
+                        key={calling.id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedCallingId(calling.id);
+                          setPositionCalling(calling.labels[languageKey]);
+                          markTouched("positionCalling");
+                          setCallingOpen(false);
+                        }}
+                        className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left text-[13px] hover:bg-surface-hover"
+                      >
+                        <Check className={cn("h-4 w-4 shrink-0", selectedCallingId === calling.id ? "opacity-100" : "opacity-0")} />
+                        <span className="flex-1 truncate">{calling.labels[languageKey]}</span>
+                        <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">{calling.organization}</span>
+                      </button>
+                    ))}
+                  </div>
+                </PickerModal>
+                {touched.positionCalling && fieldErrors.positionCalling && (
+                  <p className="text-xs text-destructive">{fieldErrors.positionCalling}</p>
+                )}
+              </div>
+            ) : null}
+          </div>
+        </ModalFormSection>
+
+        {category && (
+          <ModalFormSection>
+            {category === "other" && (
+              <div className="max-w-[32rem] space-y-2">
+                <Label htmlFor="customScript">
+                  Custom Script (optional)
+                </Label>
+                <Textarea
+                  id="customScript"
+                  value={customScript}
+                  onChange={(e) => setCustomScript(e.target.value)}
+                  placeholder="Enter custom conducting script or leave blank to use notes"
+                  rows={3}
                   disabled={isLoading}
                 />
-                <p className="text-xs text-muted-foreground">
-                  Leave blank to use today&apos;s date
-                </p>
               </div>
             )}
-          </div>
+          </ModalFormSection>
+        )}
 
-          <div className="space-y-2">
-            <Label htmlFor="notes">Notes</Label>
-            <Textarea
-              id="notes"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Additional context or details (not shown in script)"
-              rows={2}
-              disabled={isLoading}
-            />
-          </div>
+      </ModalFormBody>
 
-          {/* Template Selector */}
-          <div className="pt-4 border-t">
-            <TemplateSelector
-              value={selectedTemplateId}
-              onChange={setSelectedTemplateId}
-              disabled={isLoading}
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Script Preview Card */}
-      {category && (
-        <Card
-          className={cn(
-            "border-2",
-            validation.valid ? "border-blue-200 bg-blue-50/50" : "border-amber-200 bg-amber-50/50"
-          )}
+      <ModalFormFooter>
+        <Button
+          type="button"
+          variant="ghost"
+          onClick={onCancel}
+          disabled={isLoading}
+          className="h-8 rounded-full px-3 text-xs"
         >
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <FileText className="h-5 w-5" />
-                Conducting Script Preview
-              </CardTitle>
-              {validation.valid ? (
-                <Badge
-                  variant="outline"
-                  className="bg-green-50 text-green-700 border-green-200"
-                >
-                  <CheckCircle2 className="h-3 w-3 mr-1" />
-                  Ready
-                </Badge>
-              ) : (
-                <Badge
-                  variant="outline"
-                  className="bg-amber-50 text-amber-700 border-amber-200"
-                >
-                  <AlertCircle className="h-3 w-3 mr-1" />
-                  Incomplete
-                </Badge>
-              )}
-            </div>
-            <CardDescription>
-              This is the official wording that will be displayed to the
-              conducting leader
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {/* Validation Errors */}
-            {!validation.valid && validation.errors.length > 0 && (
-              <div className="mb-4 p-3 bg-amber-100 rounded-md border border-amber-200">
-                <p className="text-sm font-medium text-amber-800 mb-1">
-                  Please complete the following:
-                </p>
-                <ul className="text-sm text-amber-700 list-disc list-inside">
-                  {validation.errors.map((error, i) => (
-                    <li key={i}>{error}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {/* Script Preview */}
-            <ScrollArea className="h-[180px]">
-              <div
-                className={cn(
-                  "p-4 rounded-md font-serif text-base leading-relaxed whitespace-pre-wrap",
-                  "bg-white border shadow-inner"
-                )}
-              >
-                {scriptPreview || (
-                  <span className="text-muted-foreground italic">
-                    Complete the form to see the script preview...
-                  </span>
-                )}
-              </div>
-            </ScrollArea>
-
-            <p className="text-xs text-muted-foreground mt-3 italic">
-              Note: This script follows General Handbook standards. The text in
-              [brackets] indicates where you need to pause or take action.
-            </p>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Submit Buttons */}
-      <div className="flex justify-end gap-3">
+          Cancel
+        </Button>
         <Button
           type="submit"
           disabled={isLoading || !validation.valid}
-          size="lg"
+          className="h-8 rounded-full px-3 text-xs"
         >
           {isLoading
             ? mode === "create"
@@ -619,7 +823,7 @@ export function BusinessItemForm({
             ? "Create Business Item"
             : "Save Changes"}
         </Button>
-      </div>
-    </form>
+      </ModalFormFooter>
+    </ModalForm>
   );
 }

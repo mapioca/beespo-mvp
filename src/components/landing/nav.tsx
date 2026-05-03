@@ -1,33 +1,166 @@
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
+"use client";
 
-export function Nav() {
+import Link from "next/link";
+import { Menu } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import {
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetDescription,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import { cn } from "@/lib/utils";
+import { LandingThemeToggle } from "@/components/landing/theme-toggle";
+
+const PUBLIC_NAV_ITEMS = [
+  { label: "Terms", href: "/terms" },
+  { label: "Privacy", href: "/privacy" },
+  { label: "Support", href: "/support" },
+] as const;
+
+const SIGN_IN_ITEM = { label: "Sign In", href: "/login" } as const;
+const GET_STARTED_ITEM = { label: "Get Started", href: "/signup" } as const;
+const OPEN_DASHBOARD_ITEM = { label: "Open Dashboard", href: "/dashboard" } as const;
+
+function isNavItemActive(pathname: string, href: string) {
+  if (pathname === href) return true;
+  if (href === "/") return pathname === "/";
+  return pathname.startsWith(`${href}/`);
+}
+
+type NavLinkItem = {
+  label: string;
+  href: string;
+};
+
+type LandingNavLinkVariant = "desktop" | "mobile";
+
+interface LandingNavLinkProps {
+  item: NavLinkItem;
+  pathname: string;
+  variant: LandingNavLinkVariant;
+  cta?: boolean;
+}
+
+function LandingNavLink({
+  item,
+  pathname,
+  variant,
+  cta = false,
+}: LandingNavLinkProps) {
+  const active = isNavItemActive(pathname, item.href);
+  const isDesktop = variant === "desktop";
+
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 h-16 bg-background/80 backdrop-blur-sm border-b">
-      <div className="container mx-auto h-full px-4 flex items-center justify-between">
+    <Button
+      asChild
+      variant={cta ? "default" : "ghost"}
+      size={isDesktop ? "sm" : undefined}
+      className={cn(
+        isDesktop
+          ? "h-9 px-3 text-[length:var(--landing-nav-link-font-size)] transition-colors"
+          : "h-11 justify-start px-3 text-[length:var(--landing-nav-link-font-size)] transition-colors",
+        cta &&
+          (isDesktop
+            ? "ml-1 h-9 px-4 text-[length:var(--landing-nav-link-font-size)]"
+            : "mt-2"),
+        !cta &&
+          (active
+            ? "bg-foreground text-background hover:bg-foreground/90"
+            : "hover:bg-accent hover:text-accent-foreground"),
+        cta && active && "bg-foreground/90"
+      )}
+    >
+      <Link href={item.href} aria-current={active ? "page" : undefined}>
+        {item.label}
+      </Link>
+    </Button>
+  );
+}
+
+export function Nav({ isAuthenticated = false }: { isAuthenticated?: boolean }) {
+  const pathname = usePathname();
+  const navItems = isAuthenticated
+    ? PUBLIC_NAV_ITEMS
+    : [...PUBLIC_NAV_ITEMS, SIGN_IN_ITEM];
+  const ctaItem = isAuthenticated ? OPEN_DASHBOARD_ITEM : GET_STARTED_ITEM;
+
+  return (
+    <nav
+      aria-label="Primary"
+      className="fixed left-0 right-0 top-0 z-50 h-[var(--landing-nav-height)] border-b bg-background/90 backdrop-blur-sm"
+    >
+      <div className="container mx-auto flex h-full items-center justify-between px-[var(--landing-nav-horizontal-padding)]">
         <Link
           href="/"
-          className="text-xl font-bold tracking-tight hover:opacity-80 transition-opacity"
+          className="text-[length:var(--landing-nav-logo-font-size)] font-bold tracking-tight transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+          style={{ color: "var(--lp-ink)" }}
         >
           Beespo
         </Link>
-        <div className="flex items-center gap-1">
-          <Button asChild variant="ghost" size="sm">
-            <Link href="/terms">Terms</Link>
-          </Button>
-          <Button asChild variant="ghost" size="sm">
-            <Link href="/privacy">Privacy</Link>
-          </Button>
-          <Button asChild variant="ghost" size="sm">
-            <Link href="/support">Support</Link>
-          </Button>
-          <Button asChild variant="ghost" size="sm">
-            <Link href="/docs">Docs</Link>
-          </Button>
-          <Button asChild variant="ghost" size="sm">
-            <Link href="/login">Sign In</Link>
-          </Button>
+        <div className="hidden items-center gap-1 sm:flex">
+          {navItems.map((item) => {
+            return (
+              <LandingNavLink
+                key={item.href}
+                item={item}
+                pathname={pathname || "/"}
+                variant="desktop"
+              />
+            );
+          })}
+          <LandingThemeToggle />
+          <LandingNavLink item={ctaItem} pathname={pathname || "/"} variant="desktop" cta />
         </div>
+        <Sheet>
+          <SheetTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-11 w-11 sm:hidden"
+              aria-label="Open navigation menu"
+            >
+              <Menu className="h-5 w-5" />
+            </Button>
+          </SheetTrigger>
+          <SheetContent
+            side="right"
+            className="w-[var(--landing-nav-mobile-panel-width)] px-4 transition-none data-[state=open]:duration-0 data-[state=closed]:duration-0 data-[state=open]:animate-none data-[state=closed]:animate-none"
+          >
+            <SheetTitle className="sr-only">Navigation</SheetTitle>
+            <SheetDescription className="sr-only">
+              Primary site navigation links
+            </SheetDescription>
+            <div className="mt-10 flex flex-col gap-2">
+              {navItems.map((item) => {
+                return (
+                  <SheetClose key={item.href} asChild>
+                    <LandingNavLink
+                      item={item}
+                      pathname={pathname || "/"}
+                      variant="mobile"
+                    />
+                  </SheetClose>
+                );
+              })}
+              <SheetClose asChild>
+                <LandingNavLink
+                  item={ctaItem}
+                  pathname={pathname || "/"}
+                  variant="mobile"
+                  cta
+                />
+              </SheetClose>
+              <div className="mt-4 flex items-center justify-between rounded-md border px-3 py-2">
+                <span className="text-sm">Theme</span>
+                <LandingThemeToggle />
+              </div>
+            </div>
+          </SheetContent>
+        </Sheet>
       </div>
     </nav>
   );

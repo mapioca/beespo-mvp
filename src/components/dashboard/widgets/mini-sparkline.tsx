@@ -9,7 +9,7 @@ interface MiniSparklineProps {
 
 export function MiniSparkline({
   data,
-  color = "#3b82f6",
+  color = "hsl(var(--dashboard-sparkline))",
 }: MiniSparklineProps) {
   if (data.length < 2) return null;
 

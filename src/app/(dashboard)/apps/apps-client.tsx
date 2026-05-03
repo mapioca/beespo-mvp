@@ -34,8 +34,8 @@ export function AppsClient({ apps, workspaceApps, userRole }: AppsClientProps) {
 
     // Handle OAuth callback results
     useEffect(() => {
-        const connected = searchParams.get("connected");
-        const error = searchParams.get("error");
+        const connected = searchParams?.get("connected");
+        const error = searchParams?.get("error");
 
         if (connected) {
             toast.success("App Connected", {

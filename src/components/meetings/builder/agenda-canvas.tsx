@@ -110,109 +110,85 @@ function SortableAgendaRow({
                         {...attributes}
                         {...listeners}
                         className={cn(
-                            "rounded-xl border border-border/40 bg-background shadow-builder-card transition-all duration-200 group cursor-grab active:cursor-grabbing touch-none",
-                            "hover:bg-background hover:border-border/60",
-                            isSelected && "ring-2 ring-primary/25 border-primary/50 shadow-builder-card-selected",
-                            isDragging && "opacity-60 ring-2 ring-primary/30"
+                            "group cursor-grab active:cursor-grabbing touch-none transition-colors border-l-2",
+                            isSelected
+                                ? "bg-primary/5 border-l-primary"
+                                : "bg-zinc-50/60 border-l-transparent hover:bg-zinc-100/70 hover:border-l-zinc-200",
+                            isDragging && "opacity-50"
                         )}
                     >
                         {/* Container Header */}
-                        <div className="flex items-center gap-2 px-3 py-2.5">
-                            <div className="flex items-center gap-2">
-                                <div className={cn(
-                                    "w-[2px] h-6 rounded-full transition-colors",
-                                    isSelected ? "bg-primary/60" : "bg-border/60 group-hover:bg-border/90"
-                                )} />
-                                <button
-                                    type="button"
-                                    onClick={(e) => { e.stopPropagation(); onToggleExpand?.(); }}
-                                    className="p-1 hover:bg-control-hover rounded-md transition-colors"
-                                >
-                                    {isExpanded ? (
-                                        <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                                    ) : (
-                                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                                    )}
-                                </button>
-                                <span className="font-semibold text-builder-md flex-1 text-foreground pl-1">
-                                    {item.title}
-                                </span>
-                            </div>
-
-                            <span className="text-builder-xs text-muted-foreground tabular-nums">
-                                {childCount} item{childCount !== 1 ? "s" : ""}
+                        <div className="flex items-center gap-2 px-4 py-3">
+                            <GripVertical className="h-3.5 w-3.5 shrink-0 text-zinc-300 opacity-0 group-hover:opacity-100 transition-opacity -ml-1" />
+                            <button
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); onToggleExpand?.(); }}
+                                className="p-0.5 text-zinc-400 hover:text-zinc-600 transition-colors"
+                            >
+                                {isExpanded ? (
+                                    <ChevronDown className="h-3.5 w-3.5" />
+                                ) : (
+                                    <ChevronRight className="h-3.5 w-3.5" />
+                                )}
+                            </button>
+                            <span className="text-[13px] font-semibold text-zinc-800 flex-1 leading-snug">
+                                {item.title}
                             </span>
-
-                            <span className="text-builder-xs text-muted-foreground ml-3 tabular-nums">
+                            <span className="text-[11px] text-zinc-400 tabular-nums">
+                                {childCount} {childCount === 1 ? "item" : "items"}
+                            </span>
+                            <span className="text-[11px] font-medium text-zinc-400 tabular-nums w-8 text-right">
                                 {item.duration_minutes}m
                             </span>
-
-                            {onDuplicate && (
-                                <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="icon"
-                                    className={cn(
-                                        "h-7 w-7 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground/90 hover:text-foreground hover:bg-control-hover",
-                                        isSelected && "opacity-100 text-foreground bg-control-hover"
-                                    )}
-                                    onClick={(e) => { e.stopPropagation(); onDuplicate(); }}
-                                >
-                                    <Copy className="h-4 w-4" />
-                                </Button>
-                            )}
-
-                            <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                className={cn(
-                                    "h-7 w-7 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-foreground/90 hover:text-destructive hover:bg-destructive/10 ml-0.5",
-                                    isSelected && "opacity-100 text-foreground bg-control-hover"
+                            <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                                {onDuplicate && (
+                                    <Button type="button" variant="ghost" size="icon"
+                                        className="h-6 w-6 text-zinc-400 hover:text-zinc-600 hover:bg-zinc-100"
+                                        onClick={(e) => { e.stopPropagation(); onDuplicate(); }}>
+                                        <Copy className="h-3.5 w-3.5" />
+                                    </Button>
                                 )}
-                                onClick={(e) => { e.stopPropagation(); onRemove(); }}
-                            >
-                                <Trash2 className="h-4 w-4" />
-                            </Button>
+                                <Button type="button" variant="ghost" size="icon"
+                                    className="h-6 w-6 text-zinc-400 hover:text-red-500 hover:bg-red-50"
+                                    onClick={(e) => { e.stopPropagation(); onRemove(); }}>
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                </Button>
+                            </div>
                         </div>
 
-                        {/* Container Body — read-only child list */}
+                        {/* Container Body — child rows */}
                         {isExpanded && item.childItems && item.childItems.length > 0 && (
-                            <div className="px-3 pb-2 pt-0">
-                            <div className="pl-6 space-y-2">
-                                    {item.childItems.map((child) => (
-                                        <div
-                                            key={child.id}
-                                        className="flex flex-col gap-1.5 p-2.5 bg-background/80 rounded-lg border border-border/40"
+                            <div className="border-t border-zinc-100">
+                                {item.childItems.map((child, i) => (
+                                    <div
+                                        key={child.id}
+                                        className={cn(
+                                            "flex flex-col gap-0.5 py-2.5 pr-4 pl-12",
+                                            i < item.childItems!.length - 1 && "border-b border-zinc-100"
+                                        )}
                                     >
-                                        <div className="flex items-center gap-2">
-                                                <span className="text-builder-md font-medium flex-1 truncate">{child.title}</span>
-                                                {child.status && (
-                                    <span className="text-builder-2xs px-1.5 py-0.5 rounded bg-muted/60 capitalize font-medium">
-                                        {child.status.replace("_", " ")}
-                                    </span>
-                                                )}
-                                            </div>
-                                            {child.description && (
-                                                <p className="text-builder-xs text-muted-foreground italic line-clamp-2">
-                                                    {child.description}
-                                                </p>
+                                        <div className="flex items-start gap-2">
+                                            <span className="text-[13px] font-medium text-zinc-700 flex-1 leading-snug">{child.title}</span>
+                                            {child.status && (
+                                                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-zinc-100 text-zinc-500 capitalize font-medium shrink-0 mt-0.5">
+                                                    {child.status.replace("_", " ")}
+                                                </span>
                                             )}
                                         </div>
-                                    ))}
-                                </div>
+                                        {child.description && (
+                                            <p className="text-[12px] text-zinc-400 line-clamp-2 leading-relaxed">
+                                                {child.description}
+                                            </p>
+                                        )}
+                                    </div>
+                                ))}
                             </div>
                         )}
                     </div>
                 </PopoverTrigger>
                 {itemProperties && (
-                    <PopoverContent
-                        side="right"
-                        align="start"
-                        sideOffset={12}
-                        className="p-0 w-auto shadow-xl"
-                        onClick={(e) => e.stopPropagation()}
-                    >
+                    <PopoverContent side="right" align="start" sideOffset={12}
+                        className="p-0 w-auto shadow-xl" onClick={(e) => e.stopPropagation()}>
                         {itemProperties}
                     </PopoverContent>
                 )}
@@ -220,7 +196,7 @@ function SortableAgendaRow({
         );
     }
 
-    // Structural: Section Header — read-only
+    // Structural: Section Header
     if (item.structural_type === "section_header") {
         return (
             <Popover open={!!isSelected} onOpenChange={(open) => (open ? onSelect?.() : onDeselect?.())}>
@@ -230,68 +206,36 @@ function SortableAgendaRow({
                         style={style}
                         onClick={(e) => { e.stopPropagation(); onSelect?.(); }}
                         className={cn(
-                            "flex flex-col border border-border/40 rounded-xl bg-background shadow-builder-card transition-all duration-200 group cursor-grab active:cursor-grabbing touch-none",
-                            "hover:bg-background hover:border-border/60",
-                            isSelected && "ring-2 ring-primary/25 border-primary/50 shadow-builder-card-selected",
-                            isDragging && "opacity-60 ring-2 ring-primary/30"
+                            "flex items-center gap-2 px-4 py-2 group cursor-grab active:cursor-grabbing touch-none transition-colors",
+                            isSelected ? "bg-primary/5" : "bg-zinc-50/60 hover:bg-zinc-100/70",
+                            isDragging && "opacity-50"
                         )}
                         {...attributes}
                         {...listeners}
                     >
-                        <div className="flex items-center gap-2 px-3 py-2.5">
-                            <div className={cn(
-                                "w-[2px] h-5 rounded-full transition-colors",
-                                isSelected ? "bg-primary/60" : "bg-border/60 group-hover:bg-border/90"
-                            )} />
-                            <span className="font-semibold text-builder-xs tracking-[0.18em] uppercase flex-1 truncate text-muted-foreground pl-2">
-                                {item.title || "Untitled section"}
-                            </span>
-                            <span className="text-builder-2xs text-muted-foreground shrink-0">
-                                Section
-                            </span>
+                        <GripVertical className="h-3.5 w-3.5 shrink-0 text-zinc-300 opacity-0 group-hover:opacity-100 transition-opacity -ml-1" />
+                        <span className="text-[10px] font-bold tracking-[0.18em] uppercase flex-1 text-zinc-400">
+                            {item.title || "Untitled section"}
+                        </span>
+                        <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                             {onDuplicate && (
-                                <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="icon"
-                                    className={cn(
-                                        "h-7 w-7 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground/90 hover:text-foreground hover:bg-control-hover",
-                                        isSelected && "opacity-100 text-foreground bg-control-hover"
-                                    )}
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        onDuplicate();
-                                    }}
-                                >
-                                    <Copy className="h-4 w-4" />
+                                <Button type="button" variant="ghost" size="icon"
+                                    className="h-6 w-6 text-zinc-400 hover:text-zinc-600 hover:bg-zinc-100"
+                                    onClick={(e) => { e.stopPropagation(); onDuplicate(); }}>
+                                    <Copy className="h-3.5 w-3.5" />
                                 </Button>
                             )}
-                            <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                className={cn(
-                                    "h-7 w-7 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-foreground/90 hover:text-destructive hover:bg-destructive/10",
-                                    isSelected && "opacity-100 text-foreground bg-control-hover"
-                                )}
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    onRemove();
-                                }}
-                            >
-                                <Trash2 className="h-4 w-4" />
+                            <Button type="button" variant="ghost" size="icon"
+                                className="h-6 w-6 text-zinc-400 hover:text-red-500 hover:bg-red-50"
+                                onClick={(e) => { e.stopPropagation(); onRemove(); }}>
+                                <Trash2 className="h-3.5 w-3.5" />
                             </Button>
                         </div>
                     </div>
                 </PopoverTrigger>
                 {itemProperties && (
-                    <PopoverContent
-                        side="right"
-                        align="start"
-                        sideOffset={12}
-                        className="p-0 w-auto shadow-xl"
-                        onClick={(e) => e.stopPropagation()}
-                    >
+                    <PopoverContent side="right" align="start" sideOffset={12}
+                        className="p-0 w-auto shadow-xl" onClick={(e) => e.stopPropagation()}>
                         {itemProperties}
                     </PopoverContent>
                 )}
@@ -299,33 +243,20 @@ function SortableAgendaRow({
         );
     }
 
-    // Structural: Divider — no selection
+    // Structural: Divider
     if (item.structural_type === "divider") {
         return (
-            <div
-                ref={setNodeRef}
-                style={style}
-                className={cn(
-                    "py-6 flex items-center group",
-                    isDragging && "opacity-50"
-                )}
-            >
-                <div
-                    {...attributes}
-                    {...listeners}
-                    className="p-1 cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                    <GripVertical className="h-3.5 w-3.5 text-muted-foreground" />
+            <div ref={setNodeRef} style={style}
+                className={cn("py-5 flex items-center group", isDragging && "opacity-50")}>
+                <div {...attributes} {...listeners}
+                    className="p-1 cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity">
+                    <GripVertical className="h-3.5 w-3.5 text-zinc-400" />
                 </div>
-                <div className="flex-1 h-px bg-border/60" />
-                <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7 opacity-0 group-hover:opacity-100 text-destructive ml-2 hover:bg-destructive/10"
-                    onClick={onRemove}
-                >
-                    <Trash2 className="h-4 w-4" />
+                <div className="flex-1 h-px bg-zinc-200" />
+                <Button type="button" variant="ghost" size="icon"
+                    className="h-6 w-6 opacity-0 group-hover:opacity-100 text-red-400 ml-2 hover:bg-red-50"
+                    onClick={onRemove}>
+                    <Trash2 className="h-3.5 w-3.5" />
                 </Button>
             </div>
         );
@@ -334,11 +265,11 @@ function SortableAgendaRow({
     // Derive secondary text for assigned data
     const secondaryText = item.hymn_title
         ? `#${item.hymn_number} ${item.hymn_title}`
-        : item.speaker_name 
+        : item.speaker_name
             ? `${item.speaker_name}${item.speaker_topic ? ` — ${item.speaker_topic}` : ""}`
             : item.participant_name || null;
 
-    // Regular item — read-only card
+    // Regular item — flat row with clear hierarchy
     return (
         <Popover open={!!isSelected} onOpenChange={(open) => (open ? onSelect?.() : onDeselect?.())}>
             <PopoverTrigger asChild>
@@ -346,77 +277,56 @@ function SortableAgendaRow({
                     ref={setNodeRef}
                     style={style}
                     onClick={(e) => { e.stopPropagation(); onSelect?.(); }}
-                        className={cn(
-                            "flex flex-col border border-border/40 rounded-xl bg-background shadow-builder-card transition-all duration-200 group cursor-grab active:cursor-grabbing touch-none",
-                            "hover:bg-background hover:border-border/60",
-                            isSelected && "ring-2 ring-primary/25 border-primary/50 shadow-builder-card-selected",
-                            isDragging && "opacity-60 ring-2 ring-primary/30"
-                        )}
+                    className={cn(
+                        "flex flex-col group cursor-grab active:cursor-grabbing touch-none transition-colors border-l-2",
+                        isSelected
+                            ? "bg-primary/5 border-l-primary"
+                            : "bg-zinc-50/60 border-l-transparent hover:bg-zinc-100/70 hover:border-l-zinc-200",
+                        isDragging && "opacity-50"
+                    )}
                     {...attributes}
                     {...listeners}
                 >
-                    {/* Header row */}
-                    <div className="flex items-center gap-2 px-3 py-2.5">
-                        <div className={cn(
-                            "w-[2px] h-6 rounded-full transition-colors",
-                            isSelected ? "bg-primary/60" : "bg-border/60 group-hover:bg-border/90"
-                        )} />
-                        <span className="font-semibold text-builder-md flex-1 truncate text-foreground pl-2">
+                    {/* Primary row */}
+                    <div className="flex items-center gap-2 px-4 py-3">
+                        <GripVertical className="h-3.5 w-3.5 shrink-0 text-zinc-300 opacity-0 group-hover:opacity-100 transition-opacity -ml-1" />
+                        <span className="text-[14px] font-semibold text-zinc-800 flex-1 leading-snug">
                             {item.title}
                         </span>
-
-                        <span className="text-builder-xs text-muted-foreground shrink-0 tabular-nums">
+                        <span className="text-[11px] font-medium text-zinc-400 shrink-0 tabular-nums w-8 text-right">
                             {item.duration_minutes}m
                         </span>
-
-                        {onDuplicate && (
-                            <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                className={cn(
-                                    "h-7 w-7 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground/90 hover:text-foreground hover:bg-control-hover",
-                                    isSelected && "opacity-100 text-foreground bg-control-hover"
-                                )}
-                                onClick={(e) => { e.stopPropagation(); onDuplicate(); }}
-                            >
-                                <Copy className="h-4 w-4" />
-                            </Button>
-                        )}
-
-                        <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className={cn(
-                                "h-7 w-7 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-foreground/90 hover:text-destructive hover:bg-destructive/10 ml-0.5",
-                                isSelected && "opacity-100 text-foreground bg-control-hover"
+                        <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                            {onDuplicate && (
+                                <Button type="button" variant="ghost" size="icon"
+                                    className="h-6 w-6 text-zinc-400 hover:text-zinc-600 hover:bg-zinc-100"
+                                    onClick={(e) => { e.stopPropagation(); onDuplicate(); }}>
+                                    <Copy className="h-3.5 w-3.5" />
+                                </Button>
                             )}
-                            onClick={(e) => { e.stopPropagation(); onRemove(); }}
-                        >
-                            <Trash2 className="h-4 w-4" />
-                        </Button>
+                            <Button type="button" variant="ghost" size="icon"
+                                className="h-6 w-6 text-zinc-400 hover:text-red-500 hover:bg-red-50"
+                                onClick={(e) => { e.stopPropagation(); onRemove(); }}>
+                                <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                        </div>
                     </div>
 
-                    {/* Secondary text — assigned data displayed read-only */}
+                    {/* Secondary text — metadata (hymn, speaker, participant) */}
                     {secondaryText && (
-                        <div className="px-3 pb-2.5 pt-0">
-                            <div className="pl-7">
-                                <span className="text-builder-xs text-muted-foreground truncate block">
-                                    {secondaryText}
-                                </span>
-                            </div>
+                        <div className="px-4 pb-2.5 pt-0 pl-[2.375rem]">
+                            <span className="text-[12px] text-zinc-500 block leading-snug">
+                                {secondaryText}
+                            </span>
                         </div>
                     )}
 
-                    {/* Description — only shown as a placeholder hint when no value is assigned yet */}
+                    {/* Description */}
                     {item.description && !secondaryText && (
-                        <div className="px-3 pb-2.5 pt-0">
-                            <div className="pl-7">
-                                <span className="text-builder-xs text-muted-foreground/80 line-clamp-2 italic">
-                                    {item.description}
-                                </span>
-                            </div>
+                        <div className="px-4 pb-2.5 pt-0 pl-[2.375rem]">
+                            <span className="text-[12px] text-zinc-400 line-clamp-2 italic block leading-relaxed">
+                                {item.description}
+                            </span>
                         </div>
                     )}
                 </div>
@@ -456,8 +366,8 @@ function InsertRow({
     onSelectItem: (item: ToolboxItem) => void;
 }) {
     return (
-        <div className="relative group">
-            <div className="flex items-center justify-center z-10 relative">
+        <div className="relative group h-[3px]">
+            <div className="absolute inset-0 flex items-center justify-center z-10">
                 <Popover open={isOpen} onOpenChange={onOpenChange}>
                     <Tooltip>
                         <TooltipTrigger asChild>
@@ -521,7 +431,6 @@ function InsertRow({
                     </PopoverContent>
                 </Popover>
             </div>
-            <div className="absolute left-0 right-0 top-1/2 h-px bg-border/50 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
         </div>
     );
 }
@@ -632,21 +541,14 @@ export function AgendaCanvas({
 
     return (
         <div
-            className="flex flex-col h-full p-3 overflow-hidden"
+            className="flex flex-col h-full overflow-hidden bg-white dark:bg-background"
             onClick={() => onSelectItem?.(null)}
         >
-            {/* Card container */}
-            <div
-                className={cn(
-                    "rounded-2xl border border-border/50 bg-paper shadow-builder-canvas ring-1 ring-border/20 flex flex-col flex-1 overflow-hidden relative"
-                )}
-            >
-                {/* Canvas */}
-                <ScrollArea className="flex-1">
+            <ScrollArea className="flex-1">
                     <div
                         ref={setNodeRef}
                         className={cn(
-                            "p-8 sm:p-12 min-h-full flex flex-col items-center",
+                            "px-6 py-6 sm:px-10 min-h-full flex flex-col items-center",
                             isOver && "bg-primary/5"
                         )}
                     >
@@ -671,15 +573,15 @@ export function AgendaCanvas({
                             </div>
                         ) : (
                             <div className="w-full max-w-[850px]">
-                                <div className="mb-6 rounded-2xl border border-border/30 bg-background/70 px-6 py-5 shadow-builder-header">
-                                    <div className="text-builder-2xs uppercase tracking-[0.16em] text-muted-foreground">
+                                <div className="mb-5 px-1">
+                                    <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400 mb-1.5">
                                         Agenda
                                     </div>
-                                    <div className="mt-1 text-builder-title font-semibold text-foreground">
+                                    <div className="text-[22px] font-bold text-zinc-900 leading-tight tracking-tight">
                                         {title || "Untitled Meeting"}
                                     </div>
                                     {(dateLabel || timeLabel) && (
-                                        <div className="mt-1 text-builder-xs text-muted-foreground">
+                                        <div className="mt-1 text-[13px] text-zinc-500">
                                             {dateLabel}{dateLabel && timeLabel ? " · " : ""}{timeLabel}
                                         </div>
                                     )}
@@ -688,7 +590,7 @@ export function AgendaCanvas({
                                     items={itemIds}
                                     strategy={verticalListSortingStrategy}
                                 >
-                                    <div className="space-y-3">
+                                    <div className="rounded-xl border border-zinc-100 overflow-hidden divide-y divide-zinc-100 shadow-sm">
                                         <InsertRow
                                             isOpen={openInsertIndex === 0}
                                             onOpenChange={(open) => setOpenInsertIndex(open ? 0 : null)}
@@ -704,7 +606,7 @@ export function AgendaCanvas({
                                             }}
                                         />
                                         {items.map((item, index) => (
-                                            <div key={item.id} className="space-y-2">
+                                            <div key={item.id}>
                                                 <SortableAgendaRow
                                                     item={item}
                                                     onRemove={() => onRemoveItem(item.id)}
@@ -757,7 +659,6 @@ export function AgendaCanvas({
                         )}
                     </div>
                 </ScrollArea>
-            </div>
         </div>
     );
 }

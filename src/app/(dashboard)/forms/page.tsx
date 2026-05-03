@@ -1,42 +1,25 @@
 import { createClient } from "@/lib/supabase/server"
-import { redirect } from "next/navigation"
 import { FormsClient } from "./forms-client"
 import { Metadata } from "next"
 import type { Form } from "@/types/form-types"
 import { FormView } from "@/lib/table-views"
+import { getDashboardRequestContext } from "@/lib/dashboard/request-context"
 
 export const metadata: Metadata = {
     title: "Forms | Beespo",
     description: "Create and manage feedback forms",
 }
 
-export const dynamic = "force-dynamic"
-
 export default async function FormsPage() {
-    const supabase = await createClient()
-
-    const {
-        data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-        redirect("/login")
-    }
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: profile } = await (supabase.from("profiles") as any)
-        .select("workspace_id")
-        .eq("id", user.id)
-        .single()
-
-    if (!profile?.workspace_id) {
-        redirect("/onboarding")
-    }
+    const [{ profile }, supabase] = await Promise.all([
+        getDashboardRequestContext(),
+        createClient(),
+    ])
 
     // Fetch all forms for this workspace
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: forms, error } = await (supabase.from("forms") as any)
-        .select("*")
+        .select("id, workspace_id, title, description, schema, slug, is_published, views_count, created_by, created_at, updated_at")
         .eq("workspace_id", profile.workspace_id)
         .order("created_at", { ascending: false })
 
@@ -75,7 +58,7 @@ export default async function FormsPage() {
     // Fetch workspace-scoped form views
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: formViewsData } = await (supabase.from("agenda_views") as any)
-        .select("*")
+        .select("id, workspace_id, created_by, name, view_type, filters, created_at, updated_at")
         .eq("workspace_id", profile.workspace_id)
         .eq("view_type", "forms")
         .order("created_at", { ascending: true })

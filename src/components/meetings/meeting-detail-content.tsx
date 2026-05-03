@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
     CalendarDays, Clock, Pencil, Download, Printer, Copy, Trash2,
-    ClipboardList, FileText, MoreHorizontal, Share2, Loader2, Info, Smartphone,
+    ClipboardList, FileText, MoreHorizontal, Share2, Smartphone,
 } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
@@ -12,10 +12,7 @@ import { Breadcrumbs } from "@/components/dashboard/breadcrumbs";
 import { MarkdownRenderer } from "@/components/meetings/markdown-renderer";
 import { calculateTotalDurationWithGrouping } from "@/lib/agenda-grouping";
 import { ShareDialog } from "@/components/conduct/share-dialog";
-import { ZoomMeetingSheet } from "@/components/meetings/zoom-meeting-sheet";
-import { ZoomIcon, ZoomLogo } from "@/components/ui/zoom-icon";
 import { createClient } from "@/lib/supabase/client";
-import { toast } from "@/lib/toast";
 import { FavoriteButton } from "@/components/navigation/favorite-button";
 import { RecentVisitTracker } from "@/components/navigation/recent-visit-tracker";
 import {
@@ -25,18 +22,8 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogFooter,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Database } from "@/types/database";
-
-const FREE_ZOOM_LIMIT = 40;
 
 type Meeting = Database["public"]["Tables"]["meetings"]["Row"] & {
     templates?: { name: string } | null;
@@ -53,8 +40,6 @@ interface MeetingDetailContentProps {
     isLeader: boolean;
     totalDuration: number;
     currentUserName: string;
-    isZoomConnected: boolean;
-    isZoomFreeAccount: boolean | null;
 }
 
 export function MeetingDetailContent({
@@ -62,17 +47,11 @@ export function MeetingDetailContent({
     agendaItems: initialAgendaItems,
     workspaceSlug,
     isLeader,
-    isZoomConnected,
-    isZoomFreeAccount,
 }: MeetingDetailContentProps) {
     const router = useRouter();
     const [currentMeeting, setCurrentMeeting] = useState(meeting);
     const [isDownloading, setIsDownloading] = useState(false);
     const [shareOpen, setShareOpen] = useState(false);
-    const [isCreatingZoom, setIsCreatingZoom] = useState(false);
-    const [zoomSheetOpen, setZoomSheetOpen] = useState(false);
-    const [zoomCreateOpen, setZoomCreateOpen] = useState(false);
-    const [zoomCreateDuration, setZoomCreateDuration] = useState(0);
 
     const totalDuration = calculateTotalDurationWithGrouping(initialAgendaItems);
 
@@ -85,50 +64,6 @@ export function MeetingDetailContent({
 
     const handleMeetingUpdate = (updatedMeeting: Meeting) => {
         setCurrentMeeting(updatedMeeting);
-    };
-
-    const handleCreateZoom = () => {
-        if (!isZoomConnected) {
-            toast.error("Zoom not connected", {
-                description: "Go to Settings → Integrations to connect your Zoom account.",
-            });
-            return;
-        }
-        const suggested = totalDuration > 0 ? totalDuration : FREE_ZOOM_LIMIT;
-        setZoomCreateDuration(
-            isZoomFreeAccount === true ? Math.min(suggested, FREE_ZOOM_LIMIT) : suggested
-        );
-        setZoomCreateOpen(true);
-    };
-
-    const handleConfirmCreateZoom = async () => {
-        setIsCreatingZoom(true);
-        setZoomCreateOpen(false);
-        try {
-            const res = await fetch(`/api/meetings/${currentMeeting.id}/zoom`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ duration: zoomCreateDuration }),
-            });
-            if (!res.ok) {
-                const data = await res.json();
-                if (data.error === "zoom_not_connected") {
-                    toast.error("Zoom not connected", {
-                        description: "Go to Settings → Integrations to connect your Zoom account.",
-                    });
-                } else {
-                    toast.error("Failed to create Zoom meeting. Please try again.");
-                }
-                return;
-            }
-            const { zoom_join_url, zoom_start_url, zoom_passcode } = await res.json();
-            setCurrentMeeting((prev) => ({ ...prev, zoom_join_url, zoom_start_url, zoom_passcode }));
-            toast.success("Zoom meeting created");
-        } catch {
-            toast.error("Failed to create Zoom meeting. Please try again.");
-        } finally {
-            setIsCreatingZoom(false);
-        }
     };
 
     const handleDownload = async () => {
@@ -188,15 +123,6 @@ export function MeetingDetailContent({
 
     const handleDelete = async () => {
         if (!window.confirm("Delete this meeting? This cannot be undone.")) return;
-
-        // Cancel the Zoom meeting on Zoom's side first if one is linked
-        if (currentMeeting.zoom_meeting_id) {
-            try {
-                await fetch(`/api/meetings/${currentMeeting.id}/zoom`, { method: "DELETE" });
-            } catch {
-                // Non-fatal — proceed with deletion even if Zoom cancellation fails
-            }
-        }
 
         const supabase = createClient();
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -276,40 +202,6 @@ export function MeetingDetailContent({
                             ~{totalDuration} min
                         </span>
 
-                        {/* Zoom */}
-                        {isLeader && (
-                            currentMeeting.zoom_join_url ? (
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    title="Zoom Meeting"
-                                    className="h-7 gap-1.5 hover:bg-blue-500/10 px-2"
-                                    onClick={() => setZoomSheetOpen(true)}
-                                >
-                                    <ZoomLogo
-                                        iconClassName="h-4 w-4"
-                                        wordmarkClassName="h-3 w-auto"
-                                    />
-                                </Button>
-                            ) : (
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    title="Add Zoom Meeting"
-                                    className="h-7 gap-1 text-xs text-muted-foreground hover:text-foreground px-2"
-                                    onClick={handleCreateZoom}
-                                    disabled={isCreatingZoom}
-                                >
-                                    {isCreatingZoom ? (
-                                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                    ) : (
-                                        <ZoomIcon className="h-3.5 w-3.5" />
-                                    )}
-                                    Add Zoom
-                                </Button>
-                            )
-                        )}
-
                         {/* Share */}
                         <Button
                             variant="ghost"
@@ -378,76 +270,6 @@ export function MeetingDetailContent({
                 hideTrigger
             />
 
-            {/* Zoom management sheet */}
-            {currentMeeting.zoom_join_url && (
-                <ZoomMeetingSheet
-                    meeting={currentMeeting}
-                    totalDuration={totalDuration}
-                    isZoomFreeAccount={isZoomFreeAccount}
-                    open={zoomSheetOpen}
-                    onOpenChange={setZoomSheetOpen}
-                    onMeetingUpdate={(fields) => setCurrentMeeting((prev) => ({ ...prev, ...fields }))}
-                />
-            )}
-
-            {/* Add Zoom — create dialog */}
-            <Dialog open={zoomCreateOpen} onOpenChange={(o) => !isCreatingZoom && setZoomCreateOpen(o)}>
-                <DialogContent className="sm:max-w-sm">
-                    <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2">
-                            <ZoomIcon className="h-4 w-4" />
-                            Add Zoom Meeting
-                        </DialogTitle>
-                    </DialogHeader>
-
-                    <div className="space-y-4 py-1">
-                        <div className="space-y-1.5">
-                            <label className="text-sm font-medium">Duration (minutes)</label>
-                            <Input
-                                type="number"
-                                min={1}
-                                max={isZoomFreeAccount === true ? FREE_ZOOM_LIMIT : 600}
-                                value={zoomCreateDuration}
-                                onChange={(e) => {
-                                    const v = Number(e.target.value);
-                                    setZoomCreateDuration(
-                                        isZoomFreeAccount === true ? Math.min(v, FREE_ZOOM_LIMIT) : v
-                                    );
-                                }}
-                                className="h-9"
-                            />
-                            {totalDuration === 0 && (
-                                <p className="text-xs text-muted-foreground">
-                                    No items are timed yet — enter a duration manually.
-                                </p>
-                            )}
-                        </div>
-
-                        {/* Warning: hidden for confirmed paid accounts */}
-                        {isZoomFreeAccount !== false && (
-                            <div className="flex gap-2.5 rounded-md border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-400">
-                                <Info className="h-3.5 w-3.5 mt-0.5 shrink-0" />
-                                <span>
-                                    {isZoomFreeAccount === true
-                                        ? `Your Zoom account is limited to ${FREE_ZOOM_LIMIT}-minute meetings. Upgrade at zoom.us for longer sessions.`
-                                        : zoomCreateDuration > FREE_ZOOM_LIMIT
-                                            ? `Free Zoom accounts are capped at ${FREE_ZOOM_LIMIT} minutes. Participants may be disconnected after that.`
-                                            : `Free Zoom accounts are limited to ${FREE_ZOOM_LIMIT}-minute meetings. Upgrade at zoom.us for longer sessions.`}
-                                </span>
-                            </div>
-                        )}
-                    </div>
-
-                    <DialogFooter>
-                        <Button variant="outline" size="sm" onClick={() => setZoomCreateOpen(false)}>
-                            Cancel
-                        </Button>
-                        <Button size="sm" onClick={handleConfirmCreateZoom} disabled={!zoomCreateDuration}>
-                            Create Zoom Meeting
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
         </div>
     );
 }

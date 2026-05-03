@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { assertLegacy } from "@/lib/actions/legacy-guards";
 
 export async function saveMeetingMarkdown(meetingId: string, markdown: string) {
     const supabase = await createClient();
@@ -8,6 +9,12 @@ export async function saveMeetingMarkdown(meetingId: string, markdown: string) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
         return { error: "Not authenticated" };
+    }
+
+    try {
+        await assertLegacy(meetingId);
+    } catch (error) {
+        return { error: error instanceof Error ? error.message : "Legacy guard failed" };
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

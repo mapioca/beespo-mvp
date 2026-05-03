@@ -10,6 +10,12 @@ export interface ToastOptions {
   description?: string;
   duration?: number;
   id?: string;
+  actions?: ToastAction[];
+}
+
+export interface ToastAction {
+  label: string;
+  onClick: () => void;
 }
 
 export interface ToastItem {
@@ -17,6 +23,7 @@ export interface ToastItem {
   type: ToastType;
   message: string;
   description?: string;
+  actions?: ToastAction[];
   duration: number; // 0 = no auto-dismiss
   createdAt: number;
   paused: boolean;
@@ -129,6 +136,7 @@ function addToast(
   const duration = opts?.duration ?? DEFAULT_DURATIONS[type];
   const sanitized = sanitize(message);
   const description = opts?.description ? sanitize(opts.description) : undefined;
+  const actions = opts?.actions;
 
   // If a toast with this id already exists, update it in-place
   const existingIdx = toasts.findIndex((t) => t.id === id);
@@ -139,6 +147,7 @@ function addToast(
       type,
       message: sanitized,
       description,
+      actions,
       duration,
       remaining: duration,
       createdAt: Date.now(),
@@ -156,6 +165,7 @@ function addToast(
     type,
     message: sanitized,
     description,
+    actions,
     duration,
     createdAt: Date.now(),
     paused: false,

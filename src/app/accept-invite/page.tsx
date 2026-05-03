@@ -16,7 +16,7 @@ import Link from "next/link";
 function AcceptInviteContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
-    const token = searchParams.get("token");
+    const token = searchParams?.get("token");
 
     const [status, setStatus] = useState<"loading" | "needsSignup" | "needsLogin" | "blocked" | "success" | "error">("loading");
     const [message, setMessage] = useState("");

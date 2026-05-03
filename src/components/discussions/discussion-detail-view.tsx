@@ -121,7 +121,7 @@ export function DiscussionDetailView({
     id: discussion.id,
     entityType: "discussion" as const,
     title: savedTitle,
-    href: `/meetings/discussions/${discussion.id}`,
+    href: "/discussions",
   }), [discussion.id, savedTitle]);
 
   const updateField = async (field: string, value: string | null) => {
@@ -220,7 +220,7 @@ export function DiscussionDetailView({
       <Breadcrumbs
         items={[
           { label: "Meetings", href: "/meetings/agendas", icon: <CalendarDays className="h-4 w-4 stroke-[1.6]" /> },
-          { label: "Discussions", href: "/meetings/discussions", icon: <MessageSquare className="h-4 w-4 stroke-[1.6]" /> },
+          { label: "Discussions", href: "/discussions", icon: <MessageSquare className="h-4 w-4 stroke-[1.6]" /> },
           { label: title },
         ]}
         inlineAction={

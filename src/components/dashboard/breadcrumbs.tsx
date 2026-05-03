@@ -2,7 +2,8 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { ChevronRight, Database, Table2, BookOpen, PanelLeft, Library } from "lucide-react"
+import { useEffect, useRef, useState } from "react"
+import { PanelLeft } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { getBreadcrumbTrail, BreadcrumbItem } from "@/lib/navigation/breadcrumb-config"
 import type { ReactNode } from "react"
@@ -12,21 +13,6 @@ export type { BreadcrumbItem }
 
 export interface BreadcrumbItemWithIcon extends BreadcrumbItem {
   icon?: ReactNode
-}
-
-function getIconForType(iconType?: "database" | "table" | "notebook" | "template"): ReactNode {
-  switch (iconType) {
-    case "database":
-      return <Database className="h-3.5 w-3.5" />
-    case "table":
-      return <Table2 className="h-3.5 w-3.5" />
-    case "notebook":
-      return <BookOpen className="h-3.5 w-3.5" />
-    case "template":
-      return <Library className="h-3.5 w-3.5" />
-    default:
-      return null
-  }
 }
 
 interface BreadcrumbsProps {
@@ -40,18 +26,62 @@ interface BreadcrumbsProps {
 
 export function Breadcrumbs({ items, className, inlineAction, action }: BreadcrumbsProps) {
   const pathname = usePathname()
-  const trail: BreadcrumbItemWithIcon[] = items ?? getBreadcrumbTrail(pathname)
+  const containerRef = useRef<HTMLDivElement | null>(null)
+  const [isElevated, setIsElevated] = useState(false)
+  const trail: BreadcrumbItemWithIcon[] = items ?? getBreadcrumbTrail(pathname || "")
   const mobileNav = useMobileNav()
+
+  useEffect(() => {
+    const node = containerRef.current
+    if (!node) return
+
+    let scrollParent: HTMLElement | Window = window
+    let current: HTMLElement | null = node.parentElement
+
+    while (current) {
+      const style = window.getComputedStyle(current)
+      const canScrollY =
+        style.overflowY === "auto" ||
+        style.overflowY === "scroll" ||
+        style.overflow === "auto" ||
+        style.overflow === "scroll"
+
+      if (canScrollY) {
+        scrollParent = current
+        break
+      }
+      current = current.parentElement
+    }
+
+    const readScrolled = () => {
+      if (scrollParent === window) {
+        setIsElevated(window.scrollY > 2)
+        return
+      }
+      setIsElevated((scrollParent as HTMLElement).scrollTop > 2)
+    }
+
+    readScrolled()
+    scrollParent.addEventListener("scroll", readScrolled, { passive: true })
+
+    return () => {
+      scrollParent.removeEventListener("scroll", readScrolled)
+    }
+  }, [])
 
   if (trail.length === 0) {
     return null
   }
 
   return (
-    <div className="flex-shrink-0">
+    <div className="sticky top-0 z-30 flex-shrink-0 bg-surface-canvas">
       <div
+        ref={containerRef}
         className={cn(
-          "flex h-12 items-center gap-2 border-b border-border/80 bg-card px-4",
+          "flex h-14 items-center gap-2 px-4 transition-[background-color,border-color,box-shadow] duration-200",
+          isElevated
+            ? "border-b border-border/55 bg-surface-canvas shadow-[0_1px_0_rgba(15,23,42,0.06)]"
+            : "border-b border-transparent bg-surface-canvas",
           className
         )}
       >
@@ -66,35 +96,31 @@ export function Breadcrumbs({ items, className, inlineAction, action }: Breadcru
           </button>
         )}
         <nav aria-label="Breadcrumb" className="hidden min-w-0 flex-1 overflow-hidden sm:block">
-          <ol className="flex min-w-0 items-center gap-1 text-[12px] font-medium text-[#8a8f98]">
+          <ol className="flex min-w-0 items-center gap-1.5 text-[12px] font-medium text-nav-muted">
             {trail.map((item, index) => {
               const isLast = index === trail.length - 1
-
-              const icon = "icon" in item && item.icon ? item.icon : getIconForType(item.iconType)
 
               return (
                 <li
                   key={index}
                   className={cn(
-                    "min-w-0 items-center gap-1",
+                    "min-w-0 items-center gap-1.5",
                     isLast ? "flex" : "hidden sm:flex"
                   )}
                 >
                   {index > 0 && (
-                    <ChevronRight className="h-3.5 w-3.5 text-[#b0b4bc]" />
+                    <span className="text-nav-muted/50 select-none">/</span>
                   )}
                   {item.href && !isLast ? (
                     <Link
                       href={item.href}
-                      className="flex min-w-0 items-center gap-1 transition-colors hover:text-[#23262b]"
+                      className="truncate max-w-[160px] sm:max-w-none transition-colors hover:text-nav-strong"
                     >
-                      <span className="opacity-70">{icon}</span>
-                      <span className="truncate max-w-[160px] sm:max-w-none">{item.label}</span>
+                      {item.label}
                     </Link>
                   ) : (
-                    <span className={cn("flex min-w-0 items-center gap-1", isLast && "font-semibold text-[#23262b]")}>
-                      <span className={cn(!isLast && "opacity-70")}>{icon}</span>
-                      <span className="truncate max-w-[200px] sm:max-w-none">{item.label}</span>
+                    <span className={cn("truncate max-w-[200px] sm:max-w-none", isLast && "font-semibold text-nav-strong")}>
+                      {item.label}
                     </span>
                   )}
                 </li>
@@ -108,7 +134,7 @@ export function Breadcrumbs({ items, className, inlineAction, action }: Breadcru
           </ol>
         </nav>
         {action && (
-          <div className="ml-auto flex items-center justify-end">
+          <div className="ml-auto flex items-center justify-end bg-surface-canvas">
             {action}
           </div>
         )}

@@ -1,578 +1,224 @@
 "use client"
 
-import { useState, useMemo, useCallback, useTransition, useEffect } from "react"
-import Link from "next/link"
-import { createPortal } from "react-dom"
-import { Button } from "@/components/ui/button"
-import { Plus, X, Trash2, CalendarDays, Briefcase } from "lucide-react"
+import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
+import { Briefcase, Plus } from "lucide-react"
+
 import { Breadcrumbs } from "@/components/dashboard/breadcrumbs"
 import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import {
-    BusinessTable,
-    BusinessItem,
-    BusinessStatus,
-    BusinessCategory,
-} from "./business-table"
-import { BusinessDrawer } from "./business-drawer"
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 import { createClient } from "@/lib/supabase/client"
+import { prefetchBusinessFormData } from "@/lib/cache/form-data-cache"
 import { toast } from "@/lib/toast"
-import { useRouter } from "next/navigation"
-import { CreateViewDialog } from "@/components/common/create-view-dialog"
-import {
-    BusinessView,
-    BusinessViewFilters,
-    createBusinessView,
-    deleteBusinessView,
-    TableView,
-} from "@/lib/table-views"
-import { cn } from "@/lib/utils"
 
-// ── Filter sections config ────────────────────────────────────────────────────
-
-const BUSINESS_FILTER_SECTIONS = [
-    {
-        sectionLabel: "Status",
-        key: "statuses",
-        optional: true,
-        options: [
-            { value: "pending", label: "Pending" },
-            { value: "completed", label: "Completed" },
-        ],
-    },
-    {
-        sectionLabel: "Category",
-        key: "categories",
-        optional: true,
-        options: [
-            { value: "sustaining", label: "Sustaining" },
-            { value: "release", label: "Release" },
-            { value: "confirmation", label: "Confirmation" },
-            { value: "ordination", label: "Ordination" },
-            { value: "setting_apart", label: "Setting Apart" },
-            { value: "other", label: "Other" },
-        ],
-    },
-]
-
-// ── Props ─────────────────────────────────────────────────────────────────────
+import { BusinessItem } from "./business-table"
+import { BusinessDetailsPanel } from "./business-details-panel"
+import { BusinessItemForm, BusinessItemFormData } from "./business-item-form"
+import { BusinessPendingView } from "./pending/business-pending-view"
 
 interface BusinessClientProps {
-    items: BusinessItem[]
-    initialViews?: BusinessView[]
+  items: BusinessItem[]
 }
 
-export function BusinessClient({ items, initialViews = [] }: BusinessClientProps) {
-    const router = useRouter()
-    const [, startDeleteTransition] = useTransition()
-    const [mounted, setMounted] = useState(false)
+export function BusinessClient({ items }: BusinessClientProps) {
+  const router = useRouter()
 
-    const [selectedItem, setSelectedItem] = useState<BusinessItem | null>(null)
-    const [drawerOpen, setDrawerOpen] = useState(false)
+  const [selectedItem, setSelectedItem] = useState<BusinessItem | null>(null)
+  const [drawerOpen, setDrawerOpen] = useState(false)
+  const [newBusinessModalOpen, setNewBusinessModalOpen] = useState(false)
+  const [isCreating, setIsCreating] = useState(false)
+  const [search] = useState("")
 
-    // ── Views state ──────────────────────────────────────────────────────────
-    const [views, setViews] = useState<BusinessView[]>(initialViews)
-    const [activeViewId, setActiveViewId] = useState<string | null>(null)
-    const [deletingViewId, setDeletingViewId] = useState<string | null>(null)
+  useEffect(() => {
+    prefetchBusinessFormData()
+  }, [])
 
-    // Search
-    const [search, setSearch] = useState("")
+  const handleViewItem = (item: BusinessItem) => {
+    setSelectedItem(item)
+    setDrawerOpen(true)
+  }
 
-    // Filters
-    const [selectedStatuses, setSelectedStatuses] = useState<BusinessStatus[]>([])
-    const [selectedCategories, setSelectedCategories] = useState<BusinessCategory[]>([])
+  const handleDelete = async (id: string) => {
+    const supabase = createClient()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase.from("business_items") as any)
+      .delete()
+      .eq("id", id)
 
-    // Sort
-    const [sortConfig, setSortConfig] = useState<{
-        key: string
-        direction: "asc" | "desc"
-    } | null>(null)
+    if (error) {
+      toast.error(error.message || "Failed to delete business item")
+    } else {
+      toast.success("Business item deleted successfully")
+      router.refresh()
+    }
+  }
 
-    // Column visibility
-    const [hiddenColumns, setHiddenColumns] = useState<Set<string>>(new Set())
+  const handleCreateBusinessItem = async (formData: BusinessItemFormData) => {
+    setIsCreating(true)
+    const supabase = createClient()
 
-    // Row selection
-    const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set())
-    const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false)
-    const [isBulkDeleting, setIsBulkDeleting] = useState(false)
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    if (!user) {
+      toast.error("Not authenticated. Please log in again.")
+      setIsCreating(false)
+      return
+    }
 
-    useEffect(() => {
-        setMounted(true)
-    }, [])
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: profile } = await (supabase.from("profiles") as any)
+      .select("workspace_id, role")
+      .eq("id", user.id)
+      .single()
 
-    // ── Derived data ────────────────────────────────────────────────────────
+    if (!profile || !["leader", "admin"].includes(profile.role)) {
+      toast.error("Only leaders and admins can create business items.")
+      setIsCreating(false)
+      return
+    }
 
-    const activeView = useMemo(
-        () => views.find((v) => v.id === activeViewId) ?? null,
-        [views, activeViewId]
-    )
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: businessItem, error: createError } = await (supabase.from("business_items") as any)
+      .insert({
+        person_name: formData.personName,
+        position_calling: formData.positionCalling,
+        category: formData.category,
+        status: formData.status,
+        action_date: formData.actionDate || null,
+        notes: formData.notes || null,
+        details: formData.details,
+        workspace_id: profile.workspace_id,
+        created_by: user.id,
+      })
+      .select("id")
+      .single()
 
-    const filteredItems = useMemo(() => {
-        // Effective filter values (view overrides manual)
-        const effectiveStatuses =
-            activeView?.filters.statuses && activeView.filters.statuses.length > 0
-                ? activeView.filters.statuses
-                : selectedStatuses
-        const effectiveCategories =
-            activeView?.filters.categories && activeView.filters.categories.length > 0
-                ? activeView.filters.categories
-                : selectedCategories
+    if (createError || !businessItem) {
+      toast.error(createError?.message || "Failed to create business item.")
+      setIsCreating(false)
+      return
+    }
 
-        const result = items.filter((item) => {
-            if (search) {
-                const q = search.toLowerCase()
-                const matches =
-                    item.person_name?.toLowerCase().includes(q) ||
-                    item.position_calling?.toLowerCase().includes(q) ||
-                    item.workspace_business_id?.toLowerCase().includes(q)
-                if (!matches) return false
-            }
-            if (
-                effectiveStatuses.length > 0 &&
-                !effectiveStatuses.includes(item.status as BusinessStatus)
-            )
-                return false
-            if (
-                effectiveCategories.length > 0 &&
-                !effectiveCategories.includes(item.category as BusinessCategory)
-            )
-                return false
-            return true
-        })
-
-        if (sortConfig) {
-            result.sort((a, b) => {
-                const { key, direction } = sortConfig
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const aValue = a[key as keyof BusinessItem] as any
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const bValue = b[key as keyof BusinessItem] as any
-                if (aValue === null || aValue === undefined) return 1
-                if (bValue === null || bValue === undefined) return -1
-                if (aValue < bValue) return direction === "asc" ? -1 : 1
-                if (aValue > bValue) return direction === "asc" ? 1 : -1
-                return 0
-            })
-        }
-
-        return result
-    }, [items, search, selectedStatuses, selectedCategories, activeView, sortConfig])
-
-    const statusCounts = useMemo(() => {
-        const counts: Record<string, number> = { pending: 0, completed: 0 }
-        items.forEach((item) => {
-            if (item.status in counts) counts[item.status]++
-        })
-        return counts
-    }, [items])
-
-    const categoryCounts = useMemo(() => {
-        const counts: Record<string, number> = {
-            sustaining: 0,
-            release: 0,
-            confirmation: 0,
-            ordination: 0,
-            setting_apart: 0,
-            other: 0,
-        }
-        items.forEach((item) => {
-            if (item.category in counts) counts[item.category]++
-        })
-        return counts
-    }, [items])
-
-    // ── Handlers ────────────────────────────────────────────────────────────
-
-    const handleSort = useCallback(
-        (key: string, direction: "asc" | "desc") => {
-            setSortConfig((current) => {
-                if (current?.key === key && current.direction === direction)
-                    return null
-                return { key, direction }
-            })
-        },
-        []
-    )
-
-    const handleStatusToggle = useCallback((status: string) => {
-        setSelectedStatuses((prev) =>
-            prev.includes(status as BusinessStatus)
-                ? prev.filter((s) => s !== status)
-                : [...prev, status as BusinessStatus]
+    if (formData.templateIds.length > 0) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error: linkError } = await (supabase.from("business_templates") as any)
+        .insert(
+          formData.templateIds.map((templateId) => ({
+            business_item_id: businessItem.id,
+            template_id: templateId,
+          }))
         )
-    }, [])
+      if (linkError) {
+        toast.warning("Created, but could not link to template.")
+      }
+    }
 
-    const handleCategoryToggle = useCallback((category: string) => {
-        setSelectedCategories((prev) =>
-            prev.includes(category as BusinessCategory)
-                ? prev.filter((c) => c !== category)
-                : [...prev, category as BusinessCategory]
+    toast.success("Business item created successfully!")
+    setIsCreating(false)
+    setNewBusinessModalOpen(false)
+    router.refresh()
+  }
+
+  const searchable = search
+    ? items.filter((item) => {
+        const q = search.toLowerCase()
+        return (
+          item.person_name?.toLowerCase().includes(q) ||
+          item.position_calling?.toLowerCase().includes(q)
         )
-    }, [])
+      })
+    : items
 
-    const handleHideColumn = useCallback((column: string) => {
-        setHiddenColumns((prev) => {
-            const next = new Set(prev)
-            next.add(column)
-            return next
-        })
-    }, [])
+  return (
+    <div className="flex h-full flex-col bg-surface-canvas">
+      <Breadcrumbs
+        items={[
+          { label: "Meetings", href: "/meetings/sacrament/planner" },
+          { label: "Business", icon: <Briefcase className="h-4 w-4 stroke-[1.6]" /> },
+        ]}
+        className="bg-transparent ring-0 border-b border-border/60 rounded-none px-4 py-1.5"
+      />
 
-    const handleToggleRow = useCallback((id: string) => {
-        setSelectedRows((prev) => {
-            const next = new Set(prev)
-            if (next.has(id)) next.delete(id)
-            else next.add(id)
-            return next
-        })
-    }, [])
-
-    const handleToggleAllRows = useCallback(() => {
-        setSelectedRows((prev) => {
-            if (prev.size === filteredItems.length) return new Set()
-            return new Set(filteredItems.map((item) => item.id))
-        })
-    }, [filteredItems])
-
-    const handleDelete = async (id: string) => {
-        const supabase = createClient()
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { error } = await (supabase.from("business_items") as any)
-            .delete()
-            .eq("id", id)
-
-        if (error) {
-            toast.error(error.message || "Failed to delete business item")
-        } else {
-            toast.success("Business item deleted successfully")
-            router.refresh()
-        }
-    }
-
-    const handleBulkDelete = async () => {
-        if (selectedRows.size === 0) return
-        setIsBulkDeleting(true)
-        const supabase = createClient()
-        const ids = Array.from(selectedRows)
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { error } = await (supabase.from("business_items") as any)
-            .delete()
-            .in("id", ids)
-
-        if (error) {
-            toast.error(error.message || "Failed to delete items")
-        } else {
-            toast.success(`${ids.length} item${ids.length > 1 ? "s" : ""} deleted`)
-            setSelectedRows(new Set())
-            router.refresh()
-        }
-        setIsBulkDeleting(false)
-        setShowBulkDeleteDialog(false)
-    }
-
-    const handleViewItem = (item: BusinessItem) => {
-        setSelectedItem(item)
-        setDrawerOpen(true)
-    }
-
-    function handleViewCreated(view: TableView) {
-        setViews((prev) => [...prev, view as BusinessView])
-        setActiveViewId(view.id)
-    }
-
-    async function handleSaveView(name: string, filters: Record<string, string[]>) {
-        return createBusinessView(name, filters as BusinessViewFilters)
-    }
-
-    function handleDeleteView(viewId: string) {
-        setDeletingViewId(viewId)
-    }
-
-    async function confirmDeleteView() {
-        if (!deletingViewId) return
-        const id = deletingViewId
-        setDeletingViewId(null)
-
-        startDeleteTransition(async () => {
-            const result = await deleteBusinessView(id)
-            if (result.error) {
-                toast.error(result.error)
-                return
-            }
-            setViews((prev) => prev.filter((v) => v.id !== id))
-            if (activeViewId === id) setActiveViewId(null)
-            toast.success("View deleted")
-        })
-    }
-
-    // ── Active filter chips ─────────────────────────────────────────────────
-
-    const hasActiveFilters =
-        !activeView &&
-        (search.length > 0 ||
-            selectedStatuses.length > 0 ||
-            selectedCategories.length > 0 ||
-            hiddenColumns.size > 0)
-
-    function formatCategoryLabel(c: string) {
-        return c.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())
-    }
-
-    // ── Render ──────────────────────────────────────────────────────────────
-
-    return (
-        <div className="flex flex-col h-full bg-muted/30">
-            {/* Breadcrumb */}
-            <Breadcrumbs
-                items={[
-                    { label: "Meetings", href: "/meetings/agendas", icon: <CalendarDays className="h-4 w-4 stroke-[1.6]" /> },
-                    { label: "Business", icon: <Briefcase className="h-4 w-4 stroke-[1.6]" /> },
-                ]}
-                className="bg-transparent ring-0 border-b border-border/60 rounded-none px-4 py-1.5"
-            />
-
-            {/* Action Bar + View Tabs */}
-            <div className="flex items-center justify-between w-full px-6 pt-3.5 pb-3.5 shrink-0 flex-wrap gap-3 border-b border-border/45">
-                <div className="flex items-center gap-2 flex-wrap min-h-8">
-                    {/* Custom view tabs */}
-                    {views.map((view) => (
-                        <span key={view.id} className="relative group/view inline-flex items-center">
-                            <button
-                                onClick={() => setActiveViewId(view.id)}
-                                className={cn(
-                                    "rounded-full border pl-3.5 pr-7 py-1.5 text-[11px] leading-none transition-all shadow-sm",
-                                    activeViewId === view.id
-                                        ? "bg-[hsl(var(--chip-active-bg))] text-[hsl(var(--chip-active-text))] border-transparent font-semibold"
-                                        : "bg-[hsl(var(--chip-bg))] text-[hsl(var(--chip-text))] border-[hsl(var(--chip-border))] hover:bg-[hsl(var(--chip-hover-bg))] hover:text-[hsl(var(--chip-active-text))] font-medium"
-                                )}
-                            >
-                                {view.name}
-                            </button>
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation()
-                                    handleDeleteView(view.id)
-                                }}
-                                title="Delete view"
-                                className={cn(
-                                    "absolute right-2 top-1/2 -translate-y-1/2",
-                                    "flex items-center justify-center h-3.5 w-3.5 rounded-full",
-                                    "opacity-0 group-hover/view:opacity-100 transition-opacity",
-                                    activeViewId === view.id
-                                        ? "text-muted-foreground/70 hover:text-foreground"
-                                        : "text-muted-foreground hover:text-foreground"
-                                )}
-                            >
-                                <X className="h-2.5 w-2.5 stroke-[1.6]" />
-                            </button>
-                        </span>
-                    ))}
-
-                    {activeViewId && (
-                        <button
-                            onClick={() => setActiveViewId(null)}
-                            className="inline-flex items-center rounded-full border border-[hsl(var(--chip-border))] px-2.5 py-1.5 text-[11px] text-muted-foreground hover:text-foreground hover:bg-[hsl(var(--chip-hover-bg))] transition-colors"
-                        >
-                            Clear view
-                        </button>
-                    )}
-
-                    <CreateViewDialog
-                        filterSections={BUSINESS_FILTER_SECTIONS}
-                        onSave={handleSaveView}
-                        onCreated={handleViewCreated}
-                    />
-                </div>
-
-                <Button asChild size="sm" className="h-8 rounded-full px-3.5 text-[11px] font-semibold shadow-sm">
-                    <Link href="/meetings/business/new" className="flex items-center gap-1.5">
-                        <Plus className="h-3.5 w-3.5 stroke-[1.6]" />
-                        New
-                    </Link>
-                </Button>
+      <div className="flex-1 overflow-auto">
+        <div className="py-10">
+          <header className="mx-auto flex w-full max-w-7xl items-end justify-between gap-6 px-4 sm:px-6 lg:px-10 mb-2">
+            <div className="min-w-0">
+              <div className="text-[10px] uppercase tracking-wider font-medium text-muted-foreground mb-2">
+                Business
+              </div>
+              <h1 className="font-serif text-3xl md:text-[34px] leading-[1.1] tracking-tight text-foreground">
+                Sacrament meeting <em className="font-serif italic">business</em>
+              </h1>
+              <p className="text-[13px] text-muted-foreground mt-2 max-w-xl leading-relaxed">
+                Track formal church procedures. The conducting script is generated automatically.
+              </p>
             </div>
+            <TooltipProvider delayDuration={150}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    onClick={() => setNewBusinessModalOpen(true)}
+                    onMouseEnter={() => prefetchBusinessFormData()}
+                    onFocus={() => prefetchBusinessFormData()}
+                    aria-label="New business"
+                    className="mt-9 grid h-8 w-8 shrink-0 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-brand/10 hover:text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent
+                  side="left"
+                  sideOffset={6}
+                  showArrow={false}
+                  className="rounded-[4px] bg-foreground/90 px-1.5 py-0.5 text-[10px] font-medium tracking-tight shadow-sm"
+                >
+                  New business
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </header>
 
-            {/* View filter summary bar */}
-            {activeView && (
-                <div className="flex items-center gap-2 px-6 pb-3 flex-wrap text-[11px] text-muted-foreground">
-                    <span className="font-medium text-foreground">Filters:</span>
-                    {activeView.filters.statuses?.map((s) => (
-                        <span key={s} className="rounded-full bg-[hsl(var(--chip-bg))] border border-[hsl(var(--chip-border))] px-2.5 py-1.5 text-[hsl(var(--chip-text))] leading-none capitalize">
-                            {s}
-                        </span>
-                    ))}
-                    {activeView.filters.categories?.map((c) => (
-                        <span key={c} className="rounded-full bg-[hsl(var(--chip-bg))] border border-[hsl(var(--chip-border))] px-2.5 py-1.5 text-[hsl(var(--chip-text))] leading-none">
-                            {formatCategoryLabel(c)}
-                        </span>
-                    ))}
-                    {search && (
-                        <span className="inline-flex items-center gap-1.5 rounded-full bg-[hsl(var(--chip-bg))] border border-[hsl(var(--chip-border))] px-2.5 py-1.5 text-[hsl(var(--chip-text))] leading-none">
-                            Search: &quot;{search}&quot;
-                            <button onClick={() => setSearch("")} className="ml-1 text-muted-foreground hover:text-foreground">
-                                <X className="h-3 w-3 inline stroke-[1.6]" />
-                            </button>
-                        </span>
-                    )}
-                </div>
-            )}
-
-            {/* Active filter chips */}
-            {hasActiveFilters && selectedRows.size === 0 && (
-                <div className="flex items-center gap-2 px-6 pb-3 flex-wrap">
-                    {search && (
-                        <span className="inline-flex items-center gap-1.5 rounded-full bg-[hsl(var(--chip-bg))] border border-[hsl(var(--chip-border))] px-2.5 py-1.5 text-[11px] font-medium leading-none text-[hsl(var(--chip-text))]">
-                            Search: &quot;{search}&quot;
-                            <button onClick={() => setSearch("")} className="text-muted-foreground hover:text-foreground">
-                                <X className="h-3 w-3 stroke-[1.6]" />
-                            </button>
-                        </span>
-                    )}
-                    {selectedStatuses.map((s) => (
-                        <span key={s} className="inline-flex items-center gap-1.5 rounded-full bg-[hsl(var(--chip-bg))] border border-[hsl(var(--chip-border))] px-2.5 py-1.5 text-[11px] font-medium leading-none text-[hsl(var(--chip-text))] capitalize">
-                            {s}
-                            <button onClick={() => handleStatusToggle(s)} className="text-muted-foreground hover:text-foreground">
-                                <X className="h-3 w-3 stroke-[1.6]" />
-                            </button>
-                        </span>
-                    ))}
-                    {selectedCategories.map((c) => (
-                        <span key={c} className="inline-flex items-center gap-1.5 rounded-full bg-[hsl(var(--chip-bg))] border border-[hsl(var(--chip-border))] px-2.5 py-1.5 text-[11px] font-medium leading-none text-[hsl(var(--chip-text))]">
-                            {formatCategoryLabel(c)}
-                            <button onClick={() => handleCategoryToggle(c)} className="text-muted-foreground hover:text-foreground">
-                                <X className="h-3 w-3 stroke-[1.6]" />
-                            </button>
-                        </span>
-                    ))}
-                    {hiddenColumns.size > 0 && (
-                        <button onClick={() => setHiddenColumns(new Set())} className="inline-flex items-center rounded-full border border-[hsl(var(--chip-border))] px-2.5 py-1.5 text-[11px] text-muted-foreground hover:text-foreground hover:bg-[hsl(var(--chip-hover-bg))] transition-colors">
-                            Show all columns
-                        </button>
-                    )}
-                    <button
-                        onClick={() => {
-                            setSearch("")
-                            setSelectedStatuses([])
-                            setSelectedCategories([])
-                            setHiddenColumns(new Set())
-                        }}
-                        className="inline-flex items-center rounded-full border border-[hsl(var(--chip-border))] px-2.5 py-1.5 text-[11px] text-muted-foreground hover:text-foreground hover:bg-[hsl(var(--chip-hover-bg))] transition-colors"
-                    >
-                        Clear all
-                    </button>
-                </div>
-            )}
-
-            {/* Table */}
-            <div className="flex-1 overflow-auto px-6 pb-6">
-                <BusinessTable
-                    items={filteredItems}
-                    sortConfig={sortConfig}
-                    onSort={handleSort}
-                    searchValue={search}
-                    onSearchChange={setSearch}
-                    selectedStatuses={activeView?.filters.statuses as BusinessStatus[] ?? selectedStatuses}
-                    statusCounts={statusCounts}
-                    onStatusToggle={activeView ? undefined : handleStatusToggle}
-                    selectedCategories={activeView?.filters.categories as BusinessCategory[] ?? selectedCategories}
-                    categoryCounts={categoryCounts}
-                    onCategoryToggle={activeView ? undefined : handleCategoryToggle}
-                    hiddenColumns={hiddenColumns}
-                    onHideColumn={handleHideColumn}
-                    selectedRows={selectedRows}
-                    onToggleRow={handleToggleRow}
-                    onToggleAllRows={handleToggleAllRows}
-                    onViewItem={handleViewItem}
-                    onDeleteItem={handleDelete}
-                />
-            </div>
-
-            {/* Drawer */}
-            <BusinessDrawer
-                item={selectedItem}
-                open={drawerOpen}
-                onOpenChange={setDrawerOpen}
-                onDelete={handleDelete}
-            />
-
-            {/* Bulk delete confirmation */}
-            <AlertDialog open={showBulkDeleteDialog} onOpenChange={setShowBulkDeleteDialog}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>
-                            Delete {selectedRows.size} item{selectedRows.size > 1 ? "s" : ""}
-                        </AlertDialogTitle>
-                        <AlertDialogDescription>
-                            This will permanently delete the selected business item{selectedRows.size > 1 ? "s" : ""}. This action cannot be undone.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel disabled={isBulkDeleting}>Cancel</AlertDialogCancel>
-                        <AlertDialogAction
-                            onClick={handleBulkDelete}
-                            disabled={isBulkDeleting}
-                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                        >
-                            {isBulkDeleting ? "Deleting..." : "Delete"}
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
-
-            {/* Delete view confirmation */}
-            <AlertDialog open={!!deletingViewId} onOpenChange={(o) => { if (!o) setDeletingViewId(null) }}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Delete this view?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            This view will be removed for everyone in your workspace. This action cannot be undone.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel onClick={() => setDeletingViewId(null)}>Cancel</AlertDialogCancel>
-                        <AlertDialogAction
-                            onClick={confirmDeleteView}
-                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                        >
-                            Delete view
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
-
-            {/* Floating bulk selection pill */}
-            {mounted && selectedRows.size > 0 && createPortal(
-                <div className="fixed bottom-6 left-1/2 z-[95] flex -translate-x-1/2 pointer-events-none w-[90vw] sm:w-auto justify-center">
-                    <div className="pointer-events-auto inline-flex items-center gap-2 rounded-full border border-border/80 bg-background/96 px-2.5 py-2 text-foreground shadow-[0_10px_30px_rgba(15,23,42,0.12)] backdrop-blur-sm">
-                        <span className="inline-flex items-center rounded-full border border-border/70 bg-muted/55 px-2.5 py-1 text-[11px] font-semibold tabular-nums text-foreground/85">
-                            {selectedRows.size} selected
-                        </span>
-                        <span className="h-4 w-px bg-border/70" aria-hidden />
-                        <button
-                            onClick={() => setSelectedRows(new Set())}
-                            className="rounded-full px-2.5 py-1 text-[11px] font-medium text-foreground/70 hover:text-foreground hover:bg-muted/55 transition-colors"
-                        >
-                            Deselect
-                        </button>
-                        <button
-                            onClick={() => setShowBulkDeleteDialog(true)}
-                            className="inline-flex items-center gap-1.5 rounded-full border border-rose-200 bg-rose-50/70 px-2.5 py-1 text-[11px] font-semibold text-rose-700 hover:bg-rose-100/75 transition-colors"
-                        >
-                            <Trash2 className="h-3 w-3 stroke-[1.7]" />
-                            Delete
-                        </button>
-                    </div>
-                </div>,
-                document.body
-            )}
+          <div className="mt-10">
+            <BusinessPendingView items={searchable} onOpenItem={handleViewItem} />
+          </div>
         </div>
-    )
+      </div>
+
+      <Dialog open={newBusinessModalOpen} onOpenChange={setNewBusinessModalOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden p-0 gap-0">
+          <DialogHeader className="px-5 py-4 space-y-3">
+            <DialogTitle>New Business Item</DialogTitle>
+            <p className="text-xs text-muted-foreground">
+              Add a formal church procedure to track. The conducting script is generated automatically.
+            </p>
+          </DialogHeader>
+          <BusinessItemForm
+            onSubmit={handleCreateBusinessItem}
+            isLoading={isCreating}
+            mode="create"
+            onCancel={() => setNewBusinessModalOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
+
+      <BusinessDetailsPanel
+        item={selectedItem}
+        open={drawerOpen}
+        onOpenChange={setDrawerOpen}
+        onDelete={handleDelete}
+      />
+    </div>
+  )
 }

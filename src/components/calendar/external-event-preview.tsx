@@ -1,25 +1,8 @@
 "use client";
 
 import { format } from "date-fns";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import {
-  Calendar,
-  Clock,
-  MapPin,
-  FileText,
-  ExternalLink,
-  Import,
-} from "lucide-react";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import { Rss, Lock, Calendar, Clock, MapPin, FileText } from "lucide-react";
 import { parseAllDayDate } from "@/lib/calendar-helpers";
 
 export interface ExternalEventData {
@@ -40,6 +23,7 @@ interface ExternalEventPreviewProps {
   onOpenChange: (open: boolean) => void;
   event: ExternalEventData | null;
   onImport: (event: ExternalEventData) => void;
+  onConvertAsIs: (event: ExternalEventData) => void;
 }
 
 export function ExternalEventPreview({
@@ -47,6 +31,7 @@ export function ExternalEventPreview({
   onOpenChange,
   event,
   onImport,
+  onConvertAsIs,
 }: ExternalEventPreviewProps) {
   if (!event) return null;
 
@@ -57,123 +42,119 @@ export function ExternalEventPreview({
     ? (event.is_all_day ? parseAllDayDate(event.end_date) : new Date(event.end_date))
     : null;
 
-  const formatDateTime = (date: Date, isAllDay: boolean) => {
-    if (isAllDay) {
-      return format(date, "EEEE, MMMM d, yyyy");
-    }
-    return format(date, "EEEE, MMMM d, yyyy 'at' h:mm a");
-  };
-
-  const handleImport = () => {
-    onImport(event);
-    onOpenChange(false);
-  };
+  const accentColor = event.subscription_color ?? "#8b5cf6";
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <div className="flex items-center gap-2 mb-2">
-            <Badge
-              variant="secondary"
-              className="text-[11px] uppercase tracking-[0.2em]"
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent className="flex w-[420px] flex-col gap-0 p-0 sm:max-w-[420px]">
+        {/* Header */}
+        <SheetHeader className="border-b border-border/40 px-6 py-5">
+          <div className="flex items-center gap-2">
+            {/* Calendar source chip */}
+            <span
+              className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium"
               style={{
-                backgroundColor: event.subscription_color ? `${event.subscription_color}20` : undefined,
-                color: event.subscription_color || undefined,
-                borderColor: event.subscription_color || undefined,
+                backgroundColor: `color-mix(in srgb, ${accentColor} 12%, transparent)`,
+                color: accentColor,
               }}
             >
-              <ExternalLink className="h-3 w-3 mr-1 stroke-[1.6]" />
-              External Event
-            </Badge>
-            {event.subscription_name && (
-              <span className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
-                from {event.subscription_name}
-              </span>
+              <Rss className="h-3 w-3" />
+              {event.subscription_name ?? "External Calendar"}
+            </span>
+            {/* Read-only chip */}
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-border/50 px-2.5 py-1 text-[11px] font-medium text-muted-foreground">
+              <Lock className="h-3 w-3" />
+              Read-only
+            </span>
+          </div>
+          <SheetTitle className="mt-3 font-serif text-[22px] font-normal leading-snug">
+            {event.title}
+          </SheetTitle>
+          <SheetDescription className="sr-only">External calendar event details</SheetDescription>
+        </SheetHeader>
+
+        {/* Event details */}
+        <div className="flex-1 overflow-y-auto px-6 py-5">
+          <div className="space-y-4">
+            {/* Date / time */}
+            <div className="flex items-start gap-3">
+              <Calendar className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+              <div className="text-[13.5px]">
+                <p className="font-medium text-foreground">
+                  {event.is_all_day
+                    ? format(startDate, "EEEE, MMMM d, yyyy")
+                    : format(startDate, "EEEE, MMMM d, yyyy")}
+                </p>
+                {!event.is_all_day && (
+                  <p className="mt-0.5 text-muted-foreground">
+                    {format(startDate, "h:mm a")}
+                    {endDate && ` – ${format(endDate, "h:mm a")}`}
+                  </p>
+                )}
+                {event.is_all_day && endDate &&
+                  format(startDate, "yyyy-MM-dd") !== format(endDate, "yyyy-MM-dd") && (
+                    <p className="mt-0.5 text-muted-foreground">
+                      Until {format(endDate, "MMMM d, yyyy")}
+                    </p>
+                  )}
+                {event.is_all_day && (
+                  <span className="mt-1 inline-flex items-center gap-1 text-[11.5px] text-muted-foreground">
+                    <Clock className="h-3 w-3" /> All day
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Location */}
+            {event.location && (
+              <div className="flex items-start gap-3">
+                <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                <p className="text-[13.5px] text-foreground">{event.location}</p>
+              </div>
+            )}
+
+            {/* Description */}
+            {event.description && (
+              <div className="flex items-start gap-3">
+                <FileText className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                <p className="max-h-40 overflow-y-auto whitespace-pre-wrap text-[13px] text-muted-foreground">
+                  {event.description}
+                </p>
+              </div>
             )}
           </div>
-          <DialogTitle className="text-xl">{event.title}</DialogTitle>
-          <DialogDescription>
-            This event is from an external calendar subscription.
-          </DialogDescription>
-        </DialogHeader>
 
-        <div className="space-y-4 py-2">
-          {/* Date & Time */}
-          <div className="flex items-start gap-3">
-            <Calendar className="h-5 w-5 text-muted-foreground mt-0.5 stroke-[1.6]" />
-            <div>
-              <p className="font-medium">
-                {formatDateTime(startDate, event.is_all_day)}
-              </p>
-              {endDate && !event.is_all_day && (
-                <p className="text-sm text-muted-foreground">
-                  to {format(endDate, "h:mm a")}
-                </p>
-              )}
-              {endDate && event.is_all_day &&
-                format(startDate, "yyyy-MM-dd") !== format(endDate, "yyyy-MM-dd") && (
-                <p className="text-sm text-muted-foreground">
-                  to {format(endDate, "MMMM d, yyyy")}
-                </p>
-              )}
-              {event.is_all_day && (
-                <Badge variant="outline" className="mt-1 text-[11px] uppercase tracking-[0.2em] border-border/60">
-                  <Clock className="h-3 w-3 mr-1 stroke-[1.6]" />
-                  All Day
-                </Badge>
-              )}
+          {/* Convert card */}
+          <div className="mt-6 rounded-[10px] border border-border/50 bg-surface-raised p-4">
+            <p className="text-[13px] font-semibold text-foreground">
+              Bring this onto the calendar
+            </p>
+            <p className="mt-1.5 text-[12.5px] leading-5 text-muted-foreground">
+              External events stay read-only. Convert it into an app event to add attendees,
+              edit details, and link it to ward work.
+            </p>
+            <div className="mt-4 flex gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  onConvertAsIs(event);
+                  onOpenChange(false);
+                }}
+                className="flex-1 rounded-[7px] border border-border/60 bg-surface-canvas py-1.5 text-[12.5px] font-medium text-foreground transition-colors hover:bg-surface-hover"
+              >
+                Convert as-is
+              </button>
+              <button
+                type="button"
+                onClick={() => onImport(event)}
+                className="flex-1 rounded-[7px] bg-foreground py-1.5 text-[12.5px] font-medium text-background transition-colors hover:opacity-90"
+              >
+                Edit before adding
+              </button>
             </div>
           </div>
-
-          {/* Location */}
-          {event.location && (
-            <div className="flex items-start gap-3">
-              <MapPin className="h-5 w-5 text-muted-foreground mt-0.5 stroke-[1.6]" />
-              <p className="text-sm">{event.location}</p>
-            </div>
-          )}
-
-          {/* Description */}
-          {event.description && (
-            <>
-              <Separator className="bg-border/60" />
-              <div className="flex items-start gap-3">
-                <FileText className="h-5 w-5 text-muted-foreground mt-0.5 stroke-[1.6]" />
-                <div className="text-sm whitespace-pre-wrap max-h-32 overflow-y-auto">
-                  {event.description}
-                </div>
-              </div>
-            </>
-          )}
         </div>
-
-        <Separator className="bg-border/60" />
-
-        <div className="bg-[hsl(var(--accent-warm)/0.35)] rounded-lg p-3 text-sm border border-border/50">
-          <p className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground mb-1">
-            Want to enrich this event?
-          </p>
-          <p className="text-muted-foreground text-xs">
-            Import it to Beespo to add announcements, link to meetings, and track it alongside your other events.
-          </p>
-        </div>
-
-        <DialogFooter className="gap-2 sm:gap-0">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            className="border-border/60 hover:bg-[hsl(var(--accent-warm)/0.6)] shadow-none"
-          >
-            Close
-          </Button>
-          <Button onClick={handleImport} className="bg-[hsl(var(--accent-warm))] text-foreground hover:bg-[hsl(var(--accent-warm-hover))] shadow-none">
-            <Import className="h-4 w-4 mr-2 stroke-[1.6]" />
-            Import to Beespo
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   );
 }

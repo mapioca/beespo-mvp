@@ -2,6 +2,8 @@
 
 This guide captures the production‑ready styling patterns used across the app so any AI coding tool can implement new pages without scanning existing UI. It references the global tokens and utility classes already defined in `src/app/globals.css`.
 
+For the approved `/events/new` baseline, see `docs/calm-precision-events-new-standard.md`.
+
 ## Core Principles
 - **Quiet chrome, strong content.** Navigation and toolbars are calm, minimal, and never compete with the document/content surface.
 - **Surface hierarchy.** Use distinct surfaces: panel (app shell), chrome (top bars), paper (document).

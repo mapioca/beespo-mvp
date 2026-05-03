@@ -1,37 +1,30 @@
 import { createClient } from "@/lib/supabase/server"
-import { redirect } from "next/navigation"
 import { MeetingsClient } from "@/components/meetings/meetings-client"
+import type { Meeting } from "@/components/meetings/meetings-table"
 import { Metadata } from "next"
-import { AgendaView } from "@/lib/agenda-views"
+import { AgendaFilter } from "@/lib/agenda-views"
+import { getDashboardRequestContext } from "@/lib/dashboard/request-context"
+import { cache } from "react"
 
 export const metadata: Metadata = {
   title: "Agendas | Beespo",
   description: "Manage your meetings and agendas",
 }
 
-export const dynamic = "force-dynamic"
+// Cache templates query (rarely changes)
+const getTemplates = cache(async (supabase: Awaited<ReturnType<typeof createClient>>) => {
+  const { data: templates } = await supabase
+    .from("templates")
+    .select("id, name")
+    .order("name")
+  return templates || []
+})
 
 export default async function AgendasPage() {
-  const supabase = await createClient()
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) {
-    redirect("/login")
-  }
-
-  const { data: profile } = await (
-    supabase.from("profiles") as ReturnType<typeof supabase.from>
-  )
-    .select("role, workspace_id")
-    .eq("id", user.id)
-    .single()
-
-  if (!profile || !profile.workspace_id) {
-    redirect("/onboarding")
-  }
+  const [{ user, profile }, supabase] = await Promise.all([
+    getDashboardRequestContext(),
+    createClient(),
+  ])
 
   const isLeader = profile.role === "leader" || profile.role === "admin"
 
@@ -44,19 +37,35 @@ export default async function AgendasPage() {
     .single()
   const workspaceSlug: string | null = workspace?.slug || null
 
-  // Fetch all meetings (no pagination — client handles filtering/scroll)
+  const isAgendaMeeting = (meeting: { plan_type?: string | null }) =>
+    meeting.plan_type === "agenda" || meeting.plan_type === null
+
+  // Fetch agenda-backed records (legacy null plan_type records still appear here)
+  // Limit to 30 for initial load (pagination handled client-side)
   const { data: meetings, error } = await supabase
     .from("meetings")
-    .select(
-      `*,
+    .select(`
+      *,
       templates (
         id,
         name
-      )`
-    )
+      )
+    `)
     .eq("workspace_id", profile.workspace_id)
+    .or("plan_type.eq.agenda,plan_type.is.null")
     .order("scheduled_date", { ascending: false })
     .order("created_at", { ascending: false })
+    .limit(30)
+
+  // Build templates map from nested data
+  const templatesMap = new Map<string, { id: string; name: string }>()
+  if (meetings) {
+    meetings.forEach((m: { templates?: { id: string; name: string } | null }) => {
+      if (m.templates) {
+        templatesMap.set(m.templates.id, m.templates)
+      }
+    })
+  }
 
   if (error) {
     console.error("Meetings query error:", error)
@@ -65,65 +74,57 @@ export default async function AgendasPage() {
     )
   }
 
-  // Fetch meetings shared WITH the current user (cross-workspace)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: inboundShareData } = await (supabase as any)
-    .from("meeting_shares")
-    .select(
-      `
-      id,
-      permission,
-      meeting_id,
-        meetings!meeting_id (
-        id, workspace_id, title, description, scheduled_date, status, is_publicly_shared,
-        created_by, notes, created_at, updated_at,
-        templates (id, name),
-        workspaces (name, slug)
-      ),
-      shared_by_profile:shared_by (full_name)
-    `
-    )
-    .eq("recipient_user_id", user.id)
-    .eq("status", "active")
-
-  // Fetch meeting IDs that the current user has shared outward
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: outboundShareData } = await (supabase as any)
-    .from("meeting_shares")
-    .select("meeting_id")
-    .eq("shared_by", user.id)
-    .eq("status", "active")
+  // Parallelize share-related queries
+  const [inboundShareData, outboundShareData] = await Promise.all([
+    supabase
+      .from("meeting_shares")
+      .select(`
+        id,
+        permission,
+        meeting_id,
+          meetings!meeting_id (
+          id, workspace_id, title, description, scheduled_date, status, is_publicly_shared,
+          created_by, notes, created_at, updated_at,
+          templates (id, name),
+          workspaces (name, slug)
+        ),
+        shared_by_profile:shared_by (full_name)
+      `)
+      .eq("recipient_user_id", user.id)
+      .eq("status", "active")
+      .then((res: { data: unknown }) => res.data),
+    supabase
+      .from("meeting_shares")
+      .select("meeting_id")
+      .eq("shared_by", user.id)
+      .eq("status", "active")
+      .then((res: { data: unknown }) => res.data),
+  ])
 
   // Build annotated shared-with-me meeting list
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const sharedMeetings = (inboundShareData || []).flatMap((share: any) => {
+  const sharedMeetings = (Array.isArray(inboundShareData) ? inboundShareData : []).flatMap((share: { meetings: { plan_type?: string | null; templates?: { id: string; name: string } | null; workspaces?: { name?: string } | null }; permission: string; shared_by_profile?: { full_name?: string } }) => {
     const m = share.meetings
-    if (!m) return []
+    if (!m || !isAgendaMeeting(m)) return []
     return [
       {
         ...m,
         templates: m.templates || null,
         _shareType: "shared_with_me" as const,
         _sharePermission: share.permission,
-        _sharedByName: share.shared_by_profile?.full_name ?? undefined,
-        _sharedFromWorkspace: m.workspaces?.name ?? undefined,
+        _sharedByName: (share.shared_by_profile as Record<string, unknown>)?.full_name ?? undefined,
+        _sharedFromWorkspace: (m.workspaces as Record<string, unknown>)?.name ?? undefined,
       },
     ]
   })
 
   // Build Set of outward-shared meeting IDs (serialised as array for client)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const sharedOutwardIds: string[] = (outboundShareData || []).map(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (row: any) => row.meeting_id
+  const sharedOutwardIds: string[] = (Array.isArray(outboundShareData) ? outboundShareData : []).map(
+    (row: { meeting_id: string }) => row.meeting_id
   )
 
-  // Fetch all templates for filter dropdown
-  const { data: templates } = await (
-    supabase.from("templates") as ReturnType<typeof supabase.from>
-  )
-    .select("id, name")
-    .order("name")
+  // Fetch all templates for filter dropdown (cached)
+  const templates = await getTemplates(supabase)
 
   // Compute counts for filter badges
   const statusCounts: Record<string, number> = {
@@ -147,27 +148,28 @@ export default async function AgendasPage() {
     }
   })
 
-  // Fetch workspace-scoped custom agenda views (RLS enforces workspace isolation)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: agendaViewsData } = await (supabase.from("agenda_views") as any)
-    .select("*")
+  // Fetch workspace-scoped saved agenda filters (RLS enforces workspace isolation)
+  const { data: agendaFiltersData } = await supabase
+    .from("agenda_views")
+    .select("id, workspace_id, created_by, name, view_type, filters, created_at, updated_at")
     .eq("workspace_id", profile.workspace_id)
     .eq("view_type", "agendas")
     .order("created_at", { ascending: true })
 
-  const initialViews: AgendaView[] = agendaViewsData ?? []
+  const initialFilters: AgendaFilter[] = agendaFiltersData ?? []
 
   return (
     <MeetingsClient
       meetings={meetings || []}
-      templates={templates || []}
+      templates={templates}
       workspaceSlug={workspaceSlug}
       isLeader={isLeader}
       statusCounts={statusCounts}
       templateCounts={templateCounts}
-      sharedMeetings={sharedMeetings}
+      sharedMeetings={sharedMeetings as unknown as Meeting[]}
       sharedOutwardIds={sharedOutwardIds}
-      initialViews={initialViews}
+      initialFilters={initialFilters}
+      workspace="agendas"
     />
   )
 }

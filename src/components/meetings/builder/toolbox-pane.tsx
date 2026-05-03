@@ -24,6 +24,7 @@ interface ToolboxPaneProps {
     selectedItemId?: string | null;
     onSelectItem?: (id: string | null) => void;
     onDuplicateItem?: (id: string) => void;
+    planType?: "agenda" | "program";
 }
 
 interface CategoryGroup {
@@ -92,7 +93,9 @@ export function ToolboxPane({
     selectedItemId,
     onSelectItem,
     onDuplicateItem,
+    planType: _planType,
 }: ToolboxPaneProps) {
+    void _planType;
     const [search, setSearch] = useState("");
     const [standardTypes, setStandardTypes] = useState<ProceduralItemType[]>([]);
     const [customTypes, setCustomTypes] = useState<ProceduralItemType[]>([]);

@@ -80,15 +80,44 @@ export function SupportForm() {
     }
   }
 
+  const shellStyle = {
+    background: "color-mix(in srgb, var(--lp-bg) 84%, white 16%)",
+    border: "1px solid color-mix(in srgb, var(--lp-ink) 12%, transparent)",
+  } as const;
+
+  const fieldStyle = {
+    background: "var(--lp-bg)",
+    color: "var(--lp-ink)",
+    borderColor: "color-mix(in srgb, var(--lp-ink) 10%, transparent)",
+  } as const;
+
+  const selectTriggerClassName =
+    "bg-transparent focus:ring-0";
+
+  const actionButtonClassName =
+    "border-0 bg-[var(--lp-accent)] text-[var(--lp-bg)] hover:opacity-90";
+
   if (loading) {
-    return <div className="h-40 flex items-center justify-center text-muted-foreground text-sm">Loading…</div>;
+    return (
+      <div
+        className="flex h-40 items-center justify-center rounded-[24px] text-sm"
+        style={{
+          ...shellStyle,
+          color: "color-mix(in srgb, var(--lp-ink) 60%, transparent)",
+        }}
+      >
+        Loading…
+      </div>
+    );
   }
 
   if (!user) {
     return (
-      <div className="border rounded-lg p-6 bg-muted/30 text-center space-y-3">
-        <p className="text-muted-foreground">Sign in to submit a support ticket and track your requests.</p>
-        <Button asChild>
+      <div className="space-y-3 rounded-[24px] p-6 text-center" style={shellStyle}>
+        <p style={{ color: "color-mix(in srgb, var(--lp-ink) 72%, transparent)" }}>
+          Sign in to submit a support ticket and track your requests.
+        </p>
+        <Button asChild className={actionButtonClassName}>
           <Link href="/login">Sign In</Link>
         </Button>
       </div>
@@ -97,13 +126,25 @@ export function SupportForm() {
 
   if (submitted) {
     return (
-      <div className="border rounded-lg p-8 bg-muted/30 text-center space-y-4">
-        <div className="text-2xl">✓</div>
-        <h3 className="font-semibold text-lg">Ticket submitted</h3>
-        <p className="text-muted-foreground text-sm">
+      <div className="space-y-4 rounded-[24px] p-8 text-center" style={shellStyle}>
+        <div
+          className="mx-auto grid h-12 w-12 place-items-center rounded-full text-2xl"
+          style={{
+            background: "color-mix(in srgb, var(--lp-accent) 14%, transparent)",
+            color: "var(--lp-accent)",
+          }}
+        >
+          ✓
+        </div>
+        <h3 className="font-serif text-2xl text-[var(--lp-ink)]">Ticket submitted</h3>
+        <p className="text-sm" style={{ color: "color-mix(in srgb, var(--lp-ink) 72%, transparent)" }}>
           We&apos;ll get back to you at <strong>{user.email}</strong> within one business day.
         </p>
-        <Button variant="outline" onClick={() => { setSubmitted(false); setSubject(""); setDescription(""); }}>
+        <Button
+          variant="outline"
+          className="border-[color:var(--lp-ink)]/20 bg-transparent text-[var(--lp-ink)] hover:bg-[var(--lp-bg)]"
+          onClick={() => { setSubmitted(false); setSubject(""); setDescription(""); }}
+        >
           Submit another ticket
         </Button>
       </div>
@@ -111,12 +152,17 @@ export function SupportForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5 border rounded-lg p-6">
+    <form onSubmit={handleSubmit} className="space-y-5 rounded-[24px] p-6 sm:p-7" style={shellStyle}>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
         <div className="space-y-2">
-          <Label>Type</Label>
+          <Label
+            className="text-[11px] uppercase tracking-[0.18em]"
+            style={{ color: "color-mix(in srgb, var(--lp-ink) 55%, transparent)" }}
+          >
+            Type
+          </Label>
           <Select value={requestType} onValueChange={setRequestType}>
-            <SelectTrigger>
+            <SelectTrigger className={selectTriggerClassName} style={fieldStyle}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -127,9 +173,14 @@ export function SupportForm() {
           </Select>
         </div>
         <div className="space-y-2">
-          <Label>Priority</Label>
+          <Label
+            className="text-[11px] uppercase tracking-[0.18em]"
+            style={{ color: "color-mix(in srgb, var(--lp-ink) 55%, transparent)" }}
+          >
+            Priority
+          </Label>
           <Select value={priority} onValueChange={setPriority}>
-            <SelectTrigger>
+            <SelectTrigger className={selectTriggerClassName} style={fieldStyle}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -142,31 +193,49 @@ export function SupportForm() {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="subject">Subject</Label>
+        <Label
+          htmlFor="subject"
+          className="text-[11px] uppercase tracking-[0.18em]"
+          style={{ color: "color-mix(in srgb, var(--lp-ink) 55%, transparent)" }}
+        >
+          Subject
+        </Label>
         <Input
           id="subject"
           value={subject}
           onChange={(e) => setSubject(e.target.value)}
           placeholder="Brief summary of your issue"
+          className="bg-transparent text-[var(--lp-ink)]"
+          style={fieldStyle}
           required
         />
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="description">Description</Label>
+        <Label
+          htmlFor="description"
+          className="text-[11px] uppercase tracking-[0.18em]"
+          style={{ color: "color-mix(in srgb, var(--lp-ink) 55%, transparent)" }}
+        >
+          Description
+        </Label>
         <Textarea
           id="description"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           placeholder="Describe your issue in detail. Include steps to reproduce if reporting a bug."
           rows={5}
+          className="bg-transparent text-[var(--lp-ink)]"
+          style={fieldStyle}
           required
         />
       </div>
 
-      <div className="flex items-center justify-between">
-        <p className="text-xs text-muted-foreground">Submitting as <strong>{user.email}</strong></p>
-        <Button type="submit" disabled={submitting}>
+      <div className="flex items-center justify-between gap-4">
+        <p className="text-xs" style={{ color: "color-mix(in srgb, var(--lp-ink) 62%, transparent)" }}>
+          Submitting as <strong>{user.email}</strong>
+        </p>
+        <Button type="submit" disabled={submitting} className={actionButtonClassName}>
           {submitting ? "Submitting…" : "Submit Ticket"}
         </Button>
       </div>

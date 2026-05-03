@@ -1,4 +1,5 @@
 import { Metadata } from "next";
+import { LegalPageShell, LegalSection } from "@/components/legal/legal-page-shell";
 import { SupportForm } from "./support-form";
 
 export const metadata: Metadata = {
@@ -8,24 +9,24 @@ export const metadata: Metadata = {
 
 const faqs = [
   {
-    q: "How do I connect my Zoom account?",
-    a: "Go to Settings → Integrations and click 'Connect Zoom'. You'll be redirected to Zoom to authorize Beespo.",
+    q: "How do I submit a support ticket?",
+    a: "Sign in, scroll to the Submit a Ticket section, choose the request type and priority, then add a clear subject and description before sending it.",
   },
   {
-    q: "How do I create a meeting with Zoom?",
-    a: "Open a meeting in Beespo, click 'Add Zoom Meeting', and Beespo will create the meeting in your Zoom account automatically.",
+    q: "What should I include in a bug report?",
+    a: "Include what you expected to happen, what actually happened, the page or feature involved, and the exact steps that reproduce the issue. The more specific the report, the faster we can investigate it.",
   },
   {
-    q: "Can I use Beespo without Zoom?",
-    a: "Yes. Zoom is an optional integration. You can create and manage meeting agendas without connecting Zoom.",
+    q: "Do I need to sign in to contact support?",
+    a: "You can always email support@beespo.com directly, but you need to sign in if you want to submit a ticket through the app and track your requests there.",
   },
   {
     q: "How do I invite team members to my workspace?",
     a: "Go to Settings → Team and click 'Invite Member'. Enter their email and they'll receive an invitation.",
   },
   {
-    q: "How do I delete my account?",
-    a: "Go to Settings → Account and scroll to the bottom. Click 'Delete Account' and follow the confirmation steps.",
+    q: "How quickly will support respond?",
+    a: "We typically respond within one business day. For urgent issues, include clear reproduction steps and relevant context so we can prioritize investigation quickly.",
   },
   {
     q: "Is my data secure?",
@@ -35,46 +36,65 @@ const faqs = [
 
 export default function SupportPage() {
   return (
-    <div className="space-y-12">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Support</h1>
-        <p className="text-muted-foreground mt-2">
-          Need help? Browse common questions below or submit a support ticket.
-        </p>
-      </div>
-
-      <section className="space-y-4">
-        <h2 className="text-xl font-semibold">Contact</h2>
-        <p className="text-muted-foreground">
+    <LegalPageShell
+      eyebrow="Help"
+      title="Support"
+      accent="desk"
+      description={
+        <>
+          Need help with Beespo? Browse common questions, contact the team directly, or file a
+          support request from the same branded surface.
+        </>
+      }
+    >
+      <LegalSection title="Contact" kicker="Direct line">
+        <p style={{ color: "color-mix(in srgb, var(--lp-ink) 78%, transparent)" }}>
           You can reach us directly at{" "}
-          <a href="mailto:support@beespo.com" className="text-primary underline underline-offset-4">
+          <a
+            href="mailto:support@beespo.com"
+            className="underline underline-offset-4"
+            style={{ color: "var(--lp-accent)" }}
+          >
             support@beespo.com
           </a>
           . We typically respond within one business day.
         </p>
-      </section>
+      </LegalSection>
 
-      <section className="space-y-6">
-        <h2 className="text-xl font-semibold">Frequently Asked Questions</h2>
-        <dl className="space-y-6">
+      <LegalSection title="Frequently Asked Questions" kicker="Common answers">
+        <dl className="space-y-5">
           {faqs.map((faq) => (
-            <div key={faq.q} className="border-b pb-6 last:border-0 last:pb-0">
-              <dt className="font-medium mb-2">{faq.q}</dt>
-              <dd className="text-muted-foreground leading-relaxed">{faq.a}</dd>
+            <div
+              key={faq.q}
+              className="rounded-[20px] px-5 py-5"
+              style={{
+                background: "color-mix(in srgb, var(--lp-bg) 84%, white 16%)",
+                border: "1px solid color-mix(in srgb, var(--lp-ink) 10%, transparent)",
+              }}
+            >
+              <dt className="font-serif text-[20px] leading-tight text-[var(--lp-ink)]">{faq.q}</dt>
+              <dd
+                className="mt-3 leading-relaxed"
+                style={{ color: "color-mix(in srgb, var(--lp-ink) 76%, transparent)" }}
+              >
+                {faq.a}
+              </dd>
             </div>
           ))}
         </dl>
-      </section>
+      </LegalSection>
 
-      <section className="space-y-6">
-        <div>
-          <h2 className="text-xl font-semibold">Submit a Ticket</h2>
-          <p className="text-muted-foreground mt-1 text-sm">
+      <LegalSection title="Submit a Ticket" kicker="Workspace support">
+        <div className="mb-6">
+          <p
+            className="text-sm"
+            style={{ color: "color-mix(in srgb, var(--lp-ink) 68%, transparent)" }}
+          >
             Sign in to submit a support ticket and track your requests.
           </p>
         </div>
         <SupportForm />
-      </section>
-    </div>
+      </LegalSection>
+    </LegalPageShell>
   );
 }

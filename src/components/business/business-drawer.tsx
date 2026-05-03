@@ -41,7 +41,6 @@ const CATEGORY_OPTIONS = [
     { value: "release", label: "Release" },
     { value: "confirmation", label: "Confirmation" },
     { value: "ordination", label: "Ordination" },
-    { value: "setting_apart", label: "Setting Apart" },
     { value: "other", label: "Other" },
 ];
 

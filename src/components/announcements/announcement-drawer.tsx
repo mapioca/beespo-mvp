@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { FormRichTextEditor } from "@/components/ui/form-rich-text-editor";
 import { Separator } from "@/components/ui/separator";
 import {
     Select,
@@ -182,12 +182,11 @@ export function AnnouncementDrawer({ announcement, open, onOpenChange, onDelete 
                             </div>
                             <div className="space-y-1.5">
                                 <label className={propertyLabelClass}>Content</label>
-                                <Textarea
+                                <FormRichTextEditor
                                     value={content}
-                                    onChange={(e) => setContent(e.target.value)}
+                                    onChange={setContent}
                                     placeholder="Announcement content..."
-                                    className={`resize-none bg-control border-control focus-visible:ring-0 focus-visible:border-foreground/30 ${propertyValueClass} placeholder:text-[length:var(--drawer-text-value)] placeholder:font-normal`}
-                                    rows={4}
+                                    minHeight="6rem"
                                 />
                             </div>
                             <div className="space-y-1.5">

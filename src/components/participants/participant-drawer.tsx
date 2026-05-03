@@ -5,6 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import {
     Sheet,
     SheetContent,
     SheetTitle,
@@ -23,6 +30,7 @@ import {
 import { User, Trash2, Loader2, Calendar } from "lucide-react";
 import { format } from "date-fns";
 import { createClient } from "@/lib/supabase/client";
+import { clearDirectoryCache } from "@/lib/cache/form-data-cache";
 import { toast } from "@/lib/toast";
 import { useRouter } from "next/navigation";
 import {
@@ -78,6 +86,7 @@ export function ParticipantDrawer({
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
     const [name, setName] = useState("");
+    const [gender, setGender] = useState<"male" | "female" | "unspecified">("unspecified");
 
     // History state
     const [historyLoading, setHistoryLoading] = useState(false);
@@ -89,6 +98,7 @@ export function ParticipantDrawer({
     useEffect(() => {
         if (participant) {
             setName(participant.name);
+            setGender(participant.gender === "male" || participant.gender === "female" ? participant.gender : "unspecified");
             setLocalTags(participant.tags || []);
         }
     }, [participant]);
@@ -126,12 +136,16 @@ export function ParticipantDrawer({
         const supabase = createClient();
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { error } = await (supabase.from("directory") as any)
-            .update({ name: name.trim() })
+            .update({
+                name: name.trim(),
+                gender: gender === "unspecified" ? null : gender,
+            })
             .eq("id", participant.id);
 
         if (error) {
             toast.error(error.message);
         } else {
+            clearDirectoryCache()
             toast.success("Participant updated.");
             router.refresh();
         }
@@ -234,6 +248,25 @@ export function ParticipantDrawer({
                                     disabled={!canManage}
                                     onKeyDown={(e) => e.key === "Enter" && canManage && handleSave()}
                                 />
+                            </div>
+                            <div className="space-y-1.5">
+                                <label className={propertyLabelClass}>Gender</label>
+                                <Select
+                                    value={gender}
+                                    onValueChange={(value) =>
+                                        setGender(value as "male" | "female" | "unspecified")
+                                    }
+                                    disabled={!canManage}
+                                >
+                                    <SelectTrigger className={`h-10 rounded-full bg-background border-border/80 focus-visible:ring-0 focus-visible:border-foreground/40 ${propertyValueClass}`}>
+                                        <SelectValue placeholder="Unspecified" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="unspecified">Unspecified</SelectItem>
+                                        <SelectItem value="male">Male</SelectItem>
+                                        <SelectItem value="female">Female</SelectItem>
+                                    </SelectContent>
+                                </Select>
                             </div>
                         </div>
 

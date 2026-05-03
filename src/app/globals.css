@@ -4,40 +4,197 @@
 
 @layer base {
   :root {
-    /* Black & White Elegance Theme */
-    --canvas: 0 0% 96.5%; /* Back-compat */
-    --panel: 0 0% 96.5%; /* Base app surface (sidebar + shell canvas) */
-    --paper: 0 0% 99.2%; /* Document surface */
-    --background: 0 0% 100%; /* Pure white */
-    --foreground: 0 0% 0%; /* Pure black */
-    --card: 0 0% 100%;
-    --card-foreground: 0 0% 0%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 0%;
-    --primary: 0 0% 0%; /* Black */
-    --primary-foreground: 0 0% 100%; /* White */
-    --secondary: 0 0% 96%; /* Near white gray */
-    --secondary-foreground: 0 0% 0%;
-    --muted: 0 0% 96%;
-    --muted-foreground: 0 0% 40%;
-    --accent: 0 0% 96%;
-    --accent-foreground: 0 0% 0%;
+    /* Neutrals */
+    --color-stone-50: #fbfbfa;
+    --color-stone-100: #f3f3f1;
+    --color-stone-200: #e6e6e4;
+    --color-stone-300: #d6d6d3;
+    --color-stone-500: #83878e;
+    --color-stone-600: #4e5258;
+    --color-stone-900: #0f1011;
+
+    /* Primary - Red Damask */
+    --color-red-damask-50: hsl(25, 67%, 96%);
+    --color-red-damask-100: hsl(28, 62%, 92%);
+    --color-red-damask-200: hsl(25, 60%, 83%);
+    --color-red-damask-300: hsl(25, 60%, 72%);
+    --color-red-damask-400: hsl(21, 59%, 61%);
+    --color-red-damask-500: hsl(18, 59%, 51%);
+    --color-red-damask-600: hsl(14, 55%, 48%);
+    --color-red-damask-700: hsl(11, 54%, 40%);
+    --color-red-damask-800: hsl(9, 49%, 34%);
+    --color-red-damask-900: hsl(9, 46%, 28%);
+    --color-red-damask-950: hsl(7, 49%, 15%);
+
+    /* Secondary - Eggplant */
+    --color-eggplant-50: hsl(300, 27%, 98%);
+    --color-eggplant-100: hsl(300, 22%, 95%);
+    --color-eggplant-200: hsl(300, 21%, 91%);
+    --color-eggplant-300: hsl(300, 22%, 83%);
+    --color-eggplant-400: hsl(302, 21%, 73%);
+    --color-eggplant-500: hsl(302, 19%, 61%);
+    --color-eggplant-600: hsl(303, 16%, 49%);
+    --color-eggplant-700: hsl(304, 17%, 37%);
+    --color-eggplant-800: hsl(304, 17%, 33%);
+    --color-eggplant-900: hsl(306, 15%, 28%);
+    --color-eggplant-950: hsl(307, 22%, 16%);
+
+    /* Secondary Dark - Moody Blue */
+    --color-moody-blue-100: hsl(222, 55%, 94%);
+    --color-moody-blue-200: hsl(223, 54%, 89%);
+    --color-moody-blue-300: hsl(225, 51%, 82%);
+    --color-moody-blue-400: hsl(229, 49%, 74%);
+    --color-moody-blue-800: hsl(238, 30%, 41%);
+    --color-moody-blue-900: hsl(238, 27%, 29%);
+    --color-moody-blue-950: hsl(238, 25%, 20%);
+
+    /* Accent - Cool Blue */
+    --color-accent-50: #e0e7ff;
+    --color-accent-200: #c7d2fe;
+    --color-accent-600: #3b5bdb;
+    --color-accent-700: #3451c7;
+    --color-accent-800: #1e3a8a;
+
+    /* Semantic */
+    --color-bg-app: #fbfbfa;
+    --color-text-primary: #0f1011;
+    --color-text-secondary: #4e5258;
+    --color-text-tertiary: #83878e;
+    --color-border: #e6e6e4;
+    --color-focus-ring: rgba(59, 91, 219, 0.3);
+
+    /* App Rail - 56px narrow left */
+    --rail-width: 56px;
+    --rail-bg: var(--color-stone-50);
+    --rail-border: 1px solid var(--color-border);
+    --rail-item-size: 32px;
+    --rail-item-radius: 8px;
+    --rail-item-gap: 4px;
+    --rail-icon-inactive: var(--color-text-tertiary);
+    --rail-icon-inactive-opacity: 0.6;
+    --rail-icon-hover: var(--color-text-primary);
+    --rail-icon-hover-opacity: 1;
+    --rail-icon-active: var(--color-accent-600);
+    --rail-bg-hover: var(--color-stone-100);
+    --rail-bg-active: var(--color-accent-50);
+
+    /* Sidebar - 240px */
+    --sidebar-width: 240px;
+    --sidebar-bg: var(--color-bg-app);
+    --sidebar-padding: 12px;
+    --sidebar-item-height: 32px;
+    --sidebar-item-radius: 6px;
+    --sidebar-item-padding-x: 12px;
+    --sidebar-item-gap: 12px;
+    --sidebar-bg-hover: var(--color-stone-100);
+    --sidebar-bg-active: var(--color-bg-app);
+    --sidebar-border-active: 3px solid var(--color-accent-600);
+    --sidebar-text-inactive: var(--color-text-secondary);
+    --sidebar-text-hover: var(--color-text-primary);
+    --sidebar-text-active: var(--color-text-primary);
+    --sidebar-text-active-weight: 500;
+    --sidebar-icon-inactive: var(--color-text-tertiary);
+    --sidebar-icon-hover: var(--color-text-primary);
+    --sidebar-icon-active: var(--color-text-primary);
+
+    /* Topbar */
+    --topbar-height: 56px;
+    --topbar-bg: var(--color-bg-app);
+    --topbar-border: 1px solid var(--color-border);
+    --topbar-padding-x: 16px;
+    --topbar-title-size: 12px;
+    --topbar-title-weight: 500;
+    --topbar-title-color: var(--color-text-primary);
+
+    /* Landing-page brand palette — themable across light/dark.
+       Semantic role > literal color name (e.g. "ink" is dark in light mode,
+       light in dark mode). All landing components reference these tokens. */
+    --lp-bg: #f9faf9;
+    --lp-surface: #f1ece2;
+    --lp-ink: #6e5345;
+    --lp-accent: #cb6538;
+    --lp-soft: #988d7a;
+
+    /* Calm Precision */
+    --cp-canvas: 0 0% 98%;
+    --cp-surface: 0 0% 100%;
+    --cp-surface-2: 0 0% 95.3%;
+    --cp-text: 210 10% 6%;
+    --cp-text-muted: 215 5% 43%;
+    --cp-text-subtle: 214 6% 54%;
+    --cp-border: 0 0% 90%;
+    --cp-divider: 0 0% 92%;
+    --cp-hover: 0 0% 93%;
+    --cp-active: 0 0% 90%;
+    --surface-canvas: 0 0% 98%; /* Deepest page canvas for light mode */
+    --surface-active: 60 4% 90%; /* Selected/active state for light mode */
+    --surface-hover: 0 0% 97%; /* Hover state for interactive surfaces in light mode */
+    --surface-raised: 0 0% 100%; /* Passive buttons, interactive tiles for light mode */
+    --surface-sunken: 0 0% 96%; /* Recessed inputs, wells for light mode */
+    --surface-body: 0 0% 99%; /* Lighter shade of surface-raised */
+    --cp-focus: 18 59% 51%;
+    --cp-primary: 18 59% 51%;
+    --cp-primary-foreground: 0 0% 100%;
+    --cp-danger: 0 75% 54%;
+    --cp-warning: 37 85% 52%;
+    --cp-success: 150 55% 40%;
+    --cp-font-title-size: 30px;
+    --cp-font-title-weight: 500;
+    --cp-font-section-size: 14px;
+    --cp-font-section-weight: 500;
+    --cp-font-label-size: 14px;
+    --cp-font-label-weight: 400;
+    --cp-font-body-size: 14px;
+    --cp-font-body-weight: 400;
+    --cp-font-meta-size: 12px;
+    --cp-font-meta-weight: 400;
+    --cp-radius-card: 12px;
+    --cp-radius-control: 10px;
+    --cp-section-gap: 24px;
+    --cp-heading-to-card: 10px;
+    --cp-row-py: 12px;
+    --cp-row-px: 16px;
+    --cp-control-height: 40px;
+    --cp-divider-inset: 16px;
+    --cp-divider-opacity: 0.35;
+
+    --canvas: var(--cp-canvas); /* Back-compat */
+    --panel: var(--cp-canvas); /* Base app surface (sidebar + shell canvas) */
+    --paper: var(--cp-surface-2); /* Document surface */
+    --background: var(--cp-surface);
+    --foreground: var(--cp-text);
+    --card: var(--cp-surface);
+    --card-foreground: var(--cp-text);
+    --popover: var(--cp-surface);
+    --popover-foreground: var(--cp-text);
+    --primary: var(--brand);
+    --primary-foreground: var(--brand-foreground);
+    --secondary: 300 22% 95%;
+    --secondary-foreground: 307 22% 16%;
+    --secondary-border: 302 21% 73%;
+    --secondary-hover: 300 21% 91%;
+    --muted: var(--cp-surface-2);
+    --muted-foreground: var(--cp-text-muted);
+    --accent: var(--cp-hover);
+    --accent-foreground: var(--cp-text);
     --accent-warm: 24 38% 91%; /* Warm peach-gray (#EFE7E1) */
     --accent-warm-hover: 24 27% 88%; /* Slightly deeper warm hover (#E6DDD6) */
-    --chrome: 0 0% 99.4%; /* App chrome surface (top bars, toolbars) */
-    --chrome-border: 0 0% 89%; /* Subtle chrome dividers */
+    --chrome: var(--cp-surface-2); /* App chrome surface (top bars, toolbars) */
+    --chrome-border: var(--cp-border); /* Subtle chrome dividers */
     --overlay: 0 0% 0% / 0.28; /* Modal overlay tint */
-    --app-shell: 0 0% 96.5%;
-    --app-island: 0 0% 100%;
-    --app-island-border: 0 0% 89%;
-    --nav-hover: 0 0% 94%;
+    --app-shell: 60 9% 98%; /* Rail - Stone & Sage: Alabaster (#fafaf9) */
+    --app-main-card: 0 0% 100%; /* Main content - Stone & Sage: Pure white */
+    --app-sidebar: 0 0% 100%; /* Sidebar - Stone & Sage: Pure white */
+    --app-island: 210 20% 98%; /* Secondary pane - #f9fafb (lighter) */
+    --app-island-border: var(--cp-border);
+    --nav-hover: 60 5% 96%; /* Stone & Sage: stone-100 hover on white */
     --nav-hover-alpha: 1;
-    --nav-selected: 0 0% 90%;
+    --nav-selected: 60 9% 95%; /* Stone & Sage: subtle stone tint on white */
     --nav-selected-alpha: 1;
-    --nav-text: 0 0% 38%;
-    --nav-text-strong: 0 0% 10%;
-    --nav-text-muted: 0 0% 46%;
-    --nav-active-border: 0 0% 82%;
+    --nav-text: 25 5% 45%;
+    --nav-text-strong: 24 10% 10%;
+    --nav-text-muted: 25 5% 50%;
+    --nav-active-border: 20 6% 90%; /* Stone & Sage: stone-200 */
     --program-stage-bg: 220 14% 95.6%;
     --program-control-panel-bg: 0 0% 100%;
     --program-control-panel-border: 220 10% 90.5%;
@@ -115,8 +272,25 @@
     --button-primary: 0 0% 0%;
     --button-primary-hover: 0 0% 12%;
     --button-primary-foreground: 0 0% 100%;
-    --pill: 0 0% 92%;
-    --pill-foreground: 0 0% 20%;
+    --primary-pill-bg: 28 62% 92%;
+    --primary-pill-foreground: 7 49% 15%;
+    --primary-pill-border: 21 59% 61%;
+    --primary-pill-hover: 25 60% 83%;
+    --primary-chip-fill-bg: 25 60% 72%;
+    --primary-chip-fill-foreground: 7 49% 15%;
+    --primary-chip-fill-hover: 21 59% 61%;
+    --secondary-chip-fill-bg: 300 22% 83%;
+    --secondary-chip-fill-foreground: 307 22% 16%;
+    --secondary-chip-fill-hover: 302 21% 73%;
+    --primary-icon-bg: 25 60% 83%;
+    --primary-icon-border: 25 60% 72%;
+    --primary-icon-fill: 21 59% 61%;
+    --secondary-icon-bg: 300 21% 91%;
+    --secondary-icon-border: 300 22% 83%;
+    --secondary-icon-fill: 302 21% 73%;
+    --pill: 300 22% 95%;
+    --pill-foreground: 307 22% 16%;
+    --pill-border: 302 21% 73%;
     --control: 0 0% 100%;
     --control-foreground: 0 0% 35%;
     --control-border: 0 0% 87%;
@@ -128,22 +302,68 @@
     --menu-icon: 0 0% 40%;
     --menu-hover: 0 0% 96%;
     --menu-separator: 0 0% 92%;
+    --menu-item-font-size: 12px;
+    --menu-shortcut-font-size: 11px;
     --table-row-hover: 0 0% 97.8%;
-    --table-row-selected: 0 0% 97.3%;
+    --table-row-selected: var(--brand-bg);
     --table-filter-hover: 0 0% 94%;
     --table-filter-active: 0 0% 92%;
     --table-shell-bg: 0 0% 100%;
     --table-shell-border: 0 0% 89%;
-    --table-shell-shadow: 0 1px 0 rgba(15,23,42,0.04);
-    --table-row-divider: 0 0% 91%;
-    --table-header-bg: 0 0% 95%;
+    --table-shell-shadow: none;
+    --table-row-divider: 220 13% 91%;
+    --table-header-bg: 0 0% 100%;
     --table-header-border: 0 0% 89%;
-    --table-head-height: 2.5rem;
-    --table-cell-px: 0.75rem;
+    /* --- new design tokens --- */
+    --table-header-height: 32px;
+    --table-header-text-size: 11px;
+    --table-header-text-transform: uppercase;
+    --table-header-text-spacing: 0.5px;
+    --table-header-color: var(--color-text-tertiary);
+    --table-header-weight: 500;
+    --table-row-height: 36px;
+    --table-row-padding-x: 16px;
+    --table-row-bg-hover: #fcfcfa;
+    --table-row-bg-selected: #f9f7f5;
+    --table-row-bg-selected-hover: #f5f1ed;
+    --table-row-border: 1px solid var(--color-border);
+    --table-cell-text: var(--color-text-primary);
+    --table-cell-text-secondary: var(--color-text-secondary);
+    /* --- legacy (kept for back-compat) --- */
+    --table-head-height: var(--table-header-height);
+    --table-cell-px: var(--table-row-padding-x);
     --table-row-py: 0.625rem;
-    --table-header-font-size: 11px;
+    --table-header-font-size: var(--table-header-text-size);
+    --table-header-letter-spacing: var(--table-header-text-spacing);
     --table-body-font-size: 13px;
     --table-meta-font-size: 12px;
+    --table-micro-font-size: 10px;
+    --table-checkbox-bg: 0 0% 100%;
+    --table-checkbox-border: 0 0% 84%;
+    --table-checkbox-hover-bg: 0 0% 98%;
+    --table-checkbox-hover-border: 0 0% 72%;
+    --table-checkbox-check: 0 0% 100%;
+    --table-checkbox-focus: var(--cp-focus);
+    --table-checkbox-checked-bg: 220 10% 24%;
+    --table-checkbox-checked-border: 220 10% 24%;
+    --table-checkbox-checked-check: 0 0% 100%;
+    /* --- new checkbox design tokens --- */
+    --checkbox-size: 16px;
+    --checkbox-radius: 4px;
+    --checkbox-border: 1.5px solid var(--color-stone-300);
+    --checkbox-border-hover: 1.5px solid var(--color-stone-500);
+    --checkbox-border-color: var(--color-stone-300);
+    --checkbox-border-color-hover: var(--color-stone-500);
+    --checkbox-border-width: 1.5px;
+    --checkbox-bg-checked: var(--color-accent-600);
+    --checkbox-icon-checked: #ffffff;
+    --agenda-control-font-size: 12px;
+    --agenda-chip-font-size: 12px;
+    --agenda-icon-control-size: 30px;
+    --agenda-interactive-hover: 0 0% 94%;
+    --agenda-interactive-active: 0 0% 92%;
+    --agenda-interactive-focus-ring: 0 0% 0%;
+    --agenda-interactive-disabled-opacity: 0.5;
     --chip-bg: 0 0% 98.8%;
     --chip-border: 0 0% 90%;
     --chip-text: 0 0% 22%;
@@ -151,53 +371,266 @@
     --chip-active-bg: 0 0% 92%;
     --chip-active-border: 0 0% 82%;
     --chip-active-text: 0 0% 10%;
-    --destructive: 0 84% 60%; /* Error red - minimal color */
+    --destructive: var(--cp-danger);
     --destructive-foreground: 0 0% 100%;
-    --border: 0 0% 89%; /* Light gray for borders */
-    --input: 0 0% 89%;
-    --ring: 0 0% 0%;
+    --border: var(--cp-border);
+    --input: 20 6% 82%; /* stone-300 #d6d3d1 */
+    --ring: var(--brand);
     --radius: 0.875rem;
     --chart-1: 0 0% 60%;
     --chart-2: 0 0% 40%;
     --chart-3: 0 0% 20%;
     --chart-4: 0 0% 80%;
     --chart-5: 0 0% 50%;
+    --landing-nav-height: 4rem;
+    --landing-nav-horizontal-padding: 1rem;
+    --landing-nav-link-font-size: 0.875rem;
+    --landing-nav-logo-font-size: 1.25rem;
+    --landing-nav-mobile-panel-width: min(85vw, 20rem);
+    --landing-page-bg: var(--cp-canvas);
+    --landing-section-bg: var(--cp-canvas);
+    --landing-demo-surface: var(--cp-surface);
+    --landing-demo-surface-2: var(--cp-surface-2);
+    --landing-demo-border: var(--cp-border);
+    --landing-demo-divider: var(--cp-divider);
+    --landing-demo-text: var(--cp-text);
+    --landing-demo-muted: var(--cp-text-muted);
+    --landing-demo-subtle: var(--cp-text-subtle);
+    --landing-demo-accent: var(--cp-primary);
+    --landing-demo-accent-soft: 25 67% 96%;
+    --landing-demo-success: var(--cp-success);
+    --landing-demo-success-soft: 150 55% 92%;
+    --landing-demo-warning: var(--cp-warning);
+    --landing-demo-warning-soft: 37 85% 92%;
+    --landing-demo-shadow: 0 32px 80px -24px rgba(15, 16, 17, 0.18), 0 8px 24px -8px rgba(15, 16, 17, 0.08);
+    --landing-cursor-fill: 18 59% 51%;
+    --landing-cursor-ring: 0 0% 100%;
+    --landing-glow-primary: 18 59% 51%;
+    --landing-glow-secondary: 24 80% 60%;
+    --landing-glow-opacity: 0.18;
+    --landing-grain-opacity: 0.04;
+    --settings-shell-max-width: 58rem;
+    --settings-shell-pad-x: 1.5rem;
+    --settings-shell-pad-y: 1.5rem;
+    --settings-title-size: var(--cp-font-title-size);
+    --settings-description-size: 13px;
+    --settings-label-size: var(--cp-font-meta-size);
+    --settings-label-tracking: 0.02em;
+    --settings-surface-bg: var(--cp-surface);
+    --settings-surface-border: var(--cp-border);
+    --settings-surface-radius: var(--cp-radius-card);
+    --settings-canvas: var(--cp-canvas);
+    --settings-row-min-height: 3.75rem;
+    --settings-row-padding-x: var(--cp-row-px);
+    --settings-row-padding-y: var(--cp-row-py);
+    --settings-row-hover: var(--cp-hover);
+    --settings-divider: var(--cp-divider);
+    --settings-input-bg: var(--cp-surface);
+    --settings-input-border: var(--cp-border);
+    --settings-input-focus: var(--cp-focus);
+    --settings-meta-size: var(--cp-font-meta-size);
+    --settings-body-size: var(--cp-font-body-size);
+    --settings-swatch-size: 1.15rem;
+    --settings-swatch-gap: 0.45rem;
+    --settings-swatch-border: 0 0% 84%;
+    --settings-swatch-ring: 0 0% 16%;
+    /* --- form-surface tokens --- */
+    --form-label-size: 12px;
+    --form-label-color: var(--color-text-secondary);
+    --form-section-header-size: 12px;
+    --form-section-header-color: var(--color-text-secondary);
+    --form-section-header-spacing: 0.5px;
+    --form-section-gap: 40px;
+    --form-field-gap: 20px;
+    --form-input-height: 40px;
+    --form-input-border: var(--color-stone-300);
+    --form-input-radius: 8px;
+    --form-checkbox-size: 18px;
+    --form-checkbox-radius: 6px;
+    --form-checkbox-bg: var(--cp-surface);
+    --form-checkbox-border: var(--cp-border);
+    --form-checkbox-focus: var(--cp-focus);
+    --form-checkbox-check: var(--cp-primary);
+    --form-checkbox-checked-bg: 14 55% 48%; /* red-damask-600 */
+    --form-checkbox-checked-border: 14 55% 48%;
+    --form-checkbox-checked-check: 0 0% 100%;
+    --nav-secondary-hover-hsl: 220 10% 45%;
+    --brand: 18 59% 51%; /* Red Damask 500 */
+    --brand-foreground: 0 0% 100%;
+    --brand-bg: 28 62% 92%; /* Red Damask 100 */
+    --brand-hover: 21 59% 61%; /* Red Damask 400 */
+    --brand-active: 14 55% 48%; /* Red Damask 600 */
+    --btn-primary-bg: hsl(var(--primary));
+    --btn-primary-text: hsl(var(--primary-foreground));
+    --btn-primary-bg-hover: hsl(var(--brand-hover));
+    --btn-primary-text-hover: hsl(var(--primary-foreground));
+    --btn-primary-bg-active: hsl(var(--brand-active));
+    --btn-primary-text-active: hsl(var(--primary-foreground));
+    --btn-primary-bg-disabled: #f5f5f4;
+    --btn-primary-text-disabled: #a8a29e;
+    --btn-primary-border-disabled: #e7e5e4;
+    --btn-secondary-bg: hsl(var(--secondary));
+    --btn-secondary-text: hsl(var(--secondary-foreground));
+    --btn-secondary-bg-hover: hsl(var(--secondary));
+    --btn-secondary-text-hover: hsl(var(--secondary-foreground));
+    --btn-secondary-bg-active: hsl(var(--secondary));
+    --btn-secondary-text-active: hsl(var(--secondary-foreground));
+    --btn-secondary-bg-disabled: hsl(var(--secondary));
+    --btn-secondary-text-disabled: hsl(var(--secondary-foreground));
+    --btn-tertiary-bg: hsl(var(--background));
+    --btn-tertiary-text: hsl(var(--foreground));
+    --btn-tertiary-border: hsl(var(--input));
+    --btn-tertiary-bg-hover: hsl(var(--accent));
+    --btn-tertiary-text-hover: hsl(var(--accent-foreground));
+    --btn-tertiary-border-hover: hsl(var(--input));
+    --btn-tertiary-bg-active: hsl(var(--accent));
+    --btn-tertiary-text-active: hsl(var(--accent-foreground));
+    --btn-tertiary-border-active: hsl(var(--input));
+    --btn-tertiary-bg-disabled: hsl(var(--background));
+    --btn-tertiary-text-disabled: hsl(var(--muted-foreground));
+    --btn-tertiary-border-disabled: hsl(var(--border));
+    --dashboard-canvas: var(--surface-canvas);
+    --dashboard-surface: var(--background);
+    --dashboard-surface-muted: var(--surface-body);
+    --dashboard-surface-hover: var(--surface-hover);
+    --dashboard-border: var(--border);
+    --dashboard-border-strong: var(--cp-divider);
+    --dashboard-shadow-sm: 0 1px 0 rgba(15, 23, 42, 0.03);
+    --dashboard-shadow-md: 0 10px 24px rgba(15, 23, 42, 0.06);
+    --dashboard-shadow-lg: 0 12px 30px rgba(15, 23, 42, 0.08);
+    --dashboard-icon-bg: var(--surface-body);
+    --dashboard-icon-fg: var(--muted-foreground);
+    --dashboard-row-bg: var(--surface-body);
+    --dashboard-row-hover: var(--surface-hover);
+    --dashboard-link: var(--brand);
+    --dashboard-link-hover: var(--brand-hover);
+    --dashboard-sparkline: var(--brand);
+    --dashboard-pill-primary-bg: var(--primary-pill-bg);
+    --dashboard-pill-primary-border: var(--primary-pill-border);
+    --dashboard-pill-primary-text: var(--primary-pill-foreground);
+    --dashboard-pill-primary-hover: var(--primary-pill-hover);
+    --dashboard-pill-secondary-bg: var(--secondary);
+    --dashboard-pill-secondary-border: var(--secondary-border);
+    --dashboard-pill-secondary-text: var(--secondary-foreground);
+    --dashboard-pill-secondary-hover: var(--secondary-hover);
+    --dashboard-pill-muted-bg: var(--muted);
+    --dashboard-pill-muted-border: var(--border);
+    --dashboard-pill-muted-text: var(--muted-foreground);
+    --dashboard-pill-muted-hover: var(--surface-hover);
+    --dashboard-pill-warning-bg: 37 85% 95%;
+    --dashboard-pill-warning-border: 37 72% 78%;
+    --dashboard-pill-warning-text: 24 68% 28%;
+    --dashboard-pill-warning-hover: 37 75% 91%;
+    --dashboard-pill-success-bg: 148 32% 93%;
+    --dashboard-pill-success-border: 149 28% 75%;
+    --dashboard-pill-success-text: 149 42% 27%;
+    --dashboard-pill-success-hover: 148 28% 89%;
+    --dashboard-pill-critical-bg: 18 58% 92%;
+    --dashboard-pill-critical-border: 18 52% 75%;
+    --dashboard-pill-critical-text: 14 50% 28%;
+    --dashboard-pill-critical-hover: 18 55% 88%;
+    --dashboard-kpi-trend-up: 149 42% 34%;
+    --dashboard-kpi-trend-down: 14 50% 38%;
+    --dashboard-kpi-trend-neutral: var(--muted-foreground);
+    --app-nav-bg: #f3f3f1;
+    --app-nav-card: #ffffff;
+    --app-nav-hover: #eeeeec;
+    --app-nav-active: #e6e6e3;
+    --app-nav-text: #25272a;
+    --app-nav-strong: #0f1011;
+    --app-nav-muted: #83878e;
+    --app-nav-icon: #4e5258;
+    --app-nav-border: #e6e6e4;
+    --app-nav-inverse: #0f1011;
+    --app-nav-inverse-text: #f3f3f1;
   }
 
   .dark {
+    /* Landing-page brand palette — dark mode */
+    --lp-bg: #14100c;
+    --lp-surface: #1f1812;
+    --lp-ink: #f1e7d6;
+    --lp-accent: #e07a4f;
+    --lp-soft: #998b78;
+
+    --color-stone-50: #141416;
+    --color-stone-100: #1f1f22;
+    --color-stone-200: #26262a;
+    --color-stone-300: #3a3a3f;
+    --color-stone-500: #78756a;
+    --color-stone-600: #a19d90;
+    --color-stone-900: #f3f1ea;
+
+    --color-accent-50: #3a231a;
+    --color-accent-600: #e08361;
+    --color-accent-700: #ea9a7a;
+    --color-accent-800: #f2b79b;
+
+    --color-bg-app: #17171a;
+    --color-text-primary: #f3f1ea;
+    --color-text-secondary: #dcd9cf;
+    --color-text-tertiary: #a19d90;
+    --color-border: #2c2c30;
+    --color-focus-ring: rgba(224, 131, 97, 0.3);
+
+    --cp-canvas: 260 6% 10%;
+    --cp-surface: 240 4% 11%;
+    --cp-surface-2: 240 4% 11%;
+    /* Named surface tokens */
+    --surface-canvas: 260 6% 10%; /* #1a1a1d — deepest bg, behind everything */
+    --surface-base: 240 4% 11%;   /* #1a1a1c — cards, panels, sidebars */
+    --surface-raised: 255 4% 13%; /* #201f22 — passive buttons, interactive tiles */
+    --surface-hover: 240 4% 16%;  /* #26262a — hover state for interactive surfaces */
+    --surface-active: 255 5% 23%; /* #383640 — selected/active state */
+    --surface-sunken: 255 5% 8%;  /* #141316 — recessed inputs, wells */
+    --surface-body: 260 5% 13%; /* Between surface-canvas and surface-raised */
+    --cp-text: 45 18% 93%;
+    --cp-text-muted: 40 8% 59%;
+    --cp-text-subtle: 38 6% 44%;
+    --cp-border: 240 3% 18%;
+    --cp-divider: 240 3% 20%;
+    --cp-hover: 240 4% 16%;
+    --cp-active: 240 4% 19%;
+    --cp-focus: 17 65% 63%;
+    --cp-primary: 45 18% 93%;
+    --cp-primary-foreground: 240 5% 10%;
+
     --canvas: 24 18% 22%; /* Back-compat */
-    --panel: 0 0% 8%;
-    --paper: 0 0% 5%;
-    --background: 0 0% 0%;
-    --foreground: 0 0% 100%;
-    --card: 0 0% 5%;
-    --card-foreground: 0 0% 100%;
-    --popover: 0 0% 5%;
-    --popover-foreground: 0 0% 100%;
-    --primary: 0 0% 100%;
-    --primary-foreground: 0 0% 0%;
-    --secondary: 0 0% 10%;
-    --secondary-foreground: 0 0% 100%;
-    --muted: 0 0% 10%;
-    --muted-foreground: 0 0% 60%;
-    --accent: 0 0% 10%;
-    --accent-foreground: 0 0% 100%;
+    --panel: var(--cp-canvas);
+    --paper: var(--cp-surface-2);
+    --background: var(--surface-base); /* #201f22 - upcoming sidebar */
+    --foreground: var(--cp-text);
+    --card: var(--surface-canvas); /* #1a1a1d - main canvas */
+    --card-foreground: var(--cp-text);
+    --popover: var(--cp-surface);
+    --popover-foreground: var(--cp-text);
+    --primary: var(--brand);
+    --primary-foreground: var(--brand-foreground);
+    --secondary: 238 25% 20%;
+    --secondary-foreground: 222 55% 94%;
+    --secondary-border: 238 30% 41%;
+    --secondary-hover: 238 27% 29%;
+    --muted: var(--cp-surface-2);
+    --muted-foreground: var(--cp-text-muted);
+    --accent: var(--cp-hover);
+    --accent-foreground: var(--cp-text);
     --accent-warm: 24 18% 22%;
     --accent-warm-hover: 24 20% 26%;
-    --chrome: 0 0% 8%;
-    --chrome-border: 0 0% 18%;
+    --chrome: var(--cp-surface-2);
     --overlay: 0 0% 0% / 0.6; /* Modal overlay tint */
-    --app-shell: 0 0% 8%;
-    --app-island: 0 0% 6%;
-    --app-island-border: 0 0% 20%;
-    --nav-hover: 220 10% 14%;
+    --app-shell: 260 6% 10%; /* #18171a */
+    --app-sidebar: 12 6% 15%; /* Stone & Sage: Stone 800 (#292524) - sidebar = main */
+    --app-main-card: 260 6% 10%; /* #18171a */
+    --app-island: var(--cp-surface);
+    --app-island-border: var(--cp-border);
+    --nav-hover: 24 8% 18%;
     --nav-hover-alpha: 1;
-    --nav-selected: 220 11% 17%;
+    --nav-selected: 24 8% 20%; /* Stone & Sage: subtle stone tint on stone-800 sidebar */
     --nav-selected-alpha: 1;
-    --nav-text: 220 8% 72%;
-    --nav-text-strong: 220 12% 94%;
-    --nav-text-muted: 220 8% 66%;
-    --nav-active-border: 220 12% 24%;
+    --nav-text: 24 5% 70%;
+    --nav-text-strong: 60 9% 98%;
+    --nav-text-muted: 24 5% 64%;
+    --nav-active-border: 30 6% 25%; /* Stone & Sage: stone-700 cutout edge */
     --program-stage-bg: 220 10% 10%;
     --program-control-panel-bg: 220 8% 8%;
     --program-control-panel-border: 220 9% 18%;
@@ -260,11 +693,28 @@
     --drawer-text-section: 13.5px;
     --drawer-text-menu-item: 13.5px;
     --drawer-text-title: 15.5px;
-    --button-primary: 0 0% 100%;
-    --button-primary-hover: 0 0% 88%;
+    --button-primary: 18 59% 51%;
+    --button-primary-hover: 21 59% 61%;
     --button-primary-foreground: 0 0% 100%;
-    --pill: 0 0% 18%;
-    --pill-foreground: 0 0% 90%;
+    --primary-pill-bg: 7 49% 15%;
+    --primary-pill-foreground: 28 62% 92%;
+    --primary-pill-border: 9 49% 34%;
+    --primary-pill-hover: 9 46% 28%;
+    --primary-chip-fill-bg: 7 49% 15%;
+    --primary-chip-fill-foreground: 28 62% 92%;
+    --primary-chip-fill-hover: 9 46% 28%;
+    --secondary-chip-fill-bg: 238 25% 20%;
+    --secondary-chip-fill-foreground: 222 55% 94%;
+    --secondary-chip-fill-hover: 238 27% 29%;
+    --primary-icon-bg: 25 60% 83%;
+    --primary-icon-border: 25 60% 72%;
+    --primary-icon-fill: 9 49% 34%;
+    --secondary-icon-bg: 223 54% 89%;
+    --secondary-icon-border: 225 51% 82%;
+    --secondary-icon-fill: 229 49% 74%;
+    --pill: 238 25% 20%;
+    --pill-foreground: 222 55% 94%;
+    --pill-border: 238 30% 41%;
     --control: 0 0% 10%;
     --control-foreground: 0 0% 75%;
     --control-border: 0 0% 20%;
@@ -277,21 +727,38 @@
     --menu-hover: 0 0% 16%;
     --menu-separator: 0 0% 22%;
     --table-row-hover: 220 10% 12.5%;
-    --table-row-selected: 220 10% 20%;
+    --table-row-selected: var(--brand-bg);
     --table-filter-hover: 220 10% 14%;
     --table-filter-active: 220 10% 18%;
     --table-shell-bg: 220 12% 10%;
     --table-shell-border: 220 10% 20%;
     --table-shell-shadow: 0 1px 0 rgba(0,0,0,0.35);
-    --table-row-divider: 220 10% 20%;
+    --table-row-divider: 220 13% 91%;
     --table-header-bg: 220 10% 13%;
     --table-header-border: 220 10% 20%;
     --table-head-height: 2.5rem;
     --table-cell-px: 0.75rem;
     --table-row-py: 0.625rem;
     --table-header-font-size: 11px;
+    --table-header-letter-spacing: 0.01em;
     --table-body-font-size: 13px;
     --table-meta-font-size: 12px;
+    --table-micro-font-size: 10px;
+    --table-checkbox-bg: var(--cp-surface-2);
+    --table-checkbox-border: 220 8% 52%;
+    --table-checkbox-hover-bg: 220 10% 22%;
+    --table-checkbox-hover-border: 220 8% 68%;
+    --table-checkbox-check: 220 14% 11%;
+    --table-checkbox-focus: var(--cp-focus);
+    --table-checkbox-checked-bg: 220 12% 84%;
+    --table-checkbox-checked-border: 220 12% 84%;
+    --table-checkbox-checked-check: 220 14% 11%;
+    --agenda-control-font-size: 12px;
+    --agenda-chip-font-size: 12px;
+    --agenda-interactive-hover: 220 10% 14%;
+    --agenda-interactive-active: 220 10% 18%;
+    --agenda-interactive-focus-ring: 0 0% 100%;
+    --agenda-interactive-disabled-opacity: 0.5;
     --chip-bg: 220 10% 14%;
     --chip-border: 220 10% 24%;
     --chip-text: 220 12% 88%;
@@ -299,11 +766,333 @@
     --chip-active-bg: 220 12% 22%;
     --chip-active-border: 220 10% 34%;
     --chip-active-text: 0 0% 98%;
-    --destructive: 0 84% 60%;
+    --destructive: var(--cp-danger);
     --destructive-foreground: 0 0% 0%;
-    --border: 0 0% 15%;
-    --input: 0 0% 15%;
-    --ring: 0 0% 100%;
+    --border: var(--cp-border);
+    --input: var(--cp-border);
+    --ring: var(--brand);
+    --btn-primary-bg: hsl(18, 59%, 51%);
+    --btn-primary-text: hsl(0, 0%, 100%);
+    --btn-primary-bg-hover: hsl(21, 59%, 61%);
+    --btn-primary-text-hover: hsl(0, 0%, 100%);
+    --btn-primary-bg-active: hsl(14, 55%, 48%);
+    --btn-primary-text-active: hsl(0, 0%, 100%);
+    --btn-primary-bg-disabled: hsl(16, 32%, 30%);
+    --btn-primary-text-disabled: hsl(21, 31%, 13%);
+    --btn-primary-border-disabled: transparent;
+    --btn-secondary-bg: hsl(20, 67%, 10%);
+    --btn-secondary-text: hsl(19, 68%, 90%);
+    --btn-secondary-bg-hover: hsl(18, 59%, 20%);
+    --btn-secondary-text-hover: hsl(17, 67%, 85%);
+    --btn-secondary-bg-active: hsl(18, 59%, 30%);
+    --btn-secondary-text-active: hsl(24, 49%, 79%);
+    --btn-secondary-bg-disabled: hsl(16, 32%, 30%);
+    --btn-secondary-text-disabled: hsl(21, 31%, 13%);
+    --btn-tertiary-bg: hsl(0, 0%, 9%);
+    --btn-tertiary-text: hsl(20, 47%, 52%);
+    --btn-tertiary-border: hsl(20, 47%, 52%);
+    --btn-tertiary-bg-hover: hsl(20, 67%, 10%);
+    --btn-tertiary-text-hover: hsl(17, 35%, 54%);
+    --btn-tertiary-border-hover: hsl(17, 35%, 54%);
+    --btn-tertiary-bg-active: hsl(20, 67%, 10%);
+    --btn-tertiary-text-active: hsl(19, 61%, 70%);
+    --btn-tertiary-border-active: hsl(19, 61%, 70%);
+    --btn-tertiary-bg-disabled: hsl(0, 0%, 9%);
+    --btn-tertiary-text-disabled: hsl(15, 18%, 34%);
+    --btn-tertiary-border-disabled: hsl(15, 18%, 34%);
+    --dashboard-canvas: var(--surface-canvas);
+    --dashboard-surface: var(--background);
+    --dashboard-surface-muted: 220 9% 12%;
+    --dashboard-surface-hover: 220 10% 14%;
+    --dashboard-border: var(--border);
+    --dashboard-border-strong: 220 8% 24%;
+    --dashboard-shadow-sm: 0 1px 0 rgba(0, 0, 0, 0.24);
+    --dashboard-shadow-md: 0 10px 24px rgba(0, 0, 0, 0.24);
+    --dashboard-shadow-lg: 0 14px 30px rgba(0, 0, 0, 0.3);
+    --dashboard-icon-bg: 220 10% 14%;
+    --dashboard-icon-fg: 220 12% 88%;
+    --dashboard-row-bg: 220 10% 14%;
+    --dashboard-row-hover: 220 10% 18%;
+    --dashboard-link: var(--brand);
+    --dashboard-link-hover: var(--brand-hover);
+    --dashboard-sparkline: var(--brand);
+    --dashboard-pill-primary-bg: var(--primary-pill-bg);
+    --dashboard-pill-primary-border: 17 45% 34%;
+    --dashboard-pill-primary-text: 22 70% 86%;
+    --dashboard-pill-primary-hover: 17 38% 20%;
+    --dashboard-pill-secondary-bg: 220 10% 16%;
+    --dashboard-pill-secondary-border: 220 10% 24%;
+    --dashboard-pill-secondary-text: 220 12% 88%;
+    --dashboard-pill-secondary-hover: 220 10% 19%;
+    --dashboard-pill-muted-bg: 220 10% 14%;
+    --dashboard-pill-muted-border: 220 10% 24%;
+    --dashboard-pill-muted-text: 220 9% 72%;
+    --dashboard-pill-muted-hover: 220 10% 18%;
+    --dashboard-pill-warning-bg: 36 44% 17%;
+    --dashboard-pill-warning-border: 36 38% 28%;
+    --dashboard-pill-warning-text: 36 72% 74%;
+    --dashboard-pill-warning-hover: 36 40% 20%;
+    --dashboard-pill-success-bg: 150 28% 16%;
+    --dashboard-pill-success-border: 150 22% 28%;
+    --dashboard-pill-success-text: 150 48% 74%;
+    --dashboard-pill-success-hover: 150 24% 19%;
+    --dashboard-pill-critical-bg: 14 38% 17%;
+    --dashboard-pill-critical-border: 14 30% 28%;
+    --dashboard-pill-critical-text: 18 64% 76%;
+    --dashboard-pill-critical-hover: 14 32% 20%;
+    --dashboard-kpi-trend-up: 150 48% 74%;
+    --dashboard-kpi-trend-down: 18 64% 76%;
+    --dashboard-kpi-trend-neutral: 220 9% 72%;
+    --landing-nav-height: 4rem;
+    --landing-nav-horizontal-padding: 1rem;
+    --landing-nav-link-font-size: 0.875rem;
+    --landing-nav-logo-font-size: 1.25rem;
+    --landing-nav-mobile-panel-width: min(85vw, 20rem);
+    --landing-page-bg: var(--cp-canvas);
+    --landing-section-bg: var(--cp-canvas);
+    --landing-demo-surface: var(--cp-surface);
+    --landing-demo-surface-2: var(--cp-surface-2);
+    --landing-demo-border: var(--cp-border);
+    --landing-demo-divider: var(--cp-divider);
+    --landing-demo-text: var(--cp-text);
+    --landing-demo-muted: var(--cp-text-muted);
+    --landing-demo-subtle: var(--cp-text-subtle);
+    --landing-demo-accent: var(--cp-primary);
+    --landing-demo-accent-soft: 17 65% 18%;
+    --landing-demo-success: var(--cp-success);
+    --landing-demo-success-soft: 150 30% 16%;
+    --landing-demo-warning: var(--cp-warning);
+    --landing-demo-warning-soft: 37 50% 18%;
+    --landing-demo-shadow: 0 32px 80px -24px rgba(0, 0, 0, 0.6), 0 8px 24px -8px rgba(0, 0, 0, 0.45);
+    --landing-cursor-fill: 17 65% 63%;
+    --landing-cursor-ring: 240 5% 10%;
+    --landing-glow-primary: 17 65% 63%;
+    --landing-glow-secondary: 231 50% 50%;
+    --landing-glow-opacity: 0.22;
+    --landing-grain-opacity: 0.06;
+    --settings-shell-max-width: 58rem;
+    --settings-shell-pad-x: 1.5rem;
+    --settings-shell-pad-y: 1.5rem;
+    --settings-title-size: var(--cp-font-title-size);
+    --settings-description-size: 13px;
+    --settings-label-size: var(--cp-font-meta-size);
+    --settings-label-tracking: 0.02em;
+    --settings-surface-bg: var(--cp-surface);
+    --settings-surface-border: var(--cp-border);
+    --settings-surface-radius: var(--cp-radius-card);
+    --settings-canvas: var(--cp-canvas);
+    --settings-row-min-height: 3.75rem;
+    --settings-row-padding-x: var(--cp-row-px);
+    --settings-row-padding-y: var(--cp-row-py);
+    --settings-row-hover: var(--cp-hover);
+    --settings-divider: var(--cp-divider);
+    --settings-input-bg: var(--cp-surface-2);
+    --settings-input-border: var(--cp-border);
+    --settings-input-focus: var(--cp-focus);
+    --settings-meta-size: var(--cp-font-meta-size);
+    --settings-body-size: var(--cp-font-body-size);
+    --settings-swatch-size: 1.15rem;
+    --settings-swatch-gap: 0.45rem;
+    --settings-swatch-border: 220 10% 26%;
+    --settings-swatch-ring: 0 0% 88%;
+    --form-checkbox-size: 18px;
+    --form-checkbox-radius: 6px;
+    --form-checkbox-bg: var(--cp-surface-2);
+    --form-checkbox-border: var(--cp-border);
+    --form-checkbox-focus: var(--cp-focus);
+    --form-checkbox-check: var(--cp-primary);
+    --form-checkbox-checked-bg: 9 46% 28%; /* red-damask-900 */
+    --form-checkbox-checked-border: 9 46% 28%;
+    --form-checkbox-checked-check: 25 60% 83%; /* red-damask-200 */
+    --nav-secondary-hover-hsl: 0 0% 100%;
+    --brand: 17 65% 63%; /* Accent: #e08361 */
+    --brand-foreground: 0 0% 100%;
+    --brand-bg: 17 37% 16%; /* Accent bg (dark warm tint) */
+    --brand-hover: 17 65% 73%; /* Accent hover: lighter */
+    --brand-active: 17 65% 53%; /* Accent active: darker */
+    --app-nav-bg: #141416;
+    --app-nav-card: #1f1f22;
+    --app-nav-hover: #26262a;
+    --app-nav-active: #2f2f34;
+    --app-nav-text: #dcd9cf;
+    --app-nav-strong: #f3f1ea;
+    --app-nav-muted: #78756a;
+    --app-nav-icon: #a19d90;
+    --app-nav-border: #2c2c30;
+    --app-nav-inverse: #f3f1ea;
+    --app-nav-inverse-text: #17171a;
+  }
+
+  [data-theme="light"] {
+    --color-stone-50: #faf9f5;
+    --color-stone-100: #f4f2ea;
+    --color-stone-200: #e6e1d1;
+    --color-stone-300: #d8d2bf;
+    --color-stone-500: #8a867a;
+    --color-stone-600: #57544c;
+    --color-stone-900: #141413;
+
+    --color-accent-50: #eadfce;
+    --color-accent-200: #dbc9b4;
+    --color-accent-600: #c9603c;
+    --color-accent-700: #a94d2d;
+    --color-accent-800: #7a3518;
+
+    --color-bg-app: #faf9f5;
+    --color-text-primary: #141413;
+    --color-text-secondary: #57544c;
+    --color-text-tertiary: #8a867a;
+    --color-border: #e6e1d1;
+    --color-focus-ring: rgba(201, 96, 60, 0.3);
+
+    --cp-canvas: 45 33% 97%;
+    --cp-surface: 0 0% 100%;
+    --cp-surface-2: 45 31% 95%;
+    --cp-text: 60 2% 8%;
+    --cp-text-muted: 43 7% 33%;
+    --cp-text-subtle: 42 6% 51%;
+    --cp-border: 45 28% 86%;
+    --cp-divider: 45 26% 88%;
+    --cp-hover: 43 28% 92%;
+    --cp-active: 43 30% 87%;
+    --surface-canvas: 45 33% 97%; /* Deepest page canvas for warm mode */
+    --surface-active: 46 30% 87%; /* Selected/active state for warm mode */
+    --surface-hover: 46 17% 94%; /* Hover state for interactive surfaces in warm mode */
+    --surface-raised: 0 0% 100%; /* Passive buttons, interactive tiles for warm mode */
+    --surface-sunken: 45 25% 93%; /* Recessed inputs, wells for warm mode */
+    --surface-body: 0 0% 99%; /* Lighter shade of surface-raised */
+    --cp-focus: 17 55% 51%;
+    --cp-primary: 17 55% 51%;
+    --cp-primary-foreground: 0 0% 100%;
+
+    --canvas: var(--cp-canvas);
+    --panel: var(--cp-canvas);
+    --paper: var(--cp-surface-2);
+    --background: var(--cp-surface);
+    --foreground: var(--cp-text);
+    --card: var(--cp-surface);
+    --card-foreground: var(--cp-text);
+    --popover: var(--cp-surface);
+    --popover-foreground: var(--cp-text);
+    --primary: var(--brand);
+    --primary-foreground: var(--brand-foreground);
+    --secondary: 300 22% 95%;
+    --secondary-foreground: 307 22% 16%;
+    --secondary-border: 302 21% 73%;
+    --secondary-hover: 300 21% 91%;
+    --muted: var(--cp-surface-2);
+    --muted-foreground: var(--cp-text-muted);
+    --accent: var(--cp-hover);
+    --accent-foreground: var(--cp-text);
+    --accent-warm: 35 31% 86%;
+    --accent-warm-hover: 39 28% 80%;
+    --chrome: var(--cp-surface-2);
+    --chrome-border: var(--cp-border);
+    --app-shell: 45 33% 97%;
+    --app-sidebar: 45 31% 95%;
+    --app-main-card: 0 0% 100%;
+    --app-island: 45 31% 95%;
+    --app-island-border: var(--cp-border);
+    --nav-hover: 43 28% 92%;
+    --nav-hover-alpha: 1;
+    --nav-selected: 43 30% 87%;
+    --nav-selected-alpha: 1;
+    --nav-text: 43 7% 33%;
+    --nav-text-strong: 60 2% 8%;
+    --nav-text-muted: 42 6% 51%;
+    --nav-active-border: 45 28% 86%;
+    --menu: 0 0% 100%;
+    --menu-border: 45 28% 86%;
+    --menu-text: 60 2% 8%;
+    --menu-muted: 42 6% 51%;
+    --menu-icon: 43 7% 33%;
+    --menu-hover: 43 28% 92%;
+    --menu-separator: 45 26% 88%;
+    --table-row-hover: 43 28% 96%;
+    --table-row-selected: var(--brand-bg);
+    --table-filter-hover: 43 28% 92%;
+    --table-filter-active: 43 30% 87%;
+    --table-shell-bg: 0 0% 100%;
+    --table-shell-border: 45 28% 86%;
+    --table-header-bg: 0 0% 100%;
+    --table-header-border: 45 28% 86%;
+    --agenda-interactive-hover: 43 28% 92%;
+    --agenda-interactive-active: 43 30% 87%;
+    --agenda-interactive-focus-ring: 17 55% 51%;
+    --chip-bg: 45 33% 97%;
+    --chip-border: 45 28% 86%;
+    --chip-text: 43 7% 26%;
+    --chip-hover-bg: 43 28% 92%;
+    --chip-active-bg: 43 30% 87%;
+    --chip-active-border: 39 25% 76%;
+    --chip-active-text: 60 2% 8%;
+    --border: var(--cp-border);
+    --input: 45 28% 82%;
+    --ring: var(--brand);
+    --brand: 17 55% 51%;
+    --brand-foreground: 0 0% 100%;
+    --brand-bg: 35 31% 86%;
+    --brand-hover: 17 55% 61%; /* Accent hover: lighter */
+    --brand-active: 17 55% 41%; /* Accent active: darker */
+    --btn-primary-bg: hsl(18, 60%, 40%);
+    --btn-primary-text: hsl(180, 100%, 99%);
+    --btn-primary-bg-hover: hsl(18, 59%, 30%);
+    --btn-primary-text-hover: hsl(180, 100%, 99%);
+    --btn-primary-bg-active: hsl(18, 59%, 20%);
+    --btn-primary-text-active: hsl(180, 100%, 99%);
+    --btn-primary-bg-disabled: hsl(18, 40%, 76%);
+    --btn-primary-text-disabled: hsl(180, 100%, 99%);
+    --btn-primary-border-disabled: transparent;
+    --primary-pill-bg: var(--brand-bg);
+    --primary-pill-foreground: 7 49% 15%;
+    --primary-pill-border: transparent;
+    --primary-pill-hover: 35 31% 80%;
+    --primary-chip-fill-bg: 25 60% 72%;
+    --primary-chip-fill-foreground: 7 49% 15%;
+    --primary-chip-fill-hover: 21 59% 61%;
+    --secondary-chip-fill-bg: 300 22% 83%;
+    --secondary-chip-fill-foreground: 307 22% 16%;
+    --secondary-chip-fill-hover: 302 21% 73%;
+    --primary-icon-bg: 25 60% 83%;
+    --primary-icon-border: 25 60% 72%;
+    --primary-icon-fill: 21 59% 61%;
+    --secondary-icon-bg: 300 21% 91%;
+    --secondary-icon-border: 300 22% 83%;
+    --secondary-icon-fill: 302 21% 73%;
+    --btn-secondary-bg: hsl(19, 65%, 90%);
+    --btn-secondary-text: hsl(20, 23%, 28%);
+    --btn-secondary-bg-hover: hsl(18, 59%, 80%);
+    --btn-secondary-text-hover: hsl(20, 23%, 28%);
+    --btn-secondary-bg-active: hsl(17, 60%, 70%);
+    --btn-secondary-text-active: hsl(20, 23%, 28%);
+    --btn-secondary-bg-disabled: hsl(18, 40%, 76%);
+    --btn-secondary-text-disabled: hsl(180, 100%, 99%);
+    --btn-tertiary-bg: hsl(0, 0%, 100%);
+    --btn-tertiary-text: hsl(22, 40%, 54%);
+    --btn-tertiary-border: hsl(22, 40%, 54%);
+    --btn-tertiary-bg-hover: hsl(18, 52%, 95%);
+    --btn-tertiary-text-hover: hsl(22, 40%, 54%);
+    --btn-tertiary-border-hover: hsl(22, 40%, 54%);
+    --btn-tertiary-bg-active: hsl(19, 65%, 90%);
+    --btn-tertiary-text-active: hsl(22, 40%, 54%);
+    --btn-tertiary-border-active: hsl(22, 40%, 54%);
+    --btn-tertiary-bg-disabled: hsl(0, 0%, 100%);
+    --btn-tertiary-text-disabled: hsl(16, 35%, 77%);
+    --btn-tertiary-border-disabled: hsl(16, 35%, 77%);
+    --app-nav-bg: #f4f2ea;
+    --app-nav-card: #ffffff;
+    --app-nav-hover: #f0ede3;
+    --app-nav-active: #e9e4d4;
+    --app-nav-text: #2b2a27;
+    --app-nav-strong: #141413;
+    --app-nav-muted: #8a867a;
+    --app-nav-icon: #57544c;
+    --app-nav-border: #e6e1d1;
+    --app-nav-inverse: #141413;
+    --app-nav-inverse-text: #faf9f5;
+    --form-checkbox-checked-bg: 14 55% 48%; /* red-damask-600 */
+    --form-checkbox-checked-border: 14 55% 48%;
+    --form-checkbox-checked-check: 0 0% 100%;
   }
 }
 
@@ -329,10 +1118,41 @@
 }
 
 /* ============================================
+   Component classes
+============================================ */
+@layer components {
+  .modal-content {
+    @apply max-h-[80vh] gap-0 overflow-hidden rounded-2xl border-border/80 p-0 shadow-2xl;
+    @apply max-w-[560px];
+  }
+}
+
+/* ============================================
    Dynamic Viewport Height Utilities
    Uses dvh with vh fallback for older browsers
 ============================================ */
 @layer utilities {
+  .skip-link {
+    position: fixed;
+    left: 1rem;
+    top: 0.75rem;
+    z-index: 100;
+    border-radius: 0.5rem;
+    background: hsl(var(--foreground));
+    color: hsl(var(--background));
+    font-size: 0.875rem;
+    font-weight: 600;
+    padding: 0.5rem 0.75rem;
+    transform: translateY(-200%);
+    transition: transform 150ms ease;
+  }
+
+  .skip-link:focus-visible {
+    transform: translateY(0);
+    outline: 2px solid hsl(var(--background));
+    outline-offset: 2px;
+  }
+
   .bg-canvas {
     background-color: hsl(var(--panel));
   }
@@ -349,8 +1169,16 @@
     background-color: hsl(var(--app-island));
   }
 
+  .bg-app-sidebar {
+    background-color: hsl(var(--app-sidebar));
+  }
+
   .bg-builder-canvas {
     background-color: hsl(var(--builder-canvas));
+  }
+
+  .bg-surface-body {
+    background-color: hsl(var(--surface-body));
   }
 
   .border-app-island {
@@ -485,6 +1313,123 @@
     color: hsl(var(--pill-foreground));
   }
 
+  .overview-card {
+    border: 1px solid hsl(var(--dashboard-border) / 0.7);
+    background-color: hsl(var(--dashboard-surface));
+    border-radius: 30px;
+    padding: 1.5rem;
+    box-shadow: var(--dashboard-shadow-sm);
+  }
+
+  .overview-row-link {
+    display: block;
+    border-radius: 22px;
+    transition: transform 150ms ease;
+  }
+
+  .overview-row-link:hover {
+    background-color: transparent;
+    transform: translateY(-2px);
+  }
+
+  .overview-row-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    border-radius: 22px;
+    border: 1px solid hsl(var(--dashboard-border) / 0.6);
+    background-color: hsl(var(--dashboard-surface));
+    padding: 0.875rem 1rem;
+  }
+
+  .overview-row-icon {
+    display: inline-flex;
+    height: 2.25rem;
+    width: 2.25rem;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9999px;
+    border: 1px solid hsl(var(--dashboard-pill-secondary-border));
+    background-color: hsl(var(--dashboard-pill-secondary-bg));
+    color: hsl(var(--dashboard-pill-secondary-text));
+  }
+
+  .overview-row-icon.is-critical {
+    border: 1px solid hsl(var(--dashboard-pill-critical-border));
+    background-color: hsl(var(--dashboard-pill-critical-bg));
+    color: hsl(var(--dashboard-pill-critical-text));
+  }
+
+  .overview-row-icon.is-warning,
+  .overview-row-icon.is-ok,
+  .overview-row-icon.is-muted {
+    border-color: hsl(var(--dashboard-pill-secondary-border));
+    background-color: hsl(var(--dashboard-pill-secondary-bg));
+    color: hsl(var(--dashboard-pill-secondary-text));
+  }
+
+  .dashboard-widget-surface {
+    background-color: hsl(var(--dashboard-surface));
+    border: 1px solid hsl(var(--dashboard-border));
+    box-shadow: var(--dashboard-shadow-sm);
+  }
+
+  .dashboard-widget-surface:hover {
+    box-shadow: var(--dashboard-shadow-md);
+  }
+
+  .dashboard-widget-icon {
+    background-color: hsl(var(--dashboard-icon-bg));
+    color: hsl(var(--dashboard-icon-fg));
+  }
+
+  .dashboard-widget-row {
+    background-color: hsl(var(--dashboard-row-bg));
+  }
+
+  .dashboard-widget-row-hover:hover {
+    background-color: hsl(var(--dashboard-row-hover));
+  }
+
+  .overview-row-value-inline {
+    display: block;
+    color: hsl(var(--muted-foreground));
+  }
+
+  .overview-row-value-trailing {
+    display: none;
+  }
+
+  .overview-row-chevron {
+    display: block;
+  }
+
+  .bg-icon-primary {
+    background-color: hsl(var(--primary-icon-bg));
+  }
+
+  .border-icon-primary {
+    border-color: hsl(var(--primary-icon-border));
+  }
+
+  .text-icon-primary {
+    color: hsl(var(--primary-icon-fill));
+  }
+
+  .bg-icon-secondary {
+    background-color: hsl(var(--secondary-icon-bg));
+  }
+
+  .border-icon-secondary {
+    border-color: hsl(var(--secondary-icon-border));
+  }
+
+  .text-icon-secondary {
+    color: hsl(var(--secondary-icon-fill));
+  }
+
   .bg-control {
     background-color: hsl(var(--control));
   }
@@ -527,11 +1472,25 @@
 
   .table-shell-standard {
     border-radius: 0.75rem;
-    border-top: 1px solid hsl(var(--table-shell-border) / 0.6);
-    border-bottom: 1px solid hsl(var(--table-shell-border) / 0.6);
+    border: 0;
     background-color: hsl(var(--table-shell-bg) / 0.8);
     box-shadow: var(--table-shell-shadow);
     overflow: hidden;
+    padding: 0 16px;
+  }
+
+  /* Grouped multi-select: consecutive selected rows merge into one card */
+  .table-shell-standard tr[data-state="selected"]:not(:has(+ tr[data-state="selected"])) td:first-child {
+    border-bottom-left-radius: 8px;
+  }
+  .table-shell-standard tr[data-state="selected"]:not(:has(+ tr[data-state="selected"])) td:last-child {
+    border-bottom-right-radius: 8px;
+  }
+  .table-shell-standard tr[data-state="selected"]:not(tr[data-state="selected"] + tr[data-state="selected"]) td:first-child {
+    border-top-left-radius: 8px;
+  }
+  .table-shell-standard tr[data-state="selected"]:not(tr[data-state="selected"] + tr[data-state="selected"]) td:last-child {
+    border-top-right-radius: 8px;
   }
 
   .table-shell-minimal {
@@ -556,12 +1515,13 @@
   }
 
   .table-header-row-standard {
-    background-color: hsl(var(--table-header-bg) / 0.25);
-    border-bottom: 1px solid hsl(var(--table-header-border) / 0.6);
+    background-color: hsl(var(--table-header-bg) / 0.5);
+    border-top: 1px solid hsl(var(--table-row-divider) / 0.38);
+    border-bottom: 1px solid hsl(var(--table-row-divider) / 0.38);
   }
 
   .table-header-row-standard:hover {
-    background-color: hsl(var(--table-header-bg) / 0.25);
+    background-color: hsl(var(--table-header-bg) / 0.5);
   }
 
   .table-cell-check {
@@ -578,6 +1538,20 @@
     padding-bottom: var(--table-row-py);
     font-size: var(--table-body-font-size);
     font-weight: 500;
+  }
+
+  .table-cell-link {
+    font-size: var(--table-meta-font-size);
+    font-weight: 600;
+    color: hsl(var(--foreground) / 0.84);
+    text-decoration-line: none;
+    text-underline-offset: 2px;
+    transition: color 150ms ease;
+  }
+
+  .table-cell-link:hover {
+    color: hsl(var(--foreground));
+    text-decoration-line: underline;
   }
 
   .table-cell-meta {

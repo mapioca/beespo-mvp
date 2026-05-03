@@ -84,7 +84,7 @@ export async function createDirectoryView(
 
   if (error) return { error: error.message }
 
-  revalidatePath("/meetings/directory")
+  revalidatePath("/directory")
   return { data: data as DirectoryView }
 }
 
@@ -100,6 +100,6 @@ export async function deleteDirectoryView(
 
   if (error) return { error: error.message }
 
-  revalidatePath("/meetings/directory")
+  revalidatePath("/directory")
   return {}
 }

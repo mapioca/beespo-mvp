@@ -1,0 +1,1587 @@
+[
+  {
+    "id": "bishop",
+    "organization": "bishopric",
+    "level": "ward",
+    "labels": { "en": "Bishop", "es": "Obispo" },
+    "active": true
+  },
+  {
+    "id": "first-counselor-bishopric",
+    "organization": "bishopric",
+    "level": "ward",
+    "labels": { "en": "First Counselor in the Bishopric", "es": "Primer Consejero del Obispado" },
+    "active": true
+  },
+  {
+    "id": "second-counselor-bishopric",
+    "organization": "bishopric",
+    "level": "ward",
+    "labels": { "en": "Second Counselor in the Bishopric", "es": "Segundo Consejero del Obispado" },
+    "active": true
+  },
+  {
+    "id": "ward-executive-secretary",
+    "organization": "bishopric",
+    "level": "ward",
+    "labels": { "en": "Ward Executive Secretary", "es": "Secretario Ejecutivo de Barrio" },
+    "active": true
+  },
+  {
+    "id": "ward-clerk",
+    "organization": "bishopric",
+    "level": "ward",
+    "labels": { "en": "Ward Clerk", "es": "Secretario de Barrio" },
+    "active": true
+  },
+  {
+    "id": "assistant-ward-clerk",
+    "organization": "bishopric",
+    "level": "ward",
+    "labels": { "en": "Assistant Ward Clerk", "es": "Secretario Auxiliar de Barrio" },
+    "active": true
+  },
+  {
+    "id": "assistant-ward-clerk-membership",
+    "organization": "bishopric",
+    "level": "ward",
+    "labels": { "en": "Assistant Ward Clerk—Membership", "es": "Secretario Auxiliar de Barrio—Registros de Miembros" },
+    "active": true
+  },
+  {
+    "id": "assistant-ward-clerk-finance",
+    "organization": "bishopric",
+    "level": "ward",
+    "labels": { "en": "Assistant Ward Clerk—Finance", "es": "Secretario Auxiliar de Barrio—Finanzas" },
+    "active": true
+  },
+  {
+    "id": "ward-mission-leader",
+    "organization": "missionary",
+    "level": "ward",
+    "labels": { "en": "Ward Mission Leader", "es": "Líder Misional de Barrio" },
+    "active": true
+  },
+  {
+    "id": "ward-missionary",
+    "organization": "missionary",
+    "level": "ward",
+    "labels": { "en": "Ward Missionary", "es": "Misionero de Barrio" },
+    "active": true
+  },
+  {
+    "id": "ward-temple-and-family-history-leader",
+    "organization": "temple-and-family-history",
+    "level": "ward",
+    "labels": { "en": "Ward Temple and Family History Leader", "es": "Líder del Templo y de Historia Familiar de Barrio" },
+    "active": true
+  },
+  {
+    "id": "ward-temple-and-family-history-consultant",
+    "organization": "temple-and-family-history",
+    "level": "ward",
+    "labels": { "en": "Ward Temple and Family History Consultant", "es": "Consultor del Templo y de Historia Familiar de Barrio" },
+    "active": true
+  },
+  {
+    "id": "ward-indexing-specialist",
+    "organization": "temple-and-family-history",
+    "level": "ward",
+    "labels": { "en": "Ward Indexing Specialist", "es": "Especialista de Indexación de Barrio" },
+    "active": true
+  },
+  {
+    "id": "elders-quorum-president",
+    "organization": "elders-quorum",
+    "level": "ward",
+    "labels": { "en": "Elders Quorum President", "es": "Presidente del Cuórum de Élderes" },
+    "active": true
+  },
+  {
+    "id": "first-counselor-elders-quorum",
+    "organization": "elders-quorum",
+    "level": "ward",
+    "labels": { "en": "First Counselor in the Elders Quorum Presidency", "es": "Primer Consejero de la Presidencia del Cuórum de Élderes" },
+    "active": true
+  },
+  {
+    "id": "second-counselor-elders-quorum",
+    "organization": "elders-quorum",
+    "level": "ward",
+    "labels": { "en": "Second Counselor in the Elders Quorum Presidency", "es": "Segundo Consejero de la Presidencia del Cuórum de Élderes" },
+    "active": true
+  },
+  {
+    "id": "elders-quorum-secretary",
+    "organization": "elders-quorum",
+    "level": "ward",
+    "labels": { "en": "Elders Quorum Secretary", "es": "Secretario del Cuórum de Élderes" },
+    "active": true
+  },
+  {
+    "id": "elders-quorum-teacher",
+    "organization": "elders-quorum",
+    "level": "ward",
+    "labels": { "en": "Elders Quorum Teacher", "es": "Maestro del Cuórum de Élderes" },
+    "active": true
+  },
+  {
+    "id": "elders-quorum-service-coordinator",
+    "organization": "elders-quorum",
+    "level": "ward",
+    "labels": { "en": "Elders Quorum Service Coordinator", "es": "Coordinador de Servicio del Cuórum de Élderes" },
+    "active": true
+  },
+  {
+    "id": "elders-quorum-activities-coordinator",
+    "organization": "elders-quorum",
+    "level": "ward",
+    "labels": { "en": "Elders Quorum Activities Coordinator", "es": "Coordinador de Actividades del Cuórum de Élderes" },
+    "active": true
+  },
+  {
+    "id": "ministering-brother",
+    "organization": "elders-quorum",
+    "level": "ward",
+    "labels": { "en": "Ministering Brother", "es": "Hermano Ministrador" },
+    "active": true
+  },
+  {
+    "id": "relief-society-president",
+    "organization": "relief-society",
+    "level": "ward",
+    "labels": { "en": "Relief Society President", "es": "Presidenta de la Sociedad de Socorro" },
+    "active": true
+  },
+  {
+    "id": "first-counselor-relief-society",
+    "organization": "relief-society",
+    "level": "ward",
+    "labels": { "en": "First Counselor in the Relief Society Presidency", "es": "Primera Consejera de la Presidencia de la Sociedad de Socorro" },
+    "active": true
+  },
+  {
+    "id": "second-counselor-relief-society",
+    "organization": "relief-society",
+    "level": "ward",
+    "labels": { "en": "Second Counselor in the Relief Society Presidency", "es": "Segunda Consejera de la Presidencia de la Sociedad de Socorro" },
+    "active": true
+  },
+  {
+    "id": "relief-society-secretary",
+    "organization": "relief-society",
+    "level": "ward",
+    "labels": { "en": "Relief Society Secretary", "es": "Secretaria de la Sociedad de Socorro" },
+    "active": true
+  },
+  {
+    "id": "relief-society-teacher",
+    "organization": "relief-society",
+    "level": "ward",
+    "labels": { "en": "Relief Society Teacher", "es": "Maestra de la Sociedad de Socorro" },
+    "active": true
+  },
+  {
+    "id": "relief-society-service-coordinator",
+    "organization": "relief-society",
+    "level": "ward",
+    "labels": { "en": "Relief Society Service Coordinator", "es": "Coordinadora de Servicio de la Sociedad de Socorro" },
+    "active": true
+  },
+  {
+    "id": "relief-society-activity-coordinator",
+    "organization": "relief-society",
+    "level": "ward",
+    "labels": { "en": "Relief Society Activity Coordinator", "es": "Coordinadora de Actividades de la Sociedad de Socorro" },
+    "active": true
+  },
+  {
+    "id": "relief-society-compassionate-service-coordinator",
+    "organization": "relief-society",
+    "level": "ward",
+    "labels": { "en": "Relief Society Compassionate Service Coordinator", "es": "Coordinadora de Servicio Compasivo de la Sociedad de Socorro" },
+    "active": true
+  },
+  {
+    "id": "ministering-sister",
+    "organization": "relief-society",
+    "level": "ward",
+    "labels": { "en": "Ministering Sister", "es": "Hermana Ministradora" },
+    "active": true
+  },
+  {
+    "id": "young-women-president",
+    "organization": "young-women",
+    "level": "ward",
+    "labels": { "en": "Young Women President", "es": "Presidenta de las Mujeres Jóvenes" },
+    "active": true
+  },
+  {
+    "id": "first-counselor-young-women",
+    "organization": "young-women",
+    "level": "ward",
+    "labels": { "en": "First Counselor in the Young Women Presidency", "es": "Primera Consejera de la Presidencia de las Mujeres Jóvenes" },
+    "active": true
+  },
+  {
+    "id": "second-counselor-young-women",
+    "organization": "young-women",
+    "level": "ward",
+    "labels": { "en": "Second Counselor in the Young Women Presidency", "es": "Segunda Consejera de la Presidencia de las Mujeres Jóvenes" },
+    "active": true
+  },
+  {
+    "id": "young-women-secretary",
+    "organization": "young-women",
+    "level": "ward",
+    "labels": { "en": "Young Women Secretary", "es": "Secretaria de las Mujeres Jóvenes" },
+    "active": true
+  },
+  {
+    "id": "young-women-class-president",
+    "organization": "young-women",
+    "level": "ward",
+    "labels": { "en": "Young Women Class President", "es": "Presidenta de Clase de las Mujeres Jóvenes" },
+    "active": true
+  },
+  {
+    "id": "young-women-class-first-counselor",
+    "organization": "young-women",
+    "level": "ward",
+    "labels": { "en": "Young Women Class First Counselor", "es": "Primera Consejera de Clase de las Mujeres Jóvenes" },
+    "active": true
+  },
+  {
+    "id": "young-women-class-second-counselor",
+    "organization": "young-women",
+    "level": "ward",
+    "labels": { "en": "Young Women Class Second Counselor", "es": "Segunda Consejera de Clase de las Mujeres Jóvenes" },
+    "active": true
+  },
+  {
+    "id": "young-women-class-secretary",
+    "organization": "young-women",
+    "level": "ward",
+    "labels": { "en": "Young Women Class Secretary", "es": "Secretaria de Clase de las Mujeres Jóvenes" },
+    "active": true
+  },
+  {
+    "id": "young-women-adviser",
+    "organization": "young-women",
+    "level": "ward",
+    "labels": { "en": "Young Women Adviser", "es": "Asesora de las Mujeres Jóvenes" },
+    "active": true
+  },
+  {
+    "id": "young-women-camp-director",
+    "organization": "young-women",
+    "level": "ward",
+    "labels": { "en": "Young Women Camp Director", "es": "Directora de Campamento de las Mujeres Jóvenes" },
+    "active": true
+  },
+  {
+    "id": "young-women-activities-specialist",
+    "organization": "young-women",
+    "level": "ward",
+    "labels": { "en": "Young Women Activities Specialist", "es": "Especialista de Actividades de las Mujeres Jóvenes" },
+    "active": true
+  },
+  {
+    "id": "young-men-president",
+    "organization": "young-men",
+    "level": "ward",
+    "labels": { "en": "Young Men President", "es": "Presidente de los Hombres Jóvenes" },
+    "active": true
+  },
+  {
+    "id": "first-counselor-young-men",
+    "organization": "young-men",
+    "level": "ward",
+    "labels": { "en": "First Counselor in the Young Men Presidency", "es": "Primer Consejero de la Presidencia de los Hombres Jóvenes" },
+    "active": true
+  },
+  {
+    "id": "second-counselor-young-men",
+    "organization": "young-men",
+    "level": "ward",
+    "labels": { "en": "Second Counselor in the Young Men Presidency", "es": "Segundo Consejero de la Presidencia de los Hombres Jóvenes" },
+    "active": true
+  },
+  {
+    "id": "young-men-secretary",
+    "organization": "young-men",
+    "level": "ward",
+    "labels": { "en": "Young Men Secretary", "es": "Secretario de los Hombres Jóvenes" },
+    "active": true
+  },
+  {
+    "id": "young-men-adviser",
+    "organization": "young-men",
+    "level": "ward",
+    "labels": { "en": "Young Men Adviser", "es": "Asesor de los Hombres Jóvenes" },
+    "active": true
+  },
+  {
+    "id": "young-men-activities-specialist",
+    "organization": "young-men",
+    "level": "ward",
+    "labels": { "en": "Young Men Activities Specialist", "es": "Especialista de Actividades de los Hombres Jóvenes" },
+    "active": true
+  },
+  {
+    "id": "deacons-quorum-president",
+    "organization": "young-men",
+    "level": "ward",
+    "labels": { "en": "Deacons Quorum President", "es": "Presidente del Cuórum de Diáconos" },
+    "active": true
+  },
+  {
+    "id": "deacons-quorum-first-counselor",
+    "organization": "young-men",
+    "level": "ward",
+    "labels": { "en": "Deacons Quorum First Counselor", "es": "Primer Consejero del Cuórum de Diáconos" },
+    "active": true
+  },
+  {
+    "id": "deacons-quorum-second-counselor",
+    "organization": "young-men",
+    "level": "ward",
+    "labels": { "en": "Deacons Quorum Second Counselor", "es": "Segundo Consejero del Cuórum de Diáconos" },
+    "active": true
+  },
+  {
+    "id": "deacons-quorum-secretary",
+    "organization": "young-men",
+    "level": "ward",
+    "labels": { "en": "Deacons Quorum Secretary", "es": "Secretario del Cuórum de Diáconos" },
+    "active": true
+  },
+  {
+    "id": "deacons-quorum-adviser",
+    "organization": "young-men",
+    "level": "ward",
+    "labels": { "en": "Deacons Quorum Adviser", "es": "Asesor del Cuórum de Diáconos" },
+    "active": true
+  },
+  {
+    "id": "teachers-quorum-president",
+    "organization": "young-men",
+    "level": "ward",
+    "labels": { "en": "Teachers Quorum President", "es": "Presidente del Cuórum de Maestros" },
+    "active": true
+  },
+  {
+    "id": "teachers-quorum-first-counselor",
+    "organization": "young-men",
+    "level": "ward",
+    "labels": { "en": "Teachers Quorum First Counselor", "es": "Primer Consejero del Cuórum de Maestros" },
+    "active": true
+  },
+  {
+    "id": "teachers-quorum-second-counselor",
+    "organization": "young-men",
+    "level": "ward",
+    "labels": { "en": "Teachers Quorum Second Counselor", "es": "Segundo Consejero del Cuórum de Maestros" },
+    "active": true
+  },
+  {
+    "id": "teachers-quorum-secretary",
+    "organization": "young-men",
+    "level": "ward",
+    "labels": { "en": "Teachers Quorum Secretary", "es": "Secretario del Cuórum de Maestros" },
+    "active": true
+  },
+  {
+    "id": "teachers-quorum-adviser",
+    "organization": "young-men",
+    "level": "ward",
+    "labels": { "en": "Teachers Quorum Adviser", "es": "Asesor del Cuórum de Maestros" },
+    "active": true
+  },
+  {
+    "id": "priests-quorum-first-assistant",
+    "organization": "young-men",
+    "level": "ward",
+    "labels": { "en": "Priests Quorum First Assistant", "es": "Primer Ayudante del Cuórum de Presbíteros" },
+    "active": true
+  },
+  {
+    "id": "priests-quorum-second-assistant",
+    "organization": "young-men",
+    "level": "ward",
+    "labels": { "en": "Priests Quorum Second Assistant", "es": "Segundo Ayudante del Cuórum de Presbíteros" },
+    "active": true
+  },
+  {
+    "id": "priests-quorum-secretary",
+    "organization": "young-men",
+    "level": "ward",
+    "labels": { "en": "Priests Quorum Secretary", "es": "Secretario del Cuórum de Presbíteros" },
+    "active": true
+  },
+  {
+    "id": "priests-quorum-adviser",
+    "organization": "young-men",
+    "level": "ward",
+    "labels": { "en": "Priests Quorum Adviser", "es": "Asesor del Cuórum de Presbíteros" },
+    "active": true
+  },
+  {
+    "id": "primary-president",
+    "organization": "primary",
+    "level": "ward",
+    "labels": { "en": "Primary President", "es": "Presidenta de la Primaria" },
+    "active": true
+  },
+  {
+    "id": "first-counselor-primary",
+    "organization": "primary",
+    "level": "ward",
+    "labels": { "en": "First Counselor in the Primary Presidency", "es": "Primera Consejera de la Presidencia de la Primaria" },
+    "active": true
+  },
+  {
+    "id": "second-counselor-primary",
+    "organization": "primary",
+    "level": "ward",
+    "labels": { "en": "Second Counselor in the Primary Presidency", "es": "Segunda Consejera de la Presidencia de la Primaria" },
+    "active": true
+  },
+  {
+    "id": "primary-secretary",
+    "organization": "primary",
+    "level": "ward",
+    "labels": { "en": "Primary Secretary", "es": "Secretaria de la Primaria" },
+    "active": true
+  },
+  {
+    "id": "primary-music-leader",
+    "organization": "primary",
+    "level": "ward",
+    "labels": { "en": "Primary Music Leader", "es": "Líder de Música de la Primaria" },
+    "active": true
+  },
+  {
+    "id": "primary-pianist",
+    "organization": "primary",
+    "level": "ward",
+    "labels": { "en": "Primary Pianist", "es": "Pianista de la Primaria" },
+    "active": true
+  },
+  {
+    "id": "primary-teacher",
+    "organization": "primary",
+    "level": "ward",
+    "labels": { "en": "Primary Teacher", "es": "Maestra de la Primaria" },
+    "active": true
+  },
+  {
+    "id": "primary-teacher-sunbeams",
+    "organization": "primary",
+    "level": "ward",
+    "labels": { "en": "Primary Teacher—Sunbeams", "es": "Maestra de la Primaria—Rayitos de Sol" },
+    "active": true
+  },
+  {
+    "id": "primary-teacher-ctr-4",
+    "organization": "primary",
+    "level": "ward",
+    "labels": { "en": "Primary Teacher—CTR 4", "es": "Maestra de la Primaria—HLF 4" },
+    "active": true
+  },
+  {
+    "id": "primary-teacher-ctr-5",
+    "organization": "primary",
+    "level": "ward",
+    "labels": { "en": "Primary Teacher—CTR 5", "es": "Maestra de la Primaria—HLF 5" },
+    "active": true
+  },
+  {
+    "id": "primary-teacher-ctr-6",
+    "organization": "primary",
+    "level": "ward",
+    "labels": { "en": "Primary Teacher—CTR 6", "es": "Maestra de la Primaria—HLF 6" },
+    "active": true
+  },
+  {
+    "id": "primary-teacher-ctr-7",
+    "organization": "primary",
+    "level": "ward",
+    "labels": { "en": "Primary Teacher—CTR 7", "es": "Maestra de la Primaria—HLF 7" },
+    "active": true
+  },
+  {
+    "id": "primary-teacher-valiant-8",
+    "organization": "primary",
+    "level": "ward",
+    "labels": { "en": "Primary Teacher—Valiant 8", "es": "Maestra de la Primaria—Valientes 8" },
+    "active": true
+  },
+  {
+    "id": "primary-teacher-valiant-9",
+    "organization": "primary",
+    "level": "ward",
+    "labels": { "en": "Primary Teacher—Valiant 9", "es": "Maestra de la Primaria—Valientes 9" },
+    "active": true
+  },
+  {
+    "id": "primary-teacher-valiant-10",
+    "organization": "primary",
+    "level": "ward",
+    "labels": { "en": "Primary Teacher—Valiant 10", "es": "Maestra de la Primaria—Valientes 10" },
+    "active": true
+  },
+  {
+    "id": "primary-teacher-valiant-11",
+    "organization": "primary",
+    "level": "ward",
+    "labels": { "en": "Primary Teacher—Valiant 11", "es": "Maestra de la Primaria—Valientes 11" },
+    "active": true
+  },
+  {
+    "id": "nursery-leader",
+    "organization": "primary",
+    "level": "ward",
+    "labels": { "en": "Nursery Leader", "es": "Líder de Guardería" },
+    "active": true
+  },
+  {
+    "id": "nursery-teacher",
+    "organization": "primary",
+    "level": "ward",
+    "labels": { "en": "Nursery Teacher", "es": "Maestra de Guardería" },
+    "active": true
+  },
+  {
+    "id": "primary-activity-days-leader",
+    "organization": "primary",
+    "level": "ward",
+    "labels": { "en": "Activity Days Leader", "es": "Líder de Días de Actividades" },
+    "active": true
+  },
+  {
+    "id": "sunday-school-president",
+    "organization": "sunday-school",
+    "level": "ward",
+    "labels": { "en": "Sunday School President", "es": "Presidente de la Escuela Dominical" },
+    "active": true
+  },
+  {
+    "id": "first-counselor-sunday-school",
+    "organization": "sunday-school",
+    "level": "ward",
+    "labels": { "en": "First Counselor in the Sunday School Presidency", "es": "Primer Consejero de la Presidencia de la Escuela Dominical" },
+    "active": true
+  },
+  {
+    "id": "second-counselor-sunday-school",
+    "organization": "sunday-school",
+    "level": "ward",
+    "labels": { "en": "Second Counselor in the Sunday School Presidency", "es": "Segundo Consejero de la Presidencia de la Escuela Dominical" },
+    "active": true
+  },
+  {
+    "id": "sunday-school-secretary",
+    "organization": "sunday-school",
+    "level": "ward",
+    "labels": { "en": "Sunday School Secretary", "es": "Secretario de la Escuela Dominical" },
+    "active": true
+  },
+  {
+    "id": "sunday-school-teacher-gospel-doctrine",
+    "organization": "sunday-school",
+    "level": "ward",
+    "labels": { "en": "Sunday School Teacher—Gospel Doctrine", "es": "Maestro de la Escuela Dominical—Doctrina del Evangelio" },
+    "active": true
+  },
+  {
+    "id": "sunday-school-teacher-gospel-principles",
+    "organization": "sunday-school",
+    "level": "ward",
+    "labels": { "en": "Sunday School Teacher—Gospel Principles", "es": "Maestro de la Escuela Dominical—Principios del Evangelio" },
+    "active": true
+  },
+  {
+    "id": "sunday-school-teacher-youth",
+    "organization": "sunday-school",
+    "level": "ward",
+    "labels": { "en": "Sunday School Teacher—Youth", "es": "Maestro de la Escuela Dominical—Jóvenes" },
+    "active": true
+  },
+  {
+    "id": "sunday-school-teacher-marriage-and-family",
+    "organization": "sunday-school",
+    "level": "ward",
+    "labels": { "en": "Sunday School Teacher—Marriage and Family Relations", "es": "Maestro de la Escuela Dominical—Relaciones Matrimoniales y Familiares" },
+    "active": true
+  },
+  {
+    "id": "sunday-school-teacher-temple-preparation",
+    "organization": "sunday-school",
+    "level": "ward",
+    "labels": { "en": "Sunday School Teacher—Temple Preparation", "es": "Maestro de la Escuela Dominical—Preparación para el Templo" },
+    "active": true
+  },
+  {
+    "id": "ward-music-chairman",
+    "organization": "music",
+    "level": "ward",
+    "labels": { "en": "Ward Music Chairman", "es": "Presidente de Música de Barrio" },
+    "active": true
+  },
+  {
+    "id": "ward-music-director",
+    "organization": "music",
+    "level": "ward",
+    "labels": { "en": "Ward Music Director", "es": "Director de Música de Barrio" },
+    "active": true
+  },
+  {
+    "id": "ward-choir-director",
+    "organization": "music",
+    "level": "ward",
+    "labels": { "en": "Ward Choir Director", "es": "Director del Coro de Barrio" },
+    "active": true
+  },
+  {
+    "id": "ward-choir-pianist",
+    "organization": "music",
+    "level": "ward",
+    "labels": { "en": "Ward Choir Pianist", "es": "Pianista del Coro de Barrio" },
+    "active": true
+  },
+  {
+    "id": "ward-organist",
+    "organization": "music",
+    "level": "ward",
+    "labels": { "en": "Ward Organist", "es": "Organista de Barrio" },
+    "active": true
+  },
+  {
+    "id": "ward-pianist",
+    "organization": "music",
+    "level": "ward",
+    "labels": { "en": "Ward Pianist", "es": "Pianista de Barrio" },
+    "active": true
+  },
+  {
+    "id": "ward-activities-chairman",
+    "organization": "activities",
+    "level": "ward",
+    "labels": { "en": "Ward Activities Chairman", "es": "Presidente de Actividades de Barrio" },
+    "active": true
+  },
+  {
+    "id": "ward-activities-committee-member",
+    "organization": "activities",
+    "level": "ward",
+    "labels": { "en": "Ward Activities Committee Member", "es": "Miembro del Comité de Actividades de Barrio" },
+    "active": true
+  },
+  {
+    "id": "ward-communications-specialist",
+    "organization": "other",
+    "level": "ward",
+    "labels": { "en": "Ward Communications Specialist", "es": "Especialista de Comunicaciones de Barrio" },
+    "active": true
+  },
+  {
+    "id": "ward-technology-specialist",
+    "organization": "other",
+    "level": "ward",
+    "labels": { "en": "Ward Technology Specialist", "es": "Especialista de Tecnología de Barrio" },
+    "active": true
+  },
+  {
+    "id": "ward-librarian",
+    "organization": "other",
+    "level": "ward",
+    "labels": { "en": "Ward Librarian", "es": "Bibliotecario de Barrio" },
+    "active": true
+  },
+  {
+    "id": "ward-building-coordinator",
+    "organization": "other",
+    "level": "ward",
+    "labels": { "en": "Ward Building Coordinator", "es": "Coordinador de Edificio de Barrio" },
+    "active": true
+  },
+  {
+    "id": "ward-building-cleaning-coordinator",
+    "organization": "other",
+    "level": "ward",
+    "labels": { "en": "Ward Building Cleaning Coordinator", "es": "Coordinador de Limpieza del Edificio de Barrio" },
+    "active": true
+  },
+  {
+    "id": "ward-physical-facilities-representative",
+    "organization": "other",
+    "level": "ward",
+    "labels": { "en": "Ward Physical Facilities Representative", "es": "Representante de Instalaciones Físicas de Barrio" },
+    "active": true
+  },
+  {
+    "id": "ward-public-affairs-director",
+    "organization": "other",
+    "level": "ward",
+    "labels": { "en": "Ward Public Affairs Director", "es": "Director de Asuntos Públicos de Barrio" },
+    "active": true
+  },
+  {
+    "id": "ward-resource-center-specialist",
+    "organization": "other",
+    "level": "ward",
+    "labels": { "en": "Ward Resource Center Specialist", "es": "Especialista del Centro de Recursos de Barrio" },
+    "active": true
+  },
+  {
+    "id": "sacrament-meeting-greeter",
+    "organization": "other",
+    "level": "ward",
+    "labels": { "en": "Sacrament Meeting Greeter", "es": "Anfitrión de la Reunión Sacramental" },
+    "active": true
+  },
+  {
+    "id": "ward-young-single-adult-adviser",
+    "organization": "other",
+    "level": "ward",
+    "labels": { "en": "Ward Young Single Adult Adviser", "es": "Asesor de Adultos Solteros Jóvenes de Barrio" },
+    "active": true
+  },
+  {
+    "id": "ward-single-adult-adviser",
+    "organization": "other",
+    "level": "ward",
+    "labels": { "en": "Ward Single Adult Adviser", "es": "Asesor de Adultos Solteros de Barrio" },
+    "active": true
+  },
+  {
+    "id": "family-home-evening-group-leader",
+    "organization": "other",
+    "level": "ward",
+    "labels": { "en": "Family Home Evening Group Leader", "es": "Líder de Grupo de Noche de Hogar" },
+    "active": true
+  },
+  {
+    "id": "ward-emergency-preparedness-specialist",
+    "organization": "welfare-and-self-reliance",
+    "level": "ward",
+    "labels": { "en": "Ward Emergency Preparedness Specialist", "es": "Especialista de Preparación para Emergencias de Barrio" },
+    "active": true
+  },
+  {
+    "id": "ward-self-reliance-specialist",
+    "organization": "welfare-and-self-reliance",
+    "level": "ward",
+    "labels": { "en": "Ward Self-Reliance Specialist", "es": "Especialista de Autosuficiencia de Barrio" },
+    "active": true
+  },
+  {
+    "id": "ward-welfare-specialist",
+    "organization": "welfare-and-self-reliance",
+    "level": "ward",
+    "labels": { "en": "Ward Welfare Specialist", "es": "Especialista de Bienestar de Barrio" },
+    "active": true
+  },
+  {
+    "id": "ward-employment-specialist",
+    "organization": "welfare-and-self-reliance",
+    "level": "ward",
+    "labels": { "en": "Ward Employment Specialist", "es": "Especialista de Empleo de Barrio" },
+    "active": true
+  },
+  {
+    "id": "ward-humanitarian-specialist",
+    "organization": "welfare-and-self-reliance",
+    "level": "ward",
+    "labels": { "en": "Ward Humanitarian Specialist", "es": "Especialista Humanitario de Barrio" },
+    "active": true
+  },
+  {
+    "id": "ward-addiction-recovery-facilitator",
+    "organization": "welfare-and-self-reliance",
+    "level": "ward",
+    "labels": { "en": "Addiction Recovery Program Facilitator", "es": "Facilitador del Programa de Recuperación de Adicciones" },
+    "active": true
+  },
+  {
+    "id": "ward-justserve-specialist",
+    "organization": "welfare-and-self-reliance",
+    "level": "ward",
+    "labels": { "en": "JustServe Specialist", "es": "Especialista de JustServe" },
+    "active": true
+  },
+  {
+    "id": "ward-seminary-teacher",
+    "organization": "seminary-and-institute",
+    "level": "ward",
+    "labels": { "en": "Seminary Teacher", "es": "Maestro de Seminario" },
+    "active": true
+  },
+  {
+    "id": "ward-institute-teacher",
+    "organization": "seminary-and-institute",
+    "level": "ward",
+    "labels": { "en": "Institute Teacher", "es": "Maestro de Instituto" },
+    "active": true
+  },
+  {
+    "id": "ward-seminary-supervisor",
+    "organization": "seminary-and-institute",
+    "level": "ward",
+    "labels": { "en": "Seminary Supervisor", "es": "Supervisor de Seminario" },
+    "active": true
+  },
+  {
+    "id": "home-teacher",
+    "organization": "elders-quorum",
+    "level": "ward",
+    "labels": { "en": "Home Teacher", "es": "Maestro Orientador" },
+    "active": false
+  },
+  {
+    "id": "visiting-teacher",
+    "organization": "relief-society",
+    "level": "ward",
+    "labels": { "en": "Visiting Teacher", "es": "Maestra Visitante" },
+    "active": false
+  },
+  {
+    "id": "cub-scout-leader",
+    "organization": "young-men",
+    "level": "ward",
+    "labels": { "en": "Cub Scout Leader", "es": "Líder de Lobatos" },
+    "active": false
+  },
+  {
+    "id": "scoutmaster",
+    "organization": "young-men",
+    "level": "ward",
+    "labels": { "en": "Scoutmaster", "es": "Jefe de Tropa Scout" },
+    "active": false
+  },
+  {
+    "id": "assistant-scoutmaster",
+    "organization": "young-men",
+    "level": "ward",
+    "labels": { "en": "Assistant Scoutmaster", "es": "Subjefe de Tropa Scout" },
+    "active": false
+  },
+  {
+    "id": "11-year-old-scout-leader",
+    "organization": "young-men",
+    "level": "ward",
+    "labels": { "en": "11-Year-Old Scout Leader", "es": "Líder Scout de 11 Años" },
+    "active": false
+  },
+  {
+    "id": "varsity-coach",
+    "organization": "young-men",
+    "level": "ward",
+    "labels": { "en": "Varsity Coach", "es": "Entrenador Varsity" },
+    "active": false
+  },
+  {
+    "id": "venturing-crew-adviser",
+    "organization": "young-men",
+    "level": "ward",
+    "labels": { "en": "Venturing Crew Adviser", "es": "Asesor de Exploradores" },
+    "active": false
+  },
+
+  {
+    "id": "branch-president",
+    "organization": "branch-presidency",
+    "level": "branch",
+    "labels": { "en": "Branch President", "es": "Presidente de Rama" },
+    "active": true
+  },
+  {
+    "id": "first-counselor-branch-presidency",
+    "organization": "branch-presidency",
+    "level": "branch",
+    "labels": { "en": "First Counselor in the Branch Presidency", "es": "Primer Consejero de la Presidencia de Rama" },
+    "active": true
+  },
+  {
+    "id": "second-counselor-branch-presidency",
+    "organization": "branch-presidency",
+    "level": "branch",
+    "labels": { "en": "Second Counselor in the Branch Presidency", "es": "Segundo Consejero de la Presidencia de Rama" },
+    "active": true
+  },
+  {
+    "id": "branch-executive-secretary",
+    "organization": "branch-presidency",
+    "level": "branch",
+    "labels": { "en": "Branch Executive Secretary", "es": "Secretario Ejecutivo de Rama" },
+    "active": true
+  },
+  {
+    "id": "branch-clerk",
+    "organization": "branch-presidency",
+    "level": "branch",
+    "labels": { "en": "Branch Clerk", "es": "Secretario de Rama" },
+    "active": true
+  },
+  {
+    "id": "assistant-branch-clerk",
+    "organization": "branch-presidency",
+    "level": "branch",
+    "labels": { "en": "Assistant Branch Clerk", "es": "Secretario Auxiliar de Rama" },
+    "active": true
+  },
+  {
+    "id": "branch-mission-leader",
+    "organization": "missionary",
+    "level": "branch",
+    "labels": { "en": "Branch Mission Leader", "es": "Líder Misional de Rama" },
+    "active": true
+  },
+  {
+    "id": "branch-temple-and-family-history-leader",
+    "organization": "temple-and-family-history",
+    "level": "branch",
+    "labels": { "en": "Branch Temple and Family History Leader", "es": "Líder del Templo y de Historia Familiar de Rama" },
+    "active": true
+  },
+  {
+    "id": "branch-elders-quorum-president",
+    "organization": "elders-quorum",
+    "level": "branch",
+    "labels": { "en": "Elders Quorum President (Branch)", "es": "Presidente del Cuórum de Élderes (Rama)" },
+    "active": true
+  },
+  {
+    "id": "branch-relief-society-president",
+    "organization": "relief-society",
+    "level": "branch",
+    "labels": { "en": "Relief Society President (Branch)", "es": "Presidenta de la Sociedad de Socorro (Rama)" },
+    "active": true
+  },
+  {
+    "id": "branch-young-women-president",
+    "organization": "young-women",
+    "level": "branch",
+    "labels": { "en": "Young Women President (Branch)", "es": "Presidenta de las Mujeres Jóvenes (Rama)" },
+    "active": true
+  },
+  {
+    "id": "branch-young-men-president",
+    "organization": "young-men",
+    "level": "branch",
+    "labels": { "en": "Young Men President (Branch)", "es": "Presidente de los Hombres Jóvenes (Rama)" },
+    "active": true
+  },
+  {
+    "id": "branch-primary-president",
+    "organization": "primary",
+    "level": "branch",
+    "labels": { "en": "Primary President (Branch)", "es": "Presidenta de la Primaria (Rama)" },
+    "active": true
+  },
+  {
+    "id": "branch-sunday-school-president",
+    "organization": "sunday-school",
+    "level": "branch",
+    "labels": { "en": "Sunday School President (Branch)", "es": "Presidente de la Escuela Dominical (Rama)" },
+    "active": true
+  },
+  {
+    "id": "branch-music-director",
+    "organization": "music",
+    "level": "branch",
+    "labels": { "en": "Branch Music Director", "es": "Director de Música de Rama" },
+    "active": true
+  },
+  {
+    "id": "branch-pianist",
+    "organization": "music",
+    "level": "branch",
+    "labels": { "en": "Branch Pianist", "es": "Pianista de Rama" },
+    "active": true
+  },
+
+  {
+    "id": "stake-president",
+    "organization": "stake-presidency",
+    "level": "stake",
+    "labels": { "en": "Stake President", "es": "Presidente de Estaca" },
+    "active": true
+  },
+  {
+    "id": "first-counselor-stake-presidency",
+    "organization": "stake-presidency",
+    "level": "stake",
+    "labels": { "en": "First Counselor in the Stake Presidency", "es": "Primer Consejero de la Presidencia de Estaca" },
+    "active": true
+  },
+  {
+    "id": "second-counselor-stake-presidency",
+    "organization": "stake-presidency",
+    "level": "stake",
+    "labels": { "en": "Second Counselor in the Stake Presidency", "es": "Segundo Consejero de la Presidencia de Estaca" },
+    "active": true
+  },
+  {
+    "id": "stake-executive-secretary",
+    "organization": "stake-presidency",
+    "level": "stake",
+    "labels": { "en": "Stake Executive Secretary", "es": "Secretario Ejecutivo de Estaca" },
+    "active": true
+  },
+  {
+    "id": "assistant-stake-executive-secretary",
+    "organization": "stake-presidency",
+    "level": "stake",
+    "labels": { "en": "Assistant Stake Executive Secretary", "es": "Secretario Ejecutivo Auxiliar de Estaca" },
+    "active": true
+  },
+  {
+    "id": "stake-clerk",
+    "organization": "stake-presidency",
+    "level": "stake",
+    "labels": { "en": "Stake Clerk", "es": "Secretario de Estaca" },
+    "active": true
+  },
+  {
+    "id": "assistant-stake-clerk",
+    "organization": "stake-presidency",
+    "level": "stake",
+    "labels": { "en": "Assistant Stake Clerk", "es": "Secretario Auxiliar de Estaca" },
+    "active": true
+  },
+  {
+    "id": "assistant-stake-clerk-membership",
+    "organization": "stake-presidency",
+    "level": "stake",
+    "labels": { "en": "Assistant Stake Clerk—Membership", "es": "Secretario Auxiliar de Estaca—Registros de Miembros" },
+    "active": true
+  },
+  {
+    "id": "assistant-stake-clerk-finance",
+    "organization": "stake-presidency",
+    "level": "stake",
+    "labels": { "en": "Assistant Stake Clerk—Finance", "es": "Secretario Auxiliar de Estaca—Finanzas" },
+    "active": true
+  },
+  {
+    "id": "stake-patriarch",
+    "organization": "stake-presidency",
+    "level": "stake",
+    "labels": { "en": "Stake Patriarch", "es": "Patriarca de Estaca" },
+    "active": true
+  },
+  {
+    "id": "high-councilor",
+    "organization": "high-council",
+    "level": "stake",
+    "labels": { "en": "High Councilor", "es": "Consejero del Sumo Consejo" },
+    "active": true
+  },
+  {
+    "id": "stake-relief-society-president",
+    "organization": "stake-relief-society",
+    "level": "stake",
+    "labels": { "en": "Stake Relief Society President", "es": "Presidenta de la Sociedad de Socorro de Estaca" },
+    "active": true
+  },
+  {
+    "id": "first-counselor-stake-relief-society",
+    "organization": "stake-relief-society",
+    "level": "stake",
+    "labels": { "en": "First Counselor in the Stake Relief Society Presidency", "es": "Primera Consejera de la Presidencia de la Sociedad de Socorro de Estaca" },
+    "active": true
+  },
+  {
+    "id": "second-counselor-stake-relief-society",
+    "organization": "stake-relief-society",
+    "level": "stake",
+    "labels": { "en": "Second Counselor in the Stake Relief Society Presidency", "es": "Segunda Consejera de la Presidencia de la Sociedad de Socorro de Estaca" },
+    "active": true
+  },
+  {
+    "id": "stake-relief-society-secretary",
+    "organization": "stake-relief-society",
+    "level": "stake",
+    "labels": { "en": "Stake Relief Society Secretary", "es": "Secretaria de la Sociedad de Socorro de Estaca" },
+    "active": true
+  },
+  {
+    "id": "stake-young-women-president",
+    "organization": "stake-young-women",
+    "level": "stake",
+    "labels": { "en": "Stake Young Women President", "es": "Presidenta de las Mujeres Jóvenes de Estaca" },
+    "active": true
+  },
+  {
+    "id": "first-counselor-stake-young-women",
+    "organization": "stake-young-women",
+    "level": "stake",
+    "labels": { "en": "First Counselor in the Stake Young Women Presidency", "es": "Primera Consejera de la Presidencia de las Mujeres Jóvenes de Estaca" },
+    "active": true
+  },
+  {
+    "id": "second-counselor-stake-young-women",
+    "organization": "stake-young-women",
+    "level": "stake",
+    "labels": { "en": "Second Counselor in the Stake Young Women Presidency", "es": "Segunda Consejera de la Presidencia de las Mujeres Jóvenes de Estaca" },
+    "active": true
+  },
+  {
+    "id": "stake-young-women-secretary",
+    "organization": "stake-young-women",
+    "level": "stake",
+    "labels": { "en": "Stake Young Women Secretary", "es": "Secretaria de las Mujeres Jóvenes de Estaca" },
+    "active": true
+  },
+  {
+    "id": "stake-young-men-president",
+    "organization": "stake-young-men",
+    "level": "stake",
+    "labels": { "en": "Stake Young Men President", "es": "Presidente de los Hombres Jóvenes de Estaca" },
+    "active": true
+  },
+  {
+    "id": "first-counselor-stake-young-men",
+    "organization": "stake-young-men",
+    "level": "stake",
+    "labels": { "en": "First Counselor in the Stake Young Men Presidency", "es": "Primer Consejero de la Presidencia de los Hombres Jóvenes de Estaca" },
+    "active": true
+  },
+  {
+    "id": "second-counselor-stake-young-men",
+    "organization": "stake-young-men",
+    "level": "stake",
+    "labels": { "en": "Second Counselor in the Stake Young Men Presidency", "es": "Segundo Consejero de la Presidencia de los Hombres Jóvenes de Estaca" },
+    "active": true
+  },
+  {
+    "id": "stake-young-men-secretary",
+    "organization": "stake-young-men",
+    "level": "stake",
+    "labels": { "en": "Stake Young Men Secretary", "es": "Secretario de los Hombres Jóvenes de Estaca" },
+    "active": true
+  },
+  {
+    "id": "stake-primary-president",
+    "organization": "stake-primary",
+    "level": "stake",
+    "labels": { "en": "Stake Primary President", "es": "Presidenta de la Primaria de Estaca" },
+    "active": true
+  },
+  {
+    "id": "first-counselor-stake-primary",
+    "organization": "stake-primary",
+    "level": "stake",
+    "labels": { "en": "First Counselor in the Stake Primary Presidency", "es": "Primera Consejera de la Presidencia de la Primaria de Estaca" },
+    "active": true
+  },
+  {
+    "id": "second-counselor-stake-primary",
+    "organization": "stake-primary",
+    "level": "stake",
+    "labels": { "en": "Second Counselor in the Stake Primary Presidency", "es": "Segunda Consejera de la Presidencia de la Primaria de Estaca" },
+    "active": true
+  },
+  {
+    "id": "stake-primary-secretary",
+    "organization": "stake-primary",
+    "level": "stake",
+    "labels": { "en": "Stake Primary Secretary", "es": "Secretaria de la Primaria de Estaca" },
+    "active": true
+  },
+  {
+    "id": "stake-sunday-school-president",
+    "organization": "stake-sunday-school",
+    "level": "stake",
+    "labels": { "en": "Stake Sunday School President", "es": "Presidente de la Escuela Dominical de Estaca" },
+    "active": true
+  },
+  {
+    "id": "first-counselor-stake-sunday-school",
+    "organization": "stake-sunday-school",
+    "level": "stake",
+    "labels": { "en": "First Counselor in the Stake Sunday School Presidency", "es": "Primer Consejero de la Presidencia de la Escuela Dominical de Estaca" },
+    "active": true
+  },
+  {
+    "id": "second-counselor-stake-sunday-school",
+    "organization": "stake-sunday-school",
+    "level": "stake",
+    "labels": { "en": "Second Counselor in the Stake Sunday School Presidency", "es": "Segundo Consejero de la Presidencia de la Escuela Dominical de Estaca" },
+    "active": true
+  },
+  {
+    "id": "stake-sunday-school-secretary",
+    "organization": "stake-sunday-school",
+    "level": "stake",
+    "labels": { "en": "Stake Sunday School Secretary", "es": "Secretario de la Escuela Dominical de Estaca" },
+    "active": true
+  },
+  {
+    "id": "stake-music-chairman",
+    "organization": "stake-music",
+    "level": "stake",
+    "labels": { "en": "Stake Music Chairman", "es": "Presidente de Música de Estaca" },
+    "active": true
+  },
+  {
+    "id": "stake-activities-chairman",
+    "organization": "stake-activities",
+    "level": "stake",
+    "labels": { "en": "Stake Activities Chairman", "es": "Presidente de Actividades de Estaca" },
+    "active": true
+  },
+  {
+    "id": "stake-activities-committee-member",
+    "organization": "stake-activities",
+    "level": "stake",
+    "labels": { "en": "Stake Activities Committee Member", "es": "Miembro del Comité de Actividades de Estaca" },
+    "active": true
+  },
+  {
+    "id": "stake-auditor",
+    "organization": "stake-audit",
+    "level": "stake",
+    "labels": { "en": "Stake Auditor", "es": "Auditor de Estaca" },
+    "active": true
+  },
+  {
+    "id": "stake-communications-director",
+    "organization": "stake-other",
+    "level": "stake",
+    "labels": { "en": "Stake Communications Director", "es": "Director de Comunicaciones de Estaca" },
+    "active": true
+  },
+  {
+    "id": "stake-communications-specialist",
+    "organization": "stake-other",
+    "level": "stake",
+    "labels": { "en": "Stake Communications Specialist", "es": "Especialista de Comunicaciones de Estaca" },
+    "active": true
+  },
+  {
+    "id": "stake-technology-specialist",
+    "organization": "stake-other",
+    "level": "stake",
+    "labels": { "en": "Stake Technology Specialist", "es": "Especialista de Tecnología de Estaca" },
+    "active": true
+  },
+  {
+    "id": "stake-public-affairs-director",
+    "organization": "stake-other",
+    "level": "stake",
+    "labels": { "en": "Stake Public Affairs Director", "es": "Director de Asuntos Públicos de Estaca" },
+    "active": true
+  },
+  {
+    "id": "stake-physical-facilities-representative",
+    "organization": "stake-other",
+    "level": "stake",
+    "labels": { "en": "Stake Physical Facilities Representative", "es": "Representante de Instalaciones Físicas de Estaca" },
+    "active": true
+  },
+  {
+    "id": "stake-building-representative",
+    "organization": "stake-other",
+    "level": "stake",
+    "labels": { "en": "Stake Building Representative", "es": "Representante de Edificios de Estaca" },
+    "active": true
+  },
+  {
+    "id": "stake-single-adult-adviser",
+    "organization": "stake-other",
+    "level": "stake",
+    "labels": { "en": "Stake Single Adult Adviser", "es": "Asesor de Adultos Solteros de Estaca" },
+    "active": true
+  },
+  {
+    "id": "stake-young-single-adult-adviser",
+    "organization": "stake-other",
+    "level": "stake",
+    "labels": { "en": "Stake Young Single Adult Adviser", "es": "Asesor de Adultos Solteros Jóvenes de Estaca" },
+    "active": true
+  },
+  {
+    "id": "stake-baptismal-coordinator",
+    "organization": "stake-other",
+    "level": "stake",
+    "labels": { "en": "Stake Baptismal Coordinator", "es": "Coordinador de Bautismos de Estaca" },
+    "active": true
+  },
+  {
+    "id": "stake-emergency-preparedness-specialist",
+    "organization": "stake-welfare",
+    "level": "stake",
+    "labels": { "en": "Stake Emergency Preparedness Specialist", "es": "Especialista de Preparación para Emergencias de Estaca" },
+    "active": true
+  },
+  {
+    "id": "stake-self-reliance-specialist",
+    "organization": "stake-welfare",
+    "level": "stake",
+    "labels": { "en": "Stake Self-Reliance Specialist", "es": "Especialista de Autosuficiencia de Estaca" },
+    "active": true
+  },
+  {
+    "id": "stake-welfare-specialist",
+    "organization": "stake-welfare",
+    "level": "stake",
+    "labels": { "en": "Stake Welfare Specialist", "es": "Especialista de Bienestar de Estaca" },
+    "active": true
+  },
+  {
+    "id": "stake-employment-specialist",
+    "organization": "stake-welfare",
+    "level": "stake",
+    "labels": { "en": "Stake Employment Specialist", "es": "Especialista de Empleo de Estaca" },
+    "active": true
+  },
+  {
+    "id": "stake-humanitarian-specialist",
+    "organization": "stake-welfare",
+    "level": "stake",
+    "labels": { "en": "Stake Humanitarian Specialist", "es": "Especialista Humanitario de Estaca" },
+    "active": true
+  },
+  {
+    "id": "stake-addiction-recovery-facilitator",
+    "organization": "stake-welfare",
+    "level": "stake",
+    "labels": { "en": "Stake Addiction Recovery Program Facilitator", "es": "Facilitador del Programa de Recuperación de Adicciones de Estaca" },
+    "active": true
+  },
+  {
+    "id": "stake-justserve-specialist",
+    "organization": "stake-welfare",
+    "level": "stake",
+    "labels": { "en": "Stake JustServe Specialist", "es": "Especialista de JustServe de Estaca" },
+    "active": true
+  },
+  {
+    "id": "stake-temple-and-family-history-consultant",
+    "organization": "stake-temple-and-family-history",
+    "level": "stake",
+    "labels": { "en": "Stake Temple and Family History Consultant", "es": "Consultor del Templo y de Historia Familiar de Estaca" },
+    "active": true
+  },
+  {
+    "id": "stake-indexing-specialist",
+    "organization": "stake-temple-and-family-history",
+    "level": "stake",
+    "labels": { "en": "Stake Indexing Specialist", "es": "Especialista de Indexación de Estaca" },
+    "active": true
+  },
+  {
+    "id": "stake-family-history-center-director",
+    "organization": "stake-temple-and-family-history",
+    "level": "stake",
+    "labels": { "en": "Stake Family History Center Director", "es": "Director del Centro de Historia Familiar de Estaca" },
+    "active": true
+  },
+  {
+    "id": "stake-family-history-center-volunteer",
+    "organization": "stake-temple-and-family-history",
+    "level": "stake",
+    "labels": { "en": "Family History Center Volunteer", "es": "Voluntario del Centro de Historia Familiar" },
+    "active": true
+  },
+  {
+    "id": "stake-seminary-and-institute-coordinator",
+    "organization": "stake-seminary-and-institute",
+    "level": "stake",
+    "labels": { "en": "Stake Seminary and Institute Coordinator", "es": "Coordinador de Seminario e Instituto de Estaca" },
+    "active": true
+  },
+
+  {
+    "id": "district-president",
+    "organization": "district-presidency",
+    "level": "district",
+    "labels": { "en": "District President", "es": "Presidente de Distrito" },
+    "active": true
+  },
+  {
+    "id": "first-counselor-district-presidency",
+    "organization": "district-presidency",
+    "level": "district",
+    "labels": { "en": "First Counselor in the District Presidency", "es": "Primer Consejero de la Presidencia de Distrito" },
+    "active": true
+  },
+  {
+    "id": "second-counselor-district-presidency",
+    "organization": "district-presidency",
+    "level": "district",
+    "labels": { "en": "Second Counselor in the District Presidency", "es": "Segundo Consejero de la Presidencia de Distrito" },
+    "active": true
+  },
+  {
+    "id": "district-executive-secretary",
+    "organization": "district-presidency",
+    "level": "district",
+    "labels": { "en": "District Executive Secretary", "es": "Secretario Ejecutivo de Distrito" },
+    "active": true
+  },
+  {
+    "id": "district-clerk",
+    "organization": "district-presidency",
+    "level": "district",
+    "labels": { "en": "District Clerk", "es": "Secretario de Distrito" },
+    "active": true
+  },
+  {
+    "id": "assistant-district-clerk",
+    "organization": "district-presidency",
+    "level": "district",
+    "labels": { "en": "Assistant District Clerk", "es": "Secretario Auxiliar de Distrito" },
+    "active": true
+  },
+  {
+    "id": "district-council-member",
+    "organization": "district-council",
+    "level": "district",
+    "labels": { "en": "District Council Member", "es": "Miembro del Consejo de Distrito" },
+    "active": true
+  },
+  {
+    "id": "district-relief-society-president",
+    "organization": "district-relief-society",
+    "level": "district",
+    "labels": { "en": "District Relief Society President", "es": "Presidenta de la Sociedad de Socorro de Distrito" },
+    "active": true
+  },
+  {
+    "id": "first-counselor-district-relief-society",
+    "organization": "district-relief-society",
+    "level": "district",
+    "labels": { "en": "First Counselor in the District Relief Society Presidency", "es": "Primera Consejera de la Presidencia de la Sociedad de Socorro de Distrito" },
+    "active": true
+  },
+  {
+    "id": "second-counselor-district-relief-society",
+    "organization": "district-relief-society",
+    "level": "district",
+    "labels": { "en": "Second Counselor in the District Relief Society Presidency", "es": "Segunda Consejera de la Presidencia de la Sociedad de Socorro de Distrito" },
+    "active": true
+  },
+  {
+    "id": "district-young-women-president",
+    "organization": "district-young-women",
+    "level": "district",
+    "labels": { "en": "District Young Women President", "es": "Presidenta de las Mujeres Jóvenes de Distrito" },
+    "active": true
+  },
+  {
+    "id": "first-counselor-district-young-women",
+    "organization": "district-young-women",
+    "level": "district",
+    "labels": { "en": "First Counselor in the District Young Women Presidency", "es": "Primera Consejera de la Presidencia de las Mujeres Jóvenes de Distrito" },
+    "active": true
+  },
+  {
+    "id": "second-counselor-district-young-women",
+    "organization": "district-young-women",
+    "level": "district",
+    "labels": { "en": "Second Counselor in the District Young Women Presidency", "es": "Segunda Consejera de la Presidencia de las Mujeres Jóvenes de Distrito" },
+    "active": true
+  },
+  {
+    "id": "district-young-men-president",
+    "organization": "district-young-men",
+    "level": "district",
+    "labels": { "en": "District Young Men President", "es": "Presidente de los Hombres Jóvenes de Distrito" },
+    "active": true
+  },
+  {
+    "id": "first-counselor-district-young-men",
+    "organization": "district-young-men",
+    "level": "district",
+    "labels": { "en": "First Counselor in the District Young Men Presidency", "es": "Primer Consejero de la Presidencia de los Hombres Jóvenes de Distrito" },
+    "active": true
+  },
+  {
+    "id": "second-counselor-district-young-men",
+    "organization": "district-young-men",
+    "level": "district",
+    "labels": { "en": "Second Counselor in the District Young Men Presidency", "es": "Segundo Consejero de la Presidencia de los Hombres Jóvenes de Distrito" },
+    "active": true
+  },
+  {
+    "id": "district-primary-president",
+    "organization": "district-primary",
+    "level": "district",
+    "labels": { "en": "District Primary President", "es": "Presidenta de la Primaria de Distrito" },
+    "active": true
+  },
+  {
+    "id": "first-counselor-district-primary",
+    "organization": "district-primary",
+    "level": "district",
+    "labels": { "en": "First Counselor in the District Primary Presidency", "es": "Primera Consejera de la Presidencia de la Primaria de Distrito" },
+    "active": true
+  },
+  {
+    "id": "second-counselor-district-primary",
+    "organization": "district-primary",
+    "level": "district",
+    "labels": { "en": "Second Counselor in the District Primary Presidency", "es": "Segunda Consejera de la Presidencia de la Primaria de Distrito" },
+    "active": true
+  },
+  {
+    "id": "district-sunday-school-president",
+    "organization": "district-sunday-school",
+    "level": "district",
+    "labels": { "en": "District Sunday School President", "es": "Presidente de la Escuela Dominical de Distrito" },
+    "active": true
+  },
+  {
+    "id": "first-counselor-district-sunday-school",
+    "organization": "district-sunday-school",
+    "level": "district",
+    "labels": { "en": "First Counselor in the District Sunday School Presidency", "es": "Primer Consejero de la Presidencia de la Escuela Dominical de Distrito" },
+    "active": true
+  },
+  {
+    "id": "second-counselor-district-sunday-school",
+    "organization": "district-sunday-school",
+    "level": "district",
+    "labels": { "en": "Second Counselor in the District Sunday School Presidency", "es": "Segundo Consejero de la Presidencia de la Escuela Dominical de Distrito" },
+    "active": true
+  },
+  {
+    "id": "district-auditor",
+    "organization": "district-audit",
+    "level": "district",
+    "labels": { "en": "District Auditor", "es": "Auditor de Distrito" },
+    "active": true
+  },
+  {
+    "id": "district-communications-specialist",
+    "organization": "district-other",
+    "level": "district",
+    "labels": { "en": "District Communications Specialist", "es": "Especialista de Comunicaciones de Distrito" },
+    "active": true
+  },
+  {
+    "id": "district-temple-and-family-history-consultant",
+    "organization": "district-temple-and-family-history",
+    "level": "district",
+    "labels": { "en": "District Temple and Family History Consultant", "es": "Consultor del Templo y de Historia Familiar de Distrito" },
+    "active": true
+  },
+  {
+    "id": "district-seminary-and-institute-coordinator",
+    "organization": "district-seminary-and-institute",
+    "level": "district",
+    "labels": { "en": "District Seminary and Institute Coordinator", "es": "Coordinador de Seminario e Instituto de Distrito" },
+    "active": true
+  },
+  {
+    "id": "district-self-reliance-specialist",
+    "organization": "district-welfare",
+    "level": "district",
+    "labels": { "en": "District Self-Reliance Specialist", "es": "Especialista de Autosuficiencia de Distrito" },
+    "active": true
+  }
+]

@@ -9,27 +9,56 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { TermsOfServiceDialog } from "@/components/auth/terms-of-service-dialog";
 import { InviteCodeInput } from "@/components/auth/invite-code-input";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "@/lib/toast";
 import { createClient } from "@/lib/supabase/client";
 import { ShieldCheck, Loader2, Users, CheckCircle } from "lucide-react";
 import type { WorkspaceInvitationData } from "@/types/onboarding";
 
+const inkSubtle = "color-mix(in srgb, var(--lp-ink) 65%, transparent)";
+const inkBorder = "1px solid color-mix(in srgb, var(--lp-ink) 18%, transparent)";
+const inkDivider = "color-mix(in srgb, var(--lp-ink) 14%, transparent)";
+const inputStyle = {
+  background: "var(--lp-bg)",
+  color: "var(--lp-ink)",
+  border: "1px solid color-mix(in srgb, var(--lp-ink) 22%, transparent)",
+};
+const accentBtnStyle = { background: "var(--lp-accent)", color: "var(--lp-bg)" };
+
+function AuthCard({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      className="rounded-2xl p-7 sm:p-8"
+      style={{ background: "var(--lp-surface)", border: inkBorder }}
+    >
+      {children}
+    </div>
+  );
+}
+
+function safeInternalPath(pathname: string | null, fallback: string) {
+  if (!pathname) return fallback;
+  if (!pathname.startsWith("/")) return fallback;
+  if (pathname.startsWith("//")) return fallback;
+  return pathname;
+}
+
 function SignupContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   // Check for workspace invitation token in URL
-  const invitationToken = searchParams.get("invitation_token");
-  const invitedEmail = searchParams.get("email");
+  const invitationToken = searchParams?.get("invitation_token");
+  const invitedEmail = searchParams?.get("email");
+  const redirectTo = searchParams?.get("redirect");
+  const useTemplateId = searchParams?.get("use");
+  const safeRedirect = safeInternalPath(redirectTo ?? null, "/library");
+  const loginHref = `/login?${new URLSearchParams(
+    Object.fromEntries(
+      [
+        ["redirect", safeRedirect],
+        ["use", useTemplateId ?? ""],
+      ].filter((entry) => entry[1].length > 0)
+    )
+  ).toString()}`;
 
   // Workspace invitation state
   const [isWorkspaceInvite, setIsWorkspaceInvite] = useState(false);
@@ -213,7 +242,7 @@ function SignupContent() {
           if (signInError) {
             toast.error("This email is already registered. Please use the login page instead.");
             setTimeout(() => {
-              router.push("/login");
+              router.push(loginHref);
             }, 2000);
           } else if (signInData.user) {
             // Check if user has a profile
@@ -231,8 +260,14 @@ function SignupContent() {
               toast.info("Complete Setup", { description: "Please complete your profile setup." });
               router.push("/onboarding");
             } else {
-              // User has profile - redirect to dashboard
-              router.push("/dashboard");
+              if (useTemplateId) {
+                const importUrl = `/library/import?use=${encodeURIComponent(useTemplateId)}&redirect=${encodeURIComponent(safeRedirect)}`;
+                router.push(importUrl);
+              } else if (redirectTo) {
+                router.push(safeRedirect);
+              } else {
+                router.push("/dashboard");
+              }
             }
             router.refresh();
           }
@@ -342,77 +377,99 @@ function SignupContent() {
   // Show loading state while validating workspace invitation
   if (isValidatingToken) {
     return (
-      <Card className="border-border">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">Validating Invitation</CardTitle>
-          <CardDescription>Please wait while we verify your invitation...</CardDescription>
-        </CardHeader>
-        <CardContent className="flex justify-center py-8">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </CardContent>
-      </Card>
+      <AuthCard>
+        <div className="space-y-1 text-center">
+          <h1 className="text-2xl font-bold tracking-tight" style={{ color: "var(--lp-ink)" }}>
+            Validating invitation
+          </h1>
+          <p className="text-sm" style={{ color: inkSubtle }}>
+            Please wait while we verify your invitation...
+          </p>
+        </div>
+        <div className="mt-6 flex justify-center py-8">
+          <Loader2 className="h-8 w-8 animate-spin" style={{ color: "var(--lp-accent)" }} />
+        </div>
+      </AuthCard>
     );
   }
 
   return (
-    <Card className="border-border">
-      <CardHeader className="space-y-1">
-        <CardTitle className="text-2xl font-bold">Create an account</CardTitle>
-        <CardDescription>
+    <AuthCard>
+      <div className="space-y-1">
+        <h1 className="text-2xl font-bold tracking-tight" style={{ color: "var(--lp-ink)" }}>
+          Create an account
+        </h1>
+        <p className="text-sm" style={{ color: inkSubtle }}>
           {isWorkspaceInvite && workspaceInviteData
             ? `Join ${workspaceInviteData.workspaceName} on Beespo`
             : "Enter your invite code and information to get started"}
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
+        </p>
+      </div>
+
+      <div className="mt-6 space-y-4">
         {/* Workspace Invitation Banner */}
         {isWorkspaceInvite && workspaceInviteValid && workspaceInviteData && (
-          <Alert className="bg-primary/5 border-primary/20">
-            <Users className="h-4 w-4 text-primary" />
-            <AlertDescription className="text-sm">
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-green-500" />
-                <span>
-                  You&apos;ve been invited to join <strong>{workspaceInviteData.workspaceName}</strong> as{" "}
-                  <span className="capitalize font-medium">{workspaceInviteData.role}</span>
-                </span>
-              </div>
-            </AlertDescription>
-          </Alert>
+          <div
+            className="flex items-center gap-3 rounded-lg p-3 text-sm"
+            style={{
+              background: "color-mix(in srgb, var(--lp-accent) 10%, transparent)",
+              border: "1px solid color-mix(in srgb, var(--lp-accent) 28%, transparent)",
+              color: "var(--lp-ink)",
+            }}
+          >
+            <Users className="h-4 w-4 shrink-0" style={{ color: "var(--lp-accent)" }} />
+            <CheckCircle className="h-4 w-4 shrink-0" style={{ color: "var(--lp-accent)" }} />
+            <span>
+              You&apos;ve been invited to join <strong>{workspaceInviteData.workspaceName}</strong> as{" "}
+              <span className="font-medium capitalize">{workspaceInviteData.role}</span>
+            </span>
+          </div>
         )}
 
         {/* Platform Invite Code Section (only for non-workspace-invite flow) */}
         {!isWorkspaceInvite && (
           <>
-            <Alert className="bg-muted/50">
-              <ShieldCheck className="h-4 w-4" />
-              <AlertDescription>
-                Beespo is currently invite-only. Enter your invite code to continue.
-              </AlertDescription>
-            </Alert>
+            <div
+              className="flex items-center gap-3 rounded-lg p-3 text-sm"
+              style={{
+                background: "color-mix(in srgb, var(--lp-ink) 6%, transparent)",
+                border: inkBorder,
+                color: inkSubtle,
+              }}
+            >
+              <ShieldCheck className="h-4 w-4 shrink-0" style={{ color: "var(--lp-ink)" }} />
+              <span>Beespo is currently invite-only. Enter your invite code to continue.</span>
+            </div>
 
             <InviteCodeInput
               value={inviteCode}
               onChange={setInviteCode}
               onValidationComplete={handleInviteValidation}
               disabled={isLoading}
+              inputStyle={inputStyle}
+              labelStyle={{ color: "var(--lp-ink)" }}
+              helperTextStyle={{ color: inkSubtle }}
             />
           </>
         )}
 
         {showForm && (
           <>
-            <Separator />
+            <div className="h-px w-full" style={{ background: inkDivider }} />
 
             {/* Google OAuth Button */}
             {process.env.NEXT_PUBLIC_GOOGLE_AUTH_ENABLED === "true" && (
               <>
                 <Button
                   type="button"
-                  variant="outline"
                   onClick={handleGoogleSignIn}
                   disabled={isLoading}
-                  className="w-full"
+                  className="w-full rounded-md transition-opacity hover:opacity-90"
+                  style={{
+                    background: "var(--lp-bg)",
+                    color: "var(--lp-ink)",
+                    border: inkBorder,
+                  }}
                 >
                   {isConsumingCode ? (
                     <>
@@ -445,11 +502,14 @@ function SignupContent() {
                 </Button>
 
                 <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <Separator />
+                  <div className="absolute inset-0 flex items-center" aria-hidden="true">
+                    <div className="h-px w-full" style={{ background: inkDivider }} />
                   </div>
-                  <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-background px-2 text-muted-foreground">
+                  <div className="relative flex justify-center">
+                    <span
+                      className="px-2 text-[11px] font-semibold uppercase tracking-[0.14em]"
+                      style={{ background: "var(--lp-surface)", color: inkSubtle }}
+                    >
                       Or sign up with email
                     </span>
                   </div>
@@ -458,138 +518,171 @@ function SignupContent() {
             )}
           </>
         )}
-      </CardContent>
+      </div>
 
       {showForm && (
-        <form onSubmit={handleSignup}>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="fullName">Full Name</Label>
-              <Input
-                id="fullName"
-                type="text"
-                placeholder="John Doe"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                required
-                disabled={isFormDisabled}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="name@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                disabled={isFormDisabled || (isWorkspaceInvite && workspaceInviteValid)}
-                className={isWorkspaceInvite && workspaceInviteValid ? "bg-muted" : ""}
-              />
-              {isWorkspaceInvite && workspaceInviteValid && (
-                <p className="text-xs text-muted-foreground">
-                  This email was used for your invitation and cannot be changed.
-                </p>
-              )}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                disabled={isFormDisabled}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirm Password</Label>
-              <Input
-                id="confirmPassword"
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-                disabled={isFormDisabled}
-              />
-            </div>
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="terms"
-                checked={agreedToTerms}
-                onCheckedChange={(checked) => setAgreedToTerms(checked as boolean)}
-                disabled={isFormDisabled}
-              />
-              <label
-                htmlFor="terms"
-                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-              >
-                I agree to the <TermsOfServiceDialog />
-              </label>
-            </div>
-          </CardContent>
-          <CardFooter className="flex flex-col space-y-4">
-            <Button
-              type="submit"
-              className="w-full"
+        <form onSubmit={handleSignup} className="mt-6 space-y-5">
+          <div className="space-y-2">
+            <Label htmlFor="fullName" style={{ color: "var(--lp-ink)" }}>
+              Full Name
+            </Label>
+            <Input
+              id="fullName"
+              type="text"
+              placeholder="John Doe"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              required
               disabled={isFormDisabled}
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  {isConsumingCode ? "Verifying..." : "Creating account..."}
-                </>
-              ) : isWorkspaceInvite ? (
-                "Create account & join workspace"
-              ) : (
-                "Create account"
-              )}
-            </Button>
-            <p className="text-center text-sm text-muted-foreground">
-              Already have an account?{" "}
-              <Link
-                href="/login"
-                className="font-medium underline underline-offset-4 hover:text-foreground"
-              >
-                Sign in
-              </Link>
-            </p>
-          </CardFooter>
-        </form>
-      )}
+              className="rounded-md placeholder:opacity-60"
+              style={inputStyle}
+            />
+          </div>
 
-      {!showForm && !isWorkspaceInvite && (
-        <CardFooter>
-          <p className="text-center text-sm text-muted-foreground w-full">
+          <div className="space-y-2">
+            <Label htmlFor="email" style={{ color: "var(--lp-ink)" }}>
+              Email
+            </Label>
+            <Input
+              id="email"
+              type="email"
+              placeholder="name@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              disabled={isFormDisabled || (isWorkspaceInvite && workspaceInviteValid)}
+              className="rounded-md placeholder:opacity-60"
+              style={
+                isWorkspaceInvite && workspaceInviteValid
+                  ? {
+                      ...inputStyle,
+                      background: "color-mix(in srgb, var(--lp-ink) 6%, var(--lp-surface))",
+                      opacity: 0.85,
+                    }
+                  : inputStyle
+              }
+            />
+            {isWorkspaceInvite && workspaceInviteValid && (
+              <p className="text-xs" style={{ color: inkSubtle }}>
+                This email was used for your invitation and cannot be changed.
+              </p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="password" style={{ color: "var(--lp-ink)" }}>
+              Password
+            </Label>
+            <Input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              disabled={isFormDisabled}
+              className="rounded-md"
+              style={inputStyle}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="confirmPassword" style={{ color: "var(--lp-ink)" }}>
+              Confirm Password
+            </Label>
+            <Input
+              id="confirmPassword"
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              required
+              disabled={isFormDisabled}
+              className="rounded-md"
+              style={inputStyle}
+            />
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="terms"
+              checked={agreedToTerms}
+              onCheckedChange={(checked) => setAgreedToTerms(checked as boolean)}
+              disabled={isFormDisabled}
+            />
+            <label
+              htmlFor="terms"
+              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              style={{ color: "var(--lp-ink)" }}
+            >
+              I agree to the <TermsOfServiceDialog />
+            </label>
+          </div>
+
+          <Button
+            type="submit"
+            className="w-full rounded-md border-0 transition-opacity hover:opacity-90"
+            disabled={isFormDisabled}
+            style={accentBtnStyle}
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                {isConsumingCode ? "Verifying..." : "Creating account..."}
+              </>
+            ) : isWorkspaceInvite ? (
+              "Create account & join workspace"
+            ) : (
+              "Create account"
+            )}
+          </Button>
+
+          <p className="text-center text-sm" style={{ color: inkSubtle }}>
             Already have an account?{" "}
             <Link
-              href="/login"
-              className="font-medium underline underline-offset-4 hover:text-foreground"
+              href={loginHref}
+              className="font-medium underline underline-offset-4"
+              style={{ color: "var(--lp-accent)" }}
             >
               Sign in
             </Link>
           </p>
-        </CardFooter>
+        </form>
       )}
-    </Card>
+
+      {!showForm && !isWorkspaceInvite && (
+        <p className="mt-6 text-center text-sm" style={{ color: inkSubtle }}>
+          Already have an account?{" "}
+          <Link
+            href={loginHref}
+            className="font-medium underline underline-offset-4"
+            style={{ color: "var(--lp-accent)" }}
+          >
+            Sign in
+          </Link>
+        </p>
+      )}
+    </AuthCard>
   );
 }
 
 export default function SignupPage() {
   return (
-    <Suspense fallback={
-      <Card className="border-border">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">Loading</CardTitle>
-          <CardDescription>Please wait...</CardDescription>
-        </CardHeader>
-        <CardContent className="flex justify-center py-8">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </CardContent>
-      </Card>
-    }>
+    <Suspense
+      fallback={
+        <AuthCard>
+          <div className="space-y-1 text-center">
+            <h1 className="text-2xl font-bold tracking-tight" style={{ color: "var(--lp-ink)" }}>
+              Loading
+            </h1>
+            <p className="text-sm" style={{ color: inkSubtle }}>
+              Please wait...
+            </p>
+          </div>
+          <div className="mt-6 flex justify-center py-8">
+            <Loader2 className="h-8 w-8 animate-spin" style={{ color: "var(--lp-accent)" }} />
+          </div>
+        </AuthCard>
+      }
+    >
       <SignupContent />
     </Suspense>
   );

@@ -32,6 +32,7 @@ export function MeetingActions({
   const router = useRouter();
   const [isStatusLoading, setIsStatusLoading] = useState(false);
   const [currentMeeting, setCurrentMeeting] = useState(meeting);
+  const canConductProgram = meeting.plan_type === "program";
 
   const handleStatusChange = async (newStatus: Meeting["status"]) => {
     setIsStatusLoading(true);
@@ -62,7 +63,7 @@ export function MeetingActions({
       {/* Primary Actions - Always visible */}
       <div className="flex flex-col gap-2">
         {/* Conduct/Start Meeting - Most prominent */}
-        {meeting.status === "scheduled" && isLeader && (
+        {meeting.status === "scheduled" && isLeader && canConductProgram && (
           <Button
             className="w-full bg-green-600 hover:bg-green-700"
             onClick={() => handleStatusChange("in_progress")}
@@ -73,15 +74,15 @@ export function MeetingActions({
             ) : (
               <Play className="w-4 h-4 mr-2" />
             )}
-            Start Meeting
+            Start Program
           </Button>
         )}
 
-        {meeting.status === "in_progress" && (
+        {meeting.status === "in_progress" && canConductProgram && (
           <Button asChild className="w-full bg-blue-600 hover:bg-blue-700">
             <Link href={`/meetings/${meeting.id}/conduct`}>
               <Play className="w-4 h-4 mr-2" />
-              Conduct Meeting
+              Conduct Program
             </Link>
           </Button>
         )}

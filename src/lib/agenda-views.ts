@@ -26,13 +26,15 @@ export interface AgendaView {
   updated_at: string
 }
 
+// UI-friendly aliases (DB table remains `agenda_views`)
+export type FilterCriteria = ViewFilters
+export type AgendaFilter = AgendaView
+
 // ── Server actions ────────────────────────────────────────────────────────────
 
-/**
- * Create a new agenda view for the current user's workspace.
- * Views are visible to all members of the same workspace.
- */
-export async function createAgendaView(
+export async function createSavedPlanFilter(
+  viewType: string,
+  path: string,
   name: string,
   filters: ViewFilters
 ): Promise<{ data?: AgendaView; error?: string }> {
@@ -43,19 +45,20 @@ export async function createAgendaView(
   } = await supabase.auth.getUser()
   if (!user) return { error: "Not authenticated" }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: profile } = await (supabase.from("profiles") as any)
+  const { data: profile } = await (supabase
+    .from("profiles") as ReturnType<typeof supabase.from>)
     .select("workspace_id")
     .eq("id", user.id)
     .single()
 
   if (!profile?.workspace_id) return { error: "No workspace found" }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, error } = await (supabase.from("agenda_views") as any)
+  const { data, error } = await (supabase
+    .from("agenda_views") as ReturnType<typeof supabase.from>)
     .insert({
       name: name.trim(),
       filters,
+      view_type: viewType,
       workspace_id: profile.workspace_id,
       created_by: user.id,
     })
@@ -64,26 +67,57 @@ export async function createAgendaView(
 
   if (error) return { error: error.message }
 
-  revalidatePath("/meetings/agendas")
+  revalidatePath(path)
   return { data: data as AgendaView }
 }
 
-/**
- * Delete an agenda view. Only the creator, leaders, and admins may delete.
- * RLS enforces this on the database side as well.
- */
-export async function deleteAgendaView(
-  id: string
+export async function deleteSavedPlanFilter(
+  id: string,
+  path: string
 ): Promise<{ error?: string }> {
   const supabase = await createClient()
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error } = await (supabase.from("agenda_views") as any)
+  const { error } = await supabase
+    .from("agenda_views")
     .delete()
     .eq("id", id)
 
   if (error) return { error: error.message }
 
-  revalidatePath("/meetings/agendas")
+  revalidatePath(path)
   return {}
+}
+
+/**
+ * Create a new saved agenda filter for the current user's workspace.
+ * Saved filters are visible to all members of the same workspace.
+ */
+export async function createAgendaView(
+  name: string,
+  filters: ViewFilters
+): Promise<{ data?: AgendaView; error?: string }> {
+  return createSavedPlanFilter("agendas", "/meetings/agendas", name, filters)
+}
+
+export async function createAgendaFilter(
+  name: string,
+  filters: FilterCriteria
+): Promise<{ data?: AgendaFilter; error?: string }> {
+  return createAgendaView(name, filters)
+}
+
+/**
+ * Delete a saved agenda filter. Only the creator, leaders, and admins may delete.
+ * RLS enforces this on the database side as well.
+ */
+export async function deleteAgendaView(
+  id: string
+): Promise<{ error?: string }> {
+  return deleteSavedPlanFilter(id, "/meetings/agendas")
+}
+
+export async function deleteAgendaFilter(
+  id: string
+): Promise<{ error?: string }> {
+  return deleteAgendaView(id)
 }

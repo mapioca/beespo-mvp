@@ -6,83 +6,179 @@
 export interface BreadcrumbItem {
   label: string
   href?: string
-  iconType?: "database" | "table" | "notebook" | "template"
 }
 
 export interface BreadcrumbConfig {
   pattern: string | RegExp
   trail: BreadcrumbItem[]
-  /**
-   * Optional function to dynamically generate the trail
-   * Useful for routes with dynamic segments like [id]
-   */
   dynamic?: boolean
 }
 
-/**
- * Static breadcrumb configurations for routes
- */
 export const breadcrumbConfigs: BreadcrumbConfig[] = [
   // Dashboard
   {
     pattern: "/dashboard",
     trail: [{ label: "Dashboard" }],
   },
+  {
+    pattern: "/inbox",
+    trail: [{ label: "Workspace", href: "/dashboard" }, { label: "Inbox" }],
+  },
 
   // Calendar section
   {
     pattern: "/calendar",
-    trail: [{ label: "Calendar" }],
-  },
-  {
-    pattern: "/calendar/view",
-    trail: [{ label: "Calendar", href: "/calendar/view" }, { label: "View" }],
+    trail: [{ label: "Calendar", href: "/calendar" }],
   },
   {
     pattern: "/calendar/events",
-    trail: [{ label: "Calendar", href: "/calendar/view" }, { label: "Events" }],
+    trail: [{ label: "Calendar", href: "/calendar" }, { label: "Events" }],
+  },
+  {
+    pattern: /^\/calendar\/events\/[^/]+$/,
+    trail: [{ label: "Calendar", href: "/calendar" }, { label: "Events", href: "/calendar/events" }, { label: "Event Details" }],
+    dynamic: true,
+  },
+  {
+    pattern: "/calendar/settings",
+    trail: [{ label: "Calendar", href: "/calendar" }, { label: "Settings" }],
+  },
+  {
+    pattern: "/schedule",
+    trail: [{ label: "Schedule", href: "/schedule/calendar" }, { label: "Calendar" }],
+  },
+  {
+    pattern: "/schedule/calendar",
+    trail: [{ label: "Schedule", href: "/schedule/calendar" }, { label: "Calendar" }],
+  },
+  {
+    pattern: "/schedule/events",
+    trail: [{ label: "Schedule", href: "/schedule/calendar" }, { label: "Events" }],
+  },
+  {
+    pattern: "/schedule/settings",
+    trail: [{ label: "Schedule", href: "/schedule/calendar" }, { label: "Settings" }],
   },
 
   // Meetings Hub
   {
+    pattern: "/meetings/overview",
+    trail: [{ label: "Meetings", href: "/meetings/overview" }, { label: "Overview" }],
+  },
+  {
     pattern: "/meetings/agendas",
-    trail: [{ label: "Meetings", href: "/meetings/agendas" }, { label: "Agendas" }],
+    trail: [{ label: "Meetings", href: "/meetings/overview" }, { label: "Agendas" }],
   },
   {
-    pattern: "/meetings/business",
-    trail: [{ label: "Meetings", href: "/meetings/agendas" }, { label: "Business" }],
+    pattern: "/meetings/programs",
+    trail: [{ label: "Meetings", href: "/meetings/overview" }, { label: "Programs" }],
   },
   {
-    pattern: "/meetings/announcements",
-    trail: [{ label: "Meetings", href: "/meetings/agendas" }, { label: "Announcements" }],
-  },
-  {
-    pattern: "/meetings/discussions",
-    trail: [{ label: "Meetings", href: "/meetings/agendas" }, { label: "Discussions" }],
-  },
-  {
-    pattern: "/templates/library",
+    pattern: "/meetings/sacrament/speakers",
     trail: [
-      { label: "Templates", href: "/templates/library", iconType: "template" },
-      { label: "Library", iconType: "template" },
+      { label: "Meetings", href: "/meetings/overview" },
+      { label: "Sacrament Meeting", href: "/meetings/sacrament/planner" },
+      { label: "Speaker Planner" },
     ],
   },
   {
-    pattern: "/templates/new",
+    pattern: "/meetings/sacrament/business",
     trail: [
-      { label: "Templates", href: "/templates/library", iconType: "template" },
-      { label: "Library", href: "/templates/library", iconType: "template" },
-      { label: "New Template", iconType: "template" },
+      { label: "Meetings", href: "/meetings/overview" },
+      { label: "Sacrament Meeting", href: "/meetings/sacrament/planner" },
+      { label: "Business" },
+    ],
+  },
+  {
+    pattern: "/meetings/sacrament/business/new",
+    trail: [
+      { label: "Meetings", href: "/meetings/overview" },
+      { label: "Sacrament Meeting", href: "/meetings/sacrament/planner" },
+      { label: "Business", href: "/meetings/sacrament/business" },
+      { label: "New Business" },
+    ],
+  },
+  {
+    pattern: "/meetings/sacrament/archive",
+    trail: [
+      { label: "Meetings", href: "/meetings/overview" },
+      { label: "Sacrament Meeting", href: "/meetings/sacrament/planner" },
+      { label: "Archive" },
+    ],
+  },
+  {
+    pattern: "/discussions",
+    trail: [
+      { label: "Discussions" },
+    ],
+  },
+  {
+    pattern: "/discussions/new",
+    trail: [
+      { label: "Discussions", href: "/discussions" },
+      { label: "New Discussion" },
+    ],
+  },
+  {
+    pattern: /^\/discussions\/[^/]+$/,
+    trail: [
+      { label: "Discussions", href: "/discussions" },
+      { label: "Discussion Details" },
+    ],
+    dynamic: true,
+  },
+  {
+    pattern: "/meetings/sacrament/announcements",
+    trail: [{ label: "Meetings", href: "/meetings/overview" }, { label: "Announcements" }],
+  },
+  {
+    pattern: "/meetings/assignments",
+    trail: [{ label: "Meetings", href: "/meetings/overview" }, { label: "Assignments" }],
+  },
+  {
+    pattern: "/library",
+    trail: [
+      { label: "Templates", href: "/library" },
+      { label: "All Templates" },
+    ],
+  },
+  {
+    pattern: "/library/programs",
+    trail: [
+      { label: "Templates", href: "/library" },
+      { label: "Programs" },
+    ],
+  },
+  {
+    pattern: "/library/agendas",
+    trail: [
+      { label: "Templates", href: "/library" },
+      { label: "Agendas" },
+    ],
+  },
+  {
+    pattern: "/library/forms",
+    trail: [
+      { label: "Templates", href: "/library" },
+      { label: "Forms" },
+    ],
+  },
+  {
+    pattern: "/library/new",
+    trail: [
+      { label: "Templates", href: "/library" },
+      { label: "All Templates", href: "/library" },
+      { label: "New Template" },
     ],
   },
   {
     pattern: "/meetings/new",
-    trail: [{ label: "Meetings", href: "/meetings/agendas" }, { label: "New Meeting" }],
+    trail: [{ label: "Meetings", href: "/meetings/overview" }, { label: "New Meeting" }],
   },
   {
     pattern: /^\/meetings\/[^/]+$/,
     trail: [
-      { label: "Meetings", href: "/meetings/agendas" },
+      { label: "Meetings", href: "/meetings/overview" },
       { label: "Meeting Details" },
     ],
     dynamic: true,
@@ -90,27 +186,61 @@ export const breadcrumbConfigs: BreadcrumbConfig[] = [
   {
     pattern: /^\/meetings\/[^/]+\/conduct$/,
     trail: [
-      { label: "Meetings", href: "/meetings/agendas" },
+      { label: "Meetings", href: "/meetings/overview" },
       { label: "Conduct Meeting" },
+    ],
+    dynamic: true,
+  },
+  {
+    pattern: /^\/meetings\/agenda\/[^/]+$/,
+    trail: [
+      { label: "Meetings", href: "/meetings/overview" },
+      { label: "Agendas", href: "/meetings/agendas" },
+      { label: "Agenda" },
     ],
     dynamic: true,
   },
 
   // Data section
   {
+    pattern: "/data",
+    trail: [{ label: "Data", href: "/data" }, { label: "Overview" }],
+  },
+  {
+    pattern: "/forms",
+    trail: [{ label: "Data", href: "/data" }, { label: "Forms" }],
+  },
+  {
+    pattern: "/forms/new",
+    trail: [
+      { label: "Data", href: "/data" },
+      { label: "Forms", href: "/forms" },
+      { label: "New Form" },
+    ],
+  },
+  {
+    pattern: /^\/forms\/[^/]+$/,
+    trail: [
+      { label: "Data", href: "/data" },
+      { label: "Forms", href: "/forms" },
+      { label: "Form Details" },
+    ],
+    dynamic: true,
+  },
+  {
     pattern: "/tables",
-    trail: [{ label: "Data", iconType: "database" }, { label: "Tables", iconType: "table" }],
+    trail: [{ label: "Data", href: "/data" }, { label: "Tables" }],
   },
   {
     pattern: "/tables/new",
-    trail: [{ label: "Data", iconType: "database" }, { label: "Tables", href: "/tables", iconType: "table" }, { label: "New Table" }],
+    trail: [{ label: "Data", href: "/data" }, { label: "Tables", href: "/tables" }, { label: "New Table" }],
   },
   {
     pattern: /^\/tables\/[^/]+$/,
     trail: [
-      { label: "Data", iconType: "database" },
-      { label: "Tables", href: "/tables", iconType: "table" },
-      { label: "Table", iconType: "table" },
+      { label: "Data", href: "/data" },
+      { label: "Tables", href: "/tables" },
+      { label: "Table" },
     ],
     dynamic: true,
   },
@@ -118,23 +248,23 @@ export const breadcrumbConfigs: BreadcrumbConfig[] = [
   // Notebooks
   {
     pattern: "/notebooks",
-    trail: [{ label: "Data", iconType: "database" }, { label: "Notebooks", iconType: "notebook" }],
+    trail: [{ label: "Data", href: "/data" }, { label: "Notebooks" }],
   },
   {
     pattern: "/notebooks/new",
-    trail: [{ label: "Data", iconType: "database" }, { label: "Notebooks", href: "/notebooks", iconType: "notebook" }, { label: "New Notebook" }],
+    trail: [{ label: "Data", href: "/data" }, { label: "Notebooks", href: "/notebooks" }, { label: "New Notebook" }],
   },
   {
     pattern: /^\/notebooks\/[^/]+$/,
     trail: [
-      { label: "Data", iconType: "database" },
-      { label: "Notebooks", href: "/notebooks", iconType: "notebook" },
+      { label: "Data", href: "/data" },
+      { label: "Notebooks", href: "/notebooks" },
       { label: "Notebook" },
     ],
     dynamic: true,
   },
 
-  // Directory section (consolidated)
+  // Directory section
   {
     pattern: "/directory",
     trail: [{ label: "Directory" }],
@@ -152,37 +282,8 @@ export const breadcrumbConfigs: BreadcrumbConfig[] = [
     ],
     dynamic: true,
   },
-  {
-    pattern: "/speakers",
-    trail: [{ label: "Directory", href: "/directory" }, { label: "Speakers" }],
-  },
-  {
-    pattern: /^\/speakers\/[^/]+$/,
-    trail: [
-      { label: "Directory", href: "/directory" },
-      { label: "Speakers", href: "/speakers" },
-      { label: "Speaker Details" },
-    ],
-    dynamic: true,
-  },
-  {
-    pattern: "/participants",
-    trail: [{ label: "Directory", href: "/directory" }, { label: "Participants" }],
-  },
-  {
-    pattern: /^\/participants\/[^/]+$/,
-    trail: [
-      { label: "Directory", href: "/directory" },
-      { label: "Participants", href: "/participants" },
-      { label: "Participant Details" },
-    ],
-    dynamic: true,
-  },
 ]
 
-/**
- * Get the breadcrumb trail for a given pathname
- */
 export function getBreadcrumbTrail(pathname: string): BreadcrumbItem[] {
   for (const config of breadcrumbConfigs) {
     if (typeof config.pattern === "string") {
@@ -194,6 +295,5 @@ export function getBreadcrumbTrail(pathname: string): BreadcrumbItem[] {
     }
   }
 
-  // Default: return empty trail
   return []
 }

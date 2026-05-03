@@ -6,23 +6,22 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import { toast } from "@/lib/toast";
 import { createClient } from "@/lib/supabase/client";
 import { GoogleOAuthButton } from "@/components/auth/google-oauth-button";
 
+function safeInternalPath(pathname: string | null, fallback: string) {
+  if (!pathname) return fallback;
+  if (!pathname.startsWith("/")) return fallback;
+  if (pathname.startsWith("//")) return fallback;
+  return pathname;
+}
+
 export default function LoginClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectTo = searchParams.get("redirect");
+  const redirectTo = searchParams?.get("redirect");
+  const useTemplateId = searchParams?.get("use");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -48,9 +47,15 @@ export default function LoginClient() {
           toast.error(error.message);
         }
       } else if (data.user) {
-        if (redirectTo) {
+        if (redirectTo || useTemplateId) {
+          const safeRedirect = safeInternalPath(redirectTo ?? null, "/library");
           toast.success("You've been logged in successfully.");
-          router.push(redirectTo);
+          if (useTemplateId) {
+            const importUrl = `/library/import?use=${encodeURIComponent(useTemplateId)}&redirect=${encodeURIComponent(safeRedirect)}`;
+            router.push(importUrl);
+          } else {
+            router.push(safeRedirect);
+          }
           router.refresh();
           return;
         }
@@ -88,84 +93,131 @@ export default function LoginClient() {
     }
   };
 
+  const inkSubtle = "color-mix(in srgb, var(--lp-ink) 65%, transparent)";
+  const inkBorder = "1px solid color-mix(in srgb, var(--lp-ink) 18%, transparent)";
+
+  const signupHref =
+    redirectTo || useTemplateId
+      ? `/signup?${new URLSearchParams(
+          Object.fromEntries(
+            [
+              ["redirect", safeInternalPath(redirectTo ?? null, "/library")],
+              ["use", useTemplateId ?? ""],
+            ].filter((entry) => entry[1].length > 0)
+          )
+        ).toString()}`
+      : "/signup";
+
   return (
-    <Card className="border-border">
-      <CardHeader className="space-y-1">
-        <CardTitle className="text-2xl font-bold">Sign in</CardTitle>
-        <CardDescription>
-          Enter your email and password to access your account
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {process.env.NEXT_PUBLIC_GOOGLE_AUTH_ENABLED === "true" && (
-          <>
-            <GoogleOAuthButton />
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <Separator />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">
-                  Or continue with email
-                </span>
-              </div>
-            </div>
-          </>
-        )}
-      </CardContent>
-      <form onSubmit={handleLogin}>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="name@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              disabled={isLoading}
-            />
-          </div>
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="password">Password</Label>
-              <Link
-                href="/forgot-password"
-                className="text-sm font-medium text-muted-foreground underline-offset-4 hover:underline"
-              >
-                Forgot password?
-              </Link>
-            </div>
-            <Input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              disabled={isLoading}
-            />
-          </div>
-        </CardContent>
-        <CardFooter className="flex flex-col space-y-4">
-          <Button
-            type="submit"
-            className="w-full"
-            disabled={isLoading}
-          >
-            {isLoading ? "Signing in..." : "Sign in"}
-          </Button>
-          <p className="text-center text-sm text-muted-foreground">
-            Don&apos;t have an account?{" "}
-            <Link
-              href="/signup"
-              className="font-medium underline underline-offset-4 hover:text-foreground"
+    <div
+      className="rounded-2xl p-7 sm:p-8"
+      style={{ background: "var(--lp-surface)", border: inkBorder }}
+    >
+      <div className="space-y-1">
+        <h1 className="text-2xl font-bold tracking-tight" style={{ color: "var(--lp-ink)" }}>
+          Sign in
+        </h1>
+        <p className="text-sm" style={{ color: inkSubtle }}>
+          Enter your email and password to access your workspace.
+        </p>
+      </div>
+
+      {process.env.NEXT_PUBLIC_GOOGLE_AUTH_ENABLED === "true" && (
+        <div className="mt-6 space-y-4">
+          <GoogleOAuthButton />
+          <div className="relative">
+            <div
+              className="absolute inset-0 flex items-center"
+              aria-hidden="true"
             >
-              Sign up
+              <div
+                className="h-px w-full"
+                style={{ background: "color-mix(in srgb, var(--lp-ink) 14%, transparent)" }}
+              />
+            </div>
+            <div className="relative flex justify-center">
+              <span
+                className="px-2 text-[11px] font-semibold uppercase tracking-[0.14em]"
+                style={{ background: "var(--lp-surface)", color: inkSubtle }}
+              >
+                Or continue with email
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <form onSubmit={handleLogin} className="mt-6 space-y-5">
+        <div className="space-y-2">
+          <Label htmlFor="email" style={{ color: "var(--lp-ink)" }}>
+            Email
+          </Label>
+          <Input
+            id="email"
+            type="email"
+            placeholder="name@example.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            disabled={isLoading}
+            className="rounded-md placeholder:opacity-60"
+            style={{
+              background: "var(--lp-bg)",
+              color: "var(--lp-ink)",
+              border: "1px solid color-mix(in srgb, var(--lp-ink) 22%, transparent)",
+            }}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label htmlFor="password" style={{ color: "var(--lp-ink)" }}>
+              Password
+            </Label>
+            <Link
+              href="/forgot-password"
+              className="text-sm font-medium underline-offset-4 hover:underline"
+              style={{ color: "var(--lp-accent)" }}
+            >
+              Forgot password?
             </Link>
-          </p>
-        </CardFooter>
+          </div>
+          <Input
+            id="password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            disabled={isLoading}
+            className="rounded-md"
+            style={{
+              background: "var(--lp-bg)",
+              color: "var(--lp-ink)",
+              border: "1px solid color-mix(in srgb, var(--lp-ink) 22%, transparent)",
+            }}
+          />
+        </div>
+
+        <Button
+          type="submit"
+          className="w-full rounded-md border-0 transition-opacity hover:opacity-90"
+          disabled={isLoading}
+          style={{ background: "var(--lp-accent)", color: "var(--lp-bg)" }}
+        >
+          {isLoading ? "Signing in..." : "Sign in"}
+        </Button>
+
+        <p className="text-center text-sm" style={{ color: inkSubtle }}>
+          Don&apos;t have an account?{" "}
+          <Link
+            href={signupHref}
+            className="font-medium underline underline-offset-4"
+            style={{ color: "var(--lp-accent)" }}
+          >
+            Sign up
+          </Link>
+        </p>
       </form>
-    </Card>
+    </div>
   );
 }

@@ -44,6 +44,11 @@ export interface FormViewFilters {
   statuses?: string[]
 }
 
+export interface AssignmentViewFilters {
+  assignmentTypes?: string[]
+  statuses?: string[]
+}
+
 // ── Typed view aliases ────────────────────────────────────────────────────────
 
 export type TaskView = Omit<TableView, "filters"> & { view_type: "tasks"; filters: TaskViewFilters }
@@ -51,6 +56,7 @@ export type AnnouncementView = Omit<TableView, "filters"> & { view_type: "announ
 export type BusinessView = Omit<TableView, "filters"> & { view_type: "business"; filters: BusinessViewFilters }
 export type DiscussionView = Omit<TableView, "filters"> & { view_type: "discussions"; filters: DiscussionViewFilters }
 export type FormView = Omit<TableView, "filters"> & { view_type: "forms"; filters: FormViewFilters }
+export type AssignmentView = Omit<TableView, "filters"> & { view_type: "assignments"; filters: AssignmentViewFilters }
 
 // ── Internal helpers ──────────────────────────────────────────────────────────
 
@@ -128,12 +134,12 @@ export async function createAnnouncementView(
   name: string,
   filters: AnnouncementViewFilters
 ): Promise<{ data?: AnnouncementView; error?: string }> {
-  const r = await _createView("announcements", name, filters, "/meetings/announcements")
+  const r = await _createView("announcements", name, filters, "/meetings/sacrament/announcements")
   return r as { data?: AnnouncementView; error?: string }
 }
 
 export async function deleteAnnouncementView(id: string): Promise<{ error?: string }> {
-  return _deleteView(id, "/meetings/announcements")
+  return _deleteView(id, "/meetings/sacrament/announcements")
 }
 
 // ── Business view actions ─────────────────────────────────────────────────────
@@ -142,12 +148,12 @@ export async function createBusinessView(
   name: string,
   filters: BusinessViewFilters
 ): Promise<{ data?: BusinessView; error?: string }> {
-  const r = await _createView("business", name, filters, "/meetings/business")
+  const r = await _createView("business", name, filters, "/meetings/sacrament/business")
   return r as { data?: BusinessView; error?: string }
 }
 
 export async function deleteBusinessView(id: string): Promise<{ error?: string }> {
-  return _deleteView(id, "/meetings/business")
+  return _deleteView(id, "/meetings/sacrament/business")
 }
 
 // ── Discussion view actions ───────────────────────────────────────────────────
@@ -156,12 +162,12 @@ export async function createDiscussionView(
   name: string,
   filters: DiscussionViewFilters
 ): Promise<{ data?: DiscussionView; error?: string }> {
-  const r = await _createView("discussions", name, filters, "/meetings/discussions")
+  const r = await _createView("discussions", name, filters, "/discussions")
   return r as { data?: DiscussionView; error?: string }
 }
 
 export async function deleteDiscussionView(id: string): Promise<{ error?: string }> {
-  return _deleteView(id, "/meetings/discussions")
+  return _deleteView(id, "/discussions")
 }
 
 // ── Form view actions ─────────────────────────────────────────────────────────
@@ -176,4 +182,18 @@ export async function createFormView(
 
 export async function deleteFormView(id: string): Promise<{ error?: string }> {
   return _deleteView(id, "/forms")
+}
+
+// ── Assignment view actions ───────────────────────────────────────────────────
+
+export async function createAssignmentView(
+  name: string,
+  filters: AssignmentViewFilters
+): Promise<{ data?: AssignmentView; error?: string }> {
+  const r = await _createView("assignments", name, filters, "/meetings/assignments")
+  return r as { data?: AssignmentView; error?: string }
+}
+
+export async function deleteAssignmentView(id: string): Promise<{ error?: string }> {
+  return _deleteView(id, "/meetings/assignments")
 }
