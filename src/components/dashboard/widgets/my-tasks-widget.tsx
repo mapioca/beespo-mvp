@@ -13,9 +13,21 @@ interface Props {
 }
 
 const priorityConfig = {
-  high: { label: "High", className: "bg-red-100 text-red-700" },
-  medium: { label: "Med", className: "bg-amber-100 text-amber-700" },
-  low: { label: "Low", className: "bg-gray-100 text-gray-600" },
+  high: {
+    label: "High",
+    className:
+      "border-[hsl(var(--dashboard-pill-critical-border))] bg-[hsl(var(--dashboard-pill-critical-bg))] text-[hsl(var(--dashboard-pill-critical-text))]",
+  },
+  medium: {
+    label: "Med",
+    className:
+      "border-[hsl(var(--dashboard-pill-warning-border))] bg-[hsl(var(--dashboard-pill-warning-bg))] text-[hsl(var(--dashboard-pill-warning-text))]",
+  },
+  low: {
+    label: "Low",
+    className:
+      "border-[hsl(var(--dashboard-pill-muted-border))] bg-[hsl(var(--dashboard-pill-muted-bg))] text-[hsl(var(--dashboard-pill-muted-text))]",
+  },
 } as const;
 
 export function MyTasksWidget({ data, dragHandleProps, isDragging }: Props) {
@@ -38,17 +50,17 @@ export function MyTasksWidget({ data, dragHandleProps, isDragging }: Props) {
               <Link
                 key={task.id}
                 href={`/tasks/${task.id}`}
-                className="flex items-center gap-3 py-2 px-2 -mx-2 rounded-md hover:bg-gray-50 transition-colors"
+                className="dashboard-widget-row dashboard-widget-row-hover -mx-2 flex items-center gap-3 rounded-md px-2 py-2 transition-colors"
               >
                 <span
                   className={cn(
-                    "text-[10px] font-semibold px-1.5 py-0.5 rounded shrink-0",
+                    "shrink-0 rounded border px-1.5 py-0.5 text-[10px] font-semibold",
                     priority.className
                   )}
                 >
                   {priority.label}
                 </span>
-                <span className="text-sm text-gray-900 truncate flex-1">
+                <span className="flex-1 truncate text-sm text-foreground">
                   {task.title}
                 </span>
                 {task.due_date && (
@@ -67,7 +79,7 @@ export function MyTasksWidget({ data, dragHandleProps, isDragging }: Props) {
       {data.totalCount > 5 && (
         <Link
           href="/tasks"
-          className="flex items-center gap-1 text-xs font-medium text-primary hover:text-primary/80 mt-3 pt-3 border-t"
+          className="mt-3 flex items-center gap-1 border-t pt-3 text-xs font-medium text-[hsl(var(--dashboard-link))] transition-colors hover:text-[hsl(var(--dashboard-link-hover))]"
         >
           View all {data.totalCount} tasks
           <ArrowRight className="h-3 w-3" />

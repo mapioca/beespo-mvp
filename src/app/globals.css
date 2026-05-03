@@ -489,6 +489,49 @@
     --btn-tertiary-bg-disabled: hsl(var(--background));
     --btn-tertiary-text-disabled: hsl(var(--muted-foreground));
     --btn-tertiary-border-disabled: hsl(var(--border));
+    --dashboard-canvas: var(--surface-canvas);
+    --dashboard-surface: var(--background);
+    --dashboard-surface-muted: var(--surface-body);
+    --dashboard-surface-hover: var(--surface-hover);
+    --dashboard-border: var(--border);
+    --dashboard-border-strong: var(--cp-divider);
+    --dashboard-shadow-sm: 0 1px 0 rgba(15, 23, 42, 0.03);
+    --dashboard-shadow-md: 0 10px 24px rgba(15, 23, 42, 0.06);
+    --dashboard-shadow-lg: 0 12px 30px rgba(15, 23, 42, 0.08);
+    --dashboard-icon-bg: var(--surface-body);
+    --dashboard-icon-fg: var(--muted-foreground);
+    --dashboard-row-bg: var(--surface-body);
+    --dashboard-row-hover: var(--surface-hover);
+    --dashboard-link: var(--brand);
+    --dashboard-link-hover: var(--brand-hover);
+    --dashboard-sparkline: var(--brand);
+    --dashboard-pill-primary-bg: var(--primary-pill-bg);
+    --dashboard-pill-primary-border: var(--primary-pill-border);
+    --dashboard-pill-primary-text: var(--primary-pill-foreground);
+    --dashboard-pill-primary-hover: var(--primary-pill-hover);
+    --dashboard-pill-secondary-bg: var(--secondary);
+    --dashboard-pill-secondary-border: var(--secondary-border);
+    --dashboard-pill-secondary-text: var(--secondary-foreground);
+    --dashboard-pill-secondary-hover: var(--secondary-hover);
+    --dashboard-pill-muted-bg: var(--muted);
+    --dashboard-pill-muted-border: var(--border);
+    --dashboard-pill-muted-text: var(--muted-foreground);
+    --dashboard-pill-muted-hover: var(--surface-hover);
+    --dashboard-pill-warning-bg: 37 85% 95%;
+    --dashboard-pill-warning-border: 37 72% 78%;
+    --dashboard-pill-warning-text: 24 68% 28%;
+    --dashboard-pill-warning-hover: 37 75% 91%;
+    --dashboard-pill-success-bg: 148 32% 93%;
+    --dashboard-pill-success-border: 149 28% 75%;
+    --dashboard-pill-success-text: 149 42% 27%;
+    --dashboard-pill-success-hover: 148 28% 89%;
+    --dashboard-pill-critical-bg: 18 58% 92%;
+    --dashboard-pill-critical-border: 18 52% 75%;
+    --dashboard-pill-critical-text: 14 50% 28%;
+    --dashboard-pill-critical-hover: 18 55% 88%;
+    --dashboard-kpi-trend-up: 149 42% 34%;
+    --dashboard-kpi-trend-down: 14 50% 38%;
+    --dashboard-kpi-trend-neutral: var(--muted-foreground);
     --app-nav-bg: #f3f3f1;
     --app-nav-card: #ffffff;
     --app-nav-hover: #eeeeec;
@@ -757,6 +800,49 @@
     --btn-tertiary-bg-disabled: hsl(0, 0%, 9%);
     --btn-tertiary-text-disabled: hsl(15, 18%, 34%);
     --btn-tertiary-border-disabled: hsl(15, 18%, 34%);
+    --dashboard-canvas: var(--surface-canvas);
+    --dashboard-surface: var(--background);
+    --dashboard-surface-muted: 220 9% 12%;
+    --dashboard-surface-hover: 220 10% 14%;
+    --dashboard-border: var(--border);
+    --dashboard-border-strong: 220 8% 24%;
+    --dashboard-shadow-sm: 0 1px 0 rgba(0, 0, 0, 0.24);
+    --dashboard-shadow-md: 0 10px 24px rgba(0, 0, 0, 0.24);
+    --dashboard-shadow-lg: 0 14px 30px rgba(0, 0, 0, 0.3);
+    --dashboard-icon-bg: 220 10% 14%;
+    --dashboard-icon-fg: 220 12% 88%;
+    --dashboard-row-bg: 220 10% 14%;
+    --dashboard-row-hover: 220 10% 18%;
+    --dashboard-link: var(--brand);
+    --dashboard-link-hover: var(--brand-hover);
+    --dashboard-sparkline: var(--brand);
+    --dashboard-pill-primary-bg: var(--primary-pill-bg);
+    --dashboard-pill-primary-border: 17 45% 34%;
+    --dashboard-pill-primary-text: 22 70% 86%;
+    --dashboard-pill-primary-hover: 17 38% 20%;
+    --dashboard-pill-secondary-bg: 220 10% 16%;
+    --dashboard-pill-secondary-border: 220 10% 24%;
+    --dashboard-pill-secondary-text: 220 12% 88%;
+    --dashboard-pill-secondary-hover: 220 10% 19%;
+    --dashboard-pill-muted-bg: 220 10% 14%;
+    --dashboard-pill-muted-border: 220 10% 24%;
+    --dashboard-pill-muted-text: 220 9% 72%;
+    --dashboard-pill-muted-hover: 220 10% 18%;
+    --dashboard-pill-warning-bg: 36 44% 17%;
+    --dashboard-pill-warning-border: 36 38% 28%;
+    --dashboard-pill-warning-text: 36 72% 74%;
+    --dashboard-pill-warning-hover: 36 40% 20%;
+    --dashboard-pill-success-bg: 150 28% 16%;
+    --dashboard-pill-success-border: 150 22% 28%;
+    --dashboard-pill-success-text: 150 48% 74%;
+    --dashboard-pill-success-hover: 150 24% 19%;
+    --dashboard-pill-critical-bg: 14 38% 17%;
+    --dashboard-pill-critical-border: 14 30% 28%;
+    --dashboard-pill-critical-text: 18 64% 76%;
+    --dashboard-pill-critical-hover: 14 32% 20%;
+    --dashboard-kpi-trend-up: 150 48% 74%;
+    --dashboard-kpi-trend-down: 18 64% 76%;
+    --dashboard-kpi-trend-neutral: 220 9% 72%;
     --landing-nav-height: 4rem;
     --landing-nav-horizontal-padding: 1rem;
     --landing-nav-link-font-size: 0.875rem;
@@ -1228,11 +1314,11 @@
   }
 
   .overview-card {
-    border: 1px solid hsl(var(--border) / 0.7);
-    background-color: hsl(var(--background));
+    border: 1px solid hsl(var(--dashboard-border) / 0.7);
+    background-color: hsl(var(--dashboard-surface));
     border-radius: 30px;
     padding: 1.5rem;
-    box-shadow: 0 1px 0 rgba(15, 23, 42, 0.03);
+    box-shadow: var(--dashboard-shadow-sm);
   }
 
   .overview-row-link {
@@ -1252,8 +1338,8 @@
     justify-content: space-between;
     gap: 1rem;
     border-radius: 22px;
-    border: 1px solid hsl(var(--border) / 0.6);
-    background-color: hsl(var(--background));
+    border: 1px solid hsl(var(--dashboard-border) / 0.6);
+    background-color: hsl(var(--dashboard-surface));
     padding: 0.875rem 1rem;
   }
 
@@ -1265,23 +1351,46 @@
     align-items: center;
     justify-content: center;
     border-radius: 9999px;
-    border: 1px solid hsl(var(--secondary-icon-border));
-    background-color: hsl(var(--secondary-icon-bg));
-    color: hsl(var(--secondary-icon-fill));
+    border: 1px solid hsl(var(--dashboard-pill-secondary-border));
+    background-color: hsl(var(--dashboard-pill-secondary-bg));
+    color: hsl(var(--dashboard-pill-secondary-text));
   }
 
   .overview-row-icon.is-critical {
-    border: 1px solid hsl(var(--primary-icon-border));
-    background-color: hsl(var(--primary-icon-bg));
-    color: hsl(var(--primary-icon-fill));
+    border: 1px solid hsl(var(--dashboard-pill-critical-border));
+    background-color: hsl(var(--dashboard-pill-critical-bg));
+    color: hsl(var(--dashboard-pill-critical-text));
   }
 
   .overview-row-icon.is-warning,
   .overview-row-icon.is-ok,
   .overview-row-icon.is-muted {
-    border-color: hsl(var(--secondary-icon-border));
-    background-color: hsl(var(--secondary-icon-bg));
-    color: hsl(var(--secondary-icon-fill));
+    border-color: hsl(var(--dashboard-pill-secondary-border));
+    background-color: hsl(var(--dashboard-pill-secondary-bg));
+    color: hsl(var(--dashboard-pill-secondary-text));
+  }
+
+  .dashboard-widget-surface {
+    background-color: hsl(var(--dashboard-surface));
+    border: 1px solid hsl(var(--dashboard-border));
+    box-shadow: var(--dashboard-shadow-sm);
+  }
+
+  .dashboard-widget-surface:hover {
+    box-shadow: var(--dashboard-shadow-md);
+  }
+
+  .dashboard-widget-icon {
+    background-color: hsl(var(--dashboard-icon-bg));
+    color: hsl(var(--dashboard-icon-fg));
+  }
+
+  .dashboard-widget-row {
+    background-color: hsl(var(--dashboard-row-bg));
+  }
+
+  .dashboard-widget-row-hover:hover {
+    background-color: hsl(var(--dashboard-row-hover));
   }
 
   .overview-row-value-inline {

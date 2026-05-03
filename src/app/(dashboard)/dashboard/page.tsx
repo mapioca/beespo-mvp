@@ -25,7 +25,7 @@ const T_LABEL =
 const T_PANEL_TITLE =
   "text-[15px] font-semibold tracking-[-0.01em] text-foreground";
 const PANEL_BASE =
-  "rounded-[22px] border border-border/70 bg-background shadow-[0_1px_0_rgba(15,23,42,0.03)]";
+  "rounded-[22px] border border-[hsl(var(--dashboard-border)/0.7)] bg-[hsl(var(--dashboard-surface))] shadow-[var(--dashboard-shadow-sm)]";
 const PANEL_PAD = "px-5 py-5 sm:px-6 sm:py-6";
 const CHEVRON_CLASS = "h-[15px] w-[15px] shrink-0 text-muted-foreground/70";
 
@@ -147,56 +147,56 @@ function attentionPoints(data: SacramentHomeData) {
 function toneClasses(tone: Tone) {
   if (tone === "primary") {
     return {
-      dot: "bg-[hsl(var(--primary-pill-border))]",
-      text: "text-[hsl(var(--primary-pill-foreground))]",
-      pill: "border-[hsl(var(--primary-pill-border))] bg-[hsl(var(--primary-pill-bg))] text-[hsl(var(--primary-pill-foreground))] hover:bg-[hsl(var(--primary-pill-hover))]",
-      bar: "bg-[hsl(var(--primary-pill-border))]",
+      dot: "bg-[hsl(var(--dashboard-pill-primary-text))]",
+      text: "text-[hsl(var(--dashboard-pill-primary-text))]",
+      pill: "border-[hsl(var(--dashboard-pill-primary-border))] bg-[hsl(var(--dashboard-pill-primary-bg))] text-[hsl(var(--dashboard-pill-primary-text))] hover:bg-[hsl(var(--dashboard-pill-primary-hover))]",
+      bar: "bg-[hsl(var(--dashboard-pill-primary-text))]",
     };
   }
   if (tone === "secondary") {
     return {
-      dot: "bg-[hsl(var(--secondary-border))]",
-      text: "text-[hsl(var(--secondary-foreground))]",
-      pill: "border-[hsl(var(--secondary-border))] bg-[hsl(var(--secondary))] text-[hsl(var(--secondary-foreground))] hover:bg-[hsl(var(--secondary-hover))]",
-      bar: "bg-[hsl(var(--secondary-border))]",
+      dot: "bg-[hsl(var(--dashboard-pill-secondary-text))]",
+      text: "text-[hsl(var(--dashboard-pill-secondary-text))]",
+      pill: "border-[hsl(var(--dashboard-pill-secondary-border))] bg-[hsl(var(--dashboard-pill-secondary-bg))] text-[hsl(var(--dashboard-pill-secondary-text))] hover:bg-[hsl(var(--dashboard-pill-secondary-hover))]",
+      bar: "bg-[hsl(var(--dashboard-pill-secondary-text))]",
     };
   }
   if (tone === "critical") {
     return {
-      dot: "bg-amber-500",
-      text: "text-amber-700 dark:text-amber-300",
-      pill: "border-amber-200/80 bg-amber-50 text-amber-800 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-200",
-      bar: "bg-amber-500",
+      dot: "bg-[hsl(var(--dashboard-pill-critical-text))]",
+      text: "text-[hsl(var(--dashboard-pill-critical-text))]",
+      pill: "border-[hsl(var(--dashboard-pill-critical-border))] bg-[hsl(var(--dashboard-pill-critical-bg))] text-[hsl(var(--dashboard-pill-critical-text))] hover:bg-[hsl(var(--dashboard-pill-critical-hover))]",
+      bar: "bg-[hsl(var(--dashboard-pill-critical-text))]",
     };
   }
   if (tone === "warning") {
     return {
-      dot: "bg-sky-500",
-      text: "text-sky-700 dark:text-sky-300",
-      pill: "border-sky-200/80 bg-sky-50 text-sky-800 dark:border-sky-500/20 dark:bg-sky-500/10 dark:text-sky-200",
-      bar: "bg-sky-500",
+      dot: "bg-[hsl(var(--dashboard-pill-warning-text))]",
+      text: "text-[hsl(var(--dashboard-pill-warning-text))]",
+      pill: "border-[hsl(var(--dashboard-pill-warning-border))] bg-[hsl(var(--dashboard-pill-warning-bg))] text-[hsl(var(--dashboard-pill-warning-text))] hover:bg-[hsl(var(--dashboard-pill-warning-hover))]",
+      bar: "bg-[hsl(var(--dashboard-pill-warning-text))]",
     };
   }
   if (tone === "ok") {
     return {
-      dot: "bg-emerald-500",
-      text: "text-emerald-700 dark:text-emerald-300",
-      pill: "border-emerald-200/80 bg-emerald-50 text-emerald-800 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-200",
-      bar: "bg-emerald-500",
+      dot: "bg-[hsl(var(--dashboard-pill-success-text))]",
+      text: "text-[hsl(var(--dashboard-pill-success-text))]",
+      pill: "border-[hsl(var(--dashboard-pill-success-border))] bg-[hsl(var(--dashboard-pill-success-bg))] text-[hsl(var(--dashboard-pill-success-text))] hover:bg-[hsl(var(--dashboard-pill-success-hover))]",
+      bar: "bg-[hsl(var(--dashboard-pill-success-text))]",
     };
   }
   return {
     dot: "bg-muted-foreground/35",
     text: "text-muted-foreground",
-    pill: "border-border/70 bg-muted/60 text-muted-foreground",
+    pill: "border-[hsl(var(--dashboard-pill-muted-border))] bg-[hsl(var(--dashboard-pill-muted-bg))] text-[hsl(var(--dashboard-pill-muted-text))] hover:bg-[hsl(var(--dashboard-pill-muted-hover))]",
     bar: "bg-muted-foreground/35",
   };
 }
 
 function SoftSecondaryPill({ children }: { children: ReactNode }) {
   return (
-    <span className="inline-flex items-center gap-1 rounded-full border border-[hsl(var(--secondary-border))]/75 bg-[hsl(var(--secondary))]/65 px-2 py-0.5 text-[10.5px] font-medium text-[hsl(var(--secondary-foreground))]/85">
-      <span className="h-1.5 w-1.5 rounded-full bg-[hsl(var(--secondary-border))]/70" />
+    <span className="inline-flex h-6 items-center gap-1.5 rounded-full border border-[hsl(var(--dashboard-pill-secondary-border))] bg-[hsl(var(--dashboard-pill-secondary-bg))] px-2.5 text-[10.5px] font-medium text-[hsl(var(--dashboard-pill-secondary-text))]">
+      <span className="h-1.5 w-1.5 rounded-full bg-[hsl(var(--dashboard-pill-secondary-text))]/85" />
       {children}
     </span>
   );
@@ -237,11 +237,11 @@ function TonePill({ tone, children }: { tone: Tone; children: ReactNode }) {
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium transition-colors",
+        "inline-flex h-6 items-center gap-1.5 rounded-full border px-2.5 text-[10.5px] font-medium transition-colors",
         classes.pill
       )}
     >
-      <span className={cn("h-1.5 w-1.5 rounded-full", classes.dot)} />
+      <span className={cn("h-1.5 w-1.5 rounded-full opacity-85", classes.dot)} />
       {children}
     </span>
   );
@@ -591,18 +591,18 @@ export default async function DashboardPage() {
       <main className="mx-auto flex w-full max-w-[1240px] flex-col gap-5 px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
         <section className="px-1 py-2 sm:px-2">
           <div className="flex flex-col gap-3">
-            <div className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+            <div className="text-[12.5px] font-medium tracking-[0.01em] text-muted-foreground/85 sm:text-[13px]">
               {formatHeaderDate()}
             </div>
-            <h1 className="font-serif text-[18px] leading-[1.08] tracking-[-0.01em] text-muted-foreground sm:text-[22px] lg:text-[26px]">
+            <h1 className="text-[17px] font-medium leading-[1.15] tracking-[-0.01em] text-muted-foreground sm:text-[19px] lg:text-[21px]">
               {getGreeting()},{" "}
               <span className="text-foreground">
-                <em>{firstName}</em>
+                <span>{firstName}</span>
               </span>
               .
             </h1>
-            <p className="max-w-3xl text-[12.5px] leading-5 text-muted-foreground/75 sm:text-[13px]">
-              Sunday readiness at a glance.
+            <p className="max-w-3xl text-[12.5px] leading-5 text-muted-foreground/80 sm:text-[13px]">
+              Review what is ready, what still needs attention, and where to jump back in for Sunday.
             </p>
           </div>
         </section>
@@ -610,21 +610,21 @@ export default async function DashboardPage() {
         <section
           className={cn(
             PANEL_BASE,
-            "rounded-[26px] border-border/75 px-6 py-5 shadow-[0_1px_0_rgba(15,23,42,0.03),0_12px_30px_rgba(15,23,42,0.04)] sm:px-7 sm:py-6"
+            "rounded-[22px] border-[hsl(var(--dashboard-border)/0.75)] px-6 py-5 shadow-[var(--dashboard-shadow-md)] sm:px-7 sm:py-6"
           )}
         >
-          <div className="flex flex-col gap-5">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
               <div className="min-w-0 max-w-3xl">
-                <div className="mb-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground/85">
-                  Coming up next
+                <div className="mb-1 text-[12px] font-medium tracking-[0.01em] text-muted-foreground/80 sm:text-[12.5px]">
+                  Next meeting
                 </div>
-                <div className="mt-1 flex flex-wrap items-center gap-2">
-                  <h1 className="font-serif text-[34px] leading-[1.02] tracking-[-0.03em] text-foreground md:text-[40px]">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h1 className="font-serif text-[31px] leading-[1.04] tracking-[-0.02em] text-foreground md:text-[36px]">
                     {data.meetingTitle}
                   </h1>
                 </div>
-                <div className="mt-4 flex flex-wrap items-center gap-2.5">
+                <div className="mt-3 flex flex-wrap items-center gap-2">
                   <TonePill tone={attentionCount > 0 ? "primary" : "ok"}>
                     {attentionCount > 0
                       ? `${pluralize(attentionCount, "attention point")}`
@@ -636,7 +636,7 @@ export default async function DashboardPage() {
               </div>
 
               <div className="flex flex-col gap-2 sm:flex-row">
-                <Button asChild className="h-11 rounded-full px-5 text-[13px] font-medium shadow-none">
+                <Button asChild className="h-10 px-4 shadow-none">
                   <Link href={data.plannerHref}>
                     Open planner
                     <ArrowUpRight className="h-4 w-4" />

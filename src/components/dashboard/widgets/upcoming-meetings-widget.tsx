@@ -26,10 +26,10 @@ export function UpcomingMeetingsWidget({
     >
       {data.meetings.length === 0 ? (
         <div className="py-6 text-center">
-          <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-3">
+          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full border border-[hsl(var(--dashboard-pill-primary-border))] bg-[hsl(var(--dashboard-pill-primary-bg))]">
             <Sparkles className="h-5 w-5 text-primary" />
           </div>
-          <h3 className="text-sm font-semibold text-gray-900 mb-1">
+          <h3 className="mb-1 text-sm font-semibold text-foreground">
             Plan Your Next Quarter
           </h3>
           <p className="text-xs text-muted-foreground mb-4">
@@ -48,10 +48,10 @@ export function UpcomingMeetingsWidget({
             <Link
               key={meeting.id}
               href={`/meetings/${meeting.id}`}
-              className="flex items-center gap-3 py-2 px-2 -mx-2 rounded-md hover:bg-gray-50 transition-colors"
+              className="dashboard-widget-row dashboard-widget-row-hover -mx-2 flex items-center gap-3 rounded-md px-2 py-2 transition-colors"
             >
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 truncate">
+                <p className="truncate text-sm font-medium text-foreground">
                   {meeting.title}
                 </p>
                 <p className="text-xs text-muted-foreground">
@@ -61,7 +61,7 @@ export function UpcomingMeetingsWidget({
                   )}
                 </p>
               </div>
-              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 shrink-0">
+              <span className="shrink-0 rounded-full border border-[hsl(var(--dashboard-pill-secondary-border))] bg-[hsl(var(--dashboard-pill-secondary-bg))] px-2 py-0.5 text-[10px] font-semibold text-[hsl(var(--dashboard-pill-secondary-text))]">
                 {meeting.agendaItemCount} items
               </span>
             </Link>
@@ -71,7 +71,7 @@ export function UpcomingMeetingsWidget({
       {data.meetings.length > 0 && (
         <Link
           href="/meetings/agendas"
-          className="flex items-center gap-1 text-xs font-medium text-primary hover:text-primary/80 mt-3 pt-3 border-t"
+          className="mt-3 flex items-center gap-1 border-t pt-3 text-xs font-medium text-[hsl(var(--dashboard-link))] transition-colors hover:text-[hsl(var(--dashboard-link-hover))]"
         >
           View all meetings
           <ArrowRight className="h-3 w-3" />

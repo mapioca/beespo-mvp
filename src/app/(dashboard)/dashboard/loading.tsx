@@ -1,7 +1,7 @@
 import { Skeleton } from "@/components/ui/skeleton";
 
 const PANEL_BASE =
-  "rounded-[22px] border border-border/70 bg-background shadow-[0_1px_0_rgba(15,23,42,0.03)]";
+  "rounded-[22px] border border-[hsl(var(--dashboard-border)/0.7)] bg-[hsl(var(--dashboard-surface))] shadow-[var(--dashboard-shadow-sm)]";
 
 function ChipSkeleton({ width }: { width: string }) {
   return <Skeleton className={`h-7 rounded-full ${width}`} />;

@@ -13,13 +13,20 @@ interface Props {
 }
 
 const stageColors: Record<string, string> = {
-  identified: "bg-gray-100 text-gray-700",
-  contacted: "bg-blue-100 text-blue-700",
-  interviewed: "bg-violet-100 text-violet-700",
-  proposed: "bg-amber-100 text-amber-700",
-  approved: "bg-emerald-100 text-emerald-700",
-  sustained: "bg-teal-100 text-teal-700",
-  set_apart: "bg-green-100 text-green-700",
+  identified:
+    "border-[hsl(var(--dashboard-pill-muted-border))] bg-[hsl(var(--dashboard-pill-muted-bg))] text-[hsl(var(--dashboard-pill-muted-text))]",
+  contacted:
+    "border-[hsl(var(--dashboard-pill-secondary-border))] bg-[hsl(var(--dashboard-pill-secondary-bg))] text-[hsl(var(--dashboard-pill-secondary-text))]",
+  interviewed:
+    "border-[hsl(var(--dashboard-pill-primary-border))] bg-[hsl(var(--dashboard-pill-primary-bg))] text-[hsl(var(--dashboard-pill-primary-text))]",
+  proposed:
+    "border-[hsl(var(--dashboard-pill-warning-border))] bg-[hsl(var(--dashboard-pill-warning-bg))] text-[hsl(var(--dashboard-pill-warning-text))]",
+  approved:
+    "border-[hsl(var(--dashboard-pill-success-border))] bg-[hsl(var(--dashboard-pill-success-bg))] text-[hsl(var(--dashboard-pill-success-text))]",
+  sustained:
+    "border-[hsl(var(--dashboard-pill-success-border))] bg-[hsl(var(--dashboard-pill-success-bg))] text-[hsl(var(--dashboard-pill-success-text))]",
+  set_apart:
+    "border-[hsl(var(--dashboard-pill-success-border))] bg-[hsl(var(--dashboard-pill-success-bg))] text-[hsl(var(--dashboard-pill-success-text))]",
 };
 
 function formatStage(stage: string) {
@@ -49,10 +56,10 @@ export function CallingPipelineWidget({
           {data.processes.map((process, i) => (
             <div
               key={i}
-              className="flex items-center gap-3 py-2 px-2 -mx-2 rounded-md bg-gray-50/60"
+              className="dashboard-widget-row -mx-2 flex items-center gap-3 rounded-md px-2 py-2"
             >
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 truncate">
+                <p className="truncate text-sm font-medium text-foreground">
                   {process.candidate_name}
                 </p>
                 <p className="text-xs text-muted-foreground truncate">
@@ -61,9 +68,9 @@ export function CallingPipelineWidget({
               </div>
               <span
                 className={cn(
-                  "text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0",
+                  "shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold",
                   stageColors[process.current_stage] ??
-                    "bg-gray-100 text-gray-700"
+                    "border-[hsl(var(--dashboard-pill-muted-border))] bg-[hsl(var(--dashboard-pill-muted-bg))] text-[hsl(var(--dashboard-pill-muted-text))]"
                 )}
               >
                 {formatStage(process.current_stage)}
@@ -75,7 +82,7 @@ export function CallingPipelineWidget({
       {data.totalActive > 5 && (
         <Link
           href="/callings"
-          className="flex items-center gap-1 text-xs font-medium text-primary hover:text-primary/80 mt-3 pt-3 border-t"
+          className="mt-3 flex items-center gap-1 border-t pt-3 text-xs font-medium text-[hsl(var(--dashboard-link))] transition-colors hover:text-[hsl(var(--dashboard-link-hover))]"
         >
           View all {data.totalActive} processes
           <ArrowRight className="h-3 w-3" />

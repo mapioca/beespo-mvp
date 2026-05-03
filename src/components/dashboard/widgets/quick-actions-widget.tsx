@@ -24,27 +24,27 @@ export function QuickActionsWidget({
             isDragging={isDragging}
         >
             <div className="space-y-2">
-                <Button asChild variant="outline" className="w-full justify-start h-11 bg-white">
+                <Button asChild variant="outline" className="w-full justify-start h-11 bg-[hsl(var(--dashboard-surface))]">
                     <Link href="/meetings/create">
                         <CalendarDays className="h-4 w-4 mr-3 text-primary" />
                         Create Plan or Meeting
                     </Link>
                 </Button>
-                <Button asChild variant="outline" className="w-full justify-start h-11 bg-white">
+                <Button asChild variant="outline" className="w-full justify-start h-11 bg-[hsl(var(--dashboard-surface))]">
                     <Link href="/meetings/sacrament/business/new">
-                        <Briefcase className="h-4 w-4 mr-3 text-blue-600" />
+                        <Briefcase className="h-4 w-4 mr-3 text-[hsl(var(--dashboard-pill-secondary-text))]" />
                         Add Business Item
                     </Link>
                 </Button>
-                <Button asChild variant="outline" className="w-full justify-start h-11 bg-white">
+                <Button asChild variant="outline" className="w-full justify-start h-11 bg-[hsl(var(--dashboard-surface))]">
                     <Link href="/meetings/sacrament/announcements/new">
-                        <Megaphone className="h-4 w-4 mr-3 text-amber-600" />
+                        <Megaphone className="h-4 w-4 mr-3 text-[hsl(var(--dashboard-pill-warning-text))]" />
                         Create Announcement
                     </Link>
                 </Button>
-                <Button asChild variant="outline" className="w-full justify-start h-11 bg-white">
+                <Button asChild variant="outline" className="w-full justify-start h-11 bg-[hsl(var(--dashboard-surface))]">
                     <Link href="/library">
-                        <FileText className="h-4 w-4 mr-3 text-purple-600" />
+                        <FileText className="h-4 w-4 mr-3 text-[hsl(var(--dashboard-pill-primary-text))]" />
                         Template Library
                     </Link>
                 </Button>

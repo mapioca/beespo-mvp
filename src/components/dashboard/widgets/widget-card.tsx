@@ -58,8 +58,8 @@ export function WidgetCard({
   return (
     <Card
       className={cn(
-        "bg-white shadow-sm border-0 ring-1 ring-gray-200 transition-shadow",
-        isDragging && "shadow-lg ring-2 ring-primary/40",
+        "dashboard-widget-surface rounded-xl border-0 transition-shadow",
+        isDragging && "shadow-[var(--dashboard-shadow-lg)] ring-2 ring-primary/40",
         className
       )}
     >
