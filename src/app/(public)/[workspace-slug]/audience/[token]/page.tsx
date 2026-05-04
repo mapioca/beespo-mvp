@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import {
     type AudienceMeeting,
     type AudienceAgendaEntry,
@@ -24,6 +24,8 @@ export const metadata: Metadata = {
         googleBot: { index: false, follow: false },
     },
 };
+
+export const dynamic = "force-dynamic";
 
 type PlannerMeetingState = {
     title?: string;
@@ -62,7 +64,7 @@ function buildAudienceMeeting(
 
 export default async function PublicAudiencePage({ params }: PublicAudiencePageProps) {
     const { "workspace-slug": workspaceSlug, token } = await params;
-    const supabase = await createClient();
+    const supabase = createAdminClient();
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: link } = await (supabase.from("workspace_audience_links") as any)
