@@ -239,7 +239,7 @@ export function AppSidebar({
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" side="right" className="w-52">
             <DropdownMenuItem asChild>
-              <Link href="/settings">
+              <Link href="/settings/account">
                 <Settings className="h-4 w-4" />
                 Workspace settings
               </Link>
@@ -286,7 +286,7 @@ export function AppSidebar({
 
       {sectionsWithOpenState.map((section) => (
         <div key={section.label}>
-          <div className="px-3 pb-1 pt-3 text-[11px] font-medium uppercase tracking-[0.06em] text-[var(--app-nav-muted)]">
+          <div className="px-3 pb-1 pt-3 text-[11px] font-medium text-[#6b5947] dark:text-[#b79f84]">
             {section.label}
           </div>
           <div className="flex flex-col gap-0.5">
