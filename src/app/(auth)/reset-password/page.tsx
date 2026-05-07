@@ -113,6 +113,10 @@ export default function ResetPasswordPage() {
             toast.error("Passwords do not match.");
             return;
         }
+        if (password.length < 8) {
+            toast.error("Password must be at least 8 characters long.");
+            return;
+        }
         setIsLoading(true);
 
         try {

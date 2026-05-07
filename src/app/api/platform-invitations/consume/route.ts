@@ -42,7 +42,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<ConsumeIn
             "unknown";
 
         // Check rate limit (max 5 requests per minute for consume - stricter than validate)
-        const rateLimit = checkRateLimit(ip, 5, 60 * 1000);
+        const rateLimit = await checkRateLimit(ip, 5, 60 * 1000);
         if (!rateLimit.allowed) {
             return NextResponse.json(
                 { success: false, error: "Too many requests. Please try again later." },
