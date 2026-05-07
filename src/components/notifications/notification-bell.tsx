@@ -289,7 +289,7 @@ export function NotificationBell({ userId, isCollapsed = false, iconOnly = false
                 {/* Footer */}
                 <div className="border-t px-4 py-2">
                     <Link
-                        href="/settings?tab=notifications"
+                        href="/settings/notifications"
                         onClick={() => setOpen(false)}
                         className="flex items-center justify-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors py-1"
                     >
