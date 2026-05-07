@@ -52,7 +52,7 @@ export function SacramentMeetingAudienceView({
     <div className="fixed inset-0 z-[9999] overflow-y-auto bg-card">
       <div className="sticky top-0 z-10 flex h-14 items-center justify-between gap-2 bg-card/90 px-4 backdrop-blur">
         <Link
-          href="/settings?tab=audience"
+          href="/settings/audience"
           className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
         >
           <Settings className="h-3.5 w-3.5" />
