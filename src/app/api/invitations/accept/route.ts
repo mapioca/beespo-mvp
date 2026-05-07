@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { createNotification } from '@/lib/actions/notification-actions';
 import { NextRequest, NextResponse } from 'next/server';
 
 async function findAuthUserByEmail(email: string) {
@@ -159,6 +160,39 @@ export async function POST(request: NextRequest) {
         .from('workspace_invitations') as any) // eslint-disable-line @typescript-eslint/no-explicit-any
         .update({ status: 'accepted' })
         .eq('id', invitation.id);
+
+    // Notify existing workspace members that someone joined
+    const newMemberName =
+        user.user_metadata?.full_name || user.email?.split('@')[0] || 'A new member';
+    const workspaceName = invitation.workspaces?.name ?? 'your workspace';
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: existingMembers } = await (supabase.from('profiles') as any)
+        .select('id')
+        .eq('workspace_id', invitation.workspace_id)
+        .eq('is_deleted', false)
+        .neq('id', user.id);
+
+    if (existingMembers && existingMembers.length > 0) {
+        await Promise.all(
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (existingMembers as any[]).map((m) =>
+                createNotification({
+                    recipientUserId: m.id,
+                    type: 'workspace_member_joined',
+                    title: `${newMemberName} joined ${workspaceName}`,
+                    body: `${newMemberName} accepted their invitation as ${invitation.role}.`,
+                    metadata: {
+                        workspace_id: invitation.workspace_id,
+                        new_member_id: user.id,
+                        role: invitation.role,
+                    },
+                }).catch((err) => {
+                    console.error('Failed to create workspace_member_joined notification:', err);
+                })
+            )
+        );
+    }
 
     return NextResponse.json({
         success: true,

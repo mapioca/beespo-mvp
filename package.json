@@ -8,9 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "type-check": "tsc --noEmit",
-    "dev:cleanup-db": "DOTENV_CONFIG_PATH=.env.local node scripts/dev-cleanup-db.mjs",
-    "admin:invite": "DOTENV_CONFIG_PATH=.env.local tsx -r dotenv/config scripts/create-admin-invite.ts",
-    "admin:reset-password": "DOTENV_CONFIG_PATH=.env.local tsx -r dotenv/config scripts/admin-reset-password.ts"
+    "dev:cleanup-db": "DOTENV_CONFIG_PATH=.env.local node scripts/dev-cleanup-db.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
