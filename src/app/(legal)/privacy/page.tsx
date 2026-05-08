@@ -15,7 +15,7 @@ export default function PrivacyPage() {
       description={
         <>
           <p>How Beespo collects, uses, and protects the information entrusted to the workspace.</p>
-          <p className="mt-2 text-sm">Last updated: March 22, 2026</p>
+          <p className="mt-2 text-sm">Last updated: May 7, 2026</p>
         </>
       }
     >
@@ -23,12 +23,8 @@ export default function PrivacyPage() {
         <p className="leading-relaxed" style={{ color: "color-mix(in srgb, var(--lp-ink) 78%, transparent)" }}>
           We collect information you provide directly, such as your name, email address, and
           workspace details when you create an account. We also collect information about how
-          you use Beespo, including meeting agendas, templates, and integration data.
-        </p>
-        <p className="mt-4 leading-relaxed" style={{ color: "color-mix(in srgb, var(--lp-ink) 78%, transparent)" }}>
-          When you connect Zoom, we store your Zoom OAuth access and refresh tokens, along with
-          meeting metadata (meeting ID, join URL, start URL, passcode). These are stored
-          encrypted at rest and are never shared with other users.
+          you use Beespo, including the agendas, templates, callings, discussions, tasks, and
+          announcements you create.
         </p>
       </LegalSection>
 
@@ -37,11 +33,6 @@ export default function PrivacyPage() {
           We use the information we collect to provide, maintain, and improve Beespo; to
           communicate with you; to process transactions; and to fulfill any other purpose for
           which you provide it.
-        </p>
-        <p className="mt-4 leading-relaxed" style={{ color: "color-mix(in srgb, var(--lp-ink) 78%, transparent)" }}>
-          Zoom data is used exclusively to create, update, and delete Zoom meetings on your
-          behalf within the Beespo platform. We do not access meeting recordings, participant
-          data, or meeting content.
         </p>
       </LegalSection>
 
@@ -57,7 +48,7 @@ export default function PrivacyPage() {
         <p className="leading-relaxed" style={{ color: "color-mix(in srgb, var(--lp-ink) 78%, transparent)" }}>
           We do not sell, trade, or otherwise transfer your personal information to outside
           parties. We may share data with trusted third-party services required to operate
-          Beespo, including Supabase (database), Vercel (hosting), Zoom (meeting integration),
+          Beespo, including Supabase (database), Vercel (hosting), Sentry (error monitoring),
           and Resend (email delivery). Each of these services is bound by their own privacy
           policies and data processing agreements.
         </p>
@@ -76,11 +67,6 @@ export default function PrivacyPage() {
           </a>
           . You may also delete your account directly from the Settings page within the app,
           which will remove all associated data.
-        </p>
-        <p className="mt-4 leading-relaxed" style={{ color: "color-mix(in srgb, var(--lp-ink) 78%, transparent)" }}>
-          If you have connected your Zoom account and wish to revoke access, you can disconnect
-          Zoom from the Settings → Integrations page. Disconnecting removes your OAuth tokens
-          from our system immediately.
         </p>
       </LegalSection>
 

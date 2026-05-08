@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
+import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,6 +10,7 @@ import { toast } from "@/lib/toast";
 import { forgotPasswordAction } from "@/lib/actions/auth-actions";
 import { ArrowLeft, Mail } from "lucide-react";
 
+const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? "";
 const inkSubtle = "color-mix(in srgb, var(--lp-ink) 65%, transparent)";
 const inkBorder = "1px solid color-mix(in srgb, var(--lp-ink) 18%, transparent)";
 const inputStyle = {
@@ -21,22 +23,40 @@ export default function ForgotPasswordPage() {
     const [email, setEmail] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
+    const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+    const turnstileRef = useRef<TurnstileInstance | null>(null);
+
+    const resetTurnstile = () => {
+        setTurnstileToken(null);
+        turnstileRef.current?.reset();
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        if (!turnstileToken) {
+            toast.error("Please wait for the security check to complete.");
+            return;
+        }
+
         setIsLoading(true);
 
         try {
-            const result = await forgotPasswordAction(email);
+            const result = await forgotPasswordAction({ email, turnstileToken });
 
-            if (result.error) {
+            if (!result.ok) {
                 toast.error(result.error);
+                resetTurnstile();
             } else {
                 setIsSuccess(true);
-                toast.info("Check your inbox for the password reset link.");
+                // Generic message — we don't reveal whether the email exists
+                toast.info(
+                    "If an account exists for that email, a reset link has been sent."
+                );
             }
         } catch {
             toast.error("An unexpected error occurred. Please try again.");
+            resetTurnstile();
         } finally {
             setIsLoading(false);
         }
@@ -60,7 +80,7 @@ export default function ForgotPasswordPage() {
                         Check your email
                     </h1>
                     <p className="text-sm" style={{ color: inkSubtle }}>
-                        We have sent a password reset link to <strong style={{ color: "var(--lp-ink)" }}>{email}</strong>.
+                        If an account exists for <strong style={{ color: "var(--lp-ink)" }}>{email}</strong>, a password reset link has been sent.
                     </p>
                 </div>
                 <div className="mt-6 space-y-4">
@@ -75,7 +95,10 @@ export default function ForgotPasswordPage() {
                         Did not receive the email? Check your spam folder or{" "}
                         <button
                             type="button"
-                            onClick={() => setIsSuccess(false)}
+                            onClick={() => {
+                                setIsSuccess(false);
+                                resetTurnstile();
+                            }}
                             className="underline underline-offset-4"
                             style={{ color: "var(--lp-accent)" }}
                         >
@@ -119,10 +142,21 @@ export default function ForgotPasswordPage() {
                     />
                 </div>
 
+                {TURNSTILE_SITE_KEY ? (
+                    <Turnstile
+                        ref={turnstileRef}
+                        siteKey={TURNSTILE_SITE_KEY}
+                        onSuccess={setTurnstileToken}
+                        onExpire={() => setTurnstileToken(null)}
+                        onError={() => setTurnstileToken(null)}
+                        options={{ theme: "auto" }}
+                    />
+                ) : null}
+
                 <Button
                     type="submit"
                     className="w-full rounded-md border-0 transition-opacity hover:opacity-90"
-                    disabled={isLoading}
+                    disabled={isLoading || !turnstileToken}
                     style={{ background: "var(--lp-accent)", color: "var(--lp-bg)" }}
                 >
                     {isLoading ? "Sending link..." : "Send reset link"}

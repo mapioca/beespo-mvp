@@ -1,16 +1,1 @@
-{
-  "crons": [
-    {
-      "path": "/api/calendar/cron-sync",
-      "schedule": "0 13 * * *"
-    },
-    {
-      "path": "/api/cron/meeting-reminders",
-      "schedule": "0 7 * * *"
-    },
-    {
-      "path": "/api/cron/notification-digest",
-      "schedule": "0 8 * * *"
-    }
-  ]
-}
+{}
