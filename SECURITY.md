@@ -146,11 +146,16 @@ plan sacrament meetings, manage callings, run discussions, and assign tasks.
 - **Generic errors**: invalid-credentials and rate-limit responses use
   identical messages to defeat email enumeration (a different message would
   let an attacker probe for valid emails).
-- **Failed-login security notice**: when a sign-in attempt fails, we send
-  the address-of-record a "suspicious sign-in attempts" email pointing at
-  the password reset flow and recommending MFA. Debounced via Upstash to
-  one email per address per hour so a sustained attack does not spam the
-  legitimate user.
+- **Failed-login security notice**: a separate per-email failure counter
+  (1-hour window, threshold 3) tracks unsuccessful sign-in attempts. When
+  the threshold is crossed, we send the address-of-record a "suspicious
+  sign-in attempts" email pointing at the password reset flow and
+  recommending MFA. The notice is further debounced to one email per
+  address per hour so a sustained attack does not spam the legitimate
+  user. Successful sign-ins do not consume from the failure counter, so
+  a power user logging in many times will never trigger the notice. A
+  user who simply mistypes once or twice and then succeeds receives no
+  email.
 - Failed sign-in attempts are throttled by Supabase Auth, by Upstash Redis
   (per-IP + per-email), and by Cloudflare's edge rate-limit rule.
 

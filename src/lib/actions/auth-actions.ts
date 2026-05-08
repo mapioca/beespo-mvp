@@ -32,16 +32,45 @@ function normalizeEmail(email: string): string {
 }
 
 /**
- * Fire-and-forget security notice when failed sign-ins are accumulating against
- * an email. Uses Upstash as a 1-per-hour debounce so a sustained attack doesn't
- * spam the legitimate user. Errors are swallowed — this must never block login.
+ * Threshold of failed sign-ins within `FAILURE_WINDOW_MS` that triggers the
+ * "suspicious sign-in attempts" email. Set high enough that a frustrated
+ * user typing the wrong password once or twice does NOT receive an alert.
  */
-async function notifyFailedLoginBurst(email: string, ip: string): Promise<void> {
+const FAILURE_THRESHOLD = 3;
+const FAILURE_WINDOW_MS = 60 * 60_000; // 1 hour
+const NOTICE_DEBOUNCE_MS = 60 * 60_000; // at most 1 email per hour per address
+
+/**
+ * Record a failed sign-in attempt and, if a burst threshold is crossed, send
+ * the address-of-record a security notice. Both the burst counter and the
+ * email send are debounced via Upstash so we never spam the legitimate user.
+ *
+ * Counters are bucketed per-email (not per-IP) — a slow attacker rotating IPs
+ * still trips the burst threshold; a single user fat-fingering once does not.
+ *
+ * Successful logins do NOT consume from this counter, so a power user logging
+ * in many times in a short window will never trigger the notice.
+ *
+ * Errors are swallowed; this must never block login.
+ */
+async function maybeNotifyFailedLoginBurst(email: string, ip: string): Promise<void> {
     try {
+        // Burst counter: every failure consumes one slot. The 4th failure in
+        // FAILURE_WINDOW_MS returns allowed=false, our cue that the threshold
+        // has been crossed.
+        const burst = await checkRateLimit(
+            `auth:fail-burst:${email}`,
+            FAILURE_THRESHOLD,
+            FAILURE_WINDOW_MS
+        );
+        if (burst.allowed) return; // still under threshold — do nothing
+
+        // Debounce email sends: even if many failures come in after the
+        // threshold trips, send at most one notice per hour per address.
         const debounce = await checkRateLimit(
             `auth:notice:email:${email}`,
             1,
-            60 * 60_000 // 1 notice per hour per address
+            NOTICE_DEBOUNCE_MS
         );
         if (!debounce.allowed) return;
 
@@ -137,13 +166,14 @@ export async function loginAction({
                 code: "email_not_confirmed",
             };
         }
-        // Heads-up to the legitimate owner that someone is trying. Debounced
-        // to one email per hour and run async so it never blocks the response.
-        void notifyFailedLoginBurst(normalizedEmail, ip);
+        // Track this failure. If it pushes the address past FAILURE_THRESHOLD
+        // within FAILURE_WINDOW_MS, the helper sends a one-per-hour notice
+        // to the address. A single typo will not trigger anything.
+        void maybeNotifyFailedLoginBurst(normalizedEmail, ip);
         return { ok: false, error: GENERIC_AUTH_ERROR };
     }
     if (!data.user) {
-        void notifyFailedLoginBurst(normalizedEmail, ip);
+        void maybeNotifyFailedLoginBurst(normalizedEmail, ip);
         return { ok: false, error: GENERIC_AUTH_ERROR };
     }
 
