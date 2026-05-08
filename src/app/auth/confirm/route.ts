@@ -2,6 +2,14 @@ import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import type { EmailOtpType } from '@supabase/supabase-js'
 
+function safeInternalPath(pathname: string | null, fallback: string) {
+    if (!pathname) return fallback
+    if (!pathname.startsWith('/')) return fallback
+    if (pathname.startsWith('//')) return fallback
+    if (pathname.startsWith('/\\')) return fallback
+    return pathname
+}
+
 /**
  * Handles email confirmation callbacks from Supabase.
  * When a user clicks the confirmation link in their email,
@@ -11,7 +19,7 @@ export async function GET(request: Request) {
     const requestUrl = new URL(request.url)
     const token_hash = requestUrl.searchParams.get('token_hash')
     const type = requestUrl.searchParams.get('type') as EmailOtpType | null
-    const next = requestUrl.searchParams.get('next') || '/onboarding'
+    const next = safeInternalPath(requestUrl.searchParams.get('next'), '/onboarding')
     const origin = requestUrl.origin
 
     if (token_hash && type) {

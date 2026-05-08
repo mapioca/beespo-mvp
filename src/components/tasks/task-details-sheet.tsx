@@ -55,7 +55,6 @@ import {
 } from "@/lib/actions/task-actions";
 import { Database } from "@/types/database";
 import { cn } from "@/lib/utils";
-import { LinkedNotesList } from "@/components/notes/linked-notes-list";
 
 type TaskWithDetails = Database["public"]["Tables"]["tasks"]["Row"] & {
     assignee?: { full_name: string } | null;
@@ -381,22 +380,6 @@ export function TaskDetailsSheet({
                                 </div>
                             )}
                         </div>
-
-                        <Separator />
-
-                        {/* LINKED NOTES section */}
-                        {task && (
-                            <div className="px-5 py-4">
-                                <p className={`${sectionHeaderClass} mb-3`}>
-                                    Linked notes
-                                </p>
-                                <LinkedNotesList
-                                    entityId={task.id}
-                                    entityType="task"
-                                    className="border-none shadow-none p-0"
-                                />
-                            </div>
-                        )}
 
                         <Separator />
 

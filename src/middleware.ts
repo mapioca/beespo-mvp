@@ -1,23 +1,31 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { updateSession } from "@/lib/supabase/middleware";
 
 const DISABLED_ROUTES = [
-  "/inbox",
   "/calendar",
   "/schedule",
-  "/tasks",
-  "/callings",
-  "/discussions",
   "/library",
   "/forms",
   "/tables",
   "/notebooks",
+  "/notes",
+  "/events",
+  "/participants",
+  "/apps",
+  "/changelog",
+  "/data",
   "/meetings/bishopric",
   "/meetings/ward-council",
   "/meetings/interviews",
   "/meetings/agendas",
   "/meetings/programs",
   "/meetings/assignments",
+  "/meetings/agenda",
+  "/meetings/program",
+  "/meetings/overview",
+  "/meetings/create",
+  "/meetings/new",
 ];
 
 const LEGACY_ROUTE_REDIRECTS: Array<{ from: string; to: string }> = [
@@ -29,7 +37,7 @@ const LEGACY_ROUTE_REDIRECTS: Array<{ from: string; to: string }> = [
   { from: "/meetings/announcements", to: "/meetings/sacrament/announcements" },
 ];
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   for (const { from, to } of LEGACY_ROUTE_REDIRECTS) {
@@ -43,7 +51,7 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
-  return NextResponse.next();
+  return await updateSession(request);
 }
 
 export const config = {

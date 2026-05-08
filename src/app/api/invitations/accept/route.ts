@@ -1,5 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { createNotification } from '@/lib/actions/notification-actions';
+import { checkRateLimit } from '@/lib/rate-limiter';
 import { NextRequest, NextResponse } from 'next/server';
 
 async function findAuthUserByEmail(email: string) {
@@ -36,6 +38,25 @@ async function findAuthUserByEmail(email: string) {
 
 // POST /api/invitations/accept - Accept an invitation
 export async function POST(request: NextRequest) {
+    // Rate limit per IP (token brute-force defense)
+    const ip =
+        request.headers.get('cf-connecting-ip') ||
+        request.headers.get('x-real-ip') ||
+        request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+        'unknown';
+    const rl = await checkRateLimit(`invite:accept:${ip}`, 10, 60 * 1000);
+    if (!rl.allowed) {
+        return NextResponse.json(
+            { error: 'Too many attempts. Please try again later.' },
+            {
+                status: 429,
+                headers: {
+                    'Retry-After': String(Math.ceil((rl.resetAt - Date.now()) / 1000)),
+                },
+            }
+        );
+    }
+
     const supabase = await createClient();
 
     const { token } = await request.json();
@@ -159,6 +180,39 @@ export async function POST(request: NextRequest) {
         .from('workspace_invitations') as any) // eslint-disable-line @typescript-eslint/no-explicit-any
         .update({ status: 'accepted' })
         .eq('id', invitation.id);
+
+    // Notify existing workspace members that someone joined
+    const newMemberName =
+        user.user_metadata?.full_name || user.email?.split('@')[0] || 'A new member';
+    const workspaceName = invitation.workspaces?.name ?? 'your workspace';
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: existingMembers } = await (supabase.from('profiles') as any)
+        .select('id')
+        .eq('workspace_id', invitation.workspace_id)
+        .eq('is_deleted', false)
+        .neq('id', user.id);
+
+    if (existingMembers && existingMembers.length > 0) {
+        await Promise.all(
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (existingMembers as any[]).map((m) =>
+                createNotification({
+                    recipientUserId: m.id,
+                    type: 'workspace_member_joined',
+                    title: `${newMemberName} joined ${workspaceName}`,
+                    body: `${newMemberName} accepted their invitation as ${invitation.role}.`,
+                    metadata: {
+                        workspace_id: invitation.workspace_id,
+                        new_member_id: user.id,
+                        role: invitation.role,
+                    },
+                }).catch((err) => {
+                    console.error('Failed to create workspace_member_joined notification:', err);
+                })
+            )
+        );
+    }
 
     return NextResponse.json({
         success: true,

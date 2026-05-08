@@ -59,7 +59,6 @@ import {
     deleteTask,
 } from "@/lib/actions/task-actions";
 import { cn } from "@/lib/utils";
-import { LinkedNotesList } from "@/components/notes/linked-notes-list";
 import type { Task } from "@/components/tasks/tasks-table";
 
 // ── Constants ────────────────────────────────────────────────────────────────
@@ -456,20 +455,6 @@ export function TaskDetailsPanel({
 
                 <Separator />
 
-                {/* Linked notes */}
-                {task && (
-                    <>
-                        <DetailsPanelSection title="Linked notes">
-                            <LinkedNotesList
-                                entityId={task.id}
-                                entityType="task"
-                                className="border-none shadow-none p-0"
-                                showEmptyState
-                            />
-                        </DetailsPanelSection>
-                        <Separator />
-                    </>
-                )}
 
                 {/* Activity */}
                 <DetailsPanelSection title="Activity">

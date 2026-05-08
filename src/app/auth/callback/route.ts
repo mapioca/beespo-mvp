@@ -1,11 +1,19 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
+function safeInternalPath(pathname: string | null, fallback: string) {
+  if (!pathname) return fallback
+  if (!pathname.startsWith('/')) return fallback
+  if (pathname.startsWith('//')) return fallback
+  if (pathname.startsWith('/\\')) return fallback
+  return pathname
+}
+
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url)
   const code = requestUrl.searchParams.get('code')
   const origin = requestUrl.origin
-  const next = requestUrl.searchParams.get('next') || '/dashboard'
+  const next = safeInternalPath(requestUrl.searchParams.get('next'), '/dashboard')
   const type = requestUrl.searchParams.get('type')
 
   if (code) {

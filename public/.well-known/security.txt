@@ -1,0 +1,8 @@
+# Beespo vulnerability disclosure
+# https://www.rfc-editor.org/rfc/rfc9116
+
+Contact: mailto:security@beespo.com
+Expires: 2027-05-08T00:00:00.000Z
+Preferred-Languages: en
+Canonical: https://beespo.com/.well-known/security.txt
+Policy: https://github.com/mapioca/beespo-mvp/blob/main/SECURITY.md#17-reporting-vulnerabilities
