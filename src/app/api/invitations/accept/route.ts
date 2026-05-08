@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createNotification } from '@/lib/actions/notification-actions';
+import { checkRateLimit } from '@/lib/rate-limiter';
 import { NextRequest, NextResponse } from 'next/server';
 
 async function findAuthUserByEmail(email: string) {
@@ -37,6 +38,25 @@ async function findAuthUserByEmail(email: string) {
 
 // POST /api/invitations/accept - Accept an invitation
 export async function POST(request: NextRequest) {
+    // Rate limit per IP (token brute-force defense)
+    const ip =
+        request.headers.get('cf-connecting-ip') ||
+        request.headers.get('x-real-ip') ||
+        request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+        'unknown';
+    const rl = await checkRateLimit(`invite:accept:${ip}`, 10, 60 * 1000);
+    if (!rl.allowed) {
+        return NextResponse.json(
+            { error: 'Too many attempts. Please try again later.' },
+            {
+                status: 429,
+                headers: {
+                    'Retry-After': String(Math.ceil((rl.resetAt - Date.now()) / 1000)),
+                },
+            }
+        );
+    }
+
     const supabase = await createClient();
 
     const { token } = await request.json();

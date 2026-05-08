@@ -1,14 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/lib/toast";
-import { createClient } from "@/lib/supabase/client";
+import { loginAction } from "@/lib/actions/auth-actions";
 import { GoogleOAuthButton } from "@/components/auth/google-oauth-button";
+
+const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? "";
 
 function safeInternalPath(pathname: string | null, fallback: string) {
   if (!pathname) return fallback;
@@ -24,70 +27,51 @@ export default function LoginClient() {
   const useTemplateId = searchParams?.get("use");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const turnstileRef = useRef<TurnstileInstance | null>(null);
+
+  const resetTurnstile = () => {
+    setTurnstileToken(null);
+    turnstileRef.current?.reset();
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!turnstileToken) {
+      toast.error("Please wait for the security check to complete.");
+      return;
+    }
+
     setIsLoading(true);
 
     try {
-      const supabase = createClient();
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const result = await loginAction({
         email,
         password,
+        turnstileToken,
+        redirectTo,
+        useTemplateId,
       });
 
-      if (error) {
-        if (error.message.toLowerCase().includes("email not confirmed")) {
-          toast.error("Email not confirmed", {
-            description: "Please check your inbox for the confirmation link.",
-          });
+      if (!result.ok) {
+        if (result.code === "email_not_confirmed") {
+          toast.error("Email not confirmed", { description: result.error });
           router.push(`/check-email?email=${encodeURIComponent(email)}`);
         } else {
-          toast.error(error.message);
+          toast.error(result.error);
         }
-      } else if (data.user) {
-        if (redirectTo || useTemplateId) {
-          const safeRedirect = safeInternalPath(redirectTo ?? null, "/library");
-          toast.success("You've been logged in successfully.");
-          if (useTemplateId) {
-            const importUrl = `/library/import?use=${encodeURIComponent(useTemplateId)}&redirect=${encodeURIComponent(safeRedirect)}`;
-            router.push(importUrl);
-          } else {
-            router.push(safeRedirect);
-          }
-          router.refresh();
-          return;
-        }
-
-        // Check if user has completed profile setup
-        const { data: profile } = await (supabase
-          .from("profiles") as ReturnType<typeof supabase.from>)
-          .select("id, is_deleted")
-          .eq("id", data.user.id)
-          .single() as { data: { id: string; is_deleted?: boolean } | null };
-
-        if (profile?.is_deleted) {
-          await supabase.auth.signOut({ scope: "local" });
-          toast.error("This account has been deleted.");
-          router.push("/signup");
-        } else if (!profile) {
-          toast.info("Complete Setup", { description: "Please complete your profile setup." });
-          router.push("/onboarding");
-        } else {
-          // Check if user has MFA enrolled
-          const { data: aalData } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-          if (aalData?.nextLevel === "aal2" && aalData?.currentLevel !== "aal2") {
-            router.push("/mfa/verify");
-          } else {
-            toast.success("You've been logged in successfully.");
-            router.push("/dashboard");
-          }
-        }
-        router.refresh();
+        resetTurnstile();
+        return;
       }
+
+      toast.success("You've been logged in successfully.");
+      router.push(result.redirectTo);
+      router.refresh();
     } catch {
       toast.error("An unexpected error occurred. Please try again.");
+      resetTurnstile();
     } finally {
       setIsLoading(false);
     }
@@ -107,6 +91,8 @@ export default function LoginClient() {
           )
         ).toString()}`
       : "/signup";
+
+  const submitDisabled = isLoading || !turnstileToken;
 
   return (
     <div
@@ -198,10 +184,21 @@ export default function LoginClient() {
           />
         </div>
 
+        {TURNSTILE_SITE_KEY ? (
+          <Turnstile
+            ref={turnstileRef}
+            siteKey={TURNSTILE_SITE_KEY}
+            onSuccess={setTurnstileToken}
+            onExpire={() => setTurnstileToken(null)}
+            onError={() => setTurnstileToken(null)}
+            options={{ theme: "auto" }}
+          />
+        ) : null}
+
         <Button
           type="submit"
           className="w-full rounded-md border-0 transition-opacity hover:opacity-90"
-          disabled={isLoading}
+          disabled={submitDisabled}
           style={{ background: "var(--lp-accent)", color: "var(--lp-bg)" }}
         >
           {isLoading ? "Signing in..." : "Sign in"}

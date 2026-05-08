@@ -139,7 +139,15 @@ plan sacrament meetings, manage callings, run discussions, and assign tasks.
   (`src/app/(auth)/signup/page.tsx`, `reset-password/page.tsx`). Supabase
   enforces additional checks server-side. Common-password / breach-corpus
   enforcement is on the [Roadmap](#16-roadmap--known-gaps).
-- Failed sign-in attempts are throttled by Supabase Auth.
+- **Server-side wrapping** (`src/lib/actions/auth-actions.ts`): the form
+  submits to a Next.js server action that verifies a Cloudflare Turnstile
+  token, applies per-IP and per-email rate limits via Upstash Redis, then
+  calls Supabase Auth. The browser does not call Supabase Auth directly.
+- **Generic errors**: invalid-credentials and rate-limit responses use
+  identical messages to defeat email enumeration (a different message would
+  let an attacker probe for valid emails).
+- Failed sign-in attempts are throttled by Supabase Auth, by Upstash Redis
+  (per-IP + per-email), and by Cloudflare's edge rate-limit rule.
 
 ### 3.3 Multi-Factor Authentication
 
@@ -374,8 +382,14 @@ Set globally via `next.config.ts`:
 - `Referrer-Policy: strict-origin-when-cross-origin`
 - `Content-Security-Policy: …` (see §6.2)
 
-[Roadmap](#16-roadmap--known-gaps): add `Strict-Transport-Security`,
-`Permissions-Policy`, `X-Frame-Options: DENY`, and `Cross-Origin-Opener-Policy`.
+Set at the Cloudflare edge:
+
+- `Strict-Transport-Security: max-age=15552000; includeSubDomains` (HSTS)
+- `Always Use HTTPS` redirect
+- TLS 1.2 minimum
+
+[Roadmap](#16-roadmap--known-gaps): add `Permissions-Policy`,
+`X-Frame-Options: DENY`, and `Cross-Origin-Opener-Policy: same-origin`.
 
 ### 7.2 CORS
 
@@ -387,15 +401,31 @@ Set globally via `next.config.ts`:
 
 ### 7.3 Rate Limiting
 
-- Distributed rate limiting via Upstash Redis + `@upstash/ratelimit`
-  (`src/lib/rate-limiter.ts`).
-- Currently applied to:
-  - `POST /api/platform-invitations/validate` — 10 req/min/IP
-  - `POST /api/platform-invitations/consume` — 5 req/min/IP
-  - `POST /api/workspace-invitations/validate` — 10 req/min/IP
-- Falls back to per-instance in-memory limiter (with prod warning) when
-  Upstash credentials are not configured. See [§16](#16-roadmap--known-gaps)
-  for layered defense additions (Cloudflare, Turnstile).
+Layered: Cloudflare edge → Upstash application layer.
+
+**Cloudflare edge** (`security/cloudflare-rules.md`):
+
+- One rate-limit rule covering all auth + invite paths: 20 req/min/IP, block 10 min.
+- Five custom WAF rules: scanner block, non-app path block, empty-UA-on-auth block, bot challenge on auth, hosting-ASN challenge on auth.
+
+**Upstash Redis application layer** (`src/lib/rate-limiter.ts`):
+
+| Endpoint | Per-IP limit | Per-email limit |
+|---|---|---|
+| `loginAction` | 10 / 1 min | 5 / 15 min |
+| `signupAction` | 5 / 1 min | 3 / 60 min |
+| `forgotPasswordAction` | 5 / 1 min | 3 / 60 min |
+| `POST /api/platform-invitations/validate` | 10 / 1 min | — |
+| `POST /api/platform-invitations/consume` | 5 / 1 min | — |
+| `POST /api/workspace-invitations/validate` | 10 / 1 min | — |
+| `POST /api/invitations/accept` | 10 / 1 min | — |
+
+The per-email axis is the key defense against rotating-IP credential stuffing
+that would otherwise slip past per-IP-only rate limiting.
+
+Falls back to per-instance in-memory limiter (with prod warning) when Upstash
+credentials are not configured. Cloudflare protections continue to apply
+regardless.
 
 ### 7.4 Authentication on API Routes
 
@@ -694,21 +724,22 @@ Google OAuth verification reviews.
 
 ### Critical (pre-launch)
 
-- [ ] **[partner-blocking]** Verify `beespo.com` domain in Resend (DKIM/SPF/DMARC).
-- [ ] **[partner-blocking]** Provision Upstash Redis for production
-      (`UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN`).
-- [ ] **[partner-blocking]** Stand up `security@beespo.com` mailbox and publish
-      `/.well-known/security.txt`.
-- [ ] **[partner-blocking]** Add Cloudflare in front of beespo.com (free tier);
-      configure rate-limit rules at the edge for `/api/platform-invitations/*`
-      and `/api/workspace-invitations/*`.
-- [ ] **[partner-blocking]** Add Cloudflare Turnstile (or hCaptcha) to the
-      invite-code input on signup; verify token server-side before
-      `checkRateLimit()`.
+- [x] **[partner-blocking]** Verify `beespo.com` domain in Resend (DKIM/SPF/DMARC). Verified 2026-05-08; TLS set to Enforced.
+- [x] **[partner-blocking]** Provision Upstash Redis for production
+      (`UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN`). Set in Vercel 2026-05-08.
+- [x] **[partner-blocking]** Stand up `security@beespo.com` mailbox and publish
+      `/.well-known/security.txt`. Mailbox live; security.txt at `public/.well-known/security.txt`.
+- [x] **[partner-blocking]** Cloudflare in front of beespo.com (free tier);
+      DDoS, Free Managed Ruleset, Bot Fight Mode, HSTS configured. 5 custom WAF
+      rules + 1 rate-limit rule deployed. Source-of-truth at `security/cloudflare-rules.md`.
+- [x] **[partner-blocking]** Cloudflare Turnstile widget configured (Managed mode,
+      Managed pre-clearance) and wired into login, signup, and forgot-password
+      flows; tokens verified server-side via `src/lib/security/turnstile.ts`.
 - [ ] Wrap `checkRateLimit()` in try/catch; on Upstash error, fall back to a
       stricter in-memory cap and alert via Sentry.
-- [ ] Add HSTS, `Permissions-Policy`, `X-Frame-Options: DENY`,
+- [ ] Add `Permissions-Policy`, `X-Frame-Options: DENY`,
       `Cross-Origin-Opener-Policy: same-origin` headers (`next.config.ts`).
+      *(HSTS now provided by Cloudflare edge.)*
 - [ ] Tighten CSP: replace `'unsafe-inline'` / `'unsafe-eval'` with
       nonce-based script-src.
 - [ ] Implement security audit log table + write events on: sign-in

@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useCallback, useEffect, Suspense } from "react";
+import { useState, useCallback, useEffect, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,8 +12,11 @@ import { TermsOfServiceDialog } from "@/components/auth/terms-of-service-dialog"
 import { InviteCodeInput } from "@/components/auth/invite-code-input";
 import { toast } from "@/lib/toast";
 import { createClient } from "@/lib/supabase/client";
+import { signupAction } from "@/lib/actions/signup-actions";
 import { ShieldCheck, Loader2, Users, CheckCircle } from "lucide-react";
 import type { WorkspaceInvitationData } from "@/types/onboarding";
+
+const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? "";
 
 const inkSubtle = "color-mix(in srgb, var(--lp-ink) 65%, transparent)";
 const inkBorder = "1px solid color-mix(in srgb, var(--lp-ink) 18%, transparent)";
@@ -78,6 +82,13 @@ function SignupContent() {
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isConsumingCode, setIsConsumingCode] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const turnstileRef = useRef<TurnstileInstance | null>(null);
+
+  const resetTurnstile = () => {
+    setTurnstileToken(null);
+    turnstileRef.current?.reset();
+  };
 
   // Validate workspace invitation token on mount
   useEffect(() => {
@@ -185,6 +196,11 @@ function SignupContent() {
       return;
     }
 
+    if (!turnstileToken) {
+      toast.error("Please wait for the security check to complete.");
+      return;
+    }
+
     setIsLoading(true);
     setIsConsumingCode(true);
 
@@ -200,107 +216,53 @@ function SignupContent() {
           setInviteCodeValid(false);
           setIsLoading(false);
           setIsConsumingCode(false);
+          resetTurnstile();
           return;
         }
       }
 
       setIsConsumingCode(false);
 
-      const supabase = createClient();
-
-      // Build metadata based on flow type
-      const userMetadata: Record<string, string> = {
-        full_name: fullName,
-      };
-
-      if (isWorkspaceInvite && invitationToken) {
-        userMetadata.workspace_invitation_token = invitationToken;
-      } else if (consumedInvitationId) {
-        userMetadata.platform_invitation_id = consumedInvitationId;
-      }
-
-      const baseUrl = window.location.origin;
-
-      const { data, error } = await supabase.auth.signUp({
+      const result = await signupAction({
         email,
         password,
-        options: {
-          data: userMetadata,
-          emailRedirectTo: `${baseUrl}/auth/confirm`,
-        },
+        fullName,
+        turnstileToken,
+        workspaceInvitationToken: isWorkspaceInvite ? invitationToken : null,
+        platformInvitationId: consumedInvitationId,
       });
 
-      if (error) {
-        // If user already exists, check if they have a profile
-        if (error.message.includes("already registered") || error.message.includes("already been registered")) {
-          // Try to sign them in instead
-          const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-            email,
-            password,
-          });
-
-          if (signInError) {
-            toast.error("This email is already registered. Please use the login page instead.");
-            setTimeout(() => {
-              router.push(loginHref);
-            }, 2000);
-          } else if (signInData.user) {
-            // Check if user has a profile
-            const { data: profile } = await supabase
-              .from("profiles")
-              .select("id")
-              .eq("id", signInData.user.id)
-              .single();
-
-            if (!profile) {
-              // User exists but no profile - store token and redirect to setup
-              if (isWorkspaceInvite && invitationToken) {
-                sessionStorage.setItem("pending_workspace_invitation_token", invitationToken);
-              }
-              toast.info("Complete Setup", { description: "Please complete your profile setup." });
-              router.push("/onboarding");
-            } else {
-              if (useTemplateId) {
-                const importUrl = `/library/import?use=${encodeURIComponent(useTemplateId)}&redirect=${encodeURIComponent(safeRedirect)}`;
-                router.push(importUrl);
-              } else if (redirectTo) {
-                router.push(safeRedirect);
-              } else {
-                router.push("/dashboard");
-              }
-            }
-            router.refresh();
-          }
+      if (!result.ok) {
+        if (result.code === "already_registered") {
+          toast.error(result.error);
+          setTimeout(() => router.push(loginHref), 2000);
         } else {
-          toast.error(error.message);
+          toast.error(result.error);
         }
-      } else if (data.user) {
-        // Store workspace invitation token for onboarding
-        if (isWorkspaceInvite && invitationToken) {
-          sessionStorage.setItem("pending_workspace_invitation_token", invitationToken);
-        }
+        resetTurnstile();
+        return;
+      }
 
-        // Check if email confirmation is required
-        // When email confirmation is enabled, identities will be empty until confirmed
-        const needsEmailConfirmation =
-          data.user.identities?.length === 0 ||
-          !data.user.email_confirmed_at;
+      // Success — store workspace invitation token for onboarding to consume
+      if (isWorkspaceInvite && invitationToken) {
+        sessionStorage.setItem("pending_workspace_invitation_token", invitationToken);
+      }
 
-        if (needsEmailConfirmation) {
-          toast.info("Check your email", { description: "We've sent a confirmation link to your email address." });
-          router.push(`/check-email?email=${encodeURIComponent(email)}`);
-        } else {
-          toast.success("Success", {
-            description: isWorkspaceInvite
-              ? `Account created! Let's get you set up to join ${workspaceInviteData?.workspaceName}.`
-              : "Account created successfully! Please complete your profile.",
-          });
-          router.push("/onboarding");
-          router.refresh();
-        }
+      if (result.needsEmailConfirmation) {
+        toast.info("Check your email", { description: "We've sent a confirmation link to your email address." });
+        router.push(`/check-email?email=${encodeURIComponent(email)}`);
+      } else {
+        toast.success("Success", {
+          description: isWorkspaceInvite
+            ? `Account created! Let's get you set up to join ${workspaceInviteData?.workspaceName}.`
+            : "Account created successfully! Please complete your profile.",
+        });
+        router.push("/onboarding");
+        router.refresh();
       }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "An unexpected error occurred. Please try again.");
+      resetTurnstile();
     } finally {
       setIsLoading(false);
       setIsConsumingCode(false);
@@ -617,10 +579,21 @@ function SignupContent() {
             </label>
           </div>
 
+          {TURNSTILE_SITE_KEY ? (
+            <Turnstile
+              ref={turnstileRef}
+              siteKey={TURNSTILE_SITE_KEY}
+              onSuccess={setTurnstileToken}
+              onExpire={() => setTurnstileToken(null)}
+              onError={() => setTurnstileToken(null)}
+              options={{ theme: "auto" }}
+            />
+          ) : null}
+
           <Button
             type="submit"
             className="w-full rounded-md border-0 transition-opacity hover:opacity-90"
-            disabled={isFormDisabled}
+            disabled={isFormDisabled || !turnstileToken}
             style={accentBtnStyle}
           >
             {isLoading ? (
