@@ -233,12 +233,7 @@ function SignupContent() {
       });
 
       if (!result.ok) {
-        if (result.code === "already_registered") {
-          toast.error(result.error);
-          setTimeout(() => router.push(loginHref), 2000);
-        } else {
-          toast.error(result.error);
-        }
+        toast.error(result.error);
         resetTurnstile();
         return;
       }

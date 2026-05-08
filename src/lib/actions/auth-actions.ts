@@ -3,7 +3,10 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { resend } from "@/lib/email/resend";
-import { getResetPasswordEmailHtml } from "@/lib/email/templates";
+import {
+    getResetPasswordEmailHtml,
+    getFailedLoginNoticeHtml,
+} from "@/lib/email/templates";
 import { verifyTurnstile } from "@/lib/security/turnstile";
 import { getClientIp } from "@/lib/security/request-ip";
 import { checkRateLimit } from "@/lib/rate-limiter";
@@ -26,6 +29,38 @@ function safeInternalPath(pathname: string | null | undefined, fallback: string)
 
 function normalizeEmail(email: string): string {
     return email.trim().toLowerCase();
+}
+
+/**
+ * Fire-and-forget security notice when failed sign-ins are accumulating against
+ * an email. Uses Upstash as a 1-per-hour debounce so a sustained attack doesn't
+ * spam the legitimate user. Errors are swallowed — this must never block login.
+ */
+async function notifyFailedLoginBurst(email: string, ip: string): Promise<void> {
+    try {
+        const debounce = await checkRateLimit(
+            `auth:notice:email:${email}`,
+            1,
+            60 * 60_000 // 1 notice per hour per address
+        );
+        if (!debounce.allowed) return;
+
+        if (!resend) {
+            console.warn(
+                "[auth] failed-login notice skipped — Resend not initialized"
+            );
+            return;
+        }
+
+        await resend.emails.send({
+            from: "Beespo Security <noreply@beespo.com>",
+            to: email,
+            subject: "Suspicious sign-in attempts on your Beespo account",
+            html: getFailedLoginNoticeHtml(email, ip),
+        });
+    } catch (err) {
+        console.error("[auth] failed to send failed-login notice", err);
+    }
 }
 
 // ── Sign out ───────────────────────────────────────────────────────────────
@@ -102,9 +137,13 @@ export async function loginAction({
                 code: "email_not_confirmed",
             };
         }
+        // Heads-up to the legitimate owner that someone is trying. Debounced
+        // to one email per hour and run async so it never blocks the response.
+        void notifyFailedLoginBurst(normalizedEmail, ip);
         return { ok: false, error: GENERIC_AUTH_ERROR };
     }
     if (!data.user) {
+        void notifyFailedLoginBurst(normalizedEmail, ip);
         return { ok: false, error: GENERIC_AUTH_ERROR };
     }
 

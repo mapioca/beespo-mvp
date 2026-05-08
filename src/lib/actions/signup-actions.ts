@@ -30,22 +30,24 @@ export type SignupResult =
         ok: true;
         /** True when Supabase requires the user to click the email link. */
         needsEmailConfirmation: boolean;
+        /** Empty string when the signup was a no-op for an existing address. */
         userId: string;
     }
     | {
         ok: false;
         error: string;
-        code?: "already_registered" | "challenge_failed" | "rate_limited";
+        code?: "challenge_failed" | "rate_limited";
     };
 
 /**
  * Server-side signup. Mirrors loginAction's protections plus the invite-flow
  * specifics (workspace invitation token vs. consumed platform invite ID).
  *
- * The previous client-side flow handled "user already exists" by silently
- * trying to sign them in. We deliberately don't replicate that here — it's a
- * subtle account-enumeration vector and the right UX is to tell the user
- * "this email is registered, please sign in instead".
+ * Account-enumeration defense: when the email is already registered, we return
+ * the same `{ ok: true, needsEmailConfirmation: true }` shape as a fresh
+ * signup. The legitimate owner of an existing address sees the same UI a
+ * fresh signup would. They learn nothing about whether the address exists
+ * until they try to actually sign in (which has its own protections).
  */
 export async function signupAction({
     email,
@@ -117,12 +119,11 @@ export async function signupAction({
             error.message.toLowerCase().includes("already registered") ||
             error.message.toLowerCase().includes("already been registered")
         ) {
-            return {
-                ok: false,
-                error:
-                    "This email is already registered. Please sign in instead.",
-                code: "already_registered",
-            };
+            // Enumeration defense: pretend the signup succeeded and ask the
+            // user to check their email. The legitimate owner of the address
+            // can use forgot-password if they've forgotten they have an
+            // account. An attacker probing for valid emails learns nothing.
+            return { ok: true, needsEmailConfirmation: true, userId: "" };
         }
         return { ok: false, error: error.message };
     }
@@ -131,7 +132,9 @@ export async function signupAction({
         return { ok: false, error: "Signup failed. Please try again." };
     }
 
-    // Email confirmation required when identities is empty (Supabase convention)
+    // Email confirmation required when identities is empty (Supabase's own
+    // existing-user defense — same response shape regardless of whether the
+    // address exists)
     const needsEmailConfirmation =
         data.user.identities?.length === 0 || !data.user.email_confirmed_at;
 
