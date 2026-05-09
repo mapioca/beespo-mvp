@@ -13,9 +13,11 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { getDashboardRequestContext } from "@/lib/dashboard/request-context";
 import {
+  fetchPendingConfirmationsHomeData,
   fetchSacramentHomeData,
   type HomeReadinessItem,
   type HomeReadinessPerson,
+  type PendingConfirmationsHomeData,
   type SacramentHomeData,
 } from "@/lib/dashboard/home-data-fetchers";
 import { createClient } from "@/lib/supabase/server";
@@ -417,6 +419,69 @@ function SnapshotRow({
   );
 }
 
+function ConfirmationsTile({
+  data,
+}: {
+  data: PendingConfirmationsHomeData;
+}) {
+  const href = "/meetings/sacrament/confirmations";
+  return (
+    <section className={cn(PANEL_BASE, PANEL_PAD)}>
+      <PanelHeader
+        label="To confirm"
+        labelClassName="!font-sans text-[14px] font-medium normal-case tracking-normal text-foreground"
+        action={
+          <TonePill tone={data.count > 0 ? "warning" : "ok"}>
+            {data.count > 0 ? pluralize(data.count, "pending") : "Clear"}
+          </TonePill>
+        }
+      />
+
+      {data.count === 0 ? (
+        <div className="mt-5 rounded-[14px] border border-dashed border-border/70 bg-surface-body/70 px-4 py-5 text-[13px] text-muted-foreground">
+          Everyone in the next 8 weeks is confirmed or declined.
+        </div>
+      ) : (
+        <>
+          <div className="mt-5 space-y-3">
+            {data.items.map((item) => (
+              <Link
+                key={item.id}
+                href={href}
+                className="group block rounded-[18px] transition-colors duration-150"
+              >
+                <div className="flex min-h-[64px] items-start gap-3 rounded-[18px] border border-border/60 bg-background px-4 py-3 transition-colors group-hover:border-border/80 group-hover:bg-surface-body/40">
+                  <span className="mt-[7px] inline-flex h-1.5 w-1.5 shrink-0 rounded-full bg-[hsl(var(--dashboard-pill-warning-text))]/70" />
+                  <div className="min-w-0 flex-1 pt-px">
+                    <div className="text-[13.5px] font-medium leading-[1.35] text-foreground">
+                      {item.title}
+                    </div>
+                    {item.detail ? (
+                      <div className="mt-1 text-[12.5px] leading-[1.4] text-muted-foreground/85">
+                        {item.detail}
+                      </div>
+                    ) : null}
+                  </div>
+                  <ChevronRight className={cn(CHEVRON_CLASS, "mt-0.5 transition-all group-hover:translate-x-0.5 group-hover:text-muted-foreground")} />
+                </div>
+              </Link>
+            ))}
+          </div>
+          {data.count > data.items.length ? (
+            <Link
+              href={href}
+              className="mt-3 inline-flex items-center gap-1 text-[12px] font-medium text-muted-foreground transition-colors hover:text-foreground"
+            >
+              View all {data.count}
+              <ArrowUpRight className="h-3.5 w-3.5" />
+            </Link>
+          ) : null}
+        </>
+      )}
+    </section>
+  );
+}
+
 function QueueCard({
   label,
   href,
@@ -567,8 +632,10 @@ export default async function DashboardPage() {
     createClient(),
   ]);
 
-  const dataPromise = fetchSacramentHomeData(supabase, profile.workspace_id);
-  const data = await dataPromise;
+  const [data, pendingConfirmations] = await Promise.all([
+    fetchSacramentHomeData(supabase, profile.workspace_id),
+    fetchPendingConfirmationsHomeData(supabase, profile.workspace_id),
+  ]);
   const updatedLabel = formatRelativeTimestamp(data.updatedAt);
   const attentionCount = attentionPoints(data);
 
@@ -663,6 +730,7 @@ export default async function DashboardPage() {
 
         <div className="grid gap-5 xl:grid-cols-3">
           <SundaySnapshotCard data={data} />
+          <ConfirmationsTile data={pendingConfirmations} />
           <QueueCard
             label="Business"
             href="/meetings/sacrament/business"
