@@ -10,6 +10,7 @@ import {
 import { verifyTurnstile } from "@/lib/security/turnstile";
 import { getClientIp } from "@/lib/security/request-ip";
 import { checkRateLimit } from "@/lib/rate-limiter";
+import { checkTrustedDevice } from "@/lib/mfa";
 import { redirect } from "next/navigation";
 
 const GENERIC_AUTH_ERROR =
@@ -105,7 +106,7 @@ export async function signOutAction() {
 interface LoginInput {
     email: string;
     password: string;
-    turnstileToken: string;
+    turnstileToken: string | null;
     redirectTo?: string | null;
     useTemplateId?: string | null;
 }
@@ -197,10 +198,15 @@ export async function loginAction({
         return { ok: true, redirectTo: "/onboarding" };
     }
 
-    // 5. MFA AAL check
+    // 5. MFA AAL check — honor "remember this device" cookie if it's still
+    // valid for this user. Without this, a trusted browser would still be
+    // forced through /mfa/verify on every fresh login.
     const { data: aalData } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
     if (aalData?.nextLevel === "aal2" && aalData?.currentLevel !== "aal2") {
-        return { ok: true, redirectTo: "/mfa/verify" };
+        const isTrusted = await checkTrustedDevice(data.user.id);
+        if (!isTrusted) {
+            return { ok: true, redirectTo: "/mfa/verify" };
+        }
     }
 
     // 6. Pick destination
@@ -221,7 +227,7 @@ export async function loginAction({
 
 interface ForgotPasswordInput {
     email: string;
-    turnstileToken: string;
+    turnstileToken: string | null;
 }
 
 /**

@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "@/lib/toast";
 import { loginAction } from "@/lib/actions/auth-actions";
 import { GoogleOAuthButton } from "@/components/auth/google-oauth-button";
+import { useTheme } from "@/components/theme/theme-provider";
 
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? "";
 
@@ -30,6 +31,7 @@ export default function LoginClient() {
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const turnstileRef = useRef<TurnstileInstance | null>(null);
+  const { theme } = useTheme();
 
   const resetTurnstile = () => {
     setTurnstileToken(null);
@@ -39,7 +41,7 @@ export default function LoginClient() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!turnstileToken) {
+    if (TURNSTILE_SITE_KEY && !turnstileToken) {
       toast.error("Please wait for the security check to complete.");
       return;
     }
@@ -92,7 +94,7 @@ export default function LoginClient() {
         ).toString()}`
       : "/signup";
 
-  const submitDisabled = isLoading || !turnstileToken;
+  const submitDisabled = isLoading || (Boolean(TURNSTILE_SITE_KEY) && !turnstileToken);
 
   return (
     <div
@@ -191,13 +193,13 @@ export default function LoginClient() {
             onSuccess={setTurnstileToken}
             onExpire={() => setTurnstileToken(null)}
             onError={() => setTurnstileToken(null)}
-            options={{ theme: "auto" }}
+            options={{ theme }}
           />
         ) : null}
 
         <Button
           type="submit"
-          className="w-full rounded-md border-0 transition-opacity hover:opacity-90"
+          className="w-full rounded-md border-0 transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
           disabled={submitDisabled}
           style={{ background: "var(--lp-accent)", color: "var(--lp-bg)" }}
         >

@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/card";
 import { Loader2, CheckCircle, XCircle } from "lucide-react";
 import Link from "next/link";
+import { useTheme } from "@/components/theme/theme-provider";
 
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? "";
 
@@ -30,6 +31,7 @@ function AcceptInviteContent() {
     const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
     const turnstileRef = useRef<TurnstileInstance | null>(null);
     const hasAcceptedRef = useRef(false);
+    const { theme } = useTheme();
 
     useEffect(() => {
         if (!token) {
@@ -127,7 +129,7 @@ function AcceptInviteContent() {
                                     onSuccess={setTurnstileToken}
                                     onExpire={() => setTurnstileToken(null)}
                                     onError={() => setTurnstileToken(null)}
-                                    options={{ theme: "auto" }}
+                                    options={{ theme }}
                                 />
                             ) : null}
                         </>

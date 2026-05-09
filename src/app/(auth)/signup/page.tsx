@@ -15,6 +15,7 @@ import { createClient } from "@/lib/supabase/client";
 import { signupAction } from "@/lib/actions/signup-actions";
 import { ShieldCheck, Loader2, Users, CheckCircle } from "lucide-react";
 import type { WorkspaceInvitationData } from "@/types/onboarding";
+import { useTheme } from "@/components/theme/theme-provider";
 
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? "";
 
@@ -84,6 +85,7 @@ function SignupContent() {
   const [isConsumingCode, setIsConsumingCode] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const turnstileRef = useRef<TurnstileInstance | null>(null);
+  const { theme } = useTheme();
 
   const resetTurnstile = () => {
     setTurnstileToken(null);
@@ -196,7 +198,7 @@ function SignupContent() {
       return;
     }
 
-    if (!turnstileToken) {
+    if (TURNSTILE_SITE_KEY && !turnstileToken) {
       toast.error("Please wait for the security check to complete.");
       return;
     }
@@ -581,14 +583,14 @@ function SignupContent() {
               onSuccess={setTurnstileToken}
               onExpire={() => setTurnstileToken(null)}
               onError={() => setTurnstileToken(null)}
-              options={{ theme: "auto" }}
+              options={{ theme }}
             />
           ) : null}
 
           <Button
             type="submit"
-            className="w-full rounded-md border-0 transition-opacity hover:opacity-90"
-            disabled={isFormDisabled || !turnstileToken}
+            className="w-full rounded-md border-0 transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+            disabled={isFormDisabled || (Boolean(TURNSTILE_SITE_KEY) && !turnstileToken)}
             style={accentBtnStyle}
           >
             {isLoading ? (

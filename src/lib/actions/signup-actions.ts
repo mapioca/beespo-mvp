@@ -18,7 +18,7 @@ interface SignupInput {
     email: string;
     password: string;
     fullName: string;
-    turnstileToken: string;
+    turnstileToken: string | null;
     /** When the user came in through a workspace invitation link. */
     workspaceInvitationToken?: string | null;
     /** When the user was already validated against the platform invite code. */
