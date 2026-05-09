@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Mail, ArrowLeft, Loader2 } from "lucide-react";
+import { AuthShell } from "@/components/auth/auth-shell";
 
 const inkSubtle = "color-mix(in srgb, var(--lp-ink) 65%, transparent)";
 const inkBorder = "1px solid color-mix(in srgb, var(--lp-ink) 18%, transparent)";
@@ -84,24 +85,26 @@ function CheckEmailContent() {
 
 export default function CheckEmailPage() {
     return (
-        <Suspense
-            fallback={
-                <AuthCard>
-                    <div className="space-y-1 text-center">
-                        <h1 className="text-2xl font-bold tracking-tight" style={{ color: "var(--lp-ink)" }}>
-                            Loading
-                        </h1>
-                        <p className="text-sm" style={{ color: inkSubtle }}>
-                            Please wait...
-                        </p>
-                    </div>
-                    <div className="mt-6 flex justify-center py-8">
-                        <Loader2 className="h-8 w-8 animate-spin" style={{ color: "var(--lp-accent)" }} />
-                    </div>
-                </AuthCard>
-            }
-        >
-            <CheckEmailContent />
-        </Suspense>
+        <AuthShell>
+            <Suspense
+                fallback={
+                    <AuthCard>
+                        <div className="space-y-1 text-center">
+                            <h1 className="text-2xl font-bold tracking-tight" style={{ color: "var(--lp-ink)" }}>
+                                Loading
+                            </h1>
+                            <p className="text-sm" style={{ color: inkSubtle }}>
+                                Please wait...
+                            </p>
+                        </div>
+                        <div className="mt-6 flex justify-center py-8">
+                            <Loader2 className="h-8 w-8 animate-spin" style={{ color: "var(--lp-accent)" }} />
+                        </div>
+                    </AuthCard>
+                }
+            >
+                <CheckEmailContent />
+            </Suspense>
+        </AuthShell>
     );
 }

@@ -3,6 +3,7 @@
 import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { MfaSetup } from "@/components/mfa/mfa-setup";
+import { AuthShell } from "@/components/auth/auth-shell";
 
 function MfaSetupContent() {
   const searchParams = useSearchParams();
@@ -13,8 +14,10 @@ function MfaSetupContent() {
 
 export default function MfaSetupPage() {
   return (
-    <Suspense>
-      <MfaSetupContent />
-    </Suspense>
+    <AuthShell>
+      <Suspense>
+        <MfaSetupContent />
+      </Suspense>
+    </AuthShell>
   );
 }

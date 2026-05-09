@@ -16,6 +16,7 @@ import { signupAction } from "@/lib/actions/signup-actions";
 import { ShieldCheck, Loader2, Users, CheckCircle } from "lucide-react";
 import type { WorkspaceInvitationData } from "@/types/onboarding";
 import { useTheme } from "@/components/theme/theme-provider";
+import { AuthShell } from "@/components/auth/auth-shell";
 
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? "";
 
@@ -636,24 +637,26 @@ function SignupContent() {
 
 export default function SignupPage() {
   return (
-    <Suspense
-      fallback={
-        <AuthCard>
-          <div className="space-y-1 text-center">
-            <h1 className="text-2xl font-bold tracking-tight" style={{ color: "var(--lp-ink)" }}>
-              Loading
-            </h1>
-            <p className="text-sm" style={{ color: inkSubtle }}>
-              Please wait...
-            </p>
-          </div>
-          <div className="mt-6 flex justify-center py-8">
-            <Loader2 className="h-8 w-8 animate-spin" style={{ color: "var(--lp-accent)" }} />
-          </div>
-        </AuthCard>
-      }
-    >
-      <SignupContent />
-    </Suspense>
+    <AuthShell>
+      <Suspense
+        fallback={
+          <AuthCard>
+            <div className="space-y-1 text-center">
+              <h1 className="text-2xl font-bold tracking-tight" style={{ color: "var(--lp-ink)" }}>
+                Loading
+              </h1>
+              <p className="text-sm" style={{ color: inkSubtle }}>
+                Please wait...
+              </p>
+            </div>
+            <div className="mt-6 flex justify-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin" style={{ color: "var(--lp-accent)" }} />
+            </div>
+          </AuthCard>
+        }
+      >
+        <SignupContent />
+      </Suspense>
+    </AuthShell>
   );
 }
