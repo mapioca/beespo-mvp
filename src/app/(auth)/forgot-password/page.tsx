@@ -9,6 +9,8 @@ import { Label } from "@/components/ui/label";
 import { toast } from "@/lib/toast";
 import { forgotPasswordAction } from "@/lib/actions/auth-actions";
 import { ArrowLeft, Mail } from "lucide-react";
+import { useTheme } from "@/components/theme/theme-provider";
+import { AuthShell } from "@/components/auth/auth-shell";
 
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? "";
 const inkSubtle = "color-mix(in srgb, var(--lp-ink) 65%, transparent)";
@@ -25,6 +27,7 @@ export default function ForgotPasswordPage() {
     const [isSuccess, setIsSuccess] = useState(false);
     const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
     const turnstileRef = useRef<TurnstileInstance | null>(null);
+    const { theme } = useTheme();
 
     const resetTurnstile = () => {
         setTurnstileToken(null);
@@ -34,7 +37,7 @@ export default function ForgotPasswordPage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (!turnstileToken) {
+        if (TURNSTILE_SITE_KEY && !turnstileToken) {
             toast.error("Please wait for the security check to complete.");
             return;
         }
@@ -64,6 +67,7 @@ export default function ForgotPasswordPage() {
 
     if (isSuccess) {
         return (
+            <AuthShell>
             <div
                 className="rounded-2xl p-7 sm:p-8"
                 style={{ background: "var(--lp-surface)", border: inkBorder }}
@@ -108,10 +112,12 @@ export default function ForgotPasswordPage() {
                     </p>
                 </div>
             </div>
+            </AuthShell>
         );
     }
 
     return (
+        <AuthShell>
         <div
             className="rounded-2xl p-7 sm:p-8"
             style={{ background: "var(--lp-surface)", border: inkBorder }}
@@ -149,14 +155,14 @@ export default function ForgotPasswordPage() {
                         onSuccess={setTurnstileToken}
                         onExpire={() => setTurnstileToken(null)}
                         onError={() => setTurnstileToken(null)}
-                        options={{ theme: "auto" }}
+                        options={{ theme }}
                     />
                 ) : null}
 
                 <Button
                     type="submit"
-                    className="w-full rounded-md border-0 transition-opacity hover:opacity-90"
-                    disabled={isLoading || !turnstileToken}
+                    className="w-full rounded-md border-0 transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+                    disabled={isLoading || (Boolean(TURNSTILE_SITE_KEY) && !turnstileToken)}
                     style={{ background: "var(--lp-accent)", color: "var(--lp-bg)" }}
                 >
                     {isLoading ? "Sending link..." : "Send reset link"}
@@ -175,5 +181,6 @@ export default function ForgotPasswordPage() {
                 </Button>
             </form>
         </div>
+        </AuthShell>
     );
 }

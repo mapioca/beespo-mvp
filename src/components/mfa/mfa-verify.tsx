@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "@/lib/toast";
 import { createClient } from "@/lib/supabase/client";
 import { TotpInput } from "@/components/mfa/totp-input";
-import { Shield } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 const inkSubtle = "color-mix(in srgb, var(--lp-ink) 65%, transparent)";
 const inkBorder = "1px solid color-mix(in srgb, var(--lp-ink) 18%, transparent)";
@@ -36,7 +36,6 @@ export function MfaVerify({ redirectTo = "/dashboard", setupPath = "/mfa/setup" 
     const loadFactors = async () => {
       const supabase = createClient();
 
-      // Check if already at aal2
       const { data: aalData } =
         await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
       if (aalData?.currentLevel === "aal2") {
@@ -87,7 +86,6 @@ export function MfaVerify({ redirectTo = "/dashboard", setupPath = "/mfa/setup" 
         return;
       }
 
-      // Handle "remember this device"
       if (rememberDevice) {
         try {
           const res = await fetch("/api/mfa/trust-device", {
@@ -115,75 +113,75 @@ export function MfaVerify({ redirectTo = "/dashboard", setupPath = "/mfa/setup" 
 
   if (isLoading) {
     return (
-      <p className="text-center text-sm" style={{ color: inkSubtle }}>
-        Loading...
-      </p>
+      <div className="flex min-h-[240px] items-center justify-center">
+        <Loader2 className="h-6 w-6 animate-spin" style={{ color: "var(--lp-accent)" }} />
+      </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col items-center text-center">
-        <Shield className="mb-2 h-8 w-8" style={{ color: inkSubtle }} />
-        <h1 className="text-xl font-bold" style={{ color: "var(--lp-ink)" }}>
-          Two-factor verification
-        </h1>
-        <p className="mt-1 text-sm" style={{ color: inkSubtle }}>
-          Enter the code from your authenticator app
-        </p>
-      </div>
-
-      <div
-        className="rounded-2xl p-7 sm:p-8"
-        style={{ background: "var(--lp-surface)", border: inkBorder }}
+    <>
+      <p
+        className="text-[11px] font-semibold uppercase tracking-[0.18em]"
+        style={{ color: "color-mix(in srgb, var(--lp-ink) 55%, transparent)" }}
       >
-        <div className="space-y-1">
-          <h2 className="text-lg font-semibold" style={{ color: "var(--lp-ink)" }}>
-            Verify identity
-          </h2>
-          <p className="text-sm" style={{ color: inkSubtle }}>
-            Open your authenticator app and enter the 6-digit code for Beespo.
-          </p>
-        </div>
+        Two-factor verification
+      </p>
+      <h1
+        className="mt-2 text-[2rem] font-bold tracking-tight leading-[1.1]"
+        style={{ color: "var(--lp-ink)" }}
+      >
+        Enter your code.
+      </h1>
+      <p className="mt-3 text-sm" style={{ color: inkSubtle }}>
+        Open your authenticator app and enter the 6-digit code for Beespo.
+      </p>
 
-        <div className="mt-6 space-y-4">
-          <TotpInput key={inputKey} onComplete={handleVerify} disabled={isVerifying} />
-          {isVerifying && (
-            <p className="text-center text-xs" style={{ color: inkSubtle }}>
-              Verifying...
-            </p>
-          )}
+      <div className="mt-8 space-y-6">
+        <TotpInput key={inputKey} onComplete={handleVerify} disabled={isVerifying} />
 
-          <div className="space-y-3 pt-2">
-            <div className="flex items-center gap-2">
-              <Checkbox
-                id="remember-device"
-                checked={rememberDevice}
-                onCheckedChange={(checked) => setRememberDevice(checked === true)}
-                disabled={isVerifying}
-              />
-              <Label
-                htmlFor="remember-device"
-                className="cursor-pointer text-sm"
-                style={{ color: inkSubtle }}
-              >
-                Remember this device for 30 days
-              </Label>
-            </div>
-
-            {rememberDevice && (
-              <Input
-                placeholder="Device name (e.g., Work Laptop, iPhone)"
-                value={deviceName}
-                onChange={(e) => setDeviceName(e.target.value)}
-                disabled={isVerifying}
-                className="rounded-md text-sm placeholder:opacity-60"
-                style={inputStyle}
-              />
-            )}
+        {isVerifying && (
+          <div className="flex items-center justify-center gap-2 text-xs" style={{ color: inkSubtle }}>
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            Verifying…
           </div>
+        )}
+
+        <div
+          className="space-y-3 rounded-lg p-3.5"
+          style={{
+            background: "color-mix(in srgb, var(--lp-ink) 4%, transparent)",
+            border: inkBorder,
+          }}
+        >
+          <div className="flex items-center gap-2.5">
+            <Checkbox
+              id="remember-device"
+              checked={rememberDevice}
+              onCheckedChange={(checked) => setRememberDevice(checked === true)}
+              disabled={isVerifying}
+            />
+            <Label
+              htmlFor="remember-device"
+              className="cursor-pointer text-sm font-medium leading-none"
+              style={{ color: "var(--lp-ink)" }}
+            >
+              Remember this device for 30 days
+            </Label>
+          </div>
+
+          {rememberDevice && (
+            <Input
+              placeholder="Device name (optional, e.g. Work Laptop)"
+              value={deviceName}
+              onChange={(e) => setDeviceName(e.target.value)}
+              disabled={isVerifying}
+              className="rounded-md text-sm placeholder:opacity-60"
+              style={inputStyle}
+            />
+          )}
         </div>
       </div>
-    </div>
+    </>
   );
 }

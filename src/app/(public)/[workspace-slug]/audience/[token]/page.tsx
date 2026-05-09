@@ -7,6 +7,7 @@ import {
     type AudienceAgendaEntry,
     type AudienceMeetingSpecialType,
 } from "@/components/audience/audience-program";
+import { loadAudienceAnnouncements } from "@/lib/audience/announcements";
 import { PublicAudienceView } from "./public-audience-view";
 
 interface PublicAudiencePageProps {
@@ -90,7 +91,7 @@ export default async function PublicAudiencePage({ params }: PublicAudiencePageP
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: entry } = await (supabase.from("sacrament_planner_entries") as any)
-        .select("meeting_date, meeting_state, audience_published_at")
+        .select("meeting_date, meeting_state, notes_state, audience_published_at")
         .eq("workspace_id", link.workspace_id)
         .not("audience_published_at", "is", null)
         .lte("audience_published_at", nowIso)
@@ -101,16 +102,27 @@ export default async function PublicAudiencePage({ params }: PublicAudiencePageP
     const unitName: string = workspace.unit_name || workspace.name || "";
 
     if (!entry) {
-        return <PublicAudienceView unitName={unitName} meeting={null} isoDate={null} />;
+        return <PublicAudienceView unitName={unitName} meeting={null} isoDate={null} announcements={[]} />;
     }
 
     const meeting = buildAudienceMeeting(entry.meeting_state);
+    const selection =
+        entry.notes_state && typeof entry.notes_state === "object"
+            ? (entry.notes_state as { announcements?: Array<{ id?: string; checked?: boolean }> })
+                  .announcements
+            : undefined;
+    const announcements = await loadAudienceAnnouncements(
+        supabase,
+        link.workspace_id as string,
+        selection,
+    );
 
     return (
         <PublicAudienceView
             unitName={unitName}
             meeting={meeting}
             isoDate={entry.meeting_date as string}
+            announcements={announcements}
         />
     );
 }

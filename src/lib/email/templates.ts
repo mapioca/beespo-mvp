@@ -102,3 +102,50 @@ export const getResetPasswordEmailHtml = (link: string, email: string) => {
 </html>
   `;
 };
+
+export const getFailedLoginNoticeHtml = (email: string, ip: string) => {
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://beespo.com';
+  const resetUrl = `${appUrl}/forgot-password`;
+  const securityUrl = `${appUrl}/settings/account`;
+
+  return `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Suspicious sign-in attempts on your Beespo account</title>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f4f4f5; margin: 0; padding: 0; color: #09090b;">
+  <div style="max-width: 480px; margin: 40px auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);">
+    <div style="padding: 32px;">
+      <h1 style="font-size: 20px; margin: 0 0 16px 0;">Suspicious sign-in attempts</h1>
+      <p style="margin: 0 0 16px 0; line-height: 1.5;">
+        We blocked multiple failed sign-in attempts on the Beespo account for
+        <strong>${email}</strong> from IP <code style="background:#f4f4f5;padding:2px 6px;border-radius:4px;">${ip}</code>.
+      </p>
+      <p style="margin: 0 0 16px 0; line-height: 1.5;">
+        Your account is safe. We've slowed the attacker down with rate limits, and they have not gained access.
+      </p>
+      <p style="margin: 0 0 16px 0; line-height: 1.5;"><strong>What to do:</strong></p>
+      <ul style="margin: 0 0 16px 0; padding-left: 20px; line-height: 1.6;">
+        <li><strong>If this was you</strong>, you may have mistyped your password — try again, or
+          <a href="${resetUrl}" style="color: #c2410c;">reset it</a>.</li>
+        <li><strong>If this was not you</strong>, your password may have been exposed in a breach
+          on another site. We recommend resetting it and enabling two-factor authentication
+          in <a href="${securityUrl}" style="color: #c2410c;">your account settings</a>.</li>
+      </ul>
+      <p style="margin: 0; line-height: 1.5; color: #71717a; font-size: 13px;">
+        You will only receive one of these emails per hour, even if attacks continue.
+      </p>
+    </div>
+    <div style="padding: 16px 32px; background-color: #fafafa; text-align: center;">
+      <p style="font-size: 12px; color: #71717a; margin: 0;">
+        &copy; ${new Date().getFullYear()} Beespo. Sent because of activity on your account.
+      </p>
+    </div>
+  </div>
+</body>
+</html>
+  `;
+};

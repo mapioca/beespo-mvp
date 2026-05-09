@@ -61,7 +61,7 @@ export function TotpInput({ onComplete, disabled = false }: TotpInputProps) {
   };
 
   return (
-    <div className="flex gap-2 justify-center">
+    <div className="flex gap-2 sm:gap-2.5 justify-center">
       {values.map((value, index) => (
         <Input
           key={index}
@@ -74,7 +74,16 @@ export function TotpInput({ onComplete, disabled = false }: TotpInputProps) {
           onKeyDown={(e) => handleKeyDown(index, e)}
           onPaste={index === 0 ? handlePaste : undefined}
           disabled={disabled}
-          className="w-12 h-14 text-center text-xl font-mono"
+          aria-label={`Digit ${index + 1}`}
+          className="h-14 w-11 sm:h-16 sm:w-12 rounded-lg p-0 text-center text-2xl font-semibold font-mono tabular-nums shadow-sm transition-[border-color,box-shadow] focus-visible:ring-2 focus-visible:ring-offset-0"
+          style={{
+            background: "var(--lp-bg)",
+            color: "var(--lp-ink)",
+            borderColor: value
+              ? "color-mix(in srgb, var(--lp-accent) 55%, transparent)"
+              : "color-mix(in srgb, var(--lp-ink) 22%, transparent)",
+            borderWidth: 1,
+          }}
           autoComplete="one-time-code"
         />
       ))}

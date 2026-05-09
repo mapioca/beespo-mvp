@@ -1,5 +1,6 @@
 import {
     AudienceProgram,
+    type AudienceAnnouncement,
     type AudienceMeeting,
 } from "@/components/audience/audience-program";
 
@@ -7,9 +8,10 @@ type PublicAudienceViewProps = {
     unitName: string;
     meeting: AudienceMeeting | null;
     isoDate: string | null;
+    announcements: AudienceAnnouncement[];
 };
 
-export function PublicAudienceView({ unitName, meeting, isoDate }: PublicAudienceViewProps) {
+export function PublicAudienceView({ unitName, meeting, isoDate, announcements }: PublicAudienceViewProps) {
     if (!meeting || !isoDate) {
         return (
             <div className="mx-auto flex flex-1 max-w-md flex-col items-center justify-center px-6 py-16 text-center">
@@ -26,7 +28,12 @@ export function PublicAudienceView({ unitName, meeting, isoDate }: PublicAudienc
 
     return (
         <div className="mx-auto flex w-full max-w-3xl flex-col items-center px-3 py-8 sm:px-6 sm:py-12">
-            <AudienceProgram unitName={unitName} isoDate={isoDate} meeting={meeting} />
+            <AudienceProgram
+                unitName={unitName}
+                isoDate={isoDate}
+                meeting={meeting}
+                announcements={announcements}
+            />
         </div>
     );
 }

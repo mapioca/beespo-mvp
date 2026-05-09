@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState, Suspense } from "react";
+import { useEffect, useRef, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
 import { Button } from "@/components/ui/button";
 import {
     Card,
@@ -12,6 +13,9 @@ import {
 } from "@/components/ui/card";
 import { Loader2, CheckCircle, XCircle } from "lucide-react";
 import Link from "next/link";
+import { useTheme } from "@/components/theme/theme-provider";
+
+const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? "";
 
 function AcceptInviteContent() {
     const router = useRouter();
@@ -24,6 +28,10 @@ function AcceptInviteContent() {
     const [invitedEmail, setInvitedEmail] = useState("");
     const [invitedRole, setInvitedRole] = useState("");
     const [existingWorkspaceName, setExistingWorkspaceName] = useState("");
+    const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+    const turnstileRef = useRef<TurnstileInstance | null>(null);
+    const hasAcceptedRef = useRef(false);
+    const { theme } = useTheme();
 
     useEffect(() => {
         if (!token) {
@@ -32,12 +40,19 @@ function AcceptInviteContent() {
             return;
         }
 
+        // If Turnstile isn't configured, skip the gate (dev environments).
+        // In prod, the env var is required and verified server-side.
+        if (TURNSTILE_SITE_KEY && !turnstileToken) return;
+
+        if (hasAcceptedRef.current) return;
+        hasAcceptedRef.current = true;
+
         const acceptInvitation = async () => {
             try {
                 const response = await fetch("/api/invitations/accept", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ token }),
+                    body: JSON.stringify({ token, turnstileToken }),
                 });
 
                 const data = await response.json();
@@ -80,7 +95,7 @@ function AcceptInviteContent() {
         };
 
         acceptInvitation();
-    }, [token, router]);
+    }, [token, turnstileToken, router]);
 
     return (
         <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-background to-muted">
@@ -105,7 +120,19 @@ function AcceptInviteContent() {
                 </CardHeader>
                 <CardContent className="flex flex-col items-center space-y-4">
                     {status === "loading" && (
-                        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                        <>
+                            <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                            {TURNSTILE_SITE_KEY ? (
+                                <Turnstile
+                                    ref={turnstileRef}
+                                    siteKey={TURNSTILE_SITE_KEY}
+                                    onSuccess={setTurnstileToken}
+                                    onExpire={() => setTurnstileToken(null)}
+                                    onError={() => setTurnstileToken(null)}
+                                    options={{ theme }}
+                                />
+                            ) : null}
+                        </>
                     )}
 
                     {(status === "needsSignup" || status === "needsLogin" || status === "blocked") && (
