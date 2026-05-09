@@ -1,4 +1,5 @@
 import { richTextToPlainText } from "./rich-text"
+import type { AssignmentStatus } from "./sacrament-confirmations"
 
 export type MeetingSpecialType =
   | "standard"
@@ -23,6 +24,9 @@ type StaticEntry = {
   detail?: string
   assigneeField?: AgendaAssigneeField
   assigneeName?: string
+  assigneeStatus?: AssignmentStatus
+  assigneeDeclineNote?: string | null
+  assigneeDeclinedAt?: string | null
   hymnId?: string
   hymnNumber?: number
   hymnTitle?: string
@@ -37,6 +41,9 @@ type SpeakerEntry = {
   topic: string
   topicUrl?: string | null
   durationMinutes?: number | null
+  speakerStatus?: AssignmentStatus
+  speakerDeclineNote?: string | null
+  speakerDeclinedAt?: string | null
 }
 
 type TestimonyEntry = {
@@ -83,8 +90,20 @@ export type ArchiveMeetingSummary = {
   openingHymn: string | null
   sacramentHymn: string | null
   closingHymn: string | null
-  speakers: Array<{ id: string; name: string | null; topic: string | null }>
-  prayers: Array<{ id: string; role: "Invocation" | "Benediction"; name: string | null }>
+  speakers: Array<{
+    id: string
+    name: string | null
+    topic: string | null
+    status: AssignmentStatus | null
+    declineNote: string | null
+  }>
+  prayers: Array<{
+    id: string
+    role: "Invocation" | "Benediction"
+    name: string | null
+    status: AssignmentStatus | null
+    declineNote: string | null
+  }>
   announcements: PlannerItem[]
   business: PlannerItem[]
   notes: string
@@ -314,22 +333,40 @@ export function buildArchiveMeetingSummary(args: {
   const entries = getVisibleAgendaEntries(meeting)
   const speakers = entries
     .filter((entry): entry is SpeakerEntry => entry.kind === "speaker")
-    .map((entry) => ({
-      id: entry.id,
-      name: normalizeText(entry.speakerName),
-      topic: normalizeText(entry.topic),
-    }))
+    .map((entry) => {
+      const name = normalizeText(entry.speakerName)
+      // Treat legacy assignments (name set, no status) as pending so the
+      // archive shows the same default state the planner does.
+      const status: AssignmentStatus | null = name
+        ? entry.speakerStatus ?? "pending"
+        : null
+      return {
+        id: entry.id,
+        name,
+        topic: normalizeText(entry.topic),
+        status,
+        declineNote: entry.speakerDeclineNote ?? null,
+      }
+    })
   const prayers = entries
     .filter(
       (entry): entry is StaticEntry =>
         entry.kind === "static" &&
         (entry.assigneeField === "invocation" || entry.assigneeField === "benediction")
     )
-    .map((entry) => ({
-      id: entry.id,
-      role: entry.assigneeField === "invocation" ? ("Invocation" as const) : ("Benediction" as const),
-      name: normalizeText(entry.assigneeName),
-    }))
+    .map((entry) => {
+      const name = normalizeText(entry.assigneeName)
+      const status: AssignmentStatus | null = name
+        ? entry.assigneeStatus ?? "pending"
+        : null
+      return {
+        id: entry.id,
+        role: entry.assigneeField === "invocation" ? ("Invocation" as const) : ("Benediction" as const),
+        name,
+        status,
+        declineNote: entry.assigneeDeclineNote ?? null,
+      }
+    })
 
   const title = normalizeText(meeting.title) ?? getMeetingTypeLabel(meeting.specialType)
   const openingHymn = getHymnLabel(getStaticEntry(entries, "opening-hymn"))

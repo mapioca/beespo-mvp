@@ -30,6 +30,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { cn } from "@/lib/utils"
 import { isRichTextEmpty, sanitizeRichTextHtml } from "@/lib/rich-text"
 import type { ArchiveMeetingSummary } from "@/lib/sacrament-archive"
+import { AssignmentStatusPill } from "@/components/meetings/sacrament-meeting/assignment-status-pill"
 
 type ArchiveScope = "all" | "standard" | "fast" | "conference"
 
@@ -294,8 +295,24 @@ export function ArchiveClient({ meetings }: { meetings: ArchiveMeetingSummary[] 
                         <div className="space-y-3">
                           {selectedMeeting.speakers.map((speaker, index) => (
                             <div key={speaker.id} className="rounded-[10px] border border-border/70 px-4 py-3">
-                              <div className="text-sm font-medium">
-                                {speaker.name || `Speaker ${index + 1}`}
+                              <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                                <span
+                                  className={cn(
+                                    "text-sm font-medium",
+                                    speaker.status === "declined" &&
+                                      "text-muted-foreground line-through decoration-muted-foreground/50"
+                                  )}
+                                >
+                                  {speaker.name || `Speaker ${index + 1}`}
+                                </span>
+                                {speaker.name && speaker.status ? (
+                                  <AssignmentStatusPill
+                                    status={speaker.status}
+                                    declineNote={speaker.declineNote}
+                                    onChange={() => {}}
+                                    interactive={false}
+                                  />
+                                ) : null}
                               </div>
                               <div className="mt-1 text-sm text-muted-foreground">
                                 {speaker.topic || "No topic recorded"}
@@ -333,7 +350,34 @@ export function ArchiveClient({ meetings }: { meetings: ArchiveMeetingSummary[] 
                       ) : (
                         <div className="space-y-3">
                           {selectedMeeting.prayers.map((prayer) => (
-                            <ArchiveFact key={prayer.id} label={prayer.role} value={prayer.name} />
+                            <div
+                              key={prayer.id}
+                              className="rounded-[10px] border border-border/70 px-4 py-3"
+                            >
+                              <div className="text-xs uppercase tracking-[0.16em] text-muted-foreground/75">
+                                {prayer.role}
+                              </div>
+                              <div className="mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                                <span
+                                  className={cn(
+                                    "text-sm font-medium",
+                                    prayer.name && prayer.status === "declined"
+                                      ? "text-muted-foreground line-through decoration-muted-foreground/50"
+                                      : "text-foreground"
+                                  )}
+                                >
+                                  {prayer.name || "Not recorded"}
+                                </span>
+                                {prayer.name && prayer.status ? (
+                                  <AssignmentStatusPill
+                                    status={prayer.status}
+                                    declineNote={prayer.declineNote}
+                                    onChange={() => {}}
+                                    interactive={false}
+                                  />
+                                ) : null}
+                              </div>
+                            </div>
                           ))}
                         </div>
                       )}
