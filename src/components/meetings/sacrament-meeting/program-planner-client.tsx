@@ -84,7 +84,14 @@ import {
 } from "@/components/ui/select"
 import { createClient } from "@/lib/supabase/client"
 import { generateBusinessScript } from "@/lib/business-script-generator"
-import { generateCombinedBusinessScript, type BusinessCategoryKey } from "@/lib/business/combined-script"
+import {
+  BUSINESS_CATEGORY_ORDER,
+  BUSINESS_CATEGORY_PLURAL,
+  generateCombinedBusinessScript,
+  isBusinessCategoryKey,
+  type BusinessCategoryKey,
+} from "@/lib/business/combined-script"
+import type { ConductBusinessSection } from "@/components/meetings/sacrament-meeting/conduct-view"
 import { isAnnouncementInWindow } from "@/lib/announcement-utils"
 import type { BusinessItem } from "@/components/business/business-table"
 import { cn } from "@/lib/utils"
@@ -174,6 +181,12 @@ type PlannerItem = {
   title: string
   checked: boolean
   detail?: string | null
+  // Business-specific metadata. Only populated for business items so the
+  // conduct view can group them by category and display people + a single
+  // combined script per category.
+  category?: string
+  personName?: string
+  positionCalling?: string
 }
 
 type PlannerNotes = {
@@ -493,6 +506,55 @@ function meetingHasUserChanges(
       agendaEntriesHaveUserChanges(meeting.standardEntries, defaultMeeting.standardEntries) ||
       agendaEntriesHaveUserChanges(meeting.fastEntries, defaultMeeting.fastEntries)
   )
+}
+
+function buildConductBusinessSections(
+  items: PlannerItem[],
+  scripts: Record<string, string> | undefined
+): ConductBusinessSection[] {
+  const checked = items.filter((item) => item.checked)
+  if (checked.length === 0) return []
+
+  type Bucket = { key: BusinessCategoryKey; items: PlannerItem[] }
+  const buckets = new Map<BusinessCategoryKey, Bucket>()
+
+  for (const item of checked) {
+    const rawCategory = item.category
+    const key: BusinessCategoryKey =
+      rawCategory && isBusinessCategoryKey(rawCategory) ? rawCategory : "other"
+    let bucket = buckets.get(key)
+    if (!bucket) {
+      bucket = { key, items: [] }
+      buckets.set(key, bucket)
+    }
+    bucket.items.push(item)
+  }
+
+  const ordered: BusinessCategoryKey[] = [
+    ...BUSINESS_CATEGORY_ORDER.filter((key) => buckets.has(key)),
+    ...Array.from(buckets.keys()).filter((key) => !BUSINESS_CATEGORY_ORDER.includes(key)),
+  ]
+
+  return ordered.map((key) => {
+    const bucket = buckets.get(key)!
+    const persisted = scripts?.[key]?.trim()
+    const fallback = bucket.items
+      .map((item) => item.detail?.trim())
+      .filter((value): value is string => Boolean(value))
+      .join("\n\n")
+
+    return {
+      category: key,
+      label: BUSINESS_CATEGORY_PLURAL[key] ?? key,
+      count: bucket.items.length,
+      people: bucket.items.map((item) => ({
+        id: item.id,
+        name: item.personName ?? item.title,
+        subtitle: item.positionCalling ?? null,
+      })),
+      script: persisted || fallback,
+    }
+  })
 }
 
 function plannerNotesHaveUserChanges(notes: PlannerNotes | undefined) {
@@ -2758,6 +2820,9 @@ export function SacramentMeetingPlannerClient({
         title: b.person_name,
         checked: false,
         detail: b.position_calling,
+        category: b.category,
+        personName: b.person_name,
+        positionCalling: b.position_calling,
       }))
 
       // Process scheduled business items and generate scripts
@@ -2807,6 +2872,9 @@ export function SacramentMeetingPlannerClient({
         title: `${b.person_name}${b.position_calling ? ` – ${b.position_calling}` : ""}`,
         checked: true,
         detail: generateBusinessScript(b),
+        category: b.category,
+        personName: b.person_name,
+        positionCalling: b.position_calling,
       }))
 
       setNotesByDate((prev) => ({
@@ -3555,18 +3623,46 @@ export function SacramentMeetingPlannerClient({
         items={breadcrumbItems}
         action={
           <div className="flex items-center gap-2 bg-surface-canvas">
-            <Button type="button" variant="ghost" size="sm" onClick={() => router.push("/meetings/sacrament/speakers")} className="bg-surface-raised border border-border">
+            {/* Mobile: navigations + audience modal collapse into an overflow menu */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="border border-border bg-surface-raised sm:hidden"
+                  aria-label="More planner actions"
+                >
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-44">
+                <DropdownMenuItem onClick={() => router.push("/meetings/sacrament/speakers")}>
+                  Speakers
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => router.push("/meetings/sacrament/business")}>
+                  Business
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setAudienceOpen(true)}>
+                  Audience
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Desktop: full nav row */}
+            <Button type="button" variant="ghost" size="sm" onClick={() => router.push("/meetings/sacrament/speakers")} className="hidden border border-border bg-surface-raised sm:inline-flex">
               Speakers
               <span className="ml-1 hidden font-mono text-[10px] text-muted-foreground/80 sm:inline">⌥S</span>
             </Button>
-            <Button type="button" variant="ghost" size="sm" onClick={() => router.push("/meetings/sacrament/business")} className="bg-surface-raised border border-border">
+            <Button type="button" variant="ghost" size="sm" onClick={() => router.push("/meetings/sacrament/business")} className="hidden border border-border bg-surface-raised sm:inline-flex">
               Business
               <span className="ml-1 hidden font-mono text-[10px] text-muted-foreground/80 sm:inline">⌥B</span>
             </Button>
-            <Button type="button" variant="ghost" size="sm" onClick={() => setAudienceOpen(true)} className="bg-surface-raised border border-border">
+            <Button type="button" variant="ghost" size="sm" onClick={() => setAudienceOpen(true)} className="hidden border border-border bg-surface-raised sm:inline-flex">
               Audience
               <span className="ml-1 hidden font-mono text-[10px] text-muted-foreground/80 sm:inline">⌥A</span>
             </Button>
+
             <AudiencePublishButton isoDate={selectedSunday.isoDate} />
             <Button type="button" variant="default" size="sm" onClick={() => setConductOpen(true)}>
               <Play className="h-3.5 w-3.5" />
@@ -3854,7 +3950,10 @@ export function SacramentMeetingPlannerClient({
             assignments: selectedMeeting.assignments,
             entries: visibleEntries,
             announcements: selectedNotes.announcements,
-            business: selectedNotes.business,
+            businessSections: buildConductBusinessSections(
+              selectedNotes.business,
+              selectedMeeting.businessScripts
+            ),
           }}
           isoDate={selectedSunday.isoDate}
           notes={selectedNotes.notes}

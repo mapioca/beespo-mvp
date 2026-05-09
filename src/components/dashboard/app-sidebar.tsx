@@ -220,7 +220,7 @@ export function AppSidebar({
   };
 
   return (
-    <aside className="flex h-full w-[248px] shrink-0 flex-col gap-0.5 overflow-y-auto border-r border-[var(--app-nav-border)] bg-[var(--app-nav-bg)] px-2.5 py-3.5">
+    <aside className="flex h-full w-full shrink-0 flex-col gap-0.5 overflow-y-auto border-r border-[var(--app-nav-border)] bg-[var(--app-nav-bg)] px-2.5 pb-3.5 pt-12 lg:pt-3.5">
       {mounted ? (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

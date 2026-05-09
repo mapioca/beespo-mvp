@@ -53,13 +53,27 @@ type ConductItem = {
   detail?: string | null
 }
 
+export type ConductBusinessPerson = {
+  id: string
+  name: string
+  subtitle: string | null
+}
+
+export type ConductBusinessSection = {
+  category: string
+  label: string
+  count: number
+  people: ConductBusinessPerson[]
+  script: string
+}
+
 export type ConductMeeting = {
   title?: string
   specialType: MeetingSpecialType
   assignments: Record<AssignmentField, string>
   entries: AgendaEntry[]
   announcements: ConductItem[]
-  business: ConductItem[]
+  businessSections: ConductBusinessSection[]
 }
 
 export type ConductViewProps = {
@@ -98,11 +112,15 @@ type Step = {
 
 // ─── Build agenda steps from meeting data ────────────────────────────────────
 
+function totalBusinessCount(sections: ConductBusinessSection[]): number {
+  return sections.reduce((sum, section) => sum + section.count, 0)
+}
+
 function buildAgenda(meeting: ConductMeeting): Step[] {
   const steps: Step[] = []
   const { entries, assignments, specialType } = meeting
   const announcements = meeting.announcements.filter((item) => item.checked)
-  const business = meeting.business.filter((item) => item.checked)
+  const businessCount = totalBusinessCount(meeting.businessSections)
 
   const getStatic = (id: string) =>
     entries.find((e): e is StaticEntry => e.kind === "static" && e.id === id)
@@ -135,13 +153,13 @@ function buildAgenda(meeting: ConductMeeting): Step[] {
   })
 
   // Ward business
-  if (business.length > 0) {
+  if (businessCount > 0) {
     steps.push({
       key: "ward-business",
       kind: "business",
       eyebrow: "Ward Business",
       title: "Sustainings & business",
-      meta: `${business.length} business item${business.length === 1 ? "" : "s"}`,
+      meta: `${businessCount} business item${businessCount === 1 ? "" : "s"}`,
     })
   }
 
@@ -267,7 +285,7 @@ export function ConductView({
   const steps = buildAgenda(meeting)
   const total = steps.length
   const checkedAnnouncements = meeting.announcements.filter((item) => item.checked)
-  const checkedBusiness = meeting.business.filter((item) => item.checked)
+  const businessSections = meeting.businessSections
 
   const [mounted, setMounted] = useState(false)
   const [cur, setCur] = useState(0)
@@ -534,7 +552,43 @@ export function ConductView({
                   {/* Business card — inline under current ward business step */}
                   {isBusinessCurrent && (
                     <div className="mb-1.5 rounded-[14px] border border-[#d8d2bf] bg-white p-5 shadow-[0_12px_40px_rgba(60,50,30,0.10),0_0_0_1px_rgba(60,50,30,0.05)] sm:p-8 dark:border-[#2a2a2a] dark:bg-[#141414] dark:shadow-[0_12px_40px_rgba(0,0,0,0.4),0_0_0_1px_rgba(255,255,255,0.05)]">
-                      <ConductItemsList title="Business" items={checkedBusiness} />
+                      {businessSections.map((section, idx) => (
+                        <section
+                          key={section.category}
+                          className={cn(
+                            idx > 0 && "mt-6 border-t border-[#f0ece6] pt-6 sm:mt-8 sm:pt-8 dark:border-[#1f1f1f]"
+                          )}
+                        >
+                          <div className="mb-3 flex items-center gap-3">
+                            <h2 className="text-[12px] font-semibold uppercase tracking-[0.08em] text-[#8a867a] dark:text-[#6b6b6b]">
+                              {section.label}
+                            </h2>
+                            <span className="font-mono text-[11px] tabular-nums text-[#8a867a] dark:text-[#6b6b6b]">
+                              · {section.count}
+                            </span>
+                            <div className="h-px flex-1 bg-[#e6e1d1] dark:bg-[#1f1f1f]" />
+                          </div>
+                          <div className="space-y-2.5">
+                            {section.people.map((person) => (
+                              <div key={person.id}>
+                                <div className="font-serif text-[19px] leading-snug text-[#141413] dark:text-[#e5e5e5]">
+                                  {person.name}
+                                </div>
+                                {person.subtitle?.trim() ? (
+                                  <div className="mt-0.5 text-[13px] text-[#57544c] dark:text-[#a1a1a1]">
+                                    {person.subtitle}
+                                  </div>
+                                ) : null}
+                              </div>
+                            ))}
+                          </div>
+                          {section.script.trim() ? (
+                            <p className="mt-4 whitespace-pre-line text-[14px] leading-6 text-[#57544c] dark:text-[#a1a1a1]">
+                              {section.script}
+                            </p>
+                          ) : null}
+                        </section>
+                      ))}
                     </div>
                   )}
 
