@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "@/lib/toast";
 import { createClient } from "@/lib/supabase/client";
 import { TotpInput } from "@/components/mfa/totp-input";
-import { ShieldCheck, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 const inkSubtle = "color-mix(in srgb, var(--lp-ink) 65%, transparent)";
 const inkBorder = "1px solid color-mix(in srgb, var(--lp-ink) 18%, transparent)";
@@ -113,39 +113,31 @@ export function MfaVerify({ redirectTo = "/dashboard", setupPath = "/mfa/setup" 
 
   if (isLoading) {
     return (
-      <div
-        className="rounded-2xl p-7 sm:p-8 flex items-center justify-center"
-        style={{ background: "var(--lp-surface)", border: inkBorder, minHeight: 220 }}
-      >
+      <div className="flex min-h-[240px] items-center justify-center">
         <Loader2 className="h-6 w-6 animate-spin" style={{ color: "var(--lp-accent)" }} />
       </div>
     );
   }
 
   return (
-    <div
-      className="rounded-2xl p-7 sm:p-8"
-      style={{ background: "var(--lp-surface)", border: inkBorder }}
-    >
-      <div className="flex flex-col items-center text-center">
-        <div
-          className="mb-4 flex h-14 w-14 items-center justify-center rounded-full"
-          style={{
-            background: "color-mix(in srgb, var(--lp-accent) 12%, transparent)",
-            border: "1px solid color-mix(in srgb, var(--lp-accent) 24%, transparent)",
-          }}
-        >
-          <ShieldCheck className="h-6 w-6" style={{ color: "var(--lp-accent)" }} />
-        </div>
-        <h1 className="text-2xl font-bold tracking-tight" style={{ color: "var(--lp-ink)" }}>
-          Two-factor verification
-        </h1>
-        <p className="mt-1.5 text-sm" style={{ color: inkSubtle }}>
-          Enter the 6-digit code from your authenticator app to continue.
-        </p>
-      </div>
+    <>
+      <p
+        className="text-[11px] font-semibold uppercase tracking-[0.18em]"
+        style={{ color: "color-mix(in srgb, var(--lp-ink) 55%, transparent)" }}
+      >
+        Two-factor verification
+      </p>
+      <h1
+        className="mt-2 text-[2rem] font-bold tracking-tight leading-[1.1]"
+        style={{ color: "var(--lp-ink)" }}
+      >
+        Enter your code.
+      </h1>
+      <p className="mt-3 text-sm" style={{ color: inkSubtle }}>
+        Open your authenticator app and enter the 6-digit code for Beespo.
+      </p>
 
-      <div className="mt-7 space-y-6">
+      <div className="mt-8 space-y-6">
         <TotpInput key={inputKey} onComplete={handleVerify} disabled={isVerifying} />
 
         {isVerifying && (
@@ -190,6 +182,6 @@ export function MfaVerify({ redirectTo = "/dashboard", setupPath = "/mfa/setup" 
           )}
         </div>
       </div>
-    </div>
+    </>
   );
 }

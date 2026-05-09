@@ -16,7 +16,8 @@ import { signupAction } from "@/lib/actions/signup-actions";
 import { ShieldCheck, Loader2, Users, CheckCircle } from "lucide-react";
 import type { WorkspaceInvitationData } from "@/types/onboarding";
 import { useTheme } from "@/components/theme/theme-provider";
-import { AuthShell } from "@/components/auth/auth-shell";
+import { AuthTwoPane } from "@/components/auth/auth-two-pane";
+import { SignupSidePanel } from "@/components/auth/signup-side-panel";
 
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? "";
 
@@ -29,17 +30,6 @@ const inputStyle = {
   border: "1px solid color-mix(in srgb, var(--lp-ink) 22%, transparent)",
 };
 const accentBtnStyle = { background: "var(--lp-accent)", color: "var(--lp-bg)" };
-
-function AuthCard({ children }: { children: React.ReactNode }) {
-  return (
-    <div
-      className="rounded-2xl p-7 sm:p-8"
-      style={{ background: "var(--lp-surface)", border: inkBorder }}
-    >
-      {children}
-    </div>
-  );
-}
 
 function safeInternalPath(pathname: string | null, fallback: string) {
   if (!pathname) return fallback;
@@ -337,34 +327,47 @@ function SignupContent() {
   // Show loading state while validating workspace invitation
   if (isValidatingToken) {
     return (
-      <AuthCard>
-        <div className="space-y-1 text-center">
-          <h1 className="text-2xl font-bold tracking-tight" style={{ color: "var(--lp-ink)" }}>
-            Validating invitation
-          </h1>
-          <p className="text-sm" style={{ color: inkSubtle }}>
-            Please wait while we verify your invitation...
-          </p>
-        </div>
-        <div className="mt-6 flex justify-center py-8">
+      <>
+        <p
+          className="text-[11px] font-semibold uppercase tracking-[0.18em]"
+          style={{ color: "color-mix(in srgb, var(--lp-ink) 55%, transparent)" }}
+        >
+          Sign up
+        </p>
+        <h1
+          className="mt-2 text-[2rem] font-bold tracking-tight leading-[1.1]"
+          style={{ color: "var(--lp-ink)" }}
+        >
+          Validating invitation…
+        </h1>
+        <div className="mt-8 flex justify-center py-6">
           <Loader2 className="h-8 w-8 animate-spin" style={{ color: "var(--lp-accent)" }} />
         </div>
-      </AuthCard>
+      </>
     );
   }
 
   return (
-    <AuthCard>
-      <div className="space-y-1">
-        <h1 className="text-2xl font-bold tracking-tight" style={{ color: "var(--lp-ink)" }}>
-          Create an account
-        </h1>
-        <p className="text-sm" style={{ color: inkSubtle }}>
-          {isWorkspaceInvite && workspaceInviteData
-            ? `Join ${workspaceInviteData.workspaceName} on Beespo`
-            : "Enter your invite code and information to get started"}
-        </p>
-      </div>
+    <>
+      <p
+        className="text-[11px] font-semibold uppercase tracking-[0.18em]"
+        style={{ color: "color-mix(in srgb, var(--lp-ink) 55%, transparent)" }}
+      >
+        Sign up
+      </p>
+      <h1
+        className="mt-2 text-[2rem] font-bold tracking-tight leading-[1.1]"
+        style={{ color: "var(--lp-ink)" }}
+      >
+        {isWorkspaceInvite && workspaceInviteData
+          ? `Join ${workspaceInviteData.workspaceName}.`
+          : "Create your account."}
+      </h1>
+      <p className="mt-3 text-sm" style={{ color: inkSubtle }}>
+        {isWorkspaceInvite && workspaceInviteData
+          ? `You've been invited as ${workspaceInviteData.role}.`
+          : "Beespo is currently invite-only. Enter your invite code to continue."}
+      </p>
 
       <div className="mt-6 space-y-4">
         {/* Workspace Invitation Banner */}
@@ -631,32 +634,22 @@ function SignupContent() {
           </Link>
         </p>
       )}
-    </AuthCard>
+    </>
   );
 }
 
 export default function SignupPage() {
   return (
-    <AuthShell>
+    <AuthTwoPane sidePanel={<SignupSidePanel />}>
       <Suspense
         fallback={
-          <AuthCard>
-            <div className="space-y-1 text-center">
-              <h1 className="text-2xl font-bold tracking-tight" style={{ color: "var(--lp-ink)" }}>
-                Loading
-              </h1>
-              <p className="text-sm" style={{ color: inkSubtle }}>
-                Please wait...
-              </p>
-            </div>
-            <div className="mt-6 flex justify-center py-8">
-              <Loader2 className="h-8 w-8 animate-spin" style={{ color: "var(--lp-accent)" }} />
-            </div>
-          </AuthCard>
+          <div className="flex min-h-[240px] items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin" style={{ color: "var(--lp-accent)" }} />
+          </div>
         }
       >
         <SignupContent />
       </Suspense>
-    </AuthShell>
+    </AuthTwoPane>
   );
 }

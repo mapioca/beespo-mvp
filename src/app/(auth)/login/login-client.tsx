@@ -10,7 +10,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/lib/toast";
 import { loginAction } from "@/lib/actions/auth-actions";
+import { createClient } from "@/lib/supabase/client";
 import { useTheme } from "@/components/theme/theme-provider";
+import { AuthTwoPane } from "@/components/auth/auth-two-pane";
 import { LoginSidePanel } from "@/components/auth/login-side-panel";
 
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? "";
@@ -46,6 +48,28 @@ export default function LoginClient() {
   const resetTurnstile = () => {
     setTurnstileToken(null);
     turnstileRef.current?.reset();
+  };
+
+  const handleGoogleSignIn = async () => {
+    setIsLoading(true);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+          queryParams: { access_type: "offline", prompt: "consent" },
+        },
+      });
+      if (error) {
+        toast.error(error.message || "Failed to sign in with Google");
+        setIsLoading(false);
+      }
+      // On success the browser navigates to Google; leave isLoading true.
+    } catch {
+      toast.error("An unexpected error occurred. Please try again.");
+      setIsLoading(false);
+    }
   };
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -105,35 +129,29 @@ export default function LoginClient() {
     isLoading || (Boolean(TURNSTILE_SITE_KEY) && !turnstileToken);
 
   return (
-    <div
-      className="grid min-h-screen lg:grid-cols-[1.05fr_1fr]"
-      style={{ background: "var(--lp-bg)" }}
-    >
-      <LoginSidePanel />
-
-      <main className="flex items-center justify-center px-6 py-12 sm:px-10">
-        <div className="w-full max-w-sm">
-          {/* Mobile-only brand mark (the side panel is hidden on mobile) */}
-          <Link
-            href="/"
-            className="mb-10 inline-block text-xl font-bold tracking-tight lg:hidden"
-            style={{ color: "var(--lp-ink)" }}
-          >
-            Beespo
-          </Link>
-
-          <p
-            className="text-[11px] font-semibold uppercase tracking-[0.18em]"
-            style={{ color: "color-mix(in srgb, var(--lp-ink) 55%, transparent)" }}
-          >
-            Sign in
-          </p>
-          <h1
-            className="mt-2 text-[2rem] font-bold tracking-tight leading-[1.1]"
-            style={{ color: "var(--lp-ink)" }}
-          >
-            Welcome back.
-          </h1>
+    <AuthTwoPane sidePanel={<LoginSidePanel />}>
+      <p
+        className="text-[11px] font-semibold uppercase tracking-[0.18em]"
+        style={{ color: "color-mix(in srgb, var(--lp-ink) 55%, transparent)" }}
+      >
+        Sign in
+      </p>
+      <h1
+        className="mt-2 text-[2rem] font-bold tracking-tight leading-[1.1]"
+        style={{ color: "var(--lp-ink)" }}
+      >
+        Welcome back.
+      </h1>
+      <p className="relative z-10 mt-3 text-sm" style={{ color: inkSubtle }}>
+        New user?{" "}
+        <Link
+          href={signupHref}
+          className="font-medium underline underline-offset-4"
+          style={{ color: "var(--lp-accent)" }}
+        >
+          Create an account
+        </Link>
+      </p>
 
           <form onSubmit={handleLogin} className="mt-8 space-y-4">
             <div className="space-y-1.5">
@@ -197,16 +215,14 @@ export default function LoginClient() {
             </div>
 
             {TURNSTILE_SITE_KEY ? (
-              <div className="overflow-hidden rounded-md">
-                <Turnstile
-                  ref={turnstileRef}
-                  siteKey={TURNSTILE_SITE_KEY}
-                  onSuccess={setTurnstileToken}
-                  onExpire={() => setTurnstileToken(null)}
-                  onError={() => setTurnstileToken(null)}
-                  options={{ theme, size: "flexible" }}
-                />
-              </div>
+              <Turnstile
+                ref={turnstileRef}
+                siteKey={TURNSTILE_SITE_KEY}
+                onSuccess={setTurnstileToken}
+                onExpire={() => setTurnstileToken(null)}
+                onError={() => setTurnstileToken(null)}
+                options={{ theme, size: "flexible" }}
+              />
             ) : null}
 
             <Button
@@ -219,43 +235,58 @@ export default function LoginClient() {
             </Button>
           </form>
 
-          <div className="mt-6 flex items-center gap-3">
-            <span
-              className="h-px flex-1"
-              style={{
-                background:
-                  "color-mix(in srgb, var(--lp-ink) 14%, transparent)",
-              }}
-            />
-            <span
-              className="text-[11px] font-semibold uppercase tracking-[0.18em]"
-              style={{ color: inkSubtle }}
-            >
-              Or
-            </span>
-            <span
-              className="h-px flex-1"
-              style={{
-                background:
-                  "color-mix(in srgb, var(--lp-ink) 14%, transparent)",
-              }}
-            />
-          </div>
+          {process.env.NEXT_PUBLIC_GOOGLE_AUTH_ENABLED === "true" && (
+            <>
+              <div className="mt-6 flex items-center gap-3">
+                <span
+                  className="h-px flex-1"
+                  style={{ background: "color-mix(in srgb, var(--lp-ink) 14%, transparent)" }}
+                />
+                <span
+                  className="text-[11px] font-semibold uppercase tracking-[0.18em]"
+                  style={{ color: inkSubtle }}
+                >
+                  Or
+                </span>
+                <span
+                  className="h-px flex-1"
+                  style={{ background: "color-mix(in srgb, var(--lp-ink) 14%, transparent)" }}
+                />
+              </div>
 
-          <Button
-            asChild
-            variant="outline"
-            className="mt-4 h-11 w-full rounded-md font-medium transition-colors hover:bg-[color-mix(in_srgb,var(--lp-ink)_4%,transparent)]"
-            style={{
-              background: "transparent",
-              color: "var(--lp-ink)",
-              border: inkBorder,
-            }}
-          >
-            <Link href={signupHref}>Sign up</Link>
-          </Button>
-        </div>
-      </main>
-    </div>
+              <Button
+                type="button"
+                onClick={handleGoogleSignIn}
+                disabled={isLoading}
+                className="mt-4 h-11 w-full rounded-md font-medium transition-colors hover:bg-[color-mix(in_srgb,var(--lp-ink)_4%,transparent)] disabled:cursor-not-allowed disabled:opacity-60"
+                style={{
+                  background: "var(--lp-bg)",
+                  color: "var(--lp-ink)",
+                  border: inkBorder,
+                }}
+              >
+                <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24" aria-hidden>
+                  <path
+                    d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                    fill="#4285F4"
+                  />
+                  <path
+                    d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                    fill="#34A853"
+                  />
+                  <path
+                    d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                    fill="#FBBC05"
+                  />
+                  <path
+                    d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                    fill="#EA4335"
+                  />
+                </svg>
+                Continue with Google
+              </Button>
+            </>
+          )}
+    </AuthTwoPane>
   );
 }

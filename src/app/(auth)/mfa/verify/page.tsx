@@ -1,12 +1,13 @@
 "use client";
 
 import { MfaVerify } from "@/components/mfa/mfa-verify";
-import { AuthShell } from "@/components/auth/auth-shell";
+import { AuthTwoPane } from "@/components/auth/auth-two-pane";
+import { MfaVerifySidePanel } from "@/components/auth/mfa-verify-side-panel";
 
 export default function MfaVerifyPage() {
   return (
-    <AuthShell>
+    <AuthTwoPane sidePanel={<MfaVerifySidePanel />}>
       <MfaVerify />
-    </AuthShell>
+    </AuthTwoPane>
   );
 }
