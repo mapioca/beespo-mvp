@@ -83,9 +83,32 @@ function detailItems(
   return items.filter((item) => item.checked)
 }
 
-type ArchiveView = "meetings" | "people"
+type ArchiveView = "meetings" | "timeline" | "people"
 
 type PeopleRole = "speaker" | "prayer"
+
+type TimelineRole = "all" | "speaker" | "prayer"
+
+const TIMELINE_ROLES: Array<{ key: TimelineRole; label: string }> = [
+  { key: "all", label: "All assignments" },
+  { key: "speaker", label: "Speakers" },
+  { key: "prayer", label: "Prayers" },
+]
+
+const MONTH_LABELS = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+]
 
 type PersonAssignment = {
   id: string
@@ -197,10 +220,55 @@ function shortDate(isoDate: string): string {
   }
 }
 
+function getMeetingDate(isoDate: string): Date {
+  return new Date(`${isoDate}T12:00:00`)
+}
+
+function getTimelineCount(meetings: ArchiveMeetingSummary[], role: TimelineRole): number {
+  return meetings.reduce((total, meeting) => {
+    const speakerCount =
+      role === "all" || role === "speaker" ? countAssigned(meeting.speakers) : 0
+    const prayerCount =
+      role === "all" || role === "prayer" ? countAssigned(meeting.prayers) : 0
+    return total + speakerCount + prayerCount
+  }, 0)
+}
+
+function groupMeetingsByYear(meetings: ArchiveMeetingSummary[]) {
+  const byYear = new Map<number, ArchiveMeetingSummary[]>()
+
+  for (const meeting of meetings) {
+    const year = getMeetingDate(meeting.meetingDate).getFullYear()
+    const yearMeetings = byYear.get(year) ?? []
+    yearMeetings.push(meeting)
+    byYear.set(year, yearMeetings)
+  }
+
+  return Array.from(byYear.entries())
+    .sort(([yearA], [yearB]) => yearB - yearA)
+    .map(([year, yearMeetings]) => ({
+      year,
+      months: MONTH_LABELS.map((label, monthIndex) => ({
+        label,
+        monthIndex,
+        meetings: yearMeetings
+          .filter((meeting) => getMeetingDate(meeting.meetingDate).getMonth() === monthIndex)
+          .sort((a, b) => a.meetingDate.localeCompare(b.meetingDate)),
+      })),
+    }))
+}
+
+function sundayOrdinal(isoDate: string): string {
+  const day = getMeetingDate(isoDate).getDate()
+  const ordinal = Math.floor((day - 1) / 7) + 1
+  return ["1st", "2nd", "3rd", "4th", "5th"][ordinal - 1] ?? `${ordinal}th`
+}
+
 export function ArchiveClient({ meetings }: { meetings: ArchiveMeetingSummary[] }) {
   const [view, setView] = useState<ArchiveView>("meetings")
   const [scope, setScope] = useState<ArchiveScope>("all")
   const [peopleRole, setPeopleRole] = useState<PeopleRole>("speaker")
+  const [timelineRole, setTimelineRole] = useState<TimelineRole>("all")
   const [search, setSearch] = useState("")
   const [selectedMeeting, setSelectedMeeting] = useState<ArchiveMeetingSummary | null>(null)
   const [expandedPersonKey, setExpandedPersonKey] = useState<string | null>(null)
@@ -229,6 +297,9 @@ export function ArchiveClient({ meetings }: { meetings: ArchiveMeetingSummary[] 
   }, [speakerPeople, prayerPeople])
 
   const filteredMeetings = meetings.filter((item) => meetingMatches(item, scope, search))
+  const timelineAssignmentCount = getTimelineCount(filteredMeetings, timelineRole)
+  const visibleResultCount =
+    view === "people" ? filteredPeople.length : filteredMeetings.length
 
   return (
     <>
@@ -257,11 +328,12 @@ export function ArchiveClient({ meetings }: { meetings: ArchiveMeetingSummary[] 
             </div>
           </div>
 
-          {/* Top-level view: meetings vs people */}
+          {/* Top-level view: meetings, timeline, people */}
           <div className="mt-10 flex gap-8 border-b border-border/70 pb-3">
             {(
               [
                 { key: "meetings" as const, label: "Meetings", count: counts.all },
+                { key: "timeline" as const, label: "Timeline", count: counts.all },
                 { key: "people" as const, label: "People", count: totalUniquePeople },
               ]
             ).map((tab) => {
@@ -286,27 +358,53 @@ export function ArchiveClient({ meetings }: { meetings: ArchiveMeetingSummary[] 
           </div>
 
           {/* Sub-tabs for the active view */}
-          {view === "meetings" ? (
-            <div className="mt-4 flex gap-6 border-b border-border/40 pb-3">
-              {SCOPES.map((item) => {
-                const active = item.key === scope
-                return (
-                  <button
-                    key={item.key}
-                    type="button"
-                    onClick={() => setScope(item.key)}
-                    className={cn(
-                      "inline-flex items-center gap-1.5 border-b-2 pb-1.5 text-[13px] font-medium transition-colors",
-                      active
-                        ? "border-foreground/70 text-foreground"
-                        : "border-transparent text-muted-foreground hover:text-foreground"
-                    )}
-                  >
-                    {item.label}
-                    <span className="text-[11px] text-muted-foreground">{counts[item.key]}</span>
-                  </button>
-                )
-              })}
+          {view === "meetings" || view === "timeline" ? (
+            <div className="mt-4 space-y-3 border-b border-border/40 pb-3">
+              <div className="flex flex-wrap gap-6">
+                {SCOPES.map((item) => {
+                  const active = item.key === scope
+                  return (
+                    <button
+                      key={item.key}
+                      type="button"
+                      onClick={() => setScope(item.key)}
+                      className={cn(
+                        "inline-flex items-center gap-1.5 border-b-2 pb-1.5 text-[13px] font-medium transition-colors",
+                        active
+                          ? "border-foreground/70 text-foreground"
+                          : "border-transparent text-muted-foreground hover:text-foreground"
+                      )}
+                    >
+                      {item.label}
+                      <span className="text-[11px] text-muted-foreground">
+                        {counts[item.key]}
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
+              {view === "timeline" ? (
+                <div className="flex flex-wrap gap-2">
+                  {TIMELINE_ROLES.map((item) => {
+                    const active = item.key === timelineRole
+                    return (
+                      <button
+                        key={item.key}
+                        type="button"
+                        onClick={() => setTimelineRole(item.key)}
+                        className={cn(
+                          "rounded-full border px-3 py-1 text-xs font-medium transition-colors",
+                          active
+                            ? "border-foreground bg-foreground text-background"
+                            : "border-border/70 bg-background text-muted-foreground hover:text-foreground"
+                        )}
+                      >
+                        {item.label}
+                      </button>
+                    )
+                  })}
+                </div>
+              ) : null}
             </div>
           ) : (
             <div className="mt-4 flex gap-6 border-b border-border/40 pb-3">
@@ -347,19 +445,24 @@ export function ArchiveClient({ meetings }: { meetings: ArchiveMeetingSummary[] 
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder={
-                  view === "meetings"
-                    ? "Search speakers, hymns, announcements, business, or notes"
-                    : "Search by name"
+                  view === "people"
+                    ? "Search by name"
+                    : view === "timeline"
+                      ? "Search names, topics, hymns, or notes"
+                      : "Search speakers, hymns, announcements, business, or notes"
                 }
                 className="h-10 rounded-[10px] border-border/70 bg-background pl-9"
               />
             </div>
             <Badge variant="secondary" className="justify-center rounded-full px-3 py-1">
-              {detailCountLabel(
-                view === "meetings" ? filteredMeetings.length : filteredPeople.length,
-                view === "meetings" ? "result" : "person",
-                view === "meetings" ? undefined : "people"
-              )}
+              {view === "people"
+                ? detailCountLabel(visibleResultCount, "person", "people")
+                : view === "timeline"
+                  ? `${detailCountLabel(visibleResultCount, "meeting")} / ${detailCountLabel(
+                      timelineAssignmentCount,
+                      "assignment"
+                    )}`
+                  : detailCountLabel(visibleResultCount, "result")}
             </Badge>
           </div>
 
@@ -458,6 +561,15 @@ export function ArchiveClient({ meetings }: { meetings: ArchiveMeetingSummary[] 
               })
             )}
           </div>
+          )}
+
+          {view === "timeline" && (
+            <ArchiveTimelineMatrix
+              meetings={filteredMeetings}
+              role={timelineRole}
+              onSelectMeeting={setSelectedMeeting}
+              hasResults={meetings.length > 0}
+            />
           )}
 
           {view === "people" && (
@@ -643,6 +755,211 @@ export function ArchiveClient({ meetings }: { meetings: ArchiveMeetingSummary[] 
         </DialogContent>
       </Dialog>
     </>
+  )
+}
+
+function ArchiveTimelineMatrix({
+  meetings,
+  role,
+  onSelectMeeting,
+  hasResults,
+}: {
+  meetings: ArchiveMeetingSummary[]
+  role: TimelineRole
+  onSelectMeeting: (meeting: ArchiveMeetingSummary) => void
+  hasResults: boolean
+}) {
+  const yearGroups = useMemo(() => groupMeetingsByYear(meetings), [meetings])
+
+  if (meetings.length === 0) {
+    return (
+      <div className="mt-8 rounded-[12px] border border-dashed border-border/80 bg-background/80 px-6 py-12 text-center">
+        <CalendarDays className="mx-auto h-8 w-8 text-muted-foreground/70" />
+        <h2 className="mt-4 text-lg font-semibold">
+          {hasResults ? "No archived meetings match" : "No archived meetings yet"}
+        </h2>
+        <p className="mt-2 text-sm text-muted-foreground">
+          {hasResults
+            ? "Try a different search or switch scopes."
+            : "Past meetings will appear here once they are archived."}
+        </p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="mt-8 rounded-[12px] border border-border/70 bg-background p-4 shadow-sm">
+      <div className="flex flex-col gap-3 border-b border-border/60 pb-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h2 className="text-lg font-semibold tracking-tight">Year matrix</h2>
+          <div className="mt-1 text-sm text-muted-foreground">
+            {detailCountLabel(meetings.length, "archived Sunday")}
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-2 text-[11px] font-medium">
+          {(role === "all" || role === "speaker") && (
+            <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-emerald-900 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-100">
+              Speakers
+            </span>
+          )}
+          {(role === "all" || role === "prayer") && (
+            <span className="rounded-full border border-sky-200 bg-sky-50 px-2.5 py-1 text-sky-900 dark:border-sky-900/60 dark:bg-sky-950/30 dark:text-sky-100">
+              Prayers
+            </span>
+          )}
+        </div>
+      </div>
+
+      <div className="mt-4 overflow-x-auto pb-2">
+        <div className="min-w-[1560px] space-y-7">
+          {yearGroups.map((group) => (
+            <section key={group.year}>
+              <div className="mb-3 flex items-center justify-between gap-4">
+                <h3 className="text-xl font-semibold tabular-nums tracking-tight">
+                  {group.year}
+                </h3>
+                <div className="text-xs text-muted-foreground">
+                  {detailCountLabel(
+                    group.months.reduce((total, month) => total + month.meetings.length, 0),
+                    "Sunday"
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-12 gap-2">
+                {group.months.map((month) => (
+                  <div
+                    key={`${group.year}-${month.monthIndex}`}
+                    className="min-h-[230px] rounded-[10px] border border-border/70 bg-muted/10"
+                  >
+                    <div className="flex items-center justify-between border-b border-border/60 px-2.5 py-2">
+                      <span className="text-[12px] font-semibold uppercase tracking-[0.08em] text-foreground">
+                        {month.label}
+                      </span>
+                      <span className="text-[11px] tabular-nums text-muted-foreground">
+                        {month.meetings.length || ""}
+                      </span>
+                    </div>
+
+                    <div className="space-y-2 p-2">
+                      {month.meetings.length > 0 ? (
+                        month.meetings.map((meeting) => (
+                          <TimelineMeetingCell
+                            key={meeting.id}
+                            meeting={meeting}
+                            role={role}
+                            onSelect={() => onSelectMeeting(meeting)}
+                          />
+                        ))
+                      ) : (
+                        <div className="flex h-[166px] items-center justify-center rounded-[8px] border border-dashed border-border/60 px-2 text-center text-[11px] text-muted-foreground/70">
+                          Empty
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function TimelineMeetingCell({
+  meeting,
+  role,
+  onSelect,
+}: {
+  meeting: ArchiveMeetingSummary
+  role: TimelineRole
+  onSelect: () => void
+}) {
+  const showSpeakers = role === "all" || role === "speaker"
+  const showPrayers = role === "all" || role === "prayer"
+  const speakers = meeting.speakers.filter((speaker) => speaker.name)
+  const prayers = meeting.prayers.filter((prayer) => prayer.name)
+  const hasVisibleAssignments =
+    (showSpeakers && speakers.length > 0) || (showPrayers && prayers.length > 0)
+
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      aria-label={`Open ${formatMeetingDate(meeting.meetingDate)}`}
+      title={`${formatMeetingDate(meeting.meetingDate)} - ${meeting.title}`}
+      className="w-full rounded-[8px] border border-border/70 bg-background px-2 py-2 text-left shadow-sm transition-colors hover:border-primary/40 hover:bg-accent/20"
+    >
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-sm font-semibold tabular-nums text-foreground">
+          {format(getMeetingDate(meeting.meetingDate), "d")}
+        </span>
+        <span className="truncate text-[10.5px] text-muted-foreground">
+          {sundayOrdinal(meeting.meetingDate)}
+        </span>
+      </div>
+
+      <div className="mt-2 space-y-1.5">
+        {showSpeakers
+          ? speakers.map((speaker, index) => (
+              <TimelineNameChip
+                key={speaker.id}
+                label={index === 0 ? "Spk" : `Spk ${index + 1}`}
+                name={speaker.name ?? ""}
+                tone="speaker"
+                muted={speaker.status === "declined"}
+              />
+            ))
+          : null}
+
+        {showPrayers
+          ? prayers.map((prayer) => (
+              <TimelineNameChip
+                key={prayer.id}
+                label={prayer.role === "Invocation" ? "Inv" : "Ben"}
+                name={prayer.name ?? ""}
+                tone="prayer"
+                muted={prayer.status === "declined"}
+              />
+            ))
+          : null}
+
+        {!hasVisibleAssignments ? (
+          <div className="rounded-[6px] border border-dashed border-border/60 px-2 py-1.5 text-[11px] text-muted-foreground">
+            No names
+          </div>
+        ) : null}
+      </div>
+    </button>
+  )
+}
+
+function TimelineNameChip({
+  label,
+  name,
+  tone,
+  muted,
+}: {
+  label: string
+  name: string
+  tone: "speaker" | "prayer"
+  muted: boolean
+}) {
+  return (
+    <span
+      className={cn(
+        "block min-w-0 rounded-[6px] border px-2 py-1 text-[11px] leading-tight",
+        tone === "speaker"
+          ? "border-emerald-200 bg-emerald-50 text-emerald-950 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-100"
+          : "border-sky-200 bg-sky-50 text-sky-950 dark:border-sky-900/60 dark:bg-sky-950/30 dark:text-sky-100",
+        muted && "opacity-60 line-through decoration-current/70"
+      )}
+    >
+      <span className="mr-1 font-semibold uppercase tracking-[0.06em]">{label}</span>
+      <span className="align-baseline [overflow-wrap:anywhere]">{name}</span>
+    </span>
   )
 }
 
