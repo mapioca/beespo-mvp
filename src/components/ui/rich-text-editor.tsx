@@ -25,6 +25,10 @@ interface RichTextEditorProps {
     disabled?: boolean;
     debounceMs?: number;
     placeholderFontSize?: string;
+    /** Drop the wrapper border/shadow when nested inside another surface. */
+    bare?: boolean;
+    /** Override the inner editor minimum height (default: min-h-[60px]). */
+    contentMinHeightClass?: string;
 }
 
 interface BubbleButtonProps {
@@ -64,6 +68,8 @@ export function RichTextEditor({
     disabled = false,
     debounceMs = 1000,
     placeholderFontSize = "0.875rem",
+    bare = false,
+    contentMinHeightClass = "min-h-[60px]",
 }: RichTextEditorProps) {
     const [isFocused, setIsFocused] = useState(false);
     const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
@@ -157,7 +163,8 @@ export function RichTextEditor({
             attributes: {
                 class: cn(
                     "prose-sm max-w-none focus:outline-none text-sm",
-                    "min-h-[60px] px-3 py-2.5",
+                    contentMinHeightClass,
+                    "px-3 py-2.5",
                     "[&_p]:my-1 [&_p:first-child]:mt-0 [&_p:last-child]:mb-0",
                     "[&_ul]:list-disc [&_ul]:ml-4 [&_ul]:my-1",
                     "[&_ol]:list-decimal [&_ol]:ml-4 [&_ol]:my-1",
@@ -189,10 +196,15 @@ export function RichTextEditor({
             ref={wrapperRef}
             style={{ ["--rte-placeholder-size" as string]: placeholderFontSize } as React.CSSProperties}
             className={cn(
-                "relative rounded-md border transition-all duration-150 bg-background",
-                isFocused
-                    ? "border-ring/50 shadow-[0_0_0_2px_hsl(var(--ring)/0.12)]"
-                    : "border-border/60 hover:border-border",
+                "relative bg-background transition-all duration-150",
+                bare
+                    ? "border-0 shadow-none"
+                    : cn(
+                          "rounded-md border",
+                          isFocused
+                              ? "border-ring/50 shadow-[0_0_0_2px_hsl(var(--ring)/0.12)]"
+                              : "border-border/60 hover:border-border"
+                      ),
                 disabled && "opacity-60 cursor-not-allowed"
             )}
         >
@@ -261,15 +273,6 @@ export function RichTextEditor({
 
             {/* Placeholder styling */}
             <style jsx global>{`
-                .is-editor-empty:first-child::before {
-                    content: attr(data-placeholder);
-                    float: left;
-                    color: hsl(var(--muted-foreground) / 0.5);
-                    pointer-events: none;
-                    height: 0;
-                    font-size: var(--rte-placeholder-size, 0.875rem);
-                    line-height: 1.35;
-                }
             `}</style>
         </div>
     );

@@ -42,6 +42,8 @@ import {
 import { CSS } from "@dnd-kit/utilities"
 
 import { Breadcrumbs } from "@/components/dashboard/breadcrumbs"
+import { ensureRichTextHtml, isRichTextEmpty } from "@/lib/rich-text"
+import { RichTextEditor } from "@/components/ui/rich-text-editor"
 import { SacramentMeetingAudienceView } from "@/components/meetings/sacrament-meeting/audience-client"
 import { AudiencePublishButton } from "@/components/meetings/sacrament-meeting/audience-publish-button"
 import { ConductView } from "@/components/meetings/sacrament-meeting/conduct-view"
@@ -178,7 +180,15 @@ type PlannerNotes = {
   announcements: PlannerItem[]
   business: PlannerItem[]
   notes: string
+  attendance: number | null
   initialized?: boolean
+}
+
+const EMPTY_PLANNER_NOTES: PlannerNotes = {
+  announcements: [],
+  business: [],
+  notes: "",
+  attendance: null,
 }
 
 const SECTION_CLOSING_ID = "section-closing"
@@ -489,9 +499,10 @@ function plannerNotesHaveUserChanges(notes: PlannerNotes | undefined) {
   if (!notes) return false
 
   return Boolean(
-    notes.notes.trim() ||
+    !isRichTextEmpty(notes.notes) ||
       notes.announcements.length > 0 ||
-      notes.business.length > 0
+      notes.business.length > 0 ||
+      (typeof notes.attendance === "number" && notes.attendance > 0)
   )
 }
 
@@ -763,7 +774,7 @@ function PlannerTabs({ activeTab, onTabChange }: PlannerTabsProps) {
   const tabs: { value: PlannerTab; label: string }[] = [
     { value: "meeting", label: "This meeting" },
     { value: "horizon", label: "Next 3 months" },
-    { value: "notes", label: "Notes" },
+    { value: "notes", label: "Notes & attendance" },
   ]
 
   return (
@@ -877,18 +888,94 @@ function HorizonPanel({
 type NotesPanelProps = {
   notes: PlannerNotes
   onNotesChange: (value: string) => void
+  onAttendanceChange: (value: number | null) => void
 }
 
-function NotesPanel({ notes, onNotesChange }: NotesPanelProps) {
+function NotesPanel({ notes, onNotesChange, onAttendanceChange }: NotesPanelProps) {
   return (
     <div className="grid max-w-3xl gap-6 px-6 py-6">
-      <div className="rounded-xl border border-border/70 bg-card px-3 py-3">
-        <textarea
-          className="min-h-48 w-full resize-y bg-transparent text-sm leading-6 outline-none placeholder:text-muted-foreground"
-          placeholder="Private bishopric notes — not shared with the congregation..."
-          value={notes.notes}
-          onChange={(event) => onNotesChange(event.target.value)}
+      <AttendanceCounter
+        value={notes.attendance}
+        onChange={onAttendanceChange}
+      />
+      <RichTextEditor
+        content={ensureRichTextHtml(notes.notes)}
+        onSave={async (html) => {
+          onNotesChange(html)
+        }}
+        placeholder="Private bishopric notes — not shared with the congregation..."
+      />
+    </div>
+  )
+}
+
+type AttendanceCounterProps = {
+  value: number | null
+  onChange: (value: number | null) => void
+  compact?: boolean
+}
+
+function AttendanceCounter({ value, onChange, compact = false }: AttendanceCounterProps) {
+  const display = typeof value === "number" ? value : 0
+  const adjust = (delta: number) => {
+    const next = Math.max(0, display + delta)
+    onChange(next)
+  }
+  const handleInput = (raw: string) => {
+    if (raw.trim() === "") {
+      onChange(null)
+      return
+    }
+    const parsed = Number.parseInt(raw, 10)
+    if (Number.isFinite(parsed) && parsed >= 0) {
+      onChange(parsed)
+    }
+  }
+
+  return (
+    <div
+      className={cn(
+        "flex items-center justify-between gap-4 rounded-xl border border-border/70 bg-card px-4",
+        compact ? "py-2" : "py-3"
+      )}
+    >
+      <div className="min-w-0">
+        <div className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+          Attendance
+        </div>
+        {!compact && (
+          <div className="mt-0.5 text-xs text-muted-foreground">
+            Total in attendance
+          </div>
+        )}
+      </div>
+      <div className="flex items-center gap-1.5">
+        <button
+          type="button"
+          onClick={() => adjust(-1)}
+          disabled={display === 0}
+          className="grid h-8 w-8 place-items-center rounded-full border border-border bg-background text-base text-foreground transition-colors hover:bg-muted disabled:pointer-events-none disabled:opacity-40"
+          aria-label="Decrease attendance"
+        >
+          –
+        </button>
+        <input
+          type="text"
+          inputMode="numeric"
+          pattern="[0-9]*"
+          value={value ?? ""}
+          placeholder="0"
+          onChange={(event) => handleInput(event.target.value)}
+          className="h-8 w-16 rounded-md border border-border bg-background text-center font-mono text-sm tabular-nums text-foreground outline-none focus:ring-2 focus:ring-ring"
         />
+        <button
+          type="button"
+          onClick={() => adjust(1)}
+          className="grid h-8 w-8 place-items-center rounded-full border border-border bg-background text-base text-foreground transition-colors hover:bg-muted"
+          aria-label="Increase attendance"
+        >
+          +
+        </button>
       </div>
     </div>
   )
@@ -2507,7 +2594,7 @@ export function SacramentMeetingPlannerClient({
   const selectedMeetingStats = getPlannerAssignmentStats(selectedMeeting)
   const selectedPlannerStatus = getDerivedPlannerStatus(selectedSunday.isoDate, selectedMeeting)
   const visibleSundays = sundays.slice(0, visibleSundayCount)
-  const selectedNotes = notesByDate[selectedSunday.isoDate] ?? { announcements: [], business: [], notes: "" }
+  const selectedNotes = notesByDate[selectedSunday.isoDate] ?? EMPTY_PLANNER_NOTES
   const remainingAgendaEntries = visibleEntries.filter(
     (entry) =>
       ![
@@ -2812,6 +2899,10 @@ export function SacramentMeetingPlannerClient({
             announcements: Array.isArray(entry.notesState.announcements) ? entry.notesState.announcements : [],
             business: Array.isArray(entry.notesState.business) ? entry.notesState.business : [],
             notes: entry.notesState.notes ?? "",
+            attendance:
+              typeof entry.notesState.attendance === "number" && Number.isFinite(entry.notesState.attendance)
+                ? entry.notesState.attendance
+                : null,
             initialized: entry.notesState.initialized ?? true,
           }
         }
@@ -2911,7 +3002,7 @@ export function SacramentMeetingPlannerClient({
             return {
               meetingDate: sunday.isoDate,
               meetingState: meeting,
-              notesState: notes ?? { announcements: [], business: [], notes: "", initialized: false },
+              notesState: notes ?? { ...EMPTY_PLANNER_NOTES, initialized: false },
               meetingTypeOverridden,
             }
           })
@@ -3057,7 +3148,7 @@ export function SacramentMeetingPlannerClient({
     }))
     setNotesByDate((prev) => ({
       ...prev,
-      [selectedSunday.isoDate]: { announcements: [], business: [], notes: "", initialized: false },
+      [selectedSunday.isoDate]: { ...EMPTY_PLANNER_NOTES, initialized: false },
     }))
     setMeetingTypeOverridesByDate((prev) => ({
       ...prev,
@@ -3070,7 +3161,7 @@ export function SacramentMeetingPlannerClient({
     setNotesByDate((prev) => ({
       ...prev,
       [selectedSunday.isoDate]: {
-        ...(prev[selectedSunday.isoDate] ?? { announcements: [], business: [], notes: "" }),
+        ...(prev[selectedSunday.isoDate] ?? EMPTY_PLANNER_NOTES),
         announcements: items,
       },
     }))
@@ -3080,7 +3171,7 @@ export function SacramentMeetingPlannerClient({
     setNotesByDate((prev) => ({
       ...prev,
       [selectedSunday.isoDate]: {
-        ...(prev[selectedSunday.isoDate] ?? { announcements: [], business: [], notes: "" }),
+        ...(prev[selectedSunday.isoDate] ?? EMPTY_PLANNER_NOTES),
         business: items,
       },
     }))
@@ -3090,8 +3181,18 @@ export function SacramentMeetingPlannerClient({
     setNotesByDate((prev) => ({
       ...prev,
       [selectedSunday.isoDate]: {
-        ...(prev[selectedSunday.isoDate] ?? { announcements: [], business: [], notes: "" }),
+        ...(prev[selectedSunday.isoDate] ?? EMPTY_PLANNER_NOTES),
         notes: value,
+      },
+    }))
+  }
+
+  const handleAttendanceChange = (value: number | null) => {
+    setNotesByDate((prev) => ({
+      ...prev,
+      [selectedSunday.isoDate]: {
+        ...(prev[selectedSunday.isoDate] ?? EMPTY_PLANNER_NOTES),
+        attendance: value,
       },
     }))
   }
@@ -3728,6 +3829,7 @@ export function SacramentMeetingPlannerClient({
                 <NotesPanel
                   notes={selectedNotes}
                   onNotesChange={handleNotesTextChange}
+                  onAttendanceChange={handleAttendanceChange}
                 />
               )}
           </section>
@@ -3755,6 +3857,10 @@ export function SacramentMeetingPlannerClient({
             business: selectedNotes.business,
           }}
           isoDate={selectedSunday.isoDate}
+          notes={selectedNotes.notes}
+          attendance={selectedNotes.attendance}
+          onNotesChange={handleNotesTextChange}
+          onAttendanceChange={handleAttendanceChange}
           onClose={() => setConductOpen(false)}
         />
       )}

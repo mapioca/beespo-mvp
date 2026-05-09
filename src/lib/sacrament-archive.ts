@@ -1,3 +1,5 @@
+import { richTextToPlainText } from "./rich-text"
+
 export type MeetingSpecialType =
   | "standard"
   | "fast-testimony"
@@ -349,7 +351,7 @@ export function buildArchiveMeetingSummary(args: {
     ...prayers.map((prayer) => prayer.name),
     ...notes.announcements.flatMap((item) => [item.title, item.detail ?? null]),
     ...notes.business.flatMap((item) => [item.title, item.detail ?? null]),
-    normalizeText(notes.notes),
+    normalizeText(richTextToPlainText(notes.notes)),
   ]
     .filter(Boolean)
     .join("\n")

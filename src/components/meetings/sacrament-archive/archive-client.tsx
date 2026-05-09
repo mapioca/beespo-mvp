@@ -28,6 +28,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { cn } from "@/lib/utils"
+import { isRichTextEmpty, sanitizeRichTextHtml } from "@/lib/rich-text"
 import type { ArchiveMeetingSummary } from "@/lib/sacrament-archive"
 
 type ArchiveScope = "all" | "standard" | "fast" | "conference"
@@ -223,7 +224,7 @@ export function ArchiveClient({ meetings }: { meetings: ArchiveMeetingSummary[] 
                             {detailCountLabel(checkedBusiness.length, "business item")}
                           </ArchiveMetaPill>
                           <ArchiveMetaPill icon={StickyNote}>
-                            {meeting.notes ? "Notes captured" : "No notes"}
+                            {isRichTextEmpty(meeting.notes) ? "No notes" : "Notes captured"}
                           </ArchiveMetaPill>
                         </div>
                       </div>
@@ -314,12 +315,13 @@ export function ArchiveClient({ meetings }: { meetings: ArchiveMeetingSummary[] 
                     </ArchiveSection>
 
                     <ArchiveSection title="Notes">
-                      {selectedMeeting.notes ? (
-                        <div className="rounded-[10px] border border-border/70 bg-muted/20 px-4 py-3 text-sm leading-6 whitespace-pre-wrap">
-                          {selectedMeeting.notes}
-                        </div>
-                      ) : (
+                      {isRichTextEmpty(selectedMeeting.notes) ? (
                         <ArchiveEmptyLine>No freeform notes were captured.</ArchiveEmptyLine>
+                      ) : (
+                        <div
+                          className="prose prose-sm max-w-none rounded-[10px] border border-border/70 bg-muted/20 px-4 py-3 text-sm leading-6 dark:prose-invert [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:my-1 [&_p:first-child]:mt-0 [&_p:last-child]:mb-0 [&_ul]:list-disc [&_ul]:pl-5"
+                          dangerouslySetInnerHTML={{ __html: sanitizeRichTextHtml(selectedMeeting.notes) }}
+                        />
                       )}
                     </ArchiveSection>
                   </div>
