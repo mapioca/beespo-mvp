@@ -23,6 +23,7 @@ interface DashboardShellProps {
 export function DashboardShell({
     children,
     userName,
+    userEmail,
     userId,
     workspaceName,
     initialNavigationItems,
@@ -42,14 +43,14 @@ export function DashboardShell({
                 {workspaceName && <WorkspaceStoreHydrator workspaceName={workspaceName} />}
                 <div className="flex h-screen-dynamic overflow-hidden overscroll-none bg-app-shell">
                 <div className="relative z-20 hidden lg:flex">
-                    <AppSidebar userName={userName} userId={userId} workspaceName={workspaceName} />
+                    <AppSidebar userName={userName} userEmail={userEmail} userId={userId} workspaceName={workspaceName} />
                 </div>
 
                 <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
                     <SheetContent side="left" className="w-[300px] p-0">
                         <SheetTitle className="sr-only">Navigation</SheetTitle>
                         <SheetDescription className="sr-only">Workspace navigation drawer</SheetDescription>
-                        <AppSidebar userName={userName} userId={userId} workspaceName={workspaceName} />
+                        <AppSidebar userName={userName} userEmail={userEmail} userId={userId} workspaceName={workspaceName} />
                     </SheetContent>
                 </Sheet>
 

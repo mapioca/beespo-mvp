@@ -31,6 +31,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { SupportTrigger } from "@/components/support/support-trigger";
 
 type SidebarItem = {
   href: string;
@@ -176,10 +177,12 @@ function NavRow({
 }
 export function AppSidebar({
   userName,
+  userEmail,
   userId,
   workspaceName,
 }: {
   userName: string;
+  userEmail: string;
   userId: string;
   workspaceName?: string;
 }) {
@@ -314,6 +317,10 @@ export function AppSidebar({
           </div>
         </div>
       ))}
+
+      <div className="mt-auto flex items-center justify-end pt-3">
+        <SupportTrigger userEmail={userEmail} userName={userName} />
+      </div>
     </aside>
   );
 }
