@@ -8,13 +8,21 @@ import { Settings, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   AudienceProgram,
+  type AudienceAnnouncement,
   type AudienceMeeting,
 } from "@/components/audience/audience-program"
+import {
+  loadAudienceAnnouncements,
+  type AudienceAnnouncementSelection,
+} from "@/lib/audience/announcements"
+import { createClient } from "@/lib/supabase/client"
 
 type AudienceViewProps = {
   unitName: string
   isoDate: string
   meeting: AudienceMeeting
+  workspaceId?: string | null
+  announcementSelection?: AudienceAnnouncementSelection[]
   onCloseAction: () => void
   onTopicUpdateAction: (
     entryId: string,
@@ -26,13 +34,31 @@ export function SacramentMeetingAudienceView({
   unitName,
   isoDate,
   meeting,
+  workspaceId,
+  announcementSelection,
   onCloseAction,
 }: AudienceViewProps) {
   const [mounted, setMounted] = useState(false)
+  const [announcements, setAnnouncements] = useState<AudienceAnnouncement[]>([])
 
   useEffect(() => {
     setMounted(true)
   }, [])
+
+  useEffect(() => {
+    let cancelled = false
+    if (!workspaceId || !announcementSelection || announcementSelection.length === 0) {
+      setAnnouncements([])
+      return
+    }
+    const supabase = createClient()
+    void loadAudienceAnnouncements(supabase, workspaceId, announcementSelection).then((rows) => {
+      if (!cancelled) setAnnouncements(rows)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [workspaceId, announcementSelection])
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -72,6 +98,7 @@ export function SacramentMeetingAudienceView({
           unitName={unitName}
           isoDate={isoDate}
           meeting={meeting}
+          announcements={announcements}
           className="rounded-[2px] border border-border bg-background shadow-lg"
         />
       </div>

@@ -60,6 +60,12 @@ export type AudienceMeeting = {
   entries: AudienceAgendaEntry[]
 }
 
+export type AudienceAnnouncement = {
+  id: string
+  title: string
+  content: string | null
+}
+
 const MEETING_TYPE_LABELS: Record<AudienceMeetingSpecialType, string> = {
   standard: "Sacrament Meeting",
   "fast-testimony": "Fast & Testimony Meeting",
@@ -97,14 +103,34 @@ function isMusicalEntry(entry: AudienceStaticEntry) {
   )
 }
 
+function decodeEntities(value: string) {
+  return value
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, "\"")
+    .replace(/&#39;/g, "'")
+}
+
+function announcementParagraphs(content: string | null | undefined): string[] {
+  if (!content) return []
+  return content
+    .replace(/<br\s*\/?>(?!\s*<)/gi, "\n")
+    .split(/<\/p>|<\/li>|<\/h[1-6]>/i)
+    .map((chunk) => decodeEntities(chunk.replace(/<[^>]+>/g, "")).replace(/\s+/g, " ").trim())
+    .filter(Boolean)
+}
+
 type AudienceProgramProps = {
   unitName: string
   isoDate: string
   meeting: AudienceMeeting
+  announcements?: AudienceAnnouncement[]
   className?: string
 }
 
-export function AudienceProgram({ unitName, isoDate, meeting, className }: AudienceProgramProps) {
+export function AudienceProgram({ unitName, isoDate, meeting, announcements = [], className }: AudienceProgramProps) {
   const entries = meeting.entries
   const openingHymn = getStaticEntry(entries, "opening-hymn")
   const invocation = getStaticEntry(entries, "invocation")
@@ -208,6 +234,22 @@ export function AudienceProgram({ unitName, isoDate, meeting, className }: Audie
       <AudienceHymn kind="Closing Hymn" entry={closingHymn} />
       <AudienceCenteredRow label="Benediction" value={benediction?.assigneeName} />
 
+      {announcements.length > 0 ? (
+        <>
+          <AudienceRule />
+          <AudienceSectionLabel>announcements</AudienceSectionLabel>
+          <div className="mt-1 flex flex-col">
+            {announcements.map((announcement, index) => (
+              <AudienceAnnouncementItem
+                key={announcement.id}
+                announcement={announcement}
+                isFirst={index === 0}
+              />
+            ))}
+          </div>
+        </>
+      ) : null}
+
       <footer className="mt-8 border-t border-border pt-6 text-center text-[11.5px] leading-7 text-muted-foreground/70">
         <div className="mx-auto mb-4 max-w-[340px] font-serif text-[13px] italic leading-6 text-muted-foreground">
           &quot;For where two or three are gathered together in my name, there am I in the midst of them.&quot;
@@ -275,6 +317,35 @@ function AudienceCenteredRow({ label, value }: { label: string; value?: string }
       <div className="mt-1 text-center font-serif text-[16px] tracking-[-0.005em] text-foreground">
         {value?.trim() || "-"}
       </div>
+    </div>
+  )
+}
+
+function AudienceAnnouncementItem({
+  announcement,
+  isFirst,
+}: {
+  announcement: AudienceAnnouncement
+  isFirst: boolean
+}) {
+  const paragraphs = announcementParagraphs(announcement.content)
+  return (
+    <div
+      className={cn(
+        "px-2 py-5 text-center",
+        !isFirst && "border-t border-border/60",
+      )}
+    >
+      <div className="font-serif text-[18px] tracking-[-0.005em] text-foreground">
+        {announcement.title}
+      </div>
+      {paragraphs.length > 0 ? (
+        <div className="mx-auto mt-2 max-w-[420px] space-y-2 font-serif text-[14px] italic leading-[1.6] text-muted-foreground">
+          {paragraphs.map((paragraph, index) => (
+            <p key={index}>{paragraph}</p>
+          ))}
+        </div>
+      ) : null}
     </div>
   )
 }
