@@ -25,7 +25,7 @@ const inkSubtle = "color-mix(in srgb, var(--lp-ink) 65%, transparent)";
 const inkBorder = "1px solid color-mix(in srgb, var(--lp-ink) 18%, transparent)";
 const inkDivider = "color-mix(in srgb, var(--lp-ink) 14%, transparent)";
 const inputStyle = {
-  background: "var(--lp-bg)",
+  background: "color-mix(in srgb, var(--lp-bg) 78%, var(--lp-surface))",
   color: "var(--lp-ink)",
   border: "1px solid color-mix(in srgb, var(--lp-ink) 22%, transparent)",
 };

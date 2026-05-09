@@ -20,7 +20,7 @@ const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? "";
 const inkSubtle = "color-mix(in srgb, var(--lp-ink) 65%, transparent)";
 const inkBorder = "1px solid color-mix(in srgb, var(--lp-ink) 22%, transparent)";
 const inputStyle = {
-  background: "var(--lp-bg)",
+  background: "color-mix(in srgb, var(--lp-bg) 78%, var(--lp-surface))",
   color: "var(--lp-ink)",
   border: inkBorder,
 };
@@ -161,7 +161,7 @@ export default function LoginClient() {
               <Input
                 id="email"
                 type="email"
-                placeholder="you@ward.org"
+                placeholder="name@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
