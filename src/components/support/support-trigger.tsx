@@ -23,6 +23,15 @@ type RequestType = "Bug Report" | "Feature Request" | "General Question";
 type Priority = "Low" | "Medium" | "High";
 type SubmissionState = "idle" | "loading" | "success" | "error";
 
+const DESCRIPTION_PLACEHOLDERS: Record<RequestType, string> = {
+  "Bug Report":
+    "What's happening, what you expected, and any steps to reproduce.",
+  "Feature Request":
+    "What would you like to see, and what problem would it solve for you?",
+  "General Question":
+    "Ask away — share any context that helps us point you in the right direction.",
+};
+
 interface SupportTriggerProps {
   userEmail: string;
   userName: string;
@@ -209,7 +218,7 @@ export function SupportTrigger({ userEmail, userName }: SupportTriggerProps) {
                 <Label htmlFor="support-description" className="text-xs">Description</Label>
                 <Textarea
                   id="support-description"
-                  placeholder="What's happening, what you expected, and any steps to reproduce."
+                  placeholder={DESCRIPTION_PLACEHOLDERS[requestType]}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   required
