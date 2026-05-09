@@ -1,7 +1,7 @@
 "use client"
 
 import type { ReactNode } from "react"
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { format, formatDistanceToNow } from "date-fns"
 import {
   BookOpenText,
@@ -9,7 +9,6 @@ import {
   CalendarDays,
   ChevronRight,
   Clock3,
-  Landmark,
   Megaphone,
   Music4,
   Search,
@@ -31,6 +30,7 @@ import { cn } from "@/lib/utils"
 import { isRichTextEmpty, sanitizeRichTextHtml } from "@/lib/rich-text"
 import type { ArchiveMeetingSummary } from "@/lib/sacrament-archive"
 import { AssignmentStatusPill } from "@/components/meetings/sacrament-meeting/assignment-status-pill"
+import type { AssignmentStatus } from "@/lib/sacrament-confirmations"
 
 type ArchiveScope = "all" | "standard" | "fast" | "conference"
 
@@ -83,10 +83,127 @@ function detailItems(
   return items.filter((item) => item.checked)
 }
 
+type ArchiveView = "meetings" | "people"
+
+type PeopleRole = "speaker" | "prayer"
+
+type PersonAssignment = {
+  id: string
+  meetingDate: string
+  meetingTitle: string
+  roleLabel: string
+  status: AssignmentStatus | null
+  declineNote: string | null
+  topic: string | null
+}
+
+type ArchivePerson = {
+  key: string
+  name: string
+  total: number
+  lastDate: string
+  assignments: PersonAssignment[]
+}
+
+// Walk the loaded archive and roll up per-person history. The ArchiveMeetingSummary
+// shape already carries everything we need, so this is a pure client-side derivation.
+function aggregatePeople(
+  meetings: ArchiveMeetingSummary[],
+  role: PeopleRole
+): ArchivePerson[] {
+  const map = new Map<string, ArchivePerson>()
+
+  const upsert = (
+    name: string,
+    meeting: ArchiveMeetingSummary,
+    assignment: PersonAssignment
+  ) => {
+    const trimmed = name.trim()
+    if (!trimmed) return
+    const key = trimmed.toLowerCase()
+    const existing = map.get(key)
+    if (existing) {
+      existing.total += 1
+      existing.assignments.push(assignment)
+      // Use the most recent variant of the name as the canonical display.
+      if (meeting.meetingDate > existing.lastDate) {
+        existing.lastDate = meeting.meetingDate
+        existing.name = trimmed
+      }
+    } else {
+      map.set(key, {
+        key,
+        name: trimmed,
+        total: 1,
+        lastDate: meeting.meetingDate,
+        assignments: [assignment],
+      })
+    }
+  }
+
+  for (const meeting of meetings) {
+    if (role === "speaker") {
+      for (const speaker of meeting.speakers) {
+        if (!speaker.name) continue
+        upsert(speaker.name, meeting, {
+          id: `${meeting.meetingDate}-${speaker.id}`,
+          meetingDate: meeting.meetingDate,
+          meetingTitle: meeting.title,
+          roleLabel: "Speaker",
+          status: speaker.status,
+          declineNote: speaker.declineNote,
+          topic: speaker.topic,
+        })
+      }
+    } else {
+      for (const prayer of meeting.prayers) {
+        if (!prayer.name) continue
+        upsert(prayer.name, meeting, {
+          id: `${meeting.meetingDate}-${prayer.id}`,
+          meetingDate: meeting.meetingDate,
+          meetingTitle: meeting.title,
+          roleLabel: prayer.role,
+          status: prayer.status,
+          declineNote: prayer.declineNote,
+          topic: null,
+        })
+      }
+    }
+  }
+
+  return Array.from(map.values())
+    .map((person) => ({
+      ...person,
+      assignments: [...person.assignments].sort((a, b) =>
+        b.meetingDate.localeCompare(a.meetingDate)
+      ),
+    }))
+    .sort((a, b) => b.lastDate.localeCompare(a.lastDate))
+}
+
+function relativeFromIsoDate(isoDate: string): string {
+  try {
+    return formatDistanceToNow(new Date(`${isoDate}T12:00:00`), { addSuffix: true })
+  } catch {
+    return isoDate
+  }
+}
+
+function shortDate(isoDate: string): string {
+  try {
+    return format(new Date(`${isoDate}T12:00:00`), "MMM d, yyyy")
+  } catch {
+    return isoDate
+  }
+}
+
 export function ArchiveClient({ meetings }: { meetings: ArchiveMeetingSummary[] }) {
+  const [view, setView] = useState<ArchiveView>("meetings")
   const [scope, setScope] = useState<ArchiveScope>("all")
+  const [peopleRole, setPeopleRole] = useState<PeopleRole>("speaker")
   const [search, setSearch] = useState("")
   const [selectedMeeting, setSelectedMeeting] = useState<ArchiveMeetingSummary | null>(null)
+  const [expandedPersonKey, setExpandedPersonKey] = useState<string | null>(null)
 
   const counts = {
     all: meetings.length,
@@ -94,6 +211,22 @@ export function ArchiveClient({ meetings }: { meetings: ArchiveMeetingSummary[] 
     fast: meetings.filter((item) => getScopeKey(item) === "fast").length,
     conference: meetings.filter((item) => getScopeKey(item) === "conference").length,
   }
+
+  const speakerPeople = useMemo(() => aggregatePeople(meetings, "speaker"), [meetings])
+  const prayerPeople = useMemo(() => aggregatePeople(meetings, "prayer"), [meetings])
+
+  const peopleSource = peopleRole === "speaker" ? speakerPeople : prayerPeople
+  const peopleQuery = search.trim().toLowerCase()
+  const filteredPeople = peopleQuery
+    ? peopleSource.filter((person) => person.name.toLowerCase().includes(peopleQuery))
+    : peopleSource
+
+  const totalUniquePeople = useMemo(() => {
+    const seen = new Set<string>()
+    for (const p of speakerPeople) seen.add(p.key)
+    for (const p of prayerPeople) seen.add(p.key)
+    return seen.size
+  }, [speakerPeople, prayerPeople])
 
   const filteredMeetings = meetings.filter((item) => meetingMatches(item, scope, search))
 
@@ -124,14 +257,20 @@ export function ArchiveClient({ meetings }: { meetings: ArchiveMeetingSummary[] 
             </div>
           </div>
 
+          {/* Top-level view: meetings vs people */}
           <div className="mt-10 flex gap-8 border-b border-border/70 pb-3">
-            {SCOPES.map((item) => {
-              const active = item.key === scope
+            {(
+              [
+                { key: "meetings" as const, label: "Meetings", count: counts.all },
+                { key: "people" as const, label: "People", count: totalUniquePeople },
+              ]
+            ).map((tab) => {
+              const active = tab.key === view
               return (
                 <button
-                  key={item.key}
+                  key={tab.key}
                   type="button"
-                  onClick={() => setScope(item.key)}
+                  onClick={() => setView(tab.key)}
                   className={cn(
                     "inline-flex items-center gap-2 border-b-2 pb-2 text-sm font-medium transition-colors",
                     active
@@ -139,12 +278,67 @@ export function ArchiveClient({ meetings }: { meetings: ArchiveMeetingSummary[] 
                       : "border-transparent text-muted-foreground hover:text-foreground"
                   )}
                 >
-                  {item.label}
-                  <span className="text-xs text-muted-foreground">{counts[item.key]}</span>
+                  {tab.label}
+                  <span className="text-xs text-muted-foreground">{tab.count}</span>
                 </button>
               )
             })}
           </div>
+
+          {/* Sub-tabs for the active view */}
+          {view === "meetings" ? (
+            <div className="mt-4 flex gap-6 border-b border-border/40 pb-3">
+              {SCOPES.map((item) => {
+                const active = item.key === scope
+                return (
+                  <button
+                    key={item.key}
+                    type="button"
+                    onClick={() => setScope(item.key)}
+                    className={cn(
+                      "inline-flex items-center gap-1.5 border-b-2 pb-1.5 text-[13px] font-medium transition-colors",
+                      active
+                        ? "border-foreground/70 text-foreground"
+                        : "border-transparent text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    {item.label}
+                    <span className="text-[11px] text-muted-foreground">{counts[item.key]}</span>
+                  </button>
+                )
+              })}
+            </div>
+          ) : (
+            <div className="mt-4 flex gap-6 border-b border-border/40 pb-3">
+              {(
+                [
+                  { key: "speaker" as const, label: "Speakers", count: speakerPeople.length },
+                  { key: "prayer" as const, label: "Prayer-givers", count: prayerPeople.length },
+                ]
+              ).map((tab) => {
+                const active = tab.key === peopleRole
+                return (
+                  <button
+                    key={tab.key}
+                    type="button"
+                    onClick={() => {
+                      setPeopleRole(tab.key)
+                      setExpandedPersonKey(null)
+                    }}
+                    className={cn(
+                      "inline-flex items-center gap-1.5 border-b-2 pb-1.5 text-[13px] font-medium transition-colors",
+                      active
+                        ? "border-foreground/70 text-foreground"
+                        : "border-transparent text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    {tab.label}
+                    <span className="text-[11px] text-muted-foreground">{tab.count}</span>
+                  </button>
+                )
+              })}
+            </div>
+          )}
 
           <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center">
             <div className="relative flex-1">
@@ -152,15 +346,24 @@ export function ArchiveClient({ meetings }: { meetings: ArchiveMeetingSummary[] 
               <Input
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
-                placeholder="Search speakers, hymns, announcements, business, or notes"
+                placeholder={
+                  view === "meetings"
+                    ? "Search speakers, hymns, announcements, business, or notes"
+                    : "Search by name"
+                }
                 className="h-10 rounded-[10px] border-border/70 bg-background pl-9"
               />
             </div>
             <Badge variant="secondary" className="justify-center rounded-full px-3 py-1">
-              {detailCountLabel(filteredMeetings.length, "result")}
+              {detailCountLabel(
+                view === "meetings" ? filteredMeetings.length : filteredPeople.length,
+                view === "meetings" ? "result" : "person",
+                view === "meetings" ? undefined : "people"
+              )}
             </Badge>
           </div>
 
+          {view === "meetings" && (
           <div className="mt-8 space-y-3">
             {filteredMeetings.length === 0 ? (
               <div className="rounded-[12px] border border-dashed border-border/80 bg-background/80 px-6 py-12 text-center">
@@ -255,6 +458,19 @@ export function ArchiveClient({ meetings }: { meetings: ArchiveMeetingSummary[] 
               })
             )}
           </div>
+          )}
+
+          {view === "people" && (
+            <PeopleList
+              people={filteredPeople}
+              role={peopleRole}
+              expandedKey={expandedPersonKey}
+              onToggleExpand={(key) =>
+                setExpandedPersonKey((current) => (current === key ? null : key))
+              }
+              hasResults={peopleSource.length > 0}
+            />
+          )}
         </div>
       </div>
 
@@ -419,18 +635,6 @@ export function ArchiveClient({ meetings }: { meetings: ArchiveMeetingSummary[] 
                         ) : null}
                       </div>
                     </ArchiveSection>
-
-                    <div className="rounded-[12px] border border-border/70 bg-muted/25 p-4">
-                      <div className="flex items-center gap-2 text-sm font-medium">
-                        <Landmark className="h-4 w-4 text-primary" />
-                        Why this layout
-                      </div>
-                      <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                        The archive uses the same pattern as announcements: scope first,
-                        search second, scan-friendly cards in the middle, and details on demand.
-                        That keeps the page fast to scan while still making historical content searchable.
-                      </p>
-                    </div>
                   </div>
                 </div>
               </ScrollArea>
@@ -439,6 +643,137 @@ export function ArchiveClient({ meetings }: { meetings: ArchiveMeetingSummary[] 
         </DialogContent>
       </Dialog>
     </>
+  )
+}
+
+function PeopleList({
+  people,
+  role,
+  expandedKey,
+  onToggleExpand,
+  hasResults,
+}: {
+  people: ArchivePerson[]
+  role: PeopleRole
+  expandedKey: string | null
+  onToggleExpand: (key: string) => void
+  hasResults: boolean
+}) {
+  if (people.length === 0) {
+    const emptyTitle = hasResults
+      ? "No people match"
+      : role === "speaker"
+        ? "No speakers in the archive yet"
+        : "No prayer assignments in the archive yet"
+    const emptyHelp = hasResults
+      ? "Try a different search."
+      : "As past meetings accumulate, contributors will show up here."
+    return (
+      <div className="mt-8 rounded-[12px] border border-dashed border-border/80 bg-background/80 px-6 py-12 text-center">
+        <UserRound className="mx-auto h-8 w-8 text-muted-foreground/70" />
+        <h2 className="mt-4 text-lg font-semibold">{emptyTitle}</h2>
+        <p className="mt-2 text-sm text-muted-foreground">{emptyHelp}</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="mt-8 overflow-hidden rounded-[12px] border border-border/70 bg-background">
+      <ul className="divide-y divide-border/60">
+        {people.map((person) => (
+          <PersonRow
+            key={person.key}
+            person={person}
+            expanded={expandedKey === person.key}
+            onToggle={() => onToggleExpand(person.key)}
+          />
+        ))}
+      </ul>
+    </div>
+  )
+}
+
+function PersonRow({
+  person,
+  expanded,
+  onToggle,
+}: {
+  person: ArchivePerson
+  expanded: boolean
+  onToggle: () => void
+}) {
+  return (
+    <li>
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={expanded}
+        className={cn(
+          "flex w-full items-center gap-4 px-4 py-3 text-left transition-colors hover:bg-accent/30 sm:px-5",
+          expanded && "bg-accent/20"
+        )}
+      >
+        <div className="min-w-0 flex-1">
+          <div className="truncate text-[14.5px] font-medium text-foreground">{person.name}</div>
+          <div className="mt-0.5 text-[12px] text-muted-foreground">
+            Last assigned {relativeFromIsoDate(person.lastDate)}
+          </div>
+        </div>
+        <div className="flex shrink-0 items-center gap-3">
+          <div className="text-right">
+            <div className="text-[14px] font-semibold tabular-nums text-foreground">
+              {person.total}
+            </div>
+            <div className="text-[10.5px] uppercase tracking-[0.08em] text-muted-foreground">
+              total
+            </div>
+          </div>
+          <ChevronRight
+            className={cn(
+              "h-4 w-4 text-muted-foreground transition-transform duration-150",
+              expanded && "rotate-90"
+            )}
+          />
+        </div>
+      </button>
+
+      {expanded && (
+        <div className="border-t border-border/50 bg-muted/10 px-4 py-3 sm:px-5">
+          <div className="mb-2 text-[10.5px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+            Assignment timeline
+          </div>
+          <ul className="divide-y divide-border/40">
+            {person.assignments.map((assignment) => (
+              <li key={assignment.id} className="flex items-start gap-3 py-2.5">
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                    <span className="text-[13px] font-medium text-foreground">
+                      {shortDate(assignment.meetingDate)}
+                    </span>
+                    <span className="text-[11.5px] text-muted-foreground">
+                      {assignment.roleLabel}
+                    </span>
+                    {assignment.status ? (
+                      <AssignmentStatusPill
+                        status={assignment.status}
+                        declineNote={assignment.declineNote}
+                        onChange={() => {}}
+                        interactive={false}
+                      />
+                    ) : null}
+                  </div>
+                  {assignment.topic ? (
+                    <div className="mt-1 text-[12.5px] italic text-muted-foreground">
+                      “{assignment.topic}”
+                    </div>
+                  ) : null}
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </li>
   )
 }
 
