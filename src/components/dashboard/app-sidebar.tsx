@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   Archive,
   BriefcaseBusiness,
+  CheckCircle2,
   ChevronRight,
   BookUser,
   Home,
@@ -65,6 +66,7 @@ const sections: SidebarSection[] = [
         match: "prefix",
         children: [
           { href: "/meetings/sacrament/planner", label: "Planner", icon: Landmark, match: "prefix" },
+          { href: "/meetings/sacrament/confirmations", label: "Confirmations", icon: CheckCircle2, match: "prefix" },
           { href: "/meetings/sacrament/speakers", label: "Speakers", icon: MicVocal, match: "prefix" },
           { href: "/meetings/sacrament/business", label: "Business", icon: BriefcaseBusiness, match: "prefix" },
           { href: "/meetings/sacrament/announcements", label: "Announcements", icon: Megaphone, match: "prefix" },

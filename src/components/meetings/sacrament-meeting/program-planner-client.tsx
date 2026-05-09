@@ -5,7 +5,6 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { addDays, format, isBefore, startOfDay } from "date-fns"
 import {
   CalendarDays,
-  Check,
   CircleCheck,
   CircleCheckBig,
   CircleDashed,
@@ -13,7 +12,6 @@ import {
   Clock3,
   ExternalLink,
   GripVertical,
-  Info,
   Link2,
   Loader2,
   Minus,
@@ -22,12 +20,10 @@ import {
   PencilLine,
   Play,
   Plus,
-  RotateCcw,
   Search,
   Shredder,
   Trash2,
   X,
-  XCircle,
 } from "lucide-react"
 import {
   DndContext,
@@ -48,6 +44,7 @@ import { CSS } from "@dnd-kit/utilities"
 import { Breadcrumbs } from "@/components/dashboard/breadcrumbs"
 import { ensureRichTextHtml, isRichTextEmpty } from "@/lib/rich-text"
 import { RichTextEditor } from "@/components/ui/rich-text-editor"
+import { AssignmentStatusPill } from "@/components/meetings/sacrament-meeting/assignment-status-pill"
 import { SacramentMeetingAudienceView } from "@/components/meetings/sacrament-meeting/audience-client"
 import { AudiencePublishButton } from "@/components/meetings/sacrament-meeting/audience-publish-button"
 import { ConductView } from "@/components/meetings/sacrament-meeting/conduct-view"
@@ -96,6 +93,7 @@ import {
   type BusinessCategoryKey,
 } from "@/lib/business/combined-script"
 import type { ConductBusinessSection } from "@/components/meetings/sacrament-meeting/conduct-view"
+import type { AssignmentStatus, AssignmentStatusChange } from "@/lib/sacrament-confirmations"
 import { isAnnouncementInWindow } from "@/lib/announcement-utils"
 import type { BusinessItem } from "@/components/business/business-table"
 import { cn } from "@/lib/utils"
@@ -131,11 +129,6 @@ type SectionEntry = {
   kind: "section"
   title: string
 }
-
-// Confirmation lifecycle for an assigned person (speaker or prayer).
-// Undefined when no person is assigned. "pending" once a name is set,
-// then flipped to "confirmed" or "declined" by the bishopric.
-type AssignmentStatus = "pending" | "confirmed" | "declined"
 
 type StaticEntry = {
   id: string
@@ -1538,232 +1531,6 @@ function HymnPlanningRow({ type, hymnNumber, hymnTitle, meta, onClick }: HymnPla
   )
 }
 
-type AssignmentStatusChange =
-  | { status: "pending" | "confirmed" }
-  | { status: "declined"; declineNote: string | null }
-
-type AssignmentStatusPillProps = {
-  status: AssignmentStatus | undefined
-  declineNote?: string | null
-  onChange: (change: AssignmentStatusChange) => void
-  // When false, pill is read-only (no popover). Used when no name is assigned.
-  interactive?: boolean
-}
-
-function AssignmentStatusPill({
-  status,
-  declineNote,
-  onChange,
-  interactive = true,
-}: AssignmentStatusPillProps) {
-  const [open, setOpen] = useState(false)
-  const [declineDraft, setDeclineDraft] = useState(declineNote ?? "")
-  const [showDeclineForm, setShowDeclineForm] = useState(false)
-  const [showNotePopover, setShowNotePopover] = useState(false)
-
-  // Sync draft with note when popover opens
-  useEffect(() => {
-    if (open) {
-      setDeclineDraft(declineNote ?? "")
-      setShowDeclineForm(false)
-    }
-  }, [open, declineNote])
-
-  if (!status) return null
-
-  const labelByStatus: Record<AssignmentStatus, string> = {
-    pending: "Pending",
-    confirmed: "Confirmed",
-    declined: "Declined",
-  }
-
-  const styleByStatus: Record<AssignmentStatus, string> = {
-    pending:
-      "border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-300",
-    confirmed:
-      "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300",
-    declined:
-      "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-900 dark:bg-rose-950 dark:text-rose-300",
-  }
-
-  const iconByStatus: Record<AssignmentStatus, React.ReactNode> = {
-    pending: <CircleDashed className="h-3 w-3" />,
-    confirmed: <Check className="h-3 w-3" />,
-    declined: <XCircle className="h-3 w-3" />,
-  }
-
-  const pill = (
-    <span
-      className={cn(
-        "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10.5px] font-medium leading-none",
-        styleByStatus[status],
-        interactive && "cursor-pointer transition-opacity hover:opacity-80"
-      )}
-    >
-      {iconByStatus[status]}
-      {labelByStatus[status]}
-    </span>
-  )
-
-  const noteIcon =
-    status === "declined" && declineNote?.trim() ? (
-      <Popover open={showNotePopover} onOpenChange={setShowNotePopover}>
-        <PopoverTrigger asChild>
-          <button
-            type="button"
-            onClick={(event) => {
-              event.stopPropagation()
-              setShowNotePopover((value) => !value)
-            }}
-            aria-label="View decline note"
-            className="grid h-5 w-5 place-items-center rounded-full text-rose-700 transition-colors hover:bg-rose-100 dark:text-rose-300 dark:hover:bg-rose-900/40"
-          >
-            <Info className="h-3.5 w-3.5" />
-          </button>
-        </PopoverTrigger>
-        <PopoverContent
-          side="top"
-          align="end"
-          className="w-64 p-3 text-[12.5px] leading-5 text-foreground"
-          onClick={(event) => event.stopPropagation()}
-        >
-          <div className="mb-1 text-[10.5px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-            Decline note
-          </div>
-          <p className="whitespace-pre-line">{declineNote}</p>
-        </PopoverContent>
-      </Popover>
-    ) : null
-
-  if (!interactive) {
-    return (
-      <span className="inline-flex items-center gap-1.5">
-        {pill}
-        {noteIcon}
-      </span>
-    )
-  }
-
-  const handleConfirm = () => {
-    onChange({ status: "confirmed" })
-    setOpen(false)
-  }
-
-  const handleReset = () => {
-    onChange({ status: "pending" })
-    setOpen(false)
-  }
-
-  const handleDeclineSave = () => {
-    const trimmed = declineDraft.trim()
-    onChange({ status: "declined", declineNote: trimmed.length > 0 ? trimmed : null })
-    setOpen(false)
-  }
-
-  return (
-    <span className="inline-flex items-center gap-1.5">
-      <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
-          <button
-            type="button"
-            onClick={(event) => event.stopPropagation()}
-            aria-label={`Assignment status: ${labelByStatus[status]}. Tap to change.`}
-            className="inline-flex"
-          >
-            {pill}
-          </button>
-        </PopoverTrigger>
-        <PopoverContent
-          side="bottom"
-          align="end"
-          className="w-60 p-1"
-          onClick={(event) => event.stopPropagation()}
-        >
-          {showDeclineForm ? (
-            <div className="space-y-2 p-2">
-              <div className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-                Why? — optional
-              </div>
-              <textarea
-                autoFocus
-                value={declineDraft}
-                onChange={(event) => setDeclineDraft(event.target.value)}
-                maxLength={280}
-                rows={3}
-                placeholder="Going through a difficult time, prefers not to speak right now…"
-                className="w-full resize-none rounded-md border border-border bg-background px-2 py-1.5 text-[12.5px] leading-5 text-foreground outline-none placeholder:text-muted-foreground focus:ring-2 focus:ring-ring"
-              />
-              <div className="flex items-center justify-end gap-1">
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="ghost"
-                  className="h-7 px-2 text-[12px]"
-                  onClick={() => setShowDeclineForm(false)}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  className="h-7 px-2.5 text-[12px]"
-                  onClick={handleDeclineSave}
-                >
-                  Save
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <div className="flex flex-col">
-              {status !== "confirmed" && (
-                <button
-                  type="button"
-                  onClick={handleConfirm}
-                  className="flex items-center gap-2 rounded-sm px-2 py-1.5 text-left text-[13px] text-foreground transition-colors hover:bg-accent"
-                >
-                  <Check className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
-                  Mark as confirmed
-                </button>
-              )}
-              {status !== "declined" && (
-                <button
-                  type="button"
-                  onClick={() => setShowDeclineForm(true)}
-                  className="flex items-center gap-2 rounded-sm px-2 py-1.5 text-left text-[13px] text-foreground transition-colors hover:bg-accent"
-                >
-                  <XCircle className="h-3.5 w-3.5 text-rose-600 dark:text-rose-400" />
-                  Mark as declined…
-                </button>
-              )}
-              {status === "declined" && declineNote?.trim() && (
-                <button
-                  type="button"
-                  onClick={() => setShowDeclineForm(true)}
-                  className="flex items-center gap-2 rounded-sm px-2 py-1.5 text-left text-[13px] text-foreground transition-colors hover:bg-accent"
-                >
-                  <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
-                  Edit decline note
-                </button>
-              )}
-              {status !== "pending" && (
-                <button
-                  type="button"
-                  onClick={handleReset}
-                  className="flex items-center gap-2 rounded-sm px-2 py-1.5 text-left text-[13px] text-foreground transition-colors hover:bg-accent"
-                >
-                  <RotateCcw className="h-3.5 w-3.5 text-muted-foreground" />
-                  Reset to pending
-                </button>
-              )}
-            </div>
-          )}
-        </PopoverContent>
-      </Popover>
-      {noteIcon}
-    </span>
-  )
-}
-
 type PrayerPlanningRowProps = {
   type: string
   personName?: string
@@ -1814,9 +1581,9 @@ function PrayerPlanningRow({
             <span className="font-serif text-[15.5px] italic text-muted-foreground">Assign someone</span>
           )}
         </button>
-        {assignedName && status ? (
+        {assignedName ? (
           <AssignmentStatusPill
-            status={status}
+            status={status ?? "pending"}
             declineNote={declineNote}
             onChange={onStatusChange}
           />
@@ -2645,9 +2412,9 @@ function SpeakerPlanningRow({
               <span className="italic text-muted-foreground">Tap to assign speaker</span>
             )}
           </button>
-          {!reorderMode && entry.speakerName.trim() && entry.speakerStatus ? (
+          {!reorderMode && entry.speakerName.trim() ? (
             <AssignmentStatusPill
-              status={entry.speakerStatus}
+              status={entry.speakerStatus ?? "pending"}
               declineNote={entry.speakerDeclineNote}
               onChange={(change) => onSpeakerStatusChange(entry.id, change)}
             />
@@ -3619,11 +3386,11 @@ export function SacramentMeetingPlannerClient({
   const handleSpeakerNameChange = (entryId: string, speakerName: string) => {
     updateSelectedMeeting((meeting) => ({
       ...meeting,
-      standardEntries: meeting.standardEntries.map((entry) => {
+      standardEntries: meeting.standardEntries.map((entry): AgendaEntry => {
         if (entry.id !== entryId || entry.kind !== "speaker") return entry
-        const wasAssigned = Boolean(entry.speakerName.trim())
-        const isAssigned = Boolean(speakerName.trim())
-        if (!isAssigned) {
+        const previousName = entry.speakerName.trim()
+        const nextName = speakerName.trim()
+        if (!nextName) {
           // Cleared the name: drop status + decline note so the row resets cleanly.
           return {
             ...entry,
@@ -3633,12 +3400,17 @@ export function SacramentMeetingPlannerClient({
             speakerDeclinedAt: null,
           }
         }
-        if (!wasAssigned) {
-          // First time assigning: default to pending (bishopric still has to confirm).
+        // First assignment OR reassignment to a different person → reset
+        // status to pending and clear any prior decline note. We only
+        // preserve status when the same name is being re-saved (which the
+        // picker doesn't usually trigger but is a no-op safety case).
+        if (previousName !== nextName) {
           return {
             ...entry,
             speakerName,
-            speakerStatus: entry.speakerStatus ?? "pending",
+            speakerStatus: "pending",
+            speakerDeclineNote: null,
+            speakerDeclinedAt: null,
           }
         }
         return { ...entry, speakerName }
@@ -3729,16 +3501,16 @@ export function SacramentMeetingPlannerClient({
   ) => {
     updateSelectedMeeting((meeting) => {
       const mapEntries = (entries: AgendaEntry[]) =>
-        entries.map((entry) => {
+        entries.map((entry): AgendaEntry => {
           if (
             entry.id !== entryId ||
             entry.kind !== "static" ||
             entry.assigneeField !== field
           )
             return entry
-          const wasAssigned = Boolean(entry.assigneeName?.trim())
-          const isAssigned = Boolean(assigneeName.trim())
-          if (!isAssigned) {
+          const previousName = entry.assigneeName?.trim() ?? ""
+          const nextName = assigneeName.trim()
+          if (!nextName) {
             return {
               ...entry,
               assigneeName,
@@ -3747,11 +3519,13 @@ export function SacramentMeetingPlannerClient({
               assigneeDeclinedAt: null,
             }
           }
-          if (!wasAssigned) {
+          if (previousName !== nextName) {
             return {
               ...entry,
               assigneeName,
-              assigneeStatus: entry.assigneeStatus ?? "pending",
+              assigneeStatus: "pending",
+              assigneeDeclineNote: null,
+              assigneeDeclinedAt: null,
             }
           }
           return { ...entry, assigneeName }

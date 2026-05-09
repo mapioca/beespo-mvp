@@ -15,9 +15,15 @@ import {
 } from "lucide-react"
 
 import { Breadcrumbs } from "@/components/dashboard/breadcrumbs"
+import { AssignmentStatusPill } from "@/components/meetings/sacrament-meeting/assignment-status-pill"
 import { Button } from "@/components/ui/button"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { createClient } from "@/lib/supabase/client"
+import type {
+  AssignmentStatus,
+  AssignmentStatusChange,
+  ConfirmationAction,
+} from "@/lib/sacrament-confirmations"
 import { cn } from "@/lib/utils"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -37,6 +43,9 @@ type SpeakerEntry = {
   topic: string
   topicUrl?: string | null
   durationMinutes: number | null
+  speakerStatus?: AssignmentStatus
+  speakerDeclineNote?: string | null
+  speakerDeclinedAt?: string | null
 }
 
 type SpeakerFieldPatch = {
@@ -804,6 +813,7 @@ type SlotFilledProps = {
   onPickSlot: () => void
   onRemove: () => void
   onTopicUpdate: (patch: SpeakerFieldPatch) => void
+  onStatusChange: (change: AssignmentStatusChange) => void
   lastSpoke: LastSpokeEntry | undefined
 }
 
@@ -813,6 +823,7 @@ function SlotFilled({
   onPickSlot,
   onRemove,
   onTopicUpdate,
+  onStatusChange,
   lastSpoke,
 }: SlotFilledProps) {
   const tier: AgoTier = lastSpoke ? agoTier(lastSpoke.date) : "never"
@@ -841,15 +852,29 @@ function SlotFilled({
       </button>
 
       <div className="min-w-0 flex-1">
-        <button
-          type="button"
-          onClick={onPickSlot}
-          className="block w-full text-left font-serif text-[14px] text-foreground hover:text-brand"
-        >
-          {speaker.speakerName || (
-            <span className="italic text-muted-foreground">Tap to assign</span>
-          )}
-        </button>
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <button
+            type="button"
+            onClick={onPickSlot}
+            className={cn(
+              "min-w-0 truncate text-left font-serif text-[14px] hover:text-brand",
+              speaker.speakerStatus === "declined"
+                ? "text-muted-foreground line-through decoration-muted-foreground/50"
+                : "text-foreground"
+            )}
+          >
+            {speaker.speakerName || (
+              <span className="italic text-muted-foreground">Tap to assign</span>
+            )}
+          </button>
+          {speaker.speakerName.trim() ? (
+            <AssignmentStatusPill
+              status={speaker.speakerStatus ?? "pending"}
+              declineNote={speaker.speakerDeclineNote}
+              onChange={onStatusChange}
+            />
+          ) : null}
+        </div>
         <TopicField
           topic={speaker.topic}
           topicUrl={speaker.topicUrl}
@@ -886,6 +911,7 @@ type MeetingCardProps = {
   onPickSlot: (slotIdx: number) => void
   onRemoveSpeaker: (slotIdx: number) => void
   onUpdateTopic: (slotIdx: number, patch: SpeakerFieldPatch) => void
+  onStatusChange: (entryId: string, change: AssignmentStatusChange) => void
 }
 
 function MeetingCard({
@@ -896,6 +922,7 @@ function MeetingCard({
   onPickSlot,
   onRemoveSpeaker,
   onUpdateTopic,
+  onStatusChange,
 }: MeetingCardProps) {
   const date = new Date(`${isoDate}T12:00:00`)
   const month = format(date, "MMM").toUpperCase()
@@ -953,6 +980,7 @@ function MeetingCard({
                 onPickSlot={() => onPickSlot(i)}
                 onRemove={() => onRemoveSpeaker(i)}
                 onTopicUpdate={(patch) => onUpdateTopic(i, patch)}
+                onStatusChange={(change) => onStatusChange(s.id, change)}
                 lastSpoke={s.speakerName ? lastSpokeMap[s.speakerName] : undefined}
               />
             ))}
@@ -1223,14 +1251,28 @@ export function SpeakerPlannerClient() {
         if (slotIdx < speakerEntries.length) {
           // Replace existing speaker name
           const targetAllIdx = speakerIndicesInAll[slotIdx]
+          const targetEntry = allEntries[targetAllIdx]
+          const previousRaw = (targetEntry as { speakerName?: unknown }).speakerName
+          const previous = typeof previousRaw === "string" ? previousRaw.trim() : ""
           const updatedEntries = [...allEntries]
+          // Reassigning to a different person resets confirmation state so
+          // the previous person's "confirmed" doesn't stick to the new one.
+          const isSwap = previous.length > 0 && previous !== person.name
           updatedEntries[targetAllIdx] = {
-            ...updatedEntries[targetAllIdx],
+            ...targetEntry,
             speakerName: person.name,
+            ...(isSwap || previous.length === 0
+              ? {
+                  speakerStatus: "pending",
+                  speakerDeclineNote: null,
+                  speakerDeclinedAt: null,
+                }
+              : {}),
           }
           return { standardEntries: updatedEntries }
         } else {
-          // Add new speaker entry
+          // Add new speaker entry — default to pending so they show up in
+          // the confirmations queue immediately.
           const newEntry: SpeakerEntry = {
             id: `${isoDate}-speaker-${Date.now()}`,
             kind: "speaker",
@@ -1238,6 +1280,7 @@ export function SpeakerPlannerClient() {
             speakerName: person.name,
             topic: "",
             durationMinutes: 10,
+            speakerStatus: "pending",
           }
           // Insert before closing section or at end of standardEntries
           const closingIdx = allEntries.findIndex((e) => e.id === "section-closing")
@@ -1290,6 +1333,66 @@ export function SpeakerPlannerClient() {
       })
     },
     [updateMeeting]
+  )
+
+  // Mutate speaker confirmation status in-place, persist via the dedicated
+  // confirmations endpoint (instead of the bulk planner upsert) so we only
+  // touch meeting_state and don't risk overwriting notes_state.
+  const updateSpeakerStatus = useCallback(
+    async (isoDate: string, entryId: string, change: AssignmentStatusChange) => {
+      let snapshot: Record<string, PlannerMeetingState> = {}
+
+      setMeetingsByDate((prev) => {
+        snapshot = prev
+        const meeting = prev[isoDate]
+        if (!meeting) return prev
+        const apply = (entries: AgendaEntry[]) =>
+          entries.map((e) => {
+            if (e.id !== entryId || e.kind !== "speaker") return e
+            if (change.status === "declined") {
+              return {
+                ...e,
+                speakerStatus: "declined",
+                speakerDeclineNote: change.declineNote,
+                speakerDeclinedAt: new Date().toISOString(),
+              }
+            }
+            return {
+              ...e,
+              speakerStatus: change.status,
+              speakerDeclineNote: null,
+              speakerDeclinedAt: null,
+            }
+          })
+        return {
+          ...prev,
+          [isoDate]: {
+            ...meeting,
+            standardEntries: apply(meeting.standardEntries ?? []),
+            fastEntries: apply(meeting.fastEntries ?? []),
+          },
+        }
+      })
+
+      const action: ConfirmationAction =
+        change.status === "declined"
+          ? { type: "decline", note: change.declineNote }
+          : change.status === "confirmed"
+            ? { type: "confirm" }
+            : { type: "reset" }
+
+      try {
+        const response = await fetch("/api/meetings/sacrament-confirmations", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ meetingDate: isoDate, entryId, action }),
+        })
+        if (!response.ok) throw new Error(await response.text())
+      } catch {
+        setMeetingsByDate(snapshot)
+      }
+    },
+    []
   )
 
   // ─── Breadcrumb ─────────────────────────────────────────────────────────────
@@ -1379,6 +1482,7 @@ export function SpeakerPlannerClient() {
                       }}
                       onRemoveSpeaker={(slotIdx) => removeSpeaker(iso, slotIdx)}
                       onUpdateTopic={(slotIdx, patch) => updateTopic(iso, slotIdx, patch)}
+                      onStatusChange={(entryId, change) => updateSpeakerStatus(iso, entryId, change)}
                     />
                   )
                 })}
