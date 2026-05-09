@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createNotification } from '@/lib/actions/notification-actions';
 import { checkRateLimit } from '@/lib/rate-limiter';
+import { verifyTurnstile } from '@/lib/security/turnstile';
 import { NextRequest, NextResponse } from 'next/server';
 
 async function findAuthUserByEmail(email: string) {
@@ -59,10 +60,21 @@ export async function POST(request: NextRequest) {
 
     const supabase = await createClient();
 
-    const { token } = await request.json();
+    const { token, turnstileToken } = await request.json();
 
     if (!token) {
         return NextResponse.json({ error: 'Token is required' }, { status: 400 });
+    }
+
+    // Verify Turnstile (skip if not configured — dev only; production fails closed)
+    if (process.env.TURNSTILE_SECRET_KEY) {
+        const turnstile = await verifyTurnstile(turnstileToken, ip);
+        if (!turnstile.success) {
+            return NextResponse.json(
+                { error: 'Could not verify the security challenge. Please refresh and try again.' },
+                { status: 403 }
+            );
+        }
     }
 
     // Get the invitation by token (RLS allows anyone to view by token)

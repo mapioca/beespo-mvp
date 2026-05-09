@@ -3,10 +3,14 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { resend } from "@/lib/email/resend";
-import { getResetPasswordEmailHtml } from "@/lib/email/templates";
+import {
+    getResetPasswordEmailHtml,
+    getFailedLoginNoticeHtml,
+} from "@/lib/email/templates";
 import { verifyTurnstile } from "@/lib/security/turnstile";
 import { getClientIp } from "@/lib/security/request-ip";
 import { checkRateLimit } from "@/lib/rate-limiter";
+import { checkTrustedDevice } from "@/lib/mfa";
 import { redirect } from "next/navigation";
 
 const GENERIC_AUTH_ERROR =
@@ -28,6 +32,67 @@ function normalizeEmail(email: string): string {
     return email.trim().toLowerCase();
 }
 
+/**
+ * Threshold of failed sign-ins within `FAILURE_WINDOW_MS` that triggers the
+ * "suspicious sign-in attempts" email. Set high enough that a frustrated
+ * user typing the wrong password once or twice does NOT receive an alert.
+ */
+const FAILURE_THRESHOLD = 3;
+const FAILURE_WINDOW_MS = 60 * 60_000; // 1 hour
+const NOTICE_DEBOUNCE_MS = 60 * 60_000; // at most 1 email per hour per address
+
+/**
+ * Record a failed sign-in attempt and, if a burst threshold is crossed, send
+ * the address-of-record a security notice. Both the burst counter and the
+ * email send are debounced via Upstash so we never spam the legitimate user.
+ *
+ * Counters are bucketed per-email (not per-IP) — a slow attacker rotating IPs
+ * still trips the burst threshold; a single user fat-fingering once does not.
+ *
+ * Successful logins do NOT consume from this counter, so a power user logging
+ * in many times in a short window will never trigger the notice.
+ *
+ * Errors are swallowed; this must never block login.
+ */
+async function maybeNotifyFailedLoginBurst(email: string, ip: string): Promise<void> {
+    try {
+        // Burst counter: every failure consumes one slot. The 4th failure in
+        // FAILURE_WINDOW_MS returns allowed=false, our cue that the threshold
+        // has been crossed.
+        const burst = await checkRateLimit(
+            `auth:fail-burst:${email}`,
+            FAILURE_THRESHOLD,
+            FAILURE_WINDOW_MS
+        );
+        if (burst.allowed) return; // still under threshold — do nothing
+
+        // Debounce email sends: even if many failures come in after the
+        // threshold trips, send at most one notice per hour per address.
+        const debounce = await checkRateLimit(
+            `auth:notice:email:${email}`,
+            1,
+            NOTICE_DEBOUNCE_MS
+        );
+        if (!debounce.allowed) return;
+
+        if (!resend) {
+            console.warn(
+                "[auth] failed-login notice skipped — Resend not initialized"
+            );
+            return;
+        }
+
+        await resend.emails.send({
+            from: "Beespo Security <noreply@beespo.com>",
+            to: email,
+            subject: "Suspicious sign-in attempts on your Beespo account",
+            html: getFailedLoginNoticeHtml(email, ip),
+        });
+    } catch (err) {
+        console.error("[auth] failed to send failed-login notice", err);
+    }
+}
+
 // ── Sign out ───────────────────────────────────────────────────────────────
 
 export async function signOutAction() {
@@ -41,7 +106,7 @@ export async function signOutAction() {
 interface LoginInput {
     email: string;
     password: string;
-    turnstileToken: string;
+    turnstileToken: string | null;
     redirectTo?: string | null;
     useTemplateId?: string | null;
 }
@@ -102,9 +167,14 @@ export async function loginAction({
                 code: "email_not_confirmed",
             };
         }
+        // Track this failure. If it pushes the address past FAILURE_THRESHOLD
+        // within FAILURE_WINDOW_MS, the helper sends a one-per-hour notice
+        // to the address. A single typo will not trigger anything.
+        void maybeNotifyFailedLoginBurst(normalizedEmail, ip);
         return { ok: false, error: GENERIC_AUTH_ERROR };
     }
     if (!data.user) {
+        void maybeNotifyFailedLoginBurst(normalizedEmail, ip);
         return { ok: false, error: GENERIC_AUTH_ERROR };
     }
 
@@ -128,10 +198,15 @@ export async function loginAction({
         return { ok: true, redirectTo: "/onboarding" };
     }
 
-    // 5. MFA AAL check
+    // 5. MFA AAL check — honor "remember this device" cookie if it's still
+    // valid for this user. Without this, a trusted browser would still be
+    // forced through /mfa/verify on every fresh login.
     const { data: aalData } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
     if (aalData?.nextLevel === "aal2" && aalData?.currentLevel !== "aal2") {
-        return { ok: true, redirectTo: "/mfa/verify" };
+        const isTrusted = await checkTrustedDevice(data.user.id);
+        if (!isTrusted) {
+            return { ok: true, redirectTo: "/mfa/verify" };
+        }
     }
 
     // 6. Pick destination
@@ -152,7 +227,7 @@ export async function loginAction({
 
 interface ForgotPasswordInput {
     email: string;
-    turnstileToken: string;
+    turnstileToken: string | null;
 }
 
 /**

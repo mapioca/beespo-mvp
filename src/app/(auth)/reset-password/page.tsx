@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/lib/toast";
 import { createClient } from "@/lib/supabase/client";
+import { AuthShell } from "@/components/auth/auth-shell";
 
 const inkSubtle = "color-mix(in srgb, var(--lp-ink) 65%, transparent)";
 const inkBorder = "1px solid color-mix(in srgb, var(--lp-ink) 18%, transparent)";
@@ -19,12 +20,14 @@ const accentBtnStyle = { background: "var(--lp-accent)", color: "var(--lp-bg)" }
 
 function AuthCard({ children }: { children: React.ReactNode }) {
     return (
-        <div
-            className="rounded-2xl p-7 sm:p-8"
-            style={{ background: "var(--lp-surface)", border: inkBorder }}
-        >
-            {children}
-        </div>
+        <AuthShell>
+            <div
+                className="rounded-2xl p-7 sm:p-8"
+                style={{ background: "var(--lp-surface)", border: inkBorder }}
+            >
+                {children}
+            </div>
+        </AuthShell>
     );
 }
 

@@ -3,6 +3,8 @@
 import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { MfaSetup } from "@/components/mfa/mfa-setup";
+import { AuthTwoPane } from "@/components/auth/auth-two-pane";
+import { MfaSetupSidePanel } from "@/components/auth/mfa-setup-side-panel";
 
 function MfaSetupContent() {
   const searchParams = useSearchParams();
@@ -13,8 +15,10 @@ function MfaSetupContent() {
 
 export default function MfaSetupPage() {
   return (
-    <Suspense>
-      <MfaSetupContent />
-    </Suspense>
+    <AuthTwoPane sidePanel={<MfaSetupSidePanel />}>
+      <Suspense>
+        <MfaSetupContent />
+      </Suspense>
+    </AuthTwoPane>
   );
 }

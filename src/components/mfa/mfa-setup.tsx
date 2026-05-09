@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "@/lib/toast";
 import { createClient } from "@/lib/supabase/client";
 import { TotpInput } from "@/components/mfa/totp-input";
-import { Shield, Copy, Check } from "lucide-react";
+import { Copy, Check } from "lucide-react";
 
 const inkSubtle = "color-mix(in srgb, var(--lp-ink) 65%, transparent)";
 const inkBorder = "1px solid color-mix(in srgb, var(--lp-ink) 18%, transparent)";
@@ -117,87 +117,78 @@ export function MfaSetup({ required = false, redirectTo = "/dashboard" }: MfaSet
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col items-center text-center">
-        <Shield className="mb-2 h-8 w-8" style={{ color: inkSubtle }} />
-        <h1 className="text-xl font-bold" style={{ color: "var(--lp-ink)" }}>
-          Set up two-factor authentication
-        </h1>
-        {required && (
-          <p className="mt-1 text-sm" style={{ color: inkSubtle }}>
-            Your workspace requires two-factor authentication
-          </p>
-        )}
-      </div>
-
-      <div
-        className="rounded-2xl p-7 sm:p-8"
-        style={{ background: "var(--lp-surface)", border: inkBorder }}
+    <>
+      <p
+        className="text-[11px] font-semibold uppercase tracking-[0.18em]"
+        style={{ color: "color-mix(in srgb, var(--lp-ink) 55%, transparent)" }}
       >
-        <div className="space-y-1">
-          <h2 className="text-lg font-semibold" style={{ color: "var(--lp-ink)" }}>
-            Scan QR code
-          </h2>
-          <p className="text-sm" style={{ color: inkSubtle }}>
-            Use your authenticator app (Google Authenticator, Authy, etc.) to
-            scan the QR code below.
-          </p>
+        Two-factor setup
+      </p>
+      <h1
+        className="mt-2 text-[2rem] font-bold tracking-tight leading-[1.1]"
+        style={{ color: "var(--lp-ink)" }}
+      >
+        Pair your app.
+      </h1>
+      <p className="mt-3 text-sm" style={{ color: inkSubtle }}>
+        {required
+          ? "Your workspace requires two-factor authentication. Scan the code with an authenticator app to finish setup."
+          : "Scan the code with an authenticator app (Google Authenticator, Authy, 1Password, etc.) to enable two-factor sign-in."}
+      </p>
+
+      <div className="mt-8 space-y-6">
+        {/* QR Code — keep white background for scannability regardless of theme */}
+        <div className="flex justify-center">
+          <div className="rounded-lg bg-white p-4" style={{ border: inkBorder }}>
+            <QRCodeSVG value={qrUri} size={180} />
+          </div>
         </div>
 
-        <div className="mt-6 space-y-6">
-          {/* QR Code — keep white background for scannability regardless of theme */}
-          <div className="flex justify-center">
-            <div className="rounded-lg bg-white p-4" style={{ border: inkBorder }}>
-              <QRCodeSVG value={qrUri} size={200} />
-            </div>
+        {/* Secret Key Fallback */}
+        <div className="space-y-2">
+          <p className="text-center text-xs" style={{ color: inkSubtle }}>
+            Or enter this key manually:
+          </p>
+          <div className="flex items-center gap-2">
+            <code
+              className="flex-1 break-all rounded px-3 py-2 text-center font-mono text-xs"
+              style={{
+                background: "var(--lp-bg)",
+                color: "var(--lp-ink)",
+                border: inkBorder,
+              }}
+            >
+              {secret}
+            </code>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={copySecret}
+              className="shrink-0 bg-transparent hover:bg-transparent"
+              style={{ color: "var(--lp-ink)" }}
+            >
+              {copied ? (
+                <Check className="h-4 w-4" style={{ color: "var(--lp-accent)" }} />
+              ) : (
+                <Copy className="h-4 w-4" />
+              )}
+            </Button>
           </div>
+        </div>
 
-          {/* Secret Key Fallback */}
-          <div className="space-y-2">
+        {/* Verification */}
+        <div className="space-y-3 pt-1">
+          <p className="text-center text-sm" style={{ color: "var(--lp-ink)" }}>
+            Enter the 6-digit code from your app:
+          </p>
+          <TotpInput onComplete={handleVerify} disabled={isVerifying} />
+          {isVerifying && (
             <p className="text-center text-xs" style={{ color: inkSubtle }}>
-              Or enter this key manually:
+              Verifying...
             </p>
-            <div className="flex items-center gap-2">
-              <code
-                className="flex-1 break-all rounded px-3 py-2 text-center font-mono text-xs"
-                style={{
-                  background: "var(--lp-bg)",
-                  color: "var(--lp-ink)",
-                  border: inkBorder,
-                }}
-              >
-                {secret}
-              </code>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={copySecret}
-                className="shrink-0 bg-transparent hover:bg-transparent"
-                style={{ color: "var(--lp-ink)" }}
-              >
-                {copied ? (
-                  <Check className="h-4 w-4" style={{ color: "var(--lp-accent)" }} />
-                ) : (
-                  <Copy className="h-4 w-4" />
-                )}
-              </Button>
-            </div>
-          </div>
-
-          {/* Verification */}
-          <div className="space-y-3">
-            <p className="text-center text-sm" style={{ color: "var(--lp-ink)" }}>
-              Enter the 6-digit code from your app:
-            </p>
-            <TotpInput onComplete={handleVerify} disabled={isVerifying} />
-            {isVerifying && (
-              <p className="text-center text-xs" style={{ color: inkSubtle }}>
-                Verifying...
-              </p>
-            )}
-          </div>
+          )}
         </div>
       </div>
-    </div>
+    </>
   );
 }

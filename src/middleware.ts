@@ -3,6 +3,7 @@ import type { NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
 
 const DISABLED_ROUTES = [
+  // Out of v1 entirely
   "/calendar",
   "/schedule",
   "/library",
@@ -26,6 +27,11 @@ const DISABLED_ROUTES = [
   "/meetings/overview",
   "/meetings/create",
   "/meetings/new",
+  // Temporarily blocked for v1 launch (code retained for future re-enable)
+  "/inbox",
+  "/tasks",
+  "/discussions",
+  "/callings",
 ];
 
 const LEGACY_ROUTE_REDIRECTS: Array<{ from: string; to: string }> = [

@@ -2478,6 +2478,7 @@ export function SacramentMeetingPlannerClient({
   const [clearDialogOpen, setClearDialogOpen] = useState(false)
   const [audienceOpen, setAudienceOpen] = useState(false)
   const [conductOpen, setConductOpen] = useState(false)
+  const [workspaceId, setWorkspaceId] = useState<string | null>(null)
   const [notesByDate, setNotesByDate] = useState<Record<string, PlannerNotes>>({})
   const [meetingTypeOverridesByDate, setMeetingTypeOverridesByDate] = useState<Record<string, boolean>>({})
   const [meetingsByDate, setMeetingsByDate] = useState<Record<string, PlannerMeetingState>>(() =>
@@ -2546,6 +2547,27 @@ export function SacramentMeetingPlannerClient({
   )
 
   useEffect(() => {
+    if (workspaceId) return
+    let cancelled = false
+    const supabase = createClient()
+    void (async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user || cancelled) return
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: profile } = await (supabase.from("profiles") as any)
+        .select("workspace_id")
+        .eq("id", user.id)
+        .single()
+      if (cancelled) return
+      const id = profile?.workspace_id as string | undefined
+      if (id) setWorkspaceId(id)
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [workspaceId])
+
+  useEffect(() => {
     if (!directoryModalOpen || directoryPeople.length > 0) {
       return
     }
@@ -2600,6 +2622,7 @@ export function SacramentMeetingPlannerClient({
 
       const workspaceId = profile?.workspace_id
       if (!workspaceId || !isMounted) return
+      setWorkspaceId(workspaceId)
 
       const [annResult, bizResult, scheduledBizResult] = await Promise.all([
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -3745,6 +3768,8 @@ export function SacramentMeetingPlannerClient({
             entries: visibleEntries,
           }}
           isoDate={selectedSunday.isoDate}
+          workspaceId={workspaceId}
+          announcementSelection={selectedNotes.announcements}
           onCloseAction={() => setAudienceOpen(false)}
           onTopicUpdateAction={handleTopicUpdate}
         />

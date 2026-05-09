@@ -6,16 +6,12 @@ import { useEffect, useMemo, useState } from "react";
 import {
   Archive,
   BriefcaseBusiness,
-  CheckSquare,
   ChevronRight,
   BookUser,
-  HandHeart,
   Home,
-  Inbox,
   Landmark,
   LogOut,
   Megaphone,
-  MessagesSquare,
   Moon,
   Search,
   Settings,
@@ -35,6 +31,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { SupportTrigger } from "@/components/support/support-trigger";
 
 type SidebarItem = {
   href: string;
@@ -55,8 +52,6 @@ const sections: SidebarSection[] = [
     label: "Workspace",
     items: [
       { href: "/dashboard", label: "Home", icon: Home, match: "exact" },
-      { href: "/inbox", label: "Inbox", icon: Inbox, match: "prefix" },
-      { href: "/tasks", label: "Tasks", icon: CheckSquare, match: "prefix" },
       { href: "/directory", label: "Directory", icon: BookUser, match: "prefix" },
     ],
   },
@@ -76,8 +71,6 @@ const sections: SidebarSection[] = [
           { href: "/meetings/sacrament/archive", label: "Archive", icon: Archive, match: "prefix" },
         ],
       },
-      { href: "/discussions", label: "Discussions", icon: MessagesSquare, match: "prefix" },
-      { href: "/callings", label: "Callings", icon: HandHeart, match: "prefix" },
     ],
   },
 ];
@@ -184,10 +177,12 @@ function NavRow({
 }
 export function AppSidebar({
   userName,
+  userEmail,
   userId,
   workspaceName,
 }: {
   userName: string;
+  userEmail: string;
   userId: string;
   workspaceName?: string;
 }) {
@@ -322,6 +317,10 @@ export function AppSidebar({
           </div>
         </div>
       ))}
+
+      <div className="mt-auto flex items-center justify-end pt-3">
+        <SupportTrigger userEmail={userEmail} userName={userName} />
+      </div>
     </aside>
   );
 }
