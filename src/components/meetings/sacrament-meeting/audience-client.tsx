@@ -99,6 +99,7 @@ export function SacramentMeetingAudienceView({
           isoDate={isoDate}
           meeting={meeting}
           announcements={announcements}
+          language={meeting.contentLanguage}
           className="rounded-[2px] border border-border bg-background shadow-lg"
         />
       </div>

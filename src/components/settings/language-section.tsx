@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 import {
     Card,
@@ -25,6 +26,7 @@ type LanguageSectionProps = {
 };
 
 export function LanguageSection({ languagePreference }: LanguageSectionProps) {
+    const router = useRouter();
     const [sacramentLanguage, setSacramentLanguage] = useState<"ENG" | "SPA">(languagePreference);
     const [isSavingLanguage, setIsSavingLanguage] = useState(false);
 
@@ -37,7 +39,10 @@ export function LanguageSection({ languagePreference }: LanguageSectionProps) {
             toast.error("Failed to save language preference");
             setSacramentLanguage(previousValue);
         } else {
-            toast.success("Saved", { description: "Language preference updated." });
+            router.refresh();
+            toast.success("Saved", {
+                description: "Meeting content language updated. Beespo interface text stays in English.",
+            });
         }
         setIsSavingLanguage(false);
     };
@@ -47,7 +52,7 @@ export function LanguageSection({ languagePreference }: LanguageSectionProps) {
             <div>
                 <h1 className="text-3xl font-bold">Language</h1>
                 <p className="text-muted-foreground">
-                    Set the preferred language for parts of the app.
+                    Set the language for meeting content shared with the congregation.
                 </p>
             </div>
 
@@ -55,7 +60,7 @@ export function LanguageSection({ languagePreference }: LanguageSectionProps) {
                 <CardHeader>
                     <CardTitle>Language Preferences</CardTitle>
                     <CardDescription>
-                        Set the preferred language for different parts of the app.
+                        Beespo stays in English. Meeting content can use the ward language.
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
@@ -67,8 +72,8 @@ export function LanguageSection({ languagePreference }: LanguageSectionProps) {
                             <div className="space-y-1">
                                 <Label>Sacrament Meeting</Label>
                                 <p className="text-sm text-muted-foreground">
-                                    Sets the default language for hymns and agenda items in the
-                                    sacrament meeting planner.
+                                    Sets the default language for hymns, generated agenda labels,
+                                    public audience programs, and conducting scripts.
                                 </p>
                             </div>
                             <Select

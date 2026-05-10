@@ -1,5 +1,10 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { isAnnouncementInWindow } from "@/lib/announcement-utils";
+import {
+  describeAssignmentRole,
+  getUpcomingSundayIsoDates,
+  parseMeetingConfirmations,
+} from "@/lib/sacrament-confirmations";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -831,4 +836,63 @@ export async function fetchUpcomingSacramentSummaries(
       hasAnyData: byDate.has(date),
     };
   });
+}
+
+export interface PendingConfirmationsHomeData {
+  count: number;
+  items: HomeReadinessItem[];
+}
+
+const PENDING_CONFIRMATIONS_HORIZON_SUNDAYS = 8;
+const PENDING_CONFIRMATIONS_PREVIEW_LIMIT = 3;
+
+/**
+ * Aggregate pending speaker + prayer assignments across the next 8 Sundays
+ * for the home dashboard "To confirm" tile. Returns a total count and the
+ * top-3 most-imminent items (sorted by meeting date ascending).
+ */
+export async function fetchPendingConfirmationsHomeData(
+  supabase: SupabaseClient,
+  workspaceId: string
+): Promise<PendingConfirmationsHomeData> {
+  const dates = getUpcomingSundayIsoDates(PENDING_CONFIRMATIONS_HORIZON_SUNDAYS);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data } = await (supabase.from("sacrament_planner_entries") as any)
+    .select("meeting_date, meeting_state")
+    .eq("workspace_id", workspaceId)
+    .in("meeting_date", dates);
+
+  const rows = (data ?? []) as Array<{ meeting_date: string; meeting_state: unknown }>;
+  const pending = rows
+    .flatMap((row) => parseMeetingConfirmations(row.meeting_state, row.meeting_date))
+    .filter((assignment) => assignment.status === "pending")
+    .sort((a, b) => a.meetingDate.localeCompare(b.meetingDate));
+
+  const items: HomeReadinessItem[] = pending.slice(0, PENDING_CONFIRMATIONS_PREVIEW_LIMIT).map(
+    (assignment) => ({
+      id: `${assignment.meetingDate}-${assignment.entryId}`,
+      title: assignment.name,
+      detail: `${describeAssignmentRole(assignment)} · ${formatPendingDateLabel(assignment.meetingDate)}`,
+    })
+  );
+
+  return { count: pending.length, items };
+}
+
+function formatPendingDateLabel(isoDate: string): string {
+  try {
+    const date = new Date(`${isoDate}T12:00:00`);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const target = new Date(date);
+    target.setHours(0, 0, 0, 0);
+    const diffDays = Math.round((target.getTime() - today.getTime()) / 86_400_000);
+    if (diffDays <= 0) return "This Sunday";
+    if (diffDays <= 7) return "This Sunday";
+    if (diffDays <= 14) return "Next Sunday";
+    return date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+  } catch {
+    return isoDate;
+  }
 }

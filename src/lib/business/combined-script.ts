@@ -64,13 +64,14 @@ function joinSpanishSeries(parts: string[]): string {
   return `${head}, y ${parts[parts.length - 1]}`
 }
 
-function dominantLanguage(items: BusinessItem[]): Language {
+function dominantLanguage(items: BusinessItem[], languageOverride?: Language): Language {
+  if (languageOverride) return languageOverride
   const spanish = items.filter((i) => i.details?.language === "SPA").length
   return spanish > items.length / 2 ? "SPA" : "ENG"
 }
 
-function sustainingCombined(items: BusinessItem[]): string {
-  const language = dominantLanguage(items)
+function sustainingCombined(items: BusinessItem[], languageOverride?: Language): string {
+  const language = dominantLanguage(items, languageOverride)
   const phrases = items.map((i) => {
     const calling = i.position_calling || "[Calling]"
     return language === "SPA"
@@ -83,8 +84,8 @@ function sustainingCombined(items: BusinessItem[]): string {
   return `We have called ${joinWithSeriesComma(phrases)}, and propose that they be sustained. Those in favor may manifest it by the uplifted hand.\n\n[Pause for voting]\n\nThose opposed, if any, may manifest it.`
 }
 
-function releaseCombined(items: BusinessItem[]): string {
-  const language = dominantLanguage(items)
+function releaseCombined(items: BusinessItem[], languageOverride?: Language): string {
+  const language = dominantLanguage(items, languageOverride)
   const phrases = items.map((i) => {
     const calling = i.position_calling || "[Calling]"
     return language === "SPA"
@@ -97,8 +98,8 @@ function releaseCombined(items: BusinessItem[]): string {
   return `We have released ${joinWithSeriesComma(phrases)}, and propose a vote of thanks for their service.`
 }
 
-function ordinationCombined(items: BusinessItem[]): string {
-  const language = dominantLanguage(items)
+function ordinationCombined(items: BusinessItem[], languageOverride?: Language): string {
+  const language = dominantLanguage(items, languageOverride)
   const phrases = items.map((i) => {
     const office = i.details?.office
     const officeText = office ? formatOffice(office, language) : language === "SPA" ? "[Oficio]" : "[Office]"
@@ -112,8 +113,8 @@ function ordinationCombined(items: BusinessItem[]): string {
   return `We propose that ${joinWithSeriesComma(phrases)} be ordained. Those in favor may manifest it by the uplifted hand.`
 }
 
-function confirmationCombined(items: BusinessItem[]): string {
-  const language = dominantLanguage(items)
+function confirmationCombined(items: BusinessItem[], languageOverride?: Language): string {
+  const language = dominantLanguage(items, languageOverride)
   const names = items.map((i) => i.person_name)
   if (language === "SPA") {
     const nameList = joinSpanishSeries(names)
@@ -128,23 +129,24 @@ function confirmationCombined(items: BusinessItem[]): string {
 
 export function generateCombinedBusinessScript(
   category: BusinessCategoryKey,
-  items: BusinessItem[]
+  items: BusinessItem[],
+  languageOverride?: Language
 ): string {
   if (items.length === 0) return ""
-  if (items.length === 1) return generateBusinessScript(items[0])
+  if (items.length === 1) return generateBusinessScript(items[0], languageOverride)
 
   switch (category) {
     case "sustaining":
-      return sustainingCombined(items)
+      return sustainingCombined(items, languageOverride)
     case "release":
-      return releaseCombined(items)
+      return releaseCombined(items, languageOverride)
     case "ordination":
-      return ordinationCombined(items)
+      return ordinationCombined(items, languageOverride)
     case "confirmation":
-      return confirmationCombined(items)
+      return confirmationCombined(items, languageOverride)
     case "other":
     default:
-      return items.map((i) => generateBusinessScript(i)).join("\n\n")
+      return items.map((i) => generateBusinessScript(i, languageOverride)).join("\n\n")
   }
 }
 

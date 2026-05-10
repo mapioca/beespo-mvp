@@ -42,12 +42,12 @@ export function DashboardShell({
                 <NavigationStoreHydrator initialItems={initialNavigationItems} />
                 {workspaceName && <WorkspaceStoreHydrator workspaceName={workspaceName} />}
                 <div className="flex h-screen-dynamic overflow-hidden overscroll-none bg-app-shell">
-                <div className="relative z-20 hidden lg:flex">
+                <div className="relative z-20 hidden w-[248px] shrink-0 lg:flex">
                     <AppSidebar userName={userName} userEmail={userEmail} userId={userId} workspaceName={workspaceName} />
                 </div>
 
                 <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-                    <SheetContent side="left" className="w-[300px] p-0">
+                    <SheetContent side="left" className="w-[88vw] max-w-[320px] p-0 sm:w-[300px]">
                         <SheetTitle className="sr-only">Navigation</SheetTitle>
                         <SheetDescription className="sr-only">Workspace navigation drawer</SheetDescription>
                         <AppSidebar userName={userName} userEmail={userEmail} userId={userId} workspaceName={workspaceName} />
