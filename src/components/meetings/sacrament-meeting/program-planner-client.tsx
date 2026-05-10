@@ -4248,6 +4248,7 @@ export function SacramentMeetingPlannerClient({
           meeting={{
             title: selectedMeeting.title,
             contentLanguage: defaultLanguageRef.current,
+            meetingTime: selectedMeeting.meetingTime,
             specialType: selectedMeeting.specialType,
             assignments: selectedMeeting.assignments,
             entries: visibleEntries,

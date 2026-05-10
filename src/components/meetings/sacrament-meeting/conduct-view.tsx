@@ -76,6 +76,7 @@ export type ConductBusinessSection = {
 export type ConductMeeting = {
   title?: string
   contentLanguage?: ContentLanguage
+  meetingTime?: string
   specialType: MeetingSpecialType
   assignments: Record<AssignmentField, string>
   entries: AgendaEntry[]
@@ -108,6 +109,7 @@ type Step = {
   meta?: string
   hymnNum?: number
   kind?: "business" | "sacrament-prayers"
+  highlights?: string[]
 }
 
 // ─── Build agenda steps from meeting data ────────────────────────────────────
@@ -116,11 +118,123 @@ function totalBusinessCount(sections: ConductBusinessSection[]): number {
   return sections.reduce((sum, section) => sum + section.count, 0)
 }
 
+function parseMeetingHour(meetingTime?: string): number {
+  const raw = meetingTime?.trim()
+  if (!raw) return 9
+
+  const match = raw.match(/^(\d{1,2})(?::(\d{2}))?\s*(AM|PM)?$/i)
+  if (!match) return 9
+
+  let hour = Number.parseInt(match[1] ?? "9", 10)
+  const period = match[3]?.toUpperCase()
+
+  if (period === "PM" && hour < 12) hour += 12
+  if (period === "AM" && hour === 12) hour = 0
+
+  return Number.isFinite(hour) ? hour : 9
+}
+
+function buildWelcomeScript(meeting: ConductMeeting, language: ContentLanguage) {
+  const text = getContentText(language).conduct
+  const hour = parseMeetingHour(meeting.meetingTime)
+  const greeting = hour >= 12 ? text.welcomeGreetingAfternoon : text.welcomeGreetingMorning
+  const lines = [`${greeting}, ${text.welcomeScriptIntro}`]
+  const highlights: string[] = []
+
+  const addRoleLine = (label: string, value?: string) => {
+    const trimmed = value?.trim()
+    if (!trimmed) return
+    lines.push(`${label} ${trimmed}.`)
+    highlights.push(trimmed)
+  }
+
+  addRoleLine(text.presidingScript, meeting.assignments.presiding)
+  addRoleLine(text.conductingScript, meeting.assignments.conductor)
+
+  const chorister = meeting.assignments.chorister?.trim()
+  const accompanist = meeting.assignments.accompanist?.trim()
+  if (chorister && accompanist) {
+    lines.push(`${text.musicScript} ${chorister}, ${text.musicWithAccompanistScript} ${accompanist} ${text.organScript}.`)
+    highlights.push(chorister, accompanist)
+  } else if (chorister) {
+    lines.push(`${text.musicScript} ${chorister}.`)
+    highlights.push(chorister)
+  } else if (accompanist) {
+    lines.push(`${text.musicWithAccompanistScript} ${accompanist} ${text.organScript}.`)
+    highlights.push(accompanist)
+  }
+
+  return {
+    script: lines.join("\n\n"),
+    highlights,
+  }
+}
+
+function buildSacramentPreparationScript(entry: StaticEntry | undefined, language: ContentLanguage) {
+  const text = getContentText(language).conduct
+  const hymnNumber = entry?.hymnNumber ? `#${entry.hymnNumber}` : "#_____"
+  const hymnTitle = entry?.hymnTitle?.trim() || "__________________________"
+
+  return {
+    script: `${text.sacramentPreparation} ${hymnNumber}, ${hymnTitle}. ${text.sacramentAfterHymn}`,
+    highlights: [entry?.hymnNumber ? hymnNumber : "", entry?.hymnTitle?.trim() ?? ""].filter(Boolean),
+  }
+}
+
+function businessScriptForConduct(section: ConductBusinessSection, language: ContentLanguage) {
+  const script = section.script.trim()
+  if (!script) return ""
+
+  if (section.category === "sustaining" || section.category === "release") {
+    return `${getContentText(language).conduct.standPreamble}\n\n${script}`
+  }
+
+  return script
+}
+
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+}
+
+function HighlightedText({
+  text,
+  highlights,
+  className,
+}: {
+  text: string
+  highlights?: string[]
+  className?: string
+}) {
+  const tokens = Array.from(new Set((highlights ?? []).map((item) => item.trim()).filter(Boolean)))
+    .sort((a, b) => b.length - a.length)
+
+  if (tokens.length === 0) {
+    return <span className={className}>{text}</span>
+  }
+
+  const matcher = new RegExp(`(${tokens.map(escapeRegExp).join("|")})`, "g")
+  const parts = text.split(matcher)
+  const tokenSet = new Set(tokens)
+
+  return (
+    <span className={className}>
+      {parts.map((part, index) =>
+        tokenSet.has(part) ? (
+          <span key={`${part}-${index}`} className="font-semibold text-[#c9603c] dark:text-[#e07856]">
+            {part}
+          </span>
+        ) : (
+          <span key={`${part}-${index}`}>{part}</span>
+        )
+      )}
+    </span>
+  )
+}
+
 function buildAgenda(meeting: ConductMeeting, language: ContentLanguage): Step[] {
   const steps: Step[] = []
   const text = getContentText(language).conduct
-  const { entries, assignments, specialType } = meeting
-  const announcements = meeting.announcements.filter((item) => item.checked)
+  const { entries, specialType } = meeting
   const businessCount = totalBusinessCount(meeting.businessSections)
 
   const getStatic = (id: string) =>
@@ -130,15 +244,14 @@ function buildAgenda(meeting: ConductMeeting, language: ContentLanguage): Step[]
     entry?.hymnTitle?.trim()
       ? { title: `"${entry.hymnTitle}"`, hymnNum: entry.hymnNumber }
       : { title: text.hymnNotChosen }
+  const welcomeScript = buildWelcomeScript(meeting, language)
 
   // Welcome & conducting
   steps.push({
     key: "welcome",
     eyebrow: text.welcome,
-    title: announcements.length > 0 ? text.welcomeAnnouncements : text.welcome,
-    meta: assignments.conductor?.trim()
-      ? `${text.conductedBy} ${assignments.conductor}`
-      : text.conductingUnassigned,
+    title: welcomeScript.script,
+    highlights: welcomeScript.highlights,
   })
 
   // Opening hymn
@@ -166,7 +279,13 @@ function buildAgenda(meeting: ConductMeeting, language: ContentLanguage): Step[]
 
   // Sacrament hymn
   const sh = getStatic("sacrament-hymn")
-  steps.push({ key: "sacrament-hymn", eyebrow: sh?.title || getContentText(language).audience.sacramentHymn, ...hymnLine(sh) })
+  const sacramentPreparation = buildSacramentPreparationScript(sh, language)
+  steps.push({
+    key: "sacrament-hymn",
+    eyebrow: sh?.title || getContentText(language).audience.sacramentHymn,
+    title: sacramentPreparation.script,
+    highlights: sacramentPreparation.highlights,
+  })
 
   // Sacrament ordinance
   steps.push({
@@ -192,30 +311,35 @@ function buildAgenda(meeting: ConductMeeting, language: ContentLanguage): Step[]
       closingStart > -1 ? closingStart : undefined
     )
 
-    const speakers = messageEntries.filter((e): e is SpeakerEntry => e.kind === "speaker")
-    const musicalEntries = messageEntries.filter(
-      (e): e is StaticEntry => e.kind === "static" && Boolean(e.removable)
-    )
+    const speakerCount = messageEntries.filter((e): e is SpeakerEntry => e.kind === "speaker").length
+    let speakerOrder = 0
 
-    musicalEntries.forEach((entry) => {
-      const hl = hymnLine(entry)
-      steps.push({
-        key: entry.id,
-        eyebrow: entry.title,
-        title: hl.title,
-        hymnNum: hl.hymnNum,
-      })
-    })
+    messageEntries.forEach((entry) => {
+      if (entry.kind === "speaker") {
+        speakerOrder += 1
+        const eyebrow =
+          speakerOrder === speakerCount ? text.concludingSpeaker : `${text.speaker} ${speakerOrder}`
+        const speakerName = entry.speakerName?.trim()
+        steps.push({
+          key: entry.id,
+          eyebrow,
+          title: speakerName || text.unassigned,
+          meta: entry.topic?.trim() ? `"${entry.topic}"` : undefined,
+          highlights: speakerName ? [speakerName, entry.topic?.trim() ?? ""] : undefined,
+        })
+        return
+      }
 
-    speakers.forEach((entry, i) => {
-      const eyebrow =
-        i === speakers.length - 1 ? text.concludingSpeaker : `${text.speaker} ${i + 1}`
-      steps.push({
-        key: entry.id,
-        eyebrow,
-        title: entry.speakerName?.trim() || text.unassigned,
-        meta: entry.topic?.trim() ? `"${entry.topic}"` : undefined,
-      })
+      if (entry.kind === "static" && entry.removable) {
+        const hl = hymnLine(entry)
+        steps.push({
+          key: entry.id,
+          eyebrow: entry.title,
+          title: hl.title,
+          hymnNum: hl.hymnNum,
+          highlights: [entry.hymnTitle?.trim() ?? ""].filter(Boolean),
+        })
+      }
     })
   }
 
@@ -286,7 +410,6 @@ export function ConductView({
 }: ConductViewProps) {
   const contentLanguage = normalizeContentLanguage(language ?? meeting.contentLanguage)
   const text = getContentText(contentLanguage).conduct
-  const roleText = getContentText(contentLanguage).roles
   const prayerLanguage = contentLanguage === "SPA" ? "es" : "en"
   const steps = buildAgenda(meeting, contentLanguage)
   const total = steps.length
@@ -513,45 +636,20 @@ export function ConductView({
                             №&thinsp;{step.hymnNum}
                           </span>
                         )}
-                        {step.title}
+                        <HighlightedText text={step.title} highlights={step.highlights} />
                       </div>
                       {step.meta && (
-                        <div className="mt-0.5 text-[13px] text-[#57544c] dark:text-[#a1a1a1]">{step.meta}</div>
+                        <div className="mt-0.5 text-[13px] text-[#57544c] dark:text-[#a1a1a1]">
+                          <HighlightedText text={step.meta} highlights={step.highlights} />
+                        </div>
                       )}
                     </div>
                   </div>
 
                   {/* Welcome supporting card — presidency + announcements consolidated */}
-                  {isWelcomeCurrent && (
+                  {isWelcomeCurrent && checkedAnnouncements.length > 0 && (
                     <div className="mb-1.5 rounded-[14px] border border-[#d8d2bf] bg-white p-5 shadow-[0_12px_40px_rgba(60,50,30,0.10),0_0_0_1px_rgba(60,50,30,0.05)] sm:p-8 dark:border-[#2a2a2a] dark:bg-[#141414] dark:shadow-[0_12px_40px_rgba(0,0,0,0.4),0_0_0_1px_rgba(255,255,255,0.05)]">
-                      {(
-                        [
-                          { label: roleText.presiding,       value: meeting.assignments.presiding },
-                          { label: roleText.conductor,       value: meeting.assignments.conductor },
-                          { label: roleText.chorister,       value: meeting.assignments.chorister },
-                          { label: roleText.pianistOrganist, value: meeting.assignments.accompanist },
-                        ] as const
-                      ).map(({ label, value }, idx, arr) => (
-                        <div key={label}>
-                          <div className="flex items-baseline justify-between gap-6 py-3">
-                            <div className="text-[11px] font-medium uppercase tracking-[0.09em] text-[#8a867a] dark:text-[#6b6b6b]">
-                              {label}
-                            </div>
-                            <div className="font-serif text-[18px] tracking-[-0.005em] text-[#141413] dark:text-[#e5e5e5]">
-                              {value?.trim() || <span className="italic text-[#b7b3a4] dark:text-[#3a3a3a]">—</span>}
-                            </div>
-                          </div>
-                          {idx < arr.length - 1 && (
-                            <div className="h-px bg-[#f0ece6] dark:bg-[#1f1f1f]" />
-                          )}
-                        </div>
-                      ))}
-
-                      {checkedAnnouncements.length > 0 && (
-                        <div className="mt-6 border-t border-[#f0ece6] pt-6 sm:mt-8 sm:pt-8 dark:border-[#1f1f1f]">
-                          <ConductItemsList title={text.announcements} items={checkedAnnouncements} />
-                        </div>
-                      )}
+                      <ConductItemsList title={text.announcements} items={checkedAnnouncements} />
                     </div>
                   )}
 
@@ -588,9 +686,15 @@ export function ConductView({
                               </div>
                             ))}
                           </div>
-                          {section.script.trim() ? (
-                            <p className="mt-4 whitespace-pre-line text-[14px] leading-6 text-[#57544c] dark:text-[#a1a1a1]">
-                              {section.script}
+                          {businessScriptForConduct(section, contentLanguage) ? (
+                            <p className="mt-4 whitespace-pre-line font-serif text-[22px] leading-[1.62] tracking-[-0.005em] text-[#141413] dark:text-[#e5e5e5]">
+                              <HighlightedText
+                                text={businessScriptForConduct(section, contentLanguage)}
+                                highlights={section.people.flatMap((person) => [
+                                  person.name,
+                                  person.subtitle ?? "",
+                                ])}
+                              />
                             </p>
                           ) : null}
                         </section>
