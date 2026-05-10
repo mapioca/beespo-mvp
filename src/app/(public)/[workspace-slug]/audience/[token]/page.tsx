@@ -3,10 +3,12 @@ import { notFound } from "next/navigation";
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
+    inferAudienceContentLanguage,
     type AudienceMeeting,
     type AudienceAgendaEntry,
     type AudienceMeetingSpecialType,
 } from "@/components/audience/audience-program";
+import type { ContentLanguage } from "@/lib/content-language";
 import { loadAudienceAnnouncements } from "@/lib/audience/announcements";
 import { PublicAudienceView } from "./public-audience-view";
 
@@ -30,6 +32,7 @@ export const dynamic = "force-dynamic";
 
 type PlannerMeetingState = {
     title?: string;
+    contentLanguage?: ContentLanguage;
     specialType?: AudienceMeetingSpecialType;
     assignments?: Record<string, string>;
     standardEntries?: AudienceAgendaEntry[];
@@ -47,6 +50,7 @@ function buildAudienceMeeting(
         specialType === "fast-testimony"
             ? (state.fastEntries ?? [])
             : (state.standardEntries ?? []);
+    const contentLanguage = inferAudienceContentLanguage(entries, state.contentLanguage);
 
     const assignments = {
         presiding: state.assignments?.presiding ?? "",
@@ -57,6 +61,7 @@ function buildAudienceMeeting(
 
     return {
         title: state.title,
+        contentLanguage,
         specialType,
         assignments,
         entries,

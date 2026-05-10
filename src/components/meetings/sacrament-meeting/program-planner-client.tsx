@@ -85,6 +85,7 @@ import {
 } from "@/components/ui/select"
 import { createClient } from "@/lib/supabase/client"
 import { generateBusinessScript } from "@/lib/business-script-generator"
+import { getContentText, normalizeContentLanguage, type ContentLanguage } from "@/lib/content-language"
 import {
   BUSINESS_CATEGORY_ORDER,
   BUSINESS_CATEGORY_PLURAL,
@@ -173,6 +174,7 @@ type AgendaEntry = SectionEntry | StaticEntry | SpeakerEntry | TestimonyEntry
 
 type PlannerMeetingState = {
   title: string
+  contentLanguage?: ContentLanguage
   meetingTime: string
   specialType: MeetingSpecialType
   assignments: Record<AssignmentField, string>
@@ -197,7 +199,8 @@ type PlannerItem = {
   // combined script per category.
   category?: string
   personName?: string
-  positionCalling?: string
+  positionCalling?: string | null
+  businessDetails?: BusinessItem["details"]
 }
 
 type PlannerNotes = {
@@ -218,7 +221,7 @@ const EMPTY_PLANNER_NOTES: PlannerNotes = {
 const SECTION_CLOSING_ID = "section-closing"
 const PLANNER_DRAFT_STORAGE_KEY = "beespo:sacrament-meeting:planner:draft:v1"
 
-type Lang = "ENG" | "SPA"
+type Lang = ContentLanguage
 
 const ENTRY_LABELS: Record<string, Record<Lang, string>> = {
   "section-opening":     { ENG: "Greeting & welcome",                SPA: "Bienvenida" },
@@ -521,8 +524,10 @@ function meetingHasUserChanges(
 
 function buildConductBusinessSections(
   items: PlannerItem[],
-  scripts: Record<string, string> | undefined
+  scripts: Record<string, string> | undefined,
+  language: Lang
 ): ConductBusinessSection[] {
+  const businessLabels = getContentText(language).businessPlural
   const checked = items.filter((item) => item.checked)
   if (checked.length === 0) return []
 
@@ -549,6 +554,19 @@ function buildConductBusinessSections(
   return ordered.map((key) => {
     const bucket = buckets.get(key)!
     const persisted = scripts?.[key]?.trim()
+    const generatedItems = bucket.items
+      .filter((item) => item.personName || item.businessDetails)
+      .map((item) => ({
+        person_name: item.personName ?? item.title,
+        position_calling: item.positionCalling ?? null,
+        category: key,
+        notes: null,
+        details: item.businessDetails ?? null,
+      }))
+    const generated =
+      generatedItems.length > 0
+        ? generateCombinedBusinessScript(key, generatedItems, language).trim()
+        : ""
     const fallback = bucket.items
       .map((item) => item.detail?.trim())
       .filter((value): value is string => Boolean(value))
@@ -556,14 +574,14 @@ function buildConductBusinessSections(
 
     return {
       category: key,
-      label: BUSINESS_CATEGORY_PLURAL[key] ?? key,
+      label: businessLabels[key] ?? BUSINESS_CATEGORY_PLURAL[key] ?? key,
       count: bucket.items.length,
       people: bucket.items.map((item) => ({
         id: item.id,
         name: item.personName ?? item.title,
         subtitle: item.positionCalling ?? null,
       })),
-      script: persisted || fallback,
+      script: generated || persisted || fallback,
     }
   })
 }
@@ -776,6 +794,7 @@ function createFastEntries(lang: Lang = "ENG"): AgendaEntry[] {
 function createInitialMeetingState(isoDate: string, lang: Lang = "ENG"): PlannerMeetingState {
   return {
     title: "",
+    contentLanguage: lang,
     meetingTime: "9:00 AM",
     specialType: getDefaultMeetingSpecialType(isoDate),
     assignments: {
@@ -1238,6 +1257,7 @@ type OpeningSectionProps = {
   onPrayerStatusChange: (entryId: string, change: AssignmentStatusChange) => void
   onAnnouncementsChange: (items: PlannerItem[]) => void
   onBusinessChange: (items: PlannerItem[]) => void
+  defaultLanguage: Lang
 }
 
 function OpeningSection({
@@ -1249,6 +1269,7 @@ function OpeningSection({
   onPrayerStatusChange,
   onAnnouncementsChange,
   onBusinessChange,
+  defaultLanguage,
 }: OpeningSectionProps) {
   const [announcementsModalOpen, setAnnouncementsModalOpen] = useState(false)
   const [businessModalOpen, setBusinessModalOpen] = useState(false)
@@ -1308,6 +1329,7 @@ function OpeningSection({
         onChange={onBusinessChange}
         addTrigger={
           <BusinessSelectorPopover
+            defaultLanguage={defaultLanguage}
             onSelect={(selected) => {
               const newItems = selected
                 .filter((b) => !business.some((item) => item.id === b.id))
@@ -1316,6 +1338,10 @@ function OpeningSection({
                   title: `${b.person_name}${b.position_calling ? ` – ${b.position_calling}` : ""}`,
                   checked: true,
                   detail: b.generated_script,
+                  category: b.category,
+                  personName: b.person_name,
+                  positionCalling: b.position_calling,
+                  businessDetails: b.details,
                 }))
               if (newItems.length) onBusinessChange([...business, ...newItems])
             }}
@@ -2685,9 +2711,10 @@ export function SacramentMeetingPlannerClient({
   const pathname = usePathname()
   const router = useRouter()
   const searchParams = useSearchParams()
+  const normalizedDefaultLanguage = normalizeContentLanguage(defaultLanguage)
 
   const [sundays, setSundays] = useState<PlannerSunday[]>(() => getUpcomingSundays())
-  const defaultLanguageRef = useRef(defaultLanguage)
+  const defaultLanguageRef = useRef(normalizedDefaultLanguage)
   const [directoryPeople, setDirectoryPeople] = useState<DirectoryPerson[]>([])
   const [isDirectoryLoading, setIsDirectoryLoading] = useState(false)
   const [directoryModalOpen, setDirectoryModalOpen] = useState(false)
@@ -2706,7 +2733,7 @@ export function SacramentMeetingPlannerClient({
   const [meetingTypeOverridesByDate, setMeetingTypeOverridesByDate] = useState<Record<string, boolean>>({})
   const [meetingsByDate, setMeetingsByDate] = useState<Record<string, PlannerMeetingState>>(() =>
     Object.fromEntries(
-      sundays.map((sunday) => [sunday.isoDate, createInitialMeetingState(sunday.isoDate, defaultLanguage)])
+      sundays.map((sunday) => [sunday.isoDate, createInitialMeetingState(sunday.isoDate, normalizedDefaultLanguage)])
     )
   )
   const [autosaveStatus, setAutosaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle")
@@ -2715,6 +2742,23 @@ export function SacramentMeetingPlannerClient({
   const hasLoadedDraftRef = useRef(false)
   const sundaysRef = useRef(sundays)
   sundaysRef.current = sundays
+
+  useEffect(() => {
+    if (defaultLanguageRef.current === normalizedDefaultLanguage) return
+    defaultLanguageRef.current = normalizedDefaultLanguage
+    setMeetingsByDate((prev) => {
+      const next: Record<string, PlannerMeetingState> = {}
+      for (const [isoDate, meeting] of Object.entries(prev)) {
+        next[isoDate] = {
+          ...meeting,
+          contentLanguage: normalizedDefaultLanguage,
+          standardEntries: translateEntries(meeting.standardEntries, normalizedDefaultLanguage),
+          fastEntries: translateEntries(meeting.fastEntries, normalizedDefaultLanguage),
+        }
+      }
+      return next
+    })
+  }, [normalizedDefaultLanguage])
 
   const selectedSunday = useMemo(() => {
     const selectedDate = searchParams?.get("date")
@@ -2897,6 +2941,7 @@ export function SacramentMeetingPlannerClient({
         category: b.category,
         personName: b.person_name,
         positionCalling: b.position_calling,
+        businessDetails: b.details,
       }))
 
       // Process scheduled business items and generate scripts
@@ -2917,7 +2962,11 @@ export function SacramentMeetingPlannerClient({
       for (const [category, items] of Object.entries(businessByCategory)) {
         if (items.length > 0) {
           // Generate combined script for this category
-          businessScripts[category] = generateCombinedBusinessScript(category as BusinessCategoryKey, items)
+          businessScripts[category] = generateCombinedBusinessScript(
+            category as BusinessCategoryKey,
+            items,
+            defaultLanguageRef.current
+          )
         }
       }
 
@@ -2925,7 +2974,8 @@ export function SacramentMeetingPlannerClient({
       setMeetingsByDate((prev) => ({
         ...prev,
         [selectedSunday.isoDate]: {
-          ...(prev[selectedSunday.isoDate] ?? createInitialMeetingState(selectedSunday.isoDate)),
+          ...(prev[selectedSunday.isoDate] ?? createInitialMeetingState(selectedSunday.isoDate, defaultLanguageRef.current)),
+          contentLanguage: defaultLanguageRef.current,
           businessScripts,
         },
       }))
@@ -2945,10 +2995,11 @@ export function SacramentMeetingPlannerClient({
         id: b.id,
         title: `${b.person_name}${b.position_calling ? ` – ${b.position_calling}` : ""}`,
         checked: true,
-        detail: generateBusinessScript(b),
+        detail: generateBusinessScript(b, defaultLanguageRef.current),
         category: b.category,
         personName: b.person_name,
         positionCalling: b.position_calling,
+        businessDetails: b.details,
       }))
 
       setNotesByDate((prev) => ({
@@ -3008,6 +3059,7 @@ export function SacramentMeetingPlannerClient({
           next[sunday.isoDate] = {
             ...prev[sunday.isoDate],
             ...savedMeeting,
+            contentLanguage: defaultLanguageRef.current,
             specialType:
               persistedEntry.meetingTypeOverridden || savedMeeting.specialType !== "standard"
                 ? savedMeeting.specialType ?? prev[sunday.isoDate].specialType
@@ -3980,6 +4032,7 @@ export function SacramentMeetingPlannerClient({
                               onPrayerStatusChange={handleAgendaAssigneeStatusChange}
                               onAnnouncementsChange={handleAnnouncementsChange}
                               onBusinessChange={handleBusinessChange}
+                              defaultLanguage={defaultLanguageRef.current}
                             />
                             <SacramentSection
                               entries={visibleEntries}
@@ -4129,16 +4182,19 @@ export function SacramentMeetingPlannerClient({
         <ConductView
           meeting={{
             title: selectedMeeting.title,
+            contentLanguage: defaultLanguageRef.current,
             specialType: selectedMeeting.specialType,
             assignments: selectedMeeting.assignments,
             entries: visibleEntries,
             announcements: selectedNotes.announcements,
             businessSections: buildConductBusinessSections(
               selectedNotes.business,
-              selectedMeeting.businessScripts
+              selectedMeeting.businessScripts,
+              defaultLanguageRef.current
             ),
           }}
           isoDate={selectedSunday.isoDate}
+          language={defaultLanguageRef.current}
           notes={selectedNotes.notes}
           attendance={selectedNotes.attendance}
           onNotesChange={handleNotesTextChange}
@@ -4151,6 +4207,7 @@ export function SacramentMeetingPlannerClient({
           unitName={unitName}
           meeting={{
             title: selectedMeeting.title,
+            contentLanguage: defaultLanguageRef.current,
             specialType: selectedMeeting.specialType,
             assignments: selectedMeeting.assignments,
             entries: visibleEntries,
@@ -4170,7 +4227,7 @@ export function SacramentMeetingPlannerClient({
           setHymnTarget(null)
         }}
         onSelect={handleSelectHymn}
-        defaultLanguage={defaultLanguage}
+        defaultLanguage={defaultLanguageRef.current}
         sacramentOnly={hymnTarget?.entryId === "sacrament-hymn"}
         currentHymnId={
           hymnTarget

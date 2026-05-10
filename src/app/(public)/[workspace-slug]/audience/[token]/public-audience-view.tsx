@@ -3,24 +3,35 @@ import {
     type AudienceAnnouncement,
     type AudienceMeeting,
 } from "@/components/audience/audience-program";
+import { getContentText, normalizeContentLanguage, type ContentLanguage } from "@/lib/content-language";
 
 type PublicAudienceViewProps = {
     unitName: string;
     meeting: AudienceMeeting | null;
     isoDate: string | null;
     announcements: AudienceAnnouncement[];
+    language?: ContentLanguage;
 };
 
-export function PublicAudienceView({ unitName, meeting, isoDate, announcements }: PublicAudienceViewProps) {
+export function PublicAudienceView({
+    unitName,
+    meeting,
+    isoDate,
+    announcements,
+    language,
+}: PublicAudienceViewProps) {
+    const contentLanguage = normalizeContentLanguage(language ?? meeting?.contentLanguage);
+    const text = getContentText(contentLanguage).audience;
+
     if (!meeting || !isoDate) {
         return (
             <div className="mx-auto flex flex-1 max-w-md flex-col items-center justify-center px-6 py-16 text-center">
                 <div className="font-serif text-[15px] italic text-muted-foreground">{unitName}</div>
                 <h1 className="mt-4 font-serif text-[24px] tracking-[-0.01em] text-foreground">
-                    Program coming soon
+                    {text.comingSoonTitle}
                 </h1>
                 <p className="mt-3 text-sm text-muted-foreground">
-                    The next meeting program will appear here once it&rsquo;s published.
+                    {text.comingSoonDescription}
                 </p>
             </div>
         );
@@ -33,6 +44,7 @@ export function PublicAudienceView({ unitName, meeting, isoDate, announcements }
                 isoDate={isoDate}
                 meeting={meeting}
                 announcements={announcements}
+                language={contentLanguage}
             />
         </div>
     );

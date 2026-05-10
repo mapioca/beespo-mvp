@@ -346,7 +346,7 @@ export function ArchiveClient({ meetings }: { meetings: ArchiveMeetingSummary[] 
                   className={cn(
                     "inline-flex items-center gap-2 border-b-2 pb-2 text-sm font-medium transition-colors",
                     active
-                      ? "border-foreground text-foreground"
+                      ? "border-[hsl(var(--brand))] text-foreground"
                       : "border-transparent text-muted-foreground hover:text-foreground"
                   )}
                 >
@@ -371,7 +371,7 @@ export function ArchiveClient({ meetings }: { meetings: ArchiveMeetingSummary[] 
                       className={cn(
                         "inline-flex items-center gap-1.5 border-b-2 pb-1.5 text-[13px] font-medium transition-colors",
                         active
-                          ? "border-foreground/70 text-foreground"
+                          ? "border-[hsl(var(--brand))] text-foreground"
                           : "border-transparent text-muted-foreground hover:text-foreground"
                       )}
                     >
@@ -395,7 +395,7 @@ export function ArchiveClient({ meetings }: { meetings: ArchiveMeetingSummary[] 
                         className={cn(
                           "rounded-full border px-3 py-1 text-xs font-medium transition-colors",
                           active
-                            ? "border-foreground bg-foreground text-background"
+                            ? "border-[hsl(var(--brand))] bg-[hsl(var(--brand))] text-[hsl(var(--brand-foreground))]"
                             : "border-border/70 bg-background text-muted-foreground hover:text-foreground"
                         )}
                       >
@@ -426,7 +426,7 @@ export function ArchiveClient({ meetings }: { meetings: ArchiveMeetingSummary[] 
                     className={cn(
                       "inline-flex items-center gap-1.5 border-b-2 pb-1.5 text-[13px] font-medium transition-colors",
                       active
-                        ? "border-foreground/70 text-foreground"
+                        ? "border-[hsl(var(--brand))] text-foreground"
                         : "border-transparent text-muted-foreground hover:text-foreground"
                     )}
                   >
@@ -906,7 +906,7 @@ function TimelineMeetingCell({
           ? speakers.map((speaker, index) => (
               <TimelineNameChip
                 key={speaker.id}
-                label={index === 0 ? "Spk" : `Spk ${index + 1}`}
+                label={index === 0 ? "Speaker" : `Speaker ${index + 1}`}
                 name={speaker.name ?? ""}
                 tone="speaker"
                 muted={speaker.status === "declined"}
@@ -918,7 +918,7 @@ function TimelineMeetingCell({
           ? prayers.map((prayer) => (
               <TimelineNameChip
                 key={prayer.id}
-                label={prayer.role === "Invocation" ? "Inv" : "Ben"}
+                label={prayer.role}
                 name={prayer.name ?? ""}
                 tone="prayer"
                 muted={prayer.status === "declined"}
@@ -957,8 +957,10 @@ function TimelineNameChip({
         muted && "opacity-60 line-through decoration-current/70"
       )}
     >
-      <span className="mr-1 font-semibold uppercase tracking-[0.06em]">{label}</span>
-      <span className="align-baseline [overflow-wrap:anywhere]">{name}</span>
+      <span className="block font-semibold text-current [overflow-wrap:anywhere]">{name}</span>
+      <span className="mt-0.5 block text-[10px] font-medium opacity-75">
+        {label}
+      </span>
     </span>
   )
 }

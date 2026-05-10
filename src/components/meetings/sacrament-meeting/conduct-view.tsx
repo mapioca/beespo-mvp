@@ -2,12 +2,18 @@
 
 import { useEffect, useRef, useState } from "react"
 import { createPortal } from "react-dom"
-import { format } from "date-fns"
 import { Check, ChevronLeft, ChevronRight, Minus, NotebookPen, Plus, Users, X } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { RichTextEditor } from "@/components/ui/rich-text-editor"
+import {
+  formatContentDate,
+  getContentText,
+  normalizeContentLanguage,
+  type ContentLanguage,
+} from "@/lib/content-language"
 import { ensureRichTextHtml, isRichTextEmpty } from "@/lib/rich-text"
+import { SACRAMENT_PRAYERS } from "@/lib/sacrament-prayers"
 import { cn } from "@/lib/utils"
 
 // ─── Types (mirrored from planner) ──────────────────────────────────────────
@@ -69,6 +75,7 @@ export type ConductBusinessSection = {
 
 export type ConductMeeting = {
   title?: string
+  contentLanguage?: ContentLanguage
   specialType: MeetingSpecialType
   assignments: Record<AssignmentField, string>
   entries: AgendaEntry[]
@@ -79,6 +86,7 @@ export type ConductMeeting = {
 export type ConductViewProps = {
   meeting: ConductMeeting
   isoDate: string
+  language?: ContentLanguage
   notes: string
   attendance: number | null
   onNotesChange: (value: string) => void
@@ -86,17 +94,9 @@ export type ConductViewProps = {
   onClose: () => void
 }
 
-// ─── Sacrament prayers ───────────────────────────────────────────────────────
-
-const SACRAMENT_PRAYERS = {
-  bread: {
-    reference: "Moroni 4:3 · D&C 20:77",
-    text: "O God, the Eternal Father, we ask thee in the name of thy Son, Jesus Christ, to bless and sanctify this bread to the souls of all those who partake of it, that they may eat in remembrance of the body of thy Son, and witness unto thee, O God, the Eternal Father, that they are willing to take upon them the name of thy Son, and always remember him, and keep his commandments which he hath given them, that they may always have his Spirit to be with them. Amen.",
-  },
-  water: {
-    reference: "Moroni 5:2 · D&C 20:79",
-    text: "O God, the Eternal Father, we ask thee in the name of thy Son, Jesus Christ, to bless and sanctify this water to the souls of all those who drink of it, that they may do it in remembrance of the blood of thy Son, which was shed for them; that they may witness unto thee, O God, the Eternal Father, that they do always remember him, that they may have his Spirit to be with them. Amen.",
-  },
+const SACRAMENT_PRAYER_REFERENCES = {
+  bread: "Moroni 4:3 · D&C 20:77",
+  water: "Moroni 5:2 · D&C 20:79",
 }
 
 // ─── Step type ───────────────────────────────────────────────────────────────
@@ -116,8 +116,9 @@ function totalBusinessCount(sections: ConductBusinessSection[]): number {
   return sections.reduce((sum, section) => sum + section.count, 0)
 }
 
-function buildAgenda(meeting: ConductMeeting): Step[] {
+function buildAgenda(meeting: ConductMeeting, language: ContentLanguage): Step[] {
   const steps: Step[] = []
+  const text = getContentText(language).conduct
   const { entries, assignments, specialType } = meeting
   const announcements = meeting.announcements.filter((item) => item.checked)
   const businessCount = totalBusinessCount(meeting.businessSections)
@@ -128,28 +129,28 @@ function buildAgenda(meeting: ConductMeeting): Step[] {
   const hymnLine = (entry?: StaticEntry) =>
     entry?.hymnTitle?.trim()
       ? { title: `"${entry.hymnTitle}"`, hymnNum: entry.hymnNumber }
-      : { title: "Hymn not chosen" }
+      : { title: text.hymnNotChosen }
 
   // Welcome & conducting
   steps.push({
     key: "welcome",
-    eyebrow: "Welcome",
-    title: announcements.length > 0 ? "Welcome & announcements" : "Welcome",
+    eyebrow: text.welcome,
+    title: announcements.length > 0 ? text.welcomeAnnouncements : text.welcome,
     meta: assignments.conductor?.trim()
-      ? `Conducted by ${assignments.conductor}`
-      : "Conducting: unassigned",
+      ? `${text.conductedBy} ${assignments.conductor}`
+      : text.conductingUnassigned,
   })
 
   // Opening hymn
   const oh = getStatic("opening-hymn")
-  steps.push({ key: "opening-hymn", eyebrow: "Opening Hymn", ...hymnLine(oh) })
+  steps.push({ key: "opening-hymn", eyebrow: oh?.title || getContentText(language).audience.openingHymn, ...hymnLine(oh) })
 
   // Invocation
   const inv = getStatic("invocation")
   steps.push({
     key: "invocation",
-    eyebrow: "Invocation",
-    title: inv?.assigneeName?.trim() || "Unassigned",
+    eyebrow: inv?.title || getContentText(language).audience.invocation,
+    title: inv?.assigneeName?.trim() || text.unassigned,
   })
 
   // Ward business
@@ -157,31 +158,31 @@ function buildAgenda(meeting: ConductMeeting): Step[] {
     steps.push({
       key: "ward-business",
       kind: "business",
-      eyebrow: "Ward Business",
-      title: "Sustainings & business",
-      meta: `${businessCount} business item${businessCount === 1 ? "" : "s"}`,
+      eyebrow: text.wardBusiness,
+      title: text.sustainingsBusiness,
+      meta: `${businessCount} ${businessCount === 1 ? text.businessItem : text.businessItems}`,
     })
   }
 
   // Sacrament hymn
   const sh = getStatic("sacrament-hymn")
-  steps.push({ key: "sacrament-hymn", eyebrow: "Sacrament Hymn", ...hymnLine(sh) })
+  steps.push({ key: "sacrament-hymn", eyebrow: sh?.title || getContentText(language).audience.sacramentHymn, ...hymnLine(sh) })
 
   // Sacrament ordinance
   steps.push({
     key: "sacrament-prayers",
     kind: "sacrament-prayers",
-    eyebrow: "The Sacrament",
-    title: "Blessing & passing of the sacrament",
+    eyebrow: text.sacrament,
+    title: text.blessingPassing,
   })
 
   // Speakers / fast testimony
   if (specialType === "fast-testimony") {
     steps.push({
       key: "testimonies",
-      eyebrow: "Fast Meeting",
-      title: "Bearing of testimonies",
-      meta: "Open to congregation",
+      eyebrow: text.fastMeeting,
+      title: text.bearingTestimonies,
+      meta: text.openToCongregation,
     })
   } else {
     const messagesStart = entries.findIndex((e) => e.id === "section-messages")
@@ -208,11 +209,11 @@ function buildAgenda(meeting: ConductMeeting): Step[] {
 
     speakers.forEach((entry, i) => {
       const eyebrow =
-        i === speakers.length - 1 ? "Concluding Speaker" : `Speaker ${i + 1}`
+        i === speakers.length - 1 ? text.concludingSpeaker : `${text.speaker} ${i + 1}`
       steps.push({
         key: entry.id,
         eyebrow,
-        title: entry.speakerName?.trim() || "Unassigned",
+        title: entry.speakerName?.trim() || text.unassigned,
         meta: entry.topic?.trim() ? `"${entry.topic}"` : undefined,
       })
     })
@@ -220,14 +221,14 @@ function buildAgenda(meeting: ConductMeeting): Step[] {
 
   // Closing hymn
   const ch = getStatic("closing-hymn")
-  steps.push({ key: "closing-hymn", eyebrow: "Closing Hymn", ...hymnLine(ch) })
+  steps.push({ key: "closing-hymn", eyebrow: ch?.title || getContentText(language).audience.closingHymn, ...hymnLine(ch) })
 
   // Benediction
   const ben = getStatic("benediction")
   steps.push({
     key: "benediction",
-    eyebrow: "Benediction",
-    title: ben?.assigneeName?.trim() || "Unassigned",
+    eyebrow: ben?.title || getContentText(language).audience.benediction,
+    title: ben?.assigneeName?.trim() || text.unassigned,
   })
 
   return steps
@@ -276,13 +277,18 @@ function ConductItemsList({ title, items }: { title: string; items: ConductItem[
 export function ConductView({
   meeting,
   isoDate,
+  language,
   notes,
   attendance,
   onNotesChange,
   onAttendanceChange,
   onClose,
 }: ConductViewProps) {
-  const steps = buildAgenda(meeting)
+  const contentLanguage = normalizeContentLanguage(language ?? meeting.contentLanguage)
+  const text = getContentText(contentLanguage).conduct
+  const roleText = getContentText(contentLanguage).roles
+  const prayerLanguage = contentLanguage === "SPA" ? "es" : "en"
+  const steps = buildAgenda(meeting, contentLanguage)
   const total = steps.length
   const checkedAnnouncements = meeting.announcements.filter((item) => item.checked)
   const businessSections = meeting.businessSections
@@ -362,9 +368,9 @@ export function ConductView({
 
   const date = plannerSundayDateFromIso(isoDate)
   const meetingTitleFull =
-    meeting.title?.trim() || format(date, "MMMM d, yyyy")
+    meeting.title?.trim() || formatContentDate(date, contentLanguage, "MMMM d, yyyy")
   const meetingTitleShort =
-    meeting.title?.trim() || format(date, "MMM d")
+    meeting.title?.trim() || formatContentDate(date, contentLanguage, "MMM d")
   const clock = now.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })
 
   const closePopups = () => {
@@ -520,10 +526,10 @@ export function ConductView({
                     <div className="mb-1.5 rounded-[14px] border border-[#d8d2bf] bg-white p-5 shadow-[0_12px_40px_rgba(60,50,30,0.10),0_0_0_1px_rgba(60,50,30,0.05)] sm:p-8 dark:border-[#2a2a2a] dark:bg-[#141414] dark:shadow-[0_12px_40px_rgba(0,0,0,0.4),0_0_0_1px_rgba(255,255,255,0.05)]">
                       {(
                         [
-                          { label: "Presiding",       value: meeting.assignments.presiding },
-                          { label: "Conducting",      value: meeting.assignments.conductor },
-                          { label: "Chorister",       value: meeting.assignments.chorister },
-                          { label: "Piano / Organist",value: meeting.assignments.accompanist },
+                          { label: roleText.presiding,       value: meeting.assignments.presiding },
+                          { label: roleText.conductor,       value: meeting.assignments.conductor },
+                          { label: roleText.chorister,       value: meeting.assignments.chorister },
+                          { label: roleText.pianistOrganist, value: meeting.assignments.accompanist },
                         ] as const
                       ).map(({ label, value }, idx, arr) => (
                         <div key={label}>
@@ -543,7 +549,7 @@ export function ConductView({
 
                       {checkedAnnouncements.length > 0 && (
                         <div className="mt-6 border-t border-[#f0ece6] pt-6 sm:mt-8 sm:pt-8 dark:border-[#1f1f1f]">
-                          <ConductItemsList title="Announcements" items={checkedAnnouncements} />
+                          <ConductItemsList title={text.announcements} items={checkedAnnouncements} />
                         </div>
                       )}
                     </div>
@@ -612,17 +618,17 @@ export function ConductView({
                                 : "border-transparent text-[#8a867a] hover:text-[#141413] dark:text-[#6b6b6b] dark:hover:text-[#e5e5e5]"
                             )}
                           >
-                            {tab}
+                            {tab === "bread" ? text.bread : text.water}
                           </button>
                         ))}
                       </div>
                       {/* Reference */}
                       <div className="mb-3 font-mono text-[11px] tracking-[0.04em] text-[#8a867a] dark:text-[#6b6b6b]">
-                        {SACRAMENT_PRAYERS[prayerTab].reference}
+                        {SACRAMENT_PRAYER_REFERENCES[prayerTab]}
                       </div>
                       {/* Prayer text */}
                       <p className="font-serif text-[22px] leading-[1.62] tracking-[-0.005em] text-[#141413] dark:text-[#e5e5e5]">
-                        {SACRAMENT_PRAYERS[prayerTab].text}
+                        {SACRAMENT_PRAYERS[prayerLanguage][prayerTab]}
                       </p>
                     </div>
                   )}
@@ -637,10 +643,10 @@ export function ConductView({
       <div className="pointer-events-none fixed bottom-6 left-0 right-0 z-[20] flex justify-center">
         <div className="pointer-events-auto flex items-center gap-1.5 rounded-full border border-[#d8d2bf] bg-white py-1 pl-2.5 pr-1 shadow-[0_12px_40px_rgba(60,50,30,0.10),0_0_0_1px_rgba(60,50,30,0.05)] sm:gap-3 sm:py-1.5 sm:pl-4 sm:pr-1.5 dark:border-[#2a2a2a] dark:bg-[#141414] dark:shadow-[0_12px_40px_rgba(0,0,0,0.4),0_0_0_1px_rgba(255,255,255,0.05)]">
           <div className="flex items-center gap-1 text-[12px] text-[#57544c] sm:gap-2 sm:text-[12.5px] dark:text-[#a1a1a1]">
-            <span className="hidden sm:inline">Step</span>
+            <span className="hidden sm:inline">{text.step}</span>
             <span className="font-mono tabular-nums">{cur + 1}</span>
             <span className="text-[#b7b3a4] dark:text-[#3a3a3a]">
-              <span className="hidden sm:inline">of</span>
+              <span className="hidden sm:inline">{text.of}</span>
               <span className="sm:hidden">/</span>
             </span>
             <span className="font-mono tabular-nums">{total}</span>
@@ -653,7 +659,7 @@ export function ConductView({
             className="grid h-8 w-8 place-items-center rounded-full border border-[#d8d2bf] bg-white text-[#57544c] transition-colors hover:bg-[#f0ede3] disabled:pointer-events-none disabled:opacity-30 sm:h-auto sm:w-auto sm:px-4 sm:py-1.5 sm:text-[13px] dark:border-[#2a2a2a] dark:bg-[#1a1a1a] dark:text-[#a1a1a1] dark:hover:bg-[#252525]"
           >
             <ChevronLeft className="h-4 w-4 sm:hidden" />
-            <span className="hidden sm:inline">Previous</span>
+            <span className="hidden sm:inline">{text.previous}</span>
           </button>
           <button
             type="button"
@@ -662,9 +668,9 @@ export function ConductView({
             aria-label="Next step"
             className="flex h-8 items-center gap-0.5 rounded-full bg-[#c9603c] px-3 text-[12.5px] font-medium text-white transition-colors hover:bg-[#b5502f] disabled:pointer-events-none disabled:opacity-40 sm:h-auto sm:px-4 sm:py-1.5 sm:text-[13px] dark:bg-[#e07856] dark:hover:bg-[#c9603c]"
           >
-            <span>Next</span>
+            <span>{text.next}</span>
             <ChevronRight className="h-4 w-4 sm:hidden" />
-            <span className="hidden sm:inline">step →</span>
+            <span className="hidden sm:inline">{text.nextStep} →</span>
           </button>
         </div>
       </div>
@@ -738,7 +744,7 @@ export function ConductView({
             </button>
           </div>
           <p className="mt-3 text-[11.5px] leading-snug text-[#8a867a] dark:text-[#6b6b6b]">
-            Total in attendance — saved with the meeting.
+            {text.attendanceHelp}
           </p>
         </div>
       )}
@@ -763,7 +769,7 @@ export function ConductView({
             <div className="flex items-center gap-2">
               <NotebookPen className="h-4 w-4 text-[#8a867a] dark:text-[#6b6b6b]" />
               <span className="text-[12px] font-semibold uppercase tracking-[0.08em] text-[#57544c] dark:text-[#a1a1a1]">
-                Meeting notes
+                {text.meetingNotes}
               </span>
             </div>
             <button
@@ -783,7 +789,7 @@ export function ConductView({
               onSave={async (html) => {
                 onNotesChange(html)
               }}
-              placeholder="Take notes during the meeting — saves automatically."
+              placeholder={text.notesPlaceholder}
             />
           </div>
         </div>

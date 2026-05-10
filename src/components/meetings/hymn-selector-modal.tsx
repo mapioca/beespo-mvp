@@ -49,6 +49,13 @@ export function HymnSelectorModal({
         }
     }, [open, hymns.length]);
 
+    useEffect(() => {
+        if (open) {
+            setSelectedLanguage(defaultLanguage);
+            setSearch("");
+        }
+    }, [open, defaultLanguage]);
+
     const loadHymns = async () => {
         setIsLoading(true);
         const supabase = createClient();
