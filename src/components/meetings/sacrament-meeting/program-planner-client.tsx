@@ -202,6 +202,7 @@ type PlannerItem = {
   category?: string
   personName?: string
   positionCalling?: string | null
+  businessCompleted?: boolean
   businessDetails?: BusinessItem["details"]
 }
 
@@ -635,6 +636,7 @@ function buildConductBusinessSections(
         id: item.id,
         name: item.personName ?? item.title,
         subtitle: item.positionCalling ?? null,
+        completed: Boolean(item.businessCompleted),
       })),
       script: generated || persisted || fallback,
     }
@@ -1353,7 +1355,12 @@ function OpeningSection({
             onSelect={(selected) => {
               const newItems = selected
                 .filter((a) => !announcements.some((item) => item.id === a.id))
-                .map((a) => ({ id: a.id, title: a.title, checked: true }))
+                .map((a) => ({
+                  id: a.id,
+                  title: a.title,
+                  checked: true,
+                  detail: a.description,
+                }))
               if (newItems.length) onAnnouncementsChange([...announcements, ...newItems])
             }}
           >
@@ -2974,6 +2981,7 @@ export function SacramentMeetingPlannerClient({
       type AnnouncementRow = {
         id: string
         title: string
+        content?: string | null
         display_start?: string | null
         display_until?: string | null
       }
@@ -2985,6 +2993,7 @@ export function SacramentMeetingPlannerClient({
           id: announcement.id,
           title: announcement.title,
           checked: true,
+          detail: announcement.content,
         }))
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -3076,6 +3085,100 @@ export function SacramentMeetingPlannerClient({
   // Only re-run when the selected date changes; notesByDate intentionally omitted
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedSunday.isoDate])
+
+  useEffect(() => {
+    const currentNotes = notesByDate[selectedSunday.isoDate]
+    const missingDetailAnnouncements = currentNotes?.announcements.filter(
+      (announcement) => typeof announcement.detail === "undefined"
+    )
+
+    if (!currentNotes || !missingDetailAnnouncements?.length) {
+      return
+    }
+
+    let isMounted = true
+
+    const hydrateAnnouncementDetails = async () => {
+      const ids = Array.from(new Set(missingDetailAnnouncements.map((announcement) => announcement.id)))
+      const supabase = createClient()
+      let resolvedWorkspaceId = workspaceId
+
+      if (!resolvedWorkspaceId) {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user || !isMounted) return
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: profile } = await (supabase.from("profiles") as any)
+          .select("workspace_id")
+          .eq("id", user.id)
+          .single()
+
+        resolvedWorkspaceId = profile?.workspace_id ?? null
+        if (resolvedWorkspaceId && isMounted) {
+          setWorkspaceId(resolvedWorkspaceId)
+        }
+      }
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let query = (supabase.from("announcements") as any)
+        .select("id, content")
+        .in("id", ids)
+
+      if (resolvedWorkspaceId) {
+        query = query.eq("workspace_id", resolvedWorkspaceId)
+      }
+
+      const { data, error } = await query
+
+      if (!isMounted) return
+
+      if (error) {
+        console.error("Failed to hydrate announcement details:", error)
+        return
+      }
+
+      const contentById = new Map(
+        ((data ?? []) as Array<{ id: string; content?: string | null }>).map((announcement) => [
+          announcement.id,
+          announcement.content ?? null,
+        ])
+      )
+
+      setNotesByDate((prev) => {
+        const latest = prev[selectedSunday.isoDate]
+        if (!latest) return prev
+
+        let changed = false
+        const announcements = latest.announcements.map((announcement) => {
+          if (typeof announcement.detail !== "undefined" || !ids.includes(announcement.id)) {
+            return announcement
+          }
+
+          changed = true
+          return {
+            ...announcement,
+            detail: contentById.get(announcement.id) ?? null,
+          }
+        })
+
+        if (!changed) return prev
+
+        return {
+          ...prev,
+          [selectedSunday.isoDate]: {
+            ...latest,
+            announcements,
+          },
+        }
+      })
+    }
+
+    void hydrateAnnouncementDetails()
+
+    return () => {
+      isMounted = false
+    }
+  }, [notesByDate, selectedSunday.isoDate, workspaceId])
 
   useEffect(() => {
     setMeetingsByDate((prev) => {
@@ -3428,6 +3531,22 @@ export function SacramentMeetingPlannerClient({
         business: items,
       },
     }))
+  }
+
+  const handleBusinessCompletedChange = (id: string, completed: boolean) => {
+    setNotesByDate((prev) => {
+      const current = prev[selectedSunday.isoDate] ?? EMPTY_PLANNER_NOTES
+
+      return {
+        ...prev,
+        [selectedSunday.isoDate]: {
+          ...current,
+          business: current.business.map((item) =>
+            item.id === id ? { ...item, businessCompleted: completed } : item
+          ),
+        },
+      }
+    })
   }
 
   const handleNotesTextChange = (value: string) => {
@@ -4265,6 +4384,7 @@ export function SacramentMeetingPlannerClient({
           attendance={selectedNotes.attendance}
           onNotesChange={handleNotesTextChange}
           onAttendanceChange={handleAttendanceChange}
+          onBusinessItemCompletedChange={handleBusinessCompletedChange}
           onClose={() => setConductOpen(false)}
         />
       )}

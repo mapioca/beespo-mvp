@@ -12,7 +12,7 @@ import {
   normalizeContentLanguage,
   type ContentLanguage,
 } from "@/lib/content-language"
-import { ensureRichTextHtml, isRichTextEmpty } from "@/lib/rich-text"
+import { ensureRichTextHtml, isRichTextEmpty, sanitizeRichTextHtml } from "@/lib/rich-text"
 import { SACRAMENT_PRAYERS } from "@/lib/sacrament-prayers"
 import { cn } from "@/lib/utils"
 
@@ -63,6 +63,7 @@ export type ConductBusinessPerson = {
   id: string
   name: string
   subtitle: string | null
+  completed?: boolean
 }
 
 export type ConductBusinessSection = {
@@ -92,6 +93,7 @@ export type ConductViewProps = {
   attendance: number | null
   onNotesChange: (value: string) => void
   onAttendanceChange: (value: number | null) => void
+  onBusinessItemCompletedChange?: (id: string, completed: boolean) => void
   onClose: () => void
 }
 
@@ -108,8 +110,16 @@ type Step = {
   title: string
   meta?: string
   hymnNum?: number
-  kind?: "business" | "sacrament-prayers"
+  kind?: "opening-hymn-prayer" | "business" | "sacrament-prayers"
+  script?: string
   highlights?: string[]
+  details?: Array<{
+    label: string
+    title: string
+    meta?: string
+    hymnNum?: number
+    highlights?: string[]
+  }>
 }
 
 // ─── Build agenda steps from meeting data ────────────────────────────────────
@@ -234,7 +244,8 @@ function HighlightedText({
 function buildAgenda(meeting: ConductMeeting, language: ContentLanguage): Step[] {
   const steps: Step[] = []
   const text = getContentText(language).conduct
-  const { entries, specialType } = meeting
+  const { entries, assignments, specialType } = meeting
+  const announcements = meeting.announcements.filter((item) => item.checked)
   const businessCount = totalBusinessCount(meeting.businessSections)
 
   const getStatic = (id: string) =>
@@ -250,20 +261,38 @@ function buildAgenda(meeting: ConductMeeting, language: ContentLanguage): Step[]
   steps.push({
     key: "welcome",
     eyebrow: text.welcome,
-    title: welcomeScript.script,
+    title: announcements.length > 0 ? text.welcomeAnnouncements : text.welcome,
+    meta: assignments.conductor?.trim()
+      ? `${text.conductedBy} ${assignments.conductor}`
+      : text.conductingUnassigned,
+    script: welcomeScript.script,
     highlights: welcomeScript.highlights,
   })
 
-  // Opening hymn
+  // Opening hymn and prayer
   const oh = getStatic("opening-hymn")
-  steps.push({ key: "opening-hymn", eyebrow: oh?.title || getContentText(language).audience.openingHymn, ...hymnLine(oh) })
-
-  // Invocation
   const inv = getStatic("invocation")
+  const openingHymn = hymnLine(oh)
+  const invocationName = inv?.assigneeName?.trim()
   steps.push({
-    key: "invocation",
-    eyebrow: inv?.title || getContentText(language).audience.invocation,
-    title: inv?.assigneeName?.trim() || text.unassigned,
+    key: "opening-hymn-prayer",
+    kind: "opening-hymn-prayer",
+    eyebrow: text.openingHymnPrayer,
+    title: text.openingHymnPrayer,
+    highlights: [oh?.hymnTitle?.trim() ?? "", invocationName ?? ""].filter(Boolean),
+    details: [
+      {
+        label: oh?.title || getContentText(language).audience.openingHymn,
+        title: openingHymn.title,
+        hymnNum: openingHymn.hymnNum,
+        highlights: [oh?.hymnTitle?.trim() ?? ""].filter(Boolean),
+      },
+      {
+        label: inv?.title || getContentText(language).audience.invocation,
+        title: invocationName || text.unassigned,
+        highlights: invocationName ? [invocationName] : undefined,
+      },
+    ],
   })
 
   // Ward business
@@ -277,15 +306,9 @@ function buildAgenda(meeting: ConductMeeting, language: ContentLanguage): Step[]
     })
   }
 
-  // Sacrament hymn
+  // Sacrament administration script includes the sacrament hymn details.
   const sh = getStatic("sacrament-hymn")
   const sacramentPreparation = buildSacramentPreparationScript(sh, language)
-  steps.push({
-    key: "sacrament-hymn",
-    eyebrow: sh?.title || getContentText(language).audience.sacramentHymn,
-    title: sacramentPreparation.script,
-    highlights: sacramentPreparation.highlights,
-  })
 
   // Sacrament ordinance
   steps.push({
@@ -293,6 +316,8 @@ function buildAgenda(meeting: ConductMeeting, language: ContentLanguage): Step[]
     kind: "sacrament-prayers",
     eyebrow: text.sacrament,
     title: text.blessingPassing,
+    script: sacramentPreparation.script,
+    highlights: sacramentPreparation.highlights,
   })
 
   // Speakers / fast testimony
@@ -383,10 +408,13 @@ function ConductItemsList({ title, items }: { title: string; items: ConductItem[
               <div className="font-serif text-[19px] leading-snug text-[#141413] dark:text-[#e5e5e5]">
                 {item.title}
               </div>
-              {item.detail?.trim() ? (
-                <p className="mt-2 whitespace-pre-line text-[14px] leading-6 text-[#57544c] dark:text-[#a1a1a1]">
-                  {item.detail}
-                </p>
+              {!isRichTextEmpty(item.detail) ? (
+                <div
+                  className="mt-2 text-[14px] leading-6 text-[#57544c] dark:text-[#a1a1a1] [&_li]:my-0.5 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:my-1 [&_p:first-child]:mt-0 [&_p:last-child]:mb-0 [&_ul]:list-disc [&_ul]:pl-5"
+                  dangerouslySetInnerHTML={{
+                    __html: sanitizeRichTextHtml(ensureRichTextHtml(item.detail)),
+                  }}
+                />
               ) : null}
             </div>
           </div>
@@ -406,6 +434,7 @@ export function ConductView({
   attendance,
   onNotesChange,
   onAttendanceChange,
+  onBusinessItemCompletedChange,
   onClose,
 }: ConductViewProps) {
   const contentLanguage = normalizeContentLanguage(language ?? meeting.contentLanguage)
@@ -586,6 +615,7 @@ export function ConductView({
               const isSacramentCurrent = step.kind === "sacrament-prayers" && state === "current"
               const isBusinessCurrent = step.kind === "business" && state === "current"
               const isWelcomeCurrent = step.key === "welcome" && state === "current"
+              const isOpeningHymnPrayerCurrent = step.kind === "opening-hymn-prayer" && state === "current"
 
               return (
                 <div key={step.key}>
@@ -646,12 +676,50 @@ export function ConductView({
                     </div>
                   </div>
 
-                  {/* Welcome supporting card — presidency + announcements consolidated */}
-                  {isWelcomeCurrent && checkedAnnouncements.length > 0 && (
+                  {/* Welcome supporting card — read-aloud script + announcements */}
+                  {isWelcomeCurrent && (step.script || checkedAnnouncements.length > 0) && (
                     <div className="mb-1.5 rounded-[14px] border border-[#d8d2bf] bg-white p-5 shadow-[0_12px_40px_rgba(60,50,30,0.10),0_0_0_1px_rgba(60,50,30,0.05)] sm:p-8 dark:border-[#2a2a2a] dark:bg-[#141414] dark:shadow-[0_12px_40px_rgba(0,0,0,0.4),0_0_0_1px_rgba(255,255,255,0.05)]">
-                      <ConductItemsList title={text.announcements} items={checkedAnnouncements} />
+                      {step.script ? (
+                        <p className="whitespace-pre-line font-serif text-[22px] leading-[1.62] tracking-[-0.005em] text-[#141413] dark:text-[#e5e5e5]">
+                          <HighlightedText text={step.script} highlights={step.highlights} />
+                        </p>
+                      ) : null}
+
+                      {checkedAnnouncements.length > 0 ? (
+                        <div className={cn(step.script && "mt-6 border-t border-[#f0ece6] pt-6 sm:mt-8 sm:pt-8 dark:border-[#1f1f1f]")}>
+                          <ConductItemsList title={text.announcements} items={checkedAnnouncements} />
+                        </div>
+                      ) : null}
                     </div>
                   )}
+
+                  {/* Opening hymn and prayer card — consolidated details */}
+                  {isOpeningHymnPrayerCurrent && step.details?.length ? (
+                    <div className="mb-1.5 rounded-[14px] border border-[#d8d2bf] bg-white p-5 shadow-[0_12px_40px_rgba(60,50,30,0.10),0_0_0_1px_rgba(60,50,30,0.05)] sm:p-8 dark:border-[#2a2a2a] dark:bg-[#141414] dark:shadow-[0_12px_40px_rgba(0,0,0,0.4),0_0_0_1px_rgba(255,255,255,0.05)]">
+                      <div className="grid gap-5 sm:grid-cols-2">
+                        {step.details.map((detail) => (
+                          <div key={detail.label} className="rounded-[12px] border border-[#f0ece6] bg-[#faf9f5] p-4 dark:border-[#1f1f1f] dark:bg-[#0f0f0f]">
+                            <div className="text-[11px] font-medium uppercase tracking-[0.09em] text-[#8a867a] dark:text-[#6b6b6b]">
+                              {detail.label}
+                            </div>
+                            <div className="mt-2 font-serif text-[22px] leading-snug text-[#141413] dark:text-[#e5e5e5]">
+                              {detail.hymnNum ? (
+                                <span className="mr-1 font-serif italic text-[#c9603c] dark:text-[#e07856]">
+                                  №&thinsp;{detail.hymnNum}
+                                </span>
+                              ) : null}
+                              <HighlightedText text={detail.title} highlights={detail.highlights} />
+                            </div>
+                            {detail.meta ? (
+                              <div className="mt-1 text-[13px] text-[#57544c] dark:text-[#a1a1a1]">
+                                <HighlightedText text={detail.meta} highlights={detail.highlights} />
+                              </div>
+                            ) : null}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
 
                   {/* Business card — inline under current ward business step */}
                   {isBusinessCurrent && (
@@ -672,22 +740,8 @@ export function ConductView({
                             </span>
                             <div className="h-px flex-1 bg-[#e6e1d1] dark:bg-[#1f1f1f]" />
                           </div>
-                          <div className="space-y-2.5">
-                            {section.people.map((person) => (
-                              <div key={person.id}>
-                                <div className="font-serif text-[19px] leading-snug text-[#141413] dark:text-[#e5e5e5]">
-                                  {person.name}
-                                </div>
-                                {person.subtitle?.trim() ? (
-                                  <div className="mt-0.5 text-[13px] text-[#57544c] dark:text-[#a1a1a1]">
-                                    {person.subtitle}
-                                  </div>
-                                ) : null}
-                              </div>
-                            ))}
-                          </div>
                           {businessScriptForConduct(section, contentLanguage) ? (
-                            <p className="mt-4 whitespace-pre-line font-serif text-[22px] leading-[1.62] tracking-[-0.005em] text-[#141413] dark:text-[#e5e5e5]">
+                            <p className="whitespace-pre-line font-serif text-[22px] leading-[1.62] tracking-[-0.005em] text-[#141413] dark:text-[#e5e5e5]">
                               <HighlightedText
                                 text={businessScriptForConduct(section, contentLanguage)}
                                 highlights={section.people.flatMap((person) => [
@@ -697,6 +751,49 @@ export function ConductView({
                               />
                             </p>
                           ) : null}
+                          <div className="mt-5 border-t border-[#f0ece6] pt-4 dark:border-[#1f1f1f]">
+                            <div className="mb-2 text-[11px] font-medium uppercase tracking-[0.09em] text-[#8a867a] dark:text-[#6b6b6b]">
+                              {text.completedBusinessItems}
+                            </div>
+                            <div className="space-y-2">
+                              {section.people.map((person) => (
+                                <button
+                                  key={person.id}
+                                  type="button"
+                                  aria-pressed={Boolean(person.completed)}
+                                  onClick={() => onBusinessItemCompletedChange?.(person.id, !person.completed)}
+                                  className="flex w-full items-center gap-3 rounded-[10px] border border-[#f0ece6] bg-[#faf9f5] px-3 py-2 text-left transition-colors hover:border-[#d8d2bf] dark:border-[#1f1f1f] dark:bg-[#0f0f0f] dark:hover:border-[#2a2a2a]"
+                                >
+                                  <span
+                                    className={cn(
+                                      "grid h-5 w-5 shrink-0 place-items-center rounded border transition-colors",
+                                      person.completed
+                                        ? "border-[#c9603c] bg-[#c9603c] text-white dark:border-[#e07856] dark:bg-[#e07856]"
+                                        : "border-[#d8d2bf] bg-white text-transparent dark:border-[#2a2a2a] dark:bg-[#1a1a1a]"
+                                    )}
+                                    aria-hidden
+                                  >
+                                    <Check className="h-3.5 w-3.5" />
+                                  </span>
+                                  <span className="min-w-0 flex-1">
+                                    <span
+                                      className={cn(
+                                        "block truncate font-serif text-[16px] leading-snug text-[#141413] dark:text-[#e5e5e5]",
+                                        person.completed && "line-through decoration-[#b7b3a4] dark:decoration-[#3a3a3a]"
+                                      )}
+                                    >
+                                      {person.name}
+                                    </span>
+                                    {person.subtitle?.trim() ? (
+                                      <span className="block truncate text-[12px] text-[#57544c] dark:text-[#a1a1a1]">
+                                        {person.subtitle}
+                                      </span>
+                                    ) : null}
+                                  </span>
+                                </button>
+                              ))}
+                            </div>
+                          </div>
                         </section>
                       ))}
                     </div>
@@ -705,8 +802,17 @@ export function ConductView({
                   {/* Sacrament prayer card — inline under current sacrament step */}
                   {isSacramentCurrent && (
                     <div className="mb-1.5 rounded-[14px] border border-[#d8d2bf] bg-white p-5 shadow-[0_12px_40px_rgba(60,50,30,0.10),0_0_0_1px_rgba(60,50,30,0.05)] sm:p-8 dark:border-[#2a2a2a] dark:bg-[#141414] dark:shadow-[0_12px_40px_rgba(0,0,0,0.4),0_0_0_1px_rgba(255,255,255,0.05)]">
+                      {step.script ? (
+                        <p className="whitespace-pre-line font-serif text-[22px] leading-[1.62] tracking-[-0.005em] text-[#141413] dark:text-[#e5e5e5]">
+                          <HighlightedText text={step.script} highlights={step.highlights} />
+                        </p>
+                      ) : null}
+
                       {/* Tabs */}
-                      <div className="mb-4 flex gap-6 border-b border-[#e6e1d1] dark:border-[#1f1f1f]">
+                      <div className={cn(
+                        "mb-4 flex gap-6 border-b border-[#e6e1d1] dark:border-[#1f1f1f]",
+                        step.script && "mt-6 border-t border-[#f0ece6] pt-6 sm:mt-8 sm:pt-8 dark:border-[#1f1f1f]"
+                      )}>
                         {(["bread", "water"] as const).map((tab) => (
                           <button
                             key={tab}
