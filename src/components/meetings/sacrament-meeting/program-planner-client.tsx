@@ -42,6 +42,9 @@ import {
 import { CSS } from "@dnd-kit/utilities"
 
 import { Breadcrumbs } from "@/components/dashboard/breadcrumbs"
+import { ensureRichTextHtml, isRichTextEmpty } from "@/lib/rich-text"
+import { RichTextEditor } from "@/components/ui/rich-text-editor"
+import { AssignmentStatusPill } from "@/components/meetings/sacrament-meeting/assignment-status-pill"
 import { SacramentMeetingAudienceView } from "@/components/meetings/sacrament-meeting/audience-client"
 import { AudiencePublishButton } from "@/components/meetings/sacrament-meeting/audience-publish-button"
 import { ConductView } from "@/components/meetings/sacrament-meeting/conduct-view"
@@ -81,8 +84,18 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { createClient } from "@/lib/supabase/client"
+import { toast } from "@/lib/toast"
 import { generateBusinessScript } from "@/lib/business-script-generator"
-import { generateCombinedBusinessScript, type BusinessCategoryKey } from "@/lib/business/combined-script"
+import { getContentText, normalizeContentLanguage, type ContentLanguage } from "@/lib/content-language"
+import {
+  BUSINESS_CATEGORY_ORDER,
+  BUSINESS_CATEGORY_PLURAL,
+  generateCombinedBusinessScript,
+  isBusinessCategoryKey,
+  type BusinessCategoryKey,
+} from "@/lib/business/combined-script"
+import type { ConductBusinessSection } from "@/components/meetings/sacrament-meeting/conduct-view"
+import type { AssignmentStatus, AssignmentStatusChange } from "@/lib/sacrament-confirmations"
 import { isAnnouncementInWindow } from "@/lib/announcement-utils"
 import type { BusinessItem } from "@/components/business/business-table"
 import { cn } from "@/lib/utils"
@@ -126,6 +139,11 @@ type StaticEntry = {
   detail?: string
   assigneeField?: AgendaAssigneeField
   assigneeName?: string
+  // Confirmation state for the assigned person (only meaningful when
+  // assigneeField is set — i.e. invocation/benediction).
+  assigneeStatus?: AssignmentStatus
+  assigneeDeclineNote?: string | null
+  assigneeDeclinedAt?: string | null
   hymnId?: string
   hymnNumber?: number
   hymnTitle?: string
@@ -140,6 +158,10 @@ type SpeakerEntry = {
   topic: string
   topicUrl?: string | null
   durationMinutes: number | null
+  // Confirmation state for the assigned speaker.
+  speakerStatus?: AssignmentStatus
+  speakerDeclineNote?: string | null
+  speakerDeclinedAt?: string | null
 }
 
 type TestimonyEntry = {
@@ -153,6 +175,7 @@ type AgendaEntry = SectionEntry | StaticEntry | SpeakerEntry | TestimonyEntry
 
 type PlannerMeetingState = {
   title: string
+  contentLanguage?: ContentLanguage
   meetingTime: string
   specialType: MeetingSpecialType
   assignments: Record<AssignmentField, string>
@@ -165,6 +188,7 @@ type PlannerMeetingState = {
 type DirectoryPerson = {
   id: string
   name: string
+  gender?: "male" | "female" | null
 }
 
 type PlannerItem = {
@@ -172,19 +196,35 @@ type PlannerItem = {
   title: string
   checked: boolean
   detail?: string | null
+  // Business-specific metadata. Only populated for business items so the
+  // conduct view can group them by category and display people + a single
+  // combined script per category.
+  category?: string
+  personName?: string
+  positionCalling?: string | null
+  businessCompleted?: boolean
+  businessDetails?: BusinessItem["details"]
 }
 
 type PlannerNotes = {
   announcements: PlannerItem[]
   business: PlannerItem[]
   notes: string
+  attendance: number | null
   initialized?: boolean
+}
+
+const EMPTY_PLANNER_NOTES: PlannerNotes = {
+  announcements: [],
+  business: [],
+  notes: "",
+  attendance: null,
 }
 
 const SECTION_CLOSING_ID = "section-closing"
 const PLANNER_DRAFT_STORAGE_KEY = "beespo:sacrament-meeting:planner:draft:v1"
 
-type Lang = "ENG" | "SPA"
+type Lang = ContentLanguage
 
 const ENTRY_LABELS: Record<string, Record<Lang, string>> = {
   "section-opening":     { ENG: "Greeting & welcome",                SPA: "Bienvenida" },
@@ -427,6 +467,59 @@ function getMeetingTypeLabel(specialType: MeetingSpecialType) {
   return MEETING_TYPE_OPTIONS.find((option) => option.value === specialType)?.label ?? "Regular"
 }
 
+function createDefaultSpeakerEntry(isoDate: string, index: number, lang: Lang): SpeakerEntry {
+  return {
+    id: `${isoDate}-speaker-${index}`,
+    kind: "speaker",
+    title: SPEAKER_LABEL[lang],
+    speakerName: "",
+    topic: "",
+    durationMinutes: null,
+  }
+}
+
+function createDefaultIntermediateHymnEntry(isoDate: string, lang: Lang): StaticEntry {
+  return {
+    id: `${isoDate}-intermediate-hymn`,
+    kind: "static",
+    title: INTERMEDIATE_HYMN_LABEL[lang],
+    hymnId: "",
+    hymnTitle: "",
+    removable: true,
+  }
+}
+
+function upgradeLegacyDefaultSpeakerLayout(isoDate: string, entries: AgendaEntry[], lang: Lang) {
+  const speaker1Index = entries.findIndex((entry) => entry.id === `${isoDate}-speaker-1` && entry.kind === "speaker")
+  const speaker2Index = entries.findIndex((entry) => entry.id === `${isoDate}-speaker-2` && entry.kind === "speaker")
+  const speaker3Index = entries.findIndex((entry) => entry.id === `${isoDate}-speaker-3` && entry.kind === "speaker")
+  const closingIndex = entries.findIndex((entry) => entry.id === SECTION_CLOSING_ID)
+  const hasIntermediateHymn = entries.some(
+    (entry) =>
+      entry.kind === "static" &&
+      (entry.id === `${isoDate}-intermediate-hymn` ||
+        entry.title === INTERMEDIATE_HYMN_LABEL.ENG ||
+        entry.title === INTERMEDIATE_HYMN_LABEL.SPA)
+  )
+
+  if (
+    speaker1Index === -1 ||
+    speaker2Index !== speaker1Index + 1 ||
+    speaker3Index !== -1 ||
+    hasIntermediateHymn ||
+    closingIndex !== speaker2Index + 1
+  ) {
+    return entries
+  }
+
+  return [
+    ...entries.slice(0, closingIndex),
+    createDefaultIntermediateHymnEntry(isoDate, lang),
+    createDefaultSpeakerEntry(isoDate, 3, lang),
+    ...entries.slice(closingIndex),
+  ]
+}
+
 function getDefaultMeetingTitle(specialType: MeetingSpecialType) {
   return specialType === "standard" ? "Sacrament Meeting" : getMeetingTypeLabel(specialType)
 }
@@ -485,13 +578,79 @@ function meetingHasUserChanges(
   )
 }
 
+function buildConductBusinessSections(
+  items: PlannerItem[],
+  scripts: Record<string, string> | undefined,
+  language: Lang
+): ConductBusinessSection[] {
+  const businessLabels = getContentText(language).businessPlural
+  const checked = items.filter((item) => item.checked)
+  if (checked.length === 0) return []
+
+  type Bucket = { key: BusinessCategoryKey; items: PlannerItem[] }
+  const buckets = new Map<BusinessCategoryKey, Bucket>()
+
+  for (const item of checked) {
+    const rawCategory = item.category
+    const key: BusinessCategoryKey =
+      rawCategory && isBusinessCategoryKey(rawCategory) ? rawCategory : "other"
+    let bucket = buckets.get(key)
+    if (!bucket) {
+      bucket = { key, items: [] }
+      buckets.set(key, bucket)
+    }
+    bucket.items.push(item)
+  }
+
+  const ordered: BusinessCategoryKey[] = [
+    ...BUSINESS_CATEGORY_ORDER.filter((key) => buckets.has(key)),
+    ...Array.from(buckets.keys()).filter((key) => !BUSINESS_CATEGORY_ORDER.includes(key)),
+  ]
+
+  return ordered.map((key) => {
+    const bucket = buckets.get(key)!
+    const persisted = scripts?.[key]?.trim()
+    const generatedItems = bucket.items
+      .filter((item) => item.personName || item.businessDetails)
+      .map((item) => ({
+        person_name: item.personName ?? item.title,
+        position_calling: item.positionCalling ?? null,
+        category: key,
+        notes: null,
+        details: item.businessDetails ?? null,
+      }))
+    const generated =
+      generatedItems.length > 0
+        ? generateCombinedBusinessScript(key, generatedItems, language).trim()
+        : ""
+    const fallback = bucket.items
+      .map((item) => item.detail?.trim())
+      .filter((value): value is string => Boolean(value))
+      .join("\n\n")
+
+    return {
+      category: key,
+      label: businessLabels[key] ?? BUSINESS_CATEGORY_PLURAL[key] ?? key,
+      count: bucket.items.length,
+      people: bucket.items.map((item) => ({
+        id: item.id,
+        name: item.personName ?? item.title,
+        subtitle: item.positionCalling ?? null,
+        completed: Boolean(item.businessCompleted),
+      })),
+      script: generated || persisted || fallback,
+    }
+  })
+}
+
 function plannerNotesHaveUserChanges(notes: PlannerNotes | undefined) {
   if (!notes) return false
 
   return Boolean(
-    notes.notes.trim() ||
+    !isRichTextEmpty(notes.notes) ||
       notes.announcements.length > 0 ||
-      notes.business.length > 0
+      notes.business.length > 0 ||
+      (typeof notes.attendance === "number" && notes.attendance > 0)
   )
 }
 
@@ -621,22 +780,10 @@ function createStandardEntries(isoDate: string, lang: Lang = "ENG"): AgendaEntry
       detail: lang === "SPA" ? "Bendición y distribución de la santa cena" : "Blessing and passing of the sacrament",
     },
     { id: "section-messages", kind: "section", title: t("section-messages") },
-    {
-      id: `${isoDate}-speaker-1`,
-      kind: "speaker",
-      title: SPEAKER_LABEL[lang],
-      speakerName: "",
-      topic: "",
-      durationMinutes: null,
-    },
-    {
-      id: `${isoDate}-speaker-2`,
-      kind: "speaker",
-      title: SPEAKER_LABEL[lang],
-      speakerName: "",
-      topic: "",
-      durationMinutes: null,
-    },
+    createDefaultSpeakerEntry(isoDate, 1, lang),
+    createDefaultSpeakerEntry(isoDate, 2, lang),
+    createDefaultIntermediateHymnEntry(isoDate, lang),
+    createDefaultSpeakerEntry(isoDate, 3, lang),
     { id: SECTION_CLOSING_ID, kind: "section", title: t(SECTION_CLOSING_ID) },
     { id: "closing-hymn", kind: "static", title: t("closing-hymn"), hymnId: "", hymnTitle: "" },
     {
@@ -692,6 +839,7 @@ function createFastEntries(lang: Lang = "ENG"): AgendaEntry[] {
 function createInitialMeetingState(isoDate: string, lang: Lang = "ENG"): PlannerMeetingState {
   return {
     title: "",
+    contentLanguage: lang,
     meetingTime: "9:00 AM",
     specialType: getDefaultMeetingSpecialType(isoDate),
     assignments: {
@@ -763,7 +911,7 @@ function PlannerTabs({ activeTab, onTabChange }: PlannerTabsProps) {
   const tabs: { value: PlannerTab; label: string }[] = [
     { value: "meeting", label: "This meeting" },
     { value: "horizon", label: "Next 3 months" },
-    { value: "notes", label: "Notes" },
+    { value: "notes", label: "Notes & attendance" },
   ]
 
   return (
@@ -877,18 +1025,94 @@ function HorizonPanel({
 type NotesPanelProps = {
   notes: PlannerNotes
   onNotesChange: (value: string) => void
+  onAttendanceChange: (value: number | null) => void
 }
 
-function NotesPanel({ notes, onNotesChange }: NotesPanelProps) {
+function NotesPanel({ notes, onNotesChange, onAttendanceChange }: NotesPanelProps) {
   return (
     <div className="grid max-w-3xl gap-6 px-6 py-6">
-      <div className="rounded-xl border border-border/70 bg-card px-3 py-3">
-        <textarea
-          className="min-h-48 w-full resize-y bg-transparent text-sm leading-6 outline-none placeholder:text-muted-foreground"
-          placeholder="Private bishopric notes — not shared with the congregation..."
-          value={notes.notes}
-          onChange={(event) => onNotesChange(event.target.value)}
+      <AttendanceCounter
+        value={notes.attendance}
+        onChange={onAttendanceChange}
+      />
+      <RichTextEditor
+        content={ensureRichTextHtml(notes.notes)}
+        onSave={async (html) => {
+          onNotesChange(html)
+        }}
+        placeholder="Private bishopric notes — not shared with the congregation..."
+      />
+    </div>
+  )
+}
+
+type AttendanceCounterProps = {
+  value: number | null
+  onChange: (value: number | null) => void
+  compact?: boolean
+}
+
+function AttendanceCounter({ value, onChange, compact = false }: AttendanceCounterProps) {
+  const display = typeof value === "number" ? value : 0
+  const adjust = (delta: number) => {
+    const next = Math.max(0, display + delta)
+    onChange(next)
+  }
+  const handleInput = (raw: string) => {
+    if (raw.trim() === "") {
+      onChange(null)
+      return
+    }
+    const parsed = Number.parseInt(raw, 10)
+    if (Number.isFinite(parsed) && parsed >= 0) {
+      onChange(parsed)
+    }
+  }
+
+  return (
+    <div
+      className={cn(
+        "flex items-center justify-between gap-4 rounded-xl border border-border/70 bg-card px-4",
+        compact ? "py-2" : "py-3"
+      )}
+    >
+      <div className="min-w-0">
+        <div className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+          Attendance
+        </div>
+        {!compact && (
+          <div className="mt-0.5 text-xs text-muted-foreground">
+            Total in attendance
+          </div>
+        )}
+      </div>
+      <div className="flex items-center gap-1.5">
+        <button
+          type="button"
+          onClick={() => adjust(-1)}
+          disabled={display === 0}
+          className="grid h-8 w-8 place-items-center rounded-full border border-border bg-background text-base text-foreground transition-colors hover:bg-muted disabled:pointer-events-none disabled:opacity-40"
+          aria-label="Decrease attendance"
+        >
+          –
+        </button>
+        <input
+          type="text"
+          inputMode="numeric"
+          pattern="[0-9]*"
+          value={value ?? ""}
+          placeholder="0"
+          onChange={(event) => handleInput(event.target.value)}
+          className="h-8 w-16 rounded-md border border-border bg-background text-center font-mono text-sm tabular-nums text-foreground outline-none focus:ring-2 focus:ring-ring"
         />
+        <button
+          type="button"
+          onClick={() => adjust(1)}
+          className="grid h-8 w-8 place-items-center rounded-full border border-border bg-background text-base text-foreground transition-colors hover:bg-muted"
+          aria-label="Increase attendance"
+        >
+          +
+        </button>
       </div>
     </div>
   )
@@ -1075,8 +1299,10 @@ type OpeningSectionProps = {
   business: PlannerItem[]
   onPickHymn: (entryId: string) => void
   onPickPrayer: (entryId: string, field: AgendaAssigneeField) => void
+  onPrayerStatusChange: (entryId: string, change: AssignmentStatusChange) => void
   onAnnouncementsChange: (items: PlannerItem[]) => void
   onBusinessChange: (items: PlannerItem[]) => void
+  defaultLanguage: Lang
 }
 
 function OpeningSection({
@@ -1085,8 +1311,10 @@ function OpeningSection({
   business,
   onPickHymn,
   onPickPrayer,
+  onPrayerStatusChange,
   onAnnouncementsChange,
   onBusinessChange,
+  defaultLanguage,
 }: OpeningSectionProps) {
   const [announcementsModalOpen, setAnnouncementsModalOpen] = useState(false)
   const [businessModalOpen, setBusinessModalOpen] = useState(false)
@@ -1109,7 +1337,10 @@ function OpeningSection({
         <PrayerPlanningRow
           type="Invocation"
           personName={invocation.assigneeName}
+          status={invocation.assigneeStatus}
+          declineNote={invocation.assigneeDeclineNote}
           onClick={() => onPickPrayer(invocation.id, "invocation")}
+          onStatusChange={(change) => onPrayerStatusChange(invocation.id, change)}
         />
       ) : null}
       <ItemsRow type="Business" items={business} onClick={() => setBusinessModalOpen(true)} />
@@ -1124,7 +1355,12 @@ function OpeningSection({
             onSelect={(selected) => {
               const newItems = selected
                 .filter((a) => !announcements.some((item) => item.id === a.id))
-                .map((a) => ({ id: a.id, title: a.title, checked: true }))
+                .map((a) => ({
+                  id: a.id,
+                  title: a.title,
+                  checked: true,
+                  detail: a.description,
+                }))
               if (newItems.length) onAnnouncementsChange([...announcements, ...newItems])
             }}
           >
@@ -1143,6 +1379,7 @@ function OpeningSection({
         onChange={onBusinessChange}
         addTrigger={
           <BusinessSelectorPopover
+            defaultLanguage={defaultLanguage}
             onSelect={(selected) => {
               const newItems = selected
                 .filter((b) => !business.some((item) => item.id === b.id))
@@ -1151,6 +1388,10 @@ function OpeningSection({
                   title: `${b.person_name}${b.position_calling ? ` – ${b.position_calling}` : ""}`,
                   checked: true,
                   detail: b.generated_script,
+                  category: b.category,
+                  personName: b.person_name,
+                  positionCalling: b.position_calling,
+                  businessDetails: b.details,
                 }))
               if (newItems.length) onBusinessChange([...business, ...newItems])
             }}
@@ -1292,9 +1533,10 @@ type ClosingSectionProps = {
   entries: AgendaEntry[]
   onPickHymn: (entryId: string) => void
   onPickPrayer: (entryId: string, field: AgendaAssigneeField) => void
+  onPrayerStatusChange: (entryId: string, change: AssignmentStatusChange) => void
 }
 
-function ClosingSection({ entries, onPickHymn, onPickPrayer }: ClosingSectionProps) {
+function ClosingSection({ entries, onPickHymn, onPickPrayer, onPrayerStatusChange }: ClosingSectionProps) {
   const closingHymn = getStaticEntry(entries, "closing-hymn")
   const benediction = getStaticEntry(entries, "benediction")
 
@@ -1313,7 +1555,10 @@ function ClosingSection({ entries, onPickHymn, onPickPrayer }: ClosingSectionPro
         <PrayerPlanningRow
           type="Benediction"
           personName={benediction.assigneeName}
+          status={benediction.assigneeStatus}
+          declineNote={benediction.assigneeDeclineNote}
           onClick={() => onPickPrayer(benediction.id, "benediction")}
+          onStatusChange={(change) => onPrayerStatusChange(benediction.id, change)}
         />
       ) : null}
     </div>
@@ -1365,30 +1610,65 @@ function HymnPlanningRow({ type, hymnNumber, hymnTitle, meta, onClick }: HymnPla
 type PrayerPlanningRowProps = {
   type: string
   personName?: string
+  status?: AssignmentStatus
+  declineNote?: string | null
   onClick: () => void
+  onStatusChange: (change: AssignmentStatusChange) => void
 }
 
-function PrayerPlanningRow({ type, personName, onClick }: PrayerPlanningRowProps) {
+function PrayerPlanningRow({
+  type,
+  personName,
+  status,
+  declineNote,
+  onClick,
+  onStatusChange,
+}: PrayerPlanningRowProps) {
   const assignedName = personName?.trim()
+  const isDeclined = status === "declined"
 
   return (
-    <button
-      className="mb-2 grid w-full grid-cols-[100px_1fr_auto] items-center gap-3.5 rounded-xl border border-border/70 bg-surface-raised px-3.5 py-3 text-left transition-colors hover:border-border hover:bg-surface-hover"
-      onClick={onClick}
-      type="button"
-    >
-      <div className="text-[10.5px] font-medium uppercase tracking-[0.05em] text-muted-foreground">
+    <div className="mb-2 grid w-full grid-cols-[100px_1fr_auto] items-center gap-3.5 rounded-xl border border-border/70 bg-surface-raised px-3.5 py-3 transition-colors hover:border-border hover:bg-surface-hover">
+      <button
+        type="button"
+        className="text-left text-[10.5px] font-medium uppercase tracking-[0.05em] text-muted-foreground"
+        onClick={onClick}
+      >
         {type}
-      </div>
-      <div className="min-w-0">
+      </button>
+      <div className="flex min-w-0 flex-wrap items-center gap-2">
+        <button
+          type="button"
+          className="min-w-0 truncate text-left"
+          onClick={onClick}
+        >
+          {assignedName ? (
+            <span
+              className={cn(
+                "font-serif text-[15.5px]",
+                isDeclined
+                  ? "text-muted-foreground line-through decoration-muted-foreground/50"
+                  : "text-foreground"
+              )}
+            >
+              {assignedName}
+            </span>
+          ) : (
+            <span className="font-serif text-[15.5px] italic text-muted-foreground">Assign someone</span>
+          )}
+        </button>
         {assignedName ? (
-          <span className="font-serif text-[15.5px] text-foreground">{assignedName}</span>
-        ) : (
-          <span className="font-serif text-[15.5px] italic text-muted-foreground">Assign someone</span>
-        )}
+          <AssignmentStatusPill
+            status={status ?? "pending"}
+            declineNote={declineNote}
+            onChange={onStatusChange}
+          />
+        ) : null}
       </div>
-      <ChevronRightIcon />
-    </button>
+      <button type="button" onClick={onClick} aria-label={`Edit ${type.toLowerCase()} assignment`}>
+        <ChevronRightIcon />
+      </button>
+    </div>
   )
 }
 
@@ -1497,6 +1777,7 @@ type SpeakersAndMusicSectionProps = {
     field: "topic" | "time",
     value: string | number | null
   ) => void
+  onSpeakerStatusChange: (entryId: string, change: AssignmentStatusChange) => void
   onDeleteSpeaker: (entryId: string) => void
   onPickHymn: (entryId: string) => void
   onDeleteStaticEntry: (entryId: string) => void
@@ -1511,6 +1792,7 @@ function SpeakersAndMusicSection({
   isFastTestimony,
   onSelectSpeaker,
   onSpeakerFieldChange,
+  onSpeakerStatusChange,
   onDeleteSpeaker,
   onPickHymn,
   onDeleteStaticEntry,
@@ -1587,6 +1869,7 @@ function SpeakersAndMusicSection({
                         reorderMode={reorderMode}
                         onSelectSpeaker={onSelectSpeaker}
                         onSpeakerFieldChange={onSpeakerFieldChange}
+                        onSpeakerStatusChange={onSpeakerStatusChange}
                         onDeleteSpeaker={onDeleteSpeaker}
                       />
                     )
@@ -2129,6 +2412,7 @@ type SpeakerPlanningRowProps = {
     field: "topic" | "time",
     value: string | number | null
   ) => void
+  onSpeakerStatusChange: (entryId: string, change: AssignmentStatusChange) => void
   onDeleteSpeaker: (entryId: string) => void
 }
 
@@ -2138,6 +2422,7 @@ function SpeakerPlanningRow({
   reorderMode,
   onSelectSpeaker,
   onSpeakerFieldChange,
+  onSpeakerStatusChange,
   onDeleteSpeaker,
 }: SpeakerPlanningRowProps) {
   const {
@@ -2185,18 +2470,32 @@ function SpeakerPlanningRow({
       )}
       <div className="font-mono text-[12px] text-muted-foreground">{order}.</div>
       <div className="min-w-0">
-        <button
-          type="button"
-          onClick={() => onSelectSpeaker(entry.id)}
-          className="block w-full truncate text-left font-serif text-[16.5px] text-foreground"
-          disabled={reorderMode}
-        >
-          {entry.speakerName ? (
-            entry.speakerName
-          ) : (
-            <span className="italic text-muted-foreground">Tap to assign speaker</span>
-          )}
-        </button>
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <button
+            type="button"
+            onClick={() => onSelectSpeaker(entry.id)}
+            className={cn(
+              "min-w-0 truncate text-left font-serif text-[16.5px]",
+              entry.speakerStatus === "declined"
+                ? "text-muted-foreground line-through decoration-muted-foreground/50"
+                : "text-foreground"
+            )}
+            disabled={reorderMode}
+          >
+            {entry.speakerName ? (
+              entry.speakerName
+            ) : (
+              <span className="italic text-muted-foreground">Tap to assign speaker</span>
+            )}
+          </button>
+          {!reorderMode && entry.speakerName.trim() ? (
+            <AssignmentStatusPill
+              status={entry.speakerStatus ?? "pending"}
+              declineNote={entry.speakerDeclineNote}
+              onChange={(change) => onSpeakerStatusChange(entry.id, change)}
+            />
+          ) : null}
+        </div>
         {!reorderMode && (
           <TopicField
             topic={entry.topic}
@@ -2462,9 +2761,10 @@ export function SacramentMeetingPlannerClient({
   const pathname = usePathname()
   const router = useRouter()
   const searchParams = useSearchParams()
+  const normalizedDefaultLanguage = normalizeContentLanguage(defaultLanguage)
 
   const [sundays, setSundays] = useState<PlannerSunday[]>(() => getUpcomingSundays())
-  const defaultLanguageRef = useRef(defaultLanguage)
+  const defaultLanguageRef = useRef(normalizedDefaultLanguage)
   const [directoryPeople, setDirectoryPeople] = useState<DirectoryPerson[]>([])
   const [isDirectoryLoading, setIsDirectoryLoading] = useState(false)
   const [directoryModalOpen, setDirectoryModalOpen] = useState(false)
@@ -2483,7 +2783,7 @@ export function SacramentMeetingPlannerClient({
   const [meetingTypeOverridesByDate, setMeetingTypeOverridesByDate] = useState<Record<string, boolean>>({})
   const [meetingsByDate, setMeetingsByDate] = useState<Record<string, PlannerMeetingState>>(() =>
     Object.fromEntries(
-      sundays.map((sunday) => [sunday.isoDate, createInitialMeetingState(sunday.isoDate, defaultLanguage)])
+      sundays.map((sunday) => [sunday.isoDate, createInitialMeetingState(sunday.isoDate, normalizedDefaultLanguage)])
     )
   )
   const [autosaveStatus, setAutosaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle")
@@ -2492,6 +2792,23 @@ export function SacramentMeetingPlannerClient({
   const hasLoadedDraftRef = useRef(false)
   const sundaysRef = useRef(sundays)
   sundaysRef.current = sundays
+
+  useEffect(() => {
+    if (defaultLanguageRef.current === normalizedDefaultLanguage) return
+    defaultLanguageRef.current = normalizedDefaultLanguage
+    setMeetingsByDate((prev) => {
+      const next: Record<string, PlannerMeetingState> = {}
+      for (const [isoDate, meeting] of Object.entries(prev)) {
+        next[isoDate] = {
+          ...meeting,
+          contentLanguage: normalizedDefaultLanguage,
+          standardEntries: translateEntries(meeting.standardEntries, normalizedDefaultLanguage),
+          fastEntries: translateEntries(meeting.fastEntries, normalizedDefaultLanguage),
+        }
+      }
+      return next
+    })
+  }, [normalizedDefaultLanguage])
 
   const selectedSunday = useMemo(() => {
     const selectedDate = searchParams?.get("date")
@@ -2507,7 +2824,7 @@ export function SacramentMeetingPlannerClient({
   const selectedMeetingStats = getPlannerAssignmentStats(selectedMeeting)
   const selectedPlannerStatus = getDerivedPlannerStatus(selectedSunday.isoDate, selectedMeeting)
   const visibleSundays = sundays.slice(0, visibleSundayCount)
-  const selectedNotes = notesByDate[selectedSunday.isoDate] ?? { announcements: [], business: [], notes: "" }
+  const selectedNotes = notesByDate[selectedSunday.isoDate] ?? EMPTY_PLANNER_NOTES
   const remainingAgendaEntries = visibleEntries.filter(
     (entry) =>
       ![
@@ -2577,10 +2894,22 @@ export function SacramentMeetingPlannerClient({
     const loadDirectoryPeople = async () => {
       setIsDirectoryLoading(true)
       const supabase = createClient()
-      const { data, error } = await supabase
+      let { data, error } = await supabase
         .from("directory")
-        .select("id, name")
+        .select("id, name, gender")
         .order("name", { ascending: true })
+
+      if (error) {
+        const fallback = await supabase
+          .from("directory")
+          .select("id, name")
+          .order("name", { ascending: true })
+        data = ((fallback.data ?? []) as Array<{ id: string; name: string }>).map((person) => ({
+          ...person,
+          gender: null,
+        })) as typeof data
+        error = fallback.error
+      }
 
       if (!isMounted) {
         return
@@ -2652,6 +2981,7 @@ export function SacramentMeetingPlannerClient({
       type AnnouncementRow = {
         id: string
         title: string
+        content?: string | null
         display_start?: string | null
         display_until?: string | null
       }
@@ -2663,6 +2993,7 @@ export function SacramentMeetingPlannerClient({
           id: announcement.id,
           title: announcement.title,
           checked: true,
+          detail: announcement.content,
         }))
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -2671,6 +3002,10 @@ export function SacramentMeetingPlannerClient({
         title: b.person_name,
         checked: false,
         detail: b.position_calling,
+        category: b.category,
+        personName: b.person_name,
+        positionCalling: b.position_calling,
+        businessDetails: b.details,
       }))
 
       // Process scheduled business items and generate scripts
@@ -2691,7 +3026,11 @@ export function SacramentMeetingPlannerClient({
       for (const [category, items] of Object.entries(businessByCategory)) {
         if (items.length > 0) {
           // Generate combined script for this category
-          businessScripts[category] = generateCombinedBusinessScript(category as BusinessCategoryKey, items)
+          businessScripts[category] = generateCombinedBusinessScript(
+            category as BusinessCategoryKey,
+            items,
+            defaultLanguageRef.current
+          )
         }
       }
 
@@ -2699,7 +3038,8 @@ export function SacramentMeetingPlannerClient({
       setMeetingsByDate((prev) => ({
         ...prev,
         [selectedSunday.isoDate]: {
-          ...(prev[selectedSunday.isoDate] ?? createInitialMeetingState(selectedSunday.isoDate)),
+          ...(prev[selectedSunday.isoDate] ?? createInitialMeetingState(selectedSunday.isoDate, defaultLanguageRef.current)),
+          contentLanguage: defaultLanguageRef.current,
           businessScripts,
         },
       }))
@@ -2719,7 +3059,11 @@ export function SacramentMeetingPlannerClient({
         id: b.id,
         title: `${b.person_name}${b.position_calling ? ` – ${b.position_calling}` : ""}`,
         checked: true,
-        detail: generateBusinessScript(b),
+        detail: generateBusinessScript(b, defaultLanguageRef.current),
+        category: b.category,
+        personName: b.person_name,
+        positionCalling: b.position_calling,
+        businessDetails: b.details,
       }))
 
       setNotesByDate((prev) => ({
@@ -2741,6 +3085,100 @@ export function SacramentMeetingPlannerClient({
   // Only re-run when the selected date changes; notesByDate intentionally omitted
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedSunday.isoDate])
+
+  useEffect(() => {
+    const currentNotes = notesByDate[selectedSunday.isoDate]
+    const missingDetailAnnouncements = currentNotes?.announcements.filter(
+      (announcement) => typeof announcement.detail === "undefined"
+    )
+
+    if (!currentNotes || !missingDetailAnnouncements?.length) {
+      return
+    }
+
+    let isMounted = true
+
+    const hydrateAnnouncementDetails = async () => {
+      const ids = Array.from(new Set(missingDetailAnnouncements.map((announcement) => announcement.id)))
+      const supabase = createClient()
+      let resolvedWorkspaceId = workspaceId
+
+      if (!resolvedWorkspaceId) {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user || !isMounted) return
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: profile } = await (supabase.from("profiles") as any)
+          .select("workspace_id")
+          .eq("id", user.id)
+          .single()
+
+        resolvedWorkspaceId = profile?.workspace_id ?? null
+        if (resolvedWorkspaceId && isMounted) {
+          setWorkspaceId(resolvedWorkspaceId)
+        }
+      }
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let query = (supabase.from("announcements") as any)
+        .select("id, content")
+        .in("id", ids)
+
+      if (resolvedWorkspaceId) {
+        query = query.eq("workspace_id", resolvedWorkspaceId)
+      }
+
+      const { data, error } = await query
+
+      if (!isMounted) return
+
+      if (error) {
+        console.error("Failed to hydrate announcement details:", error)
+        return
+      }
+
+      const contentById = new Map(
+        ((data ?? []) as Array<{ id: string; content?: string | null }>).map((announcement) => [
+          announcement.id,
+          announcement.content ?? null,
+        ])
+      )
+
+      setNotesByDate((prev) => {
+        const latest = prev[selectedSunday.isoDate]
+        if (!latest) return prev
+
+        let changed = false
+        const announcements = latest.announcements.map((announcement) => {
+          if (typeof announcement.detail !== "undefined" || !ids.includes(announcement.id)) {
+            return announcement
+          }
+
+          changed = true
+          return {
+            ...announcement,
+            detail: contentById.get(announcement.id) ?? null,
+          }
+        })
+
+        if (!changed) return prev
+
+        return {
+          ...prev,
+          [selectedSunday.isoDate]: {
+            ...latest,
+            announcements,
+          },
+        }
+      })
+    }
+
+    void hydrateAnnouncementDetails()
+
+    return () => {
+      isMounted = false
+    }
+  }, [notesByDate, selectedSunday.isoDate, workspaceId])
 
   useEffect(() => {
     setMeetingsByDate((prev) => {
@@ -2779,6 +3217,7 @@ export function SacramentMeetingPlannerClient({
           next[sunday.isoDate] = {
             ...prev[sunday.isoDate],
             ...savedMeeting,
+            contentLanguage: defaultLanguageRef.current,
             specialType:
               persistedEntry.meetingTypeOverridden || savedMeeting.specialType !== "standard"
                 ? savedMeeting.specialType ?? prev[sunday.isoDate].specialType
@@ -2792,7 +3231,11 @@ export function SacramentMeetingPlannerClient({
               ...(savedMeeting.sacramentAssignments ?? {}),
             },
             standardEntries: Array.isArray(savedMeeting.standardEntries)
-              ? translateEntries(savedMeeting.standardEntries as AgendaEntry[], defaultLanguageRef.current)
+              ? upgradeLegacyDefaultSpeakerLayout(
+                  sunday.isoDate,
+                  translateEntries(savedMeeting.standardEntries as AgendaEntry[], defaultLanguageRef.current),
+                  defaultLanguageRef.current
+                )
               : prev[sunday.isoDate].standardEntries,
             fastEntries: Array.isArray(savedMeeting.fastEntries)
               ? translateEntries(savedMeeting.fastEntries as AgendaEntry[], defaultLanguageRef.current)
@@ -2812,6 +3255,10 @@ export function SacramentMeetingPlannerClient({
             announcements: Array.isArray(entry.notesState.announcements) ? entry.notesState.announcements : [],
             business: Array.isArray(entry.notesState.business) ? entry.notesState.business : [],
             notes: entry.notesState.notes ?? "",
+            attendance:
+              typeof entry.notesState.attendance === "number" && Number.isFinite(entry.notesState.attendance)
+                ? entry.notesState.attendance
+                : null,
             initialized: entry.notesState.initialized ?? true,
           }
         }
@@ -2911,7 +3358,7 @@ export function SacramentMeetingPlannerClient({
             return {
               meetingDate: sunday.isoDate,
               meetingState: meeting,
-              notesState: notes ?? { announcements: [], business: [], notes: "", initialized: false },
+              notesState: notes ?? { ...EMPTY_PLANNER_NOTES, initialized: false },
               meetingTypeOverridden,
             }
           })
@@ -3057,7 +3504,7 @@ export function SacramentMeetingPlannerClient({
     }))
     setNotesByDate((prev) => ({
       ...prev,
-      [selectedSunday.isoDate]: { announcements: [], business: [], notes: "", initialized: false },
+      [selectedSunday.isoDate]: { ...EMPTY_PLANNER_NOTES, initialized: false },
     }))
     setMeetingTypeOverridesByDate((prev) => ({
       ...prev,
@@ -3070,7 +3517,7 @@ export function SacramentMeetingPlannerClient({
     setNotesByDate((prev) => ({
       ...prev,
       [selectedSunday.isoDate]: {
-        ...(prev[selectedSunday.isoDate] ?? { announcements: [], business: [], notes: "" }),
+        ...(prev[selectedSunday.isoDate] ?? EMPTY_PLANNER_NOTES),
         announcements: items,
       },
     }))
@@ -3080,18 +3527,44 @@ export function SacramentMeetingPlannerClient({
     setNotesByDate((prev) => ({
       ...prev,
       [selectedSunday.isoDate]: {
-        ...(prev[selectedSunday.isoDate] ?? { announcements: [], business: [], notes: "" }),
+        ...(prev[selectedSunday.isoDate] ?? EMPTY_PLANNER_NOTES),
         business: items,
       },
     }))
+  }
+
+  const handleBusinessCompletedChange = (id: string, completed: boolean) => {
+    setNotesByDate((prev) => {
+      const current = prev[selectedSunday.isoDate] ?? EMPTY_PLANNER_NOTES
+
+      return {
+        ...prev,
+        [selectedSunday.isoDate]: {
+          ...current,
+          business: current.business.map((item) =>
+            item.id === id ? { ...item, businessCompleted: completed } : item
+          ),
+        },
+      }
+    })
   }
 
   const handleNotesTextChange = (value: string) => {
     setNotesByDate((prev) => ({
       ...prev,
       [selectedSunday.isoDate]: {
-        ...(prev[selectedSunday.isoDate] ?? { announcements: [], business: [], notes: "" }),
+        ...(prev[selectedSunday.isoDate] ?? EMPTY_PLANNER_NOTES),
         notes: value,
+      },
+    }))
+  }
+
+  const handleAttendanceChange = (value: number | null) => {
+    setNotesByDate((prev) => ({
+      ...prev,
+      [selectedSunday.isoDate]: {
+        ...(prev[selectedSunday.isoDate] ?? EMPTY_PLANNER_NOTES),
+        attendance: value,
       },
     }))
   }
@@ -3143,11 +3616,62 @@ export function SacramentMeetingPlannerClient({
   const handleSpeakerNameChange = (entryId: string, speakerName: string) => {
     updateSelectedMeeting((meeting) => ({
       ...meeting,
-      standardEntries: meeting.standardEntries.map((entry) =>
-        entry.id === entryId && entry.kind === "speaker"
-          ? { ...entry, speakerName }
-          : entry
-      ),
+      standardEntries: meeting.standardEntries.map((entry): AgendaEntry => {
+        if (entry.id !== entryId || entry.kind !== "speaker") return entry
+        const previousName = entry.speakerName.trim()
+        const nextName = speakerName.trim()
+        if (!nextName) {
+          // Cleared the name: drop status + decline note so the row resets cleanly.
+          return {
+            ...entry,
+            speakerName,
+            speakerStatus: undefined,
+            speakerDeclineNote: null,
+            speakerDeclinedAt: null,
+          }
+        }
+        // First assignment OR reassignment to a different person → reset
+        // status to pending and clear any prior decline note. We only
+        // preserve status when the same name is being re-saved (which the
+        // picker doesn't usually trigger but is a no-op safety case).
+        if (previousName !== nextName) {
+          return {
+            ...entry,
+            speakerName,
+            speakerStatus: "pending",
+            speakerDeclineNote: null,
+            speakerDeclinedAt: null,
+          }
+        }
+        return { ...entry, speakerName }
+      }),
+    }))
+  }
+
+  const handleSpeakerStatusChange = (
+    entryId: string,
+    change: AssignmentStatusChange
+  ) => {
+    updateSelectedMeeting((meeting) => ({
+      ...meeting,
+      standardEntries: meeting.standardEntries.map((entry): AgendaEntry => {
+        if (entry.id !== entryId || entry.kind !== "speaker") return entry
+        if (change.status === "declined") {
+          return {
+            ...entry,
+            speakerStatus: "declined",
+            speakerDeclineNote: change.declineNote,
+            speakerDeclinedAt: new Date().toISOString(),
+          }
+        }
+        return {
+          ...entry,
+          speakerStatus: change.status,
+          // Clear decline metadata when leaving the declined state.
+          speakerDeclineNote: null,
+          speakerDeclinedAt: null,
+        }
+      }),
     }))
   }
 
@@ -3207,13 +3731,68 @@ export function SacramentMeetingPlannerClient({
   ) => {
     updateSelectedMeeting((meeting) => {
       const mapEntries = (entries: AgendaEntry[]) =>
-        entries.map((entry) =>
-          entry.id === entryId &&
-          entry.kind === "static" &&
-          entry.assigneeField === field
-            ? { ...entry, assigneeName }
-            : entry
-        )
+        entries.map((entry): AgendaEntry => {
+          if (
+            entry.id !== entryId ||
+            entry.kind !== "static" ||
+            entry.assigneeField !== field
+          )
+            return entry
+          const previousName = entry.assigneeName?.trim() ?? ""
+          const nextName = assigneeName.trim()
+          if (!nextName) {
+            return {
+              ...entry,
+              assigneeName,
+              assigneeStatus: undefined,
+              assigneeDeclineNote: null,
+              assigneeDeclinedAt: null,
+            }
+          }
+          if (previousName !== nextName) {
+            return {
+              ...entry,
+              assigneeName,
+              assigneeStatus: "pending",
+              assigneeDeclineNote: null,
+              assigneeDeclinedAt: null,
+            }
+          }
+          return { ...entry, assigneeName }
+        })
+
+      return {
+        ...meeting,
+        standardEntries: mapEntries(meeting.standardEntries),
+        fastEntries: mapEntries(meeting.fastEntries),
+      }
+    })
+  }
+
+  const handleAgendaAssigneeStatusChange = (
+    entryId: string,
+    change: AssignmentStatusChange
+  ) => {
+    updateSelectedMeeting((meeting) => {
+      const mapEntries = (entries: AgendaEntry[]) =>
+        entries.map((entry): AgendaEntry => {
+          if (entry.id !== entryId || entry.kind !== "static" || !entry.assigneeField)
+            return entry
+          if (change.status === "declined") {
+            return {
+              ...entry,
+              assigneeStatus: "declined",
+              assigneeDeclineNote: change.declineNote,
+              assigneeDeclinedAt: new Date().toISOString(),
+            }
+          }
+          return {
+            ...entry,
+            assigneeStatus: change.status,
+            assigneeDeclineNote: null,
+            assigneeDeclinedAt: null,
+          }
+        })
 
       return {
         ...meeting,
@@ -3454,18 +4033,46 @@ export function SacramentMeetingPlannerClient({
         items={breadcrumbItems}
         action={
           <div className="flex items-center gap-2 bg-surface-canvas">
-            <Button type="button" variant="ghost" size="sm" onClick={() => router.push("/meetings/sacrament/speakers")} className="bg-surface-raised border border-border">
+            {/* Mobile: navigations + audience modal collapse into an overflow menu */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="border border-border bg-surface-raised sm:hidden"
+                  aria-label="More planner actions"
+                >
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-44">
+                <DropdownMenuItem onClick={() => router.push("/meetings/sacrament/speakers")}>
+                  Speakers
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => router.push("/meetings/sacrament/business")}>
+                  Business
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setAudienceOpen(true)}>
+                  Audience
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Desktop: full nav row */}
+            <Button type="button" variant="ghost" size="sm" onClick={() => router.push("/meetings/sacrament/speakers")} className="hidden border border-border bg-surface-raised sm:inline-flex">
               Speakers
               <span className="ml-1 hidden font-mono text-[10px] text-muted-foreground/80 sm:inline">⌥S</span>
             </Button>
-            <Button type="button" variant="ghost" size="sm" onClick={() => router.push("/meetings/sacrament/business")} className="bg-surface-raised border border-border">
+            <Button type="button" variant="ghost" size="sm" onClick={() => router.push("/meetings/sacrament/business")} className="hidden border border-border bg-surface-raised sm:inline-flex">
               Business
               <span className="ml-1 hidden font-mono text-[10px] text-muted-foreground/80 sm:inline">⌥B</span>
             </Button>
-            <Button type="button" variant="ghost" size="sm" onClick={() => setAudienceOpen(true)} className="bg-surface-raised border border-border">
+            <Button type="button" variant="ghost" size="sm" onClick={() => setAudienceOpen(true)} className="hidden border border-border bg-surface-raised sm:inline-flex">
               Audience
               <span className="ml-1 hidden font-mono text-[10px] text-muted-foreground/80 sm:inline">⌥A</span>
             </Button>
+
             <AudiencePublishButton isoDate={selectedSunday.isoDate} />
             <Button type="button" variant="default" size="sm" onClick={() => setConductOpen(true)}>
               <Play className="h-3.5 w-3.5" />
@@ -3600,8 +4207,10 @@ export function SacramentMeetingPlannerClient({
                                   field,
                                 })
                               }
+                              onPrayerStatusChange={handleAgendaAssigneeStatusChange}
                               onAnnouncementsChange={handleAnnouncementsChange}
                               onBusinessChange={handleBusinessChange}
+                              defaultLanguage={defaultLanguageRef.current}
                             />
                             <SacramentSection
                               entries={visibleEntries}
@@ -3625,6 +4234,7 @@ export function SacramentMeetingPlannerClient({
                                 })
                               }
                               onSpeakerFieldChange={handleSpeakerFieldChange}
+                              onSpeakerStatusChange={handleSpeakerStatusChange}
                               onDeleteSpeaker={handleDeleteSpeaker}
                               onPickHymn={handleOpenHymnPicker}
                               onDeleteStaticEntry={handleDeleteStaticEntry}
@@ -3643,6 +4253,7 @@ export function SacramentMeetingPlannerClient({
                                   field,
                                 })
                               }
+                              onPrayerStatusChange={handleAgendaAssigneeStatusChange}
                             />
                           </div>
                         </div>
@@ -3728,6 +4339,7 @@ export function SacramentMeetingPlannerClient({
                 <NotesPanel
                   notes={selectedNotes}
                   onNotesChange={handleNotesTextChange}
+                  onAttendanceChange={handleAttendanceChange}
                 />
               )}
           </section>
@@ -3743,18 +4355,36 @@ export function SacramentMeetingPlannerClient({
         people={directoryPeople}
         isLoading={isDirectoryLoading}
         onSelect={handleSelectDirectoryPerson}
+        onCreated={(person) => {
+          setDirectoryPeople((prev) => {
+            if (prev.some((entry) => entry.id === person.id)) return prev
+            return [...prev, person].sort((left, right) => left.name.localeCompare(right.name))
+          })
+        }}
       />
       {conductOpen && (
         <ConductView
           meeting={{
             title: selectedMeeting.title,
+            contentLanguage: defaultLanguageRef.current,
+            meetingTime: selectedMeeting.meetingTime,
             specialType: selectedMeeting.specialType,
             assignments: selectedMeeting.assignments,
             entries: visibleEntries,
             announcements: selectedNotes.announcements,
-            business: selectedNotes.business,
+            businessSections: buildConductBusinessSections(
+              selectedNotes.business,
+              selectedMeeting.businessScripts,
+              defaultLanguageRef.current
+            ),
           }}
           isoDate={selectedSunday.isoDate}
+          language={defaultLanguageRef.current}
+          notes={selectedNotes.notes}
+          attendance={selectedNotes.attendance}
+          onNotesChange={handleNotesTextChange}
+          onAttendanceChange={handleAttendanceChange}
+          onBusinessItemCompletedChange={handleBusinessCompletedChange}
           onClose={() => setConductOpen(false)}
         />
       )}
@@ -3763,6 +4393,7 @@ export function SacramentMeetingPlannerClient({
           unitName={unitName}
           meeting={{
             title: selectedMeeting.title,
+            contentLanguage: defaultLanguageRef.current,
             specialType: selectedMeeting.specialType,
             assignments: selectedMeeting.assignments,
             entries: visibleEntries,
@@ -3782,7 +4413,7 @@ export function SacramentMeetingPlannerClient({
           setHymnTarget(null)
         }}
         onSelect={handleSelectHymn}
-        defaultLanguage={defaultLanguage}
+        defaultLanguage={defaultLanguageRef.current}
         sacramentOnly={hymnTarget?.entryId === "sacrament-hymn"}
         currentHymnId={
           hymnTarget
@@ -4011,18 +4642,29 @@ function DirectorySelectDialog({
   people,
   isLoading,
   onSelect,
+  onCreated,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
   people: DirectoryPerson[]
   isLoading: boolean
   onSelect: (personName: string) => void
+  onCreated?: (person: DirectoryPerson) => void
 }) {
   const [query, setQuery] = useState("")
+  const [isCreating, setIsCreating] = useState(false)
+  const [isSavingPerson, setIsSavingPerson] = useState(false)
+  const [newName, setNewName] = useState("")
+  const [newGender, setNewGender] = useState<"male" | "female" | "unspecified">("unspecified")
+  const [createError, setCreateError] = useState<string | null>(null)
 
   useEffect(() => {
     if (open) {
       setQuery("")
+      setIsCreating(false)
+      setNewName("")
+      setNewGender("unspecified")
+      setCreateError(null)
     }
   }, [open])
 
@@ -4034,6 +4676,124 @@ function DirectorySelectDialog({
 
     return people.filter((person) => person.name.toLowerCase().includes(needle))
   }, [people, query])
+
+  const handleCreatePerson = async () => {
+    const trimmedName = newName.trim()
+    if (!trimmedName || isSavingPerson) return
+
+    const existing = people.find((person) => person.name.toLowerCase() === trimmedName.toLowerCase())
+    if (existing) {
+      onSelect(existing.name)
+      onOpenChange(false)
+      toast.success("Directory person selected", {
+        description: `${existing.name} already exists in the directory.`,
+      })
+      return
+    }
+
+    setIsSavingPerson(true)
+    setCreateError(null)
+
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      const message = "You need to be signed in to add a directory record."
+      setCreateError(message)
+      toast.error("Failed to add directory person", { description: message })
+      setIsSavingPerson(false)
+      return
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: profile } = await (supabase.from("profiles") as any)
+      .select("workspace_id")
+      .eq("id", user.id)
+      .single()
+
+    if (!profile?.workspace_id) {
+      const message = "Could not determine your workspace."
+      setCreateError(message)
+      toast.error("Failed to add directory person", { description: message })
+      setIsSavingPerson(false)
+      return
+    }
+
+    const insertPayload = {
+      name: trimmedName,
+      gender: newGender === "unspecified" ? null : newGender,
+      workspace_id: profile.workspace_id,
+      created_by: user.id,
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let { data, error } = await (supabase.from("directory") as any)
+      .insert(insertPayload)
+      .select("id, name, gender")
+      .single()
+
+    if (error && "gender" in insertPayload) {
+      // Fallback for local databases that have not run the optional gender migration yet.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const fallback = await (supabase.from("directory") as any)
+        .insert({
+          name: trimmedName,
+          workspace_id: profile.workspace_id,
+          created_by: user.id,
+        })
+        .select("id, name")
+        .single()
+
+      data = fallback.data ? { ...fallback.data, gender: null } : null
+      error = fallback.error
+    }
+
+    if (error || !data) {
+      let duplicate = await (supabase.from("directory") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+        .select("id, name, gender")
+        .eq("workspace_id", profile.workspace_id)
+        .ilike("name", trimmedName)
+        .maybeSingle()
+
+      if (duplicate.error) {
+        duplicate = await (supabase.from("directory") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+          .select("id, name")
+          .eq("workspace_id", profile.workspace_id)
+          .ilike("name", trimmedName)
+          .maybeSingle()
+        if (duplicate.data) {
+          duplicate = {
+            ...duplicate,
+            data: { ...duplicate.data, gender: null },
+          }
+        }
+      }
+
+      if (duplicate.data) {
+        onCreated?.(duplicate.data as DirectoryPerson)
+        onSelect(duplicate.data.name)
+        onOpenChange(false)
+        toast.success("Directory person selected", {
+          description: `${duplicate.data.name} already exists in the directory.`,
+        })
+      } else {
+        const message = error?.message || "Failed to add directory record."
+        setCreateError(message)
+        toast.error("Failed to add directory person", { description: message })
+      }
+
+      setIsSavingPerson(false)
+      return
+    }
+
+    const person = data as DirectoryPerson
+    onCreated?.(person)
+    onSelect(person.name)
+    onOpenChange(false)
+    toast.success("Directory person added", {
+      description: `${person.name} is now available in future name pickers.`,
+    })
+    setIsSavingPerson(false)
+  }
 
   return (
     <PickerModal
@@ -4050,6 +4810,105 @@ function DirectorySelectDialog({
         />
       }
     >
+          {isCreating ? (
+            <div className="space-y-4 px-5 py-5">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <div className="text-[13px] font-semibold text-foreground">Add directory record</div>
+                  <div className="text-[11.5px] text-muted-foreground">
+                    This person will be available in future name pickers.
+                  </div>
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={() => {
+                    setIsCreating(false)
+                    setCreateError(null)
+                  }}
+                >
+                  <X className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                  Name
+                </label>
+                <input
+                  className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm outline-none transition-colors placeholder:text-muted-foreground focus:border-foreground/30"
+                  placeholder="Enter full name"
+                  value={newName}
+                  onChange={(event) => {
+                    setNewName(event.target.value)
+                    setCreateError(null)
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      event.preventDefault()
+                      void handleCreatePerson()
+                    }
+                    if (event.key === "Escape") {
+                      setIsCreating(false)
+                      setCreateError(null)
+                    }
+                  }}
+                  autoFocus
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                  Gender
+                </label>
+                <Select
+                  value={newGender}
+                  onValueChange={(value) => setNewGender(value as "male" | "female" | "unspecified")}
+                >
+                  <SelectTrigger className="h-9">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="unspecified">Unspecified</SelectItem>
+                    <SelectItem value="male">Male</SelectItem>
+                    <SelectItem value="female">Female</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {createError ? (
+                <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-[12px] text-destructive">
+                  {createError}
+                </div>
+              ) : null}
+
+              <div className="flex justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setIsCreating(false)
+                    setCreateError(null)
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  disabled={!newName.trim() || isSavingPerson}
+                  onClick={() => void handleCreatePerson()}
+                >
+                  {isSavingPerson ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
+                  Add person
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <>
           {isLoading ? (
             <div className="flex items-center justify-center py-10">
               <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
@@ -4079,6 +4938,25 @@ function DirectorySelectDialog({
                 </div>
               </button>
             ))
+          )}
+              <div className="border-t border-border/70 px-3 py-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="w-full justify-start"
+                  onClick={() => {
+                    setNewName(query.trim())
+                    setNewGender("unspecified")
+                    setCreateError(null)
+                    setIsCreating(true)
+                  }}
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  Add new directory record
+                </Button>
+              </div>
+            </>
           )}
     </PickerModal>
   )

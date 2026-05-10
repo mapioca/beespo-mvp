@@ -143,7 +143,8 @@ export function AudiencePublishButton({ isoDate }: AudiencePublishButtonProps) {
         ) : (
           <CheckCircle2 className="h-3.5 w-3.5" />
         )}
-        Published · Unpublish
+        <span className="sm:hidden">Published</span>
+        <span className="hidden sm:inline">Published · Unpublish</span>
       </Button>
     )
   }
@@ -163,7 +164,8 @@ export function AudiencePublishButton({ isoDate }: AudiencePublishButtonProps) {
         ) : (
           <Radio className="h-3.5 w-3.5" />
         )}
-        Publish to audience
+        <span className="sm:hidden">Publish</span>
+        <span className="hidden sm:inline">Publish to audience</span>
       </Button>
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent>

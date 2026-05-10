@@ -57,6 +57,7 @@ export interface BusinessSelection {
 interface BusinessSelectorPopoverProps {
     children: React.ReactNode;
     onSelect: (items: BusinessSelection[]) => void;
+    defaultLanguage?: Language;
 }
 
 const CATEGORY_OPTIONS = [
@@ -101,6 +102,7 @@ const CATEGORY_OPTIONS = [
 export function BusinessSelectorPopover({
     children,
     onSelect,
+    defaultLanguage = "ENG",
 }: BusinessSelectorPopoverProps) {
     const [open, setOpen] = useState(false);
     const [items, setItems] = useState<BusinessItem[]>([]);
@@ -119,7 +121,7 @@ export function BusinessSelectorPopover({
     const [newNotes, setNewNotes] = useState("");
 
     // Details state
-    const [newLanguage, setNewLanguage] = useState<Language>("ENG");
+    const [newLanguage, setNewLanguage] = useState<Language>(defaultLanguage);
     const [newGender, setNewGender] = useState<Gender | undefined>("male");
     const [newOffice, setNewOffice] = useState<PriesthoodOffice | undefined>();
     const [newCustomScript, setNewCustomScript] = useState("");
@@ -169,7 +171,7 @@ export function BusinessSelectorPopover({
             // Reset creation state
             setNewName("");
             setNewCategory("sustaining");
-            setNewLanguage("ENG");
+            setNewLanguage(defaultLanguage);
             setNewCalling("");
             setNewNotes("");
             setNewGender("male");
@@ -177,7 +179,7 @@ export function BusinessSelectorPopover({
             setNewCustomScript("");
             setSelectedTemplateIds([]);
         }
-    }, [open]);
+    }, [open, defaultLanguage]);
 
     const loadItems = async () => {
         setIsLoading(true);
@@ -277,7 +279,7 @@ export function BusinessSelectorPopover({
             category: item.category,
             notes: item.notes,
             details: item.details,
-            generated_script: generateBusinessScript(item)
+            generated_script: generateBusinessScript(item, defaultLanguage)
         })));
         setOpen(false);
     };
@@ -349,7 +351,7 @@ export function BusinessSelectorPopover({
             setNewCalling("");
             setNewNotes("");
             setNewCategory("sustaining");
-            setNewLanguage("ENG");
+            setNewLanguage(defaultLanguage);
             setNewGender("male");
             setNewOffice(undefined);
             setNewCustomScript("");

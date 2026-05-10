@@ -100,10 +100,10 @@ export const getPriesthoodFromOffice = (office?: PriesthoodOffice): PriesthoodTy
  * Generate the official conducting script for a business item
  * Following General Handbook standards
  */
-export function generateBusinessScript(item: BusinessItem): string {
+export function generateBusinessScript(item: BusinessItem, languageOverride?: Language): string {
   const { person_name, position_calling, category, details } = item;
   const gender = details?.gender;
-  const language = details?.language || "ENG";
+  const language = languageOverride || details?.language || "ENG";
 
   switch (category) {
     case "sustaining":

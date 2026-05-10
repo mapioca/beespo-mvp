@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   Archive,
   BriefcaseBusiness,
+  CheckCircle2,
   ChevronRight,
   BookUser,
   Home,
@@ -65,6 +66,7 @@ const sections: SidebarSection[] = [
         match: "prefix",
         children: [
           { href: "/meetings/sacrament/planner", label: "Planner", icon: Landmark, match: "prefix" },
+          { href: "/meetings/sacrament/confirmations", label: "Confirmations", icon: CheckCircle2, match: "prefix" },
           { href: "/meetings/sacrament/speakers", label: "Speakers", icon: MicVocal, match: "prefix" },
           { href: "/meetings/sacrament/business", label: "Business", icon: BriefcaseBusiness, match: "prefix" },
           { href: "/meetings/sacrament/announcements", label: "Announcements", icon: Megaphone, match: "prefix" },
@@ -220,7 +222,7 @@ export function AppSidebar({
   };
 
   return (
-    <aside className="flex h-full w-[248px] shrink-0 flex-col gap-0.5 overflow-y-auto border-r border-[var(--app-nav-border)] bg-[var(--app-nav-bg)] px-2.5 py-3.5">
+    <aside className="flex h-full w-full shrink-0 flex-col gap-0.5 overflow-y-auto border-r border-[var(--app-nav-border)] bg-[var(--app-nav-bg)] px-2.5 pb-3.5 pt-12 lg:pt-3.5">
       {mounted ? (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

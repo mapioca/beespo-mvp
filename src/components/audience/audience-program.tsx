@@ -1,5 +1,11 @@
-import { format } from "date-fns"
-
+import {
+  formatContentDate,
+  formatContentUnitName,
+  getContentText,
+  MEETING_TYPE_LABELS,
+  normalizeContentLanguage,
+  type ContentLanguage,
+} from "@/lib/content-language"
 import { cn } from "@/lib/utils"
 
 export type AudienceMeetingSpecialType =
@@ -55,6 +61,7 @@ export type AudienceAgendaEntry =
 
 export type AudienceMeeting = {
   title?: string
+  contentLanguage?: ContentLanguage
   specialType: AudienceMeetingSpecialType
   assignments: Record<AudienceAssignmentField, string>
   entries: AudienceAgendaEntry[]
@@ -64,14 +71,6 @@ export type AudienceAnnouncement = {
   id: string
   title: string
   content: string | null
-}
-
-const MEETING_TYPE_LABELS: Record<AudienceMeetingSpecialType, string> = {
-  standard: "Sacrament Meeting",
-  "fast-testimony": "Fast & Testimony Meeting",
-  "general-conference": "General Conference",
-  "stake-conference": "Stake Conference",
-  "ward-conference": "Ward Conference",
 }
 
 function plannerSundayDateFromIso(isoDate: string): Date {
@@ -84,8 +83,25 @@ function getStaticEntry(entries: AudienceAgendaEntry[], id: string) {
   )
 }
 
-function getAudienceSubtitle(meeting: AudienceMeeting) {
-  return meeting.title?.trim() || MEETING_TYPE_LABELS[meeting.specialType]
+export function inferAudienceContentLanguage(
+  entries: AudienceAgendaEntry[],
+  explicitLanguage?: unknown
+): ContentLanguage {
+  const normalized = normalizeContentLanguage(explicitLanguage)
+  if (explicitLanguage === "ENG" || explicitLanguage === "SPA") return normalized
+
+  const text = entries
+    .map((entry) => `${entry.title} ${"detail" in entry ? entry.detail ?? "" : ""}`)
+    .join(" ")
+    .toLowerCase()
+
+  return /\b(himno|santa cena|oraci[oó]n|discursante|testimonios|bienvenida|clausura)\b/.test(text)
+    ? "SPA"
+    : "ENG"
+}
+
+function getAudienceSubtitle(meeting: AudienceMeeting, language: ContentLanguage) {
+  return meeting.title?.trim() || MEETING_TYPE_LABELS[language][meeting.specialType]
 }
 
 function romanize(index: number) {
@@ -97,9 +113,10 @@ function quoteTitle(title: string) {
 }
 
 function isMusicalEntry(entry: AudienceStaticEntry) {
+  const title = entry.title.toLowerCase()
   return Boolean(
     entry.removable &&
-      (entry.title.toLowerCase().includes("hymn") || entry.title.toLowerCase().includes("number")),
+      (title.includes("hymn") || title.includes("himno") || title.includes("number") || title.includes("número")),
   )
 }
 
@@ -127,10 +144,22 @@ type AudienceProgramProps = {
   isoDate: string
   meeting: AudienceMeeting
   announcements?: AudienceAnnouncement[]
+  language?: ContentLanguage
   className?: string
 }
 
-export function AudienceProgram({ unitName, isoDate, meeting, announcements = [], className }: AudienceProgramProps) {
+export function AudienceProgram({
+  unitName,
+  isoDate,
+  meeting,
+  announcements = [],
+  language,
+  className,
+}: AudienceProgramProps) {
+  const contentLanguage = normalizeContentLanguage(language ?? meeting.contentLanguage)
+  const text = getContentText(contentLanguage).audience
+  const roleText = getContentText(contentLanguage).roles
+  const displayUnitName = formatContentUnitName(unitName, contentLanguage)
   const entries = meeting.entries
   const openingHymn = getStaticEntry(entries, "opening-hymn")
   const invocation = getStaticEntry(entries, "invocation")
@@ -150,13 +179,13 @@ export function AudienceProgram({ unitName, isoDate, meeting, announcements = []
     >
       <header className="border-b border-border pb-7 text-center">
         <div className="font-serif text-[13px] italic tracking-[0.02em] text-muted-foreground">
-          {unitName}
+          {displayUnitName}
         </div>
         <h1 className="mt-2 font-serif text-[24px] font-normal tracking-[-0.01em] text-foreground sm:text-[28px]">
-          {getAudienceSubtitle(meeting)}
+          {getAudienceSubtitle(meeting, contentLanguage)}
         </h1>
         <div className="mt-4 font-serif text-[15px] italic text-muted-foreground">
-          {format(date, "EEEE, MMMM d, yyyy")}
+          {formatContentDate(date, contentLanguage, "EEEE, MMMM d, yyyy")}
         </div>
         <div className="mt-1 text-[12.5px] text-muted-foreground/70">9:00 AM</div>
       </header>
@@ -164,44 +193,44 @@ export function AudienceProgram({ unitName, isoDate, meeting, announcements = []
       <AudienceRule />
 
       <section className="py-1.5">
-        <AudienceRole label="Presiding" value={meeting.assignments.presiding} />
-        <AudienceRole label="Conducting" value={meeting.assignments.conductor} />
-        <AudienceRole label="Chorister" value={meeting.assignments.chorister} />
-        <AudienceRole label="Organist" value={meeting.assignments.accompanist} />
+        <AudienceRole label={roleText.presiding} value={meeting.assignments.presiding} />
+        <AudienceRole label={roleText.conductor} value={meeting.assignments.conductor} />
+        <AudienceRole label={roleText.chorister} value={meeting.assignments.chorister} />
+        <AudienceRole label={roleText.accompanist} value={meeting.assignments.accompanist} />
       </section>
 
       <AudienceRule />
 
-      <AudienceSectionLabel>Greeting & Welcome</AudienceSectionLabel>
-      <AudienceHymn kind="Opening Hymn" entry={openingHymn} />
-      <AudienceCenteredRow label="Invocation" value={invocation?.assigneeName} />
+      <AudienceSectionLabel>{text.greeting}</AudienceSectionLabel>
+      <AudienceHymn kind={text.openingHymn} entry={openingHymn} hymnNumberLabel={text.hymnNo} />
+      <AudienceCenteredRow label={text.invocation} value={invocation?.assigneeName} />
 
       <AudienceRule />
 
-      <AudienceSectionLabel>the sacrament</AudienceSectionLabel>
-      <AudienceHymn kind="Sacrament Hymn" entry={sacramentHymn} />
+      <AudienceSectionLabel>{text.sacrament}</AudienceSectionLabel>
+      <AudienceHymn kind={text.sacramentHymn} entry={sacramentHymn} hymnNumberLabel={text.hymnNo} />
       <div className="py-2.5 text-center font-serif text-[14.5px] italic text-muted-foreground">
-        Administration of the Sacrament
+        {text.administration}
       </div>
 
       <AudienceRule />
 
       {meeting.specialType === "fast-testimony" ? (
         <>
-          <AudienceSectionLabel>bearing of testimonies</AudienceSectionLabel>
+          <AudienceSectionLabel>{text.testimonies}</AudienceSectionLabel>
           <div className="px-3 pb-1 pt-3 text-center font-serif text-[15px] italic leading-7 text-muted-foreground">
-            The remainder of this meeting will be devoted to the bearing of testimonies
+            {text.testimonyDetail}
           </div>
         </>
       ) : (
         <>
-          <AudienceSectionLabel>speakers</AudienceSectionLabel>
+          <AudienceSectionLabel>{text.speakers}</AudienceSectionLabel>
           {musicalEntries.map((entry) => (
             <AudienceSpeaker
               key={entry.id}
               eyebrow={entry.title}
-              name={entry.hymnTitle || "Musical number"}
-              topic={entry.hymnNumber ? `Hymn No. ${entry.hymnNumber}` : undefined}
+              name={entry.hymnTitle || text.musicalNumber}
+              topic={entry.hymnNumber ? `${text.hymnNo} ${entry.hymnNumber}` : undefined}
               musical
             />
           ))}
@@ -213,8 +242,8 @@ export function AudienceProgram({ unitName, isoDate, meeting, announcements = []
                   key={speaker.id}
                   eyebrow={
                     index === assignedSpeakers.length - 1
-                      ? "Concluding Speaker"
-                      : `Speaker ${romanize(index + 1)}`
+                      ? text.concludingSpeaker
+                      : `${text.speaker} ${romanize(index + 1)}`
                   }
                   name={speaker.speakerName}
                   topic={speaker.topic ? quoteTitle(speaker.topic) : undefined}
@@ -222,7 +251,7 @@ export function AudienceProgram({ unitName, isoDate, meeting, announcements = []
               ))
           ) : (
             <div className="py-4 text-center font-serif text-[15px] italic text-muted-foreground/60">
-              Speakers to be announced
+              {text.speakersTba}
             </div>
           )}
         </>
@@ -230,14 +259,14 @@ export function AudienceProgram({ unitName, isoDate, meeting, announcements = []
 
       <AudienceRule />
 
-      <AudienceSectionLabel>closing</AudienceSectionLabel>
-      <AudienceHymn kind="Closing Hymn" entry={closingHymn} />
-      <AudienceCenteredRow label="Benediction" value={benediction?.assigneeName} />
+      <AudienceSectionLabel>{text.closing}</AudienceSectionLabel>
+      <AudienceHymn kind={text.closingHymn} entry={closingHymn} hymnNumberLabel={text.hymnNo} />
+      <AudienceCenteredRow label={text.benediction} value={benediction?.assigneeName} />
 
       {announcements.length > 0 ? (
         <>
           <AudienceRule />
-          <AudienceSectionLabel>announcements</AudienceSectionLabel>
+          <AudienceSectionLabel>{text.announcements}</AudienceSectionLabel>
           <div className="mt-1 flex flex-col">
             {announcements.map((announcement, index) => (
               <AudienceAnnouncementItem
@@ -252,9 +281,9 @@ export function AudienceProgram({ unitName, isoDate, meeting, announcements = []
 
       <footer className="mt-8 border-t border-border pt-6 text-center text-[11.5px] leading-7 text-muted-foreground/70">
         <div className="mx-auto mb-4 max-w-[340px] font-serif text-[13px] italic leading-6 text-muted-foreground">
-          &quot;For where two or three are gathered together in my name, there am I in the midst of them.&quot;
+          &quot;{text.footerQuote}&quot;
         </div>
-        <div>Matthew 18:20</div>
+        <div>{text.footerReference}</div>
       </footer>
     </article>
   )
@@ -285,7 +314,15 @@ function AudienceRole({ label, value }: { label: string; value?: string }) {
   )
 }
 
-function AudienceHymn({ kind, entry }: { kind: string; entry?: AudienceStaticEntry }) {
+function AudienceHymn({
+  kind,
+  entry,
+  hymnNumberLabel,
+}: {
+  kind: string
+  entry?: AudienceStaticEntry
+  hymnNumberLabel: string
+}) {
   const title = entry?.hymnTitle?.trim()
 
   return (
@@ -301,7 +338,7 @@ function AudienceHymn({ kind, entry }: { kind: string; entry?: AudienceStaticEnt
       </div>
       {title && typeof entry?.hymnNumber === "number" ? (
         <div className="mt-1 font-serif text-[14px] italic text-brand">
-          Hymn No. {entry.hymnNumber}
+          {hymnNumberLabel} {entry.hymnNumber}
         </div>
       ) : null}
     </div>
