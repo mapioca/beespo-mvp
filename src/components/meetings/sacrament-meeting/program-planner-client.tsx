@@ -96,6 +96,7 @@ import {
 } from "@/lib/business/combined-script"
 import type { ConductBusinessSection } from "@/components/meetings/sacrament-meeting/conduct-view"
 import type { AssignmentStatus, AssignmentStatusChange } from "@/lib/sacrament-confirmations"
+import type { ConductScriptKey, ConductScriptTemplateMap } from "@/lib/conduct-script-templates"
 import { isAnnouncementInWindow } from "@/lib/announcement-utils"
 import type { BusinessItem } from "@/components/business/business-table"
 import { cn } from "@/lib/utils"
@@ -581,7 +582,8 @@ function meetingHasUserChanges(
 function buildConductBusinessSections(
   items: PlannerItem[],
   scripts: Record<string, string> | undefined,
-  language: Lang
+  language: Lang,
+  scriptTemplates?: ConductScriptTemplateMap
 ): ConductBusinessSection[] {
   const businessLabels = getContentText(language).businessPlural
   const checked = items.filter((item) => item.checked)
@@ -593,7 +595,7 @@ function buildConductBusinessSections(
   for (const item of checked) {
     const rawCategory = item.category
     const key: BusinessCategoryKey =
-      rawCategory && isBusinessCategoryKey(rawCategory) ? rawCategory : "other"
+      rawCategory && isBusinessCategoryKey(rawCategory) ? rawCategory : "miscellaneous"
     let bucket = buckets.get(key)
     if (!bucket) {
       bucket = { key, items: [] }
@@ -621,7 +623,7 @@ function buildConductBusinessSections(
       }))
     const generated =
       generatedItems.length > 0
-        ? generateCombinedBusinessScript(key, generatedItems, language).trim()
+        ? generateCombinedBusinessScript(key, generatedItems, language, scriptTemplates).trim()
         : ""
     const fallback = bucket.items
       .map((item) => item.detail?.trim())
@@ -2779,6 +2781,7 @@ export function SacramentMeetingPlannerClient({
   const [audienceOpen, setAudienceOpen] = useState(false)
   const [conductOpen, setConductOpen] = useState(false)
   const [workspaceId, setWorkspaceId] = useState<string | null>(null)
+  const [conductScriptTemplates, setConductScriptTemplates] = useState<ConductScriptTemplateMap>({})
   const [notesByDate, setNotesByDate] = useState<Record<string, PlannerNotes>>({})
   const [meetingTypeOverridesByDate, setMeetingTypeOverridesByDate] = useState<Record<string, boolean>>({})
   const [meetingsByDate, setMeetingsByDate] = useState<Record<string, PlannerMeetingState>>(() =>
@@ -2878,6 +2881,30 @@ export function SacramentMeetingPlannerClient({
       if (cancelled) return
       const id = profile?.workspace_id as string | undefined
       if (id) setWorkspaceId(id)
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [workspaceId])
+
+  useEffect(() => {
+    if (!workspaceId) return
+    let cancelled = false
+    const supabase = createClient()
+    void (async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase.from("conduct_script_templates") as any)
+        .select("script_key, template")
+        .eq("workspace_id", workspaceId)
+        .eq("language", defaultLanguageRef.current)
+
+      if (cancelled || error) return
+
+      const templates: ConductScriptTemplateMap = {}
+      for (const row of (data ?? []) as Array<{ script_key: ConductScriptKey; template: string }>) {
+        templates[row.script_key] = row.template
+      }
+      setConductScriptTemplates(templates)
     })()
     return () => {
       cancelled = true
@@ -4375,13 +4402,15 @@ export function SacramentMeetingPlannerClient({
             businessSections: buildConductBusinessSections(
               selectedNotes.business,
               selectedMeeting.businessScripts,
-              defaultLanguageRef.current
+              defaultLanguageRef.current,
+              conductScriptTemplates
             ),
           }}
           isoDate={selectedSunday.isoDate}
           language={defaultLanguageRef.current}
           notes={selectedNotes.notes}
           attendance={selectedNotes.attendance}
+          scriptTemplates={conductScriptTemplates}
           onNotesChange={handleNotesTextChange}
           onAttendanceChange={handleAttendanceChange}
           onBusinessItemCompletedChange={handleBusinessCompletedChange}

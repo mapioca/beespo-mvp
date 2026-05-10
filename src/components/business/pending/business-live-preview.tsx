@@ -76,7 +76,7 @@ type ScheduledDateGroup = {
   groupedByCategory: Record<BusinessCategoryKey, BusinessItem[]>
 }
 
-const PLACEHOLDER_PATTERN = /\[[^\]]+]/g
+const PLACEHOLDER_PATTERN = /\[[^\]]+]|\{\{[^}]+}}/g
 const CONDUCTING_CUES = new Set([
   "[Pause]",
   "[Pause for voting]",
@@ -186,9 +186,12 @@ function emptyCategoryGrouping(): Record<BusinessCategoryKey, BusinessItem[]> {
   return {
     sustaining: [],
     release: [],
-    confirmation: [],
     ordination: [],
-    other: [],
+    confirmation_ordinance: [],
+    new_member_welcome: [],
+    child_blessing: [],
+    records_received: [],
+    miscellaneous: [],
   }
 }
 
@@ -208,7 +211,7 @@ function groupScheduledItemsByDate(items: BusinessItem[]): ScheduledDateGroup[] 
     const group = map.get(date)!
     const category = BUSINESS_CATEGORY_ORDER.includes(item.category as BusinessCategoryKey)
       ? item.category as BusinessCategoryKey
-      : "other"
+      : "miscellaneous"
 
     group.items.push(item)
     group.groupedByCategory[category].push(item)
@@ -226,7 +229,7 @@ function readinessFor(item: BusinessItem) {
     }
   }
 
-  if (item.details?.customScript?.trim()) {
+  if (item.details?.customText?.trim() || item.details?.customScript?.trim()) {
     return {
       label: "Custom",
       className: "border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-900 dark:bg-blue-950 dark:text-blue-300",

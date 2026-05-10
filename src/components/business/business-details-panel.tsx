@@ -69,8 +69,12 @@ const STATUS_OPTIONS = [
 const CATEGORY_OPTIONS = [
     { value: "sustaining", label: "Sustaining", icon: UserCheck },
     { value: "release", label: "Release", icon: UserMinus },
-    { value: "confirmation", label: "Confirmation", icon: Flame },
     { value: "ordination", label: "Ordination", icon: Award },
+    { value: "confirmation_ordinance", label: "Confirmation", icon: Flame },
+    { value: "new_member_welcome", label: "New Member Welcome", icon: UserCheck },
+    { value: "child_blessing", label: "Child Blessing", icon: Award },
+    { value: "records_received", label: "Records Received", icon: UserCheck },
+    { value: "miscellaneous", label: "Miscellaneous", icon: Award },
 ];
 // ── Callings catalog helpers ─────────────────────────────────────────────────
 

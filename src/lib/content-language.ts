@@ -157,9 +157,12 @@ export const CONTENT_TEXT = {
     businessPlural: {
       sustaining: "Sustainings",
       release: "Releases",
-      confirmation: "Confirmations",
+      confirmation_ordinance: "Confirmations",
+      new_member_welcome: "New member welcomes",
+      child_blessing: "Child blessings",
+      records_received: "Records received",
       ordination: "Ordinations",
-      other: "Other",
+      miscellaneous: "Miscellaneous",
     },
     sacramentPrayers: {
       bread: "Blessing on the Bread",
@@ -246,9 +249,12 @@ export const CONTENT_TEXT = {
     businessPlural: {
       sustaining: "Sostenimientos",
       release: "Relevos",
-      confirmation: "Confirmaciones",
+      confirmation_ordinance: "Confirmaciones",
+      new_member_welcome: "Bienvenidas de nuevos miembros",
+      child_blessing: "Bendiciones de niños",
+      records_received: "Registros recibidos",
       ordination: "Ordenaciones",
-      other: "Otros",
+      miscellaneous: "Misceláneo",
     },
     sacramentPrayers: {
       bread: "Bendición del Pan",

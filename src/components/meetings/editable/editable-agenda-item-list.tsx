@@ -1103,7 +1103,7 @@ export function EditableAgendaItemList({
                                                     ? generateBusinessScript({
                                                         person_name: childItem.person_name || childItem.title.split(" - ")[0] || "",
                                                         position_calling: childItem.position_calling || null,
-                                                        category: childItem.business_category || "other",
+                                                        category: childItem.business_category || "miscellaneous",
                                                         notes: childItem.description || null,
                                                         // Cast to correct type since it comes from JSONB
                                                         details: childItem.business_details as Parameters<typeof generateBusinessScript>[0]["details"],

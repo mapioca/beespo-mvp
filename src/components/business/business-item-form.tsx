@@ -96,9 +96,16 @@ const CATEGORY_OPTIONS = [
     requiresGender: true,
   },
   {
-    value: "confirmation",
+    value: "confirmation_ordinance",
     label: "Confirmation",
-    description: "Accept a newly baptized member into fellowship",
+    description: "Transition into a confirmation during sacrament meeting",
+    requiresCalling: false,
+    requiresGender: true,
+  },
+  {
+    value: "new_member_welcome",
+    label: "New Member Welcome",
+    description: "Welcome a member who has already been baptized and confirmed",
     requiresCalling: false,
     requiresGender: true,
   },
@@ -111,11 +118,27 @@ const CATEGORY_OPTIONS = [
     requiresOffice: true,
   },
   {
-    value: "other",
-    label: "Other",
-    description: "Custom business item",
+    value: "child_blessing",
+    label: "Child Blessing",
+    description: "Transition into naming and blessing a child",
     requiresCalling: false,
     requiresGender: false,
+    requiresPerson: false,
+  },
+  {
+    value: "records_received",
+    label: "Records Received",
+    description: "Welcome members whose records were received",
+    requiresCalling: false,
+    requiresGender: false,
+  },
+  {
+    value: "miscellaneous",
+    label: "Miscellaneous",
+    description: "Open text for other recognized business",
+    requiresCalling: false,
+    requiresGender: false,
+    requiresPerson: false,
   },
 ];
 
@@ -190,8 +213,12 @@ export function BusinessItemForm({
   const [office, setOffice] = useState<PriesthoodOffice | undefined>(
     initialData?.details?.office
   );
-  const [customScript, setCustomScript] = useState(
-    initialData?.details?.customScript || ""
+  const [baptismDate, setBaptismDate] = useState(initialData?.details?.baptismDate || "");
+  const [confirmationDate, setConfirmationDate] = useState(initialData?.details?.confirmationDate || "");
+  const [childName, setChildName] = useState(initialData?.details?.childName || "");
+  const [voiceName, setVoiceName] = useState(initialData?.details?.voiceName || "");
+  const [customText, setCustomText] = useState(
+    initialData?.details?.customText || initialData?.details?.customScript || ""
   );
   const [touched, setTouched] = useState<Record<RequiredFieldKey, boolean>>({
     personName: false,
@@ -244,19 +271,43 @@ export function BusinessItemForm({
   // Build the business item for script generation
   const businessItem: BusinessItem = useMemo(
     () => ({
-      person_name: personName || "[Name]",
+      person_name:
+        category === "child_blessing"
+          ? childName || personName || "{{childName}}"
+          : category === "miscellaneous"
+            ? "Miscellaneous"
+            : personName || "{{personName}}",
       position_calling: positionCalling || null,
-      category: category || "other",
+      category: category || "miscellaneous",
       notes: notes || null,
       details: {
         language,
         gender: effectiveGender,
         office,
         priesthood,
-        customScript: category === "other" ? customScript : undefined,
+        baptismDate,
+        confirmationDate,
+        childName,
+        voiceName,
+        customText: category === "miscellaneous" ? customText : undefined,
+        customScript: category === "miscellaneous" ? customText : undefined,
       },
     }),
-    [personName, positionCalling, category, notes, language, effectiveGender, office, priesthood, customScript]
+    [
+      personName,
+      positionCalling,
+      category,
+      notes,
+      language,
+      effectiveGender,
+      office,
+      priesthood,
+      baptismDate,
+      confirmationDate,
+      childName,
+      voiceName,
+      customText,
+    ]
   );
 
   // Generate script preview
@@ -270,14 +321,18 @@ export function BusinessItemForm({
 
     const trimmedName = personName.trim();
     const trimmedCalling = positionCalling.trim();
+    const trimmedChildName = childName.trim();
+    const trimmedVoiceName = voiceName.trim();
     if (trimmedName) tokens.add(trimmedName);
     if (trimmedCalling) tokens.add(trimmedCalling);
+    if (trimmedChildName) tokens.add(trimmedChildName);
+    if (trimmedVoiceName) tokens.add(trimmedVoiceName);
 
     return Array.from(tokens)
       .map((token) => token.trim())
       .filter(Boolean)
       .sort((a, b) => b.length - a.length);
-  }, [personName, positionCalling]);
+  }, [personName, positionCalling, childName, voiceName]);
   useMemo(() => {
     if (!scriptPreview || scriptVariableTokens.length === 0) return scriptPreview;
 
@@ -307,19 +362,27 @@ export function BusinessItemForm({
   /** Validation **/
   const validation = useMemo(() => {
     if (!category) return { valid: false, errors: ["Select a category"] };
-    if (!selectedDirectoryPersonId) return { valid: false, errors: ["Person is required"] };
+    if (categoryConfig?.requiresPerson !== false && !selectedDirectoryPersonId) {
+      return { valid: false, errors: ["Person is required"] };
+    }
+    if (category === "child_blessing" && !childName.trim()) {
+      return { valid: false, errors: ["Child name is required"] };
+    }
+    if (category === "miscellaneous" && !customText.trim()) {
+      return { valid: false, errors: ["Custom text is required"] };
+    }
 
     return validateBusinessItemDetails(
       category,
       positionCalling,
       businessItem.details
     );
-  }, [category, selectedDirectoryPersonId, positionCalling, businessItem.details]);
+  }, [category, categoryConfig?.requiresPerson, selectedDirectoryPersonId, childName, customText, positionCalling, businessItem.details]);
 
   const fieldErrors = useMemo(() => {
     const errors: Partial<Record<RequiredFieldKey, string>> = {};
 
-    if (!selectedDirectoryPersonId) {
+    if (categoryConfig?.requiresPerson !== false && !selectedDirectoryPersonId) {
       errors.personName = "Person name is required.";
     }
     if (!category) {
@@ -358,7 +421,12 @@ export function BusinessItemForm({
     }
 
     const formData: BusinessItemFormData = {
-      personName,
+      personName:
+        category === "child_blessing"
+          ? childName.trim()
+          : category === "miscellaneous"
+            ? "Miscellaneous"
+            : personName,
       positionCalling,
       category,
       status: "pending",
@@ -369,7 +437,12 @@ export function BusinessItemForm({
         gender: effectiveGender,
         office,
         priesthood,
-        customScript: category === "other" ? customScript : undefined,
+        baptismDate,
+        confirmationDate,
+        childName,
+        voiceName,
+        customText: category === "miscellaneous" ? customText : undefined,
+        customScript: category === "miscellaneous" ? customText : undefined,
       },
       templateIds: selectedTemplateIds,
       templateId: selectedTemplateIds[0] ?? null,
@@ -577,9 +650,7 @@ export function BusinessItemForm({
                 <SelectValue placeholder="Select category" />
               </SelectTrigger>
               <SelectContent>
-                {CATEGORY_OPTIONS
-                  .filter((opt) => opt.value !== "other")
-                  .map((opt) => (
+                {CATEGORY_OPTIONS.map((opt) => (
                   <SelectItem key={opt.value} value={opt.value}>
                     {opt.label}
                   </SelectItem>
@@ -591,7 +662,11 @@ export function BusinessItemForm({
             )}
           </div>
 
+          {(categoryConfig?.requiresPerson !== false ||
+            categoryConfig?.requiresOffice ||
+            categoryConfig?.requiresCalling) && (
           <div className="grid max-w-[34rem] grid-cols-1 gap-3 sm:grid-cols-2">
+            {categoryConfig?.requiresPerson !== false && (
             <div className="space-y-2">
               <Label htmlFor="personName">Person Name*</Label>
               <Input
@@ -683,6 +758,7 @@ export function BusinessItemForm({
                   </div>
                 )}
             </div>
+            )}
 
             {categoryConfig?.requiresOffice ? (
               <div className="space-y-2">
@@ -776,21 +852,70 @@ export function BusinessItemForm({
               </div>
             ) : null}
           </div>
+          )}
         </ModalFormSection>
 
         {category && (
           <ModalFormSection>
-            {category === "other" && (
+            {category === "confirmation_ordinance" && (
               <div className="max-w-[32rem] space-y-2">
-                <Label htmlFor="customScript">
-                  Custom Script (optional)
+                <Label htmlFor="baptismDate">Baptism date</Label>
+                <Input
+                  id="baptismDate"
+                  type="date"
+                  value={baptismDate}
+                  onChange={(e) => setBaptismDate(e.target.value)}
+                  disabled={isLoading}
+                />
+              </div>
+            )}
+            {category === "new_member_welcome" && (
+              <div className="max-w-[32rem] space-y-2">
+                <Label htmlFor="confirmationDate">Baptism and confirmation date</Label>
+                <Input
+                  id="confirmationDate"
+                  type="date"
+                  value={confirmationDate}
+                  onChange={(e) => setConfirmationDate(e.target.value)}
+                  disabled={isLoading}
+                />
+              </div>
+            )}
+            {category === "child_blessing" && (
+              <div className="grid max-w-[34rem] grid-cols-1 gap-3 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="childName">Child name*</Label>
+                  <Input
+                    id="childName"
+                    value={childName}
+                    onChange={(e) => setChildName(e.target.value)}
+                    placeholder="Child name"
+                    disabled={isLoading}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="voiceName">Voice</Label>
+                  <Input
+                    id="voiceName"
+                    value={voiceName}
+                    onChange={(e) => setVoiceName(e.target.value)}
+                    placeholder="Brother or father acting as voice"
+                    disabled={isLoading}
+                  />
+                </div>
+              </div>
+            )}
+            {category === "miscellaneous" && (
+              <div className="max-w-[32rem] space-y-2">
+                <Label htmlFor="customText">
+                  Script text*
                 </Label>
                 <Textarea
-                  id="customScript"
-                  value={customScript}
-                  onChange={(e) => setCustomScript(e.target.value)}
-                  placeholder="Enter custom conducting script or leave blank to use notes"
-                  rows={3}
+                  id="customText"
+                  value={customText}
+                  onChange={(e) => setCustomText(e.target.value)}
+                  placeholder="Enter the transition language for this item"
+                  rows={4}
                   disabled={isLoading}
                 />
               </div>

@@ -1,4 +1,4 @@
-import { ArrowUpRight, Briefcase, ClipboardList, Landmark, LayoutGrid, Megaphone, MessageSquare, NotebookPen, PanelsTopLeft, UserRoundCheck } from "lucide-react"
+import { ArrowUpRight, Briefcase, ClipboardList, Landmark, LayoutGrid, Megaphone, MessageSquare, NotebookPen, PanelsTopLeft, ScrollText, UserRoundCheck } from "lucide-react"
 
 import type { DomainNavItem } from "@/components/domain/domain-shell"
 
@@ -41,6 +41,12 @@ export function getMeetingsNavItems(isBishopric: boolean): DomainNavItem[] {
                 href: "/meetings/sacrament/business",
                 label: "Business",
                 icon: Briefcase,
+                matchMode: "prefix" as const,
+              },
+              {
+                href: "/meetings/sacrament/scripts",
+                label: "Scripts",
+                icon: ScrollText,
                 matchMode: "prefix" as const,
               },
             ],

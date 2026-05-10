@@ -47,9 +47,12 @@ function emptyGrouping(): Record<BusinessCategoryKey, BusinessItem[]> {
   return {
     sustaining: [],
     release: [],
-    confirmation: [],
     ordination: [],
-    other: [],
+    confirmation_ordinance: [],
+    new_member_welcome: [],
+    child_blessing: [],
+    records_received: [],
+    miscellaneous: [],
   }
 }
 
@@ -61,7 +64,7 @@ function groupByCategory(
     if (isBusinessCategoryKey(item.category)) {
       groups[item.category].push(item)
     } else {
-      groups.other.push(item)
+      groups.miscellaneous.push(item)
     }
   }
   return groups
@@ -71,9 +74,12 @@ function emptyScriptOverrides(): Record<BusinessCategoryKey, string | null> {
   return {
     sustaining: null,
     release: null,
-    confirmation: null,
     ordination: null,
-    other: null,
+    confirmation_ordinance: null,
+    new_member_welcome: null,
+    child_blessing: null,
+    records_received: null,
+    miscellaneous: null,
   }
 }
 

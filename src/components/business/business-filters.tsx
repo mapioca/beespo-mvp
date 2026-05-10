@@ -14,9 +14,12 @@ export type BusinessStatus = "pending" | "completed";
 export type BusinessCategory =
     | "sustaining"
     | "release"
-    | "confirmation"
     | "ordination"
-    | "other";
+    | "confirmation_ordinance"
+    | "new_member_welcome"
+    | "child_blessing"
+    | "records_received"
+    | "miscellaneous";
 
 interface BusinessFiltersProps {
     onFilterChange: (filters: {
@@ -36,9 +39,12 @@ const STATUS_OPTIONS: { value: BusinessStatus; label: string; icon: React.ReactN
 const CATEGORY_OPTIONS: { value: BusinessCategory; label: string }[] = [
     { value: "sustaining", label: "Sustaining" },
     { value: "release", label: "Release" },
-    { value: "confirmation", label: "Confirmation" },
     { value: "ordination", label: "Ordination" },
-    { value: "other", label: "Other" },
+    { value: "confirmation_ordinance", label: "Confirmation" },
+    { value: "new_member_welcome", label: "New Member Welcome" },
+    { value: "child_blessing", label: "Child Blessing" },
+    { value: "records_received", label: "Records Received" },
+    { value: "miscellaneous", label: "Miscellaneous" },
 ];
 
 export function BusinessFilters({ onFilterChange, statusCounts, categoryCounts }: BusinessFiltersProps) {

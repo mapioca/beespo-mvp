@@ -39,9 +39,12 @@ import type { BusinessItem } from "./business-table";
 const CATEGORY_OPTIONS = [
     { value: "sustaining", label: "Sustaining" },
     { value: "release", label: "Release" },
-    { value: "confirmation", label: "Confirmation" },
     { value: "ordination", label: "Ordination" },
-    { value: "other", label: "Other" },
+    { value: "confirmation_ordinance", label: "Confirmation" },
+    { value: "new_member_welcome", label: "New Member Welcome" },
+    { value: "child_blessing", label: "Child Blessing" },
+    { value: "records_received", label: "Records Received" },
+    { value: "miscellaneous", label: "Miscellaneous" },
 ];
 
 interface BusinessDrawerProps {

@@ -1069,10 +1069,12 @@ export type Database = {
           category:
           | "sustaining"
           | "release"
-          | "confirmation"
           | "ordination"
-          | "setting_apart"
-          | "other";
+          | "confirmation_ordinance"
+          | "new_member_welcome"
+          | "child_blessing"
+          | "records_received"
+          | "miscellaneous";
           status: "pending" | "completed";
           action_date: string | null;
           notes: string | null;
@@ -1088,10 +1090,12 @@ export type Database = {
           category:
           | "sustaining"
           | "release"
-          | "confirmation"
           | "ordination"
-          | "setting_apart"
-          | "other";
+          | "confirmation_ordinance"
+          | "new_member_welcome"
+          | "child_blessing"
+          | "records_received"
+          | "miscellaneous";
           status?: "pending" | "completed";
           action_date?: string | null;
           notes?: string | null;
@@ -1107,14 +1111,51 @@ export type Database = {
           category?:
           | "sustaining"
           | "release"
-          | "confirmation"
           | "ordination"
-          | "setting_apart"
-          | "other";
+          | "confirmation_ordinance"
+          | "new_member_welcome"
+          | "child_blessing"
+          | "records_received"
+          | "miscellaneous";
           status?: "pending" | "completed";
           action_date?: string | null;
           notes?: string | null;
           created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      conduct_script_templates: {
+        Row: {
+          id: string;
+          workspace_id: string;
+          script_key: string;
+          language: "ENG" | "SPA";
+          template: string;
+          created_by: string | null;
+          updated_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          workspace_id: string;
+          script_key: string;
+          language: "ENG" | "SPA";
+          template: string;
+          created_by?: string | null;
+          updated_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          workspace_id?: string;
+          script_key?: string;
+          language?: "ENG" | "SPA";
+          template?: string;
+          created_by?: string | null;
+          updated_by?: string | null;
           created_at?: string;
           updated_at?: string;
         };
