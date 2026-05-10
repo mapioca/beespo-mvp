@@ -83,7 +83,71 @@ type PersistedPlannerEntry = {
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const PLANNER_DRAFT_STORAGE_KEY = "beespo:sacrament-meeting:planner:draft:v1"
-const MAX_SPEAKERS = 3
+const SECTION_CLOSING_ID = "section-closing"
+
+function createDefaultSpeakerEntry(isoDate: string, index: number): SpeakerEntry {
+  return {
+    id: `${isoDate}-speaker-${index}`,
+    kind: "speaker",
+    title: "Speaker",
+    speakerName: "",
+    topic: "",
+    durationMinutes: null,
+  }
+}
+
+function createDefaultIntermediateHymnEntry(isoDate: string): AgendaEntry {
+  return {
+    id: `${isoDate}-intermediate-hymn`,
+    kind: "static",
+    title: "Intermediate Hymn",
+    hymnId: "",
+    hymnTitle: "",
+    removable: true,
+  }
+}
+
+function createDefaultStandardEntries(isoDate: string): AgendaEntry[] {
+  return [
+    createDefaultSpeakerEntry(isoDate, 1),
+    createDefaultSpeakerEntry(isoDate, 2),
+    createDefaultIntermediateHymnEntry(isoDate),
+    createDefaultSpeakerEntry(isoDate, 3),
+    {
+      id: SECTION_CLOSING_ID,
+      kind: "section",
+    },
+  ]
+}
+
+function upgradeLegacyDefaultSpeakerLayout(isoDate: string, entries: AgendaEntry[]) {
+  const speaker1Index = entries.findIndex((entry) => entry.id === `${isoDate}-speaker-1` && entry.kind === "speaker")
+  const speaker2Index = entries.findIndex((entry) => entry.id === `${isoDate}-speaker-2` && entry.kind === "speaker")
+  const speaker3Index = entries.findIndex((entry) => entry.id === `${isoDate}-speaker-3` && entry.kind === "speaker")
+  const closingIndex = entries.findIndex((entry) => entry.id === SECTION_CLOSING_ID)
+  const hasIntermediateHymn = entries.some(
+    (entry) =>
+      entry.kind === "static" &&
+      (entry.id === `${isoDate}-intermediate-hymn` || entry.title === "Intermediate Hymn")
+  )
+
+  if (
+    speaker1Index === -1 ||
+    speaker2Index !== speaker1Index + 1 ||
+    speaker3Index !== -1 ||
+    hasIntermediateHymn ||
+    closingIndex !== speaker2Index + 1
+  ) {
+    return entries
+  }
+
+  return [
+    ...entries.slice(0, closingIndex),
+    createDefaultIntermediateHymnEntry(isoDate),
+    createDefaultSpeakerEntry(isoDate, 3),
+    ...entries.slice(closingIndex),
+  ]
+}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -205,12 +269,7 @@ function createFallbackMeetingState(isoDate: string): PlannerMeetingState {
     title: "",
     specialType: getDefaultMeetingSpecialType(isoDate),
     assignments: {},
-    standardEntries: [
-      {
-        id: "section-closing",
-        kind: "section",
-      },
-    ],
+    standardEntries: createDefaultStandardEntries(isoDate),
     fastEntries: [],
   }
 }
@@ -985,26 +1044,24 @@ function MeetingCard({
               />
             ))}
 
-            {speakers.length < MAX_SPEAKERS && (
-              <button
-                type="button"
-                onClick={() => onPickSlot(speakers.length)}
-                className={cn(
-                  "flex w-full items-center gap-2 rounded-lg border-[1.5px] border-dashed px-3 py-2 text-[13px] transition-all",
-                  isActive && picking?.slotIdx === speakers.length
-                    ? "border-brand bg-brand/10 text-brand"
-                    : "border-border text-muted-foreground hover:border-muted-foreground/40 hover:bg-muted/40 hover:text-foreground"
-                )}
-              >
-                <Plus className="h-3.5 w-3.5 shrink-0" />
-                <span>Add speaker</span>
-                {isActive && picking?.slotIdx === speakers.length && (
-                  <span className="ml-auto text-[11.5px] font-medium text-brand">
-                    ← select from roster
-                  </span>
-                )}
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={() => onPickSlot(speakers.length)}
+              className={cn(
+                "flex w-full items-center gap-2 rounded-lg border-[1.5px] border-dashed px-3 py-2 text-[13px] transition-all",
+                isActive && picking?.slotIdx === speakers.length
+                  ? "border-brand bg-brand/10 text-brand"
+                  : "border-border text-muted-foreground hover:border-muted-foreground/40 hover:bg-muted/40 hover:text-foreground"
+              )}
+            >
+              <Plus className="h-3.5 w-3.5 shrink-0" />
+              <span>Add speaker</span>
+              {isActive && picking?.slotIdx === speakers.length && (
+                <span className="ml-auto text-[11.5px] font-medium text-brand">
+                  ← select from roster
+                </span>
+              )}
+            </button>
           </>
         )}
       </div>
@@ -1050,7 +1107,10 @@ export function SpeakerPlannerClient() {
               ...(entry.meetingState.assignments ?? {}),
             },
             standardEntries: Array.isArray(entry.meetingState.standardEntries)
-              ? entry.meetingState.standardEntries
+              ? upgradeLegacyDefaultSpeakerLayout(
+                  entry.meetingDate,
+                  entry.meetingState.standardEntries as AgendaEntry[]
+                )
               : fallback.standardEntries,
             fastEntries: Array.isArray(entry.meetingState.fastEntries)
               ? entry.meetingState.fastEntries

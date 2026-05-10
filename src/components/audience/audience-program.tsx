@@ -1,5 +1,6 @@
 import {
   formatContentDate,
+  formatContentUnitName,
   getContentText,
   MEETING_TYPE_LABELS,
   normalizeContentLanguage,
@@ -158,6 +159,7 @@ export function AudienceProgram({
   const contentLanguage = normalizeContentLanguage(language ?? meeting.contentLanguage)
   const text = getContentText(contentLanguage).audience
   const roleText = getContentText(contentLanguage).roles
+  const displayUnitName = formatContentUnitName(unitName, contentLanguage)
   const entries = meeting.entries
   const openingHymn = getStaticEntry(entries, "opening-hymn")
   const invocation = getStaticEntry(entries, "invocation")
@@ -177,7 +179,7 @@ export function AudienceProgram({
     >
       <header className="border-b border-border pb-7 text-center">
         <div className="font-serif text-[13px] italic tracking-[0.02em] text-muted-foreground">
-          {unitName}
+          {displayUnitName}
         </div>
         <h1 className="mt-2 font-serif text-[24px] font-normal tracking-[-0.01em] text-foreground sm:text-[28px]">
           {getAudienceSubtitle(meeting, contentLanguage)}

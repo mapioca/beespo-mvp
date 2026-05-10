@@ -84,6 +84,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { createClient } from "@/lib/supabase/client"
+import { toast } from "@/lib/toast"
 import { generateBusinessScript } from "@/lib/business-script-generator"
 import { getContentText, normalizeContentLanguage, type ContentLanguage } from "@/lib/content-language"
 import {
@@ -187,6 +188,7 @@ type PlannerMeetingState = {
 type DirectoryPerson = {
   id: string
   name: string
+  gender?: "male" | "female" | null
 }
 
 type PlannerItem = {
@@ -464,6 +466,59 @@ function getMeetingTypeLabel(specialType: MeetingSpecialType) {
   return MEETING_TYPE_OPTIONS.find((option) => option.value === specialType)?.label ?? "Regular"
 }
 
+function createDefaultSpeakerEntry(isoDate: string, index: number, lang: Lang): SpeakerEntry {
+  return {
+    id: `${isoDate}-speaker-${index}`,
+    kind: "speaker",
+    title: SPEAKER_LABEL[lang],
+    speakerName: "",
+    topic: "",
+    durationMinutes: null,
+  }
+}
+
+function createDefaultIntermediateHymnEntry(isoDate: string, lang: Lang): StaticEntry {
+  return {
+    id: `${isoDate}-intermediate-hymn`,
+    kind: "static",
+    title: INTERMEDIATE_HYMN_LABEL[lang],
+    hymnId: "",
+    hymnTitle: "",
+    removable: true,
+  }
+}
+
+function upgradeLegacyDefaultSpeakerLayout(isoDate: string, entries: AgendaEntry[], lang: Lang) {
+  const speaker1Index = entries.findIndex((entry) => entry.id === `${isoDate}-speaker-1` && entry.kind === "speaker")
+  const speaker2Index = entries.findIndex((entry) => entry.id === `${isoDate}-speaker-2` && entry.kind === "speaker")
+  const speaker3Index = entries.findIndex((entry) => entry.id === `${isoDate}-speaker-3` && entry.kind === "speaker")
+  const closingIndex = entries.findIndex((entry) => entry.id === SECTION_CLOSING_ID)
+  const hasIntermediateHymn = entries.some(
+    (entry) =>
+      entry.kind === "static" &&
+      (entry.id === `${isoDate}-intermediate-hymn` ||
+        entry.title === INTERMEDIATE_HYMN_LABEL.ENG ||
+        entry.title === INTERMEDIATE_HYMN_LABEL.SPA)
+  )
+
+  if (
+    speaker1Index === -1 ||
+    speaker2Index !== speaker1Index + 1 ||
+    speaker3Index !== -1 ||
+    hasIntermediateHymn ||
+    closingIndex !== speaker2Index + 1
+  ) {
+    return entries
+  }
+
+  return [
+    ...entries.slice(0, closingIndex),
+    createDefaultIntermediateHymnEntry(isoDate, lang),
+    createDefaultSpeakerEntry(isoDate, 3, lang),
+    ...entries.slice(closingIndex),
+  ]
+}
+
 function getDefaultMeetingTitle(specialType: MeetingSpecialType) {
   return specialType === "standard" ? "Sacrament Meeting" : getMeetingTypeLabel(specialType)
 }
@@ -723,22 +778,10 @@ function createStandardEntries(isoDate: string, lang: Lang = "ENG"): AgendaEntry
       detail: lang === "SPA" ? "Bendición y distribución de la santa cena" : "Blessing and passing of the sacrament",
     },
     { id: "section-messages", kind: "section", title: t("section-messages") },
-    {
-      id: `${isoDate}-speaker-1`,
-      kind: "speaker",
-      title: SPEAKER_LABEL[lang],
-      speakerName: "",
-      topic: "",
-      durationMinutes: null,
-    },
-    {
-      id: `${isoDate}-speaker-2`,
-      kind: "speaker",
-      title: SPEAKER_LABEL[lang],
-      speakerName: "",
-      topic: "",
-      durationMinutes: null,
-    },
+    createDefaultSpeakerEntry(isoDate, 1, lang),
+    createDefaultSpeakerEntry(isoDate, 2, lang),
+    createDefaultIntermediateHymnEntry(isoDate, lang),
+    createDefaultSpeakerEntry(isoDate, 3, lang),
     { id: SECTION_CLOSING_ID, kind: "section", title: t(SECTION_CLOSING_ID) },
     { id: "closing-hymn", kind: "static", title: t("closing-hymn"), hymnId: "", hymnTitle: "" },
     {
@@ -2844,10 +2887,22 @@ export function SacramentMeetingPlannerClient({
     const loadDirectoryPeople = async () => {
       setIsDirectoryLoading(true)
       const supabase = createClient()
-      const { data, error } = await supabase
+      let { data, error } = await supabase
         .from("directory")
-        .select("id, name")
+        .select("id, name, gender")
         .order("name", { ascending: true })
+
+      if (error) {
+        const fallback = await supabase
+          .from("directory")
+          .select("id, name")
+          .order("name", { ascending: true })
+        data = ((fallback.data ?? []) as Array<{ id: string; name: string }>).map((person) => ({
+          ...person,
+          gender: null,
+        })) as typeof data
+        error = fallback.error
+      }
 
       if (!isMounted) {
         return
@@ -3073,7 +3128,11 @@ export function SacramentMeetingPlannerClient({
               ...(savedMeeting.sacramentAssignments ?? {}),
             },
             standardEntries: Array.isArray(savedMeeting.standardEntries)
-              ? translateEntries(savedMeeting.standardEntries as AgendaEntry[], defaultLanguageRef.current)
+              ? upgradeLegacyDefaultSpeakerLayout(
+                  sunday.isoDate,
+                  translateEntries(savedMeeting.standardEntries as AgendaEntry[], defaultLanguageRef.current),
+                  defaultLanguageRef.current
+                )
               : prev[sunday.isoDate].standardEntries,
             fastEntries: Array.isArray(savedMeeting.fastEntries)
               ? translateEntries(savedMeeting.fastEntries as AgendaEntry[], defaultLanguageRef.current)
@@ -4177,6 +4236,12 @@ export function SacramentMeetingPlannerClient({
         people={directoryPeople}
         isLoading={isDirectoryLoading}
         onSelect={handleSelectDirectoryPerson}
+        onCreated={(person) => {
+          setDirectoryPeople((prev) => {
+            if (prev.some((entry) => entry.id === person.id)) return prev
+            return [...prev, person].sort((left, right) => left.name.localeCompare(right.name))
+          })
+        }}
       />
       {conductOpen && (
         <ConductView
@@ -4456,18 +4521,29 @@ function DirectorySelectDialog({
   people,
   isLoading,
   onSelect,
+  onCreated,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
   people: DirectoryPerson[]
   isLoading: boolean
   onSelect: (personName: string) => void
+  onCreated?: (person: DirectoryPerson) => void
 }) {
   const [query, setQuery] = useState("")
+  const [isCreating, setIsCreating] = useState(false)
+  const [isSavingPerson, setIsSavingPerson] = useState(false)
+  const [newName, setNewName] = useState("")
+  const [newGender, setNewGender] = useState<"male" | "female" | "unspecified">("unspecified")
+  const [createError, setCreateError] = useState<string | null>(null)
 
   useEffect(() => {
     if (open) {
       setQuery("")
+      setIsCreating(false)
+      setNewName("")
+      setNewGender("unspecified")
+      setCreateError(null)
     }
   }, [open])
 
@@ -4479,6 +4555,124 @@ function DirectorySelectDialog({
 
     return people.filter((person) => person.name.toLowerCase().includes(needle))
   }, [people, query])
+
+  const handleCreatePerson = async () => {
+    const trimmedName = newName.trim()
+    if (!trimmedName || isSavingPerson) return
+
+    const existing = people.find((person) => person.name.toLowerCase() === trimmedName.toLowerCase())
+    if (existing) {
+      onSelect(existing.name)
+      onOpenChange(false)
+      toast.success("Directory person selected", {
+        description: `${existing.name} already exists in the directory.`,
+      })
+      return
+    }
+
+    setIsSavingPerson(true)
+    setCreateError(null)
+
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      const message = "You need to be signed in to add a directory record."
+      setCreateError(message)
+      toast.error("Failed to add directory person", { description: message })
+      setIsSavingPerson(false)
+      return
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: profile } = await (supabase.from("profiles") as any)
+      .select("workspace_id")
+      .eq("id", user.id)
+      .single()
+
+    if (!profile?.workspace_id) {
+      const message = "Could not determine your workspace."
+      setCreateError(message)
+      toast.error("Failed to add directory person", { description: message })
+      setIsSavingPerson(false)
+      return
+    }
+
+    const insertPayload = {
+      name: trimmedName,
+      gender: newGender === "unspecified" ? null : newGender,
+      workspace_id: profile.workspace_id,
+      created_by: user.id,
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let { data, error } = await (supabase.from("directory") as any)
+      .insert(insertPayload)
+      .select("id, name, gender")
+      .single()
+
+    if (error && "gender" in insertPayload) {
+      // Fallback for local databases that have not run the optional gender migration yet.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const fallback = await (supabase.from("directory") as any)
+        .insert({
+          name: trimmedName,
+          workspace_id: profile.workspace_id,
+          created_by: user.id,
+        })
+        .select("id, name")
+        .single()
+
+      data = fallback.data ? { ...fallback.data, gender: null } : null
+      error = fallback.error
+    }
+
+    if (error || !data) {
+      let duplicate = await (supabase.from("directory") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+        .select("id, name, gender")
+        .eq("workspace_id", profile.workspace_id)
+        .ilike("name", trimmedName)
+        .maybeSingle()
+
+      if (duplicate.error) {
+        duplicate = await (supabase.from("directory") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+          .select("id, name")
+          .eq("workspace_id", profile.workspace_id)
+          .ilike("name", trimmedName)
+          .maybeSingle()
+        if (duplicate.data) {
+          duplicate = {
+            ...duplicate,
+            data: { ...duplicate.data, gender: null },
+          }
+        }
+      }
+
+      if (duplicate.data) {
+        onCreated?.(duplicate.data as DirectoryPerson)
+        onSelect(duplicate.data.name)
+        onOpenChange(false)
+        toast.success("Directory person selected", {
+          description: `${duplicate.data.name} already exists in the directory.`,
+        })
+      } else {
+        const message = error?.message || "Failed to add directory record."
+        setCreateError(message)
+        toast.error("Failed to add directory person", { description: message })
+      }
+
+      setIsSavingPerson(false)
+      return
+    }
+
+    const person = data as DirectoryPerson
+    onCreated?.(person)
+    onSelect(person.name)
+    onOpenChange(false)
+    toast.success("Directory person added", {
+      description: `${person.name} is now available in future name pickers.`,
+    })
+    setIsSavingPerson(false)
+  }
 
   return (
     <PickerModal
@@ -4495,6 +4689,105 @@ function DirectorySelectDialog({
         />
       }
     >
+          {isCreating ? (
+            <div className="space-y-4 px-5 py-5">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <div className="text-[13px] font-semibold text-foreground">Add directory record</div>
+                  <div className="text-[11.5px] text-muted-foreground">
+                    This person will be available in future name pickers.
+                  </div>
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={() => {
+                    setIsCreating(false)
+                    setCreateError(null)
+                  }}
+                >
+                  <X className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                  Name
+                </label>
+                <input
+                  className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm outline-none transition-colors placeholder:text-muted-foreground focus:border-foreground/30"
+                  placeholder="Enter full name"
+                  value={newName}
+                  onChange={(event) => {
+                    setNewName(event.target.value)
+                    setCreateError(null)
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      event.preventDefault()
+                      void handleCreatePerson()
+                    }
+                    if (event.key === "Escape") {
+                      setIsCreating(false)
+                      setCreateError(null)
+                    }
+                  }}
+                  autoFocus
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                  Gender
+                </label>
+                <Select
+                  value={newGender}
+                  onValueChange={(value) => setNewGender(value as "male" | "female" | "unspecified")}
+                >
+                  <SelectTrigger className="h-9">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="unspecified">Unspecified</SelectItem>
+                    <SelectItem value="male">Male</SelectItem>
+                    <SelectItem value="female">Female</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {createError ? (
+                <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-[12px] text-destructive">
+                  {createError}
+                </div>
+              ) : null}
+
+              <div className="flex justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setIsCreating(false)
+                    setCreateError(null)
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  disabled={!newName.trim() || isSavingPerson}
+                  onClick={() => void handleCreatePerson()}
+                >
+                  {isSavingPerson ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
+                  Add person
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <>
           {isLoading ? (
             <div className="flex items-center justify-center py-10">
               <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
@@ -4524,6 +4817,25 @@ function DirectorySelectDialog({
                 </div>
               </button>
             ))
+          )}
+              <div className="border-t border-border/70 px-3 py-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="w-full justify-start"
+                  onClick={() => {
+                    setNewName(query.trim())
+                    setNewGender("unspecified")
+                    setCreateError(null)
+                    setIsCreating(true)
+                  }}
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  Add new directory record
+                </Button>
+              </div>
+            </>
           )}
     </PickerModal>
   )

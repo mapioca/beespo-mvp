@@ -17,7 +17,46 @@ export function formatContentDate(
   language: ContentLanguage,
   formatString: string
 ) {
-  return format(date, formatString, { locale: dateFnsContentLocale(language) })
+  return format(date, localizeContentDateFormat(formatString, language), {
+    locale: dateFnsContentLocale(language),
+  })
+}
+
+export function formatContentUnitName(unitName: string, language: ContentLanguage) {
+  const trimmed = unitName.trim()
+
+  if (language === "ENG" || !trimmed) {
+    return trimmed
+  }
+
+  if (/^barrio\s+/i.test(trimmed)) {
+    return trimmed
+  }
+
+  const wardMatch = trimmed.match(/^(.*?)\s+ward$/i)
+
+  if (wardMatch?.[1]?.trim()) {
+    return `Barrio ${wardMatch[1].trim()}`
+  }
+
+  return trimmed
+}
+
+function localizeContentDateFormat(formatString: string, language: ContentLanguage) {
+  if (language === "ENG") {
+    return formatString
+  }
+
+  switch (formatString) {
+    case "EEEE, MMMM d, yyyy":
+      return "EEEE, d 'de' MMMM 'de' yyyy"
+    case "MMMM d, yyyy":
+      return "d 'de' MMMM 'de' yyyy"
+    case "MMM d":
+      return "d MMM"
+    default:
+      return formatString
+  }
 }
 
 export const MEETING_TYPE_LABELS = {
@@ -191,4 +230,3 @@ export const CONTENT_TEXT = {
 export function getContentText(language: ContentLanguage) {
   return CONTENT_TEXT[language]
 }
-
