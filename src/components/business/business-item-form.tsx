@@ -40,6 +40,7 @@ import {
   type BusinessItemDetails,
   type BusinessItem,
 } from "@/lib/business-script-generator";
+import type { ConductScriptTemplateMap } from "@/lib/conduct-script-templates";
 
 const escapeRegExp = (value: string): string =>
   value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -194,6 +195,7 @@ export function BusinessItemForm({
   const [isDirectoryLoading, setIsDirectoryLoading] = useState(false);
   const [isUpdatingDirectoryGender, setIsUpdatingDirectoryGender] = useState(false);
   const [workspaceCallingLevel, setWorkspaceCallingLevel] = useState<CallingLevel | null>(null);
+  const [scriptTemplates, setScriptTemplates] = useState<ConductScriptTemplateMap>({});
   const [positionCalling, setPositionCalling] = useState(
     initialData?.positionCalling || ""
   );
@@ -207,7 +209,7 @@ export function BusinessItemForm({
   const [selectedCallingId, setSelectedCallingId] = useState<string>("");
 
   // Details state (structured metadata)
-  const [language] = useState<Language>(
+  const [language, setLanguage] = useState<Language>(
     initialData?.details?.language || "ENG"
   );
   const [office, setOffice] = useState<PriesthoodOffice | undefined>(
@@ -313,8 +315,8 @@ export function BusinessItemForm({
   // Generate script preview
   const scriptPreview = useMemo(() => {
     if (!category) return "";
-    return generateBusinessScript(businessItem);
-  }, [businessItem, category]);
+    return generateBusinessScript(businessItem, language, scriptTemplates);
+  }, [businessItem, category, language, scriptTemplates]);
 
   const scriptVariableTokens = useMemo(() => {
     const tokens = new Set<string>();
@@ -492,13 +494,17 @@ export function BusinessItemForm({
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: profile } = await (supabase.from("profiles") as any)
-      .select("workspace_id, workspaces(type)")
+      .select("workspace_id, language_preference, workspaces(type)")
       .eq("id", user.id)
       .single();
 
     if (!profile?.workspace_id) {
       setIsDirectoryLoading(false);
       return;
+    }
+
+    if (!initialData?.details?.language && profile.language_preference) {
+      setLanguage(profile.language_preference as Language);
     }
 
     setWorkspaceCallingLevel(
@@ -556,6 +562,51 @@ export function BusinessItemForm({
     if (!selectedDirectoryPersonId || !selectedDirectoryPerson) return;
     setPersonName(selectedDirectoryPerson.name);
   }, [selectedDirectoryPersonId, selectedDirectoryPerson]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadScriptTemplates = async () => {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user || cancelled) return;
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: profile } = await (supabase.from("profiles") as any)
+        .select("workspace_id, language_preference")
+        .eq("id", user.id)
+        .single();
+
+      if (!profile?.workspace_id || cancelled) return;
+
+      if (!initialData?.details?.language && profile.language_preference) {
+        setLanguage(profile.language_preference as Language);
+      }
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase.from("conduct_script_templates") as any)
+        .select("script_key, template")
+        .eq("workspace_id", profile.workspace_id)
+        .eq("language", profile.language_preference ?? language);
+
+      if (error || cancelled) return;
+
+      const nextTemplates: ConductScriptTemplateMap = {};
+      for (const row of (data ?? []) as Array<{ script_key: keyof ConductScriptTemplateMap; template: string }>) {
+        nextTemplates[row.script_key] = row.template;
+      }
+      setScriptTemplates(nextTemplates);
+    };
+
+    void loadScriptTemplates();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [initialData?.details?.language, language]);
 
   useEffect(() => {
     if (!selectedCalling) {

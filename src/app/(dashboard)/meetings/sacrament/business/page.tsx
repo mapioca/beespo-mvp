@@ -24,7 +24,7 @@ export default async function BusinessPage() {
   const { data: profile } = await (
     supabase.from("profiles") as ReturnType<typeof supabase.from>
   )
-    .select("workspace_id, role")
+    .select("workspace_id, role, language_preference")
     .eq("id", user.id)
     .single()
 
@@ -48,5 +48,12 @@ export default async function BusinessPage() {
     console.error("Business items query error:", error)
   }
 
-  return <BusinessClient items={businessItems || []} />
+  return (
+    <BusinessClient
+      items={businessItems || []}
+      workspaceId={profile.workspace_id}
+      userId={user.id}
+      language={(profile.language_preference ?? "ENG") as "ENG" | "SPA"}
+    />
+  )
 }

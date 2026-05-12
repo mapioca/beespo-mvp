@@ -9,8 +9,8 @@ import { Textarea } from "@/components/ui/textarea"
 import { createClient } from "@/lib/supabase/client"
 import {
   CONDUCT_SCRIPT_KEYS,
-  CONDUCT_SCRIPT_VARIABLES,
   defaultConductScriptTemplate,
+  getAllowedConductScriptVariables,
   renderConductScriptTemplate,
   type ConductScriptKey,
   type ConductScriptTemplateMap,
@@ -84,6 +84,41 @@ const PREVIEW_VARIABLES: Record<ContentLanguage, Record<string, string>> = {
   },
 }
 
+const PREVIEW_VARIABLE_OVERRIDES: Partial<
+  Record<ConductScriptKey, Record<ContentLanguage, Partial<Record<string, string>>>>
+> = {
+  "ward-business.sustaining_multiple": {
+    ENG: {
+      personNames: "Brother Martin and Sister Santos",
+      callingPhrases: "Brother Martin as Primary Teacher, and Sister Santos as Relief Society Teacher",
+    },
+    SPA: {
+      personNames: "Hermano Martínez y Hermana Santos",
+      callingPhrases: "Hermano Martínez como maestro de la Primaria, y Hermana Santos como maestra de la Sociedad de Socorro",
+    },
+  },
+  "ward-business.release_multiple": {
+    ENG: {
+      personNames: "Brother Martin and Sister Santos",
+      callingPhrases: "Brother Martin as Primary Teacher, and Sister Santos as Relief Society Teacher",
+    },
+    SPA: {
+      personNames: "Hermano Martínez y Hermana Santos",
+      callingPhrases: "Hermano Martínez como maestro de la Primaria, y Hermana Santos como maestra de la Sociedad de Socorro",
+    },
+  },
+  "ward-business.records_received_multiple": {
+    ENG: {
+      personNames: "Brother Martin and Sister Santos",
+      memberNames: "Brother Martin\nSister Santos",
+    },
+    SPA: {
+      personNames: "Hermano Martínez y Hermana Santos",
+      memberNames: "Hermano Martínez\nHermana Santos",
+    },
+  },
+}
+
 function mapTemplates(rows: PersistedTemplate[]): ConductScriptTemplateMap {
   const templates: ConductScriptTemplateMap = {}
   for (const row of rows) {
@@ -98,7 +133,7 @@ export function ConductScriptsClient({
   defaultLanguage,
   initialTemplates,
 }: ConductScriptsClientProps) {
-  const [language, setLanguage] = useState<ContentLanguage>(defaultLanguage)
+  const [language] = useState<ContentLanguage>(defaultLanguage)
   const [activeKey, setActiveKey] = useState<ConductScriptKey>("welcome")
   const [savedTemplates, setSavedTemplates] = useState<ConductScriptTemplateMap>(() => mapTemplates(initialTemplates))
   const [draft, setDraft] = useState(
@@ -109,6 +144,7 @@ export function ConductScriptsClient({
   const activeMeta = CONDUCT_SCRIPT_KEYS.find((item) => item.key === activeKey) ?? CONDUCT_SCRIPT_KEYS[0]
   const activeSavedTemplate = savedTemplates[activeKey]
   const beespoDefault = defaultConductScriptTemplate(activeKey, language)
+  const allowedVariables = useMemo(() => getAllowedConductScriptVariables(activeKey), [activeKey])
   const hasCustomTemplate = Boolean(activeSavedTemplate)
   const dirty = draft !== (activeSavedTemplate ?? beespoDefault)
 
@@ -139,9 +175,17 @@ export function ConductScriptsClient({
     return Array.from(new Set(matches.map((match) => match.replace(/[{}\s]/g, ""))))
   }, [draft])
 
+  const previewVariables = useMemo(
+    () => ({
+      ...PREVIEW_VARIABLES[language],
+      ...(PREVIEW_VARIABLE_OVERRIDES[activeKey]?.[language] ?? {}),
+    }),
+    [activeKey, language]
+  )
+
   const preview = useMemo(
-    () => renderConductScriptTemplate(draft, PREVIEW_VARIABLES[language]),
-    [draft, language]
+    () => renderConductScriptTemplate(draft, previewVariables),
+    [draft, previewVariables]
   )
 
   const insertVariable = (key: string) => {
@@ -223,22 +267,6 @@ export function ConductScriptsClient({
               </h1>
             </div>
 
-            <div className="inline-flex rounded-full border border-border bg-surface-raised p-1">
-              {(["ENG", "SPA"] as const).map((value) => (
-                <button
-                  key={value}
-                  type="button"
-                  onClick={() => setLanguage(value)}
-                  className={cn(
-                    "rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
-                    language === value ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"
-                  )}
-                >
-                  {value === "ENG" ? "English" : "Español"}
-                </button>
-              ))}
-            </div>
-
             <nav className="space-y-4">
               {(["Meeting", "Ward Business"] as const).map((group) => (
                 <div key={group}>
@@ -316,7 +344,7 @@ export function ConductScriptsClient({
                     Variables
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    {CONDUCT_SCRIPT_VARIABLES.map((variable) => (
+                    {allowedVariables.map((variable) => (
                       <button
                         key={variable.key}
                         type="button"

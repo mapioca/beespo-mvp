@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { logSecurityEvent } from "@/lib/security/audit-log";
 import { cookies } from "next/headers";
 import crypto from "crypto";
 
@@ -70,6 +71,12 @@ export async function revokeUserTrustedDevices(userId: string) {
   const supabase = createAdminClient();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   await (supabase as any).from("trusted_devices").delete().eq("user_id", userId);
+  void logSecurityEvent({
+    eventType: "mfa.trusted_device.revoke",
+    outcome: "success",
+    actorUserId: userId,
+    targetUserId: userId,
+  });
 }
 
 export async function checkWorkspaceMfaRequired(workspaceId: string): Promise<boolean> {

@@ -29,9 +29,12 @@ import { BusinessPendingView } from "./pending/business-pending-view"
 
 interface BusinessClientProps {
   items: BusinessItem[]
+  workspaceId: string
+  userId: string
+  language: "ENG" | "SPA"
 }
 
-export function BusinessClient({ items }: BusinessClientProps) {
+export function BusinessClient({ items, workspaceId, userId, language }: BusinessClientProps) {
   const router = useRouter()
 
   const [selectedItem, setSelectedItem] = useState<BusinessItem | null>(null)
@@ -192,7 +195,13 @@ export function BusinessClient({ items }: BusinessClientProps) {
           </header>
 
           <div className="mt-10">
-            <BusinessPendingView items={searchable} onOpenItem={handleViewItem} />
+            <BusinessPendingView
+              items={searchable}
+              workspaceId={workspaceId}
+              userId={userId}
+              language={language}
+              onOpenItem={handleViewItem}
+            />
           </div>
         </div>
       </div>

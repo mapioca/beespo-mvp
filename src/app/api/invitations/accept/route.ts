@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { createNotification } from '@/lib/actions/notification-actions';
 import { checkRateLimit } from '@/lib/rate-limiter';
 import { verifyTurnstile } from '@/lib/security/turnstile';
+import { logSecurityEvent } from '@/lib/security/audit-log';
 import { NextRequest, NextResponse } from 'next/server';
 
 async function findAuthUserByEmail(email: string) {
@@ -192,6 +193,17 @@ export async function POST(request: NextRequest) {
         .from('workspace_invitations') as any) // eslint-disable-line @typescript-eslint/no-explicit-any
         .update({ status: 'accepted' })
         .eq('id', invitation.id);
+
+    void logSecurityEvent({
+        eventType: 'workspace.invitation.accept',
+        outcome: 'success',
+        actorUserId: user.id,
+        targetEmail: invitation.email,
+        workspaceId: invitation.workspace_id,
+        ipAddress: ip,
+        userAgent: request.headers.get('user-agent'),
+        details: { role: invitation.role },
+    });
 
     // Notify existing workspace members that someone joined
     const newMemberName =

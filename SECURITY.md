@@ -578,10 +578,29 @@ any integration ships to disclose:
 ### 10.2 Audit Logs
 
 - The `share_activity_log` table records share-related state changes.
-- A general-purpose audit log for security-relevant events (sign-in success/fail,
-  MFA enroll/disable, role changes, invitation accept/revoke, token
-  revocation) is on the [roadmap](#16-roadmap--known-gaps) — **required before
-  partner submission** for full traceability.
+- The `security_audit_log` table records security-relevant events:
+  - **Auth**: sign-in success/failure, email-not-confirmed, rate-limit denial
+    (per-IP and per-email axes), Turnstile failure, sign-out.
+  - **MFA**: TOTP enroll success/failure, unenroll (user-initiated disable),
+    verify success/failure, trusted-device revocation.
+  - **Workspace**: member role change (with `{ from, to }`), member removal,
+    invitation accept, invitation revoke.
+  - **Platform invitations**: invalid-code validation failure, consume
+    success/failure.
+  Each row captures `event_type`, `outcome` (`success`/`failure`/`denied`),
+  `actor_user_id`, `target_user_id`, `target_email` (for pre-auth events
+  where no user_id is yet known), `workspace_id`, `ip_address`, `user_agent`,
+  and a flexible `details` jsonb. Writes go through a single fire-and-forget
+  helper (`src/lib/security/audit-log.ts`) using the service-role client so
+  failed-write errors never block the originating action.
+- **Access controls**: the table has RLS enabled with no INSERT/UPDATE/DELETE
+  policies — only the service role can write or modify rows. A single SELECT
+  policy restricts reads to `profiles.is_sys_admin = true`. No in-app viewer
+  exists in v1; sys-admins query via the Supabase dashboard.
+- **What we deliberately do NOT log**: password attempts, plaintext tokens,
+  MFA secrets, or session JWTs.
+- **Retention**: not yet automated; a `pg_cron` pruning job (drop rows older
+  than 365 days) is on the [roadmap](#16-roadmap--known-gaps).
 
 ### 10.3 Infrastructure Logs
 
@@ -736,7 +755,7 @@ data ([roadmap](#16-roadmap--known-gaps)).
 | A06   | Vulnerable & Outdated Components                    | Mitigated  | `npm audit` clean; Dependabot enabled; postcss override applied. §9.                    |
 | A07   | Identification & Authentication Failures            | Mitigated  | MFA TOTP, session refresh, password min 8, invite-only. §3.                             |
 | A08   | Software & Data Integrity Failures                  | Partial    | No SRI on script tags; CI enforcement of integrity checks on roadmap.                   |
-| A09   | Security Logging & Monitoring Failures              | Partial    | Sentry in place; **dedicated security audit log on roadmap** (§10.2).                   |
+| A09   | Security Logging & Monitoring Failures              | Mitigated  | Sentry for errors; dedicated `security_audit_log` table for auth, MFA, role, and invitation events. §10.2. |
 | A10   | Server-Side Request Forgery                         | Mitigated  | Single allow-listed host on the only user-driven outbound fetch. §6.4.                  |
 
 ---
@@ -767,9 +786,13 @@ Google OAuth verification reviews.
       *(HSTS now provided by Cloudflare edge.)*
 - [ ] Tighten CSP: replace `'unsafe-inline'` / `'unsafe-eval'` with
       nonce-based script-src.
-- [ ] Implement security audit log table + write events on: sign-in
+- [x] Implement security audit log table + write events on: sign-in
       success/fail, MFA changes, role changes, invitation accept/revoke,
-      OAuth token issuance/revocation.
+      OAuth token issuance/revocation. Shipped 2026-05-12 — see §10.2. OAuth
+      events reserved in the taxonomy (`oauth.*`) but not yet emitted; will
+      wire when Zoom/Google integrations return.
+- [ ] Add `pg_cron` retention/pruning job for `security_audit_log`
+      (drop rows older than 365 days).
 - [ ] Self-serve account deletion + data export in Settings.
 
 ### High (within 60 days of launch)

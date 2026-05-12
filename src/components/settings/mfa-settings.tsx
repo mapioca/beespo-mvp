@@ -23,6 +23,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "@/lib/toast";
 import { createClient } from "@/lib/supabase/client";
 import { TotpInput } from "@/components/mfa/totp-input";
+import { recordMfaAuditEvent } from "@/lib/actions/mfa-actions";
 import { Shield, Smartphone, Trash2, Loader2, Copy, Check } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 
@@ -127,12 +128,20 @@ export function MfaSettings({ workspaceMfaRequired = false }: MfaSettingsProps) 
       });
 
       if (unenrollError) {
+        void recordMfaAuditEvent({ eventType: "mfa.unenroll", outcome: "failure" });
         toast.error("Failed to disable MFA.");
         return;
       }
 
+      void recordMfaAuditEvent({ eventType: "mfa.unenroll", outcome: "success" });
+
       // Delete all trusted devices
       await supabase.from("trusted_devices").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+      void recordMfaAuditEvent({
+        eventType: "mfa.trusted_device.revoke",
+        outcome: "success",
+        details: { trigger: "disable_mfa" },
+      });
 
       toast.success("MFA Disabled", {
         description: "Two-factor authentication has been removed from your account.",

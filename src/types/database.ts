@@ -1160,6 +1160,50 @@ export type Database = {
           updated_at?: string;
         };
       };
+      business_meeting_scripts: {
+        Row: {
+          id: string;
+          workspace_id: string;
+          meeting_date: string;
+          script_key: string;
+          template_snapshot: string;
+          rendered_script: string;
+          business_item_ids: string[];
+          is_custom: boolean;
+          created_by: string | null;
+          updated_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          workspace_id: string;
+          meeting_date: string;
+          script_key: string;
+          template_snapshot: string;
+          rendered_script: string;
+          business_item_ids?: string[];
+          is_custom?: boolean;
+          created_by?: string | null;
+          updated_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          workspace_id?: string;
+          meeting_date?: string;
+          script_key?: string;
+          template_snapshot?: string;
+          rendered_script?: string;
+          business_item_ids?: string[];
+          is_custom?: boolean;
+          created_by?: string | null;
+          updated_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
       directory: {
         Row: {
           id: string;
@@ -2552,6 +2596,54 @@ export type Database = {
           details?: Record<string, unknown>;
           created_at?: string;
         };
+      };
+      security_audit_log: {
+        Row: {
+          id: string;
+          event_type:
+            | 'auth.signin.success'
+            | 'auth.signin.failure'
+            | 'auth.signin.email_not_confirmed'
+            | 'auth.signin.rate_limited'
+            | 'auth.signin.turnstile_failed'
+            | 'auth.signout'
+            | 'mfa.enroll.success'
+            | 'mfa.enroll.failure'
+            | 'mfa.unenroll'
+            | 'mfa.verify.success'
+            | 'mfa.verify.failure'
+            | 'mfa.trusted_device.revoke'
+            | 'workspace.role.change'
+            | 'workspace.member.remove'
+            | 'workspace.invitation.accept'
+            | 'workspace.invitation.revoke'
+            | 'platform_invitation.validate.failure'
+            | 'platform_invitation.consume.success'
+            | 'platform_invitation.consume.failure';
+          outcome: 'success' | 'failure' | 'denied';
+          actor_user_id: string | null;
+          target_user_id: string | null;
+          target_email: string | null;
+          workspace_id: string | null;
+          ip_address: string | null;
+          user_agent: string | null;
+          details: Record<string, unknown>;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          event_type: string;
+          outcome: 'success' | 'failure' | 'denied';
+          actor_user_id?: string | null;
+          target_user_id?: string | null;
+          target_email?: string | null;
+          workspace_id?: string | null;
+          ip_address?: string | null;
+          user_agent?: string | null;
+          details?: Record<string, unknown>;
+          created_at?: string;
+        };
+        Update: Record<string, never>;
       };
     };
     Views: Record<string, never>;

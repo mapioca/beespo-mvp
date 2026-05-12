@@ -1,6 +1,8 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { canManage, INVITABLE_ROLES } from '@/lib/auth/role-permissions';
+import { logSecurityEvent } from '@/lib/security/audit-log';
+import { getClientIp } from '@/lib/security/request-ip';
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -60,6 +62,17 @@ export async function PATCH(request: NextRequest, { params }: Params) {
         return NextResponse.json({ error: updateError.message }, { status: 500 });
     }
 
+    void logSecurityEvent({
+        eventType: 'workspace.role.change',
+        outcome: 'success',
+        actorUserId: user.id,
+        targetUserId: memberId,
+        workspaceId: currentProfile.workspace_id,
+        ipAddress: await getClientIp(),
+        userAgent: request.headers.get('user-agent'),
+        details: { from: targetProfile.role, to: role },
+    });
+
     return NextResponse.json({ success: true });
 }
 
@@ -116,6 +129,17 @@ export async function DELETE(request: NextRequest, { params }: Params) {
     if (updateError) {
         return NextResponse.json({ error: updateError.message }, { status: 500 });
     }
+
+    void logSecurityEvent({
+        eventType: 'workspace.member.remove',
+        outcome: 'success',
+        actorUserId: user.id,
+        targetUserId: memberId,
+        workspaceId: currentProfile.workspace_id,
+        ipAddress: await getClientIp(),
+        userAgent: request.headers.get('user-agent'),
+        details: { role: targetProfile.role },
+    });
 
     return NextResponse.json({ success: true });
 }

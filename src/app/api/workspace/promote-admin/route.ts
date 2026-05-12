@@ -1,6 +1,8 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { canManage } from '@/lib/auth/role-permissions';
+import { logSecurityEvent } from '@/lib/security/audit-log';
+import { getClientIp } from '@/lib/security/request-ip';
 
 export async function POST(request: NextRequest) {
     const supabase = await createClient();
@@ -28,7 +30,7 @@ export async function POST(request: NextRequest) {
     // Verify target is in same workspace
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: targetProfile } = await (supabase.from('profiles') as any)
-        .select('id')
+        .select('id, role')
         .eq('id', memberId)
         .eq('workspace_id', currentProfile.workspace_id)
         .single();
@@ -46,6 +48,17 @@ export async function POST(request: NextRequest) {
     if (updateError) {
         return NextResponse.json({ error: updateError.message }, { status: 500 });
     }
+
+    void logSecurityEvent({
+        eventType: 'workspace.role.change',
+        outcome: 'success',
+        actorUserId: user.id,
+        targetUserId: memberId,
+        workspaceId: currentProfile.workspace_id,
+        ipAddress: await getClientIp(),
+        userAgent: request.headers.get('user-agent'),
+        details: { from: targetProfile.role, to: 'admin' },
+    });
 
     return NextResponse.json({ success: true });
 }

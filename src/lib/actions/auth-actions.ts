@@ -8,7 +8,8 @@ import {
     getFailedLoginNoticeHtml,
 } from "@/lib/email/templates";
 import { verifyTurnstile } from "@/lib/security/turnstile";
-import { getClientIp } from "@/lib/security/request-ip";
+import { getClientIp, getUserAgent } from "@/lib/security/request-ip";
+import { logSecurityEvent } from "@/lib/security/audit-log";
 import { checkRateLimit } from "@/lib/rate-limiter";
 import { checkTrustedDevice } from "@/lib/mfa";
 import { redirect } from "next/navigation";
@@ -97,6 +98,15 @@ async function maybeNotifyFailedLoginBurst(email: string, ip: string): Promise<v
 
 export async function signOutAction() {
     const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    const [ip, ua] = await Promise.all([getClientIp(), getUserAgent()]);
+    void logSecurityEvent({
+        eventType: "auth.signout",
+        outcome: "success",
+        actorUserId: user?.id ?? null,
+        ipAddress: ip,
+        userAgent: ua,
+    });
     await supabase.auth.signOut();
     redirect("/login");
 }
@@ -129,18 +139,33 @@ export async function loginAction({
     redirectTo,
     useTemplateId,
 }: LoginInput): Promise<LoginResult> {
-    const ip = await getClientIp();
+    const [ip, ua] = await Promise.all([getClientIp(), getUserAgent()]);
     const normalizedEmail = normalizeEmail(email);
 
     // 1. Turnstile
     const turnstile = await verifyTurnstile(turnstileToken, ip);
     if (!turnstile.success) {
+        void logSecurityEvent({
+            eventType: "auth.signin.turnstile_failed",
+            outcome: "failure",
+            targetEmail: normalizedEmail,
+            ipAddress: ip,
+            userAgent: ua,
+        });
         return { ok: false, error: GENERIC_CHALLENGE_ERROR };
     }
 
     // 2. Rate limit per IP (volumetric) AND per email (targeted credential stuffing)
     const ipLimit = await checkRateLimit(`auth:login:ip:${ip}`, 10, 60_000);
     if (!ipLimit.allowed) {
+        void logSecurityEvent({
+            eventType: "auth.signin.rate_limited",
+            outcome: "denied",
+            targetEmail: normalizedEmail,
+            ipAddress: ip,
+            userAgent: ua,
+            details: { axis: "ip" },
+        });
         return { ok: false, error: GENERIC_RATE_LIMIT_ERROR };
     }
     const emailLimit = await checkRateLimit(
@@ -149,6 +174,14 @@ export async function loginAction({
         15 * 60_000 // 5 attempts per 15 minutes per email (any IP)
     );
     if (!emailLimit.allowed) {
+        void logSecurityEvent({
+            eventType: "auth.signin.rate_limited",
+            outcome: "denied",
+            targetEmail: normalizedEmail,
+            ipAddress: ip,
+            userAgent: ua,
+            details: { axis: "email" },
+        });
         return { ok: false, error: GENERIC_RATE_LIMIT_ERROR };
     }
 
@@ -161,6 +194,13 @@ export async function loginAction({
 
     if (error) {
         if (error.message.toLowerCase().includes("email not confirmed")) {
+            void logSecurityEvent({
+                eventType: "auth.signin.email_not_confirmed",
+                outcome: "failure",
+                targetEmail: normalizedEmail,
+                ipAddress: ip,
+                userAgent: ua,
+            });
             return {
                 ok: false,
                 error: "Please confirm your email address before signing in.",
@@ -171,12 +211,35 @@ export async function loginAction({
         // within FAILURE_WINDOW_MS, the helper sends a one-per-hour notice
         // to the address. A single typo will not trigger anything.
         void maybeNotifyFailedLoginBurst(normalizedEmail, ip);
+        void logSecurityEvent({
+            eventType: "auth.signin.failure",
+            outcome: "failure",
+            targetEmail: normalizedEmail,
+            ipAddress: ip,
+            userAgent: ua,
+        });
         return { ok: false, error: GENERIC_AUTH_ERROR };
     }
     if (!data.user) {
         void maybeNotifyFailedLoginBurst(normalizedEmail, ip);
+        void logSecurityEvent({
+            eventType: "auth.signin.failure",
+            outcome: "failure",
+            targetEmail: normalizedEmail,
+            ipAddress: ip,
+            userAgent: ua,
+        });
         return { ok: false, error: GENERIC_AUTH_ERROR };
     }
+
+    void logSecurityEvent({
+        eventType: "auth.signin.success",
+        outcome: "success",
+        actorUserId: data.user.id,
+        targetEmail: normalizedEmail,
+        ipAddress: ip,
+        userAgent: ua,
+    });
 
     // 4. Profile / soft-delete / onboarding gates
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

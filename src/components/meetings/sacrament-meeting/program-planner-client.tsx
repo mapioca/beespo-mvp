@@ -88,12 +88,10 @@ import { toast } from "@/lib/toast"
 import { generateBusinessScript } from "@/lib/business-script-generator"
 import { getContentText, normalizeContentLanguage, type ContentLanguage } from "@/lib/content-language"
 import {
-  BUSINESS_CATEGORY_ORDER,
   BUSINESS_CATEGORY_PLURAL,
-  generateCombinedBusinessScript,
   isBusinessCategoryKey,
-  type BusinessCategoryKey,
 } from "@/lib/business/combined-script"
+import { resolveBusinessMeetingScripts } from "@/lib/business/meeting-scripts"
 import type { ConductBusinessSection } from "@/components/meetings/sacrament-meeting/conduct-view"
 import type { AssignmentStatus, AssignmentStatusChange } from "@/lib/sacrament-confirmations"
 import type { ConductScriptKey, ConductScriptTemplateMap } from "@/lib/conduct-script-templates"
@@ -585,64 +583,36 @@ function buildConductBusinessSections(
   language: Lang,
   scriptTemplates?: ConductScriptTemplateMap
 ): ConductBusinessSection[] {
-  const businessLabels = getContentText(language).businessPlural
   const checked = items.filter((item) => item.checked)
   if (checked.length === 0) return []
+  const businessLabels = getContentText(language).businessPlural
+  const grouped = resolveBusinessMeetingScripts(
+    checked.map((item) => ({
+      id: item.id,
+      person_name: item.personName ?? item.title,
+      position_calling: item.positionCalling ?? null,
+      category: item.category && isBusinessCategoryKey(item.category) ? item.category : "miscellaneous",
+      notes: null,
+      details: item.businessDetails ?? null,
+      status: item.businessCompleted ? "completed" : "pending",
+      created_at: "",
+    })) as BusinessItem[],
+    language,
+    scriptTemplates
+  )
 
-  type Bucket = { key: BusinessCategoryKey; items: PlannerItem[] }
-  const buckets = new Map<BusinessCategoryKey, Bucket>()
-
-  for (const item of checked) {
-    const rawCategory = item.category
-    const key: BusinessCategoryKey =
-      rawCategory && isBusinessCategoryKey(rawCategory) ? rawCategory : "miscellaneous"
-    let bucket = buckets.get(key)
-    if (!bucket) {
-      bucket = { key, items: [] }
-      buckets.set(key, bucket)
-    }
-    bucket.items.push(item)
-  }
-
-  const ordered: BusinessCategoryKey[] = [
-    ...BUSINESS_CATEGORY_ORDER.filter((key) => buckets.has(key)),
-    ...Array.from(buckets.keys()).filter((key) => !BUSINESS_CATEGORY_ORDER.includes(key)),
-  ]
-
-  return ordered.map((key) => {
-    const bucket = buckets.get(key)!
-    const persisted = scripts?.[key]?.trim()
-    const generatedItems = bucket.items
-      .filter((item) => item.personName || item.businessDetails)
-      .map((item) => ({
-        person_name: item.personName ?? item.title,
-        position_calling: item.positionCalling ?? null,
-        category: key,
-        notes: null,
-        details: item.businessDetails ?? null,
-      }))
-    const generated =
-      generatedItems.length > 0
-        ? generateCombinedBusinessScript(key, generatedItems, language, scriptTemplates).trim()
-        : ""
-    const fallback = bucket.items
-      .map((item) => item.detail?.trim())
-      .filter((value): value is string => Boolean(value))
-      .join("\n\n")
-
-    return {
-      category: key,
-      label: businessLabels[key] ?? BUSINESS_CATEGORY_PLURAL[key] ?? key,
-      count: bucket.items.length,
-      people: bucket.items.map((item) => ({
-        id: item.id,
-        name: item.personName ?? item.title,
-        subtitle: item.positionCalling ?? null,
-        completed: Boolean(item.businessCompleted),
-      })),
-      script: generated || persisted || fallback,
-    }
-  })
+  return grouped.map((group) => ({
+    category: group.category,
+    label: businessLabels[group.category] ?? BUSINESS_CATEGORY_PLURAL[group.category] ?? group.category,
+    count: group.items.length,
+    people: group.items.map((item) => ({
+      id: item.id,
+      name: item.person_name,
+      subtitle: item.position_calling ?? null,
+      completed: items.find((candidate) => candidate.id === item.id)?.businessCompleted ?? false,
+    })),
+    script: scripts?.[group.scriptKey]?.trim() || group.renderedScript,
+  }))
 }
 
 function plannerNotesHaveUserChanges(notes: PlannerNotes | undefined) {
@@ -2980,7 +2950,7 @@ export function SacramentMeetingPlannerClient({
       if (!workspaceId || !isMounted) return
       setWorkspaceId(workspaceId)
 
-      const [annResult, bizResult, scheduledBizResult] = await Promise.all([
+      const [annResult, bizResult, scheduledBizResult, scheduledScriptResult] = await Promise.all([
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (supabase.from("announcements") as any)
           .select("id, title, content, display_start, display_until")
@@ -3001,6 +2971,11 @@ export function SacramentMeetingPlannerClient({
           .eq("action_date", selectedSunday.isoDate)
           .eq("workspace_id", workspaceId)
           .order("created_at", { ascending: true }),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (supabase.from("business_meeting_scripts") as any)
+          .select("script_key, template_snapshot, rendered_script, business_item_ids, is_custom")
+          .eq("meeting_date", selectedSunday.isoDate)
+          .eq("workspace_id", workspaceId),
       ])
 
       if (!isMounted) return
@@ -3035,30 +3010,49 @@ export function SacramentMeetingPlannerClient({
         businessDetails: b.details,
       }))
 
-      // Process scheduled business items and generate scripts
+      // Process scheduled business items and load persisted meeting scripts
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const scheduledBusinessItems: any[] = scheduledBizResult.data ?? []
+      const resolvedBusinessScripts = resolveBusinessMeetingScripts(
+        scheduledBusinessItems as BusinessItem[],
+        defaultLanguageRef.current,
+        conductScriptTemplates
+      )
+      const persistedBusinessScripts = Object.fromEntries(
+        ((scheduledScriptResult.data ?? []) as Array<{
+          script_key: string
+          template_snapshot: string
+          rendered_script: string
+          business_item_ids: string[]
+          is_custom: boolean
+        }>).map((row) => [row.script_key, row])
+      )
+      const missingResolvedScripts = resolvedBusinessScripts.filter(
+        (script) => !persistedBusinessScripts[script.scriptKey]
+      )
 
-      // Group business items by category
-      const businessByCategory: Record<string, BusinessItem[]> = {}
-      for (const item of scheduledBusinessItems) {
-        if (!businessByCategory[item.category]) {
-          businessByCategory[item.category] = []
-        }
-        businessByCategory[item.category].push(item)
+      if (missingResolvedScripts.length > 0) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (supabase.from("business_meeting_scripts") as any).upsert(
+          missingResolvedScripts.map((script) => ({
+            workspace_id: workspaceId,
+            meeting_date: selectedSunday.isoDate,
+            script_key: script.scriptKey,
+            template_snapshot: script.templateSnapshot,
+            rendered_script: script.renderedScript,
+            business_item_ids: script.businessItemIds,
+            is_custom: false,
+            created_by: user.id,
+            updated_by: user.id,
+          })),
+          { onConflict: "workspace_id,meeting_date,script_key" }
+        )
       }
 
-      // Generate scripts for each category
       const businessScripts: Record<string, string> = {}
-      for (const [category, items] of Object.entries(businessByCategory)) {
-        if (items.length > 0) {
-          // Generate combined script for this category
-          businessScripts[category] = generateCombinedBusinessScript(
-            category as BusinessCategoryKey,
-            items,
-            defaultLanguageRef.current
-          )
-        }
+      for (const script of resolvedBusinessScripts) {
+        businessScripts[script.scriptKey] =
+          persistedBusinessScripts[script.scriptKey]?.rendered_script?.trim() || script.renderedScript
       }
 
       // Update meeting state with generated business scripts
@@ -3499,6 +3493,121 @@ export function SacramentMeetingPlannerClient({
     }))
   }
 
+  const syncScheduledBusinessScriptsForDate = async (meetingDate: string) => {
+    if (!workspaceId) return
+
+    const supabase = createClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    if (!user) return
+    const [scheduledResult, persistedScriptsResult] = await Promise.all([
+      (supabase.from("business_items") as ReturnType<typeof supabase.from>)
+        .select("id, person_name, position_calling, category, notes, details")
+        .eq("workspace_id", workspaceId)
+        .eq("action_date", meetingDate)
+        .neq("status", "completed")
+        .order("created_at", { ascending: true }),
+      (supabase.from("business_meeting_scripts") as ReturnType<typeof supabase.from>)
+        .select("script_key, template_snapshot, rendered_script, business_item_ids, is_custom")
+        .eq("workspace_id", workspaceId)
+        .eq("meeting_date", meetingDate),
+    ])
+
+    if (scheduledResult.error) {
+      throw scheduledResult.error
+    }
+    if (persistedScriptsResult.error) {
+      throw persistedScriptsResult.error
+    }
+
+    const scheduledBusinessItems = (scheduledResult.data ?? []) as BusinessItem[]
+    const resolvedScripts = resolveBusinessMeetingScripts(
+      scheduledBusinessItems,
+      defaultLanguageRef.current,
+      conductScriptTemplates
+    )
+    const persistedScripts = Object.fromEntries(
+      ((persistedScriptsResult.data ?? []) as Array<{
+        script_key: string
+        template_snapshot: string
+        rendered_script: string
+        business_item_ids: string[]
+        is_custom: boolean
+      }>).map((row) => [row.script_key, row])
+    )
+
+    const rows = resolvedScripts.map((script) => {
+      const existing = persistedScripts[script.scriptKey]
+      const sameItems =
+        existing &&
+        JSON.stringify([...(existing.business_item_ids ?? [])].sort()) ===
+          JSON.stringify([...script.businessItemIds].sort())
+
+      if (existing?.is_custom && sameItems) {
+        return {
+          workspace_id: workspaceId,
+          meeting_date: meetingDate,
+          script_key: script.scriptKey,
+          template_snapshot: existing.template_snapshot,
+          rendered_script: existing.rendered_script,
+          business_item_ids: existing.business_item_ids,
+          is_custom: true,
+        }
+      }
+
+      return {
+        workspace_id: workspaceId,
+        meeting_date: meetingDate,
+        script_key: script.scriptKey,
+        template_snapshot: script.templateSnapshot,
+        rendered_script: script.renderedScript,
+        business_item_ids: script.businessItemIds,
+        is_custom: false,
+      }
+    })
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const scriptsTable = supabase.from("business_meeting_scripts") as any
+
+    if (rows.length > 0) {
+      const { error: upsertError } = await scriptsTable.upsert(
+        rows.map((row) => ({
+          ...row,
+          created_by: user.id,
+          updated_by: user.id,
+        })),
+        { onConflict: "workspace_id,meeting_date,script_key" }
+      )
+
+      if (upsertError) {
+        throw upsertError
+      }
+    }
+
+    const activeKeys = new Set(resolvedScripts.map((script) => script.scriptKey))
+    const staleKeys = Object.keys(persistedScripts).filter((key) => !activeKeys.has(key as ConductScriptKey))
+
+    if (staleKeys.length > 0) {
+      const { error: deleteError } = await scriptsTable
+        .delete()
+        .eq("workspace_id", workspaceId)
+        .eq("meeting_date", meetingDate)
+        .in("script_key", staleKeys)
+
+      if (deleteError) {
+        throw deleteError
+      }
+    }
+
+    updateSelectedMeeting((meeting) => ({
+      ...meeting,
+      businessScripts: Object.fromEntries(
+        rows.map((row) => [row.script_key, row.rendered_script])
+      ),
+    }))
+  }
+
   const handleMeetingTypeChange = (nextType: MeetingSpecialType) => {
     setMeetingTypeOverridesByDate((prev) => ({
       ...prev,
@@ -3560,7 +3669,22 @@ export function SacramentMeetingPlannerClient({
     }))
   }
 
-  const handleBusinessCompletedChange = (id: string, completed: boolean) => {
+  const handleBusinessCompletedChange = async (id: string, completed: boolean) => {
+    const supabase = createClient()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase.from("business_items") as any)
+      .update(
+        completed
+          ? { status: "completed" }
+          : { status: "pending", action_date: selectedSunday.isoDate }
+      )
+      .eq("id", id)
+
+    if (error) {
+      toast.error(error.message || "Failed to update business item.")
+      return
+    }
+
     setNotesByDate((prev) => {
       const current = prev[selectedSunday.isoDate] ?? EMPTY_PLANNER_NOTES
 
@@ -3569,11 +3693,24 @@ export function SacramentMeetingPlannerClient({
         [selectedSunday.isoDate]: {
           ...current,
           business: current.business.map((item) =>
-            item.id === id ? { ...item, businessCompleted: completed } : item
+            item.id === id
+              ? {
+                  ...item,
+                  businessCompleted: completed,
+                  checked: !completed,
+                }
+              : item
           ),
         },
       }
     })
+
+    try {
+      await syncScheduledBusinessScriptsForDate(selectedSunday.isoDate)
+    } catch (syncError) {
+      console.error("Failed to sync scheduled business scripts after completion change:", syncError)
+      toast.warning("Business item status changed, but meeting scripts could not be refreshed.")
+    }
   }
 
   const handleNotesTextChange = (value: string) => {
