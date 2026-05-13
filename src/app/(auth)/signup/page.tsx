@@ -12,7 +12,7 @@ import { TermsOfServiceDialog } from "@/components/auth/terms-of-service-dialog"
 import { InviteCodeInput } from "@/components/auth/invite-code-input";
 import { toast } from "@/lib/toast";
 import { signupAction } from "@/lib/actions/signup-actions";
-import { ShieldCheck, Loader2, Users, CheckCircle } from "lucide-react";
+import { Loader2, Eye, EyeOff } from "lucide-react";
 import {
   GoogleSignInButton,
   signInWithGoogle,
@@ -74,6 +74,8 @@ function SignupContent() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isConsumingCode, setIsConsumingCode] = useState(false);
@@ -359,54 +361,23 @@ function SignupContent() {
       <p className="mt-3 text-sm" style={{ color: inkSubtle }}>
         {isWorkspaceInvite && workspaceInviteData
           ? `You've been invited as ${workspaceInviteData.role}.`
-          : "Beespo is currently invite-only. Enter your invite code to continue."}
+          : inviteCodeValid
+            ? "Choose how you'd like to sign up."
+            : "Beespo is currently invite-only. Enter your invite code to continue."}
       </p>
 
       <div className="mt-6 space-y-4">
-        {/* Workspace Invitation Banner */}
-        {isWorkspaceInvite && workspaceInviteValid && workspaceInviteData && (
-          <div
-            className="flex items-center gap-3 rounded-lg p-3 text-sm"
-            style={{
-              background: "color-mix(in srgb, var(--lp-accent) 10%, transparent)",
-              border: "1px solid color-mix(in srgb, var(--lp-accent) 28%, transparent)",
-              color: "var(--lp-ink)",
-            }}
-          >
-            <Users className="h-4 w-4 shrink-0" style={{ color: "var(--lp-accent)" }} />
-            <CheckCircle className="h-4 w-4 shrink-0" style={{ color: "var(--lp-accent)" }} />
-            <span>
-              You&apos;ve been invited to join <strong>{workspaceInviteData.workspaceName}</strong> as{" "}
-              <span className="font-medium capitalize">{workspaceInviteData.role}</span>
-            </span>
-          </div>
-        )}
-
-        {/* Platform Invite Code Section (only for non-workspace-invite flow) */}
-        {!isWorkspaceInvite && (
-          <>
-            <div
-              className="flex items-center gap-3 rounded-lg p-3 text-sm"
-              style={{
-                background: "color-mix(in srgb, var(--lp-ink) 6%, transparent)",
-                border: inkBorder,
-                color: inkSubtle,
-              }}
-            >
-              <ShieldCheck className="h-4 w-4 shrink-0" style={{ color: "var(--lp-ink)" }} />
-              <span>Beespo is currently invite-only. Enter your invite code to continue.</span>
-            </div>
-
-            <InviteCodeInput
-              value={inviteCode}
-              onChange={setInviteCode}
-              onValidationComplete={handleInviteValidation}
-              disabled={isLoading}
-              inputStyle={inputStyle}
-              labelStyle={{ color: "var(--lp-ink)" }}
-              helperTextStyle={{ color: inkSubtle }}
-            />
-          </>
+        {/* Platform Invite Code Section (only for non-workspace-invite flow, hidden once validated) */}
+        {!isWorkspaceInvite && !inviteCodeValid && (
+          <InviteCodeInput
+            value={inviteCode}
+            onChange={setInviteCode}
+            onValidationComplete={handleInviteValidation}
+            disabled={isLoading}
+            inputStyle={inputStyle}
+            labelStyle={{ color: "var(--lp-ink)" }}
+            helperTextStyle={{ color: inkSubtle }}
+          />
         )}
 
         {showForm && (
@@ -502,32 +473,66 @@ function SignupContent() {
             <Label htmlFor="password" style={{ color: "var(--lp-ink)" }}>
               Password
             </Label>
-            <Input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              disabled={isFormDisabled}
-              className="rounded-md"
-              style={inputStyle}
-            />
+            <div className="relative">
+              <Input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                disabled={isFormDisabled}
+                autoComplete="new-password"
+                className="rounded-md pr-10"
+                style={inputStyle}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                className="absolute inset-y-0 right-0 flex items-center px-3 transition-opacity hover:opacity-80"
+                style={{ color: inkSubtle }}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                tabIndex={-1}
+              >
+                {showPassword ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
+              </button>
+            </div>
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="confirmPassword" style={{ color: "var(--lp-ink)" }}>
               Confirm Password
             </Label>
-            <Input
-              id="confirmPassword"
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required
-              disabled={isFormDisabled}
-              className="rounded-md"
-              style={inputStyle}
-            />
+            <div className="relative">
+              <Input
+                id="confirmPassword"
+                type={showConfirmPassword ? "text" : "password"}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+                disabled={isFormDisabled}
+                autoComplete="new-password"
+                className="rounded-md pr-10"
+                style={inputStyle}
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword((v) => !v)}
+                className="absolute inset-y-0 right-0 flex items-center px-3 transition-opacity hover:opacity-80"
+                style={{ color: inkSubtle }}
+                aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                tabIndex={-1}
+              >
+                {showConfirmPassword ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
+              </button>
+            </div>
           </div>
 
           <div className="flex items-center gap-2">

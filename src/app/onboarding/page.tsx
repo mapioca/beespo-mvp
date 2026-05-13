@@ -596,7 +596,7 @@ export default function OnboardingPage() {
                       What is your calling in the bishopric?
                     </h1>
                     <p style={{ color: inkSubtle }}>
-                      Beespo is built for the bishopric of a ward. Select your role.
+                      Select your role.
                     </p>
                   </div>
                   <PillSelector
