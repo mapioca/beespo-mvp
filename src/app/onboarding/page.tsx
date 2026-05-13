@@ -337,9 +337,6 @@ export default function OnboardingPage() {
   const handleBack = () => {
     if (step > 1) {
       setStep((prev) => prev - 1);
-    } else {
-      // Go back to welcome page
-      router.push('/welcome');
     }
   };
 
@@ -873,7 +870,7 @@ export default function OnboardingPage() {
           <WizardFooter
             currentStep={step}
             totalSteps={TOTAL_STEPS}
-            canGoBack={!isInvitedUser || step > 1}
+            canGoBack={step > 1}
             canSkip={canSkip()}
             canContinue={isStepValid()}
             isLastStep={step === TOTAL_STEPS}
