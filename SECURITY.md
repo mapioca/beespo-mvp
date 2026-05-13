@@ -713,6 +713,7 @@ The following third parties process customer data on our behalf:
 | Vercel, Inc.      | Application hosting, edge, logs  | US          | <https://vercel.com/legal/privacy-policy> · DPA on request               |
 | Supabase, Inc.    | Database, authentication, storage| US (AWS)    | <https://supabase.com/privacy> · <https://supabase.com/legal/dpa>        |
 | Functional Software, Inc. (Sentry) | Error monitoring | US          | <https://sentry.io/legal/privacy/>                                      |
+| Google LLC        | OAuth sign-in (email, profile) — optional per user | US | <https://policies.google.com/privacy>                                |
 | Resend, Inc.      | Transactional email delivery     | US          | <https://resend.com/legal/privacy-policy>                               |
 | Upstash, Inc.     | Rate-limiting Redis (no PII)     | US (AWS)    | <https://upstash.com/trust/privacy.pdf>                                 |
 | Atlassian, Inc.   | Support ticketing (Jira)         | US          | <https://www.atlassian.com/legal/privacy-policy>                         |
