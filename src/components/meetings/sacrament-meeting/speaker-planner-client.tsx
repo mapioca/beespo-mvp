@@ -1075,6 +1075,8 @@ export function SpeakerPlannerClient() {
   const [meetingsByDate, setMeetingsByDate] = useState<Record<string, PlannerMeetingState>>({})
   const [roster, setRoster] = useState<DirectoryPerson[]>([])
   const [rosterLoading, setRosterLoading] = useState(true)
+  const [workspaceId, setWorkspaceId] = useState<string | null>(null)
+  const [addingToRoster, setAddingToRoster] = useState(false)
   const [picking, setPicking] = useState<PickingState>(null)
   const [search, setSearch] = useState("")
   const searchRef = useRef<HTMLInputElement>(null)
@@ -1164,17 +1166,27 @@ export function SpeakerPlannerClient() {
     }
   }, [upcomingSundays])
 
-  // ── Load roster from Supabase ──────────────────────────────────────────────
+  // ── Load roster and workspace_id from Supabase ───────────────────────────
   useEffect(() => {
     const supabase = createClient()
-    supabase
-      .from("directory")
-      .select("id, name")
-      .order("name", { ascending: true })
-      .then(({ data }) => {
-        setRoster((data ?? []) as DirectoryPerson[])
-        setRosterLoading(false)
-      })
+    const load = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: profile } = await (supabase.from("profiles") as any)
+          .select("workspace_id")
+          .eq("id", user.id)
+          .single()
+        if (profile?.workspace_id) setWorkspaceId(profile.workspace_id as string)
+      }
+      const { data } = await supabase
+        .from("directory")
+        .select("id, name")
+        .order("name", { ascending: true })
+      setRoster((data ?? []) as DirectoryPerson[])
+      setRosterLoading(false)
+    }
+    void load()
   }, [])
 
   // ── Escape to cancel ───────────────────────────────────────────────────────
@@ -1455,6 +1467,33 @@ export function SpeakerPlannerClient() {
     []
   )
 
+  // ── Add new member to roster ────────────────────────────────────────────────
+  const handleAddToRoster = async () => {
+    const trimmedName = search.trim()
+    if (!trimmedName || !workspaceId || addingToRoster) return
+    setAddingToRoster(true)
+    try {
+      const supabase = createClient()
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase.from("directory") as any)
+        .insert({ workspace_id: workspaceId, name: trimmedName })
+        .select("id, name")
+        .single()
+      if (!error && data) {
+        const newPerson = data as DirectoryPerson
+        setRoster((prev) =>
+          [...prev, newPerson].sort((a, b) => a.name.localeCompare(b.name))
+        )
+        setSearch("")
+        if (picking) {
+          assignSpeaker(newPerson)
+        }
+      }
+    } finally {
+      setAddingToRoster(false)
+    }
+  }
+
   // ─── Breadcrumb ─────────────────────────────────────────────────────────────
   const breadcrumbItems = useMemo(
     () => [
@@ -1590,8 +1629,21 @@ export function SpeakerPlannerClient() {
                       Loading…
                     </div>
                   ) : filteredRoster.length === 0 ? (
-                    <div className="py-8 text-center font-serif text-[13px] italic text-muted-foreground">
-                      No members found.
+                    <div className="flex flex-col items-center gap-3 py-8 text-center">
+                      <div className="font-serif text-[13px] italic text-muted-foreground">
+                        {search.trim() ? `"${search.trim()}" not in roster.` : "No members found."}
+                      </div>
+                      {search.trim() && workspaceId ? (
+                        <button
+                          type="button"
+                          disabled={addingToRoster}
+                          onClick={handleAddToRoster}
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-dashed border-border bg-muted/40 px-3 py-1.5 text-[12px] font-medium text-muted-foreground transition-colors hover:border-brand/40 hover:bg-brand/5 hover:text-brand disabled:pointer-events-none disabled:opacity-50"
+                        >
+                          <Plus className="h-3 w-3 shrink-0" />
+                          {addingToRoster ? "Adding…" : `Add "${search.trim()}" to roster`}
+                        </button>
+                      ) : null}
                     </div>
                   ) : (
                     filteredRoster.map((person) => {

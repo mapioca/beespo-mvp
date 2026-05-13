@@ -519,6 +519,78 @@ function upgradeLegacyDefaultSpeakerLayout(isoDate: string, entries: AgendaEntry
   ]
 }
 
+// Ensures structural entries (opening/closing hymns and prayers) are present in
+// saved state that predates these entries being added to the default template.
+function ensureStructuralEntries(entries: AgendaEntry[], lang: Lang): AgendaEntry[] {
+  const t = (id: string) => ENTRY_LABELS[id]?.[lang] ?? ENTRY_LABELS[id]?.["ENG"] ?? id
+  const result = [...entries]
+
+  const hasId = (id: string) => result.some((e) => e.id === id)
+  const idxOf = (id: string) => result.findIndex((e) => e.id === id)
+
+  const insertAfterEntry = (afterId: string, newEntry: AgendaEntry): boolean => {
+    const idx = idxOf(afterId)
+    if (idx === -1) return false
+    result.splice(idx + 1, 0, newEntry)
+    return true
+  }
+
+  const insertBeforeEntry = (beforeId: string, newEntry: AgendaEntry): boolean => {
+    const idx = idxOf(beforeId)
+    if (idx === -1) return false
+    result.splice(idx, 0, newEntry)
+    return true
+  }
+
+  if (!hasId("opening-hymn")) {
+    const entry: StaticEntry = { id: "opening-hymn", kind: "static", title: t("opening-hymn"), hymnId: "", hymnTitle: "" }
+    if (!insertAfterEntry("section-opening", entry)) {
+      if (!insertBeforeEntry("invocation", entry)) {
+        insertBeforeEntry("ward-business", entry)
+      }
+    }
+  }
+
+  if (!hasId("invocation")) {
+    const entry: StaticEntry = {
+      id: "invocation",
+      kind: "static",
+      title: t("invocation"),
+      assigneeField: "invocation",
+      assigneeName: "",
+    }
+    if (!insertAfterEntry("opening-hymn", entry)) {
+      if (!insertAfterEntry("section-opening", entry)) {
+        insertBeforeEntry("ward-business", entry)
+      }
+    }
+  }
+
+  if (!hasId("closing-hymn")) {
+    const entry: StaticEntry = { id: "closing-hymn", kind: "static", title: t("closing-hymn"), hymnId: "", hymnTitle: "" }
+    if (!insertAfterEntry(SECTION_CLOSING_ID, entry)) {
+      result.push(entry)
+    }
+  }
+
+  if (!hasId("benediction")) {
+    const entry: StaticEntry = {
+      id: "benediction",
+      kind: "static",
+      title: t("benediction"),
+      assigneeField: "benediction",
+      assigneeName: "",
+    }
+    if (!insertAfterEntry("closing-hymn", entry)) {
+      if (!insertAfterEntry(SECTION_CLOSING_ID, entry)) {
+        result.push(entry)
+      }
+    }
+  }
+
+  return result
+}
+
 function getDefaultMeetingTitle(specialType: MeetingSpecialType) {
   return specialType === "standard" ? "Sacrament Meeting" : getMeetingTypeLabel(specialType)
 }
@@ -1676,14 +1748,12 @@ function SacramentSection({
         <AaronicAssignmentCard
           title="Blessing the sacrament"
           people={assignments.blessing}
-          max={2}
           onAdd={() => onAssign("blessing")}
           onRemove={(name) => onRemove("blessing", name)}
         />
         <AaronicAssignmentCard
           title="Passing the sacrament"
           people={assignments.passing}
-          max={8}
           onAdd={() => onAssign("passing")}
           onRemove={(name) => onRemove("passing", name)}
         />
@@ -1695,18 +1765,20 @@ function SacramentSection({
 type AaronicAssignmentCardProps = {
   title: string
   people: string[]
-  max: number
   onAdd: () => void
   onRemove: (name: string) => void
 }
 
-function AaronicAssignmentCard({ title, people, max, onAdd, onRemove }: AaronicAssignmentCardProps) {
+function AaronicAssignmentCard({ title, people, onAdd, onRemove }: AaronicAssignmentCardProps) {
   const assignedPeople = people.filter((person) => person.trim())
 
   return (
     <div className="rounded-xl border border-border/70 bg-surface-raised px-3.5 py-3">
       <div className="mb-2 text-[11px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
-        {title} <span className="text-muted-foreground/70">· {assignedPeople.length}/{max}</span>
+        {title}
+        {assignedPeople.length > 0 && (
+          <span className="ml-1 text-muted-foreground/70">· {assignedPeople.length}</span>
+        )}
       </div>
       <div className="flex flex-wrap gap-1.5">
         {assignedPeople.map((person) => (
@@ -1725,16 +1797,14 @@ function AaronicAssignmentCard({ title, people, max, onAdd, onRemove }: AaronicA
             </button>
           </span>
         ))}
-        {assignedPeople.length < max ? (
-          <button
-            type="button"
-            className="inline-flex items-center gap-1.5 rounded-full border border-dashed border-border px-2.5 py-1 text-[12px] font-medium text-muted-foreground transition-colors hover:border-border hover:text-foreground"
-            onClick={onAdd}
-          >
-            <Plus className="h-3 w-3" />
-            Add
-          </button>
-        ) : null}
+        <button
+          type="button"
+          className="inline-flex items-center gap-1.5 rounded-full border border-dashed border-border px-2.5 py-1 text-[12px] font-medium text-muted-foreground transition-colors hover:border-border hover:text-foreground"
+          onClick={onAdd}
+        >
+          <Plus className="h-3 w-3" />
+          Add
+        </button>
       </div>
     </div>
   )
@@ -1802,14 +1872,14 @@ function SpeakersAndMusicSection({
             type="button"
             onClick={() => setReorderMode(!reorderMode)}
             className={cn(
-              "flex items-center gap-1.5 rounded-md px-2 py-1 text-[11px] font-medium transition-colors",
+              "flex items-center gap-1.5 rounded-md border px-2 py-1 text-[11px] font-medium transition-colors",
               reorderMode
-                ? "bg-brand/10 text-brand"
-                : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                ? "border-brand bg-brand/10 text-brand"
+                : "border-border text-muted-foreground hover:border-muted-foreground/40 hover:bg-muted/50 hover:text-foreground"
             )}
           >
             <GripVertical className="h-3 w-3" />
-            {reorderMode ? "Done" : "Reorder"}
+            {reorderMode ? "Done reordering" : "Reorder"}
           </button>
         )}
         <div className="text-[11px] font-medium tracking-[0.04em] text-muted-foreground">05</div>
@@ -3252,14 +3322,20 @@ export function SacramentMeetingPlannerClient({
               ...(savedMeeting.sacramentAssignments ?? {}),
             },
             standardEntries: Array.isArray(savedMeeting.standardEntries)
-              ? upgradeLegacyDefaultSpeakerLayout(
-                  sunday.isoDate,
-                  translateEntries(savedMeeting.standardEntries as AgendaEntry[], defaultLanguageRef.current),
+              ? ensureStructuralEntries(
+                  upgradeLegacyDefaultSpeakerLayout(
+                    sunday.isoDate,
+                    translateEntries(savedMeeting.standardEntries as AgendaEntry[], defaultLanguageRef.current),
+                    defaultLanguageRef.current
+                  ),
                   defaultLanguageRef.current
                 )
               : prev[sunday.isoDate].standardEntries,
             fastEntries: Array.isArray(savedMeeting.fastEntries)
-              ? translateEntries(savedMeeting.fastEntries as AgendaEntry[], defaultLanguageRef.current)
+              ? ensureStructuralEntries(
+                  translateEntries(savedMeeting.fastEntries as AgendaEntry[], defaultLanguageRef.current),
+                  defaultLanguageRef.current
+                )
               : prev[sunday.isoDate].fastEntries,
           }
         }
