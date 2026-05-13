@@ -226,7 +226,7 @@ function CheckEmailContent() {
     useEffect(() => {
         if (!polledConfirmed) return;
         const t = window.setTimeout(() => {
-            router.replace("/verified?next=/onboarding");
+            router.replace("/onboarding");
         }, 700);
         return () => window.clearTimeout(t);
     }, [polledConfirmed, router]);
