@@ -82,7 +82,8 @@ type PersistedPlannerEntry = {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const PLANNER_DRAFT_STORAGE_KEY = "beespo:sacrament-meeting:planner:draft:v1"
+const LEGACY_PLANNER_DRAFT_KEY = "beespo:sacrament-meeting:planner:draft:v1"
+const plannerDraftKey = (wsId: string) => `${LEGACY_PLANNER_DRAFT_KEY}:${wsId}`
 const SECTION_CLOSING_ID = "section-closing"
 
 function createDefaultSpeakerEntry(isoDate: string, index: number): SpeakerEntry {
@@ -1076,6 +1077,7 @@ export function SpeakerPlannerClient() {
   const [roster, setRoster] = useState<DirectoryPerson[]>([])
   const [rosterLoading, setRosterLoading] = useState(true)
   const [workspaceId, setWorkspaceId] = useState<string | null>(null)
+  const workspaceIdRef = useRef<string | null>(null)
   const [addingToRoster, setAddingToRoster] = useState(false)
   const [picking, setPicking] = useState<PickingState>(null)
   const [search, setSearch] = useState("")
@@ -1125,20 +1127,23 @@ export function SpeakerPlannerClient() {
     }
 
     try {
-      const raw = window.localStorage.getItem(PLANNER_DRAFT_STORAGE_KEY)
-      if (raw) {
-        const parsed = JSON.parse(raw) as {
-          meetingsByDate?: Record<string, Partial<PlannerMeetingState>>
-          meetingTypeOverridesByDate?: Record<string, boolean>
-        }
-        if (parsed.meetingsByDate) {
-          applyPersistedEntries(
-            Object.entries(parsed.meetingsByDate).map(([meetingDate, meetingState]) => ({
-              meetingDate,
-              meetingState,
-              meetingTypeOverridden: parsed.meetingTypeOverridesByDate?.[meetingDate],
-            }))
-          )
+      if (workspaceId) {
+        window.localStorage.removeItem(LEGACY_PLANNER_DRAFT_KEY)
+        const raw = window.localStorage.getItem(plannerDraftKey(workspaceId))
+        if (raw) {
+          const parsed = JSON.parse(raw) as {
+            meetingsByDate?: Record<string, Partial<PlannerMeetingState>>
+            meetingTypeOverridesByDate?: Record<string, boolean>
+          }
+          if (parsed.meetingsByDate) {
+            applyPersistedEntries(
+              Object.entries(parsed.meetingsByDate).map(([meetingDate, meetingState]) => ({
+                meetingDate,
+                meetingState,
+                meetingTypeOverridden: parsed.meetingTypeOverridesByDate?.[meetingDate],
+              }))
+            )
+          }
         }
       }
     } catch {
@@ -1164,7 +1169,7 @@ export function SpeakerPlannerClient() {
     return () => {
       isMounted = false
     }
-  }, [upcomingSundays])
+  }, [upcomingSundays, workspaceId])
 
   // ── Load roster and workspace_id from Supabase ───────────────────────────
   useEffect(() => {
@@ -1177,11 +1182,16 @@ export function SpeakerPlannerClient() {
           .select("workspace_id")
           .eq("id", user.id)
           .single()
-        if (profile?.workspace_id) setWorkspaceId(profile.workspace_id as string)
+        if (profile?.workspace_id) {
+          workspaceIdRef.current = profile.workspace_id as string
+          setWorkspaceId(profile.workspace_id as string)
+        }
       }
+      const wsId = workspaceIdRef.current
       const { data } = await supabase
         .from("directory")
         .select("id, name")
+        .eq("workspace_id", wsId ?? "")
         .order("name", { ascending: true })
       setRoster((data ?? []) as DirectoryPerson[])
       setRosterLoading(false)
@@ -1220,12 +1230,16 @@ export function SpeakerPlannerClient() {
   const persist = useCallback(
     (next: Record<string, PlannerMeetingState>, dates: string[]) => {
       try {
-        const raw = window.localStorage.getItem(PLANNER_DRAFT_STORAGE_KEY)
-        const base = raw ? (JSON.parse(raw) as Record<string, unknown>) : {}
-        window.localStorage.setItem(
-          PLANNER_DRAFT_STORAGE_KEY,
-          JSON.stringify({ ...base, meetingsByDate: next, savedAt: new Date().toISOString() })
-        )
+        const currentWorkspaceId = workspaceIdRef.current
+        if (currentWorkspaceId) {
+          const key = plannerDraftKey(currentWorkspaceId)
+          const raw = window.localStorage.getItem(key)
+          const base = raw ? (JSON.parse(raw) as Record<string, unknown>) : {}
+          window.localStorage.setItem(
+            key,
+            JSON.stringify({ ...base, meetingsByDate: next, savedAt: new Date().toISOString() })
+          )
+        }
       } catch {
         /* ignore */
       }

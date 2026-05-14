@@ -221,7 +221,8 @@ const EMPTY_PLANNER_NOTES: PlannerNotes = {
 }
 
 const SECTION_CLOSING_ID = "section-closing"
-const PLANNER_DRAFT_STORAGE_KEY = "beespo:sacrament-meeting:planner:draft:v1"
+const LEGACY_PLANNER_DRAFT_KEY = "beespo:sacrament-meeting:planner:draft:v1"
+const plannerDraftKey = (wsId: string) => `${LEGACY_PLANNER_DRAFT_KEY}:${wsId}`
 
 type Lang = ContentLanguage
 
@@ -2821,6 +2822,7 @@ export function SacramentMeetingPlannerClient({
   const [audienceOpen, setAudienceOpen] = useState(false)
   const [conductOpen, setConductOpen] = useState(false)
   const [workspaceId, setWorkspaceId] = useState<string | null>(null)
+  const workspaceIdRef = useRef<string | null>(null)
   const [conductScriptTemplates, setConductScriptTemplates] = useState<ConductScriptTemplateMap>({})
   const [notesByDate, setNotesByDate] = useState<Record<string, PlannerNotes>>({})
   const [meetingTypeOverridesByDate, setMeetingTypeOverridesByDate] = useState<Record<string, boolean>>({})
@@ -2927,6 +2929,8 @@ export function SacramentMeetingPlannerClient({
     }
   }, [workspaceId])
 
+  useEffect(() => { workspaceIdRef.current = workspaceId }, [workspaceId])
+
   useEffect(() => {
     if (!workspaceId) return
     let cancelled = false
@@ -2952,7 +2956,7 @@ export function SacramentMeetingPlannerClient({
   }, [workspaceId])
 
   useEffect(() => {
-    if (!directoryModalOpen || directoryPeople.length > 0) {
+    if (!workspaceId || !directoryModalOpen || directoryPeople.length > 0) {
       return
     }
 
@@ -2964,12 +2968,14 @@ export function SacramentMeetingPlannerClient({
       let { data, error } = await supabase
         .from("directory")
         .select("id, name, gender")
+        .eq("workspace_id", workspaceId ?? "")
         .order("name", { ascending: true })
 
       if (error) {
         const fallback = await supabase
           .from("directory")
           .select("id, name")
+          .eq("workspace_id", workspaceId ?? "")
           .order("name", { ascending: true })
         data = ((fallback.data ?? []) as Array<{ id: string; name: string }>).map((person) => ({
           ...person,
@@ -2996,7 +3002,7 @@ export function SacramentMeetingPlannerClient({
     return () => {
       isMounted = false
     }
-  }, [directoryModalOpen, directoryPeople.length])
+  }, [directoryModalOpen, directoryPeople.length, workspaceId])
 
   // Auto-populate announcements & business items on first visit to a date
   useEffect(() => {
@@ -3370,30 +3376,33 @@ export function SacramentMeetingPlannerClient({
 
     const loadDraft = async () => {
       try {
-        const raw = window.localStorage.getItem(PLANNER_DRAFT_STORAGE_KEY)
+        if (workspaceId) {
+          window.localStorage.removeItem(LEGACY_PLANNER_DRAFT_KEY)
+          const raw = window.localStorage.getItem(plannerDraftKey(workspaceId))
 
-        if (raw) {
-          const parsed = JSON.parse(raw) as {
-            meetingsByDate?: Record<string, Partial<PlannerMeetingState>>
-            notesByDate?: Record<string, PlannerNotes>
-            meetingTypeOverridesByDate?: Record<string, boolean>
-            savedAt?: string
-          }
+          if (raw) {
+            const parsed = JSON.parse(raw) as {
+              meetingsByDate?: Record<string, Partial<PlannerMeetingState>>
+              notesByDate?: Record<string, PlannerNotes>
+              meetingTypeOverridesByDate?: Record<string, boolean>
+              savedAt?: string
+            }
 
-          const localEntries: PersistedPlannerEntry[] = sundays
-            .map((sunday) => ({
-              meetingDate: sunday.isoDate,
-              meetingState: parsed.meetingsByDate?.[sunday.isoDate],
-              notesState: parsed.notesByDate?.[sunday.isoDate],
-              meetingTypeOverridden: parsed.meetingTypeOverridesByDate?.[sunday.isoDate],
-            }))
-            .filter((entry) => entry.meetingState || entry.notesState || typeof entry.meetingTypeOverridden === "boolean")
+            const localEntries: PersistedPlannerEntry[] = sundays
+              .map((sunday) => ({
+                meetingDate: sunday.isoDate,
+                meetingState: parsed.meetingsByDate?.[sunday.isoDate],
+                notesState: parsed.notesByDate?.[sunday.isoDate],
+                meetingTypeOverridden: parsed.meetingTypeOverridesByDate?.[sunday.isoDate],
+              }))
+              .filter((entry) => entry.meetingState || entry.notesState || typeof entry.meetingTypeOverridden === "boolean")
 
-          applyPersistedEntries(localEntries)
+            applyPersistedEntries(localEntries)
 
-          if (parsed.savedAt) {
-            setLastSavedAt(new Date(parsed.savedAt))
-            setAutosaveStatus("saved")
+            if (parsed.savedAt) {
+              setLastSavedAt(new Date(parsed.savedAt))
+              setAutosaveStatus("saved")
+            }
           }
         }
 
@@ -3419,7 +3428,7 @@ export function SacramentMeetingPlannerClient({
       isMounted = false
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sundays])
+  }, [sundays, workspaceId])
 
   useEffect(() => {
     if (!hasLoadedDraftRef.current) {
@@ -3435,7 +3444,10 @@ export function SacramentMeetingPlannerClient({
           meetingTypeOverridesByDate,
           savedAt: new Date().toISOString(),
         }
-        window.localStorage.setItem(PLANNER_DRAFT_STORAGE_KEY, JSON.stringify(payload))
+        const currentWorkspaceId = workspaceIdRef.current
+        if (currentWorkspaceId) {
+          window.localStorage.setItem(plannerDraftKey(currentWorkspaceId), JSON.stringify(payload))
+        }
 
         const currentSundays = sundaysRef.current
         const entries = currentSundays
