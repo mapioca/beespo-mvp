@@ -88,14 +88,13 @@ import { toast } from "@/lib/toast"
 import { generateBusinessScript } from "@/lib/business-script-generator"
 import { getContentText, normalizeContentLanguage, type ContentLanguage } from "@/lib/content-language"
 import {
-  BUSINESS_CATEGORY_ORDER,
   BUSINESS_CATEGORY_PLURAL,
-  generateCombinedBusinessScript,
   isBusinessCategoryKey,
-  type BusinessCategoryKey,
 } from "@/lib/business/combined-script"
+import { resolveBusinessMeetingScripts } from "@/lib/business/meeting-scripts"
 import type { ConductBusinessSection } from "@/components/meetings/sacrament-meeting/conduct-view"
 import type { AssignmentStatus, AssignmentStatusChange } from "@/lib/sacrament-confirmations"
+import type { ConductScriptKey, ConductScriptTemplateMap } from "@/lib/conduct-script-templates"
 import { isAnnouncementInWindow } from "@/lib/announcement-utils"
 import type { BusinessItem } from "@/components/business/business-table"
 import { cn } from "@/lib/utils"
@@ -222,7 +221,8 @@ const EMPTY_PLANNER_NOTES: PlannerNotes = {
 }
 
 const SECTION_CLOSING_ID = "section-closing"
-const PLANNER_DRAFT_STORAGE_KEY = "beespo:sacrament-meeting:planner:draft:v1"
+const LEGACY_PLANNER_DRAFT_KEY = "beespo:sacrament-meeting:planner:draft:v1"
+const plannerDraftKey = (wsId: string) => `${LEGACY_PLANNER_DRAFT_KEY}:${wsId}`
 
 type Lang = ContentLanguage
 
@@ -520,6 +520,78 @@ function upgradeLegacyDefaultSpeakerLayout(isoDate: string, entries: AgendaEntry
   ]
 }
 
+// Ensures structural entries (opening/closing hymns and prayers) are present in
+// saved state that predates these entries being added to the default template.
+function ensureStructuralEntries(entries: AgendaEntry[], lang: Lang): AgendaEntry[] {
+  const t = (id: string) => ENTRY_LABELS[id]?.[lang] ?? ENTRY_LABELS[id]?.["ENG"] ?? id
+  const result = [...entries]
+
+  const hasId = (id: string) => result.some((e) => e.id === id)
+  const idxOf = (id: string) => result.findIndex((e) => e.id === id)
+
+  const insertAfterEntry = (afterId: string, newEntry: AgendaEntry): boolean => {
+    const idx = idxOf(afterId)
+    if (idx === -1) return false
+    result.splice(idx + 1, 0, newEntry)
+    return true
+  }
+
+  const insertBeforeEntry = (beforeId: string, newEntry: AgendaEntry): boolean => {
+    const idx = idxOf(beforeId)
+    if (idx === -1) return false
+    result.splice(idx, 0, newEntry)
+    return true
+  }
+
+  if (!hasId("opening-hymn")) {
+    const entry: StaticEntry = { id: "opening-hymn", kind: "static", title: t("opening-hymn"), hymnId: "", hymnTitle: "" }
+    if (!insertAfterEntry("section-opening", entry)) {
+      if (!insertBeforeEntry("invocation", entry)) {
+        insertBeforeEntry("ward-business", entry)
+      }
+    }
+  }
+
+  if (!hasId("invocation")) {
+    const entry: StaticEntry = {
+      id: "invocation",
+      kind: "static",
+      title: t("invocation"),
+      assigneeField: "invocation",
+      assigneeName: "",
+    }
+    if (!insertAfterEntry("opening-hymn", entry)) {
+      if (!insertAfterEntry("section-opening", entry)) {
+        insertBeforeEntry("ward-business", entry)
+      }
+    }
+  }
+
+  if (!hasId("closing-hymn")) {
+    const entry: StaticEntry = { id: "closing-hymn", kind: "static", title: t("closing-hymn"), hymnId: "", hymnTitle: "" }
+    if (!insertAfterEntry(SECTION_CLOSING_ID, entry)) {
+      result.push(entry)
+    }
+  }
+
+  if (!hasId("benediction")) {
+    const entry: StaticEntry = {
+      id: "benediction",
+      kind: "static",
+      title: t("benediction"),
+      assigneeField: "benediction",
+      assigneeName: "",
+    }
+    if (!insertAfterEntry("closing-hymn", entry)) {
+      if (!insertAfterEntry(SECTION_CLOSING_ID, entry)) {
+        result.push(entry)
+      }
+    }
+  }
+
+  return result
+}
+
 function getDefaultMeetingTitle(specialType: MeetingSpecialType) {
   return specialType === "standard" ? "Sacrament Meeting" : getMeetingTypeLabel(specialType)
 }
@@ -581,66 +653,39 @@ function meetingHasUserChanges(
 function buildConductBusinessSections(
   items: PlannerItem[],
   scripts: Record<string, string> | undefined,
-  language: Lang
+  language: Lang,
+  scriptTemplates?: ConductScriptTemplateMap
 ): ConductBusinessSection[] {
-  const businessLabels = getContentText(language).businessPlural
   const checked = items.filter((item) => item.checked)
   if (checked.length === 0) return []
+  const businessLabels = getContentText(language).businessPlural
+  const grouped = resolveBusinessMeetingScripts(
+    checked.map((item) => ({
+      id: item.id,
+      person_name: item.personName ?? item.title,
+      position_calling: item.positionCalling ?? null,
+      category: item.category && isBusinessCategoryKey(item.category) ? item.category : "miscellaneous",
+      notes: null,
+      details: item.businessDetails ?? null,
+      status: item.businessCompleted ? "completed" : "pending",
+      created_at: "",
+    })) as BusinessItem[],
+    language,
+    scriptTemplates
+  )
 
-  type Bucket = { key: BusinessCategoryKey; items: PlannerItem[] }
-  const buckets = new Map<BusinessCategoryKey, Bucket>()
-
-  for (const item of checked) {
-    const rawCategory = item.category
-    const key: BusinessCategoryKey =
-      rawCategory && isBusinessCategoryKey(rawCategory) ? rawCategory : "other"
-    let bucket = buckets.get(key)
-    if (!bucket) {
-      bucket = { key, items: [] }
-      buckets.set(key, bucket)
-    }
-    bucket.items.push(item)
-  }
-
-  const ordered: BusinessCategoryKey[] = [
-    ...BUSINESS_CATEGORY_ORDER.filter((key) => buckets.has(key)),
-    ...Array.from(buckets.keys()).filter((key) => !BUSINESS_CATEGORY_ORDER.includes(key)),
-  ]
-
-  return ordered.map((key) => {
-    const bucket = buckets.get(key)!
-    const persisted = scripts?.[key]?.trim()
-    const generatedItems = bucket.items
-      .filter((item) => item.personName || item.businessDetails)
-      .map((item) => ({
-        person_name: item.personName ?? item.title,
-        position_calling: item.positionCalling ?? null,
-        category: key,
-        notes: null,
-        details: item.businessDetails ?? null,
-      }))
-    const generated =
-      generatedItems.length > 0
-        ? generateCombinedBusinessScript(key, generatedItems, language).trim()
-        : ""
-    const fallback = bucket.items
-      .map((item) => item.detail?.trim())
-      .filter((value): value is string => Boolean(value))
-      .join("\n\n")
-
-    return {
-      category: key,
-      label: businessLabels[key] ?? BUSINESS_CATEGORY_PLURAL[key] ?? key,
-      count: bucket.items.length,
-      people: bucket.items.map((item) => ({
-        id: item.id,
-        name: item.personName ?? item.title,
-        subtitle: item.positionCalling ?? null,
-        completed: Boolean(item.businessCompleted),
-      })),
-      script: generated || persisted || fallback,
-    }
-  })
+  return grouped.map((group) => ({
+    category: group.category,
+    label: businessLabels[group.category] ?? BUSINESS_CATEGORY_PLURAL[group.category] ?? group.category,
+    count: group.items.length,
+    people: group.items.map((item) => ({
+      id: item.id,
+      name: item.person_name,
+      subtitle: item.position_calling ?? null,
+      completed: items.find((candidate) => candidate.id === item.id)?.businessCompleted ?? false,
+    })),
+    script: scripts?.[group.scriptKey]?.trim() || group.renderedScript,
+  }))
 }
 
 function plannerNotesHaveUserChanges(notes: PlannerNotes | undefined) {
@@ -1704,14 +1749,12 @@ function SacramentSection({
         <AaronicAssignmentCard
           title="Blessing the sacrament"
           people={assignments.blessing}
-          max={2}
           onAdd={() => onAssign("blessing")}
           onRemove={(name) => onRemove("blessing", name)}
         />
         <AaronicAssignmentCard
           title="Passing the sacrament"
           people={assignments.passing}
-          max={8}
           onAdd={() => onAssign("passing")}
           onRemove={(name) => onRemove("passing", name)}
         />
@@ -1723,18 +1766,20 @@ function SacramentSection({
 type AaronicAssignmentCardProps = {
   title: string
   people: string[]
-  max: number
   onAdd: () => void
   onRemove: (name: string) => void
 }
 
-function AaronicAssignmentCard({ title, people, max, onAdd, onRemove }: AaronicAssignmentCardProps) {
+function AaronicAssignmentCard({ title, people, onAdd, onRemove }: AaronicAssignmentCardProps) {
   const assignedPeople = people.filter((person) => person.trim())
 
   return (
     <div className="rounded-xl border border-border/70 bg-surface-raised px-3.5 py-3">
       <div className="mb-2 text-[11px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
-        {title} <span className="text-muted-foreground/70">· {assignedPeople.length}/{max}</span>
+        {title}
+        {assignedPeople.length > 0 && (
+          <span className="ml-1 text-muted-foreground/70">· {assignedPeople.length}</span>
+        )}
       </div>
       <div className="flex flex-wrap gap-1.5">
         {assignedPeople.map((person) => (
@@ -1753,16 +1798,14 @@ function AaronicAssignmentCard({ title, people, max, onAdd, onRemove }: AaronicA
             </button>
           </span>
         ))}
-        {assignedPeople.length < max ? (
-          <button
-            type="button"
-            className="inline-flex items-center gap-1.5 rounded-full border border-dashed border-border px-2.5 py-1 text-[12px] font-medium text-muted-foreground transition-colors hover:border-border hover:text-foreground"
-            onClick={onAdd}
-          >
-            <Plus className="h-3 w-3" />
-            Add
-          </button>
-        ) : null}
+        <button
+          type="button"
+          className="inline-flex items-center gap-1.5 rounded-full border border-dashed border-border px-2.5 py-1 text-[12px] font-medium text-muted-foreground transition-colors hover:border-border hover:text-foreground"
+          onClick={onAdd}
+        >
+          <Plus className="h-3 w-3" />
+          Add
+        </button>
       </div>
     </div>
   )
@@ -1830,14 +1873,14 @@ function SpeakersAndMusicSection({
             type="button"
             onClick={() => setReorderMode(!reorderMode)}
             className={cn(
-              "flex items-center gap-1.5 rounded-md px-2 py-1 text-[11px] font-medium transition-colors",
+              "flex items-center gap-1.5 rounded-md border px-2 py-1 text-[11px] font-medium transition-colors",
               reorderMode
-                ? "bg-brand/10 text-brand"
-                : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                ? "border-brand bg-brand/10 text-brand"
+                : "border-border text-muted-foreground hover:border-muted-foreground/40 hover:bg-muted/50 hover:text-foreground"
             )}
           >
             <GripVertical className="h-3 w-3" />
-            {reorderMode ? "Done" : "Reorder"}
+            {reorderMode ? "Done reordering" : "Reorder"}
           </button>
         )}
         <div className="text-[11px] font-medium tracking-[0.04em] text-muted-foreground">05</div>
@@ -2779,6 +2822,8 @@ export function SacramentMeetingPlannerClient({
   const [audienceOpen, setAudienceOpen] = useState(false)
   const [conductOpen, setConductOpen] = useState(false)
   const [workspaceId, setWorkspaceId] = useState<string | null>(null)
+  const workspaceIdRef = useRef<string | null>(null)
+  const [conductScriptTemplates, setConductScriptTemplates] = useState<ConductScriptTemplateMap>({})
   const [notesByDate, setNotesByDate] = useState<Record<string, PlannerNotes>>({})
   const [meetingTypeOverridesByDate, setMeetingTypeOverridesByDate] = useState<Record<string, boolean>>({})
   const [meetingsByDate, setMeetingsByDate] = useState<Record<string, PlannerMeetingState>>(() =>
@@ -2884,8 +2929,34 @@ export function SacramentMeetingPlannerClient({
     }
   }, [workspaceId])
 
+  useEffect(() => { workspaceIdRef.current = workspaceId }, [workspaceId])
+
   useEffect(() => {
-    if (!directoryModalOpen || directoryPeople.length > 0) {
+    if (!workspaceId) return
+    let cancelled = false
+    const supabase = createClient()
+    void (async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase.from("conduct_script_templates") as any)
+        .select("script_key, template")
+        .eq("workspace_id", workspaceId)
+        .eq("language", defaultLanguageRef.current)
+
+      if (cancelled || error) return
+
+      const templates: ConductScriptTemplateMap = {}
+      for (const row of (data ?? []) as Array<{ script_key: ConductScriptKey; template: string }>) {
+        templates[row.script_key] = row.template
+      }
+      setConductScriptTemplates(templates)
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [workspaceId])
+
+  useEffect(() => {
+    if (!workspaceId || !directoryModalOpen || directoryPeople.length > 0) {
       return
     }
 
@@ -2897,12 +2968,14 @@ export function SacramentMeetingPlannerClient({
       let { data, error } = await supabase
         .from("directory")
         .select("id, name, gender")
+        .eq("workspace_id", workspaceId ?? "")
         .order("name", { ascending: true })
 
       if (error) {
         const fallback = await supabase
           .from("directory")
           .select("id, name")
+          .eq("workspace_id", workspaceId ?? "")
           .order("name", { ascending: true })
         data = ((fallback.data ?? []) as Array<{ id: string; name: string }>).map((person) => ({
           ...person,
@@ -2929,7 +3002,7 @@ export function SacramentMeetingPlannerClient({
     return () => {
       isMounted = false
     }
-  }, [directoryModalOpen, directoryPeople.length])
+  }, [directoryModalOpen, directoryPeople.length, workspaceId])
 
   // Auto-populate announcements & business items on first visit to a date
   useEffect(() => {
@@ -2953,7 +3026,7 @@ export function SacramentMeetingPlannerClient({
       if (!workspaceId || !isMounted) return
       setWorkspaceId(workspaceId)
 
-      const [annResult, bizResult, scheduledBizResult] = await Promise.all([
+      const [annResult, bizResult, scheduledBizResult, scheduledScriptResult] = await Promise.all([
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (supabase.from("announcements") as any)
           .select("id, title, content, display_start, display_until")
@@ -2974,6 +3047,11 @@ export function SacramentMeetingPlannerClient({
           .eq("action_date", selectedSunday.isoDate)
           .eq("workspace_id", workspaceId)
           .order("created_at", { ascending: true }),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (supabase.from("business_meeting_scripts") as any)
+          .select("script_key, template_snapshot, rendered_script, business_item_ids, is_custom")
+          .eq("meeting_date", selectedSunday.isoDate)
+          .eq("workspace_id", workspaceId),
       ])
 
       if (!isMounted) return
@@ -3008,30 +3086,49 @@ export function SacramentMeetingPlannerClient({
         businessDetails: b.details,
       }))
 
-      // Process scheduled business items and generate scripts
+      // Process scheduled business items and load persisted meeting scripts
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const scheduledBusinessItems: any[] = scheduledBizResult.data ?? []
+      const resolvedBusinessScripts = resolveBusinessMeetingScripts(
+        scheduledBusinessItems as BusinessItem[],
+        defaultLanguageRef.current,
+        conductScriptTemplates
+      )
+      const persistedBusinessScripts = Object.fromEntries(
+        ((scheduledScriptResult.data ?? []) as Array<{
+          script_key: string
+          template_snapshot: string
+          rendered_script: string
+          business_item_ids: string[]
+          is_custom: boolean
+        }>).map((row) => [row.script_key, row])
+      )
+      const missingResolvedScripts = resolvedBusinessScripts.filter(
+        (script) => !persistedBusinessScripts[script.scriptKey]
+      )
 
-      // Group business items by category
-      const businessByCategory: Record<string, BusinessItem[]> = {}
-      for (const item of scheduledBusinessItems) {
-        if (!businessByCategory[item.category]) {
-          businessByCategory[item.category] = []
-        }
-        businessByCategory[item.category].push(item)
+      if (missingResolvedScripts.length > 0) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (supabase.from("business_meeting_scripts") as any).upsert(
+          missingResolvedScripts.map((script) => ({
+            workspace_id: workspaceId,
+            meeting_date: selectedSunday.isoDate,
+            script_key: script.scriptKey,
+            template_snapshot: script.templateSnapshot,
+            rendered_script: script.renderedScript,
+            business_item_ids: script.businessItemIds,
+            is_custom: false,
+            created_by: user.id,
+            updated_by: user.id,
+          })),
+          { onConflict: "workspace_id,meeting_date,script_key" }
+        )
       }
 
-      // Generate scripts for each category
       const businessScripts: Record<string, string> = {}
-      for (const [category, items] of Object.entries(businessByCategory)) {
-        if (items.length > 0) {
-          // Generate combined script for this category
-          businessScripts[category] = generateCombinedBusinessScript(
-            category as BusinessCategoryKey,
-            items,
-            defaultLanguageRef.current
-          )
-        }
+      for (const script of resolvedBusinessScripts) {
+        businessScripts[script.scriptKey] =
+          persistedBusinessScripts[script.scriptKey]?.rendered_script?.trim() || script.renderedScript
       }
 
       // Update meeting state with generated business scripts
@@ -3231,14 +3328,20 @@ export function SacramentMeetingPlannerClient({
               ...(savedMeeting.sacramentAssignments ?? {}),
             },
             standardEntries: Array.isArray(savedMeeting.standardEntries)
-              ? upgradeLegacyDefaultSpeakerLayout(
-                  sunday.isoDate,
-                  translateEntries(savedMeeting.standardEntries as AgendaEntry[], defaultLanguageRef.current),
+              ? ensureStructuralEntries(
+                  upgradeLegacyDefaultSpeakerLayout(
+                    sunday.isoDate,
+                    translateEntries(savedMeeting.standardEntries as AgendaEntry[], defaultLanguageRef.current),
+                    defaultLanguageRef.current
+                  ),
                   defaultLanguageRef.current
                 )
               : prev[sunday.isoDate].standardEntries,
             fastEntries: Array.isArray(savedMeeting.fastEntries)
-              ? translateEntries(savedMeeting.fastEntries as AgendaEntry[], defaultLanguageRef.current)
+              ? ensureStructuralEntries(
+                  translateEntries(savedMeeting.fastEntries as AgendaEntry[], defaultLanguageRef.current),
+                  defaultLanguageRef.current
+                )
               : prev[sunday.isoDate].fastEntries,
           }
         }
@@ -3273,30 +3376,33 @@ export function SacramentMeetingPlannerClient({
 
     const loadDraft = async () => {
       try {
-        const raw = window.localStorage.getItem(PLANNER_DRAFT_STORAGE_KEY)
+        if (workspaceId) {
+          window.localStorage.removeItem(LEGACY_PLANNER_DRAFT_KEY)
+          const raw = window.localStorage.getItem(plannerDraftKey(workspaceId))
 
-        if (raw) {
-          const parsed = JSON.parse(raw) as {
-            meetingsByDate?: Record<string, Partial<PlannerMeetingState>>
-            notesByDate?: Record<string, PlannerNotes>
-            meetingTypeOverridesByDate?: Record<string, boolean>
-            savedAt?: string
-          }
+          if (raw) {
+            const parsed = JSON.parse(raw) as {
+              meetingsByDate?: Record<string, Partial<PlannerMeetingState>>
+              notesByDate?: Record<string, PlannerNotes>
+              meetingTypeOverridesByDate?: Record<string, boolean>
+              savedAt?: string
+            }
 
-          const localEntries: PersistedPlannerEntry[] = sundays
-            .map((sunday) => ({
-              meetingDate: sunday.isoDate,
-              meetingState: parsed.meetingsByDate?.[sunday.isoDate],
-              notesState: parsed.notesByDate?.[sunday.isoDate],
-              meetingTypeOverridden: parsed.meetingTypeOverridesByDate?.[sunday.isoDate],
-            }))
-            .filter((entry) => entry.meetingState || entry.notesState || typeof entry.meetingTypeOverridden === "boolean")
+            const localEntries: PersistedPlannerEntry[] = sundays
+              .map((sunday) => ({
+                meetingDate: sunday.isoDate,
+                meetingState: parsed.meetingsByDate?.[sunday.isoDate],
+                notesState: parsed.notesByDate?.[sunday.isoDate],
+                meetingTypeOverridden: parsed.meetingTypeOverridesByDate?.[sunday.isoDate],
+              }))
+              .filter((entry) => entry.meetingState || entry.notesState || typeof entry.meetingTypeOverridden === "boolean")
 
-          applyPersistedEntries(localEntries)
+            applyPersistedEntries(localEntries)
 
-          if (parsed.savedAt) {
-            setLastSavedAt(new Date(parsed.savedAt))
-            setAutosaveStatus("saved")
+            if (parsed.savedAt) {
+              setLastSavedAt(new Date(parsed.savedAt))
+              setAutosaveStatus("saved")
+            }
           }
         }
 
@@ -3322,7 +3428,7 @@ export function SacramentMeetingPlannerClient({
       isMounted = false
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sundays])
+  }, [sundays, workspaceId])
 
   useEffect(() => {
     if (!hasLoadedDraftRef.current) {
@@ -3338,7 +3444,10 @@ export function SacramentMeetingPlannerClient({
           meetingTypeOverridesByDate,
           savedAt: new Date().toISOString(),
         }
-        window.localStorage.setItem(PLANNER_DRAFT_STORAGE_KEY, JSON.stringify(payload))
+        const currentWorkspaceId = workspaceIdRef.current
+        if (currentWorkspaceId) {
+          window.localStorage.setItem(plannerDraftKey(currentWorkspaceId), JSON.stringify(payload))
+        }
 
         const currentSundays = sundaysRef.current
         const entries = currentSundays
@@ -3472,6 +3581,121 @@ export function SacramentMeetingPlannerClient({
     }))
   }
 
+  const syncScheduledBusinessScriptsForDate = async (meetingDate: string) => {
+    if (!workspaceId) return
+
+    const supabase = createClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    if (!user) return
+    const [scheduledResult, persistedScriptsResult] = await Promise.all([
+      (supabase.from("business_items") as ReturnType<typeof supabase.from>)
+        .select("id, person_name, position_calling, category, notes, details")
+        .eq("workspace_id", workspaceId)
+        .eq("action_date", meetingDate)
+        .neq("status", "completed")
+        .order("created_at", { ascending: true }),
+      (supabase.from("business_meeting_scripts") as ReturnType<typeof supabase.from>)
+        .select("script_key, template_snapshot, rendered_script, business_item_ids, is_custom")
+        .eq("workspace_id", workspaceId)
+        .eq("meeting_date", meetingDate),
+    ])
+
+    if (scheduledResult.error) {
+      throw scheduledResult.error
+    }
+    if (persistedScriptsResult.error) {
+      throw persistedScriptsResult.error
+    }
+
+    const scheduledBusinessItems = (scheduledResult.data ?? []) as BusinessItem[]
+    const resolvedScripts = resolveBusinessMeetingScripts(
+      scheduledBusinessItems,
+      defaultLanguageRef.current,
+      conductScriptTemplates
+    )
+    const persistedScripts = Object.fromEntries(
+      ((persistedScriptsResult.data ?? []) as Array<{
+        script_key: string
+        template_snapshot: string
+        rendered_script: string
+        business_item_ids: string[]
+        is_custom: boolean
+      }>).map((row) => [row.script_key, row])
+    )
+
+    const rows = resolvedScripts.map((script) => {
+      const existing = persistedScripts[script.scriptKey]
+      const sameItems =
+        existing &&
+        JSON.stringify([...(existing.business_item_ids ?? [])].sort()) ===
+          JSON.stringify([...script.businessItemIds].sort())
+
+      if (existing?.is_custom && sameItems) {
+        return {
+          workspace_id: workspaceId,
+          meeting_date: meetingDate,
+          script_key: script.scriptKey,
+          template_snapshot: existing.template_snapshot,
+          rendered_script: existing.rendered_script,
+          business_item_ids: existing.business_item_ids,
+          is_custom: true,
+        }
+      }
+
+      return {
+        workspace_id: workspaceId,
+        meeting_date: meetingDate,
+        script_key: script.scriptKey,
+        template_snapshot: script.templateSnapshot,
+        rendered_script: script.renderedScript,
+        business_item_ids: script.businessItemIds,
+        is_custom: false,
+      }
+    })
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const scriptsTable = supabase.from("business_meeting_scripts") as any
+
+    if (rows.length > 0) {
+      const { error: upsertError } = await scriptsTable.upsert(
+        rows.map((row) => ({
+          ...row,
+          created_by: user.id,
+          updated_by: user.id,
+        })),
+        { onConflict: "workspace_id,meeting_date,script_key" }
+      )
+
+      if (upsertError) {
+        throw upsertError
+      }
+    }
+
+    const activeKeys = new Set(resolvedScripts.map((script) => script.scriptKey))
+    const staleKeys = Object.keys(persistedScripts).filter((key) => !activeKeys.has(key as ConductScriptKey))
+
+    if (staleKeys.length > 0) {
+      const { error: deleteError } = await scriptsTable
+        .delete()
+        .eq("workspace_id", workspaceId)
+        .eq("meeting_date", meetingDate)
+        .in("script_key", staleKeys)
+
+      if (deleteError) {
+        throw deleteError
+      }
+    }
+
+    updateSelectedMeeting((meeting) => ({
+      ...meeting,
+      businessScripts: Object.fromEntries(
+        rows.map((row) => [row.script_key, row.rendered_script])
+      ),
+    }))
+  }
+
   const handleMeetingTypeChange = (nextType: MeetingSpecialType) => {
     setMeetingTypeOverridesByDate((prev) => ({
       ...prev,
@@ -3533,7 +3757,22 @@ export function SacramentMeetingPlannerClient({
     }))
   }
 
-  const handleBusinessCompletedChange = (id: string, completed: boolean) => {
+  const handleBusinessCompletedChange = async (id: string, completed: boolean) => {
+    const supabase = createClient()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase.from("business_items") as any)
+      .update(
+        completed
+          ? { status: "completed" }
+          : { status: "pending", action_date: selectedSunday.isoDate }
+      )
+      .eq("id", id)
+
+    if (error) {
+      toast.error(error.message || "Failed to update business item.")
+      return
+    }
+
     setNotesByDate((prev) => {
       const current = prev[selectedSunday.isoDate] ?? EMPTY_PLANNER_NOTES
 
@@ -3542,11 +3781,24 @@ export function SacramentMeetingPlannerClient({
         [selectedSunday.isoDate]: {
           ...current,
           business: current.business.map((item) =>
-            item.id === id ? { ...item, businessCompleted: completed } : item
+            item.id === id
+              ? {
+                  ...item,
+                  businessCompleted: completed,
+                  checked: !completed,
+                }
+              : item
           ),
         },
       }
     })
+
+    try {
+      await syncScheduledBusinessScriptsForDate(selectedSunday.isoDate)
+    } catch (syncError) {
+      console.error("Failed to sync scheduled business scripts after completion change:", syncError)
+      toast.warning("Business item status changed, but meeting scripts could not be refreshed.")
+    }
   }
 
   const handleNotesTextChange = (value: string) => {
@@ -4375,13 +4627,15 @@ export function SacramentMeetingPlannerClient({
             businessSections: buildConductBusinessSections(
               selectedNotes.business,
               selectedMeeting.businessScripts,
-              defaultLanguageRef.current
+              defaultLanguageRef.current,
+              conductScriptTemplates
             ),
           }}
           isoDate={selectedSunday.isoDate}
           language={defaultLanguageRef.current}
           notes={selectedNotes.notes}
           attendance={selectedNotes.attendance}
+          scriptTemplates={conductScriptTemplates}
           onNotesChange={handleNotesTextChange}
           onAttendanceChange={handleAttendanceChange}
           onBusinessItemCompletedChange={handleBusinessCompletedChange}

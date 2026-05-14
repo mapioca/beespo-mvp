@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { normalizeInviteCode, isValidCodeFormat } from "@/lib/services/access-control";
 import { checkRateLimit } from "@/lib/rate-limiter";
+import { logSecurityEvent } from "@/lib/security/audit-log";
 
 interface ConsumeInviteCodeResponse {
     success: boolean;
@@ -77,11 +78,26 @@ export async function POST(request: NextRequest): Promise<NextResponse<ConsumeIn
         }
 
         if (result.is_valid) {
+            void logSecurityEvent({
+                eventType: "platform_invitation.consume.success",
+                outcome: "success",
+                ipAddress: ip,
+                userAgent: request.headers.get("user-agent"),
+                details: { invitation_id: result.invitation_id },
+            });
             return NextResponse.json({
                 success: true,
                 invitationId: result.invitation_id,
             });
         }
+
+        void logSecurityEvent({
+            eventType: "platform_invitation.consume.failure",
+            outcome: "failure",
+            ipAddress: ip,
+            userAgent: request.headers.get("user-agent"),
+            details: { error: result.error_message },
+        });
 
         return NextResponse.json({
             success: false,

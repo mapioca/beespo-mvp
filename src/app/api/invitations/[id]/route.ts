@@ -3,6 +3,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { sendInviteEmail } from '@/lib/email/send-invite-email';
 import { getAppUrlFromRequest } from '@/lib/url/app-url';
 import { canManage, formatRoleLabel } from '@/lib/auth/role-permissions';
+import { logSecurityEvent } from '@/lib/security/audit-log';
+import { getClientIp } from '@/lib/security/request-ip';
 
 
 type Params = { params: Promise<{ id: string }> };
@@ -38,6 +40,16 @@ export async function DELETE(request: NextRequest, { params }: Params) {
     if (error) {
         return NextResponse.json({ error: error.message }, { status: 500 });
     }
+
+    void logSecurityEvent({
+        eventType: 'workspace.invitation.revoke',
+        outcome: 'success',
+        actorUserId: user.id,
+        workspaceId: profile.workspace_id,
+        ipAddress: await getClientIp(),
+        userAgent: request.headers.get('user-agent'),
+        details: { invitation_id: id },
+    });
 
     return NextResponse.json({ success: true });
 }

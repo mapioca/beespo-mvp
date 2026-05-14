@@ -26,10 +26,17 @@ export interface BusinessItemDetails {
   office?: PriesthoodOffice;
   priesthood?: PriesthoodType;
   // For sustainings/releases - stored in position_calling field
-  // For confirmations
-  ordinance?: string;
-  // For other/custom
+  // For baptism/confirmation recognition
+  baptismDate?: string;
+  confirmationDate?: string;
+  // For child blessings
+  childName?: string;
+  voiceName?: string;
+  // For records received
+  memberNames?: string[];
+  // For miscellaneous/custom
   customScript?: string;
+  customText?: string;
 }
 
 export interface BusinessItem {
@@ -50,6 +57,15 @@ const getSubjectPronoun = (gender?: Gender): string => {
 const getPossessivePronoun = (gender?: Gender): string => {
   if (gender === "female") return "her";
   return "his";
+};
+const getObjectPronoun = (gender?: Gender): string => {
+  if (gender === "female") return "her";
+  return "him";
+};
+
+const tokenOrValue = (value: string | null | undefined, token: string): string => {
+  const trimmed = value?.trim();
+  return trimmed || `{{${token}}}`;
 };
 
 // Format priesthood office for display
@@ -100,34 +116,59 @@ export const getPriesthoodFromOffice = (office?: PriesthoodOffice): PriesthoodTy
  * Generate the official conducting script for a business item
  * Following General Handbook standards
  */
-export function generateBusinessScript(item: BusinessItem, languageOverride?: Language): string {
+export function generateBusinessScript(
+  item: BusinessItem,
+  languageOverride?: Language,
+  scriptTemplates?: ConductScriptTemplateMap
+): string {
   const { person_name, position_calling, category, details } = item;
   const gender = details?.gender;
   const language = languageOverride || details?.language || "ENG";
 
   switch (category) {
     case "sustaining":
-      return generateSustainingScript(person_name, position_calling, gender, language);
+      return generateSustainingScript(person_name, position_calling, gender, language, scriptTemplates);
 
     case "release":
-      return generateReleaseScript(person_name, position_calling, gender, language);
+      return generateReleaseScript(person_name, position_calling, gender, language, scriptTemplates);
 
     case "ordination":
       return generateOrdinationScript(
         person_name,
         details?.office,
         details?.priesthood,
-        language
+        language,
+        scriptTemplates
       );
 
-    case "confirmation":
-      return generateConfirmationScript(person_name, gender, language);
+    case "confirmation_ordinance":
+      return generateConfirmationOrdinanceScript(person_name, details?.baptismDate, language, scriptTemplates);
 
-    case "setting_apart":
-      return generateSettingApartScript(person_name, position_calling, gender, language);
+    case "new_member_welcome":
+      return generateNewMemberWelcomeScript(
+        person_name,
+        details?.confirmationDate,
+        gender,
+        language,
+        scriptTemplates
+      );
 
-    case "other":
-      return details?.customScript || generateOtherScript(person_name, item.notes);
+    case "child_blessing":
+      return generateChildBlessingScript(
+        details?.childName || person_name,
+        details?.voiceName,
+        language,
+        scriptTemplates
+      );
+
+    case "records_received":
+      return generateRecordsReceivedScript(details?.memberNames?.length ? details.memberNames : [person_name], language, scriptTemplates);
+
+    case "miscellaneous":
+      return renderConductScriptTemplate(
+        scriptTemplates?.["ward-business.miscellaneous"] ?? defaultConductScriptTemplate("ward-business.miscellaneous", language),
+        { customText: details?.customText || details?.customScript || item.notes }
+      );
 
     default:
       return "";
@@ -142,10 +183,20 @@ function generateSustainingScript(
   name: string,
   calling?: string | null,
   gender?: Gender,
-  language: Language = "ENG"
+  language: Language = "ENG",
+  scriptTemplates?: ConductScriptTemplateMap
 ): string {
   const pronoun = getSubjectPronoun(gender);
   const callingText = calling || "[Calling]";
+  const template = scriptTemplates?.["ward-business.sustaining"];
+  if (template) {
+    return renderConductScriptTemplate(template, {
+      personName: name,
+      calling: callingText,
+      callingPhrases: language === "SPA" ? `${name} como ${callingText}` : `${name} as ${callingText}`,
+      subjectPronoun: pronoun,
+    });
+  }
 
   if (language === "SPA") {
     const sustainedWord = gender === "female" ? "sostenida" : "sostenido";
@@ -171,10 +222,20 @@ function generateReleaseScript(
   name: string,
   calling?: string | null,
   gender?: Gender,
-  language: Language = "ENG"
+  language: Language = "ENG",
+  scriptTemplates?: ConductScriptTemplateMap
 ): string {
   const possessive = getPossessivePronoun(gender);
   const callingText = calling || "[Calling]";
+  const template = scriptTemplates?.["ward-business.release"];
+  if (template) {
+    return renderConductScriptTemplate(template, {
+      personName: name,
+      calling: callingText,
+      callingPhrases: language === "SPA" ? `${name} como ${callingText}` : `${name} as ${callingText}`,
+      possessivePronoun: possessive,
+    });
+  }
 
   if (language === "SPA") {
     const releasedWord = gender === "female" ? "relevada" : "relevado";
@@ -192,10 +253,20 @@ function generateOrdinationScript(
   name: string,
   office?: PriesthoodOffice,
   priesthood?: PriesthoodType,
-  language: Language = "ENG"
+  language: Language = "ENG",
+  scriptTemplates?: ConductScriptTemplateMap
 ): string {
   const officeText = office ? formatOffice(office, language) : "[Office]";
   const priesthoodText = priesthood ? formatPriesthood(priesthood, language) : "[Priesthood]";
+  const template = scriptTemplates?.["ward-business.ordination"];
+  if (template) {
+    return renderConductScriptTemplate(template, {
+      personName: name,
+      office: officeText,
+      priesthood: priesthoodText,
+      ordinationPhrases: language === "SPA" ? `${name} al oficio de ${officeText}` : `${name} to the office of ${officeText}`,
+    });
+  }
 
   if (language === "SPA") {
     return `${name} ha sido hallado digno y se recomienda que sea ordenado al oficio de ${officeText} en el Sacerdocio ${priesthoodText}. Proponemos que sea sostenido. Los que estén a favor, sírvanse manifestarlo levantando la mano.
@@ -212,69 +283,131 @@ Los que se opongan, si los hay, sírvanse manifestarlo.`;
 Those opposed, if any, may manifest it.`;
 }
 
-/**
- * Confirmation Script (New Member)
- * Welcoming newly baptized members into the ward
- */
-function generateConfirmationScript(
+function generateNewMemberWelcomeScript(
   name: string,
+  confirmationDate?: string,
   gender?: Gender,
-  language: Language = "ENG"
+  language: Language = "ENG",
+  scriptTemplates?: ConductScriptTemplateMap
 ): string {
+  const personName = tokenOrValue(name, "personName");
+  const date = tokenOrValue(confirmationDate, "confirmationDate");
+  const objectPronoun = getObjectPronoun(gender);
+  const template = scriptTemplates?.["ward-business.new_member_welcome"];
+  if (template) {
+    return renderConductScriptTemplate(template, {
+      personName,
+      confirmationDate: date,
+      objectPronoun,
+    });
+  }
+
   if (language === "SPA") {
     const baptizedConfirmed = gender === "female" ? "bautizada y confirmada" : "bautizado y confirmado";
-    return `${name} ha sido ${baptizedConfirmed} miembro de La Iglesia de Jesucristo de los Santos de los Últimos Días. Les pedimos que muestren con la mano levantada que le dan la bienvenida al barrio.`;
+    return `${personName} fue ${baptizedConfirmed} miembro de La Iglesia de Jesucristo de los Santos de los Últimos Días el ${date}.
+
+Nos complace darle la bienvenida al barrio. Quienes puedan dar la bienvenida a ${personName}, sírvanse manifestarlo levantando la mano.`;
   }
 
-  return `${name} has been baptized and confirmed a member of The Church of Jesus Christ of Latter-day Saints. Please show by an uplifted hand that you welcome ${name} into the ward.`;
+  return `${personName} was baptized and confirmed a member of The Church of Jesus Christ of Latter-day Saints on ${date}.
+
+We are grateful to welcome ${objectPronoun} into the ward. All those who can welcome ${personName} may manifest it by the uplifted hand.`;
 }
 
-/**
- * Setting Apart Script
- * Similar to sustaining but for positions that require setting apart
- */
-function generateSettingApartScript(
+function generateConfirmationOrdinanceScript(
   name: string,
-  calling?: string | null,
-  gender?: Gender,
-  language: Language = "ENG"
+  baptismDate?: string,
+  language: Language = "ENG",
+  scriptTemplates?: ConductScriptTemplateMap
 ): string {
-  const pronoun = getSubjectPronoun(gender);
-  const callingText = calling || "[Calling]";
+  const personName = tokenOrValue(name, "personName");
+  const date = tokenOrValue(baptismDate, "baptismDate");
+  const template = scriptTemplates?.["ward-business.confirmation_ordinance"];
+  if (template) {
+    return renderConductScriptTemplate(template, {
+      personName,
+      baptismDate: date,
+    });
+  }
 
   if (language === "SPA") {
-    const sustainedWord = gender === "female" ? "sostenida" : "sostenido";
-    const apartWord = gender === "female" ? "apartada" : "apartado";
-    return `Hemos llamado a ${name} para servir como ${callingText} y proponemos que sea ${sustainedWord}. Los que estén a favor, sírvanse manifestarlo levantando la mano.
+    return `${personName} fue bautizado el ${date} y ahora será confirmado miembro de La Iglesia de Jesucristo de los Santos de los Últimos Días.
 
-[Pausa para la votación]
+Quienes hayan sido invitados a participar, por favor pasen al frente.
 
-Los que se opongan, si los hay, sírvanse manifestarlo.
+[Después de la confirmación]
 
-[Nota: ${name} será ${apartWord} después de la reunión.]`;
+Quienes puedan dar la bienvenida a ${personName} al barrio, sírvanse manifestarlo levantando la mano.`;
   }
 
-  return `We have called ${name} to serve as ${callingText} and propose that ${pronoun} be sustained. Those in favor may manifest it by the uplifted hand.
+  return `${personName} was baptized on ${date} and will now be confirmed a member of The Church of Jesus Christ of Latter-day Saints.
 
-[Pause for voting]
+Those who have been invited to participate, please come forward.
 
-Those opposed, if any, may manifest it.
+[After the confirmation]
 
-[Note: ${name} will be set apart following the meeting.]`;
+All those who can welcome ${personName} into the ward may manifest it by the uplifted hand.`;
 }
 
-/**
- * Other/Custom Script
- * Uses notes field or custom script from details
- */
-function generateOtherScript(
-  name: string,
-  notes?: string | null
+function generateChildBlessingScript(
+  childName: string,
+  voiceName?: string,
+  language: Language = "ENG",
+  scriptTemplates?: ConductScriptTemplateMap
 ): string {
-  if (notes) {
-    return `Regarding ${name}:\n\n${notes}`;
+  const child = tokenOrValue(childName, "childName");
+  const voice = tokenOrValue(voiceName, "voiceName");
+  const template = scriptTemplates?.["ward-business.child_blessing"];
+  if (template) {
+    return renderConductScriptTemplate(template, {
+      childName: child,
+      voiceName: voice,
+    });
   }
-  return `[Custom business regarding ${name}]`;
+
+  if (language === "SPA") {
+    return `${child} recibirá ahora un nombre y una bendición. ${voice} actuará como voz.
+
+Quienes hayan sido invitados a participar, por favor pasen al frente.`;
+  }
+
+  return `${child} will now receive a name and a blessing. ${voice} will act as voice.
+
+Those who have been invited to participate, please come forward.`;
+}
+
+function generateRecordsReceivedScript(
+  names: string[],
+  language: Language = "ENG",
+  scriptTemplates?: ConductScriptTemplateMap
+): string {
+  const memberNames = names.map((name) => name.trim()).filter(Boolean);
+  const renderedNames = memberNames.length > 0 ? memberNames.join("\n") : "{{memberNames}}";
+  const template = scriptTemplates?.["ward-business.records_received"];
+  if (template) {
+    return renderConductScriptTemplate(template, {
+      memberNames: renderedNames,
+      personNames: renderedNames,
+    });
+  }
+
+  if (language === "SPA") {
+    return `Hemos recibido los registros de membresía de las siguientes personas:
+
+${renderedNames}
+
+Al escuchar sus nombres, por favor pónganse de pie.
+
+Quienes puedan darles la bienvenida al barrio, sírvanse manifestarlo levantando la mano.`;
+  }
+
+  return `We have received the membership records for the following individuals:
+
+${renderedNames}
+
+As your names are read, please stand.
+
+All those who can welcome these members into the ward may manifest it by the uplifted hand.`;
 }
 
 /**
@@ -290,12 +423,16 @@ export function getBusinessScriptSummary(item: BusinessItem): string {
       return `Release: ${person_name} from ${position_calling || "..."}`;
     case "ordination":
       return `Ordination: ${person_name} to ${formatOffice(details?.office) || "..."} (${formatPriesthood(details?.priesthood) || "..."})`;
-    case "confirmation":
+    case "confirmation_ordinance":
       return `Confirmation: ${person_name}`;
-    case "setting_apart":
-      return `Setting Apart: ${person_name} as ${position_calling || "..."}`;
-    case "other":
-      return `Other: ${person_name}`;
+    case "new_member_welcome":
+      return `New Member Welcome: ${person_name}`;
+    case "child_blessing":
+      return `Child Blessing: ${details?.childName || person_name}`;
+    case "records_received":
+      return `Records Received: ${person_name}`;
+    case "miscellaneous":
+      return `Miscellaneous: ${person_name}`;
     default:
       return `${person_name}`;
   }
@@ -314,7 +451,6 @@ export function validateBusinessItemDetails(
   switch (category) {
     case "sustaining":
     case "release":
-    case "setting_apart":
       if (!positionCalling?.trim()) {
         errors.push("Position/Calling is required");
       }
@@ -330,14 +466,22 @@ export function validateBusinessItemDetails(
       // Priesthood type is auto-determined from office, but can be validated
       break;
 
-    case "confirmation":
+    case "confirmation_ordinance":
+    case "new_member_welcome":
       if (!details?.gender) {
         errors.push("Gender is required for correct pronouns");
       }
       break;
 
-    case "other":
-      // No required fields for "other"
+    case "child_blessing":
+      if (!(details?.childName?.trim() || details?.voiceName?.trim())) {
+        // The selected person can still be used as the child name.
+        break;
+      }
+      break;
+
+    case "records_received":
+    case "miscellaneous":
       break;
   }
 
@@ -360,8 +504,15 @@ export const PRIESTHOOD_OFFICES: { value: PriesthoodOffice; label: string; pries
 export const BUSINESS_CATEGORIES = {
   sustaining: "Sustaining",
   release: "Release",
-  confirmation: "Confirmation",
   ordination: "Ordination",
-  setting_apart: "Setting Apart",
-  other: "Other",
+  confirmation_ordinance: "Confirmation",
+  new_member_welcome: "New Member Welcome",
+  child_blessing: "Child Blessing",
+  records_received: "Records Received",
+  miscellaneous: "Miscellaneous",
 } as const;
+import {
+  defaultConductScriptTemplate,
+  renderConductScriptTemplate,
+  type ConductScriptTemplateMap,
+} from "@/lib/conduct-script-templates";

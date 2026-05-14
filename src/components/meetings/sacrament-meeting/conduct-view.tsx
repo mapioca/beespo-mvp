@@ -14,6 +14,11 @@ import {
 } from "@/lib/content-language"
 import { ensureRichTextHtml, isRichTextEmpty, sanitizeRichTextHtml } from "@/lib/rich-text"
 import { SACRAMENT_PRAYERS } from "@/lib/sacrament-prayers"
+import {
+  defaultConductScriptTemplate,
+  renderConductScriptTemplate,
+  type ConductScriptTemplateMap,
+} from "@/lib/conduct-script-templates"
 import { cn } from "@/lib/utils"
 
 // ─── Types (mirrored from planner) ──────────────────────────────────────────
@@ -91,6 +96,7 @@ export type ConductViewProps = {
   language?: ContentLanguage
   notes: string
   attendance: number | null
+  scriptTemplates?: ConductScriptTemplateMap
   onNotesChange: (value: string) => void
   onAttendanceChange: (value: number | null) => void
   onBusinessItemCompletedChange?: (id: string, completed: boolean) => void
@@ -144,11 +150,12 @@ function parseMeetingHour(meetingTime?: string): number {
   return Number.isFinite(hour) ? hour : 9
 }
 
-function buildWelcomeScript(meeting: ConductMeeting, language: ContentLanguage) {
+function buildWelcomeScript(meeting: ConductMeeting, language: ContentLanguage, scriptTemplates?: ConductScriptTemplateMap) {
   const text = getContentText(language).conduct
   const hour = parseMeetingHour(meeting.meetingTime)
   const greeting = hour >= 12 ? text.welcomeGreetingAfternoon : text.welcomeGreetingMorning
-  const lines = [`${greeting}, ${text.welcomeScriptIntro}`]
+  const defaultScript = `${greeting}, ${text.welcomeScriptIntro}`
+  const lines = [defaultScript]
   const highlights: string[] = []
 
   const addRoleLine = (label: string, value?: string) => {
@@ -174,19 +181,44 @@ function buildWelcomeScript(meeting: ConductMeeting, language: ContentLanguage) 
     highlights.push(accompanist)
   }
 
+  const template = scriptTemplates?.welcome
+  if (template) {
+    const rendered = renderConductScriptTemplate(template, {
+      greeting,
+      presiding: meeting.assignments.presiding,
+      conductor: meeting.assignments.conductor,
+      chorister,
+      accompanist,
+    })
+    return {
+      script: rendered,
+      highlights: [
+        meeting.assignments.presiding,
+        meeting.assignments.conductor,
+        chorister,
+        accompanist,
+      ].filter((value): value is string => Boolean(value?.trim())),
+    }
+  }
+
   return {
     script: lines.join("\n\n"),
     highlights,
   }
 }
 
-function buildSacramentPreparationScript(entry: StaticEntry | undefined, language: ContentLanguage) {
+function buildSacramentPreparationScript(entry: StaticEntry | undefined, language: ContentLanguage, scriptTemplates?: ConductScriptTemplateMap) {
   const text = getContentText(language).conduct
   const hymnNumber = entry?.hymnNumber ? `#${entry.hymnNumber}` : "#_____"
   const hymnTitle = entry?.hymnTitle?.trim() || "__________________________"
+  const template = scriptTemplates?.["sacrament-preparation"]
+    ?? defaultConductScriptTemplate("sacrament-preparation", language)
 
   return {
-    script: `${text.sacramentPreparation} ${hymnNumber}, ${hymnTitle}. ${text.sacramentAfterHymn}`,
+    script: renderConductScriptTemplate(template, {
+      sacramentHymnNumber: entry?.hymnNumber ?? "_____",
+      sacramentHymnTitle: hymnTitle,
+    }) || `${text.sacramentPreparation} ${hymnNumber}, ${hymnTitle}. ${text.sacramentAfterHymn}`,
     highlights: [entry?.hymnNumber ? hymnNumber : "", entry?.hymnTitle?.trim() ?? ""].filter(Boolean),
   }
 }
@@ -241,7 +273,7 @@ function HighlightedText({
   )
 }
 
-function buildAgenda(meeting: ConductMeeting, language: ContentLanguage): Step[] {
+function buildAgenda(meeting: ConductMeeting, language: ContentLanguage, scriptTemplates?: ConductScriptTemplateMap): Step[] {
   const steps: Step[] = []
   const text = getContentText(language).conduct
   const { entries, assignments, specialType } = meeting
@@ -255,7 +287,7 @@ function buildAgenda(meeting: ConductMeeting, language: ContentLanguage): Step[]
     entry?.hymnTitle?.trim()
       ? { title: `"${entry.hymnTitle}"`, hymnNum: entry.hymnNumber }
       : { title: text.hymnNotChosen }
-  const welcomeScript = buildWelcomeScript(meeting, language)
+  const welcomeScript = buildWelcomeScript(meeting, language, scriptTemplates)
 
   // Welcome & conducting
   steps.push({
@@ -308,7 +340,7 @@ function buildAgenda(meeting: ConductMeeting, language: ContentLanguage): Step[]
 
   // Sacrament administration script includes the sacrament hymn details.
   const sh = getStatic("sacrament-hymn")
-  const sacramentPreparation = buildSacramentPreparationScript(sh, language)
+  const sacramentPreparation = buildSacramentPreparationScript(sh, language, scriptTemplates)
 
   // Sacrament ordinance
   steps.push({
@@ -432,6 +464,7 @@ export function ConductView({
   language,
   notes,
   attendance,
+  scriptTemplates,
   onNotesChange,
   onAttendanceChange,
   onBusinessItemCompletedChange,
@@ -440,7 +473,7 @@ export function ConductView({
   const contentLanguage = normalizeContentLanguage(language ?? meeting.contentLanguage)
   const text = getContentText(contentLanguage).conduct
   const prayerLanguage = contentLanguage === "SPA" ? "es" : "en"
-  const steps = buildAgenda(meeting, contentLanguage)
+  const steps = buildAgenda(meeting, contentLanguage, scriptTemplates)
   const total = steps.length
   const checkedAnnouncements = meeting.announcements.filter((item) => item.checked)
   const businessSections = meeting.businessSections
@@ -451,6 +484,7 @@ export function ConductView({
   const [now, setNow] = useState(new Date())
   const [notesOpen, setNotesOpen] = useState(false)
   const [attendanceOpen, setAttendanceOpen] = useState(false)
+  const agendaScrollRef = useRef<HTMLDivElement | null>(null)
   const currentRef = useRef<HTMLDivElement | null>(null)
   const attendanceDisplay = typeof attendance === "number" ? attendance : 0
   const adjustAttendance = (delta: number) => {
@@ -510,9 +544,20 @@ export function ConductView({
     return () => window.removeEventListener("keydown", onKey)
   }, [total, onClose, notesOpen, attendanceOpen])
 
-  // Scroll current step into view
+  // Keep the active step pinned to the top of the agenda when navigating.
   useEffect(() => {
-    currentRef.current?.scrollIntoView({ block: "center", behavior: "smooth" })
+    const scrollContainer = agendaScrollRef.current
+    const currentStep = currentRef.current
+    if (!scrollContainer || !currentStep) return
+
+    const scrollPadding = 12
+    const containerRect = scrollContainer.getBoundingClientRect()
+    const stepRect = currentStep.getBoundingClientRect()
+
+    scrollContainer.scrollTo({
+      top: scrollContainer.scrollTop + stepRect.top - containerRect.top - scrollPadding,
+      behavior: "smooth",
+    })
   }, [cur])
 
   const navigate = (idx: number) =>
@@ -606,7 +651,7 @@ export function ConductView({
       </div>
 
       {/* ── Agenda ── */}
-      <div className="flex-1 overflow-y-auto px-4 pb-24 pt-6 sm:px-10 sm:pb-28">
+      <div ref={agendaScrollRef} className="flex-1 overflow-y-auto px-4 pb-24 pt-6 sm:px-10 sm:pb-28">
         <div className="mx-auto w-full max-w-[900px]">
           <div className="flex flex-col gap-0.5">
             {steps.map((step, i) => {
@@ -623,7 +668,7 @@ export function ConductView({
                     ref={state === "current" ? currentRef : null}
                     onClick={() => navigate(i)}
                     className={cn(
-                      "grid cursor-pointer grid-cols-[80px_1fr_auto] items-center gap-[18px] rounded-[10px] border px-[18px] py-3.5 transition-all duration-150",
+                      "grid cursor-pointer grid-cols-[80px_1fr_auto] items-center gap-[18px] rounded-[10px] border px-[18px] py-3.5 transition-[background-color,border-color,box-shadow,opacity] duration-150",
                       state === "done" &&
                         "border-transparent opacity-40 hover:bg-[#f0ede3] hover:opacity-60 dark:hover:bg-[#1a1a1a]",
                       state === "upcoming" &&

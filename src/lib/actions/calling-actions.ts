@@ -1262,12 +1262,20 @@ export async function getProcessDetails(processId: string) {
     };
 }
 
-// Create a sacrament-meeting business item (sustaining / setting_apart / release)
+// Create a sacrament-meeting business item from a calling process.
 // from a calling process, pre-populating person + calling.
 export async function createCallingBusinessItem(
     processId: string,
     input: {
-        category: "sustaining" | "release" | "setting_apart" | "confirmation" | "ordination" | "other";
+        category:
+            | "sustaining"
+            | "release"
+            | "ordination"
+            | "confirmation_ordinance"
+            | "new_member_welcome"
+            | "child_blessing"
+            | "records_received"
+            | "miscellaneous";
         personName?: string;
         positionCalling?: string;
         actionDate?: string;

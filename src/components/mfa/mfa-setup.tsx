@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "@/lib/toast";
 import { createClient } from "@/lib/supabase/client";
 import { TotpInput } from "@/components/mfa/totp-input";
+import { recordMfaAuditEvent } from "@/lib/actions/mfa-actions";
 import { Copy, Check } from "lucide-react";
 
 const inkSubtle = "color-mix(in srgb, var(--lp-ink) 65%, transparent)";
@@ -88,10 +89,12 @@ export function MfaSetup({ required = false, redirectTo = "/dashboard" }: MfaSet
 
       if (verifyError) {
         toast.error("Invalid Code", { description: "The verification code is incorrect. Please try again." });
+        void recordMfaAuditEvent({ eventType: "mfa.enroll.failure", outcome: "failure" });
         return;
       }
 
       toast.success("MFA Enabled", { description: "Two-factor authentication has been set up successfully." });
+      void recordMfaAuditEvent({ eventType: "mfa.enroll.success", outcome: "success" });
 
       router.push(redirectTo);
       router.refresh();

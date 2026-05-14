@@ -9,6 +9,10 @@ export interface PillOption {
   label: string;
   description: string; // Kept for data but NOT rendered
   icon?: ReactNode;
+  /** When true, the pill renders disabled and cannot be selected. */
+  disabled?: boolean;
+  /** Optional small badge appended to the label (e.g., "Coming soon"). */
+  badge?: string;
 }
 
 interface PillSelectorProps {
@@ -50,7 +54,7 @@ export function PillSelector({
 
   const isSelected = (optionValue: string) => selectedValues.includes(optionValue);
 
-  const isDisabled = (optionValue: string) => {
+  const isCapacityDisabled = (optionValue: string) => {
     if (!multiple || !maxSelections) return false;
     const currentValues = selectedValues.filter((v) => v !== '');
     return currentValues.length >= maxSelections && !currentValues.includes(optionValue);
@@ -75,7 +79,7 @@ export function PillSelector({
     >
       {options.map((option) => {
         const selected = isSelected(option.value);
-        const disabled = isDisabled(option.value);
+        const disabled = Boolean(option.disabled) || isCapacityDisabled(option.value);
 
         return (
           <button
@@ -92,10 +96,25 @@ export function PillSelector({
               'transition-all duration-200 ease-in-out',
               'focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
               !selected && !disabled && 'hover:opacity-90',
-              disabled && 'cursor-not-allowed opacity-40'
+              disabled && 'cursor-not-allowed opacity-55'
             )}
           >
             <span className="text-sm font-medium">{option.label}</span>
+            {option.badge && (
+              <span
+                className="rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em]"
+                style={{
+                  background: selected
+                    ? 'color-mix(in srgb, var(--lp-bg) 24%, transparent)'
+                    : 'color-mix(in srgb, var(--lp-ink) 8%, transparent)',
+                  color: selected
+                    ? 'var(--lp-bg)'
+                    : 'color-mix(in srgb, var(--lp-ink) 60%, transparent)',
+                }}
+              >
+                {option.badge}
+              </span>
+            )}
             <div
               className={cn(
                 'flex h-4 w-4 flex-shrink-0 items-center justify-center transition-all duration-200',

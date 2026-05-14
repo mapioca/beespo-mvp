@@ -76,9 +76,16 @@ const CATEGORY_OPTIONS = [
         requiresGender: true,
     },
     {
-        value: "confirmation",
+        value: "confirmation_ordinance",
         label: "Confirmation",
-        description: "Accept a new member into fellowship",
+        description: "Transition into a confirmation during sacrament meeting",
+        requiresCalling: false,
+        requiresGender: true,
+    },
+    {
+        value: "new_member_welcome",
+        label: "New Member Welcome",
+        description: "Welcome a member who has already been baptized and confirmed",
         requiresCalling: false,
         requiresGender: true,
     },
@@ -91,9 +98,23 @@ const CATEGORY_OPTIONS = [
         requiresOffice: true,
     },
     {
-        value: "other",
-        label: "Other",
-        description: "Custom business item",
+        value: "child_blessing",
+        label: "Child Blessing",
+        description: "Transition into naming and blessing a child",
+        requiresCalling: false,
+        requiresGender: false,
+    },
+    {
+        value: "records_received",
+        label: "Records Received",
+        description: "Welcome members whose records were received",
+        requiresCalling: false,
+        requiresGender: false,
+    },
+    {
+        value: "miscellaneous",
+        label: "Miscellaneous",
+        description: "Open text for other recognized business",
         requiresCalling: false,
         requiresGender: false,
     },
@@ -148,7 +169,8 @@ export function BusinessSelectorPopover({
                 gender: newCategory === "ordination" ? "male" : newGender,
                 office: newOffice,
                 priesthood: newOffice ? getPriesthoodFromOffice(newOffice) : undefined,
-                customScript: newCategory === "other" ? newCustomScript : undefined,
+                customText: newCategory === "miscellaneous" ? newCustomScript : undefined,
+                customScript: newCategory === "miscellaneous" ? newCustomScript : undefined,
             },
         });
     }, [newName, newCalling, newCategory, newNotes, newGender, newOffice, newCustomScript, newLanguage]);
@@ -313,7 +335,8 @@ export function BusinessSelectorPopover({
             gender: newCategory === "ordination" ? "male" : newGender,
             office: newOffice,
             priesthood: newOffice ? getPriesthoodFromOffice(newOffice) : undefined,
-            customScript: newCategory === "other" ? newCustomScript : undefined,
+            customText: newCategory === "miscellaneous" ? newCustomScript : undefined,
+            customScript: newCategory === "miscellaneous" ? newCustomScript : undefined,
         };
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -497,7 +520,7 @@ export function BusinessSelectorPopover({
                                 </div>
                             )}
 
-                            {newCategory === "other" && (
+                            {newCategory === "miscellaneous" && (
                                 <div className="space-y-1">
                                     <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
                                         Custom Script (Optional)

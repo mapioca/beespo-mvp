@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { verifyTurnstile } from "@/lib/security/turnstile";
 import { getClientIp } from "@/lib/security/request-ip";
 import { checkRateLimit } from "@/lib/rate-limiter";
+import { setPendingSignupCookie } from "@/lib/auth/pending-signup-cookie";
 
 const GENERIC_RATE_LIMIT_ERROR =
     "Too many attempts. Please wait a minute and try again.";
@@ -137,6 +138,12 @@ export async function signupAction({
     // address exists)
     const needsEmailConfirmation =
         data.user.identities?.length === 0 || !data.user.email_confirmed_at;
+
+    // Short-lived signed cookie that authorizes the same browser to edit the
+    // pending signup (used by the /check-email "Change email" affordance).
+    if (needsEmailConfirmation) {
+        await setPendingSignupCookie(data.user.id);
+    }
 
     return { ok: true, needsEmailConfirmation, userId: data.user.id };
 }

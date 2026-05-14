@@ -1,8 +1,7 @@
 import { cache } from "react";
-import type { SupabaseClient } from "@supabase/supabase-js";
+import { createClient as createBaseClient, type SupabaseClient } from "@supabase/supabase-js";
 import { revalidateTag, unstable_cache } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
 import { measureAsync } from "@/lib/performance/measure";
 import type { Database } from "@/types/database";
 import type {
@@ -42,6 +41,20 @@ type NoteSummary = { id: string; title: string | null; notebook_id: string | nul
 
 const fromTable = (supabase: NavigationDbClient, table: string) =>
   supabase.from(table as never) as ReturnType<typeof supabase.from>;
+
+// Creates a user-scoped client using a JWT access token rather than cookies.
+// Safe to use inside unstable_cache callbacks (no cookie store access needed).
+// RLS policies are enforced by Supabase via the Bearer token.
+function createUserScopedClient(accessToken: string): NavigationDbClient {
+  return createBaseClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+    {
+      global: { headers: { Authorization: `Bearer ${accessToken}` } },
+      auth: { autoRefreshToken: false, persistSession: false },
+    }
+  ) as unknown as NavigationDbClient;
+}
 
 const NAVIGATION_ICON_BY_TYPE: Record<FavoriteEntityType, FavoriteEntityType> = {
   meeting: "meeting",
@@ -99,9 +112,10 @@ function getUserNavigationCacheTag(context: UserNavigationContext) {
 }
 
 async function fetchUserNavigationItemsForContext(
-  context: UserNavigationContext
+  context: UserNavigationContext,
+  accessToken: string
 ): Promise<UserNavigationItems> {
-  const supabase = createAdminClient() as unknown as NavigationDbClient;
+  const supabase = createUserScopedClient(accessToken);
 
   const [favoritesResult, recentsResult] = await Promise.all([
     fromTable(supabase, "user_favorites")
@@ -142,10 +156,15 @@ async function fetchUserNavigationItemsForContext(
 }
 
 async function getCachedNavigationItemsForContext(
-  context: UserNavigationContext
+  context: UserNavigationContext,
+  // accessToken is captured via closure so it is NOT part of the cache key.
+  // Cache key = [workspaceId, userId] only — stable across token refreshes.
+  // On a cache hit the stored result is returned without calling the inner fn.
+  // On a cache miss the closure provides a valid token for the actual fetch.
+  accessToken: string
 ): Promise<UserNavigationItems> {
   return unstable_cache(
-    async () => fetchUserNavigationItemsForContext(context),
+    async () => fetchUserNavigationItemsForContext(context, accessToken),
     ["dashboard-navigation", context.workspaceId, context.userId],
     {
       revalidate: USER_NAVIGATION_REVALIDATE_SECONDS,
@@ -377,21 +396,29 @@ export const getUserNavigationItems = cache(async (
   contextOverride?: UserNavigationContext
 ): Promise<UserNavigationItems> => {
   return measureAsync("dashboard.navigation_items", async () => {
-    if (contextOverride) {
-      return getCachedNavigationItemsForContext(contextOverride);
+    // Create the cookie-based client here (has cookie access).
+    // We extract the access token before entering the unstable_cache boundary,
+    // which has no cookie access. getSession() is a local cookie read — no
+    // network round-trip — so this is cheap on the hot path.
+    const supabase = await createClient();
+    const { data: { session } } = await supabase.auth.getSession();
+    const accessToken = session?.access_token;
+
+    if (!accessToken) {
+      return { favorites: [], recents: [] };
     }
 
-    const supabase = await createClient();
+    if (contextOverride) {
+      return getCachedNavigationItemsForContext(contextOverride, accessToken);
+    }
+
     const context = await getCurrentNavigationContext(supabase);
 
     if (!context) {
-      return {
-        favorites: [],
-        recents: [],
-      };
+      return { favorites: [], recents: [] };
     }
 
-    return getCachedNavigationItemsForContext(context);
+    return getCachedNavigationItemsForContext(context, accessToken);
   }, { thresholdMs: 25 });
 });
 
