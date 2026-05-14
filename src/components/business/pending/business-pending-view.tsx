@@ -9,6 +9,7 @@ import { toast } from "@/lib/toast"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import type { BusinessItem } from "@/components/business/business-table"
+import type { ConductScriptKey, ConductScriptTemplateMap } from "@/lib/conduct-script-templates"
 import {
   BusinessStatusTabs,
   type BusinessLifecycleStatus,
@@ -23,17 +24,34 @@ import {
   BUSINESS_CATEGORY_LABEL,
   type BusinessCategoryKey,
 } from "@/lib/business/combined-script"
+import { resolveBusinessMeetingScripts } from "@/lib/business/meeting-scripts"
 import { readPlannerDraftMeta, getDefaultMeetingTitle } from "@/lib/sundays"
 
 interface BusinessPendingViewProps {
   items: BusinessItem[]
+  workspaceId: string
+  userId: string
+  language: "ENG" | "SPA"
   onOpenItem?: (item: BusinessItem) => void
+}
+
+type BusinessMeetingScriptRow = {
+  script_key: ConductScriptKey
+  template_snapshot: string
+  rendered_script: string
+  is_custom: boolean
+  business_item_ids: string[]
 }
 
 function lifecycleStatusFor(item: BusinessItem): BusinessLifecycleStatus {
   if (item.status === "completed") return "presented"
   if (item.action_date) return "scheduled"
   return "pending"
+}
+
+function isPastDueDate(date: string | null | undefined): boolean {
+  if (!date) return false
+  return date < format(new Date(), "yyyy-MM-dd")
 }
 
 function getNextSundayIso(): string {
@@ -47,9 +65,12 @@ function emptyGrouping(): Record<BusinessCategoryKey, BusinessItem[]> {
   return {
     sustaining: [],
     release: [],
-    confirmation: [],
     ordination: [],
-    other: [],
+    confirmation_ordinance: [],
+    new_member_welcome: [],
+    child_blessing: [],
+    records_received: [],
+    miscellaneous: [],
   }
 }
 
@@ -61,20 +82,10 @@ function groupByCategory(
     if (isBusinessCategoryKey(item.category)) {
       groups[item.category].push(item)
     } else {
-      groups.other.push(item)
+      groups.miscellaneous.push(item)
     }
   }
   return groups
-}
-
-function emptyScriptOverrides(): Record<BusinessCategoryKey, string | null> {
-  return {
-    sustaining: null,
-    release: null,
-    confirmation: null,
-    ordination: null,
-    other: null,
-  }
 }
 
 function itemSubtitle(item: BusinessItem): string {
@@ -115,6 +126,7 @@ function ScheduledMeetingCards({
         const dateLabel = isoDate !== "unknown"
           ? format(new Date(`${isoDate}T12:00:00`), "EEEE, MMMM d, yyyy")
           : "Unknown date"
+        const isPastDue = isoDate !== "unknown" && isPastDueDate(isoDate)
 
         return (
           <div key={isoDate} className="rounded-2xl border border-border/70 bg-surface-raised overflow-hidden shadow-[var(--shadow-builder-card)]">
@@ -133,6 +145,11 @@ function ScheduledMeetingCards({
                 <span className="shrink-0 rounded-full border border-border/60 bg-surface-sunken px-2.5 py-1 text-[11.5px] font-medium text-muted-foreground">
                   {dateItems.length} item{dateItems.length === 1 ? "" : "s"}
                 </span>
+                {isPastDue ? (
+                  <span className="shrink-0 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[11.5px] font-medium text-amber-700 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-300">
+                    Past due
+                  </span>
+                ) : null}
               </div>
             </div>
 
@@ -177,13 +194,20 @@ function ScheduledMeetingCards({
   )
 }
 
-export function BusinessPendingView({ items, onOpenItem }: BusinessPendingViewProps) {
+export function BusinessPendingView({
+  items,
+  workspaceId,
+  userId,
+  language,
+  onOpenItem,
+}: BusinessPendingViewProps) {
   const router = useRouter()
   const [active, setActive] = useState<BusinessLifecycleStatus>("pending")
   const [meetingDate, setMeetingDate] = useState<string>(getNextSundayIso())
   const [scheduling, setScheduling] = useState(false)
   const [unschedulingItemId, setUnschedulingItemId] = useState<string | null>(null)
-  const [scriptOverridesByDate, setScriptOverridesByDate] = useState<Record<string, Record<BusinessCategoryKey, string | null>>>({})
+  const [scriptTemplates, setScriptTemplates] = useState<ConductScriptTemplateMap>({})
+  const [meetingScriptsByDate, setMeetingScriptsByDate] = useState<Record<string, Record<string, BusinessMeetingScriptRow>>>({})
   const [selectedItemIds, setSelectedItemIds] = useState<Set<string>>(new Set())
 
   const byStatus = useMemo(() => {
@@ -229,19 +253,69 @@ export function BusinessPendingView({ items, onOpenItem }: BusinessPendingViewPr
     return Array.from(map.entries()).sort(([a], [b]) => a.localeCompare(b))
   }, [active, activeItems])
 
-  const handleScriptOverrideChange = useCallback(
-    (date: string, category: BusinessCategoryKey, script: string | null) => {
-      setScriptOverridesByDate((prev) => ({
-        ...prev,
-        [date]: {
-          ...emptyScriptOverrides(),
-          ...prev[date],
-          [category]: script,
-        },
-      }))
-    },
-    []
-  )
+  useEffect(() => {
+    let cancelled = false
+    const supabase = createClient()
+
+    void (async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase.from("conduct_script_templates") as any)
+        .select("script_key, template")
+        .eq("workspace_id", workspaceId)
+        .eq("language", language)
+
+      if (cancelled || error) return
+
+      const nextTemplates: ConductScriptTemplateMap = {}
+      for (const row of (data ?? []) as Array<{ script_key: ConductScriptKey; template: string }>) {
+        nextTemplates[row.script_key] = row.template
+      }
+      setScriptTemplates(nextTemplates)
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [language, workspaceId])
+
+  useEffect(() => {
+    const scheduledDates = Array.from(
+      new Set(
+        byStatus.scheduled
+          .map((item) => item.action_date)
+          .filter((value): value is string => Boolean(value))
+      )
+    )
+
+    if (scheduledDates.length === 0) {
+      setMeetingScriptsByDate({})
+      return
+    }
+
+    let cancelled = false
+    const supabase = createClient()
+
+    void (async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase.from("business_meeting_scripts") as any)
+        .select("meeting_date, script_key, template_snapshot, rendered_script, is_custom, business_item_ids")
+        .eq("workspace_id", workspaceId)
+        .in("meeting_date", scheduledDates)
+
+      if (cancelled || error) return
+
+      const nextRows: Record<string, Record<string, BusinessMeetingScriptRow>> = {}
+      for (const row of (data ?? []) as Array<BusinessMeetingScriptRow & { meeting_date: string }>) {
+        nextRows[row.meeting_date] ??= {}
+        nextRows[row.meeting_date][row.script_key] = row
+      }
+      setMeetingScriptsByDate(nextRows)
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [byStatus.scheduled, workspaceId])
 
   const handleToggleItemSelection = useCallback((itemId: string) => {
     setSelectedItemIds(prev => {
@@ -262,6 +336,64 @@ export function BusinessPendingView({ items, onOpenItem }: BusinessPendingViewPr
   const handleDeselectAll = useCallback(() => {
     setSelectedItemIds(new Set());
   }, []);
+
+  const syncMeetingScriptsForDate = useCallback(async (date: string, scheduledItemsForDate: BusinessItem[]) => {
+    const supabase = createClient()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const scriptsTable = supabase.from("business_meeting_scripts") as any
+
+    await scriptsTable
+      .delete()
+      .eq("workspace_id", workspaceId)
+      .eq("meeting_date", date)
+
+    if (scheduledItemsForDate.length === 0) {
+      setMeetingScriptsByDate((prev) => {
+        const next = { ...prev }
+        delete next[date]
+        return next
+      })
+      return
+    }
+
+    const resolvedScripts = resolveBusinessMeetingScripts(
+      scheduledItemsForDate,
+      language,
+      scriptTemplates
+    )
+
+    const rows = resolvedScripts.map((script) => ({
+      workspace_id: workspaceId,
+      meeting_date: date,
+      script_key: script.scriptKey,
+      template_snapshot: script.templateSnapshot,
+      rendered_script: script.renderedScript,
+      business_item_ids: script.businessItemIds,
+      is_custom: false,
+      created_by: userId,
+      updated_by: userId,
+    }))
+
+    const { error } = await scriptsTable.upsert(rows, { onConflict: "workspace_id,meeting_date,script_key" })
+    if (error) throw error
+
+    setMeetingScriptsByDate((prev) => ({
+      ...prev,
+      [date]: Object.fromEntries(
+        rows.map((row) => [
+          row.script_key,
+          {
+            script_key: row.script_key,
+            template_snapshot: row.template_snapshot,
+            rendered_script: row.rendered_script,
+            is_custom: row.is_custom,
+            business_item_ids: row.business_item_ids,
+          },
+        ])
+      ),
+    }))
+  }, [language, scriptTemplates, userId, workspaceId])
+
   const handleUnschedule = useCallback(async (item: BusinessItem) => {
     setUnschedulingItemId(item.id)
     const supabase = createClient()
@@ -272,11 +404,22 @@ export function BusinessPendingView({ items, onOpenItem }: BusinessPendingViewPr
     if (error) {
       toast.error(error.message || "Failed to move item back to pending.")
     } else {
+      if (item.action_date) {
+        try {
+          const remainingItems = items.filter(
+            (candidate) => candidate.action_date === item.action_date && candidate.id !== item.id
+          )
+          await syncMeetingScriptsForDate(item.action_date, remainingItems)
+        } catch (syncError) {
+          console.error(syncError)
+          toast.warning("Business item was unscheduled, but meeting scripts could not be refreshed.")
+        }
+      }
       toast.success(`${item.person_name} moved back to pending.`)
       router.refresh()
     }
     setUnschedulingItemId(null)
-  }, [router]);
+  }, [items, router, syncMeetingScriptsForDate]);
 
   const handleSchedule = useCallback(async () => {
     if (active !== "pending" || selectedItemIds.size === 0 || !meetingDate) return
@@ -300,6 +443,13 @@ export function BusinessPendingView({ items, onOpenItem }: BusinessPendingViewPr
     if (errors.length > 0) {
       toast.error(errors[0].error?.message || "Failed to schedule business items.")
     } else {
+      try {
+        const existingScheduledItems = items.filter((item) => item.action_date === meetingDate)
+        await syncMeetingScriptsForDate(meetingDate, [...existingScheduledItems, ...selectedItems])
+      } catch (syncError) {
+        console.error(syncError)
+        toast.warning("Business items were scheduled, but meeting scripts could not be synced.")
+      }
       const label = format(new Date(`${meetingDate}T12:00:00`), "MMM d, yyyy")
       toast.success(`${selectedItems.length} item${selectedItems.length === 1 ? "" : "s"} scheduled for ${label}`)
       setSelectedItemIds(new Set()); // Clear selection after successful scheduling
@@ -307,7 +457,241 @@ export function BusinessPendingView({ items, onOpenItem }: BusinessPendingViewPr
       setActive("scheduled")
     }
     setScheduling(false)
-  }, [active, activeItems, selectedItemIds, meetingDate, router])
+  }, [active, activeItems, items, meetingDate, router, selectedItemIds, syncMeetingScriptsForDate])
+
+  const handleSaveMeetingScript = useCallback(async (
+    date: string,
+    scriptKey: ConductScriptKey,
+    templateSnapshot: string,
+    renderedScript: string,
+    businessItemIds: string[]
+  ) => {
+    const supabase = createClient()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase.from("business_meeting_scripts") as any)
+      .upsert(
+        {
+          workspace_id: workspaceId,
+          meeting_date: date,
+          script_key: scriptKey,
+          template_snapshot: templateSnapshot,
+          rendered_script: renderedScript,
+          business_item_ids: businessItemIds,
+          is_custom: true,
+          created_by: userId,
+          updated_by: userId,
+        },
+        { onConflict: "workspace_id,meeting_date,script_key" }
+      )
+
+    if (error) {
+      toast.error(error.message || "Failed to save meeting script.")
+      return
+    }
+
+    setMeetingScriptsByDate((prev) => ({
+      ...prev,
+      [date]: {
+        ...(prev[date] ?? {}),
+        [scriptKey]: {
+          script_key: scriptKey,
+          template_snapshot: templateSnapshot,
+          rendered_script: renderedScript,
+          is_custom: true,
+          business_item_ids: businessItemIds,
+        },
+      },
+    }))
+    toast.success("Meeting script saved.")
+  }, [userId, workspaceId])
+
+  const handleResetMeetingScript = useCallback(async (
+    date: string,
+    scriptKey: ConductScriptKey,
+    businessItemIds: string[]
+  ) => {
+    const scheduledItemsForDate = items.filter((item) => item.action_date === date)
+    const targetItems = scheduledItemsForDate.filter((item) => businessItemIds.includes(item.id))
+    const [resolved] = resolveBusinessMeetingScripts(targetItems, language, scriptTemplates)
+    if (!resolved || resolved.scriptKey !== scriptKey) return
+
+    const supabase = createClient()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase.from("business_meeting_scripts") as any)
+      .upsert(
+        {
+          workspace_id: workspaceId,
+          meeting_date: date,
+          script_key: scriptKey,
+          template_snapshot: resolved.templateSnapshot,
+          rendered_script: resolved.renderedScript,
+          business_item_ids: resolved.businessItemIds,
+          is_custom: false,
+          created_by: userId,
+          updated_by: userId,
+        },
+        { onConflict: "workspace_id,meeting_date,script_key" }
+      )
+
+    if (error) {
+      toast.error(error.message || "Failed to reset meeting script.")
+      return
+    }
+
+    setMeetingScriptsByDate((prev) => ({
+      ...prev,
+      [date]: {
+        ...(prev[date] ?? {}),
+        [scriptKey]: {
+          script_key: scriptKey,
+          template_snapshot: resolved.templateSnapshot,
+          rendered_script: resolved.renderedScript,
+          is_custom: false,
+          business_item_ids: resolved.businessItemIds,
+        },
+      },
+    }))
+    toast.success("Meeting script reset.")
+  }, [items, language, scriptTemplates, userId, workspaceId])
+
+  const handleRescheduleGroup = useCallback(async (fromDate: string, toDate: string) => {
+    if (fromDate === toDate) return
+
+    const sourceItems = items.filter((item) => item.action_date === fromDate && item.status !== "completed")
+    if (sourceItems.length === 0) return
+
+    const sourceResolvedScripts = resolveBusinessMeetingScripts(sourceItems, language, scriptTemplates)
+    const destinationItems = items.filter((item) => item.action_date === toDate && item.status !== "completed")
+
+    const supabase = createClient()
+    const sourceMeetingScripts = meetingScriptsByDate[fromDate] ?? {}
+    const destinationMeetingScripts = meetingScriptsByDate[toDate] ?? {}
+
+    const updateResults = await Promise.all(
+      sourceItems.map(async (item) =>
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (supabase.from("business_items") as any)
+          .update({ action_date: toDate })
+          .eq("id", item.id)
+      )
+    )
+
+    const updateError = updateResults.find((result) => result.error)?.error
+    if (updateError) {
+      toast.error(updateError.message || "Failed to reschedule business items.")
+      return
+    }
+
+    const combinedDestinationItems = [...destinationItems, ...sourceItems.map((item) => ({ ...item, action_date: toDate }))]
+    const combinedResolvedScripts = resolveBusinessMeetingScripts(
+      combinedDestinationItems,
+      language,
+      scriptTemplates
+    )
+
+    const rowsToUpsert = combinedResolvedScripts.map((script) => {
+      const sourcePersisted = sourceMeetingScripts[script.scriptKey]
+      const destinationPersisted = destinationMeetingScripts[script.scriptKey]
+
+      if (
+        destinationPersisted?.is_custom &&
+        JSON.stringify([...(destinationPersisted.business_item_ids ?? [])].sort()) ===
+          JSON.stringify([...script.businessItemIds].sort())
+      ) {
+        return {
+          workspace_id: workspaceId,
+          meeting_date: toDate,
+          script_key: script.scriptKey,
+          template_snapshot: destinationPersisted.template_snapshot,
+          rendered_script: destinationPersisted.rendered_script,
+          business_item_ids: destinationPersisted.business_item_ids,
+          is_custom: true,
+          created_by: userId,
+          updated_by: userId,
+        }
+      }
+
+      if (
+        sourcePersisted?.is_custom &&
+        JSON.stringify([...(sourcePersisted.business_item_ids ?? [])].sort()) ===
+          JSON.stringify([...script.businessItemIds].sort())
+      ) {
+        return {
+          workspace_id: workspaceId,
+          meeting_date: toDate,
+          script_key: script.scriptKey,
+          template_snapshot: sourcePersisted.template_snapshot,
+          rendered_script: sourcePersisted.rendered_script,
+          business_item_ids: sourcePersisted.business_item_ids,
+          is_custom: true,
+          created_by: userId,
+          updated_by: userId,
+        }
+      }
+
+      return {
+        workspace_id: workspaceId,
+        meeting_date: toDate,
+        script_key: script.scriptKey,
+        template_snapshot: script.templateSnapshot,
+        rendered_script: script.renderedScript,
+        business_item_ids: script.businessItemIds,
+        is_custom: false,
+        created_by: userId,
+        updated_by: userId,
+      }
+    })
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error: upsertError } = await (supabase.from("business_meeting_scripts") as any)
+      .upsert(rowsToUpsert, { onConflict: "workspace_id,meeting_date,script_key" })
+
+    if (upsertError) {
+      toast.error(upsertError.message || "Business items were moved, but scripts could not be preserved.")
+      router.refresh()
+      return
+    }
+
+    const sourceScriptKeys = sourceResolvedScripts.map((script) => script.scriptKey)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error: deleteError } = await (supabase.from("business_meeting_scripts") as any)
+      .delete()
+      .eq("workspace_id", workspaceId)
+      .eq("meeting_date", fromDate)
+      .in("script_key", sourceScriptKeys)
+
+    if (deleteError) {
+      toast.warning("Business items were rescheduled and scripts preserved, but the old meeting scripts could not be cleaned up.")
+      router.refresh()
+      return
+    }
+
+    setMeetingScriptsByDate((prev) => {
+      const next = { ...prev }
+      delete next[fromDate]
+      next[toDate] = {
+        ...Object.fromEntries(
+          Object.entries(next[toDate] ?? {}).filter(([scriptKey]) => !sourceScriptKeys.includes(scriptKey as ConductScriptKey))
+        ),
+        ...Object.fromEntries(
+          rowsToUpsert.map((row) => [
+            row.script_key,
+            {
+              script_key: row.script_key,
+              template_snapshot: row.template_snapshot,
+              rendered_script: row.rendered_script,
+              is_custom: row.is_custom,
+              business_item_ids: row.business_item_ids,
+            },
+          ])
+        ),
+      }
+      return next
+    })
+
+    toast.success(`Moved ${sourceItems.length} unresolved item${sourceItems.length === 1 ? "" : "s"} to ${format(new Date(`${toDate}T12:00:00`), "MMM d, yyyy")}. Matching script groups were updated.`)
+    router.refresh()
+  }, [items, language, meetingScriptsByDate, router, scriptTemplates, userId, workspaceId])
 return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-6 sm:px-6 lg:px-10 lg:py-8">
       <BusinessStatusTabs active={active} counts={counts} onChange={setActive} />
@@ -333,14 +717,15 @@ return (
                     items={dateItems}
                     groupedByCategory={dateGrouped}
                     meetingDate={isoDate}
-                    scriptOverrides={scriptOverridesByDate[isoDate]}
-                    onScriptOverrideChange={(category, script) =>
-                      handleScriptOverrideChange(isoDate, category, script)
+                    language={language}
+                    scriptTemplates={scriptTemplates}
+                    meetingScripts={meetingScriptsByDate[isoDate]}
+                    onSaveMeetingScript={(scriptKey, templateSnapshot, renderedScript, businessItemIds) =>
+                      handleSaveMeetingScript(isoDate, scriptKey, templateSnapshot, renderedScript, businessItemIds)
                     }
-                    selectedItemIds={selectedItemIds}
-                    onToggleItemSelection={handleToggleItemSelection}
-                    onSelectAll={handleSelectAll}
-                    onDeselectAll={handleDeselectAll}
+                    onResetMeetingScript={(scriptKey, businessItemIds) =>
+                      handleResetMeetingScript(isoDate, scriptKey, businessItemIds)
+                    }
                   />
                 )
               })}
@@ -355,6 +740,7 @@ return (
           <BusinessReviewPanel
             items={activeItems}
             groupedByCategory={grouped}
+            language={language}
             meetingDate={meetingDate}
             onMeetingDateChange={setMeetingDate}
             activeStatus={active}
@@ -366,6 +752,7 @@ return (
             onSelectAll={handleSelectAll}
             onDeselectAll={handleDeselectAll}
             onUnscheduleItem={active === "scheduled" ? handleUnschedule : undefined}
+            onRescheduleGroup={active === "scheduled" ? handleRescheduleGroup : undefined}
             unschedulingItemId={unschedulingItemId}
           />
         </div>

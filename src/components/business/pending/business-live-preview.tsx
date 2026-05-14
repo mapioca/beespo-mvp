@@ -9,36 +9,47 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { SundayPickerModal } from "@/components/ui/sunday-picker-modal"
+import { Textarea } from "@/components/ui/textarea"
 import {
   BUSINESS_CATEGORY_LABEL,
   BUSINESS_CATEGORY_ORDER,
   BUSINESS_CATEGORY_PLURAL,
   describeOrdination,
-  generateCombinedBusinessScript,
   type BusinessCategoryKey,
 } from "@/lib/business/combined-script"
 import { validateBusinessItemDetails } from "@/lib/business-script-generator"
-import { scriptToTemplate, templateToScript, type ScriptVariable } from "@/lib/business/script-template"
+import { getAllowedConductScriptVariableKeys } from "@/lib/conduct-script-templates"
+import type { ConductScriptKey, ConductScriptTemplateMap } from "@/lib/conduct-script-templates"
+import { renderConductScriptTemplate } from "@/lib/conduct-script-templates"
+import { buildBusinessScriptTemplateVariables, resolveBusinessMeetingScripts } from "@/lib/business/meeting-scripts"
+import { scriptToTemplate } from "@/lib/business/script-template"
 import type { BusinessLifecycleStatus } from "./business-status-tabs"
 import type { BusinessItem } from "@/components/business/business-table"
-import { BusinessScriptEditor } from "./business-script-editor"
+
+type BusinessMeetingScriptRow = {
+  script_key: ConductScriptKey
+  template_snapshot: string
+  rendered_script: string
+  is_custom: boolean
+  business_item_ids: string[]
+}
 
 interface BusinessScriptPreviewProps {
   items: BusinessItem[]
   groupedByCategory: Record<BusinessCategoryKey, BusinessItem[]>
   meetingDate: string
-  scriptOverrides?: Record<BusinessCategoryKey, string | null>
-  onScriptOverrideChange?: (category: BusinessCategoryKey, script: string | null) => void
-  selectedItemIds?: Set<string>
-  onToggleItemSelection?: (itemId: string) => void
-  onSelectAll?: () => void
-  onDeselectAll?: () => void
+  language: "ENG" | "SPA"
+  meetingScripts?: Record<string, BusinessMeetingScriptRow>
+  scriptTemplates?: ConductScriptTemplateMap
+  onSaveMeetingScript?: (scriptKey: ConductScriptKey, templateSnapshot: string, renderedScript: string, businessItemIds: string[]) => Promise<void>
+  onResetMeetingScript?: (scriptKey: ConductScriptKey, businessItemIds: string[]) => Promise<void>
   className?: string
 }
 
 interface BusinessReviewPanelProps {
   items: BusinessItem[]
   groupedByCategory: Record<BusinessCategoryKey, BusinessItem[]>
+  language: "ENG" | "SPA"
   meetingDate: string
   onMeetingDateChange: (value: string) => void
   activeStatus: BusinessLifecycleStatus
@@ -50,14 +61,17 @@ interface BusinessReviewPanelProps {
   onSelectAll?: () => void
   onDeselectAll?: () => void
   onUnscheduleItem?: (item: BusinessItem) => void | Promise<void>
+  onRescheduleGroup?: (fromDate: string, toDate: string) => void | Promise<void>
   unschedulingItemId?: string | null
   className?: string
 }
 
 type ScriptSection = {
-  key: BusinessCategoryKey
+  category: BusinessCategoryKey
+  scriptKey: ConductScriptKey
   title: string
   items: BusinessItem[]
+  templateSnapshot: string
   script: string
   issues: string[]
   unresolvedPlaceholders: string[]
@@ -72,11 +86,12 @@ type ActionIssue = {
 
 type ScheduledDateGroup = {
   date: string
+  isPastDue: boolean
   items: BusinessItem[]
   groupedByCategory: Record<BusinessCategoryKey, BusinessItem[]>
 }
 
-const PLACEHOLDER_PATTERN = /\[[^\]]+]/g
+const PLACEHOLDER_PATTERN = /\[[^\]]+]|\{\{[^}]+}}/g
 const CONDUCTING_CUES = new Set([
   "[Pause]",
   "[Pause for voting]",
@@ -108,6 +123,11 @@ function formatCompactMeetingLabel(isoDate: string): string {
   } catch {
     return isoDate
   }
+}
+
+function isPastDueDate(isoDate: string): boolean {
+  if (!isoDate || isoDate === "unknown") return false
+  return isoDate < format(new Date(), "yyyy-MM-dd")
 }
 
 function itemSubtitle(item: BusinessItem, category: BusinessCategoryKey): string {
@@ -151,34 +171,34 @@ function buildActionIssues(
 
 function buildScriptSections(
   groupedByCategory: Record<BusinessCategoryKey, BusinessItem[]>,
-  selectedItemIds?: Set<string>
+  language: "ENG" | "SPA",
+  meetingScripts?: Record<string, BusinessMeetingScriptRow>,
+  scriptTemplates?: ConductScriptTemplateMap
 ): ScriptSection[] {
-  return BUSINESS_CATEGORY_ORDER.flatMap((key) => {
-    const group = groupedByCategory[key] ?? []
-    const filteredGroup = selectedItemIds 
-      ? group.filter(item => selectedItemIds.has(item.id))
-      : group
-    
-    if (filteredGroup.length === 0) return []
+  const resolvedSections = resolveBusinessMeetingScripts(
+    BUSINESS_CATEGORY_ORDER.flatMap((key) => groupedByCategory[key] ?? []),
+    language,
+    scriptTemplates
+  )
 
-    // Generate combined script for selected items in this category
-    const script = generateCombinedBusinessScript(key, filteredGroup)
-
-    const issues = filteredGroup.flatMap((item) =>
+  return resolvedSections.map((section) => {
+    const persisted = meetingScripts?.[section.scriptKey]
+    const script = persisted?.rendered_script?.trim() || section.renderedScript
+    const templateSnapshot = persisted?.template_snapshot || section.templateSnapshot
+    const issues = section.items.flatMap((item) =>
       itemIssues(item).map((issue) => `${item.person_name}: ${issue}`)
     )
     const unresolvedPlaceholders = unresolvedPlaceholdersFor(script)
-
-    return [
-      {
-        key,
-        title: BUSINESS_CATEGORY_PLURAL[key],
-        items: filteredGroup,
-        script,
-        issues,
-        unresolvedPlaceholders,
-      },
-    ]
+    return {
+      category: section.category,
+      scriptKey: section.scriptKey,
+      title: BUSINESS_CATEGORY_PLURAL[section.category],
+      items: section.items,
+      templateSnapshot,
+      script,
+      issues,
+      unresolvedPlaceholders,
+    }
   })
 }
 
@@ -186,9 +206,12 @@ function emptyCategoryGrouping(): Record<BusinessCategoryKey, BusinessItem[]> {
   return {
     sustaining: [],
     release: [],
-    confirmation: [],
     ordination: [],
-    other: [],
+    confirmation_ordinance: [],
+    new_member_welcome: [],
+    child_blessing: [],
+    records_received: [],
+    miscellaneous: [],
   }
 }
 
@@ -200,6 +223,7 @@ function groupScheduledItemsByDate(items: BusinessItem[]): ScheduledDateGroup[] 
     if (!map.has(date)) {
       map.set(date, {
         date,
+        isPastDue: isPastDueDate(date),
         items: [],
         groupedByCategory: emptyCategoryGrouping(),
       })
@@ -208,13 +232,16 @@ function groupScheduledItemsByDate(items: BusinessItem[]): ScheduledDateGroup[] 
     const group = map.get(date)!
     const category = BUSINESS_CATEGORY_ORDER.includes(item.category as BusinessCategoryKey)
       ? item.category as BusinessCategoryKey
-      : "other"
+      : "miscellaneous"
 
     group.items.push(item)
     group.groupedByCategory[category].push(item)
   }
 
-  return Array.from(map.values()).sort((a, b) => a.date.localeCompare(b.date))
+  return Array.from(map.values()).sort((a, b) => {
+    if (a.isPastDue !== b.isPastDue) return a.isPastDue ? -1 : 1
+    return a.date.localeCompare(b.date)
+  })
 }
 
 function readinessFor(item: BusinessItem) {
@@ -226,7 +253,7 @@ function readinessFor(item: BusinessItem) {
     }
   }
 
-  if (item.details?.customScript?.trim()) {
+  if (item.details?.customText?.trim() || item.details?.customScript?.trim()) {
     return {
       label: "Custom",
       className: "border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-900 dark:bg-blue-950 dark:text-blue-300",
@@ -241,50 +268,73 @@ function readinessFor(item: BusinessItem) {
 
 interface EditableScriptSectionProps {
   section: ScriptSection
-  scriptOverride?: string | null
-  onScriptOverrideChange?: (script: string | null) => void
+  language: "ENG" | "SPA"
+  onSaveMeetingScript?: (scriptKey: ConductScriptKey, templateSnapshot: string, renderedScript: string, businessItemIds: string[]) => Promise<void>
+  onResetMeetingScript?: (scriptKey: ConductScriptKey, businessItemIds: string[]) => Promise<void>
 }
 
 function EditableScriptSection({
   section,
-  scriptOverride,
-  onScriptOverrideChange,
+  language,
+  onSaveMeetingScript,
+  onResetMeetingScript,
 }: EditableScriptSectionProps) {
   const [editing, setEditing] = useState(false)
-  const [draft, setDraft] = useState("")
-  const [variables, setVariables] = useState<ScriptVariable[]>([])
-  const [hasValidationErrors, setHasValidationErrors] = useState(false)
+  const [draft, setDraft] = useState(section.templateSnapshot)
+  const [saving, setSaving] = useState(false)
 
-  const activeScript = scriptOverride && scriptOverride.trim().length > 0 ? scriptOverride : section.script
+  const variableMap = useMemo(() => {
+    const values = buildBusinessScriptTemplateVariables(section.category, section.items, language)
+    const itemVariables = scriptToTemplate(section.script, section.items).variables
+    for (const variable of itemVariables) {
+      values[variable.key.replace(/[{}]/g, "")] = variable.value
+    }
+    return values
+  }, [language, section.category, section.items, section.script])
+
+  const preview = useMemo(
+    () => renderConductScriptTemplate(draft, variableMap).trim(),
+    [draft, variableMap]
+  )
+
+  const variables = useMemo(
+    () => {
+      const allowedKeys = new Set(getAllowedConductScriptVariableKeys(section.scriptKey))
+      return Object.entries(variableMap)
+        .filter(([key, value]) => allowedKeys.has(key) && value.trim().length > 0)
+        .map(([key, value]) => ({
+          key,
+          label: key.replace(/_/g, " "),
+          value,
+        }))
+    },
+    [section.scriptKey, variableMap]
+  )
 
   const handleEditStart = () => {
-    const { template, variables: vars } = scriptToTemplate(activeScript, section.items)
-    setDraft(template)
-    setVariables(vars)
+    setDraft(section.templateSnapshot)
     setEditing(true)
   }
 
-  const handleSave = () => {
-    const renderedScript = templateToScript(draft, variables)
-    const trimmed = renderedScript.trim()
-    if (trimmed === section.script.trim() || trimmed.length === 0) {
-      onScriptOverrideChange?.(null)
-    } else {
-      onScriptOverrideChange?.(trimmed)
-    }
+  const handleSave = async () => {
+    if (!onSaveMeetingScript) return
+    setSaving(true)
+    await onSaveMeetingScript(section.scriptKey, draft.trim(), preview, section.items.map((item) => item.id))
+    setSaving(false)
     setEditing(false)
   }
 
   const handleCancel = () => {
-    setDraft(activeScript)
+    setDraft(section.templateSnapshot)
     setEditing(false)
   }
 
-  const handleResetToGenerated = () => {
-    const { template, variables: vars } = scriptToTemplate(section.script, section.items)
-    setDraft(template)
-    setVariables(vars)
-    onScriptOverrideChange?.(null)
+  const handleResetToGenerated = async () => {
+    if (!onResetMeetingScript) return
+    setSaving(true)
+    await onResetMeetingScript(section.scriptKey, section.items.map((item) => item.id))
+    setSaving(false)
+    setEditing(false)
   }
 
   return (
@@ -301,12 +351,7 @@ function EditableScriptSection({
             <AlertTriangle className="h-3 w-3" />
             Review needed
           </span>
-        ) : editing && hasValidationErrors ? (
-          <span className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-red-200 bg-red-50 px-2 py-0.5 text-[11px] font-medium text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300">
-            <AlertTriangle className="h-3 w-3" />
-            Requires attention
-          </span>
-        ) : !editing && onScriptOverrideChange ? (
+        ) : !editing && onSaveMeetingScript ? (
           <button
             type="button"
             onClick={handleEditStart}
@@ -327,7 +372,7 @@ function EditableScriptSection({
             <div key={item.id} className="flex items-center justify-between gap-3 text-[12px]">
               <span className="truncate font-medium text-foreground">{item.person_name}</span>
               <span className="truncate text-right text-muted-foreground">
-                {itemSubtitle(item, section.key)}
+                {itemSubtitle(item, section.category)}
               </span>
             </div>
           ))}
@@ -335,46 +380,73 @@ function EditableScriptSection({
       </div>
 
       {editing ? (
-        <div className="space-y-2">
-          <BusinessScriptEditor
-            value={draft}
-            variables={variables}
-            onChange={setDraft}
-            onValidationChange={setHasValidationErrors}
-          />
-          <div className="flex items-center justify-between text-[11px]">
-            <button
-              type="button"
-              onClick={handleResetToGenerated}
-              className="text-muted-foreground hover:text-foreground"
-            >
-              Reset to generated script
-            </button>
-            <div className="flex items-center gap-1">
+        <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
+          <div className="space-y-4">
+            <Textarea
+              value={draft}
+              onChange={(event) => setDraft(event.target.value)}
+              className="min-h-[260px] resize-y rounded-lg border-border bg-background font-mono text-[13px] leading-6"
+            />
+            <div>
+              <div className="mb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                Variables
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {variables.map((variable) => (
+                  <button
+                    key={variable.key}
+                    type="button"
+                    onClick={() => setDraft((value) => `${value}${value.endsWith(" ") || value.endsWith("\n") || value.length === 0 ? "" : " "}{{${variable.key}}}`)}
+                    className="rounded-full border border-border bg-background px-2.5 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:text-foreground"
+                  >
+                    {variable.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="flex items-center justify-between text-[11px]">
               <button
                 type="button"
-                onClick={handleCancel}
-                className="mr-3 text-muted-foreground hover:text-foreground"
+                onClick={handleResetToGenerated}
+                disabled={saving}
+                className="text-muted-foreground hover:text-foreground disabled:opacity-60"
               >
-                Cancel
+                Reset
               </button>
-              <Button
-                type="button"
-                size="sm"
-                onClick={handleSave}
-                disabled={hasValidationErrors}
-                className="h-7 gap-1 bg-[hsl(var(--brand))] px-2.5 text-[hsl(var(--brand-foreground))] hover:bg-[hsl(var(--brand-active))] disabled:opacity-50"
-              >
-                <Check className="h-3.5 w-3.5" />
-                Save
-              </Button>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={handleCancel}
+                  className="mr-3 text-muted-foreground hover:text-foreground"
+                >
+                  Cancel
+                </button>
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={handleSave}
+                  disabled={saving}
+                  className="h-7 gap-1 bg-[hsl(var(--brand))] px-2.5 text-[hsl(var(--brand-foreground))] hover:bg-[hsl(var(--brand-active))] disabled:opacity-50"
+                >
+                  <Check className="h-3.5 w-3.5" />
+                  Save
+                </Button>
+              </div>
             </div>
           </div>
+          <aside className="rounded-xl border border-border/60 bg-background/55 p-4">
+            <div className="mb-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+              Preview
+            </div>
+            <div className="whitespace-pre-line font-serif text-[18px] leading-8 text-foreground">
+              {preview}
+            </div>
+          </aside>
         </div>
       ) : (
         <>
           <div className="whitespace-pre-line font-serif text-[20px] leading-[1.7] tracking-normal text-foreground">
-            {activeScript.split(/(\[Pause[^\]]*])/g).map((part, i) => {
+            {section.script.split(/(\[Pause[^\]]*])/g).map((part, i) => {
               if (part.match(/^\[Pause[^\]]*]$/)) {
                 return (
                   <span
@@ -409,16 +481,19 @@ export function BusinessScriptPreview({
   items,
   groupedByCategory,
   meetingDate,
-  scriptOverrides,
-  onScriptOverrideChange,
-  selectedItemIds,
+  language,
+  meetingScripts,
+  scriptTemplates,
+  onSaveMeetingScript,
+  onResetMeetingScript,
   className,
 }: BusinessScriptPreviewProps) {
   const sections = useMemo(
-    () => buildScriptSections(groupedByCategory, selectedItemIds),
-    [groupedByCategory, selectedItemIds]
+    () => buildScriptSections(groupedByCategory, language, meetingScripts, scriptTemplates),
+    [groupedByCategory, language, meetingScripts, scriptTemplates]
   )
   const longDate = formatLongMeetingLabel(meetingDate)
+  const isPastDue = isPastDueDate(meetingDate)
   const issueCount = sections.reduce(
     (total, section) => total + section.issues.length + section.unresolvedPlaceholders.length,
     0
@@ -445,17 +520,25 @@ export function BusinessScriptPreview({
               Ward Business · {items.length} item{items.length === 1 ? "" : "s"} · {sharedScriptCount} shared script{sharedScriptCount === 1 ? "" : "s"}
             </div>
           </div>
-          <span
-            className={cn(
-              "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11.5px] font-medium",
-              issueCount > 0
-                ? "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-300"
-                : "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300"
-            )}
-          >
-            {issueCount > 0 ? <AlertTriangle className="h-3.5 w-3.5" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
-            {issueCount > 0 ? `${issueCount} issue${issueCount === 1 ? "" : "s"}` : "Ready to read"}
-          </span>
+          <div className="flex flex-wrap items-center gap-2">
+            {isPastDue ? (
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[11.5px] font-medium text-amber-700 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-300">
+                <AlertTriangle className="h-3.5 w-3.5" />
+                Past due
+              </span>
+            ) : null}
+            <span
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11.5px] font-medium",
+                issueCount > 0
+                  ? "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-300"
+                  : "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300"
+              )}
+            >
+              {issueCount > 0 ? <AlertTriangle className="h-3.5 w-3.5" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
+              {issueCount > 0 ? `${issueCount} issue${issueCount === 1 ? "" : "s"}` : "Ready to read"}
+            </span>
+          </div>
         </div>
       </div>
 
@@ -468,14 +551,11 @@ export function BusinessScriptPreview({
           <div className="space-y-7">
             {sections.map((section) => (
               <EditableScriptSection
-                key={section.key}
+                key={section.scriptKey}
                 section={section}
-                scriptOverride={scriptOverrides?.[section.key]}
-                onScriptOverrideChange={
-                  onScriptOverrideChange
-                    ? (script) => onScriptOverrideChange(section.key, script)
-                    : undefined
-                }
+                language={language}
+                onSaveMeetingScript={onSaveMeetingScript}
+                onResetMeetingScript={onResetMeetingScript}
               />
             ))}
           </div>
@@ -489,13 +569,18 @@ function ScheduledReviewQueue({
   groups,
   onOpenItem,
   onUnscheduleItem,
+  onRescheduleGroup,
   unschedulingItemId,
 }: {
   groups: ScheduledDateGroup[]
   onOpenItem?: (item: BusinessItem) => void
   onUnscheduleItem?: (item: BusinessItem) => void | Promise<void>
+  onRescheduleGroup?: (fromDate: string, toDate: string) => void | Promise<void>
   unschedulingItemId?: string | null
 }) {
+  const [rescheduleDate, setRescheduleDate] = useState<string | null>(null)
+  const [pickerOpen, setPickerOpen] = useState(false)
+
   if (groups.length === 0) {
     return (
       <div className="rounded-lg border border-dashed border-border/60 px-3 py-4 text-center text-[11.5px] text-muted-foreground">
@@ -505,18 +590,38 @@ function ScheduledReviewQueue({
   }
 
   return (
-    <div className="space-y-4">
-      {groups.map((group) => (
-        <section key={group.date} className="space-y-2 rounded-xl border border-border/60 bg-background/55 p-3">
+    <>
+      <div className="space-y-4">
+        {groups.map((group) => (
+          <section key={group.date} className="space-y-2 rounded-xl border border-border/60 bg-background/55 p-3">
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
               <div className="truncate font-serif text-[15px] text-foreground">
                 {formatCompactMeetingLabel(group.date)}
               </div>
-              <div className="mt-0.5 text-[11px] text-muted-foreground">
-                {group.items.length} item{group.items.length === 1 ? "" : "s"}
+              <div className="mt-0.5 flex items-center gap-2 text-[11px] text-muted-foreground">
+                <span>{group.items.length} item{group.items.length === 1 ? "" : "s"}</span>
+                {group.isPastDue ? (
+                  <span className="rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-700 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-300">
+                    Past due
+                  </span>
+                ) : null}
               </div>
             </div>
+            {group.isPastDue && onRescheduleGroup ? (
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  setRescheduleDate(group.date)
+                  setPickerOpen(true)
+                }}
+                className="h-7 shrink-0 rounded-full px-2.5 text-[11px]"
+              >
+                Reschedule
+              </Button>
+            ) : null}
           </div>
 
           {BUSINESS_CATEGORY_ORDER.map((key) => {
@@ -569,15 +674,27 @@ function ScheduledReviewQueue({
               </div>
             )
           })}
-        </section>
-      ))}
-    </div>
+          </section>
+        ))}
+      </div>
+      <SundayPickerModal
+        open={pickerOpen}
+        onOpenChange={setPickerOpen}
+        value={undefined}
+        onSelect={(isoDate) => {
+          if (rescheduleDate) {
+            void onRescheduleGroup?.(rescheduleDate, isoDate)
+          }
+        }}
+      />
+    </>
   )
 }
 
 export function BusinessReviewPanel({
   items,
   groupedByCategory,
+  language,
   meetingDate,
   onMeetingDateChange,
   activeStatus,
@@ -589,14 +706,15 @@ export function BusinessReviewPanel({
   onSelectAll,
   onDeselectAll,
   onUnscheduleItem,
+  onRescheduleGroup,
   unschedulingItemId,
   className,
 }: BusinessReviewPanelProps) {
   const [datePickerOpen, setDatePickerOpen] = useState(false)
 
   const sections = useMemo(
-    () => buildScriptSections(groupedByCategory, selectedItemIds),
-    [groupedByCategory, selectedItemIds]
+    () => buildScriptSections(groupedByCategory, language),
+    [groupedByCategory, language]
   )
   const actionIssues = useMemo(
     () => buildActionIssues(groupedByCategory),
@@ -609,6 +727,10 @@ export function BusinessReviewPanel({
   const customCount = items.filter((item) => item.details?.customScript?.trim()).length
   const shortDate = formatShortMeetingLabel(meetingDate)
   const scheduledGroups = useMemo(() => groupScheduledItemsByDate(items), [items])
+  const overdueGroupCount = useMemo(
+    () => scheduledGroups.filter((group) => group.isPastDue).length,
+    [scheduledGroups]
+  )
 
   return (
     <aside
@@ -629,7 +751,7 @@ export function BusinessReviewPanel({
             <Metric value={totalIssues} label="Issues" tone={totalIssues > 0 ? "warning" : "success"} />
           )}
           {activeStatus === "scheduled" ? (
-            <Metric value={totalIssues} label="Issues" tone={totalIssues > 0 ? "warning" : "success"} />
+            <Metric value={overdueGroupCount} label="Past Due" tone={overdueGroupCount > 0 ? "warning" : "neutral"} />
           ) : (
             <Metric value={customCount} label="Custom" />
           )}
@@ -755,6 +877,7 @@ export function BusinessReviewPanel({
             groups={scheduledGroups}
             onOpenItem={onOpenItem}
             onUnscheduleItem={onUnscheduleItem}
+            onRescheduleGroup={onRescheduleGroup}
             unschedulingItemId={unschedulingItemId}
           />
         ) : items.length === 0 ? (

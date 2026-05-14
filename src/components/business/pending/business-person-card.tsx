@@ -34,12 +34,27 @@ const CATEGORY_PILL_TONE: Record<
     text: "text-foreground",
     border: "border-[hsl(var(--chip-border))]",
   },
-  confirmation: {
+  confirmation_ordinance: {
     bg: "bg-[hsl(var(--chip-bg))]",
     text: "text-foreground",
     border: "border-[hsl(var(--chip-border))]",
   },
-  other: {
+  new_member_welcome: {
+    bg: "bg-[hsl(var(--chip-bg))]",
+    text: "text-foreground",
+    border: "border-[hsl(var(--chip-border))]",
+  },
+  child_blessing: {
+    bg: "bg-[hsl(var(--chip-bg))]",
+    text: "text-foreground",
+    border: "border-[hsl(var(--chip-border))]",
+  },
+  records_received: {
+    bg: "bg-[hsl(var(--chip-bg))]",
+    text: "text-muted-foreground",
+    border: "border-[hsl(var(--chip-border))]",
+  },
+  miscellaneous: {
     bg: "bg-[hsl(var(--chip-bg))]",
     text: "text-muted-foreground",
     border: "border-[hsl(var(--chip-border))]",

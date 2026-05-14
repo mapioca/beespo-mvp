@@ -48,9 +48,12 @@ export type BusinessStatus = "pending" | "completed"
 export type BusinessCategory =
     | "sustaining"
     | "release"
-    | "confirmation"
     | "ordination"
-    | "other"
+    | "confirmation_ordinance"
+    | "new_member_welcome"
+    | "child_blessing"
+    | "records_received"
+    | "miscellaneous"
 
 export interface BusinessItem {
     id: string

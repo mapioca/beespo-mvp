@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "@/lib/toast";
 import { createClient } from "@/lib/supabase/client";
 import { TotpInput } from "@/components/mfa/totp-input";
+import { recordMfaAuditEvent } from "@/lib/actions/mfa-actions";
 import { Loader2 } from "lucide-react";
 
 const inkSubtle = "color-mix(in srgb, var(--lp-ink) 65%, transparent)";
@@ -82,9 +83,12 @@ export function MfaVerify({ redirectTo = "/dashboard", setupPath = "/mfa/setup" 
 
       if (verifyError) {
         toast.error("Invalid Code", { description: "The verification code is incorrect. Please try again." });
+        void recordMfaAuditEvent({ eventType: "mfa.verify.failure", outcome: "failure" });
         setInputKey(k => k + 1);
         return;
       }
+
+      void recordMfaAuditEvent({ eventType: "mfa.verify.success", outcome: "success" });
 
       if (rememberDevice) {
         try {

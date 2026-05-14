@@ -27,65 +27,60 @@ export async function sendInviteEmail({
     return { success: true };
   }
 
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://beespo.com';
+  const logoUrl = `${appUrl}/images/beespo-logo-full.svg`;
+  const year = new Date().getFullYear();
+
   try {
     const { error } = await resend.emails.send({
       from: 'Beespo <noreply@beespo.com>',
       to: toEmail,
-      subject: `You've been invited to join ${workspaceName} on Beespo`,
+      subject: `${inviterName} invited you to ${workspaceName} on Beespo`,
       html: `
-        <!DOCTYPE html>
-        <html lang="en">
-          <head>
-            <meta charset="utf-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <style>
-              @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-            </style>
-          </head>
-          <body style="margin: 0; padding: 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #ffffff; color: #111827; -webkit-font-smoothing: antialiased;">
-            <div style="max-width: 600px; margin: 0 auto; padding: 48px 24px;">
-              <!-- Logo/Header -->
-              <div style="margin-bottom: 48px; text-align: left;">
-                <div style="font-size: 24px; font-weight: 700; letter-spacing: -0.025em; color: #111827;">Beespo</div>
-              </div>
-              
-              <!-- Content Card -->
-              <div style="background-color: #ffffff; border: 1px solid #f3f4f6; border-radius: 16px; padding: 40px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);">
-                <h1 style="font-size: 24px; font-weight: 600; margin: 0 0 16px 0; color: #111827; letter-spacing: -0.025em;">You've been invited</h1>
-                
-                <p style="font-size: 16px; line-height: 24px; color: #4b5563; margin: 0 0 32px 0;">
-                  <strong>${inviterName}</strong> has invited you to join the <strong>${workspaceName}</strong> workspace on Beespo as a <strong>${role}</strong>.
-                </p>
-                
-                <!-- Action Button -->
-                <div style="margin-bottom: 32px;">
-                  <a href="${inviteLink}" style="display: inline-block; background-color: #6366f1; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; font-size: 15px; transition: background-color 0.2s ease;">
-                    Join Workspace
-                  </a>
-                </div>
-                
-                <div style="height: 1px; background-color: #f3f4f6; margin-bottom: 32px;"></div>
-                
-                <p style="font-size: 14px; line-height: 20px; color: #6b7280; margin: 0;">
-                  Beespo is a leadership management platform designed to help you organize meetings, sync on discussions, and track assignments seamlessly.
-                </p>
-              </div>
-              
-              <!-- Footer -->
-              <div style="margin-top: 40px; text-align: center; padding: 0 24px;">
-                <p style="font-size: 13px; color: #9ca3af; margin: 0 0 12px 0;">
-                  This invitation will expire in 7 days.
-                </p>
-                <p style="font-size: 13px; color: #9ca3af; margin: 0;">
-                  If you didn't expect this invitation, you can safely ignore this email.
-                </p>
-                <div style="margin-top: 32px; font-size: 12px; color: #d1d5db;">
-                  &copy; ${new Date().getFullYear()} Beespo. All rights reserved.
-                </div>
-              </div>
-            </div>
-          </body>
-        </html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>You're invited to ${workspaceName} on Beespo</title>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f9faf9; margin: 0; padding: 0; color: #6e5345;">
+  <div style="max-width: 480px; margin: 40px auto; background-color: #f1ece2; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(110, 83, 69, 0.08);">
+    <div style="padding: 32px 32px 0 32px; text-align: center;">
+      <img src="${logoUrl}" alt="Beespo" style="height: 32px; width: auto; margin-bottom: 8px;" />
+    </div>
+    <div style="padding: 24px 32px 32px 32px; text-align: left;">
+      <h1 style="font-size: 26px; font-weight: 700; letter-spacing: -0.01em; margin: 0 0 16px 0; color: #6e5345;">
+        You&rsquo;re <em style="font-family: Georgia, 'Times New Roman', ui-serif, serif; font-style: italic; font-weight: 600; color: #cb6538;">invited.</em>
+      </h1>
+      <p style="font-size: 16px; line-height: 24px; color: #6e5345; margin: 0 0 24px 0;">
+        <strong style="color: #6e5345;">${inviterName}</strong> added you to <strong style="color: #6e5345;">${workspaceName}</strong> as <strong style="color: #6e5345;">${role}</strong>. Accept the invitation to set up your profile and start collaborating with your bishopric.
+      </p>
+      <div style="text-align: center;">
+        <a href="${inviteLink}"
+           style="display: inline-block; background-color: #cb6538; color: #ffffff !important; font-size: 16px; font-weight: 600; text-decoration: none !important; padding: 12px 28px; border-radius: 8px; margin-bottom: 24px;">
+          Join workspace
+        </a>
+      </div>
+      <p style="font-size: 14px; line-height: 22px; color: #988d7a; margin: 0 0 8px 0;">
+        If the button doesn&rsquo;t work, paste this link into your browser:
+      </p>
+      <p style="color: #988d7a; font-size: 13px; word-break: break-all; margin: 0 0 24px 0;">
+        ${inviteLink}
+      </p>
+      <p style="font-size: 13px; line-height: 20px; color: #988d7a; margin: 0;">
+        This invitation expires in 7 days. If you weren&rsquo;t expecting it, you can safely ignore this email.
+      </p>
+    </div>
+    <div style="padding: 20px 32px; background-color: #f9faf9; text-align: center; border-top: 1px solid rgba(110, 83, 69, 0.12);">
+      <p style="font-size: 12px; color: #988d7a; margin: 0 0 4px 0;">&copy; ${year} Beespo. All rights reserved.</p>
+      <p style="font-size: 12px; color: #988d7a; margin: 0;">
+        Need help? <a href="mailto:support@beespo.com" style="color: #988d7a; text-decoration: underline;">support@beespo.com</a>
+      </p>
+    </div>
+  </div>
+</body>
+</html>
       `,
     });
 

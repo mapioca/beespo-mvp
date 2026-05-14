@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -15,6 +16,7 @@ import {
 } from '@/components/ui/select';
 import { PillSelector } from '@/components/onboarding/pill-selector';
 import { WizardFooter } from '@/components/onboarding/wizard-footer';
+import { AccentItalic } from '@/components/auth/auth-two-pane';
 import { toast } from '@/lib/toast';
 import {
   getOrganizationKeyFromDbType,
@@ -22,11 +24,14 @@ import {
   getRoleTitle,
   generateWorkspaceName,
 } from '@/lib/onboarding/filters';
+import { UNIT_TYPES, ORGANIZATIONS } from '@/lib/onboarding/constants';
 import type {
   OnboardingFormData,
   RoleKey,
   WorkspaceMemberRole,
   WorkspaceInvitationData,
+  UnitType,
+  OrganizationKey,
 } from '@/types/onboarding';
 import { INVITABLE_ROLES, formatRoleLabel } from '@/lib/auth/role-permissions';
 import { ONBOARDING_STEPS, INVITED_USER_ONBOARDING_STEPS } from '@/types/onboarding';
@@ -38,6 +43,8 @@ import {
   PartyPopper,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+
+const EASE = [0.16, 1, 0.3, 1] as const;
 
 const inkSubtle = 'color-mix(in srgb, var(--lp-ink) 65%, transparent)';
 const inkBorder = '1px solid color-mix(in srgb, var(--lp-ink) 18%, transparent)';
@@ -208,13 +215,17 @@ export default function OnboardingPage() {
       }
     }
 
-    // Regular flow (3 steps: role → ward name → invites)
+    // Regular flow (5 steps: unit → organization → role → ward name → invites)
     switch (step) {
       case 1:
-        return Boolean(formData.role);
+        return Boolean(formData.unitType);
       case 2:
-        return formData.unitName.trim().length >= 2;
+        return Boolean(formData.organization);
       case 3:
+        return Boolean(formData.role);
+      case 4:
+        return formData.unitName.trim().length >= 2;
+      case 5:
         return true;
       default:
         return false;
@@ -326,9 +337,6 @@ export default function OnboardingPage() {
   const handleBack = () => {
     if (step > 1) {
       setStep((prev) => prev - 1);
-    } else {
-      // Go back to welcome page
-      router.push('/welcome');
     }
   };
 
@@ -464,26 +472,24 @@ export default function OnboardingPage() {
 
   return (
     <div
-      className="flex min-h-screen items-center justify-center p-6"
+      className="relative flex min-h-screen flex-col"
       style={{ background: 'var(--lp-bg)' }}
     >
-      <div
-        className="flex min-h-[600px] w-full max-w-3xl flex-col rounded-2xl p-8 md:p-12"
-        style={{ background: 'var(--lp-surface)', border: inkBorder }}
-      >
-        {/* Brand wordmark */}
-        <div className="mb-8">
-          <Link
-            href="/"
-            className="text-2xl font-bold tracking-tight transition-opacity hover:opacity-80"
-            style={{ color: 'var(--lp-ink)' }}
-          >
-            Beespo
-          </Link>
-        </div>
+      {/* Slim top wordmark — restrained brand presence */}
+      <header className="px-6 pt-8 sm:px-10">
+        <Link
+          href="/"
+          className="text-[11px] font-semibold uppercase tracking-[0.32em] transition-opacity hover:opacity-70"
+          style={{ color: 'color-mix(in srgb, var(--lp-ink) 55%, transparent)' }}
+        >
+          Beespo
+        </Link>
+      </header>
 
-        {/* Step content - flex-1 to fill available space */}
-        <div className="flex-1">
+      <div className="flex flex-1 items-center justify-center px-6 py-12 sm:px-10">
+        <div className="flex w-full max-w-[640px] flex-col">
+          {/* Step content */}
+          <div className="flex-1">
           {/* INVITED USER FLOW */}
           {isInvitedUser && (
             <>
@@ -585,8 +591,106 @@ export default function OnboardingPage() {
           {/* REGULAR WORKSPACE CREATION FLOW (bishopric of a ward) */}
           {!isInvitedUser && (
             <>
-              {/* Step 1: Calling */}
+              {/* Step 1: Unit type — only Ward enabled for v1 */}
               {step === 1 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, ease: EASE }}
+                  className="space-y-8"
+                >
+                  <div>
+                    <motion.p
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.4, ease: EASE, delay: 0.05 }}
+                      className="text-[11px] font-semibold uppercase tracking-[0.28em]"
+                      style={{ color: 'var(--lp-accent)' }}
+                    >
+                      Step 1 of {TOTAL_STEPS}
+                    </motion.p>
+                    <motion.h1
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.55, ease: EASE, delay: 0.12 }}
+                      className="mt-4 font-bold tracking-tighter"
+                      style={{
+                        color: 'var(--lp-ink)',
+                        fontSize: 'clamp(2rem, 4vw + 0.5rem, 3.25rem)',
+                        lineHeight: 1.05,
+                      }}
+                    >
+                      Which unit do you{' '}
+                      <AccentItalic>lead?</AccentItalic>
+                    </motion.h1>
+                    <motion.p
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.5, ease: EASE, delay: 0.22 }}
+                      className="mt-5 max-w-[480px] text-[15px] leading-relaxed"
+                      style={{ color: inkSubtle }}
+                    >
+                      Beespo is built for ward bishoprics first. Branches, stakes,
+                      and districts are on the way — pick the option that matches
+                      your unit, even if it&apos;s coming soon.
+                    </motion.p>
+                  </div>
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, ease: EASE, delay: 0.32 }}
+                  >
+                    <PillSelector
+                      options={UNIT_TYPES.map((u) => ({
+                        value: u.value,
+                        label: u.label,
+                        description: u.description,
+                        disabled: u.value !== 'ward',
+                        badge: u.value !== 'ward' ? 'Coming soon' : undefined,
+                      }))}
+                      value={formData.unitType}
+                      onChange={(v) =>
+                        updateFormData('unitType', v as UnitType)
+                      }
+                      ariaLabel="Choose your unit type"
+                    />
+                  </motion.div>
+                </motion.div>
+              )}
+
+              {/* Step 2: Organization — only Bishopric enabled for v1 */}
+              {step === 2 && (
+                <div className="space-y-6">
+                  <div className="space-y-2">
+                    <h1
+                      className="text-2xl font-bold tracking-tight lg:text-3xl"
+                      style={{ color: 'var(--lp-ink)' }}
+                    >
+                      Which organization are you part of?
+                    </h1>
+                    <p style={{ color: inkSubtle }}>
+                      Other organizations are coming soon.
+                    </p>
+                  </div>
+                  <PillSelector
+                    options={ORGANIZATIONS.map((o) => ({
+                      value: o.value,
+                      label: o.label,
+                      description: o.description,
+                      disabled: o.value !== 'bishopric',
+                      badge: o.value !== 'bishopric' ? 'Coming soon' : undefined,
+                    }))}
+                    value={formData.organization}
+                    onChange={(v) =>
+                      updateFormData('organization', v as OrganizationKey)
+                    }
+                    ariaLabel="Choose your organization"
+                  />
+                </div>
+              )}
+
+              {/* Step 3: Calling */}
+              {step === 3 && (
                 <div className="space-y-6">
                   <div className="space-y-2">
                     <h1
@@ -596,7 +700,7 @@ export default function OnboardingPage() {
                       What is your calling in the bishopric?
                     </h1>
                     <p style={{ color: inkSubtle }}>
-                      Beespo is built for the bishopric of a ward. Select your role.
+                      Select your role.
                     </p>
                   </div>
                   <PillSelector
@@ -612,8 +716,8 @@ export default function OnboardingPage() {
                 </div>
               )}
 
-              {/* Step 2: Ward name */}
-              {step === 2 && (
+              {/* Step 4: Ward name */}
+              {step === 4 && (
                 <div className="space-y-6">
                   <div className="space-y-2">
                     <h1
@@ -670,8 +774,8 @@ export default function OnboardingPage() {
                 </div>
               )}
 
-              {/* Step 3: Invite teammates */}
-              {step === 3 && (
+              {/* Step 5: Invite teammates */}
+              {step === 5 && (
                 <div className="space-y-6">
                   <div className="space-y-2">
                     <h1
@@ -762,20 +866,21 @@ export default function OnboardingPage() {
           )}
         </div>
 
-        {/* Wizard Footer - anchored at bottom */}
-        <WizardFooter
-          currentStep={step}
-          totalSteps={TOTAL_STEPS}
-          canGoBack={!isInvitedUser || step > 1}
-          canSkip={canSkip()}
-          canContinue={isStepValid()}
-          isLastStep={step === TOTAL_STEPS}
-          onBack={handleBack}
-          onSkip={handleSkip}
-          onContinue={handleNext}
-          continueLabel={isInvitedUser && step === TOTAL_STEPS ? 'Join workspace' : undefined}
-          className="flex-shrink-0 pt-8"
-        />
+          {/* Wizard Footer - anchored at bottom of content column */}
+          <WizardFooter
+            currentStep={step}
+            totalSteps={TOTAL_STEPS}
+            canGoBack={step > 1}
+            canSkip={canSkip()}
+            canContinue={isStepValid()}
+            isLastStep={step === TOTAL_STEPS}
+            onBack={handleBack}
+            onSkip={handleSkip}
+            onContinue={handleNext}
+            continueLabel={isInvitedUser && step === TOTAL_STEPS ? 'Join workspace' : undefined}
+            className="flex-shrink-0 pt-12"
+          />
+        </div>
       </div>
     </div>
   );

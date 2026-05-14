@@ -162,9 +162,6 @@ export function InviteCodeInput({
             {errorMessage && (
                 <p className="text-sm text-destructive">{errorMessage}</p>
             )}
-            {validationStatus === "valid" && (
-                <p className="text-sm text-green-600">Code verified successfully!</p>
-            )}
             <p className="text-xs" style={helperTextStyle}>
                 Enter the invite code you received to create an account.
             </p>

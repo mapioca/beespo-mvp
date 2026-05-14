@@ -69,8 +69,12 @@ const STATUS_OPTIONS = [
 const CATEGORY_OPTIONS = [
     { value: "sustaining", label: "Sustaining", icon: UserCheck },
     { value: "release", label: "Release", icon: UserMinus },
-    { value: "confirmation", label: "Confirmation", icon: Flame },
     { value: "ordination", label: "Ordination", icon: Award },
+    { value: "confirmation_ordinance", label: "Confirmation", icon: Flame },
+    { value: "new_member_welcome", label: "New Member Welcome", icon: UserCheck },
+    { value: "child_blessing", label: "Child Blessing", icon: Award },
+    { value: "records_received", label: "Records Received", icon: UserCheck },
+    { value: "miscellaneous", label: "Miscellaneous", icon: Award },
 ];
 // ── Callings catalog helpers ─────────────────────────────────────────────────
 
@@ -125,6 +129,7 @@ export function BusinessDetailsPanel({
     const [positionCalling, setPositionCalling] = useState("");
     const [category, setCategory] = useState("");
     const [status, setStatus] = useState("pending");
+    const [preferredLanguage, setPreferredLanguage] = useState<Language>("ENG");
     const [language, setLanguage] = useState<Language>("ENG");
     const [gender, setGender] = useState<Gender | undefined>();
     const [office, setOffice] = useState<PriesthoodOffice | undefined>();
@@ -201,13 +206,22 @@ export function BusinessDetailsPanel({
             if (!user) { setIsDirectoryLoading(false); return; }
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const { data: profile } = await (supabase.from("profiles") as any)
-                .select("workspace_id, workspaces(type)")
+                .select("workspace_id, language_preference, workspaces(type)")
                 .eq("id", user.id)
                 .single();
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const workspaceId: string | null = (profile as any)?.workspace_id ?? null;
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const type = ((profile as any)?.workspaces?.type as string | null) ?? null;
+            const typedProfile = profile as
+                | {
+                    workspace_id?: string | null;
+                    language_preference?: Language | null;
+                    workspaces?: { type?: string | null } | null;
+                }
+                | null;
+            const workspaceId: string | null = typedProfile?.workspace_id ?? null;
+            const nextPreferredLanguage =
+                (typedProfile?.language_preference ?? "ENG");
+            setPreferredLanguage(nextPreferredLanguage);
+            setLanguage((current) => (item?.details?.language ? current : nextPreferredLanguage));
+            const type = typedProfile?.workspaces?.type ?? null;
             setWorkspaceCallingLevel(mapWorkspaceTypeToCallingLevel(type));
             if (!workspaceId) { setIsDirectoryLoading(false); return; }
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -221,7 +235,7 @@ export function BusinessDetailsPanel({
             }
             setIsDirectoryLoading(false);
         })();
-    }, []);
+    }, [item?.details?.language]);
 
     // Sync state when the selected item changes
     useEffect(() => {
@@ -230,14 +244,14 @@ export function BusinessDetailsPanel({
             setPositionCalling(item.position_calling ?? "");
             setCategory(item.category);
             setStatus(item.status);
-            setLanguage(item.details?.language ?? "ENG");
+            setLanguage(item.details?.language ?? preferredLanguage);
             setGender(item.details?.gender);
             setOffice(item.details?.office);
             setNotes(item.notes ?? "");
             setSelectedPersonId(""); // resolved by directory-match effect below
             setSelectedCallingId(""); // resolved by catalog-match effect below
         }
-    }, [item]);
+    }, [item, preferredLanguage]);
 
     // Once directory is available, try to match person_name against it
     useEffect(() => {

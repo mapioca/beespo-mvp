@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "@/lib/toast";
 import { createClient } from "@/lib/supabase/client";
 import { AuthShell } from "@/components/auth/auth-shell";
+import { Eye, EyeOff } from "lucide-react";
 
 const inkSubtle = "color-mix(in srgb, var(--lp-ink) 65%, transparent)";
 const inkBorder = "1px solid color-mix(in srgb, var(--lp-ink) 18%, transparent)";
@@ -38,6 +39,8 @@ export default function ResetPasswordPage() {
     const router = useRouter();
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [isVerifying, setIsVerifying] = useState(true);
     const [hasSession, setHasSession] = useState(false);
@@ -220,33 +223,67 @@ export default function ResetPasswordPage() {
                     <Label htmlFor="password" style={{ color: "var(--lp-ink)" }}>
                         New password
                     </Label>
-                    <Input
-                        id="password"
-                        type="password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                        disabled={isLoading}
-                        minLength={6}
-                        className="rounded-md"
-                        style={inputStyle}
-                    />
+                    <div className="relative">
+                        <Input
+                            id="password"
+                            type={showPassword ? "text" : "password"}
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            required
+                            disabled={isLoading}
+                            minLength={6}
+                            autoComplete="new-password"
+                            className="rounded-md pr-10"
+                            style={inputStyle}
+                        />
+                        <button
+                            type="button"
+                            onClick={() => setShowPassword((v) => !v)}
+                            className="absolute inset-y-0 right-0 flex items-center px-3 transition-opacity hover:opacity-80"
+                            style={{ color: inkSubtle }}
+                            aria-label={showPassword ? "Hide password" : "Show password"}
+                            tabIndex={-1}
+                        >
+                            {showPassword ? (
+                                <EyeOff className="h-4 w-4" />
+                            ) : (
+                                <Eye className="h-4 w-4" />
+                            )}
+                        </button>
+                    </div>
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="confirmPassword" style={{ color: "var(--lp-ink)" }}>
                         Confirm password
                     </Label>
-                    <Input
-                        id="confirmPassword"
-                        type="password"
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        required
-                        disabled={isLoading}
-                        minLength={6}
-                        className="rounded-md"
-                        style={inputStyle}
-                    />
+                    <div className="relative">
+                        <Input
+                            id="confirmPassword"
+                            type={showConfirmPassword ? "text" : "password"}
+                            value={confirmPassword}
+                            onChange={(e) => setConfirmPassword(e.target.value)}
+                            required
+                            disabled={isLoading}
+                            minLength={6}
+                            autoComplete="new-password"
+                            className="rounded-md pr-10"
+                            style={inputStyle}
+                        />
+                        <button
+                            type="button"
+                            onClick={() => setShowConfirmPassword((v) => !v)}
+                            className="absolute inset-y-0 right-0 flex items-center px-3 transition-opacity hover:opacity-80"
+                            style={{ color: inkSubtle }}
+                            aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                            tabIndex={-1}
+                        >
+                            {showConfirmPassword ? (
+                                <EyeOff className="h-4 w-4" />
+                            ) : (
+                                <Eye className="h-4 w-4" />
+                            )}
+                        </button>
+                    </div>
                 </div>
 
                 <Button

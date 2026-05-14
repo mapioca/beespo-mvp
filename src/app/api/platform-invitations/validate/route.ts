@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { validateInviteCode } from "@/lib/services/access-control";
 import { checkRateLimit } from "@/lib/rate-limiter";
+import { logSecurityEvent } from "@/lib/security/audit-log";
 import type { ValidateInviteCodeResponse } from "@/lib/services/access-control";
 
 /**
@@ -46,6 +47,14 @@ export async function POST(request: NextRequest): Promise<NextResponse<ValidateI
                 invitationId: result.invitationId || undefined,
             });
         }
+
+        void logSecurityEvent({
+            eventType: "platform_invitation.validate.failure",
+            outcome: "failure",
+            ipAddress: ip,
+            userAgent: request.headers.get("user-agent"),
+            details: { error: result.errorMessage },
+        });
 
         return NextResponse.json({
             valid: false,

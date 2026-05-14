@@ -34,8 +34,8 @@ export function scriptToTemplate(
       });
     }
 
-    // Replace calling/position (skip for ordinations and confirmations)
-    if (item.position_calling && item.category !== 'ordination' && item.category !== 'confirmation') {
+    // Replace calling/position only for business categories that use callings.
+    if (item.position_calling && (item.category === 'sustaining' || item.category === 'release')) {
       const callingVar = `{{calling_${num}}}`;
       const callingLabel = `${item.position_calling}`;
       template = template.replace(new RegExp(item.position_calling, 'g'), callingVar);
