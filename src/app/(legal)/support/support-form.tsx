@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { FileDropzone } from "@/components/support/file-dropzone";
+import { uploadAttachmentsToBlob } from "@/lib/support/upload-attachments";
 import { toast } from "@/lib/toast";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
@@ -21,12 +23,14 @@ export function SupportForm() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [stage, setStage] = useState<"uploading" | "submitting" | null>(null);
   const [submitted, setSubmitted] = useState(false);
 
   const [requestType, setRequestType] = useState("General Question");
   const [subject, setSubject] = useState("");
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState("Medium");
+  const [files, setFiles] = useState<File[]>([]);
 
   useEffect(() => {
     const supabase = createClient();
@@ -48,6 +52,10 @@ export function SupportForm() {
         user.email?.split("@")[0] ||
         "Beespo User";
 
+      setStage(files.length > 0 ? "uploading" : "submitting");
+      const attachments = await uploadAttachmentsToBlob(files);
+
+      setStage("submitting");
       const res = await fetch("/api/support/create-ticket", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -63,6 +71,7 @@ export function SupportForm() {
             userAgent: navigator.userAgent,
             timestamp: new Date().toISOString(),
           },
+          attachments,
         }),
       });
 
@@ -77,6 +86,7 @@ export function SupportForm() {
       toast.error(err instanceof Error ? err.message : "Failed to submit ticket. Please try again.");
     } finally {
       setSubmitting(false);
+      setStage(null);
     }
   }
 
@@ -231,12 +241,26 @@ export function SupportForm() {
         />
       </div>
 
+      <div className="space-y-2">
+        <Label
+          className="text-[11px] uppercase tracking-[0.18em]"
+          style={{ color: "color-mix(in srgb, var(--lp-ink) 55%, transparent)" }}
+        >
+          Attachments
+        </Label>
+        <FileDropzone files={files} onFilesChange={setFiles} disabled={submitting} />
+      </div>
+
       <div className="flex items-center justify-between gap-4">
         <p className="text-xs" style={{ color: "color-mix(in srgb, var(--lp-ink) 62%, transparent)" }}>
           Submitting as <strong>{user.email}</strong>
         </p>
         <Button type="submit" disabled={submitting} className={actionButtonClassName}>
-          {submitting ? "Submitting…" : "Submit Ticket"}
+          {submitting
+            ? stage === "uploading"
+              ? "Uploading attachments…"
+              : "Submitting…"
+            : "Submit Ticket"}
         </Button>
       </div>
     </form>

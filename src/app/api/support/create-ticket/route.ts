@@ -1,5 +1,213 @@
+import { del } from '@vercel/blob';
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
+import {
+  MAX_FILE_COUNT,
+  MAX_FILE_SIZE_BYTES,
+  MAX_TOTAL_SIZE_BYTES,
+  findRuleFor,
+  getExtension,
+  sanitizeFilename,
+  verifyMagicBytes,
+} from '@/lib/support/attachment-policy';
+
+// Reference posted by the client. Every field is treated as untrusted —
+// the bytes are re-downloaded from Blob and validated below.
+interface AttachmentRef {
+  url: string;
+  pathname: string;
+  name: string;
+  type: string;
+  size: number;
+}
+
+interface PreparedAttachment {
+  filename: string;
+  bytes: Uint8Array;
+  mime: string;
+  /** Blob URL — used after Jira forwarding to delete the temporary upload. */
+  blobUrl: string;
+}
+
+const VERCEL_BLOB_HOST_SUFFIX = '.private.blob.vercel-storage.com';
+
+/** Validate the URL points at our private Vercel Blob store before we fetch it. */
+function isAllowedBlobUrl(rawUrl: string): boolean {
+  try {
+    const u = new URL(rawUrl);
+    if (u.protocol !== 'https:') return false;
+    return u.hostname.endsWith(VERCEL_BLOB_HOST_SUFFIX);
+  } catch {
+    return false;
+  }
+}
+
+async function prepareAttachmentsFromRefs(
+  refs: AttachmentRef[]
+): Promise<{ attachments?: PreparedAttachment[]; error?: string; cleanup?: string[] }> {
+  if (refs.length > MAX_FILE_COUNT) {
+    return { error: `At most ${MAX_FILE_COUNT} attachments are allowed.` };
+  }
+
+  const cleanup: string[] = [];
+  for (const r of refs) {
+    if (r) cleanup.push(r.url);
+  }
+
+  let runningTotal = 0;
+  const prepared: PreparedAttachment[] = [];
+
+  for (const ref of refs) {
+    if (!ref) {
+      return { error: 'Attachment reference is malformed.', cleanup };
+    }
+    if (!isAllowedBlobUrl(ref.url)) {
+      return { error: 'Attachment URL is not allowed.', cleanup };
+    }
+    if (ref.size <= 0) {
+      return { error: `Attachment "${ref.name}" has an invalid size.`, cleanup };
+    }
+    if (ref.size > MAX_FILE_SIZE_BYTES) {
+      return { error: `Attachment "${ref.name}" exceeds the per-file size limit.`, cleanup };
+    }
+    runningTotal += ref.size;
+    if (runningTotal > MAX_TOTAL_SIZE_BYTES) {
+      return { error: 'Attachments exceed the total size limit.', cleanup };
+    }
+
+    const ext = getExtension(ref.name);
+    const rule = findRuleFor(ref.type, ext);
+    if (!rule) {
+      return { error: `Attachment "${ref.name}" has a disallowed type.`, cleanup };
+    }
+
+    // Pull the bytes back from private Blob storage and verify them. Cap
+    // the read at MAX_FILE_SIZE_BYTES + 1 so a tampered ref can't make us
+    // download more than the policy allows.
+    const fetchResp = await fetch(ref.url, {
+      headers: {
+        Authorization: `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}`,
+      },
+    });
+    if (!fetchResp.ok) {
+      return { error: `Attachment "${ref.name}" could not be retrieved.`, cleanup };
+    }
+    const buf = new Uint8Array(await fetchResp.arrayBuffer());
+    if (buf.byteLength === 0 || buf.byteLength > MAX_FILE_SIZE_BYTES) {
+      return { error: `Attachment "${ref.name}" failed size revalidation.`, cleanup };
+    }
+    if (!verifyMagicBytes(buf, rule)) {
+      return { error: `Attachment "${ref.name}" content does not match its declared type.`, cleanup };
+    }
+
+    prepared.push({
+      filename: sanitizeFilename(ref.name),
+      bytes: buf,
+      mime: rule.mime,
+      blobUrl: ref.url,
+    });
+  }
+
+  return { attachments: prepared, cleanup };
+}
+
+async function deleteBlobs(urls: string[]): Promise<void> {
+  if (urls.length === 0) return;
+  await Promise.allSettled(
+    urls.map((url) =>
+      del(url).catch((err) => {
+        console.warn('[Create Ticket] Failed to delete blob:', url, err);
+      })
+    )
+  );
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Forward one attachment to Jira with exponential backoff on transient
+ * failures (5xx / 429). Returns true on success, false on permanent failure.
+ * Permanent 4xx responses (other than 429) abort immediately — retrying a
+ * 400 won't change anything.
+ */
+async function forwardAttachmentToJira(
+  attachUrl: string,
+  authHeader: string,
+  file: PreparedAttachment,
+  maxAttempts = 3
+): Promise<boolean> {
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      const fd = new FormData();
+      const blob = new Blob([new Uint8Array(file.bytes)], { type: file.mime });
+      fd.append('file', blob, file.filename);
+
+      const resp = await fetch(attachUrl, {
+        method: 'POST',
+        headers: {
+          Authorization: `Basic ${authHeader}`,
+          Accept: 'application/json',
+          'X-Atlassian-Token': 'no-check',
+        },
+        body: fd,
+      });
+
+      if (resp.ok) return true;
+
+      const transient = resp.status >= 500 || resp.status === 429;
+      const text = await resp.text().catch(() => '');
+      console.error('[Create Ticket] Attachment upload failed', {
+        filename: file.filename,
+        status: resp.status,
+        attempt,
+        transient,
+        body: text.slice(0, 500),
+      });
+      if (!transient || attempt === maxAttempts) return false;
+    } catch (err) {
+      console.error('[Create Ticket] Attachment upload threw', {
+        filename: file.filename,
+        attempt,
+        err,
+      });
+      if (attempt === maxAttempts) return false;
+    }
+
+    await sleep(200 * 2 ** (attempt - 1));
+  }
+  return false;
+}
+
+async function deleteJiraIssue(
+  jiraDomain: string,
+  authHeader: string,
+  ticketKey: string
+): Promise<void> {
+  try {
+    const resp = await fetch(
+      `${jiraDomain}/rest/api/3/issue/${encodeURIComponent(ticketKey)}`,
+      {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Basic ${authHeader}`,
+          Accept: 'application/json',
+        },
+      }
+    );
+    if (!resp.ok && resp.status !== 404) {
+      const text = await resp.text().catch(() => '');
+      console.error('[Create Ticket] Rollback delete failed', {
+        ticketKey,
+        status: resp.status,
+        body: text.slice(0, 500),
+      });
+    }
+  } catch (err) {
+    console.error('[Create Ticket] Rollback delete threw', { ticketKey, err });
+  }
+}
 
 // Jira Priority mapping
 const JIRA_PRIORITIES: Record<string, string> = {
@@ -48,8 +256,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  // Parse request body
-  let body: SupportRequestBody;
+  // Parse JSON body. Attachments are uploaded to Vercel Blob client-side
+  // and referenced by URL; the server fetches and validates them below.
+  let body: SupportRequestBody & { attachments?: AttachmentRef[] };
   try {
     body = await request.json();
   } catch {
@@ -67,11 +276,37 @@ export async function POST(request: NextRequest) {
   } = body;
 
   // Validate required fields
-  if (!requestType || !subject || !description) {
+  if (!requestType || !subject || !description || !userEmail || !userName) {
     return NextResponse.json(
-      { error: 'Request type, subject, and description are required' },
+      { error: 'Request type, subject, description, email, and name are required' },
       { status: 400 }
     );
+  }
+  if (!metadata || typeof metadata !== 'object') {
+    return NextResponse.json({ error: 'Invalid metadata' }, { status: 400 });
+  }
+
+  // Validate attachments (fetches bytes from Blob, sniffs magic bytes).
+  // Even if validation fails, the blobs the client uploaded are cleaned up.
+  let preparedAttachments: PreparedAttachment[] = [];
+  const refs = Array.isArray(body.attachments) ? body.attachments : [];
+  if (refs.length > 0 && !process.env.BLOB_READ_WRITE_TOKEN) {
+    console.error('[Create Ticket] BLOB_READ_WRITE_TOKEN is not configured');
+    return NextResponse.json(
+      {
+        error:
+          'Attachment uploads are not configured. Please set BLOB_READ_WRITE_TOKEN in Vercel.',
+      },
+      { status: 503 }
+    );
+  }
+  if (refs.length > 0) {
+    const result = await prepareAttachmentsFromRefs(refs);
+    if (result.error) {
+      if (result.cleanup) await deleteBlobs(result.cleanup);
+      return NextResponse.json({ error: result.error }, { status: 400 });
+    }
+    preparedAttachments = result.attachments ?? [];
   }
 
   // Get Jira configuration from environment
@@ -350,7 +585,10 @@ export async function POST(request: NextRequest) {
         error: errorData,
       });
 
-      // Return a user-friendly error message
+      // Issue never got created — clean up the staged blobs so they don't
+      // linger in storage.
+      await deleteBlobs(preparedAttachments.map((a) => a.blobUrl));
+
       return NextResponse.json(
         {
           error: 'Failed to create support ticket. Please try again later or contact support directly.',
@@ -363,15 +601,50 @@ export async function POST(request: NextRequest) {
     const jiraData = await jiraResponse.json();
     const ticketKey = jiraData.key;
 
+    // Forward attachments to Jira with retries. All-or-nothing: if any
+    // attachment cannot be forwarded after retries, we roll back the
+    // newly-created Jira issue and report failure to the client.
+    if (preparedAttachments.length > 0) {
+      const attachUrl = `${jiraDomain}/rest/api/3/issue/${encodeURIComponent(ticketKey)}/attachments`;
+      const failedFile: PreparedAttachment | null = await (async () => {
+        for (const file of preparedAttachments) {
+          const ok = await forwardAttachmentToJira(attachUrl, authHeader, file);
+          if (!ok) return file;
+        }
+        return null;
+      })();
+
+      if (failedFile) {
+        console.error('[Create Ticket] Rolling back issue after permanent attachment failure', {
+          ticketKey,
+          failedFile: failedFile.filename,
+        });
+        await deleteJiraIssue(jiraDomain, authHeader, ticketKey);
+        await deleteBlobs(preparedAttachments.map((a) => a.blobUrl));
+        return NextResponse.json(
+          {
+            error:
+              'We could not attach all your files to the ticket, so we cancelled it. Please try again.',
+          },
+          { status: 502 }
+        );
+      }
+    }
+
+    // Success path — staged blobs are no longer needed.
+    await deleteBlobs(preparedAttachments.map((a) => a.blobUrl));
+
     return NextResponse.json(
       {
         success: true,
         ticketKey,
+        attachmentsUploaded: preparedAttachments.length,
       },
       { status: 201 }
     );
   } catch (error) {
     console.error('Error creating Jira ticket:', error);
+    await deleteBlobs(preparedAttachments.map((a) => a.blobUrl));
     return NextResponse.json(
       {
         error: 'An unexpected error occurred. Please try again later.',
