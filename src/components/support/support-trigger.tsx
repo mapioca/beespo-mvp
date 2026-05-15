@@ -18,10 +18,13 @@ import {
 } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { cn } from "@/lib/utils";
+import { uploadAttachmentsToBlob } from "@/lib/support/upload-attachments";
+import { FileDropzone } from "./file-dropzone";
 
 type RequestType = "Bug Report" | "Feature Request" | "General Question";
 type Priority = "Low" | "Medium" | "High";
 type SubmissionState = "idle" | "loading" | "success" | "error";
+type LoadingStage = "uploading" | "submitting";
 
 const DESCRIPTION_PLACEHOLDERS: Record<RequestType, string> = {
   "Bug Report":
@@ -44,8 +47,10 @@ export function SupportTrigger({ userEmail, userName }: SupportTriggerProps) {
   const [subject, setSubject] = useState("");
   const [description, setDescription] = useState("");
   const [state, setState] = useState<SubmissionState>("idle");
+  const [stage, setStage] = useState<LoadingStage | null>(null);
   const [ticketKey, setTicketKey] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const [files, setFiles] = useState<File[]>([]);
 
   const resetForm = () => {
     setRequestType("Bug Report");
@@ -53,8 +58,10 @@ export function SupportTrigger({ userEmail, userName }: SupportTriggerProps) {
     setSubject("");
     setDescription("");
     setState("idle");
+    setStage(null);
     setTicketKey("");
     setErrorMessage("");
+    setFiles([]);
   };
 
   const handleOpenChange = (next: boolean) => {
@@ -71,6 +78,10 @@ export function SupportTrigger({ userEmail, userName }: SupportTriggerProps) {
     setErrorMessage("");
 
     try {
+      setStage(files.length > 0 ? "uploading" : "submitting");
+      const attachments = await uploadAttachmentsToBlob(files);
+
+      setStage("submitting");
       const response = await fetch("/api/support/create-ticket", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -86,6 +97,7 @@ export function SupportTrigger({ userEmail, userName }: SupportTriggerProps) {
             userAgent: navigator.userAgent,
             timestamp: new Date().toISOString(),
           },
+          attachments,
         }),
       });
 
@@ -98,6 +110,7 @@ export function SupportTrigger({ userEmail, userName }: SupportTriggerProps) {
       setState("success");
     } catch (error) {
       setState("error");
+      setStage(null);
       setErrorMessage(
         error instanceof Error ? error.message : "Something went wrong"
       );
@@ -227,6 +240,16 @@ export function SupportTrigger({ userEmail, userName }: SupportTriggerProps) {
                   className="resize-none"
                 />
               </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-xs">Attachments</Label>
+                <FileDropzone
+                  files={files}
+                  onFilesChange={setFiles}
+                  disabled={state === "loading"}
+                  compact
+                />
+              </div>
             </div>
 
             <div className="flex items-center justify-between gap-2 border-t bg-muted/30 px-4 py-2.5">
@@ -241,7 +264,11 @@ export function SupportTrigger({ userEmail, userName }: SupportTriggerProps) {
                 {state === "loading" ? (
                   <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
                 ) : null}
-                Send
+                {state === "loading"
+                  ? stage === "uploading"
+                    ? "Uploading…"
+                    : "Submitting…"
+                  : "Send"}
               </Button>
             </div>
           </form>
