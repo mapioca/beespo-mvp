@@ -24,7 +24,9 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { uploadAttachmentsToBlob } from "@/lib/support/upload-attachments"
 import { RequestHistory } from "./request-history"
+import { FileDropzone } from "./file-dropzone"
 
 interface SupportModalProps {
   open: boolean
@@ -36,6 +38,7 @@ interface SupportModalProps {
 type RequestType = "Bug Report" | "Feature Request" | "General Question"
 type Priority = "Low" | "Medium" | "High"
 type SubmissionState = "idle" | "loading" | "success" | "error"
+type LoadingStage = "uploading" | "submitting"
 
 export function SupportModal({
   open,
@@ -49,8 +52,10 @@ export function SupportModal({
   const [description, setDescription] = useState("")
   const [priority, setPriority] = useState<Priority>("Medium")
   const [state, setState] = useState<SubmissionState>("idle")
+  const [stage, setStage] = useState<LoadingStage | null>(null)
   const [ticketKey, setTicketKey] = useState("")
   const [errorMessage, setErrorMessage] = useState("")
+  const [files, setFiles] = useState<File[]>([])
 
   const resetForm = () => {
     setRequestType("Bug Report")
@@ -58,8 +63,10 @@ export function SupportModal({
     setDescription("")
     setPriority("Medium")
     setState("idle")
+    setStage(null)
     setTicketKey("")
     setErrorMessage("")
+    setFiles([])
     setActiveTab("new")
   }
 
@@ -81,11 +88,13 @@ export function SupportModal({
         timestamp: new Date().toISOString(),
       }
 
+      setStage(files.length > 0 ? "uploading" : "submitting")
+      const attachments = await uploadAttachmentsToBlob(files)
+      setStage("submitting")
+
       const response = await fetch("/api/support/create-ticket", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           requestType,
           subject,
@@ -94,6 +103,7 @@ export function SupportModal({
           userEmail,
           userName,
           metadata,
+          attachments,
         }),
       })
 
@@ -107,6 +117,7 @@ export function SupportModal({
       setState("success")
     } catch (error) {
       setState("error")
+      setStage(null)
       setErrorMessage(
         error instanceof Error ? error.message : "Something went wrong"
       )
@@ -269,6 +280,16 @@ export function SupportModal({
                 />
               </div>
 
+              {/* Attachments */}
+              <div className="space-y-2">
+                <Label>Attachments</Label>
+                <FileDropzone
+                  files={files}
+                  onFilesChange={setFiles}
+                  disabled={state === "loading"}
+                />
+              </div>
+
               {/* Metadata Info */}
               <div className="text-xs text-muted-foreground bg-muted p-3 rounded-md">
                 <p className="font-semibold mb-1">Auto-captured information:</p>
@@ -296,7 +317,11 @@ export function SupportModal({
                   {state === "loading" && (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   )}
-                  Send Request
+                  {state === "loading"
+                    ? stage === "uploading"
+                      ? "Uploading attachments…"
+                      : "Submitting…"
+                    : "Send Request"}
                 </Button>
               </DialogFooter>
             </form>
