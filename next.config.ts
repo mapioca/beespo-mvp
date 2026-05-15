@@ -59,7 +59,7 @@ const nextConfig: NextConfig = {
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: blob: https:",
               "font-src 'self' data:",
-              "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.sentry.io https://api.zoom.us https://challenges.cloudflare.com",
+              "connect-src 'self' https://vercel.com https://*.supabase.co wss://*.supabase.co https://*.sentry.io https://api.zoom.us https://challenges.cloudflare.com",
               "frame-src 'self' https://challenges.cloudflare.com",
               "object-src 'none'",
               "base-uri 'self'",
