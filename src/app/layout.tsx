@@ -28,9 +28,6 @@ export const metadata: Metadata = {
   icons: {
     icon: "/beespo-favicon.png",
   },
-  other: {
-    "zoom-domain-verification": "ZOOM_verify_9532e3df21144d538c14515b2717638d",
-  },
 };
 
 export default function RootLayout({
@@ -51,7 +48,9 @@ export default function RootLayout({
           Skip to main content
         </a>
         <ThemeProvider>
-          {children}
+          <div id="main-content" tabIndex={-1} className="outline-none">
+            {children}
+          </div>
           <ToastContainer />
         </ThemeProvider>
       </body>
