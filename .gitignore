@@ -22,6 +22,9 @@
 # Ignore Claude-related files
 .claude/
 
+# Ignore Firecrawl cache
+.firecrawl/
+
 # Ignore node_modules
 node_modules/
 
