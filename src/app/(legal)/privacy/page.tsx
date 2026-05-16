@@ -30,8 +30,8 @@ export default function PrivacyPage() {
 
       <LegalSection title="2. Information Received from Google" kicker="OAuth sign-in">
         <p className="leading-relaxed" style={{ color: "color-mix(in srgb, var(--lp-ink) 78%, transparent)" }}>
-          If you choose to sign in with Google, we receive your name, email address, profile
-          picture URL, and Google account identifier from Google&apos;s OAuth service. We use
+          If you choose to sign in with Google, we receive your name, email address, and profile
+          picture URL from Google&apos;s OAuth service. We use
           this information solely to create and authenticate your Beespo account. We do not
           request or store any other data from your Google account, and we do not access
           Google services on your behalf. You can stop using Google sign-in at any time by
