@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { NextRequest, NextResponse } from 'next/server';
 import { sendInviteEmail } from '@/lib/email/send-invite-email';
 import { getAppUrlFromRequest } from '@/lib/url/app-url';
@@ -46,18 +47,20 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
   }
 
+  const adminClient = createAdminClient();
+
   // Check if this is an invited user flow
   if (body.workspaceInvitationToken) {
-    return handleInvitedUserOnboarding(supabase, user, body);
+    return handleInvitedUserOnboarding(adminClient, user, body);
   }
 
   // Regular workspace creation flow
-  return handleWorkspaceCreation(supabase, user, body, baseUrl);
+  return handleWorkspaceCreation(adminClient, user, body, baseUrl);
 }
 
 // Handle invited user onboarding (abbreviated flow)
 async function handleInvitedUserOnboarding(
-  supabase: Awaited<ReturnType<typeof createClient>>,
+  supabase: ReturnType<typeof createAdminClient>,
   user: { id: string; email?: string; user_metadata?: { full_name?: string } },
   body: { workspaceInvitationToken: string; role?: RoleKey; roleTitle?: string }
 ) {
@@ -153,7 +156,7 @@ async function handleInvitedUserOnboarding(
 
 // Handle regular workspace creation flow
 async function handleWorkspaceCreation(
-  supabase: Awaited<ReturnType<typeof createClient>>,
+  supabase: ReturnType<typeof createAdminClient>,
   user: { id: string; email?: string; user_metadata?: { full_name?: string } },
   body: unknown,
   baseUrl: string

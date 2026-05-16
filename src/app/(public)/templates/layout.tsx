@@ -22,7 +22,7 @@ export default function PublicTemplatesLayout({
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Nav />
-      <main id="main-content" className="flex-1 pt-[var(--landing-nav-height)]">
+      <main className="flex-1 pt-[var(--landing-nav-height)]">
         {children}
       </main>
       <Footer />

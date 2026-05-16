@@ -4,6 +4,7 @@ import { getUserNavigationItems } from "@/lib/navigation/user-navigation";
 import { getDashboardRequestContext } from "@/lib/dashboard/request-context";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { TermsUpdateBanner } from "@/components/legal/terms-update-banner";
 
 export default async function DashboardLayout({
   children,
@@ -50,6 +51,7 @@ export default async function DashboardLayout({
 
   return (
     <>
+      <TermsUpdateBanner currentAcknowledgedVersion={profile.terms_version_acknowledged ?? null} />
       <DashboardShell
         userName={profile?.full_name || ""}
         userEmail={user?.email || ""}

@@ -2948,6 +2948,7 @@ export type Database = {
           platform_invitation_id: string | null
           role: string
           role_title: string | null
+          terms_version_acknowledged: string | null
           updated_at: string | null
           workspace_id: string | null
         }
@@ -2967,6 +2968,7 @@ export type Database = {
           platform_invitation_id?: string | null
           role: string
           role_title?: string | null
+          terms_version_acknowledged?: string | null
           updated_at?: string | null
           workspace_id?: string | null
         }
@@ -2986,6 +2988,7 @@ export type Database = {
           platform_invitation_id?: string | null
           role?: string
           role_title?: string | null
+          terms_version_acknowledged?: string | null
           updated_at?: string | null
           workspace_id?: string | null
         }

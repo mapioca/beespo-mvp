@@ -17,7 +17,7 @@ export default function TermsPage() {
         <>
           The operating terms for access to Beespo, our related services, and the responsibilities
           attached to each account.
-          <p className="mt-2 text-sm">Last updated: January 12, 2026</p>
+          <p className="mt-2 text-sm">Last updated: May 16, 2026</p>
         </>
       }
     >

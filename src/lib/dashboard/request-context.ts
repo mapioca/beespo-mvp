@@ -28,7 +28,7 @@ export const getDashboardRequestContext = cache(
       // to avoid extra client/bootstrap overhead on the request hot path.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: profile } = await (supabase.from("profiles") as any)
-        .select("full_name, workspace_id, role, role_title, feature_tier, last_read_release_note_at, workspaces(name, organization_type)")
+        .select("full_name, workspace_id, role, role_title, feature_tier, last_read_release_note_at, terms_version_acknowledged, workspaces(name, organization_type)")
         .eq("id", user.id)
         .eq("is_deleted", false)
         .single();

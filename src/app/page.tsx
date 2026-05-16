@@ -32,10 +32,7 @@ export default async function Home() {
       style={{ background: "var(--lp-bg)" }}
     >
       <Nav isAuthenticated={isAuthenticated} />
-      <main
-        id="main-content"
-        className="flex-1 pt-[var(--landing-nav-height)]"
-      >
+      <main className="flex-1 pt-[var(--landing-nav-height)]">
         <Hero />
         <FourShapesSection />
         <CTASection />

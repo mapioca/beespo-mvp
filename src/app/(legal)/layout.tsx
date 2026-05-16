@@ -15,7 +15,7 @@ export default async function LegalLayout({ children }: { children: React.ReactN
       style={{ background: "var(--lp-bg)" }}
     >
       <Nav isAuthenticated={isAuthenticated} />
-      <main id="main-content" className="flex-1 pt-[var(--landing-nav-height)]">
+      <main className="flex-1 pt-[var(--landing-nav-height)]">
         {children}
       </main>
       <Footer isAuthenticated={isAuthenticated} />
