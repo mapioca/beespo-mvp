@@ -18,7 +18,7 @@ const faqs = [
   },
   {
     q: "Do I need to sign in to contact support?",
-    a: "You can always email support@beespo.com directly, but you need to sign in if you want to submit a ticket through the app and track your requests there.",
+    a: "You can always email support@beespo.com directly, or sign in to submit a ticket through the app. We'll reply by email either way.",
   },
   {
     q: "How do I invite team members to my workspace?",

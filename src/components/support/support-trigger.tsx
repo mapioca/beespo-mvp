@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { LifeBuoy, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -147,7 +146,7 @@ export function SupportTrigger({ userEmail, userName }: SupportTriggerProps) {
             <div>
               <div className="text-sm font-semibold">Request sent</div>
               <div className="mt-1 text-xs text-muted-foreground">
-                Thanks — we&apos;ll get back to you soon.
+                Thanks — we&apos;ll reply via email to {userEmail} within one business day.
               </div>
               {ticketKey ? (
                 <div className="mt-2 text-xs text-muted-foreground">
@@ -253,13 +252,9 @@ export function SupportTrigger({ userEmail, userName }: SupportTriggerProps) {
             </div>
 
             <div className="flex items-center justify-between gap-2 border-t bg-muted/30 px-4 py-2.5">
-              <Link
-                href="/support"
-                className="text-[11px] text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
-                onClick={() => setOpen(false)}
-              >
-                View past requests
-              </Link>
+              <span className="text-[11px] text-muted-foreground">
+                We&apos;ll reply to {userEmail}
+              </span>
               <Button type="submit" size="sm" disabled={state === "loading"}>
                 {state === "loading" ? (
                   <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
